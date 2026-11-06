@@ -47,38 +47,51 @@
         </Style>
 
         <Style Selector="^.primary">
-            <Setter Property="Background" Value="{DynamicResource V2Primary}" />
+            <Setter Property="Background" Value="{DynamicResource V2PrimaryFill}" />
             <Setter Property="Foreground" Value="{DynamicResource V2OnPrimary}" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
+        <Style Selector="^.primary /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2PrimaryShadow}" />
+        </Style>
         <Style Selector="^.primary:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource V2PrimaryHover}" />
+            <Setter Property="Background" Value="{DynamicResource V2PrimaryFillHover}" />
         </Style>
 
         <Style Selector="^.accent">
-            <Setter Property="Background" Value="{DynamicResource V2Accent}" />
+            <Setter Property="Background" Value="{DynamicResource V2AccentFill}" />
             <Setter Property="Foreground" Value="{DynamicResource V2OnAccent}" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
+        <Style Selector="^.accent /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2AccentShadow}" />
+        </Style>
         <Style Selector="^.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource V2AccentHover}" />
+            <Setter Property="Background" Value="{DynamicResource V2AccentFillHover}" />
         </Style>
 
         <Style Selector="^.disconnect">
-            <Setter Property="Background" Value="{DynamicResource V2Neutral}" />
+            <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
             <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
+        <Style Selector="^.disconnect /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2NeutralShadow}" />
+        </Style>
         <Style Selector="^.disconnect:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource V2NeutralHover}" />
+            <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
         </Style>
 
+        <!--  Secondary buttons are raised white keys (light) or lifted slate (dark), not flat grey.  -->
         <Style Selector="^.subtle">
-            <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
+            <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
             <Setter Property="BorderThickness" Value="0" />
         </Style>
+        <Style Selector="^.subtle /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2NeutralShadow}" />
+        </Style>
         <Style Selector="^.subtle:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource V2Pressed}" />
+            <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
         </Style>
 
         <Style Selector="^.ghost">
@@ -95,7 +108,7 @@
             <Setter Property="Width" Value="32" />
             <Setter Property="Height" Value="32" />
             <Setter Property="MinHeight" Value="32" />
-            <Setter Property="CornerRadius" Value="8" />
+            <Setter Property="CornerRadius" Value="10" />
         </Style>
         <Style Selector="^.small">
             <Setter Property="MinHeight" Value="28" />
@@ -107,7 +120,7 @@
             <Setter Property="Height" Value="24" />
             <Setter Property="Padding" Value="8,0" />
             <Setter Property="FontSize" Value="12" />
-            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="CornerRadius" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         </Style>
         <Style Selector="^.tiny:pointerover">
@@ -121,7 +134,7 @@
             <Setter Property="Width" Value="28" />
             <Setter Property="Height" Value="28" />
             <Setter Property="MinHeight" Value="28" />
-            <Setter Property="CornerRadius" Value="7" />
+            <Setter Property="CornerRadius" Value="9" />
         </Style>
         <Style Selector="^:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
@@ -133,9 +146,9 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
         <Setter Property="Padding" Value="10,0" />
-        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="MinHeight" Value="36" />
         <Setter Property="Margin" Value="0,1" />
-        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="CornerRadius" Value="12" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
         <Setter Property="Template">
@@ -162,8 +175,8 @@
             <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
         </Style>
         <Style Selector="^:selected /template/ Border#PART_Chip">
-            <Setter Property="Background" Value="{DynamicResource V2Selected}" />
-            <Setter Property="BoxShadow" Value="{DynamicResource V2NavShadow}" />
+            <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
+            <Setter Property="BoxShadow" Value="{DynamicResource V2ChipShadow}" />
         </Style>
         <Style Selector="^:focus-visible /template/ Border#PART_Chip">
             <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
@@ -289,9 +302,9 @@
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
         <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusRow}" />
         <Setter Property="Padding" Value="10,0,6,0" />
-        <Setter Property="MinHeight" Value="48" />
+        <Setter Property="MinHeight" Value="50" />
         <Setter Property="Margin" Value="0,1" />
         <Setter Property="HorizontalAlignment" Value="Stretch" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
@@ -316,7 +329,8 @@
             <Setter Property="Background" Value="{DynamicResource V2Pressed}" />
         </Style>
         <Style Selector="^.active /template/ ContentPresenter#PART_ContentPresenter">
-            <Setter Property="Background" Value="{DynamicResource V2Selected}" />
+            <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
+            <Setter Property="BoxShadow" Value="{DynamicResource V2ChipShadow}" />
         </Style>
         <Style Selector="^.indent">
             <Setter Property="Padding" Value="22,0,6,0" />
@@ -338,7 +352,7 @@
                     HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                     Content="{TemplateBinding Content}"
                     ContentTemplate="{TemplateBinding ContentTemplate}"
-                    CornerRadius="8" />
+                    CornerRadius="{DynamicResource V2RadiusRow}" />
             </ControlTemplate>
         </Setter>
         <!--  Arrow keys move through the list items; the focused one gets the ring and a soft fill.  -->
@@ -353,7 +367,7 @@
         <Setter Property="Width" Value="88" />
         <Setter Property="MinHeight" Value="64" />
         <Setter Property="Padding" Value="4,8" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusTile}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -386,7 +400,7 @@
         <Setter Property="Width" Value="88" />
         <Setter Property="MinHeight" Value="64" />
         <Setter Property="Padding" Value="4,8" />
-        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusTile}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />

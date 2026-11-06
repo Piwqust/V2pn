@@ -137,6 +137,7 @@ public static class L
     public static string ConnectFastestIn => T("Connect to the fastest server here", "Подключиться к самому быстрому здесь");
     public static string UpdateSubscription => T("Update subscription", "Обновить подписку");
     public static string ClearSearch => T("Clear search", "Очистить поиск");
+    public static string AppMenu => T("Menu", "Меню");
 
     public static string ThemeName(string? name) => name switch
     {

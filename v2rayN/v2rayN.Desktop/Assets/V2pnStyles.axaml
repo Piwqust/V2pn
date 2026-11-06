@@ -10,7 +10,7 @@
     </Style>
     <Style Selector="Border.well">
         <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusRow}" />
     </Style>
     <Style Selector="Border.hairline">
         <Setter Property="Height" Value="1" />
@@ -203,7 +203,7 @@
     <!--  Search field  -->
     <Style Selector="TextBox.search">
         <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusControl}" />
-        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="MinHeight" Value="36" />
         <Setter Property="Background" Value="{DynamicResource V2CardBackground}" />
         <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
         <Setter Property="BorderThickness" Value="1" />
@@ -212,11 +212,11 @@
 
     <!--  Floating cards over the map  -->
     <Style Selector="Border.floating">
-        <Setter Property="Background" Value="{DynamicResource V2CardFloating}" />
-        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+        <Setter Property="Background" Value="{DynamicResource V2FloatingFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PanelBorder}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="12" />
-        <Setter Property="BoxShadow" Value="{DynamicResource V2CardShadow}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusFloating}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource V2RaisedShadow}" />
     </Style>
 
     <Style Selector="TextBlock.ping">
@@ -306,10 +306,13 @@
         layouts; these give them the V2pn surface and make the confirm action the solid one.
     -->
     <Style Selector=":is(Window)">
-        <Setter Property="Background" Value="{DynamicResource V2WindowBackground}" />
+        <Setter Property="Background" Value="{DynamicResource V2DialogBackground}" />
     </Style>
     <Style Selector=":is(Window) Button[IsDefault=True]">
         <Setter Property="Theme" Value="{StaticResource SolidButton}" />
+    </Style>
+    <Style Selector=":is(Window) Button[IsDefault=True] /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2DefaultButtonShadow}" />
     </Style>
 
     <!--  Sidebar rows: secondary actions appear on hover or keyboard focus; a set favorite stays visible.  -->
@@ -424,6 +427,7 @@
     <Style Selector="Border.state">
         <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusPill}" />
         <Setter Property="Padding" Value="12,5" />
+        <Setter Property="BoxShadow" Value="inset 0 1 0 0 #14FFFFFF" />
         <Setter Property="Background" Value="{DynamicResource V2Hover}" />
     </Style>
     <Style Selector="Border.state TextBlock">

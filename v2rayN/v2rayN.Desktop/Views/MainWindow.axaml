@@ -40,11 +40,11 @@
                 ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
                 <Button
                     x:Name="btnAppMenu"
-                    AutomationProperties.Name="{x:Static resx:ResUI.menuSetting}"
+                    AutomationProperties.Name="{x:Static loc:L.AppMenu}"
                     Margin="8,0,2,0"
                     Classes="ghost icon"
                     Theme="{StaticResource V2Button}"
-                    ToolTip.Tip="{x:Static resx:ResUI.menuSetting}">
+                    ToolTip.Tip="{x:Static loc:L.AppMenu}">
                     <PathIcon Classes="i16" Data="{StaticResource SemiIconMore}">
                         <PathIcon.RenderTransform>
                             <RotateTransform Angle="90" />
@@ -95,7 +95,8 @@
                     <Border
                         Width="20"
                         Height="20"
-                        Background="{DynamicResource V2Accent}"
+                        Background="{DynamicResource V2AccentFill}"
+                        BoxShadow="inset 0 1 0 0 #59FFFFFF"
                         CornerRadius="6">
                         <Path
                             Width="14"
@@ -161,17 +162,18 @@
             <!--  ───────── Body ─────────  -->
             <Grid
                 Grid.Row="1"
-                Margin="8,0,8,8"
+                Margin="10,0,10,10"
                 ColumnDefinitions="312,*">
 
-                <!--  Sidebar  -->
+                <!--  Sidebar: a raised panel on the window backdrop  -->
                 <Border
                     Grid.Column="0"
-                    Margin="0,0,8,0"
-                    Background="{DynamicResource V2SidebarBackground}"
-                    BorderBrush="{DynamicResource V2Border}"
+                    Margin="0,0,10,0"
+                    Background="{DynamicResource V2SidebarFill}"
+                    BorderBrush="{DynamicResource V2PanelBorder}"
                     BorderThickness="1"
-                    CornerRadius="10">
+                    BoxShadow="{DynamicResource V2PanelShadow}"
+                    CornerRadius="{DynamicResource V2RadiusPanel}">
                     <DockPanel>
                         <Grid
                             Margin="12,12,12,8"
@@ -207,8 +209,8 @@
                                 x:Name="btnAdd"
                     AutomationProperties.Name="{x:Static loc:L.AddMenu}"
                                 Grid.Column="1"
-                                Width="34"
-                                Height="34"
+                                Width="36"
+                                Height="36"
                                 Margin="8,0,0,0"
                                 Classes="subtle icon"
                                 Theme="{StaticResource V2Button}"
@@ -345,8 +347,9 @@
                                                 <Border
                                                     Width="24"
                                                     Height="18"
+                                                    BoxShadow="{DynamicResource V2FlagRing}"
                                                     ClipToBounds="True"
-                                                    CornerRadius="3"
+                                                    CornerRadius="4"
                                                     IsVisible="{Binding ShowFlag}">
                                                     <Image Source="{Binding Flag}" Stretch="UniformToFill" />
                                                 </Border>
@@ -451,8 +454,9 @@
                                                 <Border
                                                     Width="24"
                                                     Height="18"
+                                                    BoxShadow="{DynamicResource V2FlagRing}"
                                                     ClipToBounds="True"
-                                                    CornerRadius="3"
+                                                    CornerRadius="4"
                                                     IsVisible="{Binding HasFlag}">
                                                     <Image Source="{Binding Flag}" Stretch="UniformToFill" />
                                                 </Border>
@@ -643,13 +647,15 @@
                     </DockPanel>
                 </Border>
 
-                <!--  Stage: map, header, feature rail, stats  -->
+                <!--  Stage: map, header, feature rail, stats. The outer border casts the shadow,
+                      the inner one clips the map to the rounded corners.  -->
                 <Border
                     Grid.Column="1"
-                    BorderBrush="{DynamicResource V2Border}"
+                    BorderBrush="{DynamicResource V2PanelBorder}"
                     BorderThickness="1"
-                    ClipToBounds="True"
-                    CornerRadius="10">
+                    BoxShadow="{DynamicResource V2PanelShadow}"
+                    CornerRadius="{DynamicResource V2RadiusPanel}">
+                    <Border ClipToBounds="True" CornerRadius="17">
                     <Panel>
                         <views:MapView x:Name="mapView" />
 
@@ -693,9 +699,9 @@
                                     Margin="0,0,12,0"
                                     VerticalAlignment="Center"
                                     DockPanel.Dock="Left"
-                                    BoxShadow="0 2 8 0 #60000000"
+                                    BoxShadow="0 1 2 0 #59000000, 0 4 12 -2 #4D000000"
                                     ClipToBounds="True"
-                                    CornerRadius="4">
+                                    CornerRadius="6">
                                     <Image x:Name="imgHeaderFlag" Stretch="UniformToFill" />
                                 </Border>
                                 <TextBlock
@@ -714,8 +720,9 @@
                                 TextTrimming="CharacterEllipsis" />
                             <Button
                                 x:Name="btnConnect"
-                                Width="220"
-                                Height="42"
+                                Width="232"
+                                Height="44"
+                                CornerRadius="22"
                                 Margin="0,10,0,0"
                                 FontSize="14"
                                 FontWeight="SemiBold"
@@ -933,6 +940,7 @@
                             <ContentControl x:Name="pageHost" />
                         </DockPanel>
                     </Panel>
+                    </Border>
                 </Border>
             </Grid>
         </Grid>

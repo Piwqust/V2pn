@@ -6,7 +6,7 @@
     -->
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
-            <SolidColorBrush x:Key="V2WindowBackground" Color="#16161B" />
+            <SolidColorBrush x:Key="V2WindowBackground" Color="#111115" />
             <SolidColorBrush x:Key="V2SidebarBackground" Color="#1C1C23" />
             <SolidColorBrush x:Key="V2ContentBackground" Color="#121217" />
             <SolidColorBrush x:Key="V2CardBackground" Color="#1E1E25" />
@@ -55,24 +55,69 @@
             <SolidColorBrush x:Key="V2MapActiveSafe" Color="#2A4A3A" />
             <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#4A2D2C" />
             <SolidColorBrush x:Key="V2MapActiveLocal" Color="#463D27" />
-            <BoxShadows x:Key="V2CardShadow">0 8 24 -8 #80000000</BoxShadows>
-            <BoxShadows x:Key="V2RaisedShadow">0 16 40 -12 #A0000000</BoxShadows>
-            <BoxShadows x:Key="V2NavShadow">0 1 2 0 #40000000</BoxShadows>
+            <BoxShadows x:Key="V2CardShadow">inset 0 1 0 0 #0FFFFFFF, 0 1 2 0 #4D000000, 0 6 16 -4 #59000000, 0 20 40 -14 #73000000</BoxShadows>
+            <BoxShadows x:Key="V2RaisedShadow">inset 0 1 0 0 #14FFFFFF, 0 2 4 0 #4D000000, 0 12 28 -8 #73000000, 0 32 64 -20 #8C000000</BoxShadows>
+            <BoxShadows x:Key="V2NavShadow">inset 0 1 0 0 #14FFFFFF, 0 1 2 0 #66000000, 0 4 10 -3 #4D000000</BoxShadows>
             <BoxShadows x:Key="V2FocusShadow">0 0 0 2 #A05C9DF0</BoxShadows>
             <LinearGradientBrush x:Key="V2StageFade" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#00121217" />
                 <GradientStop Offset="1" Color="#E6121217" />
             </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2SidebarFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#1F1F27" />
+                <GradientStop Offset="1" Color="#19191F" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2ChipFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#2E2E38" />
+                <GradientStop Offset="1" Color="#26262F" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2FloatingFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#F2272731" />
+                <GradientStop Offset="1" Color="#EE1C1C24" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2AccentFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#F45B51" />
+                <GradientStop Offset="1" Color="#D53A30" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2AccentFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#F8695F" />
+                <GradientStop Offset="1" Color="#DF443A" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#3B3C48" />
+                <GradientStop Offset="1" Color="#2E2F3A" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2NeutralFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#44454F" />
+                <GradientStop Offset="1" Color="#363743" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2PrimaryFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#FFFFFF" />
+                <GradientStop Offset="1" Color="#DCDCE3" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2PrimaryFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#FFFFFF" />
+                <GradientStop Offset="1" Color="#E9E9EF" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="V2PanelBorder" Color="#24242C" />
+            <SolidColorBrush x:Key="V2DialogBackground" Color="#18181D" />
+            <BoxShadows x:Key="V2FlagRing">0 0 0 1 #40000000</BoxShadows>
+            <BoxShadows x:Key="V2DefaultButtonShadow">inset 0 1 0 0 #33FFFFFF, 0 1 2 0 #66000000, 0 8 18 -8 #994F8FEA</BoxShadows>
+            <BoxShadows x:Key="V2PanelShadow">0 1 1 0 #40000000, 0 10 28 -8 #73000000</BoxShadows>
+            <BoxShadows x:Key="V2ChipShadow">inset 0 1 0 0 #14FFFFFF, 0 1 2 0 #66000000, 0 4 10 -3 #4D000000</BoxShadows>
+            <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #59FFFFFF, inset 0 -1 0 0 #33000000, 0 1 2 0 #66000000, 0 10 22 -8 #B3E5483E</BoxShadows>
+            <BoxShadows x:Key="V2NeutralShadow">inset 0 1 0 0 #1FFFFFFF, 0 1 2 0 #66000000, 0 6 14 -6 #73000000</BoxShadows>
+            <BoxShadows x:Key="V2PrimaryShadow">inset 0 -1 0 0 #26000000, 0 1 2 0 #66000000, 0 6 14 -6 #73000000</BoxShadows>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
-            <SolidColorBrush x:Key="V2WindowBackground" Color="#F3F4F7" />
+            <SolidColorBrush x:Key="V2WindowBackground" Color="#E3E4E9" />
             <SolidColorBrush x:Key="V2SidebarBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="V2ContentBackground" Color="#ECEEF3" />
             <SolidColorBrush x:Key="V2CardBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="V2CardFloating" Color="#F2FFFFFF" />
             <SolidColorBrush x:Key="V2CardMutedBackground" Color="#F0F1F5" />
-            <SolidColorBrush x:Key="V2Border" Color="#E2E4EA" />
-            <SolidColorBrush x:Key="V2BorderStrong" Color="#D0D3DB" />
+            <SolidColorBrush x:Key="V2Border" Color="#1816161B" />
+            <SolidColorBrush x:Key="V2BorderStrong" Color="#2616161B" />
             <SolidColorBrush x:Key="V2Hover" Color="#0A16161B" />
             <SolidColorBrush x:Key="V2Pressed" Color="#1416161B" />
             <SolidColorBrush x:Key="V2Selected" Color="#0F16161B" />
@@ -114,22 +159,71 @@
             <SolidColorBrush x:Key="V2MapActiveSafe" Color="#C9EEDB" />
             <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#F8D3CF" />
             <SolidColorBrush x:Key="V2MapActiveLocal" Color="#F5E6C4" />
-            <BoxShadows x:Key="V2CardShadow">0 8 24 -8 #2E16161B</BoxShadows>
-            <BoxShadows x:Key="V2RaisedShadow">0 16 40 -12 #3816161B</BoxShadows>
-            <BoxShadows x:Key="V2NavShadow">0 1 2 0 #1416161B</BoxShadows>
+            <BoxShadows x:Key="V2CardShadow">inset 0 1 0 0 #FFFFFFFF, 0 1 2 0 #0F16161B, 0 6 16 -4 #1716161B, 0 20 40 -14 #2416161B</BoxShadows>
+            <BoxShadows x:Key="V2RaisedShadow">inset 0 1 0 0 #FFFFFFFF, 0 2 4 0 #1216161B, 0 12 28 -8 #2416161B, 0 32 64 -20 #3316161B</BoxShadows>
+            <BoxShadows x:Key="V2NavShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1416161B, 0 1 2 0 #1416161B, 0 4 10 -3 #1A16161B</BoxShadows>
             <BoxShadows x:Key="V2FocusShadow">0 0 0 2 #A03A7BD5</BoxShadows>
             <LinearGradientBrush x:Key="V2StageFade" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#00ECEEF3" />
                 <GradientStop Offset="1" Color="#E6ECEEF3" />
             </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2SidebarFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#F9F9FB" />
+                <GradientStop Offset="1" Color="#F0F1F4" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2ChipFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#FFFFFF" />
+                <GradientStop Offset="1" Color="#FAFAFB" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2FloatingFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#F7FFFFFF" />
+                <GradientStop Offset="1" Color="#EFF8F9FB" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2AccentFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#F2584E" />
+                <GradientStop Offset="1" Color="#D4362C" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2AccentFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#F6665C" />
+                <GradientStop Offset="1" Color="#DC3F35" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#FFFFFF" />
+                <GradientStop Offset="1" Color="#F0F1F4" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2NeutralFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#FFFFFF" />
+                <GradientStop Offset="1" Color="#E8EAEE" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2PrimaryFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#3A3A44" />
+                <GradientStop Offset="1" Color="#131317" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2PrimaryFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#4A4A54" />
+                <GradientStop Offset="1" Color="#1F1F25" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="V2PanelBorder" Color="#1216161B" />
+            <SolidColorBrush x:Key="V2DialogBackground" Color="#F7F8FA" />
+            <BoxShadows x:Key="V2FlagRing">0 0 0 1 #1F16161B</BoxShadows>
+            <BoxShadows x:Key="V2DefaultButtonShadow">inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #26000000, 0 8 18 -8 #803A7BD5</BoxShadows>
+            <BoxShadows x:Key="V2PanelShadow">0 1 2 0 #0F16161B, 0 10 28 -10 #2416161B</BoxShadows>
+            <BoxShadows x:Key="V2ChipShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1416161B, 0 1 2 0 #1416161B, 0 4 10 -3 #1A16161B</BoxShadows>
+            <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #66FFFFFF, inset 0 -1 0 0 #26000000, 0 1 2 0 #33D4362C, 0 10 20 -8 #A6E0443A</BoxShadows>
+            <BoxShadows x:Key="V2NeutralShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1A16161B, 0 1 2 0 #1416161B, 0 5 12 -5 #2416161B</BoxShadows>
+            <BoxShadows x:Key="V2PrimaryShadow">inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #4016161B, 0 8 16 -6 #5916161B</BoxShadows>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
     <FontFamily x:Key="V2UiFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
     <FontFamily x:Key="V2DisplayFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
-    <CornerRadius x:Key="V2RadiusCard">12</CornerRadius>
-    <CornerRadius x:Key="V2RadiusRow">8</CornerRadius>
-    <CornerRadius x:Key="V2RadiusControl">8</CornerRadius>
+    <!--  Radii nest: inner = outer - padding (panel 18 with 6 padding -> rows 12; floating 20 with 6 -> tiles 14).  -->
+    <CornerRadius x:Key="V2RadiusPanel">18</CornerRadius>
+    <CornerRadius x:Key="V2RadiusFloating">20</CornerRadius>
+    <CornerRadius x:Key="V2RadiusCard">18</CornerRadius>
+    <CornerRadius x:Key="V2RadiusTile">14</CornerRadius>
+    <CornerRadius x:Key="V2RadiusRow">12</CornerRadius>
+    <CornerRadius x:Key="V2RadiusControl">12</CornerRadius>
     <CornerRadius x:Key="V2RadiusPill">999</CornerRadius>
     <StreamGeometry x:Key="V2SpinnerArc">M6,1 A5,5 0 1 1 1,6</StreamGeometry>
     <StreamGeometry x:Key="V2BrandWave">M2,9 C4.5,9 4.5,4 7,4 C9.5,4 9.5,14 12,14 C14.5,14 14.5,7 17,7 C18.4,7 19,8 20,9</StreamGeometry>

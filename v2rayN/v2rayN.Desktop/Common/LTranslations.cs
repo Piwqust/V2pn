@@ -20,6 +20,7 @@ internal static class LTranslations
     {
         ["zh-Hans"] = new()
         {
+            ["Menu"] = "菜单",
             ["just now"] = "刚刚",
             ["{0} min ago"] = "{0} 分钟前",
             ["{0} h ago"] = "{0} 小时前",
@@ -139,6 +140,7 @@ internal static class LTranslations
         },
         ["zh-Hant"] = new()
         {
+            ["Menu"] = "選單",
             ["just now"] = "剛剛",
             ["{0} min ago"] = "{0} 分鐘前",
             ["{0} h ago"] = "{0} 小時前",
@@ -258,6 +260,7 @@ internal static class LTranslations
         },
         ["fa"] = new()
         {
+            ["Menu"] = "منو",
             ["just now"] = "همین الان",
             ["{0} min ago"] = "{0} دقیقه پیش",
             ["{0} h ago"] = "{0} ساعت پیش",
@@ -377,6 +380,7 @@ internal static class LTranslations
         },
         ["fr"] = new()
         {
+            ["Menu"] = "Menu",
             ["just now"] = "à l'instant",
             ["{0} min ago"] = "il y a {0} min",
             ["{0} h ago"] = "il y a {0} h",
@@ -496,6 +500,7 @@ internal static class LTranslations
         },
         ["hu"] = new()
         {
+            ["Menu"] = "Menü",
             ["just now"] = "épp most",
             ["{0} min ago"] = "{0} perce",
             ["{0} h ago"] = "{0} órája",
@@ -615,6 +620,7 @@ internal static class LTranslations
         },
         ["id"] = new()
         {
+            ["Menu"] = "Menu",
             ["just now"] = "baru saja",
             ["{0} min ago"] = "{0} mnt lalu",
             ["{0} h ago"] = "{0} jam lalu",
@@ -734,6 +740,7 @@ internal static class LTranslations
         },
         ["az"] = new()
         {
+            ["Menu"] = "Menyu",
             ["just now"] = "indicə",
             ["{0} min ago"] = "{0} dəq əvvəl",
             ["{0} h ago"] = "{0} saat əvvəl",

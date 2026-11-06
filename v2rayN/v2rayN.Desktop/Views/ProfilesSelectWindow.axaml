@@ -9,7 +9,7 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.TbSelectProfile}"
-    Width="800"
+    Width="840"
     Height="450"
     x:DataType="vms:ProfilesSelectViewModel"
     Design.DataContext="{x:Static dd:DesignData.ProfilesSelect}"
@@ -20,12 +20,9 @@
         <conv:DelayColorConverter x:Key="DelayColorConverter" />
     </Window.Resources>
 
-    <DockPanel Margin="{StaticResource Margin8}">
-        <StackPanel
-            Margin="{StaticResource Margin4}"
-            HorizontalAlignment="Center"
-            DockPanel.Dock="Bottom"
-            Orientation="Horizontal">
+    <DockPanel>
+        <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+            <StackPanel Classes="footer">
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
@@ -34,12 +31,13 @@
             <Button
                 x:Name="btnCancel"
                 MinWidth="100"
-                Margin="{StaticResource MarginLr8}"
                 Content="{x:Static resx:ResUI.TbCancel}"
                 IsCancel="True" />
         </StackPanel>
+        </Border>
 
-        <Grid>
+        <Border Classes="formcard table">
+            <Grid>
             <DockPanel>
                 <!--  Top tools  -->
                 <WrapPanel Margin="{StaticResource Margin4}" DockPanel.Dock="Top">
@@ -152,5 +150,6 @@
                 </DataGrid>
             </DockPanel>
         </Grid>
+        </Border>
     </DockPanel>
 </Window>

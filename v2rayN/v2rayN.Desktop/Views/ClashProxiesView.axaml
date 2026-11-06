@@ -17,21 +17,18 @@
         <conv:DelayColorConverter x:Key="DelayColorConverter" />
     </UserControl.Resources>
 
-    <DockPanel Margin="2">
-        <WrapPanel
-            Margin="{StaticResource Margin4}"
+    <DockPanel Classes="page">
+        <WrapPanel Classes="toolbar"
             VerticalAlignment="Center"
             DockPanel.Dock="Top"
             Orientation="Horizontal">
 
             <TextBlock
-                Margin="{StaticResource MarginLr8}"
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.menuRulemode}" />
             <ComboBox
                 x:Name="cmbRulemode"
-                Width="100"
-                Margin="{StaticResource MarginLr8}">
+                Width="100">
                 <ComboBox.ItemTemplate>
                     <DataTemplate x:DataType="x:String">
                         <TextBlock Text="{Binding}" />
@@ -40,13 +37,11 @@
             </ComboBox>
 
             <TextBlock
-                Margin="{StaticResource MarginLr8}"
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.TbSorting}" />
             <ComboBox
                 x:Name="cmbSorting"
-                Width="100"
-                Margin="{StaticResource MarginLr8}">
+                Width="100">
                 <ComboBoxItem Content="{x:Static resx:ResUI.TbSortingDelay}" />
                 <ComboBoxItem Content="{x:Static resx:ResUI.TbSortingName}" />
                 <ComboBoxItem Content="{x:Static resx:ResUI.TbSortingDefault}" />
@@ -54,7 +49,6 @@
 
             <Button
                 x:Name="menuProxiesReload"
-                Margin="{StaticResource MarginLr8}"
                 Classes="IconButton Success"
                 ToolTip.Tip="{x:Static resx:ResUI.menuProxiesReload}">
                 <Button.Content>
@@ -64,7 +58,6 @@
 
             <Button
                 x:Name="menuGroupProxiesDelaytest"
-                Margin="{StaticResource MarginLr8}"
                 Classes="IconButton Success"
                 ToolTip.Tip="{x:Static resx:ResUI.menuDelaytest}">
                 <Button.Content>
@@ -73,15 +66,14 @@
             </Button>
 
             <TextBlock
-                Margin="{StaticResource MarginLr8}"
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.TbAutoRefresh}" />
             <ToggleSwitch
                 x:Name="togAutoRefresh"
-                Margin="{StaticResource MarginLr8}"
                 HorizontalAlignment="Left" />
         </WrapPanel>
-        <DockPanel>
+        <Border Classes="formcard">
+            <DockPanel>
             <ListBox
                 x:Name="lstProxyGroups"
                 DockPanel.Dock="Left"
@@ -156,5 +148,6 @@
                 </ItemsControl.ItemTemplate>
             </ListBox>
         </DockPanel>
+        </Border>
     </DockPanel>
 </UserControl>

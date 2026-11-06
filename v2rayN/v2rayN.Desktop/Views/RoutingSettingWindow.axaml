@@ -8,7 +8,7 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuRoutingSetting}"
-    Width="900"
+    Width="940"
     Height="600"
     x:DataType="vms:RoutingSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.RoutingSetting}"
@@ -22,10 +22,12 @@
             <MenuItem x:Name="menuRoutingAdvancedImportRules2" Header="{x:Static resx:ResUI.menuRoutingAdvancedImportRules}" />
         </Menu>
 
-        <Grid
-            Margin="{StaticResource Margin4}"
+        <Border
+            Margin="16,14,16,0"
+            Classes="formcard"
+            DockPanel.Dock="Top">
+            <Grid
             ColumnDefinitions="Auto,Auto"
-            DockPanel.Dock="Top"
             RowDefinitions="Auto,Auto">
 
             <TextBlock
@@ -64,6 +66,7 @@
                 HorizontalAlignment="Left"
                 VerticalAlignment="Center" />
         </Grid>
+        </Border>
 
         <TabControl x:Name="tabAdvanced">
             <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.TbRoutingTabRuleList}">

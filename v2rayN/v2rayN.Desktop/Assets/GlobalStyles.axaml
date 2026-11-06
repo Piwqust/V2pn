@@ -29,7 +29,7 @@
     </Style>
 
     <Style Selector="TabControl">
-        <Setter Property="Theme" Value="{StaticResource LineTabControl}" />
+        <Setter Property="Theme" Value="{StaticResource V2TabControl}" />
     </Style>
 
     <Style Selector="TabStrip">
@@ -45,10 +45,10 @@
 
     <Style Selector="dialogHost|DialogHost">
         <Setter Property="OverlayBackground" Value="{DynamicResource SemiColorOverlayBackground}" />
-        <Setter Property="Background" Value="{DynamicResource SemiColorFill0}" />
+        <Setter Property="Background" Value="{DynamicResource V2DialogBackground}" />
 
-        <Setter Property="dialogHost:DialogHostStyle.BoxShadow" Value="{DynamicResource SemiShadowElevated}" />
-        <Setter Property="dialogHost:DialogHostStyle.CornerRadius" Value="6" />
+        <Setter Property="dialogHost:DialogHostStyle.BoxShadow" Value="{DynamicResource V2RaisedShadow}" />
+        <Setter Property="dialogHost:DialogHostStyle.CornerRadius" Value="20" />
     </Style>
 
     <Style Selector="TextBlock, TextBox, SelectableTextBlock, Button, ToggleButton, ListBoxItem, MenuItem, ComboBoxItem, TabItem, TabStripItem, DataGridCell, HeaderedContentControl, avaloniaEdit|TextEditor">

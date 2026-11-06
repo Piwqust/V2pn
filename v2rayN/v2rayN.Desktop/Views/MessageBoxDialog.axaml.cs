@@ -12,6 +12,8 @@ public partial class MessageBoxDialog : Window
     public MessageBoxDialog(string caption, string message)
     {
         InitializeComponent();
+        Classes.Add("dialog");
+        DialogChrome.Attach(this);
 
         if (Design.IsDesignMode)
         {

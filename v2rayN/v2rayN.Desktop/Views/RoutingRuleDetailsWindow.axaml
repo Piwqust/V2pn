@@ -8,7 +8,7 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuRoutingRuleDetailsSetting}"
-    Width="900"
+    Width="940"
     Height="600"
     x:DataType="vms:RoutingRuleDetailsViewModel"
     Design.DataContext="{x:Static dd:DesignData.RoutingRuleDetails}"
@@ -16,10 +16,12 @@
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <DockPanel>
-        <Grid
-            Margin="{StaticResource Margin4}"
+        <Border
+            Margin="16,14,16,0"
+            Classes="formcard"
+            DockPanel.Dock="Top">
+            <Grid
             ColumnDefinitions="Auto,Auto,*"
-            DockPanel.Dock="Top"
             RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock
                 Grid.Row="0"
@@ -192,12 +194,10 @@
                 Text="{x:Static resx:ResUI.TbRoutingTips}"
                 TextWrapping="Wrap" />
         </Grid>
+        </Border>
 
-        <StackPanel
-            Margin="{StaticResource Margin4}"
-            HorizontalAlignment="Right"
-            DockPanel.Dock="Bottom"
-            Orientation="Horizontal">
+        <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+            <StackPanel Classes="footer">
             <StackPanel
                 Width="600"
                 HorizontalAlignment="Center"
@@ -214,12 +214,13 @@
             <Button
                 x:Name="btnCancel"
                 MinWidth="100"
-                Margin="{StaticResource MarginLr8}"
                 Content="{x:Static resx:ResUI.TbCancel}"
                 IsCancel="True" />
         </StackPanel>
+        </Border>
 
-        <Grid Margin="{StaticResource Margin4}" ColumnDefinitions="1*,10,1*,10,1*">
+        <Border Classes="formcard">
+            <Grid ColumnDefinitions="1*,10,1*,10,1*">
             <HeaderedContentControl
                 Grid.Column="0"
                 BorderBrush="Gray"
@@ -259,5 +260,6 @@
                     TextWrapping="Wrap" />
             </HeaderedContentControl>
         </Grid>
+        </Border>
     </DockPanel>
 </Window>

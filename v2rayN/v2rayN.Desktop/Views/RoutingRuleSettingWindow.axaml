@@ -8,7 +8,7 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuRoutingRuleSetting}"
-    Width="900"
+    Width="940"
     Height="600"
     x:DataType="vms:RoutingRuleSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.RoutingRuleSetting}"
@@ -23,11 +23,8 @@
             <MenuItem x:Name="menuImportRulesFromUrl" Header="{x:Static resx:ResUI.menuImportRulesFromUrl}" />
         </Menu>
 
-        <StackPanel
-            Margin="{StaticResource Margin4}"
-            HorizontalAlignment="Right"
-            DockPanel.Dock="Bottom"
-            Orientation="Horizontal">
+        <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+            <StackPanel Classes="footer">
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
@@ -36,15 +33,17 @@
             <Button
                 x:Name="btnCancel"
                 MinWidth="100"
-                Margin="{StaticResource MarginLr8}"
                 Content="{x:Static resx:ResUI.TbCancel}"
                 IsCancel="True" />
         </StackPanel>
+        </Border>
 
-        <Grid
-            Margin="{StaticResource Margin4}"
+        <Border
+            Margin="16,14,16,0"
+            Classes="formcard"
+            DockPanel.Dock="Top">
+            <Grid
             ColumnDefinitions="Auto,Auto,Auto"
-            DockPanel.Dock="Top"
             RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
             <TextBlock
                 Grid.Row="0"
@@ -167,6 +166,7 @@
                 Margin="{StaticResource Margin4}"
                 Content="{x:Static resx:ResUI.TbBrowse}" />
         </Grid>
+        </Border>
 
         <TabControl x:Name="tabAdvanced">
             <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.menuRuleList}">

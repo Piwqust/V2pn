@@ -9,7 +9,7 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuSubSetting}"
-    Width="900"
+    Width="940"
     Height="600"
     x:DataType="vms:SubSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.SubSetting}"
@@ -20,7 +20,7 @@
         CloseOnClickAway="True"
         DisableOpeningAnimation="True"
         Identifier="dialogHostSub">
-        <DockPanel Margin="{StaticResource Margin8}">
+        <DockPanel>
             <Menu Margin="{StaticResource Margin4}" DockPanel.Dock="Top">
                 <MenuItem x:Name="menuSubAdd" Header="{x:Static resx:ResUI.menuSubAdd}" />
                 <MenuItem x:Name="menuSubDelete" Header="{x:Static resx:ResUI.menuSubDelete}" />
@@ -29,7 +29,8 @@
                 <MenuItem x:Name="menuClose" Header="{x:Static resx:ResUI.menuClose}" />
             </Menu>
 
-            <DataGrid
+            <Border Classes="formcard table">
+                <DataGrid
                 x:Name="lstSubscription"
                 AutoGenerateColumns="False"
                 BorderThickness="1"
@@ -76,6 +77,7 @@
                         Header="{x:Static resx:ResUI.LvSort}" />
                 </DataGrid.Columns>
             </DataGrid>
+            </Border>
         </DockPanel>
     </dialogHost:DialogHost>
 </Window>

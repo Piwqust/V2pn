@@ -11,24 +11,22 @@
     d:DesignWidth="800"
     Design.DataContext="{x:Static dd:DesignData.Msg}"
     mc:Ignorable="d">
-    <DockPanel Margin="2">
-        <WrapPanel
-            Margin="{StaticResource Margin4}"
+    <DockPanel Classes="page">
+        <WrapPanel Classes="toolbar"
             VerticalAlignment="Center"
             DockPanel.Dock="Top"
             Orientation="Horizontal">
 
             <TextBox
                 x:Name="cmbMsgFilter"
-                Width="200"
-                Margin="{StaticResource MarginLr8}"
+                Width="240"
+                Classes="search"
                 VerticalContentAlignment="Center"
                 PlaceholderText="{x:Static resx:ResUI.MsgFilterTitle}"
                 ToolTip.Tip="{x:Static resx:ResUI.MsgFilterTitle}" />
 
             <Button
                 x:Name="btnCopy"
-                Margin="{StaticResource MarginLr8}"
                 Classes="IconButton Success"
                 Click="menuMsgViewCopyAll_Click"
                 ToolTip.Tip="{x:Static resx:ResUI.menuMsgViewCopyAll}">
@@ -38,7 +36,6 @@
             </Button>
             <Button
                 x:Name="btnClear"
-                Margin="{StaticResource MarginLr8}"
                 Classes="IconButton Success"
                 Click="menuMsgViewClear_Click"
                 ToolTip.Tip="{x:Static resx:ResUI.menuMsgViewClear}">
@@ -47,30 +44,28 @@
                 </Button.Content>
             </Button>
             <TextBlock
-                Margin="{StaticResource MarginLr8}"
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.TbAutoRefresh}" />
             <ToggleSwitch
                 x:Name="togAutoRefresh"
-                Margin="{StaticResource MarginLr8}"
                 HorizontalAlignment="Left"
                 IsChecked="True"
                 Theme="{DynamicResource SimpleToggleSwitch}" />
             <TextBlock
-                Margin="{StaticResource MarginLr8}"
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.TbAutoScrollToEnd}" />
             <ToggleSwitch
                 x:Name="togScrollToEnd"
-                Margin="{StaticResource MarginLr8}"
                 HorizontalAlignment="Left"
                 IsChecked="True"
                 Theme="{DynamicResource SimpleToggleSwitch}" />
         </WrapPanel>
 
-        <avaloniaEdit:TextEditor
+        <Border Classes="formcard">
+            <avaloniaEdit:TextEditor
             Name="txtMsg"
-            Margin="{StaticResource Margin8}"
+            FontFamily="Cascadia Mono, Consolas, Menlo, monospace"
+            FontSize="12.5"
             IsReadOnly="True"
             VerticalScrollBarVisibility="Auto"
             WordWrap="True">
@@ -100,6 +95,7 @@
                 </MenuFlyout>
             </avaloniaEdit:TextEditor.ContextFlyout>
         </avaloniaEdit:TextEditor>
+        </Border>
 
     </DockPanel>
 </UserControl>

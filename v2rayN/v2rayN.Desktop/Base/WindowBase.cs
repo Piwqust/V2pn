@@ -4,6 +4,12 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
 {
     public WindowBase()
     {
+        // Everything but the main window is a v2rayN dialog; they share the V2pn dialog styling.
+        if (this is not Views.MainWindow)
+        {
+            Classes.Add("dialog");
+            Common.DialogChrome.Attach(this);
+        }
         Loaded += OnLoaded;
         Loaded += (s, e) =>
         {
@@ -33,7 +39,9 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
             var scaling = screen.Scaling > 0 ? screen.Scaling : 1.0;
             var workingArea = screen.WorkingArea;
 
-            var width = Math.Min(sizeItem.Width, workingArea.Width / scaling);
+            // Dialogs grew to fit the V2pn card frame; a width saved by v2rayN must not squeeze them back.
+            var designWidth = double.IsNaN(Width) ? 0 : Width;
+            var width = Math.Min(Math.Max(sizeItem.Width, designWidth), workingArea.Width / scaling);
             var height = Math.Min(sizeItem.Height, workingArea.Height / scaling);
 
             Width = width;

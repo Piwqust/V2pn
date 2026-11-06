@@ -101,6 +101,8 @@
             </LinearGradientBrush>
             <SolidColorBrush x:Key="V2PanelBorder" Color="#24242C" />
             <SolidColorBrush x:Key="V2DialogBackground" Color="#18181D" />
+            <SolidColorBrush x:Key="V2TabTrack" Color="#0DFFFFFF" />
+            <SolidColorBrush x:Key="V2FooterBackground" Color="#14141A" />
             <BoxShadows x:Key="V2FlagRing">0 0 0 1 #40000000</BoxShadows>
             <BoxShadows x:Key="V2DefaultButtonShadow">inset 0 1 0 0 #33FFFFFF, 0 1 2 0 #66000000, 0 8 18 -8 #994F8FEA</BoxShadows>
             <BoxShadows x:Key="V2PanelShadow">0 1 1 0 #40000000, 0 10 28 -8 #73000000</BoxShadows>
@@ -205,6 +207,8 @@
             </LinearGradientBrush>
             <SolidColorBrush x:Key="V2PanelBorder" Color="#1216161B" />
             <SolidColorBrush x:Key="V2DialogBackground" Color="#F7F8FA" />
+            <SolidColorBrush x:Key="V2TabTrack" Color="#0F16161B" />
+            <SolidColorBrush x:Key="V2FooterBackground" Color="#EFF0F3" />
             <BoxShadows x:Key="V2FlagRing">0 0 0 1 #1F16161B</BoxShadows>
             <BoxShadows x:Key="V2DefaultButtonShadow">inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #26000000, 0 8 18 -8 #803A7BD5</BoxShadows>
             <BoxShadows x:Key="V2PanelShadow">0 1 2 0 #0F16161B, 0 10 28 -10 #2416161B</BoxShadows>

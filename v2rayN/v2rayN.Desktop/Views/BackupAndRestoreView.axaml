@@ -16,19 +16,20 @@
         </Style>
     </UserControl.Styles>
 
-    <DockPanel Margin="{StaticResource Margin8}">
-        <StackPanel Margin="{StaticResource Margin4}" DockPanel.Dock="Bottom">
-            <TextBlock
-                Name="txtMsg"
-                Margin="{StaticResource Margin4}"
-                HorizontalAlignment="Left" />
-        </StackPanel>
+    <DockPanel>
+        <TextBlock
+            Name="txtMsg"
+            Margin="20,0,20,14"
+            HorizontalAlignment="Left"
+            Classes="muted small"
+            DockPanel.Dock="Bottom" />
 
-        <StackPanel Grid.IsSharedSizeScope="True">
+        <StackPanel
+            Margin="16"
+            Grid.IsSharedSizeScope="True"
+            Spacing="12">
             <Border
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Theme="{DynamicResource CardBorder}">
+                Classes="formcard">
 
                 <Grid Margin="{StaticResource Margin4}" RowDefinitions="Auto,Auto,Auto,Auto">
                     <Grid.ColumnDefinitions>
@@ -83,9 +84,7 @@
                 </Grid>
             </Border>
             <Border
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Theme="{DynamicResource CardBorder}">
+                Classes="formcard">
                 <Grid Margin="{StaticResource Margin4}" RowDefinitions="Auto,Auto,Auto,Auto,Auto">
                     <Grid.ColumnDefinitions>
                         <ColumnDefinition
@@ -223,5 +222,6 @@
                 </Grid>
             </Border>
         </StackPanel>
+
     </DockPanel>
 </UserControl>

@@ -13,46 +13,33 @@
     Design.DataContext="{x:Static dd:DesignData.CheckUpdate}"
     mc:Ignorable="d">
 
-    <DockPanel Margin="{StaticResource Margin8}">
-        <Border
-            Margin="{StaticResource Margin4}"
-            VerticalAlignment="Center"
-            DockPanel.Dock="Bottom"
-            Theme="{DynamicResource CardBorder}">
-
-            <StackPanel
-                Margin="{StaticResource Margin4}"
-                HorizontalAlignment="Center"
-                Orientation="Horizontal">
-
-                <TextBlock
-                    Margin="{StaticResource Margin4}"
-                    HorizontalAlignment="Left"
+    <DockPanel>
+        <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+            <DockPanel>
+                <StackPanel
                     VerticalAlignment="Center"
-                    Text="{x:Static resx:ResUI.TbSettingsEnableUpdateViaProxy}" />
-                <ToggleSwitch
-                    x:Name="togEnableUpdateViaProxy"
-                    Margin="{StaticResource Margin4}"
-                    HorizontalAlignment="Left" />
-
-                <Button
-                    x:Name="btnCheckOnly"
-                    MinWidth="100"
-                    Margin="{StaticResource Margin4}"
-                    Content="{x:Static resx:ResUI.menuCheckOnly}" />
-
-                <Button
-                    x:Name="btnCheckUpdate"
-                    MinWidth="100"
-                    Margin="{StaticResource Margin4}"
-                    Content="{x:Static resx:ResUI.menuCheckAndUpdate}" />
-            </StackPanel>
+                    DockPanel.Dock="Left"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <ToggleSwitch x:Name="togEnableUpdateViaProxy" />
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Classes="muted"
+                        Text="{x:Static resx:ResUI.TbSettingsEnableUpdateViaProxy}" />
+                </StackPanel>
+                <StackPanel Classes="footer">
+                    <Button x:Name="btnCheckOnly" Content="{x:Static resx:ResUI.menuCheckOnly}" />
+                    <Button
+                        x:Name="btnCheckUpdate"
+                        Classes="primary"
+                        Content="{x:Static resx:ResUI.menuCheckAndUpdate}" />
+                </StackPanel>
+            </DockPanel>
         </Border>
 
         <Border
-            Margin="{StaticResource Margin4}"
-            VerticalAlignment="Center"
-            Theme="{DynamicResource CardBorder}">
+            Margin="16"
+            Classes="formcard">
 
             <ListBox
                 x:Name="lstCheckUpdates"

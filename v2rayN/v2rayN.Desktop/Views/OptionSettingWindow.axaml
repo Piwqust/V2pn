@@ -8,19 +8,16 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuSetting}"
-    Width="1000"
+    Width="1040"
     Height="600"
     x:DataType="vms:OptionSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.OptionSetting}"
     ShowInTaskbar="False"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
-    <DockPanel Margin="{StaticResource Margin8}">
-        <StackPanel
-            Margin="{StaticResource Margin4}"
-            HorizontalAlignment="Center"
-            DockPanel.Dock="Bottom"
-            Orientation="Horizontal">
+    <DockPanel>
+        <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+            <StackPanel Classes="footer">
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
@@ -29,10 +26,10 @@
             <Button
                 x:Name="btnCancel"
                 MinWidth="100"
-                Margin="{StaticResource MarginLr8}"
                 Content="{x:Static resx:ResUI.TbCancel}"
                 IsCancel="True" />
         </StackPanel>
+        </Border>
 
         <TabControl HorizontalContentAlignment="Stretch">
             <TabItem Header="{x:Static resx:ResUI.TbSettingsCore}">

@@ -459,5 +459,86 @@
             <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
         </Style>
     </ControlTheme>
-</ResourceDictionary>
 
+    <!--
+        Dialog tabs: pills on a soft track, the selected one lifted like the sidebar tabs.
+        The page itself sits in a raised card, so every tabbed dialog gets the same frame.
+    -->
+    <ControlTheme x:Key="V2TabItem" TargetType="TabItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border
+                    Name="PART_Chip"
+                    Background="{TemplateBinding Background}"
+                    CornerRadius="{TemplateBinding CornerRadius}">
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
+                        Padding="{TemplateBinding Padding}"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Header}"
+                        ContentTemplate="{TemplateBinding HeaderTemplate}"
+                        Foreground="{TemplateBinding Foreground}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        </Style>
+        <Style Selector="^:pointerover /template/ Border#PART_Chip">
+            <Setter Property="Background" Value="{DynamicResource V2Hover}" />
+        </Style>
+        <Style Selector="^:selected">
+            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        </Style>
+        <Style Selector="^:selected /template/ Border#PART_Chip">
+            <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
+            <Setter Property="BoxShadow" Value="{DynamicResource V2ChipShadow}" />
+        </Style>
+        <Style Selector="^:focus-visible /template/ Border#PART_Chip">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
+        </Style>
+        <Style Selector="^:disabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="V2TabControl" TargetType="TabControl">
+        <Setter Property="ItemContainerTheme" Value="{StaticResource V2TabItem}" />
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <WrapPanel Orientation="Horizontal" />
+            </ItemsPanelTemplate>
+        </Setter>
+        <Setter Property="Template">
+            <ControlTemplate>
+                <DockPanel>
+                    <Border
+                        Margin="0,0,0,12"
+                        Padding="4"
+                        HorizontalAlignment="Left"
+                        Background="{DynamicResource V2TabTrack}"
+                        CornerRadius="14"
+                        DockPanel.Dock="Top">
+                        <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                    </Border>
+                    <Border Classes="formcard">
+                        <ContentPresenter
+                            Name="PART_SelectedContentHost"
+                            HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                            VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                            Content="{TemplateBinding SelectedContent}"
+                            ContentTemplate="{TemplateBinding SelectedContentTemplate}" />
+                    </Border>
+                </DockPanel>
+            </ControlTemplate>
+        </Setter>
+    </ControlTheme>
+</ResourceDictionary>

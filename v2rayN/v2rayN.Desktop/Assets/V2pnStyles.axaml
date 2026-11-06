@@ -1,4 +1,7 @@
-<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia">
 
     <!--  Surfaces  -->
     <Style Selector="Border.card">
@@ -308,11 +311,103 @@
     <Style Selector=":is(Window)">
         <Setter Property="Background" Value="{DynamicResource V2DialogBackground}" />
     </Style>
-    <Style Selector=":is(Window) Button[IsDefault=True]">
-        <Setter Property="Theme" Value="{StaticResource SolidButton}" />
+
+    <!--  Section card: forms, tab pages and tables sit on a raised, rounded surface.  -->
+    <Style Selector="Border.formcard">
+        <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PanelBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusCard}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource V2CardShadow}" />
+        <Setter Property="Padding" Value="10,8" />
+        <Setter Property="ClipToBounds" Value="False" />
     </Style>
-    <Style Selector=":is(Window) Button[IsDefault=True] /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="BoxShadow" Value="{DynamicResource V2DefaultButtonShadow}" />
+    <Style Selector=":is(Window).dialog > DockPanel > Border.formcard, :is(Window).dialog > DockPanel > TabControl">
+        <Setter Property="Margin" Value="16,14,16,14" />
+    </Style>
+    <Style Selector=":is(Window).dialog > dialogHost|DialogHost > DockPanel > Border.formcard">
+        <Setter Property="Margin" Value="16,14,16,14" />
+    </Style>
+    <!--  Tables fill their card edge to edge; the card clips them to its corners.  -->
+    <Style Selector="Border.formcard.table">
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <!--  The card is the table's frame; the grid's own border would draw a second one.  -->
+    <Style Selector=":is(Window).dialog DataGrid">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!--  Form text: labels in ink, the explanatory third column muted and smaller.  -->
+    <!--  Tab pages are logical children of the TabItem, not of the card in its template, so these key off the dialog.  -->
+    <Style Selector=":is(Window).dialog TextBlock[TextWrapping=Wrap]:not(.message), UserControl Border.formcard TextBlock[TextWrapping=Wrap]">
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+
+    <!--  Menus used as toolbars above tables.  -->
+    <Style Selector=":is(Window).dialog Menu">
+        <Setter Property="Margin" Value="12,10,12,0" />
+    </Style>
+
+
+    <!--  Buttons inside dialog forms: raised neutral keys, like the main window's secondary actions.  -->
+    <Style Selector=":is(Window).dialog Button:not(.IconButton), UserControl Border.formcard Button:not(.IconButton)">
+        <Setter Property="Theme" Value="{StaticResource V2Button}" />
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="MinHeight" Value="32" />
+    </Style>
+    <Style Selector=":is(Window).dialog Button:not(.IconButton) /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton) /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2NeutralShadow}" />
+    </Style>
+    <Style Selector=":is(Window).dialog Button:not(.IconButton):pointerover /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
+    </Style>
+
+    <!--  Footer: a quiet strip with the actions on the right, primary last-but-glossy.  -->
+    <Style Selector="Border.dialogfooter">
+        <Setter Property="Background" Value="{DynamicResource V2FooterBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PanelBorder}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+        <Setter Property="Padding" Value="16,12" />
+    </Style>
+    <Style Selector="Border.dialogfooter StackPanel.footer">
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="Spacing" Value="8" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button">
+        <Setter Property="Theme" Value="{StaticResource V2Button}" />
+        <Setter Property="MinWidth" Value="110" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2NeutralShadow}" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button.primary">
+        <Setter Property="Background" Value="{DynamicResource V2PrimaryFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2OnPrimary}" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button.primary /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2PrimaryShadow}" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button[IsDefault=True]">
+        <Setter Property="Background" Value="{DynamicResource V2PrimaryFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2OnPrimary}" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button[IsDefault=True] /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2PrimaryShadow}" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button[IsDefault=True]:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource V2PrimaryFillHover}" />
     </Style>
 
     <!--  Sidebar rows: secondary actions appear on hover or keyboard focus; a set favorite stays visible.  -->
@@ -498,5 +593,43 @@
     <Style Selector="ListBox Button.siderow">
         <Setter Property="IsTabStop" Value="False" />
         <Setter Property="Focusable" Value="False" />
+    </Style>
+
+    <!--  Secondary pages (log, Clash): padded, a toolbar of raised keys, content in a card.  -->
+    <Style Selector="DockPanel.page">
+        <Setter Property="Margin" Value="16,12,16,16" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar">
+        <Setter Property="Margin" Value="0,0,0,12" />
+        <Setter Property="ItemSpacing" Value="8" />
+        <Setter Property="LineSpacing" Value="8" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar > :is(Control)">
+        <Setter Property="Margin" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar Button">
+        <Setter Property="Theme" Value="{StaticResource V2Button}" />
+        <Setter Property="Width" Value="36" />
+        <Setter Property="Height" Value="36" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar Button /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2NeutralShadow}" />
+    </Style>
+    <Style Selector="WrapPanel.toolbar Button:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
+    </Style>
+    <Style Selector="DockPanel.page > Border.formcard">
+        <Setter Property="Padding" Value="12,10" />
+    </Style>
+    <Style Selector="DockPanel.page DataGrid">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
     </Style>
 </Styles>

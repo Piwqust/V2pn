@@ -13,9 +13,8 @@
     Design.DataContext="{x:Static dd:DesignData.ClashConnections}"
     mc:Ignorable="d">
 
-    <DockPanel Margin="2">
-        <WrapPanel
-            Margin="{StaticResource Margin4}"
+    <DockPanel Classes="page">
+        <WrapPanel Classes="toolbar"
             VerticalAlignment="Center"
             DockPanel.Dock="Top"
             Orientation="Horizontal">
@@ -23,13 +22,11 @@
             <TextBox
                 x:Name="txtHostFilter"
                 Width="200"
-                Margin="{StaticResource MarginLr8}"
                 VerticalContentAlignment="Center"
                 PlaceholderText="{x:Static resx:ResUI.ConnectionsHostFilterTitle}" />
 
             <Button
                 x:Name="btnConnectionCloseAll"
-                Margin="{StaticResource MarginLr8}"
                 Classes="IconButton Success"
                 ToolTip.Tip="{x:Static resx:ResUI.menuConnectionCloseAll}">
                 <Button.Content>
@@ -39,7 +36,6 @@
 
             <Button
                 x:Name="btnAutofitColumnWidth"
-                Margin="{StaticResource MarginLr8}"
                 Classes="IconButton Success"
                 ToolTip.Tip="{x:Static resx:ResUI.menuProfileAutofitColumnWidth}">
                 <Button.Content>
@@ -48,16 +44,15 @@
             </Button>
 
             <TextBlock
-                Margin="{StaticResource MarginLr8}"
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.TbAutoRefresh}" />
             <ToggleSwitch
                 x:Name="togAutoRefresh"
-                Margin="{StaticResource MarginLr8}"
                 HorizontalAlignment="Left" />
         </WrapPanel>
 
-        <DataGrid
+        <Border Classes="formcard table">
+            <DataGrid
             x:Name="lstConnections"
             AutoGenerateColumns="False"
             BorderThickness="1"
@@ -105,5 +100,6 @@
                     Tag="Elapsed" />
             </DataGrid.Columns>
         </DataGrid>
+        </Border>
     </DockPanel>
 </UserControl>

@@ -19,16 +19,12 @@
         </Style>
     </UserControl.Styles>
 
-    <Button Margin="{StaticResource MarginLr8}" Classes="IconButton">
+    <Button Classes="ghost icon" Theme="{StaticResource V2Button}">
         <Button.Content>
-            <PathIcon Data="{StaticResource SemiIconMore}">
-                <PathIcon.RenderTransform>
-                    <RotateTransform Angle="90" />
-                </PathIcon.RenderTransform>
-            </PathIcon>
+            <PathIcon Classes="i16" Data="{StaticResource SemiIconColorPalette}" />
         </Button.Content>
         <Button.Flyout>
-            <Flyout>
+            <Flyout Placement="TopEdgeAlignedRight">
                 <StackPanel Margin="{StaticResource MarginTb8}">
                     <StackPanel Orientation="Horizontal">
                         <TextBlock

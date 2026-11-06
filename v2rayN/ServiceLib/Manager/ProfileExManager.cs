@@ -173,6 +173,19 @@ public class ProfileExManager
         IndexIdEnqueue(indexId);
     }
 
+    public void SetFavorite(string indexId, bool isFavorite)
+    {
+        var profileEx = GetProfileExItem(indexId);
+
+        profileEx.IsFavorite = isFavorite;
+        IndexIdEnqueue(indexId);
+    }
+
+    public bool IsFavorite(string? indexId)
+    {
+        return _lstProfileEx.FirstOrDefault(t => t.IndexId == indexId)?.IsFavorite ?? false;
+    }
+
     public int GetSort(string indexId)
     {
         var profileEx = _lstProfileEx.FirstOrDefault(t => t.IndexId == indexId);

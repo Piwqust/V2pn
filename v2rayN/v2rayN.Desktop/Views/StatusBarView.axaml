@@ -4,79 +4,179 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    d:DesignWidth="900"
     x:DataType="vms:StatusBarViewModel"
     Design.DataContext="{x:Static dd:DesignData.StatusBar}"
     mc:Ignorable="d">
-    <Grid>
-        <DockPanel Margin="{StaticResource Margin8}">
-            <StackPanel
-                Margin="{StaticResource MarginLr8}"
-                VerticalAlignment="Center"
-                DockPanel.Dock="Right">
-                <TextBlock x:Name="txtSpeedProxyDisplay" HorizontalAlignment="Right" />
-                <Border Margin="1" />
-                <TextBlock x:Name="txtSpeedDirectDisplay" HorizontalAlignment="Right" />
-            </StackPanel>
+    <UserControl.Styles>
+        <Style Selector="TextBlock.k">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        </Style>
+        <Style Selector="TextBlock.v">
+            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+            <Setter Property="FontFeatures" Value="+tnum" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+    </UserControl.Styles>
 
-            <StackPanel
-                Margin="{StaticResource MarginLr8}"
-                VerticalAlignment="Center"
-                DockPanel.Dock="Left">
-                <TextBlock x:Name="txtInboundDisplay" />
-                <Border Margin="1" />
-                <TextBlock x:Name="txtInboundLanDisplay" />
-            </StackPanel>
-
-            <StackPanel
-                x:Name="spEnableTun"
-                Margin="{StaticResource MarginLr8}"
-                VerticalAlignment="Center"
-                DockPanel.Dock="Left"
-                Orientation="Horizontal">
+    <Border
+        MaxWidth="980"
+        Padding="18,14,18,14"
+        Classes="floating">
+        <Grid ColumnDefinitions="*,28,1.15*" RowDefinitions="Auto,Auto">
+            <Grid
+                Grid.ColumnSpan="3"
+                Margin="0,0,0,12"
+                ColumnDefinitions="Auto,*,Auto">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <PathIcon
+                        x:Name="iconState"
+                        Width="15"
+                        Height="15"
+                        Data="{StaticResource SemiIconShield}" />
+                    <TextBlock
+                        x:Name="txtState"
+                        VerticalAlignment="Center"
+                        FontWeight="SemiBold" />
+                    <TextBlock
+                        x:Name="txtStateTime"
+                        VerticalAlignment="Center"
+                        Classes="muted num" />
+                </StackPanel>
                 <TextBlock
-                    Margin="{StaticResource MarginLr8}"
+                    x:Name="txtRunningInfoDisplay"
+                    Grid.Column="2"
+                    MaxWidth="420"
                     VerticalAlignment="Center"
-                    Text="{x:Static resx:ResUI.TbEnableTunAs}" />
-                <ToggleSwitch
-                    x:Name="togEnableTun"
-                    Margin="{StaticResource Margin4}"
-                    HorizontalAlignment="Center"
-                    Theme="{DynamicResource SimpleToggleSwitch}" />
-            </StackPanel>
+                    Background="Transparent"
+                    Classes="faint small"
+                    Cursor="Hand"
+                    TextTrimming="CharacterEllipsis"
+                    ToolTip.Tip="{x:Static loc:L.CheckAvailability}" />
+            </Grid>
 
-            <StackPanel
-                Margin="{StaticResource MarginLr8}"
-                VerticalAlignment="Center"
-                DockPanel.Dock="Left"
-                Orientation="Horizontal">
-                <ComboBox
-                    x:Name="cmbSystemProxy"
-                    Width="160"
-                    Margin="{StaticResource MarginLr8}"
-                    ToolTip.Tip="{x:Static resx:ResUI.menuSystemproxy}">
-                    <ComboBoxItem Content="{x:Static resx:ResUI.menuSystemProxyClear}" />
-                    <ComboBoxItem Content="{x:Static resx:ResUI.menuSystemProxySet}" />
-                    <ComboBoxItem Content="{x:Static resx:ResUI.menuSystemProxyNothing}" />
-                    <ComboBoxItem Content="{x:Static resx:ResUI.menuSystemProxyPac}" />
-                </ComboBox>
+            <Grid
+                Grid.Row="1"
+                ColumnDefinitions="*,*"
+                RowDefinitions="Auto,Auto">
+                <StackPanel Margin="0,0,16,12" Spacing="3">
+                    <TextBlock Classes="k" Text="{x:Static loc:L.ServerIp}" />
+                    <TextBlock x:Name="txtStatServer" Classes="v" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="0,0,0,12"
+                    Spacing="3">
+                    <TextBlock Classes="k" Text="{x:Static loc:L.Ping}" />
+                    <StackPanel Orientation="Horizontal" Spacing="10">
+                        <TextBlock x:Name="txtStatPing" Classes="v" />
+                        <Border
+                            Width="48"
+                            Height="4"
+                            VerticalAlignment="Center"
+                            Background="{DynamicResource V2Pressed}"
+                            CornerRadius="2">
+                            <Border
+                                x:Name="barPing"
+                                Width="0"
+                                HorizontalAlignment="Left"
+                                CornerRadius="2" />
+                        </Border>
+                    </StackPanel>
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="1"
+                    Margin="0,0,16,0"
+                    Spacing="3">
+                    <TextBlock Classes="k" Text="{x:Static loc:L.Protocol}" />
+                    <TextBlock x:Name="txtStatProtocol" Classes="v" />
+                </StackPanel>
+                <StackPanel
+                    Grid.Row="1"
+                    Grid.Column="1"
+                    Spacing="3">
+                    <TextBlock Classes="k" Text="{x:Static loc:L.SessionTraffic}" />
+                    <TextBlock x:Name="txtStatTotal" Classes="v" />
+                </StackPanel>
+            </Grid>
 
-                <ComboBox
-                    x:Name="cmbRoutings2"
-                    Width="160"
-                    Margin="{StaticResource MarginLr8}"
-                    DisplayMemberBinding="{Binding Remarks}"
-                    ItemsSource="{Binding RoutingItems}"
-                    ToolTip.Tip="{x:Static resx:ResUI.menuRouting}" />
-            </StackPanel>
-
-            <StackPanel Margin="{StaticResource MarginLr8}" VerticalAlignment="Center">
-                <TextBlock x:Name="txtRunningServerDisplay" />
-                <Border Margin="1" />
-                <TextBlock x:Name="txtRunningInfoDisplay" />
-            </StackPanel>
-        </DockPanel>
-    </Grid>
+            <Grid
+                Grid.Row="1"
+                Grid.Column="2"
+                RowDefinitions="Auto,*">
+                <Grid ColumnDefinitions="*,Auto">
+                    <TextBlock Classes="k" Text="{x:Static loc:L.CurrentSpeed}" />
+                    <StackPanel
+                        Grid.Column="1"
+                        Orientation="Horizontal"
+                        Spacing="12">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <PathIcon
+                                Width="11"
+                                Height="11"
+                                Foreground="{DynamicResource V2Safe}"
+                                Data="{StaticResource SemiIconArrowDown}" />
+                            <TextBlock
+                                x:Name="txtSpeedDown"
+                                Classes="small num"
+                                Foreground="{DynamicResource V2Ink}" />
+                        </StackPanel>
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <PathIcon
+                                Width="11"
+                                Height="11"
+                                Foreground="{DynamicResource V2Accent}"
+                                Data="{StaticResource SemiIconArrowUp}" />
+                            <TextBlock
+                                x:Name="txtSpeedUp"
+                                Classes="small num"
+                                Foreground="{DynamicResource V2Ink}" />
+                        </StackPanel>
+                    </StackPanel>
+                </Grid>
+                <Panel
+                    Grid.Row="1"
+                    Height="58"
+                    Margin="0,8,0,0">
+                    <Border
+                        Height="1"
+                        VerticalAlignment="Bottom"
+                        Background="{DynamicResource V2Border}" />
+                    <Border
+                        Height="1"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource V2Border}"
+                        Opacity="0.5" />
+                    <Viewbox Stretch="Fill">
+                        <Canvas Width="300" Height="58">
+                            <Path x:Name="pathDownFill" Fill="{DynamicResource V2SafeSoft}" />
+                            <Path
+                                x:Name="pathDown"
+                                Stroke="{DynamicResource V2Safe}"
+                                StrokeJoin="Round"
+                                StrokeThickness="1.6" />
+                            <Path
+                                x:Name="pathUp"
+                                Opacity="0.85"
+                                Stroke="{DynamicResource V2Accent}"
+                                StrokeJoin="Round"
+                                StrokeThickness="1.2" />
+                        </Canvas>
+                    </Viewbox>
+                    <TextBlock
+                        x:Name="txtChartMax"
+                        HorizontalAlignment="Left"
+                        VerticalAlignment="Top"
+                        Classes="faint num"
+                        FontSize="10" />
+                </Panel>
+            </Grid>
+        </Grid>
+    </Border>
 </UserControl>

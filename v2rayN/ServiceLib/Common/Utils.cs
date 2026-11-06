@@ -925,9 +925,11 @@ public class Utils
     {
         try
         {
+            // The short form is the HTTP User-Agent for subscriptions. Panels pick the config format
+            // by the "v2rayN/x.y.z" agent, so V2pn keeps presenting itself as v2rayN there.
             return blFull
                 ? $"{Global.AppName} - V{GetVersionInfo()} - {RuntimeInformation.ProcessArchitecture}"
-                : $"{Global.AppName}/{GetVersionInfo()}";
+                : $"{Global.UpstreamName}/{GetVersionInfo()}";
         }
         catch (Exception ex)
         {
@@ -1177,7 +1179,7 @@ public class Utils
     {
         if (Environment.GetEnvironmentVariable(Global.LocalAppData) == "1")
         {
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "v2rayN");
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Global.AppName);
         }
 
         return GetBaseDirectory();

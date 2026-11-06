@@ -28,6 +28,21 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public BulkObservableCollection<SubItem> SubItems { get; } = [];
 
+    /// <summary>Subscriptions with server counts, without the synthetic "all servers" entry.</summary>
+    public BulkObservableCollection<SubItemModel> SubNavItems { get; } = [];
+
+    /// <summary>Favorite servers across every subscription.</summary>
+    public BulkObservableCollection<ProfileItemModel> FavoriteItems { get; } = [];
+
+    [Reactive]
+    public partial bool FavoritesOnly { get; set; }
+
+    [Reactive]
+    public partial int AllServersCount { get; set; }
+
+    [Reactive]
+    public partial int FavoritesCount { get; set; }
+
     [Reactive]
     public partial ProfileItemModel SelectedProfile { get; set; }
 
@@ -84,6 +99,10 @@ public partial class ProfilesViewModel : MyReactiveObject
     public ReactiveCommand<RxVoid, RxVoid> Export2ShareUrlBase64Cmd { get; }
     public ReactiveCommand<RxVoid, RxVoid> Export2InnerUriCmd { get; }
 
+    public ReactiveCommand<ProfileItemModel?, RxVoid> ToggleFavoriteCmd { get; }
+    public ReactiveCommand<ProfileItemModel, RxVoid> ActivateServerCmd { get; }
+    public ReactiveCommand<ProfileItemModel, RxVoid> PingServerCmd { get; }
+
     public ReactiveCommand<RxVoid, RxVoid> AddSubCmd { get; }
     public ReactiveCommand<RxVoid, RxVoid> EditSubCmd { get; }
     public ReactiveCommand<RxVoid, RxVoid> DeleteSubCmd { get; }
@@ -108,6 +127,10 @@ public partial class ProfilesViewModel : MyReactiveObject
         this.WhenAnyValue(x => x.SelectedMoveToGroup)
             .Where(y => y != null && !y.Remarks.IsNullOrEmpty())
             .SubscribeAsync(async _ => await MoveToGroup());
+
+        this.WhenAnyValue(x => x.FavoritesOnly)
+            .Skip(1)
+            .SubscribeAsync(async _ => await RefreshServers());
 
         this.WhenAnyValue(x => x.ServerFilter)
             .Where(y => y != null && _serverFilter != y)
@@ -224,6 +247,19 @@ public partial class ProfilesViewModel : MyReactiveObject
             await Export2InnerUrlAsync();
         }, canEditRemove);
 
+        ToggleFavoriteCmd = ReactiveCommand.CreateFromTask<ProfileItemModel?>(async item =>
+        {
+            await ToggleFavoriteAsync(item);
+        });
+        ActivateServerCmd = ReactiveCommand.CreateFromTask<ProfileItemModel>(async item =>
+        {
+            await SetDefaultServer(item?.IndexId);
+        });
+        PingServerCmd = ReactiveCommand.CreateFromTask<ProfileItemModel>(async item =>
+        {
+            await PingProfileAsync(item);
+        });
+
         //Subscription
         AddSubCmd = ReactiveCommand.CreateFromTask(async () =>
         {
@@ -279,6 +315,13 @@ public partial class ProfilesViewModel : MyReactiveObject
             NoticeManager.Instance.Enqueue(result.Delay);
             return;
         }
+        var favorite = FavoriteItems.FirstOrDefault(it => it.IndexId == result.IndexId);
+        if (favorite != null && result.Delay.IsNotEmpty())
+        {
+            favorite.Delay = result.Delay.ToInt();
+            favorite.DelayVal = result.Delay ?? string.Empty;
+        }
+
         var item = ProfileItems.FirstOrDefault(it => it.IndexId == result.IndexId);
         if (item == null)
         {
@@ -375,7 +418,112 @@ public partial class ProfilesViewModel : MyReactiveObject
             SelectedProfile = selected ?? lstModel.First();
         }
 
+        await RefreshNavCounts();
+
         await DispatcherRefreshServersBizInteraction.HandleSafe(RxVoid.Default);
+    }
+
+    /// <summary>
+    /// Recomputes sidebar counters and the favorites strip from every stored server.
+    /// </summary>
+    public async Task RefreshNavCounts()
+    {
+        var all = await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? [];
+        var lstProfileExs = await ProfileExManager.Instance.GetProfileExs();
+        var favoriteIds = lstProfileExs.Where(t => t.IsFavorite).Select(t => t.IndexId).ToHashSet();
+
+        AllServersCount = all.Count;
+
+        var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
+        foreach (var sub in SubNavItems)
+        {
+            sub.Count = counts.GetValueOrDefault(sub.Id ?? string.Empty);
+        }
+
+        var favorites = (from t in all
+                         where favoriteIds.Contains(t.IndexId)
+                         join t3 in lstProfileExs on t.IndexId equals t3.IndexId into t3b
+                         from t33 in t3b.DefaultIfEmpty()
+                         orderby t33?.Sort ?? 0
+                         select new ProfileItemModel
+                         {
+                             IndexId = t.IndexId,
+                             ConfigType = t.ConfigType,
+                             Remarks = t.Remarks,
+                             Address = t.Address,
+                             Port = t.Port,
+                             Network = t.Network,
+                             StreamSecurity = t.StreamSecurity,
+                             Subid = t.Subid,
+                             SubRemarks = t.SubRemarks,
+                             IsActive = t.IndexId == _config.IndexId,
+                             IsFavorite = true,
+                             Sort = t33?.Sort ?? 0,
+                             Delay = t33?.Delay ?? 0,
+                             DelayVal = t33?.Delay != 0 ? $"{t33?.Delay}" : string.Empty,
+                         }).ToList();
+        FavoritesCount = favorites.Count;
+        FavoriteItems.ReplaceRange(favorites);
+    }
+
+    /// <summary>
+    /// Switches the server list to a subscription, to every server, or to favorites only.
+    /// </summary>
+    public void SelectNav(SubItem? sub, bool favoritesOnly)
+    {
+        var target = favoritesOnly || sub == null
+            ? SubItems.FirstOrDefault()
+            : SubItems.FirstOrDefault(t => t.Id == sub.Id) ?? sub;
+        SelectedSub = target;
+        FavoritesOnly = favoritesOnly;
+    }
+
+    public async Task ToggleFavoriteAsync(ProfileItemModel? item)
+    {
+        List<ProfileItemModel> targets = item != null
+            ? [item]
+            : SelectedProfiles?.Where(t => t != null).ToList() ?? [];
+        if (targets.Count == 0)
+        {
+            return;
+        }
+
+        // A mixed selection becomes all favorites; an all-favorite selection is cleared.
+        var value = item != null ? !item.IsFavorite : targets.Any(t => !t.IsFavorite);
+        foreach (var target in targets)
+        {
+            ProfileExManager.Instance.SetFavorite(target.IndexId, value);
+            target.IsFavorite = value;
+            var listed = ProfileItems.FirstOrDefault(t => t.IndexId == target.IndexId);
+            if (listed != null)
+            {
+                listed.IsFavorite = value;
+            }
+        }
+        await ProfileExManager.Instance.SaveTo();
+
+        if (FavoritesOnly && !value)
+        {
+            await RefreshServers();
+        }
+        else
+        {
+            await RefreshNavCounts();
+        }
+    }
+
+    public async Task PingProfileAsync(ProfileItemModel? item)
+    {
+        if (item == null || item.IndexId.IsNullOrEmpty())
+        {
+            return;
+        }
+        var profile = await AppManager.Instance.GetProfileItem(item.IndexId);
+        if (profile == null)
+        {
+            return;
+        }
+        await RunSpeedtest(ESpeedActionType.Realping, [profile]);
     }
 
     public async Task RefreshSubscriptions()
@@ -384,6 +532,7 @@ public partial class ProfilesViewModel : MyReactiveObject
         subItems.Insert(0, new SubItem { Remarks = ResUI.AllGroupServers });
 
         SubItems.ReplaceRange(subItems);
+        SubNavItems.ReplaceRange(subItems.Skip(1).Select(t => new SubItemModel(t)));
 
         SelectedSub = (_config.SubIndexId.IsNotEmpty()
                         ? subItems.FirstOrDefault(t => t.Id == _config.SubIndexId)
@@ -421,6 +570,7 @@ public partial class ProfilesViewModel : MyReactiveObject
                         Subid = t.Subid,
                         SubRemarks = t.SubRemarks,
                         IsActive = t.IndexId == _config.IndexId,
+                        IsFavorite = t33?.IsFavorite ?? false,
                         Sort = t33?.Sort ?? 0,
                         Delay = t33?.Delay ?? 0,
                         Speed = t33?.Speed ?? 0,
@@ -432,6 +582,11 @@ public partial class ProfilesViewModel : MyReactiveObject
                         TotalDown = t22 == null ? "" : Utils.HumanFy(t22.TotalDown),
                         TotalUp = t22 == null ? "" : Utils.HumanFy(t22.TotalUp)
                     }).OrderBy(t => t.Sort).ToList();
+
+        if (FavoritesOnly)
+        {
+            lstModel = lstModel.Where(t => t.IsFavorite).ToList();
+        }
 
         return lstModel;
     }
@@ -746,6 +901,11 @@ public partial class ProfilesViewModel : MyReactiveObject
             lstSelected = await GetProfileItems(false);
         }
 
+        await RunSpeedtest(actionType, lstSelected);
+    }
+
+    private async Task RunSpeedtest(ESpeedActionType actionType, List<ProfileItem>? lstSelected)
+    {
         if (lstSelected is null || lstSelected.Count <= 0)
         {
             return;
@@ -760,6 +920,7 @@ public partial class ProfilesViewModel : MyReactiveObject
             await Task.CompletedTask;
         });
         _speedtestService?.RunLoop(actionType, lstSelected);
+        await Task.CompletedTask;
     }
 
     public void ServerSpeedtestStop()

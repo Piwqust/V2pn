@@ -15,6 +15,9 @@ public partial class ProfileItemModel : ReactiveObject
     public int Sort { get; set; }
 
     [Reactive]
+    public partial bool IsFavorite { get; set; }
+
+    [Reactive]
     public partial int Delay { get; set; }
 
     public decimal Speed { get; set; }

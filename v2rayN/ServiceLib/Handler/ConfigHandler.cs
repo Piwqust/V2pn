@@ -92,7 +92,8 @@ public static class ConfigHandler
             IcmpRouting = Global.TunIcmpRoutingPolicies.First(),
             EnableLegacyProtect = true,
         };
-        config.GuiItem ??= new();
+        // V2pn shows a live speed graph, so real-time speed is on for new installs.
+        config.GuiItem ??= new() { DisplayRealTimeSpeed = true };
         if (!Global.RootCertProviders.Contains(config.GuiItem.RootCertProvider))
         {
             config.GuiItem.RootCertProvider = Global.RootCertProviders.First();
@@ -2235,6 +2236,10 @@ public static class ConfigHandler
                 if (existItem != null)
                 {
                     await StatisticsManager.Instance.CloneServerStatItem(existItem.IndexId, item.IndexId);
+                    if (ProfileExManager.Instance.IsFavorite(existItem.IndexId))
+                    {
+                        ProfileExManager.Instance.SetFavorite(item.IndexId, true);
+                    }
                 }
             }
         }

@@ -2,10 +2,12 @@
 
 	<PropertyGroup>
 		<OutputType>WinExe</OutputType>
-		<ApplicationIcon>Assets\v2rayN.ico</ApplicationIcon>
+		<ApplicationIcon>Assets\V2pn.ico</ApplicationIcon>
 		<BuiltInComInteropSupport>true</BuiltInComInteropSupport>
 		<AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
-		<AssemblyName>v2rayN</AssemblyName>
+		<AssemblyName>V2pn</AssemblyName>
+		<Product>V2pn</Product>
+		<AssemblyTitle>V2pn</AssemblyTitle>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<CETCompat>false</CETCompat>
 	</PropertyGroup>
@@ -40,7 +42,7 @@
 	</ItemGroup>
 
 	<ItemGroup>
-		<EmbeddedResource Include="Assets\v2rayN.ico">
+		<EmbeddedResource Include="Assets\V2pn.ico">
 			<CopyToOutputDirectory>Never</CopyToOutputDirectory>
 		</EmbeddedResource>
 		<Compile Update="Views\FullConfigTemplateWindow.axaml.cs">

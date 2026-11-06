@@ -2,152 +2,805 @@
     x:Class="v2rayN.Desktop.Views.MainWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:chrome="using:Avalonia.Controls.Chrome"
+    xmlns:conv="using:v2rayN.Desktop.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+    xmlns:ent="clr-namespace:ServiceLib.Models.Entities;assembly=ServiceLib"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:side="using:v2rayN.Desktop.ViewModels"
+    xmlns:views="using:v2rayN.Desktop.Views"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="v2rayN"
-    Width="1200"
+    Title="V2pn"
+    Width="1280"
     Height="800"
-    MinWidth="600"
+    MinWidth="1000"
+    MinHeight="640"
     x:DataType="vms:MainWindowViewModel"
+    Background="{DynamicResource V2WindowBackground}"
     Design.DataContext="{x:Static dd:DesignData.MainWindow}"
+    ExtendClientAreaTitleBarHeightHint="40"
+    ExtendClientAreaToDecorationsHint="True"
+    WindowDecorations="BorderOnly"
     Icon="/Assets/NotifyIcon1.ico"
     ShowInTaskbar="True"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <dialogHost:DialogHost CloseOnClickAway="True" DisableOpeningAnimation="True">
-        <DockPanel>
-            <DockPanel Margin="{StaticResource Margin8}" DockPanel.Dock="Top">
-                <ContentControl x:Name="conTheme" DockPanel.Dock="Right" />
-                <Menu Margin="{StaticResource Margin4}">
-                    <MenuItem Header="{x:Static resx:ResUI.menuServers}">
-                        <MenuItem
-                            x:Name="menuAddServerViaClipboard"
-                            Header="{x:Static resx:ResUI.menuAddServerViaClipboard}"
-                            InputGesture="Ctrl+V" />
-                        <MenuItem
-                            x:Name="menuAddServerViaScan"
-                            Header="{x:Static resx:ResUI.menuAddServerViaScan}"
-                            InputGesture="Ctrl+S" />
-                        <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static resx:ResUI.menuAddServerViaImage}" />
-                        <Separator />
-                        <MenuItem x:Name="menuAddCustomServer" Header="{x:Static resx:ResUI.menuAddCustomServer}" />
-                        <MenuItem x:Name="menuAddPolicyGroupServer" Header="{x:Static resx:ResUI.menuAddPolicyGroupServer}" />
-                        <MenuItem x:Name="menuAddProxyChainServer" Header="{x:Static resx:ResUI.menuAddProxyChainServer}" />
-                        <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static resx:ResUI.menuAddCustomOutboundServer}" />
-                        <Separator />
-                        <MenuItem x:Name="menuAddVmessServer" Header="{x:Static resx:ResUI.menuAddVmessServer}" />
-                        <MenuItem x:Name="menuAddVlessServer" Header="{x:Static resx:ResUI.menuAddVlessServer}" />
-                        <MenuItem x:Name="menuAddShadowsocksServer" Header="{x:Static resx:ResUI.menuAddShadowsocksServer}" />
-                        <MenuItem x:Name="menuAddTrojanServer" Header="{x:Static resx:ResUI.menuAddTrojanServer}" />
-                        <MenuItem x:Name="menuAddHysteria2Server" Header="{x:Static resx:ResUI.menuAddHysteria2Server}" />
-                        <MenuItem x:Name="menuAddWireguardServer" Header="{x:Static resx:ResUI.menuAddWireguardServer}" />
-                        <MenuItem x:Name="menuAddMasqueServer" Header="{x:Static resx:ResUI.menuAddMasqueServer}" />
-                        <MenuItem x:Name="menuAddSocksServer" Header="{x:Static resx:ResUI.menuAddSocksServer}" />
-                        <MenuItem x:Name="menuAddHttpServer" Header="{x:Static resx:ResUI.menuAddHttpServer}" />
-                        <Separator />
-                        <MenuItem x:Name="menuAddTuicServer" Header="{x:Static resx:ResUI.menuAddTuicServer}" />
-                        <MenuItem x:Name="menuAddAnytlsServer" Header="{x:Static resx:ResUI.menuAddAnytlsServer}" />
-                        <MenuItem x:Name="menuAddNaiveServer" Header="{x:Static resx:ResUI.menuAddNaiveServer}" />
-                    </MenuItem>
+        <Grid RowDefinitions="40,*">
 
-                    <MenuItem Header="{x:Static resx:ResUI.menuSubscription}">
-                        <MenuItem x:Name="menuSubSetting" Header="{x:Static resx:ResUI.menuSubSetting}" />
-                        <Separator />
-                        <MenuItem x:Name="menuSubUpdate" Header="{x:Static resx:ResUI.menuSubUpdate}" />
-                        <MenuItem x:Name="menuSubUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubUpdateViaProxy}" />
-                        <MenuItem x:Name="menuSubGroupUpdate" Header="{x:Static resx:ResUI.menuSubGroupUpdate}" />
-                        <MenuItem x:Name="menuSubGroupUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubGroupUpdateViaProxy}" />
-                    </MenuItem>
-
-                    <MenuItem Header="{x:Static resx:ResUI.menuSetting}">
-                        <MenuItem x:Name="menuOptionSetting" Header="{x:Static resx:ResUI.menuOptionSetting}" />
-                        <MenuItem x:Name="menuRoutingSetting" Header="{x:Static resx:ResUI.menuRoutingSetting}" />
-                        <MenuItem x:Name="menuDNSSetting" Header="{x:Static resx:ResUI.menuDNSSetting}" />
-                        <MenuItem x:Name="menuFullConfigTemplate" Header="{x:Static resx:ResUI.menuFullConfigTemplate}" />
-                        <MenuItem
-                            x:Name="menuGlobalHotkeySetting"
-                            Header="{x:Static resx:ResUI.menuGlobalHotkeySetting}"
-                            IsVisible="{Binding BlIsWindows}" />
-                        <Separator />
-                        <MenuItem
-                            x:Name="menuRebootAsAdmin"
-                            Header="{x:Static resx:ResUI.menuRebootAsAdmin}"
-                            IsVisible="{Binding BlIsWindows}" />
-                        <MenuItem
-                            x:Name="menuSettingsSetUWP"
-                            Header="{x:Static resx:ResUI.TbSettingsSetUWP}"
-                            IsVisible="{Binding BlIsWindows}" />
-                        <MenuItem x:Name="menuClearServerStatistics" Header="{x:Static resx:ResUI.menuClearServerStatistics}" />
-                        <Separator />
-                        <MenuItem Header="{x:Static resx:ResUI.menuRegionalPresets}">
-                            <MenuItem x:Name="menuRegionalPresetsDefault" Header="{x:Static resx:ResUI.menuRegionalPresetsDefault}" />
-                            <MenuItem x:Name="menuRegionalPresetsRussia" Header="{x:Static resx:ResUI.menuRegionalPresetsRussia}" />
-                            <MenuItem x:Name="menuRegionalPresetsIran" Header="{x:Static resx:ResUI.menuRegionalPresetsIran}" />
-                        </MenuItem>
-                        <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static resx:ResUI.menuBackupAndRestore}" />
-                        <MenuItem x:Name="menuOpenTheFileLocation" Header="{x:Static resx:ResUI.menuOpenTheFileLocation}" />
-                    </MenuItem>
-
-                    <MenuItem x:Name="menuHelp" Header="{x:Static resx:ResUI.menuHelp}">
-                        <MenuItem x:Name="menuCheckUpdate" Header="{x:Static resx:ResUI.menuCheckUpdate}" />
-                        <Separator />
-                    </MenuItem>
-
-                    <MenuItem x:Name="menuReload" Header="{x:Static resx:ResUI.menuReload}" />
-
-                    <MenuItem x:Name="menuPromotion" Header="{x:Static resx:ResUI.menuPromotion}" />
-
-                    <MenuItem x:Name="menuClose" Header="{x:Static resx:ResUI.menuExit}" />
-                </Menu>
-
+            <!--  ───────── Title bar ─────────  -->
+            <Grid
+                Grid.Row="0"
+                chrome:WindowDecorationProperties.ElementRole="TitleBar"
+                Background="Transparent"
+                ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+                <Button
+                    x:Name="btnAppMenu"
+                    Margin="8,0,2,0"
+                    Classes="ghost icon"
+                    Theme="{StaticResource V2Button}"
+                    ToolTip.Tip="{x:Static resx:ResUI.menuSetting}">
+                    <PathIcon Classes="i16" Data="{StaticResource SemiIconMore}">
+                        <PathIcon.RenderTransform>
+                            <RotateTransform Angle="90" />
+                        </PathIcon.RenderTransform>
+                    </PathIcon>
+                    <Button.Flyout>
+                        <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                            <MenuItem x:Name="menuPageLog" Header="{x:Static loc:L.MenuLog}" />
+                            <MenuItem x:Name="menuPageTable" Header="{x:Static loc:L.MenuTable}" />
+                            <MenuItem
+                                x:Name="menuPageProxies"
+                                Header="{x:Static loc:L.MenuClashProxies}"
+                                IsVisible="{Binding ShowClashUI}" />
+                            <MenuItem
+                                x:Name="menuPageConnections"
+                                Header="{x:Static loc:L.MenuClashConnections}"
+                                IsVisible="{Binding ShowClashUI}" />
+                            <Separator />
+                            <MenuItem Header="{x:Static resx:ResUI.menuSubscription}">
+                                <MenuItem x:Name="menuSubSetting" Header="{x:Static resx:ResUI.menuSubSetting}" />
+                                <Separator />
+                                <MenuItem x:Name="menuSubUpdate" Header="{x:Static resx:ResUI.menuSubUpdate}" />
+                                <MenuItem x:Name="menuSubUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubUpdateViaProxy}" />
+                                <MenuItem x:Name="menuSubGroupUpdate" Header="{x:Static resx:ResUI.menuSubGroupUpdate}" />
+                                <MenuItem x:Name="menuSubGroupUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubGroupUpdateViaProxy}" />
+                            </MenuItem>
+                            <MenuItem x:Name="menuHelp" Header="{x:Static loc:L.Help}">
+                                <MenuItem x:Name="menuCheckUpdate" Header="{x:Static resx:ResUI.menuCheckUpdate}" />
+                                <MenuItem x:Name="menuPromotion" Header="{x:Static resx:ResUI.menuPromotion}" />
+                                <Separator />
+                            </MenuItem>
+                            <MenuItem
+                                x:Name="menuReload"
+                                Header="{x:Static resx:ResUI.menuReload}"
+                                InputGesture="F5" />
+                            <Separator />
+                            <MenuItem x:Name="menuClose" Header="{x:Static resx:ResUI.menuExit}" />
+                        </MenuFlyout>
+                    </Button.Flyout>
+                </Button>
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="4,0,0,0"
+                    VerticalAlignment="Center"
+                    IsHitTestVisible="False"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <Border
+                        Width="20"
+                        Height="20"
+                        Background="{DynamicResource V2Accent}"
+                        CornerRadius="6">
+                        <Path
+                            Width="14"
+                            Height="12"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Data="{StaticResource V2BrandWave}"
+                            Stretch="Uniform"
+                            Stroke="White"
+                            StrokeLineCap="Round"
+                            StrokeThickness="1.8" />
+                    </Border>
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        FontSize="13"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource V2InkSoft}"
+                        Text="{x:Static loc:L.AppName}" />
+                </StackPanel>
                 <Button
                     x:Name="btnNewUpdate"
-                    Margin="{StaticResource MarginLr8}"
-                    HorizontalAlignment="Left"
-                    Content="{x:Static resx:ResUI.menuNewUpdate}"
-                    IsVisible="False" />
-            </DockPanel>
-
-            <ContentControl x:Name="contentStatusBarView" DockPanel.Dock="Bottom" />
-
-            <Grid
-                x:Name="gridMain"
-                ColumnDefinitions="1*,10,1*"
-                IsVisible="False">
-                <ContentControl x:Name="tabProfiles" Grid.Column="0" />
-                <GridSplitter
-                    x:Name="gridSplitter"
-                    Grid.Column="1"
-                    HorizontalAlignment="Stretch" />
-                <DockPanel x:Name="tabDockPanel" Grid.Column="2">
-                    <TabStrip
-                        x:Name="tabStripH"
-                        Margin="{StaticResource MarginLr8}"
-                        DockPanel.Dock="Top">
-                        <TabStrip.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Horizontal" />
-                            </ItemsPanelTemplate>
-                        </TabStrip.ItemsPanel>
-                    </TabStrip>
-                    <TabStrip
-                        x:Name="tabStripV"
-                        Margin="{StaticResource MarginLr8}"
-                        DockPanel.Dock="Left"
-                        IsVisible="False">
-                        <TabStrip.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel Orientation="Vertical" />
-                            </ItemsPanelTemplate>
-                        </TabStrip.ItemsPanel>
-                    </TabStrip>
-                    <ContentControl x:Name="tabContent" />
-                </DockPanel>
+                    Grid.Column="2"
+                    Margin="12,0,0,0"
+                    Classes="subtle small"
+                    IsVisible="False"
+                    Theme="{StaticResource V2Button}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse Classes="dot live" />
+                        <TextBlock Text="{x:Static loc:L.NewVersion}" />
+                    </StackPanel>
+                </Button>
+                <ContentControl
+                    x:Name="conTheme"
+                    Grid.Column="4"
+                    Margin="0,0,6,0"
+                    VerticalAlignment="Center"
+                    ToolTip.Tip="{x:Static loc:L.Appearance}" />
+                <StackPanel Grid.Column="5" Orientation="Horizontal">
+                    <Button
+                        x:Name="btnMinimize"
+                        Classes="caption"
+                        Theme="{StaticResource V2Caption}">
+                        <PathIcon Classes="i14" Data="{StaticResource SemiIconMinus}" />
+                    </Button>
+                    <Button
+                        x:Name="btnMaximize"
+                        Classes="caption"
+                        Theme="{StaticResource V2Caption}">
+                        <PathIcon Classes="i14" Data="{StaticResource SemiIconMaximize}" />
+                    </Button>
+                    <Button
+                        x:Name="btnCloseWindow"
+                        Classes="caption close"
+                        Theme="{StaticResource V2Caption}">
+                        <PathIcon Classes="i14" Data="{StaticResource SemiIconClose}" />
+                    </Button>
+                </StackPanel>
             </Grid>
-        </DockPanel>
+
+            <!--  ───────── Body ─────────  -->
+            <Grid
+                Grid.Row="1"
+                Margin="8,0,8,8"
+                ColumnDefinitions="312,*">
+
+                <!--  Sidebar  -->
+                <Border
+                    Grid.Column="0"
+                    Margin="0,0,8,0"
+                    Background="{DynamicResource V2SidebarBackground}"
+                    BorderBrush="{DynamicResource V2Border}"
+                    BorderThickness="1"
+                    CornerRadius="10">
+                    <DockPanel>
+                        <Grid
+                            Margin="12,12,12,8"
+                            ColumnDefinitions="*,Auto"
+                            DockPanel.Dock="Top">
+                            <TextBox
+                                x:Name="txtSearch"
+                                Classes="search"
+                                PlaceholderText="{x:Static loc:L.SearchServers}">
+                                <TextBox.InnerLeftContent>
+                                    <PathIcon
+                                        Width="14"
+                                        Height="14"
+                                        Margin="10,0,2,0"
+                                        Foreground="{DynamicResource V2Muted}"
+                                        Data="{StaticResource SemiIconSearch}" />
+                                </TextBox.InnerLeftContent>
+                                <TextBox.InnerRightContent>
+                                    <TextBlock
+                                        Margin="0,0,10,0"
+                                        VerticalAlignment="Center"
+                                        Classes="faint small"
+                                        Text="Ctrl+F" />
+                                </TextBox.InnerRightContent>
+                            </TextBox>
+                            <Button
+                                x:Name="btnAdd"
+                                Grid.Column="1"
+                                Width="34"
+                                Height="34"
+                                Margin="8,0,0,0"
+                                Classes="subtle icon"
+                                Theme="{StaticResource V2Button}"
+                                ToolTip.Tip="{x:Static loc:L.AddMenu}">
+                                <PathIcon Classes="i16" Data="{StaticResource SemiIconPlus}" />
+                                <Button.Flyout>
+                                    <MenuFlyout Placement="BottomEdgeAlignedLeft">
+                                        <MenuItem
+                                            x:Name="menuAddServerViaClipboard"
+                                            Header="{x:Static resx:ResUI.menuAddServerViaClipboard}"
+                                            InputGesture="Ctrl+V" />
+                                        <MenuItem
+                                            x:Name="menuAddServerViaScan"
+                                            Header="{x:Static resx:ResUI.menuAddServerViaScan}"
+                                            InputGesture="Ctrl+S" />
+                                        <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static resx:ResUI.menuAddServerViaImage}" />
+                                        <Separator />
+                                        <MenuItem x:Name="menuAddSubscription" Header="{x:Static loc:L.AddSubscription}" />
+                                        <Separator />
+                                        <MenuItem Header="{x:Static resx:ResUI.menuServers}">
+                                            <MenuItem x:Name="menuAddVlessServer" Header="{x:Static resx:ResUI.menuAddVlessServer}" />
+                                            <MenuItem x:Name="menuAddVmessServer" Header="{x:Static resx:ResUI.menuAddVmessServer}" />
+                                            <MenuItem x:Name="menuAddShadowsocksServer" Header="{x:Static resx:ResUI.menuAddShadowsocksServer}" />
+                                            <MenuItem x:Name="menuAddTrojanServer" Header="{x:Static resx:ResUI.menuAddTrojanServer}" />
+                                            <MenuItem x:Name="menuAddHysteria2Server" Header="{x:Static resx:ResUI.menuAddHysteria2Server}" />
+                                            <MenuItem x:Name="menuAddTuicServer" Header="{x:Static resx:ResUI.menuAddTuicServer}" />
+                                            <MenuItem x:Name="menuAddWireguardServer" Header="{x:Static resx:ResUI.menuAddWireguardServer}" />
+                                            <MenuItem x:Name="menuAddAnytlsServer" Header="{x:Static resx:ResUI.menuAddAnytlsServer}" />
+                                            <MenuItem x:Name="menuAddNaiveServer" Header="{x:Static resx:ResUI.menuAddNaiveServer}" />
+                                            <MenuItem x:Name="menuAddMasqueServer" Header="{x:Static resx:ResUI.menuAddMasqueServer}" />
+                                            <MenuItem x:Name="menuAddSocksServer" Header="{x:Static resx:ResUI.menuAddSocksServer}" />
+                                            <MenuItem x:Name="menuAddHttpServer" Header="{x:Static resx:ResUI.menuAddHttpServer}" />
+                                        </MenuItem>
+                                        <MenuItem x:Name="menuAddCustomServer" Header="{x:Static resx:ResUI.menuAddCustomServer}" />
+                                        <MenuItem x:Name="menuAddPolicyGroupServer" Header="{x:Static resx:ResUI.menuAddPolicyGroupServer}" />
+                                        <MenuItem x:Name="menuAddProxyChainServer" Header="{x:Static resx:ResUI.menuAddProxyChainServer}" />
+                                        <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static resx:ResUI.menuAddCustomOutboundServer}" />
+                                    </MenuFlyout>
+                                </Button.Flyout>
+                            </Button>
+                        </Grid>
+
+                        <ListBox
+                            x:Name="lstTabs"
+                            Margin="8,0,8,4"
+                            DockPanel.Dock="Top"
+                            SelectedIndex="0"
+                            Theme="{StaticResource V2NavList}">
+                            <ListBoxItem>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <PathIcon Classes="nav" Data="{StaticResource SemiIconStarStroked}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Margin="10,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Static loc:L.TabFavorites}" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Classes="faint small"
+                                        Text="Ctrl+1" />
+                                </Grid>
+                            </ListBoxItem>
+                            <ListBoxItem>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <PathIcon Classes="nav" Data="{StaticResource SemiIconGlobeStroke}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Margin="10,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Static loc:L.TabCountries}" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Classes="faint small"
+                                        Text="Ctrl+2" />
+                                </Grid>
+                            </ListBoxItem>
+                            <ListBoxItem>
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <PathIcon Classes="nav" Data="{StaticResource SemiIconFolderStroked}" />
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Margin="10,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Text="{x:Static loc:L.TabSubscriptions}" />
+                                    <TextBlock
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Classes="faint small"
+                                        Text="Ctrl+3" />
+                                </Grid>
+                            </ListBoxItem>
+                        </ListBox>
+
+                        <Border
+                            Margin="12,4,12,0"
+                            Classes="hairline"
+                            DockPanel.Dock="Top" />
+
+                        <ListBox
+                            x:Name="lstRows"
+                            Padding="6,4,6,10"
+                            Background="Transparent"
+                            BorderThickness="0"
+                            ItemContainerTheme="{StaticResource V2PlainItem}"
+                            ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <ListBox.DataTemplates>
+                                <DataTemplate x:DataType="side:SideHeaderRow">
+                                    <TextBlock
+                                        Margin="8,12,8,6"
+                                        Classes="muted small"
+                                        Text="{Binding Title}" />
+                                </DataTemplate>
+
+                                <DataTemplate x:DataType="side:SideHintRow">
+                                    <TextBlock
+                                        Margin="8,4,8,8"
+                                        Classes="faint small"
+                                        Text="{Binding Text}"
+                                        TextWrapping="Wrap" />
+                                </DataTemplate>
+
+                                <DataTemplate x:DataType="side:SideServerRow">
+                                    <Button
+                                        Classes="siderow"
+                                        Classes.active="{Binding IsActive}"
+                                        Classes.indent="{Binding Indent}"
+                                        Click="SideServer_Click"
+                                        Theme="{StaticResource V2SideRow}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <Panel Width="24" Height="18">
+                                                <Border
+                                                    ClipToBounds="True"
+                                                    CornerRadius="3"
+                                                    IsVisible="{Binding HasFlag}">
+                                                    <Image Source="{Binding Flag}" Stretch="UniformToFill" />
+                                                </Border>
+                                                <PathIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="{DynamicResource V2Faint}"
+                                                    Data="{StaticResource SemiIconGlobeStroke}"
+                                                    IsVisible="{Binding !HasFlag}" />
+                                            </Panel>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="12,0,8,0"
+                                                VerticalAlignment="Center"
+                                                Spacing="1">
+                                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                                    <TextBlock
+                                                        MaxWidth="170"
+                                                        Classes="title"
+                                                        Text="{Binding Title}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        ToolTip.Tip="{Binding Model.Remarks}" />
+                                                    <Ellipse
+                                                        Width="7"
+                                                        Height="7"
+                                                        VerticalAlignment="Center"
+                                                        Fill="{DynamicResource V2Safe}"
+                                                        IsVisible="{Binding IsActive}" />
+                                                </StackPanel>
+                                                <TextBlock
+                                                    Classes="faint small"
+                                                    Text="{Binding Subtitle}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                VerticalAlignment="Center"
+                                                Classes="ping"
+                                                Classes.bad="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingBad}}"
+                                                Classes.good="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingGood}}"
+                                                Classes.mid="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingMid}}"
+                                                Text="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.PingShort}}" />
+                                            <Button
+                                                Grid.Column="3"
+                                                Margin="4,0,-4,0"
+                                                Classes="ghost small icon kebab"
+                                                Click="SideServerMenu_Click"
+                                                Theme="{StaticResource V2Button}"
+                                                ToolTip.Tip="{x:Static loc:L.More}">
+                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}">
+                                                    <PathIcon.RenderTransform>
+                                                        <RotateTransform Angle="90" />
+                                                    </PathIcon.RenderTransform>
+                                                </PathIcon>
+                                            </Button>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+
+                                <DataTemplate x:DataType="side:SideCountryRow">
+                                    <Button
+                                        Classes="siderow"
+                                        Click="SideCountry_Click"
+                                        Theme="{StaticResource V2SideRow}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
+                                            <Panel Width="24" Height="18">
+                                                <Border
+                                                    ClipToBounds="True"
+                                                    CornerRadius="3"
+                                                    IsVisible="{Binding HasFlag}">
+                                                    <Image Source="{Binding Flag}" Stretch="UniformToFill" />
+                                                </Border>
+                                                <PathIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="{DynamicResource V2Faint}"
+                                                    Data="{StaticResource SemiIconGlobeStroke}"
+                                                    IsVisible="{Binding !HasFlag}" />
+                                            </Panel>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="12,0,8,0"
+                                                VerticalAlignment="Center"
+                                                Orientation="Horizontal"
+                                                Spacing="7">
+                                                <TextBlock
+                                                    Classes="title"
+                                                    Text="{Binding Name}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <Ellipse
+                                                    Width="7"
+                                                    Height="7"
+                                                    VerticalAlignment="Center"
+                                                    Fill="{DynamicResource V2Safe}"
+                                                    IsVisible="{Binding HasActive}" />
+                                            </StackPanel>
+                                            <TextBlock
+                                                Grid.Column="2"
+                                                VerticalAlignment="Center"
+                                                Classes="faint small num"
+                                                Text="{Binding Info}" />
+                                            <PathIcon
+                                                Grid.Column="3"
+                                                Width="12"
+                                                Height="12"
+                                                Margin="10,0,4,0"
+                                                Classes.open="{Binding IsExpanded}"
+                                                Classes="chevron"
+                                                Data="{StaticResource SemiIconChevronDown}" />
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+
+                                <DataTemplate x:DataType="side:SideSubRow">
+                                    <Button
+                                        Classes="siderow"
+                                        Click="SideSub_Click"
+                                        Theme="{StaticResource V2SideRow}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Canvas
+                                                Width="20"
+                                                Height="16"
+                                                VerticalAlignment="Center">
+                                                <Path
+                                                    Data="{StaticResource V2FolderBack}"
+                                                    Fill="{DynamicResource V2Folder}"
+                                                    Opacity="0.55" />
+                                                <Path Data="{StaticResource V2FolderFront}" Fill="{DynamicResource V2Folder}" />
+                                            </Canvas>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="10,0,8,0"
+                                                VerticalAlignment="Center"
+                                                Spacing="1">
+                                                <TextBlock
+                                                    Classes="title"
+                                                    Text="{Binding Sub.Remarks}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    ToolTip.Tip="{Binding Sub.Remarks}" />
+                                                <TextBlock
+                                                    Classes="faint small"
+                                                    Text="{Binding Info}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                            <Button
+                                                Grid.Column="2"
+                                                Margin="4,0,-4,0"
+                                                Classes="ghost small icon kebab"
+                                                Click="SideSubMenu_Click"
+                                                Theme="{StaticResource V2Button}"
+                                                ToolTip.Tip="{x:Static loc:L.More}">
+                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}">
+                                                    <PathIcon.RenderTransform>
+                                                        <RotateTransform Angle="90" />
+                                                    </PathIcon.RenderTransform>
+                                                </PathIcon>
+                                            </Button>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+
+                                <DataTemplate x:DataType="side:SideActionRow">
+                                    <Button
+                                        Classes="siderow"
+                                        Click="SideAction_Click"
+                                        Theme="{StaticResource V2SideRow}">
+                                        <Grid ColumnDefinitions="Auto,*">
+                                            <Panel Width="24" Height="24">
+                                                <Border
+                                                    Background="{DynamicResource V2SafeSoft}"
+                                                    CornerRadius="6"
+                                                    IsVisible="{Binding IsFastest}">
+                                                    <PathIcon
+                                                        Width="13"
+                                                        Height="13"
+                                                        Foreground="{DynamicResource V2Safe}"
+                                                        Data="{StaticResource SemiIconBolt}" />
+                                                </Border>
+                                                <PathIcon
+                                                    Width="14"
+                                                    Height="14"
+                                                    Foreground="{DynamicResource V2Muted}"
+                                                    Data="{StaticResource SemiIconChevronLeft}"
+                                                    IsVisible="{Binding IsBack}" />
+                                                <PathIcon
+                                                    Width="14"
+                                                    Height="14"
+                                                    Foreground="{DynamicResource V2Muted}"
+                                                    Data="{StaticResource SemiIconPlusCircleStroked}"
+                                                    IsVisible="{Binding IsPlus}" />
+                                            </Panel>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Margin="12,0,8,0"
+                                                VerticalAlignment="Center"
+                                                Spacing="1">
+                                                <TextBlock
+                                                    Classes="title"
+                                                    Text="{Binding Title}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <TextBlock
+                                                    Classes="faint small"
+                                                    IsVisible="{Binding Subtitle, Converter={x:Static conv:V2pnConverters.NotEmpty}}"
+                                                    Text="{Binding Subtitle}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+                            </ListBox.DataTemplates>
+                        </ListBox>
+                    </DockPanel>
+                </Border>
+
+                <!--  Stage: map, header, feature rail, stats  -->
+                <Border
+                    Grid.Column="1"
+                    BorderBrush="{DynamicResource V2Border}"
+                    BorderThickness="1"
+                    ClipToBounds="True"
+                    CornerRadius="10">
+                    <Panel>
+                        <views:MapView x:Name="mapView" />
+
+                        <Border
+                            x:Name="stateTint"
+                            Height="300"
+                            VerticalAlignment="Top"
+                            IsHitTestVisible="False" />
+                        <Border
+                            Height="260"
+                            VerticalAlignment="Bottom"
+                            Background="{DynamicResource V2StageFade}"
+                            IsHitTestVisible="False" />
+
+                        <!--  Connection header  -->
+                        <StackPanel
+                            Margin="124,26,124,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Top"
+                            Spacing="6">
+                            <DockPanel HorizontalAlignment="Center">
+                                <Border
+                                    x:Name="borderHeaderFlag"
+                                    Width="40"
+                                    Height="30"
+                                    Margin="0,0,12,0"
+                                    VerticalAlignment="Center"
+                                    DockPanel.Dock="Left"
+                                    BoxShadow="0 2 8 0 #60000000"
+                                    ClipToBounds="True"
+                                    CornerRadius="4">
+                                    <Image x:Name="imgHeaderFlag" Stretch="UniformToFill" />
+                                </Border>
+                                <TextBlock
+                                    x:Name="txtHeaderTitle"
+                                    VerticalAlignment="Center"
+                                    FontSize="28"
+                                    FontWeight="SemiBold"
+                                    Foreground="{DynamicResource V2Ink}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                            <TextBlock
+                                x:Name="txtHeaderSubtitle"
+                                HorizontalAlignment="Center"
+                                Classes="muted"
+                                TextAlignment="Center"
+                                TextTrimming="CharacterEllipsis" />
+                            <Button
+                                x:Name="btnConnect"
+                                Width="210"
+                                Height="38"
+                                Margin="0,10,0,0"
+                                HorizontalAlignment="Center"
+                                Theme="{StaticResource V2Button}" />
+                        </StackPanel>
+
+                        <!--  Feature rail (system proxy, TUN, routing, DNS, settings)  -->
+                        <Panel
+                            x:Name="railHost"
+                            Margin="0,16,16,0"
+                            HorizontalAlignment="Right"
+                            VerticalAlignment="Top"
+                            DataContext="{Binding StatusBarViewModel}">
+                            <Border
+                                Padding="6"
+                                x:DataType="vms:StatusBarViewModel"
+                                Classes="floating">
+                                <StackPanel Spacing="4">
+                                    <Button
+                                        x:Name="btnRailProxy"
+                                        Classes="rail"
+                                        Theme="{StaticResource V2RailTile}"
+                                        ToolTip.Tip="{x:Static resx:ResUI.menuSystemproxy}">
+                                        <StackPanel Spacing="6">
+                                            <Panel HorizontalAlignment="Center">
+                                                <PathIcon Classes="rail" Data="{StaticResource SemiIconGlobeStroke}" />
+                                                <Ellipse x:Name="dotRailProxy" Classes="railDot" />
+                                            </Panel>
+                                            <TextBlock Classes="rail" Text="{x:Static loc:L.RailProxy}" />
+                                        </StackPanel>
+                                        <Button.Flyout>
+                                            <Flyout Placement="LeftEdgeAlignedTop">
+                                                <StackPanel Width="280" Spacing="8">
+                                                    <TextBlock Classes="title" Text="{x:Static resx:ResUI.menuSystemproxy}" />
+                                                    <ListBox
+                                                        x:Name="lstProxyMode"
+                                                        SelectedIndex="{Binding SystemProxySelected}"
+                                                        Theme="{StaticResource V2NavList}">
+                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModeOff}" />
+                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModeOn}" />
+                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModeKeep}" />
+                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModePac}" />
+                                                    </ListBox>
+                                                    <TextBlock
+                                                        Classes="faint small"
+                                                        Text="{Binding InboundDisplay}"
+                                                        TextWrapping="Wrap" />
+                                                    <TextBlock
+                                                        Classes="faint small"
+                                                        Text="{Binding InboundLanDisplay}"
+                                                        TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                    </Button>
+
+                                    <ToggleButton
+                                        x:Name="btnRailTun"
+                                        IsChecked="{Binding EnableTun}"
+                                        Theme="{StaticResource V2RailToggle}"
+                                        ToolTip.Tip="{x:Static resx:ResUI.TbEnableTunAs}">
+                                        <StackPanel Spacing="6">
+                                            <Panel HorizontalAlignment="Center">
+                                                <PathIcon Classes="rail" Data="{StaticResource SemiIconShieldStroked}" />
+                                                <Ellipse Classes="railDot" IsVisible="{Binding EnableTun}" />
+                                            </Panel>
+                                            <TextBlock Classes="rail" Text="{x:Static loc:L.RailTun}" />
+                                        </StackPanel>
+                                    </ToggleButton>
+
+                                    <Button
+                                        Classes="rail"
+                                        Theme="{StaticResource V2RailTile}"
+                                        ToolTip.Tip="{x:Static resx:ResUI.menuRouting}">
+                                        <StackPanel Spacing="6">
+                                            <PathIcon
+                                                HorizontalAlignment="Center"
+                                                Classes="rail"
+                                                Data="{StaticResource SemiIconRoute}" />
+                                            <TextBlock Classes="rail" Text="{x:Static loc:L.RailRouting}" />
+                                        </StackPanel>
+                                        <Button.Flyout>
+                                            <Flyout Placement="LeftEdgeAlignedTop">
+                                                <StackPanel Width="280" Spacing="8">
+                                                    <TextBlock Classes="title" Text="{x:Static resx:ResUI.menuRouting}" />
+                                                    <ListBox
+                                                        MaxHeight="320"
+                                                        ItemsSource="{Binding RoutingItems}"
+                                                        SelectedItem="{Binding SelectedRouting}"
+                                                        Theme="{StaticResource V2NavList}">
+                                                        <ListBox.ItemTemplate>
+                                                            <DataTemplate x:DataType="ent:RoutingItem">
+                                                                <TextBlock Text="{Binding Remarks}" TextTrimming="CharacterEllipsis" />
+                                                            </DataTemplate>
+                                                        </ListBox.ItemTemplate>
+                                                    </ListBox>
+                                                    <Button
+                                                        x:Name="btnRoutingSettings"
+                                                        HorizontalAlignment="Stretch"
+                                                        Classes="subtle small"
+                                                        Content="{x:Static loc:L.RoutingSettings}"
+                                                        Theme="{StaticResource V2Button}" />
+                                                </StackPanel>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                    </Button>
+
+                                    <Button
+                                        x:Name="btnRailDns"
+                                        Classes="rail"
+                                        Theme="{StaticResource V2RailTile}"
+                                        ToolTip.Tip="{x:Static resx:ResUI.menuDNSSetting}">
+                                        <StackPanel Spacing="6">
+                                            <PathIcon
+                                                HorizontalAlignment="Center"
+                                                Classes="rail"
+                                                Data="{StaticResource SemiIconServerStroked}" />
+                                            <TextBlock Classes="rail" Text="{x:Static loc:L.RailDns}" />
+                                        </StackPanel>
+                                    </Button>
+
+                                    <Button
+                                        Classes="rail"
+                                        Theme="{StaticResource V2RailTile}"
+                                        ToolTip.Tip="{x:Static resx:ResUI.menuSetting}">
+                                        <StackPanel Spacing="6">
+                                            <PathIcon
+                                                HorizontalAlignment="Center"
+                                                Classes="rail"
+                                                Data="{StaticResource SemiIconSettingStroked}" />
+                                            <TextBlock Classes="rail" Text="{x:Static loc:L.RailSettings}" />
+                                        </StackPanel>
+                                        <Button.Flyout>
+                                            <MenuFlyout Placement="LeftEdgeAlignedTop">
+                                                <MenuItem x:Name="menuOptionSetting" Header="{x:Static resx:ResUI.menuOptionSetting}" />
+                                                <MenuItem x:Name="menuRoutingSetting" Header="{x:Static resx:ResUI.menuRoutingSetting}" />
+                                                <MenuItem x:Name="menuDNSSetting" Header="{x:Static resx:ResUI.menuDNSSetting}" />
+                                                <MenuItem x:Name="menuFullConfigTemplate" Header="{x:Static resx:ResUI.menuFullConfigTemplate}" />
+                                                <MenuItem x:Name="menuGlobalHotkeySetting" Header="{x:Static resx:ResUI.menuGlobalHotkeySetting}" />
+                                                <Separator />
+                                                <MenuItem x:Name="menuRebootAsAdmin" Header="{x:Static resx:ResUI.menuRebootAsAdmin}" />
+                                                <MenuItem x:Name="menuSettingsSetUWP" Header="{x:Static resx:ResUI.TbSettingsSetUWP}" />
+                                                <MenuItem x:Name="menuClearServerStatistics" Header="{x:Static resx:ResUI.menuClearServerStatistics}" />
+                                                <Separator />
+                                                <MenuItem Header="{x:Static resx:ResUI.menuRegionalPresets}">
+                                                    <MenuItem x:Name="menuRegionalPresetsDefault" Header="{x:Static resx:ResUI.menuRegionalPresetsDefault}" />
+                                                    <MenuItem x:Name="menuRegionalPresetsRussia" Header="{x:Static resx:ResUI.menuRegionalPresetsRussia}" />
+                                                    <MenuItem x:Name="menuRegionalPresetsIran" Header="{x:Static resx:ResUI.menuRegionalPresetsIran}" />
+                                                </MenuItem>
+                                                <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static resx:ResUI.menuBackupAndRestore}" />
+                                                <MenuItem x:Name="menuOpenTheFileLocation" Header="{x:Static resx:ResUI.menuOpenTheFileLocation}" />
+                                            </MenuFlyout>
+                                        </Button.Flyout>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </Panel>
+
+                        <!--  Bottom statistics  -->
+                        <ContentControl
+                            x:Name="contentStatusBarView"
+                            Margin="16"
+                            VerticalAlignment="Bottom" />
+
+                        <!--  Secondary pages (log, server table, Clash) slide over the map  -->
+                        <DockPanel
+                            x:Name="pageOverlay"
+                            Background="{DynamicResource V2ContentBackground}"
+                            IsVisible="False">
+                            <Grid
+                                Height="48"
+                                Margin="12,0,16,0"
+                                ColumnDefinitions="Auto,*"
+                                DockPanel.Dock="Top">
+                                <Button
+                                    x:Name="btnPageBack"
+                                    Classes="ghost"
+                                    Theme="{StaticResource V2Button}">
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <PathIcon Classes="i14" Data="{StaticResource SemiIconChevronLeft}" />
+                                        <TextBlock Text="{x:Static loc:L.Back}" />
+                                    </StackPanel>
+                                </Button>
+                                <TextBlock
+                                    x:Name="txtPageTitle"
+                                    Grid.Column="1"
+                                    Margin="8,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Classes="title"
+                                    FontSize="15" />
+                            </Grid>
+                            <Border Classes="hairline" DockPanel.Dock="Top" />
+                            <ContentControl x:Name="pageHost" />
+                        </DockPanel>
+                    </Panel>
+                </Border>
+            </Grid>
+        </Grid>
     </dialogHost:DialogHost>
 </Window>

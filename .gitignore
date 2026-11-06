@@ -402,3 +402,7 @@ FodyWeavers.xsd
 # JetBrains Rider
 .idea/
 *.sln.iml
+
+# V2pn asset generator
+tools/mapgen/node_modules/
+dist/

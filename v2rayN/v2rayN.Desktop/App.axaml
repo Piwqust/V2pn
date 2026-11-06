@@ -7,14 +7,17 @@
     xmlns:semi="https://irihi.tech/semi"
     xmlns:service="clr-namespace:ServiceLib;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Name="v2rayN"
+    Name="V2pn"
     x:DataType="vms:StatusBarViewModel"
     RequestedThemeVariant="Default">
     <Application.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
                 <ResourceInclude Source="Assets/GlobalResources.axaml" />
+                <ResourceInclude Source="Assets/V2pnTheme.axaml" />
+                <ResourceInclude Source="Assets/V2pnControls.axaml" />
             </ResourceDictionary.MergedDictionaries>
+            <FontFamily x:Key="AppFontFamily">avares://V2pn/Assets/Fonts#Inter, avares://V2pn/Assets/Fonts#Noto Sans SC</FontFamily>
         </ResourceDictionary>
     </Application.Resources>
     <Application.Styles>
@@ -23,6 +26,7 @@
         <StyleInclude Source="avares://Semi.Avalonia.DataGrid/Index.axaml" />
         <dialogHost:DialogHostStyles />
         <StyleInclude Source="Assets/GlobalStyles.axaml" />
+        <StyleInclude Source="Assets/V2pnStyles.axaml" />
     </Application.Styles>
 
     <TrayIcon.Icons>

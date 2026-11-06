@@ -1,4 +1,4 @@
-using Avalonia.Controls.DataGridDragDrop;
+using Avalonia.LogicalTree;
 using DialogHostAvalonia;
 using v2rayN.Desktop.Common;
 
@@ -7,8 +7,7 @@ namespace v2rayN.Desktop.Views;
 public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
 {
     private static Config _config;
-    private static readonly string _tag = "ProfilesView";
-    private bool _isDndRegistered = false;
+    private MainWindowViewModel? _mainViewModel;
 
     public ProfilesView()
     {
@@ -16,29 +15,34 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
 
         _config = AppManager.Instance.Config;
 
-        menuSelectAll.Click += menuSelectAll_Click;
-        btnAutofitColumnWidth.Click += BtnAutofitColumnWidth_Click;
+        menuSelectAll.Click += (_, _) => lstProfiles.SelectAll();
         txtServerFilter.KeyDown += TxtServerFilter_KeyDown;
         lstProfiles.KeyDown += LstProfiles_KeyDown;
-        lstProfiles.SelectionChanged += lstProfiles_SelectionChanged;
+        lstProfiles.SelectionChanged += LstProfiles_SelectionChanged;
         lstProfiles.DoubleTapped += LstProfiles_DoubleTapped;
-        lstProfiles.Sorting += LstProfiles_Sorting;
+        lstProfiles.ContextRequested += LstProfiles_ContextRequested;
+        menuStopTests.Click += (_, _) => ViewModel?.ServerSpeedtestStop();
+        menuMoveToGroup.AddHandler(MenuItem.ClickEvent, MenuMoveToGroup_Click);
+        btnEmptyPaste.Click += async (_, _) => await PasteFromClipboardAsync();
+        menuAddServerViaClipboard.Click += async (_, _) => await PasteFromClipboardAsync();
+
+        foreach (var btn in new[] { btnSortName, btnSortType, btnSortSub, btnSortPing })
+        {
+            btn.Click += SortHeader_Click;
+        }
+
+        if (!Utils.IsWindows())
+        {
+            menuAddServerViaScan.IsVisible = false;
+        }
 
         this.WhenActivated(disposables =>
         {
             this.OneWayBind(ViewModel, vm => vm.ProfileItems, v => v.lstProfiles.ItemsSource).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedProfile, v => v.lstProfiles.SelectedItem).DisposeWith(disposables);
-
-            // this.OneWayBind(ViewModel, vm => vm.SubItems, v => v.lstGroup.ItemsSource).DisposeWith(disposables);
-            this.Bind(ViewModel, vm => vm.SelectedSub, v => v.lstGroup.SelectedItem).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.ServerFilter, v => v.txtServerFilter.Text).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.AddSubCmd, v => v.btnAddSub).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.EditSubCmd, v => v.btnEditSub).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.EditSubCmd, v => v.menuSubEdit).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.AddSubCmd, v => v.menuSubAdd).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.DeleteSubCmd, v => v.menuSubDelete).DisposeWith(disposables);
 
-            //servers delete
+            //servers
             this.BindCommand(ViewModel, vm => vm.EditServerCmd, v => v.menuEditServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RemoveServerCmd, v => v.menuRemoveServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RemoveDuplicateServerCmd, v => v.menuRemoveDuplicateServer).DisposeWith(disposables);
@@ -47,17 +51,17 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
             this.BindCommand(ViewModel, vm => vm.ShareServerCmd, v => v.menuShareServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.GenGroupAllServerCmd, v => v.menuGenGroupAllServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.GenGroupRegionServerCmd, v => v.menuGenGroupRegionServer).DisposeWith(disposables);
+            menuToggleFavorite.Command = ViewModel.ToggleFavoriteCmd;
+            menuToggleFavorite.CommandParameter = null;
 
-            //servers move
-            //this.OneWayBind(ViewModel, vm => vm.SubItems, v => v.cmbMoveToGroup.ItemsSource).DisposeWith(disposables);
-            //this.Bind(ViewModel, vm => vm.SelectedMoveToGroup, v => v.cmbMoveToGroup.SelectedItem).DisposeWith(disposables);
-
+            //move
             this.BindCommand(ViewModel, vm => vm.MoveTopCmd, v => v.menuMoveTop).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.MoveUpCmd, v => v.menuMoveUp).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.MoveDownCmd, v => v.menuMoveDown).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.MoveBottomCmd, v => v.menuMoveBottom).DisposeWith(disposables);
 
-            //servers ping
+            //tests
+            this.BindCommand(ViewModel, vm => vm.FastRealPingCmd, v => v.btnFastRealPing).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.MixedTestServerCmd, v => v.menuMixedTestServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.TcpingServerCmd, v => v.menuTcpingServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RealPingServerCmd, v => v.menuRealPingServer).DisposeWith(disposables);
@@ -65,35 +69,34 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
             this.BindCommand(ViewModel, vm => vm.SpeedServerCmd, v => v.menuSpeedServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.SortServerResultCmd, v => v.menuSortServerResult).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RemoveInvalidServerResultCmd, v => v.menuRemoveInvalidServerResult).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.FastRealPingCmd, v => v.btnFastRealPing).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.TcpingServerCmd, v => v.menuTcpingServer2).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.RealPingServerCmd, v => v.menuRealPingServer2).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.UdpTestServerCmd, v => v.menuUdpTestServer2).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.SpeedServerCmd, v => v.menuSpeedServer2).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.SortServerResultCmd, v => v.menuSortServerResult2).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.RemoveInvalidServerResultCmd, v => v.menuRemoveInvalidServerResult2).DisposeWith(disposables);
 
-            //servers export
+            //export
             this.BindCommand(ViewModel, vm => vm.Export2ClientConfigCmd, v => v.menuExport2ClientConfig).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.Export2ClientConfigClipboardCmd, v => v.menuExport2ClientConfigClipboard).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.Export2ShareUrlCmd, v => v.menuExport2ShareUrl).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.Export2ShareUrlBase64Cmd, v => v.menuExport2ShareUrlBase64).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.Export2InnerUriCmd, v => v.menuExport2InnerUri).DisposeWith(disposables);
 
-            if (_config.UiItem.EnableDragDropSort && !_isDndRegistered)
-            {
-                lstProfiles.CanUserReorderRows = true;
-                lstProfiles.RowDragHandle = DataGridRowDragHandle.RowHeaderAndRow;
-                lstProfiles.RowDragHandleVisible = true;
-                var rowDragDropOptions = new DataGridRowDragDropOptions()
-                {
-                    AllowedEffects = DragDropEffects.Move,
-                    DragSelectedRows = true,
-                    SuppressSelectionDragFromDragHandle = true,
-                };
-                lstProfiles.RowDragDropOptions = rowDragDropOptions;
-                lstProfiles.RowDropHandler = new ProfileRowDropHandler(ViewModel);
-                _isDndRegistered = true;
-            }
+            //subscriptions
+            this.BindCommand(ViewModel, vm => vm.AddSubCmd, v => v.menuAddSubscription).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.AddSubCmd, v => v.btnEmptyAddSub).DisposeWith(disposables);
+
+            this.WhenAnyValue(v => v.ViewModel.SelectedSub, v => v.ViewModel.FavoritesOnly, v => v.ViewModel.FavoritesCount)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => UpdateHeader())
+                .DisposeWith(disposables);
+
+            ViewModel.ProfileItems.CollectionChanged += (_, _) => UpdateHeader();
 
             ViewModel.ShowYesNoInteraction.RegisterHandler(async interaction =>
             {
-                var message = interaction.Input;
-                var result = await UI.ShowYesNo(message);
+                var result = await UI.ShowYesNo(interaction.Input);
                 interaction.SetOutput(result == ButtonResult.Yes);
             }).DisposeWith(disposables);
 
@@ -105,21 +108,19 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
                     interaction.SetOutput(false);
                     return;
                 }
-                var profileItem = interaction.Input;
                 var fileName = await UI.SaveFileDialog("");
                 if (fileName.IsNullOrEmpty())
                 {
                     interaction.SetOutput(false);
                     return;
                 }
-                await viewModel.Export2ClientConfigResult(fileName, profileItem);
+                await viewModel.Export2ClientConfigResult(fileName, interaction.Input);
                 interaction.SetOutput(true);
             }).DisposeWith(disposables);
 
             ViewModel.SetClipboardDataInteraction.RegisterHandler(async interaction =>
             {
-                var strData = interaction.Input;
-                await AvaUtils.SetClipboardData(this, strData);
+                await AvaUtils.SetClipboardData(this, interaction.Input);
                 interaction.SetOutput(RxVoid.Default);
             }).DisposeWith(disposables);
 
@@ -131,13 +132,10 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
 
             ViewModel.ShareServerInteraction.RegisterHandler(async interaction =>
             {
-                var url = interaction.Input;
-                if (url.IsNullOrEmpty())
+                if (interaction.Input.IsNotEmpty())
                 {
-                    interaction.SetOutput(RxVoid.Default);
-                    return;
+                    await DialogHost.Show(new QrcodeView(interaction.Input));
                 }
-                await ShareServer(url);
                 interaction.SetOutput(RxVoid.Default);
             }).DisposeWith(disposables);
 
@@ -149,65 +147,150 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
 
             ViewModel.AdjustMainLvColWidthInteraction.RegisterHandler(interaction =>
             {
-                //AutofitColumnWidth();
                 interaction.SetOutput(RxVoid.Default);
             }).DisposeWith(disposables);
-
-            AppEvents.AppExitRequested
-              .AsObservable()
-              .ObserveOn(RxSchedulers.MainThreadScheduler)
-              .Subscribe(_ => StorageUI())
-              .DisposeWith(disposables);
         });
-
-        RestoreUI();
     }
 
-    private async void LstProfiles_Sorting(object? sender, DataGridColumnEventArgs e)
+    /// <summary>
+    /// The window's view model; it owns the add-server and subscription-update commands shown in this page's header.
+    /// </summary>
+    public MainWindowViewModel? MainViewModel
     {
-        e.Handled = true;
-
-        if (ViewModel != null && e.Column?.Tag?.ToString() != null)
+        get => _mainViewModel;
+        set
         {
-            await ViewModel.SortServer(e.Column.Tag.ToString());
-        }
+            _mainViewModel = value;
+            if (value == null)
+            {
+                return;
+            }
 
-        e.Handled = false;
+            btnUpdateSub.Command = value.SubGroupUpdateCmd;
+            menuUpdateSubViaProxy.Command = value.SubGroupUpdateViaProxyCmd;
+            menuAddServerViaScan.Command = value.AddServerViaScanCmd;
+            menuAddServerViaImage.Command = value.AddServerViaImageCmd;
+            menuAddVmessServer.Command = value.AddVmessServerCmd;
+            menuAddVlessServer.Command = value.AddVlessServerCmd;
+            menuAddShadowsocksServer.Command = value.AddShadowsocksServerCmd;
+            menuAddTrojanServer.Command = value.AddTrojanServerCmd;
+            menuAddHysteria2Server.Command = value.AddHysteria2ServerCmd;
+            menuAddTuicServer.Command = value.AddTuicServerCmd;
+            menuAddWireguardServer.Command = value.AddWireguardServerCmd;
+            menuAddAnytlsServer.Command = value.AddAnytlsServerCmd;
+            menuAddNaiveServer.Command = value.AddNaiveServerCmd;
+            menuAddMasqueServer.Command = value.AddMasqueServerCmd;
+            menuAddSocksServer.Command = value.AddSocksServerCmd;
+            menuAddHttpServer.Command = value.AddHttpServerCmd;
+            menuAddCustomServer.Command = value.AddCustomServerCmd;
+            menuAddPolicyGroupServer.Command = value.AddPolicyGroupServerCmd;
+            menuAddProxyChainServer.Command = value.AddProxyChainServerCmd;
+            menuAddCustomOutboundServer.Command = value.AddCustomOutboundServerCmd;
+        }
     }
 
-    #region Event
+    #region Header
 
-    public async Task ShareServer(string url)
+    private void UpdateHeader()
     {
-        if (url.IsNullOrEmpty())
+        var vm = ViewModel;
+        if (vm == null)
         {
             return;
         }
 
-        var dialog = new QrcodeView(url);
-        await DialogHost.Show(dialog);
+        var sub = vm.SelectedSub;
+        var isSub = !vm.FavoritesOnly && sub?.Id.IsNotEmpty() == true;
+        var count = vm.ProfileItems.Count;
+
+        runTitle.Text = vm.FavoritesOnly ? L.Favorites : isSub ? sub!.Remarks : L.AllServers;
+        runTitleCount.Text = $" {count}";
+
+        if (vm.FavoritesOnly)
+        {
+            txtSubtitle.Text = L.FavoritesHint;
+        }
+        else if (isSub)
+        {
+            var parts = new List<string>();
+            var host = GetHost(sub!.Url);
+            if (host.IsNotEmpty())
+            {
+                parts.Add(host);
+            }
+            parts.Add(Fmt.SubUpdated(sub));
+            if (sub.AutoUpdateInterval > 0)
+            {
+                parts.Add(string.Format(L.AutoUpdateEvery, sub.AutoUpdateInterval));
+            }
+            txtSubtitle.Text = string.Join("  ·  ", parts);
+        }
+        else
+        {
+            txtSubtitle.Text = L.LocalServers;
+        }
+
+        btnUpdateSub.IsVisible = !vm.FavoritesOnly;
+        panelFavorites.IsVisible = !vm.FavoritesOnly && vm.FavoritesCount > 0;
+
+        var empty = count == 0;
+        panelEmpty.IsVisible = empty;
+        if (empty)
+        {
+            var noFilter = vm.ServerFilter.IsNullOrEmpty();
+            txtEmptyTitle.Text = vm.FavoritesOnly ? L.EmptyFavoritesTitle : L.EmptyTitle;
+            txtEmptyHint.Text = vm.FavoritesOnly ? L.FavoritesHint : L.EmptyHint;
+            panelEmptyActions.IsVisible = !vm.FavoritesOnly && noFilter;
+        }
+    }
+
+    private static string GetHost(string? url)
+    {
+        if (url.IsNullOrEmpty())
+        {
+            return string.Empty;
+        }
+        return Uri.TryCreate(url, UriKind.Absolute, out var uri) ? uri.Host : string.Empty;
+    }
+
+
+    #endregion Header
+
+    #region Event
+
+    private async Task PasteFromClipboardAsync()
+    {
+        if (TopLevel.GetTopLevel(this) is not Window window)
+        {
+            return;
+        }
+        var data = await AvaUtils.GetClipboardData(window);
+        if (data.IsNotEmpty() && _mainViewModel != null)
+        {
+            await _mainViewModel.AddServerViaClipboardAsync(data);
+        }
     }
 
     public void RefreshServersBiz()
     {
-        if (lstProfiles.SelectedIndex >= 0)
+        if (lstProfiles.SelectedItem != null)
         {
-            lstProfiles.ScrollIntoView(lstProfiles.SelectedItem, null);
+            lstProfiles.ScrollIntoView(lstProfiles.SelectedItem);
         }
+        UpdateHeader();
     }
 
-    private void lstProfiles_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    private void LstProfiles_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         if (ViewModel != null)
         {
-            ViewModel.SelectedProfiles = lstProfiles.SelectedItems.Cast<ProfileItemModel>().ToList();
+            ViewModel.SelectedProfiles = lstProfiles.SelectedItems?.Cast<ProfileItemModel>().ToList() ?? [];
         }
     }
 
     private void LstProfiles_DoubleTapped(object? sender, TappedEventArgs e)
     {
-        var source = e.Source as Border;
-        if (source?.Name == "HeaderBackground")
+        if (e.Source is Control c && c.FindLogicalAncestorOfType<Button>(true) != null)
         {
             return;
         }
@@ -222,21 +305,44 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
         }
     }
 
-    //private void LstProfiles_ColumnHeader_Click(object? sender, RoutedEventArgs e)
-    //{
-    //    var colHeader = sender as DataGridColumnHeader;
-    //    if (colHeader == null || colHeader.TabIndex < 0 || colHeader.Column == null)
-    //    {
-    //        return;
-    //    }
-
-    //    var colName = ((MyDGTextColumn)colHeader.Column).ExName;
-    //    ViewModel?.SortServer(colName);
-    //}
-
-    private void menuSelectAll_Click(object? sender, RoutedEventArgs e)
+    private void LstProfiles_ContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        lstProfiles.SelectAll();
+        // Right-click on an unselected row acts on that row alone.
+        if (e.Source is StyledElement element
+            && (element.FindLogicalAncestorOfType<ListBoxItem>(true)?.DataContext ?? element.DataContext) is ProfileItemModel item
+            && !lstProfiles.SelectedItems!.Contains(item))
+        {
+            lstProfiles.SelectedItem = item;
+        }
+    }
+
+    private void RowMore_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is not Button { DataContext: ProfileItemModel item } button)
+        {
+            return;
+        }
+        if (!lstProfiles.SelectedItems!.Contains(item))
+        {
+            lstProfiles.SelectedItem = item;
+        }
+        ctxProfiles.Open(button);
+    }
+
+    private void MenuMoveToGroup_Click(object? sender, RoutedEventArgs e)
+    {
+        if (e.Source is MenuItem { DataContext: SubItem sub } && ViewModel != null && sub.Id.IsNotEmpty())
+        {
+            ViewModel.MoveToGroupCmd.Execute(sub).Subscribe();
+        }
+    }
+
+    private async void SortHeader_Click(object? sender, RoutedEventArgs e)
+    {
+        if (sender is Button { Tag: string col } && ViewModel != null)
+        {
+            await ViewModel.SortServer(col);
+        }
     }
 
     private void LstProfiles_KeyDown(object? sender, KeyEventArgs e)
@@ -246,7 +352,7 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
             switch (e.Key)
             {
                 case Key.A:
-                    menuSelectAll_Click(null, null);
+                    lstProfiles.SelectAll();
                     break;
 
                 case Key.C:
@@ -283,7 +389,6 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
             switch (e.Key)
             {
                 case Key.Enter:
-                    //case Key.Return:
                     ViewModel?.SetDefaultServer();
                     break;
 
@@ -315,44 +420,6 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
         }
     }
 
-    private void BtnAutofitColumnWidth_Click(object? sender, RoutedEventArgs e)
-    {
-        AutofitColumnWidth();
-    }
-
-    private void AutofitColumnWidth()
-    {
-        try
-        {
-            //First scroll horizontally to the initial position to avoid the control crash bug
-            if (lstProfiles.SelectedIndex >= 0)
-            {
-                lstProfiles.ScrollIntoView(lstProfiles.SelectedItem, lstProfiles.Columns[0]);
-            }
-            else
-            {
-                var model = lstProfiles.ItemsSource.Cast<ProfileItemModel>();
-                if (model.Any())
-                {
-                    lstProfiles.ScrollIntoView(model.First(), lstProfiles.Columns[0]);
-                }
-                else
-                {
-                    return;
-                }
-            }
-
-            foreach (var it in lstProfiles.Columns)
-            {
-                it.Width = new DataGridLength(1, DataGridLengthUnitType.Auto);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog(_tag, ex);
-        }
-    }
-
     private void TxtServerFilter_KeyDown(object? sender, KeyEventArgs e)
     {
         if (e.Key is Key.Enter or Key.Return)
@@ -362,126 +429,4 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
     }
 
     #endregion Event
-
-    #region UI
-
-    private void RestoreUI()
-    {
-        try
-        {
-            var lvColumnItem = _config.UiItem.MainColumnItem.OrderBy(t => t.Index).ToList();
-            var displayIndex = 0;
-            foreach (var item in lvColumnItem)
-            {
-                foreach (var item2 in lstProfiles.Columns)
-                {
-                    if (item2.Tag == null)
-                    {
-                        continue;
-                    }
-                    if (item2.Tag.Equals(item.Name))
-                    {
-                        if (item.Width < 0)
-                        {
-                            item2.IsVisible = false;
-                        }
-                        else
-                        {
-                            item2.Width = new DataGridLength(item.Width, DataGridLengthUnitType.Pixel);
-                            item2.DisplayIndex = displayIndex++;
-                        }
-                        if (item.Name.StartsWith("to", StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            item2.IsVisible = _config.GuiItem.EnableStatistics;
-                        }
-                        if (item.Name.Equals("IpInfo", StringComparison.CurrentCultureIgnoreCase))
-                        {
-                            item2.IsVisible = _config.SpeedTestItem.IPAPIUrl.IsNotEmpty() && !_config.UiItem.HideColumnIpInfo;
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog(_tag, ex);
-        }
-    }
-
-    private async void CopyIpInfo_Click(object? sender, RoutedEventArgs e)
-    {
-        try
-        {
-            if (sender is MenuItem { CommandParameter: string text } && !text.IsNullOrEmpty())
-            {
-                await AvaUtils.SetClipboardData(this, text);
-            }
-        }
-        catch
-        {
-            // Ignore
-        }
-    }
-
-    private void StorageUI()
-    {
-        try
-        {
-            List<ColumnItem> lvColumnItem = [];
-            foreach (var item2 in lstProfiles.Columns)
-            {
-                if (item2.Tag == null)
-                {
-                    continue;
-                }
-                lvColumnItem.Add(new()
-                {
-                    Name = (string)item2.Tag,
-                    Width = (int)(item2.IsVisible == true ? item2.ActualWidth : -1),
-                    Index = item2.DisplayIndex
-                });
-            }
-            _config.UiItem.MainColumnItem = lvColumnItem;
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog(_tag, ex);
-        }
-    }
-
-    #endregion UI
-
-    private sealed class ProfileRowDropHandler(ProfilesViewModel viewModel) : IDataGridRowDropHandler
-    {
-        private readonly DataGridRowReorderHandler _reorderHandler = new();
-
-        public bool Validate(DataGridRowDropEventArgs args)
-        {
-            ArgumentNullException.ThrowIfNull(args);
-            return _reorderHandler.Validate(args);
-        }
-
-        public bool Execute(DataGridRowDropEventArgs args)
-        {
-            ArgumentNullException.ThrowIfNull(args);
-
-            if (!_reorderHandler.Execute(args))
-            {
-                return false;
-            }
-
-            if (viewModel?.ProfileItems != null)
-            {
-                for (var index = 0; index < viewModel.ProfileItems.Count; index++)
-                {
-                    var item = viewModel.ProfileItems[index];
-                    var sort = (index + 1) * 10;
-                    item.Sort = sort;
-                    ProfileExManager.Instance.SetSort(item.IndexId, sort);
-                }
-            }
-
-            return true;
-        }
-    }
 }

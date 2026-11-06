@@ -14,7 +14,7 @@ mkdir -p "$PackagePath/v2rayN.app/Contents/Resources"
 cp -rf "$OutputPath" "$PackagePath/v2rayN.app/Contents/MacOS"
 cp -f "$PackagePath/v2rayN.app/Contents/MacOS/v2rayN.icns" "$PackagePath/v2rayN.app/Contents/Resources/AppIcon.icns"
 echo "When this file exists, app will not store configs under this folder" > "$PackagePath/v2rayN.app/Contents/MacOS/NotStoreConfigHere.txt"
-chmod +x "$PackagePath/v2rayN.app/Contents/MacOS/v2rayN"
+chmod +x "$PackagePath/v2rayN.app/Contents/MacOS/V2pn"
 
 cat >"$PackagePath/v2rayN.app/Contents/Info.plist" <<-EOF
 <?xml version="1.0" encoding="UTF-8"?>
@@ -34,9 +34,9 @@ cat >"$PackagePath/v2rayN.app/Contents/Info.plist" <<-EOF
     <string>hu</string>
   </array>
   <key>CFBundleDisplayName</key>
-  <string>v2rayN</string>
+  <string>V2pn</string>
   <key>CFBundleExecutable</key>
-  <string>v2rayN</string>
+  <string>V2pn</string>
   <key>CFBundleIconFile</key>
   <string>AppIcon</string>
   <key>CFBundleIconName</key>
@@ -44,7 +44,7 @@ cat >"$PackagePath/v2rayN.app/Contents/Info.plist" <<-EOF
   <key>CFBundleIdentifier</key>
   <string>2dust.v2rayN</string>
   <key>CFBundleName</key>
-  <string>v2rayN</string>
+  <string>V2pn</string>
   <key>CFBundlePackageType</key>
   <string>APPL</string>
   <key>CFBundleShortVersionString</key>

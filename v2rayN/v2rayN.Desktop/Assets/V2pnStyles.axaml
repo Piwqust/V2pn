@@ -1,0 +1,304 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+
+    <!--  Surfaces  -->
+    <Style Selector="Border.card">
+        <Setter Property="Background" Value="{DynamicResource V2CardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusCard}" />
+        <Setter Property="BoxShadow" Value="{DynamicResource V2CardShadow}" />
+    </Style>
+    <Style Selector="Border.well">
+        <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
+        <Setter Property="CornerRadius" Value="12" />
+    </Style>
+    <Style Selector="Border.hairline">
+        <Setter Property="Height" Value="1" />
+        <Setter Property="Background" Value="{DynamicResource V2Border}" />
+    </Style>
+
+    <!--  Type  -->
+    <Style Selector="TextBlock.display">
+        <Setter Property="FontFamily" Value="{DynamicResource V2DisplayFont}" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        <Setter Property="LetterSpacing" Value="-0.4" />
+    </Style>
+    <Style Selector="TextBlock.h1">
+        <Setter Property="FontSize" Value="36" />
+        <Setter Property="LineHeight" Value="40" />
+    </Style>
+    <Style Selector="TextBlock.h2">
+        <Setter Property="FontSize" Value="24" />
+        <Setter Property="LineHeight" Value="28" />
+    </Style>
+    <Style Selector="TextBlock.h3">
+        <Setter Property="FontSize" Value="19" />
+    </Style>
+    <Style Selector="TextBlock.title">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+    <Style Selector="TextBlock.muted">
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+    </Style>
+    <Style Selector="TextBlock.faint">
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
+    <Style Selector="TextBlock.small">
+        <Setter Property="FontSize" Value="12" />
+    </Style>
+    <Style Selector="TextBlock.section">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="Margin" Value="10,0,0,0" />
+    </Style>
+    <Style Selector="TextBlock.count">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+    </Style>
+    <Style Selector="TextBlock.num">
+        <Setter Property="FontFeatures" Value="+tnum" />
+    </Style>
+
+    <!--  Latency pill. Tier classes are set from the delay value.  -->
+    <Style Selector="Border.pill">
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusPill}" />
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="MinWidth" Value="52" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource V2PingNoneSoft}" />
+    </Style>
+    <Style Selector="Border.pill TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource V2PingNone}" />
+    </Style>
+    <Style Selector="Border.pill.good">
+        <Setter Property="Background" Value="{DynamicResource V2PingGoodSoft}" />
+    </Style>
+    <Style Selector="Border.pill.good TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingGood}" />
+    </Style>
+    <Style Selector="Border.pill.mid">
+        <Setter Property="Background" Value="{DynamicResource V2PingMidSoft}" />
+    </Style>
+    <Style Selector="Border.pill.mid TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="Border.pill.bad">
+        <Setter Property="Background" Value="{DynamicResource V2PingBadSoft}" />
+    </Style>
+    <Style Selector="Border.pill.bad TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingBad}" />
+    </Style>
+
+    <Style Selector="Ellipse.dot">
+        <Setter Property="Width" Value="7" />
+        <Setter Property="Height" Value="7" />
+        <Setter Property="Fill" Value="{DynamicResource V2PingNone}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Ellipse.dot.good">
+        <Setter Property="Fill" Value="{DynamicResource V2PingGood}" />
+    </Style>
+    <Style Selector="Ellipse.dot.mid">
+        <Setter Property="Fill" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="Ellipse.dot.bad">
+        <Setter Property="Fill" Value="{DynamicResource V2PingBad}" />
+    </Style>
+    <Style Selector="Ellipse.dot.live">
+        <Setter Property="Fill" Value="{DynamicResource V2Accent}" />
+    </Style>
+
+    <!--  Small labelled tags (protocol, transport, "active").  -->
+    <Style Selector="Border.tag">
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="6,1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
+    </Style>
+    <Style Selector="Border.tag TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+    </Style>
+    <Style Selector="Border.tag.live">
+        <Setter Property="Background" Value="{DynamicResource V2AccentSoft}" />
+    </Style>
+    <Style Selector="Border.tag.live TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Accent}" />
+    </Style>
+    <Style Selector="Border.tag.folder">
+        <Setter Property="Background" Value="{DynamicResource V2FolderSoft}" />
+    </Style>
+    <Style Selector="Border.tag.folder TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Folder}" />
+    </Style>
+
+    <!--  Protocol monogram tile at the start of each row.  -->
+    <Style Selector="Border.mono">
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+    </Style>
+    <Style Selector="Border.mono TextBlock">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="0.3" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.mono.live">
+        <Setter Property="Background" Value="{DynamicResource V2AccentSoft}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+    </Style>
+    <Style Selector="Border.mono.live TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Accent}" />
+    </Style>
+
+    <!--  Star toggle  -->
+    <Style Selector="Button.star PathIcon">
+        <Setter Property="Width" Value="15" />
+        <Setter Property="Height" Value="15" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
+    <Style Selector="Button.star:pointerover PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2Star}" />
+    </Style>
+    <Style Selector="Button.star.on PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2Star}" />
+    </Style>
+
+    <Style Selector="PathIcon.i14">
+        <Setter Property="Width" Value="14" />
+        <Setter Property="Height" Value="14" />
+    </Style>
+    <Style Selector="PathIcon.i16">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+    </Style>
+    <Style Selector="Button PathIcon">
+        <Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
+    </Style>
+    <Style Selector="ListBoxItem PathIcon.nav">
+        <Setter Property="Width" Value="15" />
+        <Setter Property="Height" Value="15" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected PathIcon.nav">
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+
+    <!--  Search field  -->
+    <Style Selector="TextBox.search">
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusControl}" />
+        <Setter Property="MinHeight" Value="34" />
+        <Setter Property="Background" Value="{DynamicResource V2CardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+    </Style>
+
+    <!--  Floating cards over the map  -->
+    <Style Selector="Border.floating">
+        <Setter Property="Background" Value="{DynamicResource V2CardFloating}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="BoxShadow" Value="{DynamicResource V2CardShadow}" />
+    </Style>
+
+    <Style Selector="TextBlock.ping">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+        <Setter Property="Foreground" Value="{DynamicResource V2PingNone}" />
+    </Style>
+    <Style Selector="TextBlock.ping.good">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingGood}" />
+    </Style>
+    <Style Selector="TextBlock.ping.mid">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="TextBlock.ping.bad">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingBad}" />
+    </Style>
+
+    <Style Selector="PathIcon.chevron">
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="RenderTransform" Value="rotate(-90deg)" />
+    </Style>
+    <Style Selector="PathIcon.chevron.open">
+        <Setter Property="RenderTransform" Value="rotate(0deg)" />
+    </Style>
+
+    <Style Selector="Button.kebab">
+        <Setter Property="Opacity" Value="0.5" />
+    </Style>
+    <Style Selector="Button.siderow:pointerover Button.kebab">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
+    <Style Selector="PathIcon.rail">
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+    </Style>
+    <Style Selector="ToggleButton:checked PathIcon.rail">
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="TextBlock.rail">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Ellipse.railDot">
+        <Setter Property="Width" Value="7" />
+        <Setter Property="Height" Value="7" />
+        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Margin" Value="0,-2,-6,0" />
+    </Style>
+
+    <!--  Map pin pulse  -->
+    <Style Selector="Ellipse.halo">
+        <Style.Animations>
+            <Animation IterationCount="Infinite" Duration="0:0:2.4">
+                <KeyFrame Cue="0%">
+                    <Setter Property="ScaleTransform.ScaleX" Value="0.35" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="0.35" />
+                    <Setter Property="Opacity" Value="0.55" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                    <Setter Property="Opacity" Value="0" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!--
+        The v2rayN dialogs (settings, server editor, routing, DNS, subscriptions) keep their
+        layouts; these give them the V2pn surface and make the confirm action the solid one.
+    -->
+    <Style Selector=":is(Window)">
+        <Setter Property="Background" Value="{DynamicResource V2WindowBackground}" />
+    </Style>
+    <Style Selector=":is(Window) Button[IsDefault=True]">
+        <Setter Property="Theme" Value="{StaticResource SolidButton}" />
+    </Style>
+</Styles>

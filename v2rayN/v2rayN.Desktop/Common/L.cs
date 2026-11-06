@@ -99,7 +99,7 @@ public static class L
     public static string Back => T("Back", "Назад");
     public static string UpdateAll => T("Update all subscriptions", "Обновить все подписки");
     public static string ServersCount => T("servers", "серверов");
-    public static string FavoritesEmpty => T("Open a server's menu and add it to favorites. Favorites survive subscription updates.", "Откройте меню сервера (⋮) и добавьте его в избранное. Избранное сохраняется после обновления подписок.");
+    public static string FavoritesEmpty => T("Hover a server and click ☆ to keep it here. Favorites survive subscription updates.", "Наведите на сервер и нажмите ☆, чтобы закрепить его здесь. Избранное сохраняется после обновления подписок.");
     public static string NothingFound => T("Nothing found", "Ничего не найдено");
     public static string SubEmpty => T("No servers yet. Update the subscription to load them.", "Серверов пока нет. Обновите подписку, чтобы загрузить их.");
     public static string Protected => T("Protected", "Защищено");
@@ -131,6 +131,49 @@ public static class L
     public static string TestSpeed => T("Speed test", "Тест скорости");
     public static string Europe => T("Europe", "Европа");
     public static string Seconds => T("s", "с");
+
+    public static string PingProgress => T("Stop · {0}/{1}", "Стоп · {0}/{1}");
+    public static string TabServers => T("Servers", "Серверы");
+    public static string ConnectFastestIn => T("Connect to the fastest server here", "Подключиться к самому быстрому здесь");
+    public static string UpdateSubscription => T("Update subscription", "Обновить подписку");
+    public static string ClearSearch => T("Clear search", "Очистить поиск");
+
+    public static string ThemeName(string? name) => name switch
+    {
+        nameof(ETheme.FollowSystem) => T("System", "Как в системе"),
+        nameof(ETheme.Dark) => T("Dark", "Тёмная"),
+        nameof(ETheme.Light) => T("Light", "Светлая"),
+        _ => name ?? string.Empty,
+    };
+    public static string CheckConnection => T("Check connection", "Проверить соединение");
+    public static string Checking => T("Checking…", "Проверяю…");
+    public static string CheckWorks => T("Works · {0} ms", "Работает · {0} мс");
+
+    /// <summary>"85 ms", with the unit Russian readers expect.</summary>
+    public static string Ms(int value) => Ru ? $"{value} мс" : $"{value} ms";
+    public static string CheckFailed => T("No response", "Нет ответа");
+    public static string NoTraffic => T("No traffic yet", "Трафика пока нет");
+    public static string StateChecking => T("Checking connection…", "Проверяю соединение…");
+    public static string StateNoResponse => T("Server not responding", "Сервер не отвечает");
+    public static string ClickToConnect => T("Click to connect · right-click for more", "Нажмите, чтобы подключиться · правая кнопка — ещё");
+
+    /// <summary>"6 servers" with the plural form the language needs.</summary>
+    public static string ServerCount(int n)
+    {
+        if (Ru)
+        {
+            var (m10, m100) = (n % 10, n % 100);
+            var word = m10 == 1 && m100 != 11 ? "сервер"
+                : m10 is >= 2 and <= 4 && m100 is < 12 or > 14 ? "сервера"
+                : "серверов";
+            return $"{n} {word}";
+        }
+        if (CultureInfo.CurrentUICulture.Name.StartsWith("en", StringComparison.OrdinalIgnoreCase))
+        {
+            return n == 1 ? "1 server" : $"{n} servers";
+        }
+        return $"{n} {ServersCount}";
+    }
 
     // Relative times and durations, used through Fmt.
     public static string JustNow => T("just now", "только что");

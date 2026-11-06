@@ -23,7 +23,7 @@ public static class V2pnConverters
         {
             0 => "—",
             < 0 => L.Timeout,
-            _ => $"{d} ms",
+            _ => L.Ms(d),
         });
 
     public static readonly IValueConverter PingShort =
@@ -31,8 +31,31 @@ public static class V2pnConverters
         {
             0 => "",
             < 0 => "×",
-            _ => d + " ms",
+            _ => L.Ms(d),
         });
+
+    /// <summary>Short label for the system proxy mode (ESysProxyType index).</summary>
+    public static readonly IValueConverter ProxyModeShort =
+        new FuncValueConverter<int, string>(m => (ESysProxyType)m switch
+        {
+            ESysProxyType.ForcedChange => L.ProxyOn,
+            ESysProxyType.Unchanged => L.ProxyKeep,
+            ESysProxyType.Pac => L.ProxyPac,
+            _ => L.ProxyOff,
+        });
+
+    public static readonly IValueConverter IsProxyRouting =
+        new FuncValueConverter<int, bool>(m => (ESysProxyType)m is ESysProxyType.ForcedChange or ESysProxyType.Pac);
+
+    public static readonly IValueConverter OnOff =
+        new FuncValueConverter<bool, string>(b => b ? L.ProxyOn : L.ProxyOff);
+
+    /// <summary>True while a ping test is running for the row (the test writes a placeholder into DelayVal).</summary>
+    public static readonly IValueConverter IsTesting =
+        new FuncValueConverter<string?, bool>(v => v == ResUI.Speedtesting);
+
+    public static readonly IValueConverter IsNotTesting =
+        new FuncValueConverter<string?, bool>(v => v != ResUI.Speedtesting);
 
     /// <summary>Short monogram for a protocol, e.g. VLESS → VL, Hysteria2 → HY2.</summary>
     public static readonly IValueConverter ProtocolMonogram =

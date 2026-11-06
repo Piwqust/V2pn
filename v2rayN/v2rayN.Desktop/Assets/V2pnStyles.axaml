@@ -264,6 +264,16 @@
         <Setter Property="TextAlignment" Value="Center" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+    <Style Selector="TextBlock.railvalue">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="TextAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.railvalue.on">
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
     <Style Selector="Ellipse.railDot">
         <Setter Property="Width" Value="7" />
         <Setter Property="Height" Value="7" />
@@ -300,5 +310,189 @@
     </Style>
     <Style Selector=":is(Window) Button[IsDefault=True]">
         <Setter Property="Theme" Value="{StaticResource SolidButton}" />
+    </Style>
+
+    <!--  Sidebar rows: secondary actions appear on hover or keyboard focus; a set favorite stays visible.  -->
+    <Style Selector="Button.siderow Button.reveal">
+        <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="Button.siderow:pointerover Button.reveal, Button.siderow Button.reveal:focus-visible, Button.siderow Button.reveal.on">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Button.siderow:pointerover Button.reveal:disabled">
+        <Setter Property="Opacity" Value="0.35" />
+    </Style>
+
+    <Style Selector="Ellipse.badge">
+        <Setter Property="Width" Value="10" />
+        <Setter Property="Height" Value="10" />
+        <Setter Property="Margin" Value="0,0,-3,-3" />
+        <Setter Property="HorizontalAlignment" Value="Right" />
+        <Setter Property="VerticalAlignment" Value="Bottom" />
+        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+        <Setter Property="Stroke" Value="{DynamicResource V2SidebarBackground}" />
+        <Setter Property="StrokeThickness" Value="2" />
+    </Style>
+
+    <Style Selector="Border.mono.sm">
+        <Setter Property="Width" Value="26" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="CornerRadius" Value="5" />
+    </Style>
+    <Style Selector="Border.mono.sm TextBlock">
+        <Setter Property="FontSize" Value="9.5" />
+        <Setter Property="LetterSpacing" Value="0" />
+    </Style>
+
+    <Style Selector="PathIcon.i12">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+    </Style>
+
+    <!--  Busy indicator: an arc that turns.  -->
+    <Style Selector="Path.spinner">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="Data" Value="{StaticResource V2SpinnerArc}" />
+        <Setter Property="Stroke" Value="{DynamicResource V2Muted}" />
+        <Setter Property="StrokeThickness" Value="1.6" />
+        <Setter Property="StrokeLineCap" Value="Round" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="RenderTransform" Value="rotate(0deg)" />
+        <Style.Animations>
+            <Animation IterationCount="Infinite" Duration="0:0:0.8">
+                <KeyFrame Cue="0%">
+                    <Setter Property="RotateTransform.Angle" Value="0" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="RotateTransform.Angle" Value="360" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+    <Style Selector="Button Path.spinner">
+        <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
+    </Style>
+
+    <Style Selector="Button.siderow StackPanel.rowactions">
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="IsHitTestVisible" Value="False" />
+    </Style>
+    <Style Selector="Button.siderow:pointerover StackPanel.rowactions">
+        <Setter Property="Opacity" Value="1" />
+        <Setter Property="IsHitTestVisible" Value="True" />
+    </Style>
+    <Style Selector="Button.siderow:pointerover Panel.rowinfo">
+        <Setter Property="Opacity" Value="0" />
+    </Style>
+    <!--  Hover-only actions stay out of the Tab order; the keyboard reaches them through the row's context menu.  -->
+    <Style Selector="Button.siderow StackPanel.rowactions Button, Button.siderow Button.reveal">
+        <Setter Property="IsTabStop" Value="False" />
+    </Style>
+
+    <!--  Result of a connection check.  -->
+    <Style Selector="Border.check">
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusPill}" />
+        <Setter Property="Padding" Value="8,2" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.check TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+    </Style>
+    <Style Selector="Border.check.ok">
+        <Setter Property="Background" Value="{DynamicResource V2SafeSoft}" />
+    </Style>
+    <Style Selector="Border.check.ok TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Border.check.ok PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Border.check.fail">
+        <Setter Property="Background" Value="{DynamicResource V2UnsafeSoft}" />
+    </Style>
+    <Style Selector="Border.check.fail TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+    </Style>
+    <Style Selector="Border.check.fail PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+    </Style>
+
+    <!--  Protection state pill in the connection header.  -->
+    <Style Selector="Border.state">
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusPill}" />
+        <Setter Property="Padding" Value="12,5" />
+        <Setter Property="Background" Value="{DynamicResource V2Hover}" />
+    </Style>
+    <Style Selector="Border.state TextBlock">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="0.6" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+    </Style>
+    <Style Selector="Border.state Ellipse.statedot">
+        <Setter Property="Width" Value="7" />
+        <Setter Property="Height" Value="7" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Fill" Value="{DynamicResource V2Muted}" />
+    </Style>
+    <Style Selector="Border.state.safe">
+        <Setter Property="Background" Value="{DynamicResource V2SafeSoft}" />
+    </Style>
+    <Style Selector="Border.state.safe TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Border.state.safe Ellipse.statedot">
+        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Border.state.unsafe">
+        <Setter Property="Background" Value="{DynamicResource V2UnsafeSoft}" />
+    </Style>
+    <Style Selector="Border.state.unsafe TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+    </Style>
+    <Style Selector="Border.state.unsafe Ellipse.statedot">
+        <Setter Property="Fill" Value="{DynamicResource V2Unsafe}" />
+    </Style>
+    <Style Selector="Border.state.warn">
+        <Setter Property="Background" Value="{DynamicResource V2PingMidSoft}" />
+    </Style>
+    <Style Selector="Border.state.warn TextBlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="Border.state.warn Ellipse.statedot">
+        <Setter Property="Fill" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="Border.state.checking Path.spinner">
+        <Setter Property="Stroke" Value="{DynamicResource V2InkSoft}" />
+    </Style>
+
+    <!--  Countries with servers on the map.  -->
+    <Style Selector="Ellipse.mapdot">
+        <Setter Property="Width" Value="9" />
+        <Setter Property="Height" Value="9" />
+        <Setter Property="Fill" Value="{DynamicResource V2MapDot}" />
+        <Setter Property="Stroke" Value="{DynamicResource V2MapOcean}" />
+        <Setter Property="StrokeThickness" Value="2" />
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Ellipse.mapdot:pointerover">
+        <Setter Property="Fill" Value="{DynamicResource V2Ink}" />
+        <Setter Property="RenderTransform" Value="scale(1.5)" />
+    </Style>
+
+    <!--  Sidebar rows are mouse targets; keyboard focus stays on the list item around them.  -->
+    <Style Selector="ListBox Button.siderow">
+        <Setter Property="IsTabStop" Value="False" />
+        <Setter Property="Focusable" Value="False" />
     </Style>
 </Styles>

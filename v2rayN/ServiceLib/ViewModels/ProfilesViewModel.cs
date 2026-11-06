@@ -18,6 +18,19 @@ public partial class ProfilesViewModel : MyReactiveObject
     private string _serverFilter = string.Empty;
     private readonly Dictionary<string, bool> _dicHeaderSort = new();
     private SpeedtestService? _speedtestService;
+    private HashSet<string> _pingPending = [];
+
+    /// <summary>Raised when a ping run finishes or is stopped.</summary>
+    public EventChannel<RxVoid> PingTestFinished { get; } = new();
+
+    [Reactive]
+    public partial bool IsPingTesting { get; set; }
+
+    [Reactive]
+    public partial int PingTotal { get; set; }
+
+    [Reactive]
+    public partial int PingDone { get; set; }
     private string? _pendingSelectIndexId;
 
     #endregion private prop
@@ -312,8 +325,23 @@ public partial class ProfilesViewModel : MyReactiveObject
         if (result.IndexId.IsNullOrEmpty())
         {
             NoticeManager.Instance.SendMessageEx(result.Delay);
-            NoticeManager.Instance.Enqueue(result.Delay);
+            var finished = result.Delay == ResUI.SpeedtestingCompleted || result.Delay == ResUI.SpeedtestingStop;
+            if (finished)
+            {
+                // The sidebar shows progress and completion inline, so no toast for the routine ending.
+                IsPingTesting = false;
+                _pingPending.Clear();
+                PingTestFinished.Publish(RxVoid.Default);
+            }
+            else
+            {
+                NoticeManager.Instance.Enqueue(result.Delay);
+            }
             return;
+        }
+        if (result.Delay.IsNotEmpty() && result.Delay != ResUI.Speedtesting && _pingPending.Remove(result.IndexId))
+        {
+            PingDone = PingTotal - _pingPending.Count;
         }
         var favorite = FavoriteItems.FirstOrDefault(it => it.IndexId == result.IndexId);
         if (favorite != null && result.Delay.IsNotEmpty())
@@ -435,9 +463,15 @@ public partial class ProfilesViewModel : MyReactiveObject
         AllServersCount = all.Count;
 
         var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
+        // An update writes UpdateTime to the database; the cached items need it too for "updated 5 min ago".
+        var stored = (await AppManager.Instance.SubItems() ?? []).ToDictionary(t => t.Id ?? string.Empty, t => t.UpdateTime);
         foreach (var sub in SubNavItems)
         {
             sub.Count = counts.GetValueOrDefault(sub.Id ?? string.Empty);
+            if (stored.TryGetValue(sub.Id ?? string.Empty, out var updated))
+            {
+                sub.Item.UpdateTime = updated;
+            }
         }
 
         var favorites = (from t in all
@@ -510,6 +544,26 @@ public partial class ProfilesViewModel : MyReactiveObject
         {
             await RefreshNavCounts();
         }
+    }
+
+    /// <summary>Real-ping test for a set of servers, with progress in IsPingTesting / PingDone / PingTotal.</summary>
+    public async Task PingProfilesAsync(IEnumerable<ProfileItemModel> items)
+    {
+        var ids = items.Select(t => t.IndexId).Where(t => t.IsNotEmpty()).Distinct().ToList();
+        if (ids.Count == 0)
+        {
+            return;
+        }
+        var profiles = await AppManager.Instance.GetProfileItemsOrderedByIndexIds(ids);
+        if (profiles.Count == 0)
+        {
+            return;
+        }
+        _pingPending = profiles.Select(t => t.IndexId).ToHashSet();
+        PingTotal = _pingPending.Count;
+        PingDone = 0;
+        IsPingTesting = true;
+        await RunSpeedtest(ESpeedActionType.Realping, profiles);
     }
 
     public async Task PingProfileAsync(ProfileItemModel? item)

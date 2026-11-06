@@ -34,7 +34,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         InitializeComponent();
 
         _config = AppManager.Instance.Config;
-        _manager = new WindowNotificationManager(TopLevel.GetTopLevel(this)) { MaxItems = 3, Position = NotificationPosition.TopRight };
+        // Above the status card and clear of the feature rail, over the empty part of the map.
+        _manager = new WindowNotificationManager(TopLevel.GetTopLevel(this))
+        {
+            MaxItems = 3,
+            Position = NotificationPosition.BottomRight,
+            Margin = new Thickness(0, 0, 20, 196),
+        };
         _pingTimer = new DispatcherTimer(TimeSpan.FromSeconds(1.5), DispatcherPriority.Background, (_, _) => RefreshActivePing());
 
         KeyDown += MainWindow_KeyDown;
@@ -55,12 +61,21 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuPageProxies.Click += (_, _) => ShowPage(L.MenuClashProxies, _clashProxiesView);
         menuPageConnections.Click += (_, _) => ShowPage(L.MenuClashConnections, _clashConnectionsView);
         lstTabs.SelectionChanged += LstTabs_SelectionChanged;
+        lstRows.KeyDown += LstRows_KeyDown;
+        lstRows.ContextRequested += LstRows_ContextRequested;
+        txtSearch.KeyDown += TxtSearch_KeyDown;
         txtSearch.TextChanged += (_, _) =>
         {
+            btnClearSearch.IsVisible = txtSearch.Text.IsNotEmpty();
             if (_sidebar != null)
             {
                 _sidebar.Search = txtSearch.Text ?? string.Empty;
             }
+        };
+        btnClearSearch.Click += (_, _) =>
+        {
+            txtSearch.Text = string.Empty;
+            txtSearch.Focus();
         };
 
         conTheme.Content ??= new ThemeSettingView();
@@ -128,7 +143,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
                 .SubscribeAsync(async _ => await RefreshConnectionAsync())
                 .DisposeWith(disposables);
-            profiles.ProfileItems.CollectionChanged += (_, _) => _ = RefreshConnectionAsync();
+            profiles.ProfileItems.CollectionChanged += (_, _) =>
+            {
+                _ = RefreshConnectionAsync();
+                QueueMapLocations();
+            };
+            profiles.PingTestFinished.AsObservable()
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => QueueMapLocations())
+                .DisposeWith(disposables);
+            this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.AvailabilityDelay)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => RefreshStatePill())
+                .DisposeWith(disposables);
 
             foreach (var handler in RegisterProfileInteractions(profiles))
             {
@@ -230,6 +257,50 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
         _sidebar ??= new SidebarViewModel(vm.ProfilesViewModel);
         lstRows.ItemsSource = _sidebar.Rows;
+        mapView.LocationClicked -= MapView_LocationClicked;
+        mapView.LocationClicked += MapView_LocationClicked;
+        QueueMapLocations();
+    }
+
+    private bool _mapQueued;
+
+    private void QueueMapLocations()
+    {
+        if (_mapQueued)
+        {
+            return;
+        }
+        _mapQueued = true;
+        Dispatcher.UIThread.Post(() =>
+        {
+            _mapQueued = false;
+            var items = ViewModel?.ProfilesViewModel.ProfileItems.ToList() ?? [];
+            var locations = items
+                .GroupBy(m => CountryResolver.Resolve(m.Remarks))
+                .Where(g => g.Key.IsNotEmpty() && !string.Equals(g.Key, "EU", StringComparison.OrdinalIgnoreCase))
+                .Select(g => new MapLocation(
+                    g.Key!,
+                    WorldMap.Instance.Get(g.Key)?.Name ?? g.Key!,
+                    g.Count(),
+                    g.Where(m => m.Delay > 0).Select(m => m.Delay).DefaultIfEmpty(0).Min()))
+                .ToList();
+            mapView.SetLocations(locations);
+        }, DispatcherPriority.Background);
+    }
+
+    private void MapView_LocationClicked(string code)
+    {
+        if (_sidebar == null)
+        {
+            return;
+        }
+        txtSearch.Text = string.Empty;
+        lstTabs.SelectedIndex = (int)SidebarTab.Countries;
+        var row = _sidebar.RevealCountry(code);
+        if (row != null)
+        {
+            Dispatcher.UIThread.Post(() => lstRows.ScrollIntoView(row), DispatcherPriority.Background);
+        }
     }
 
     private void ShowPage(string title, Control? page)
@@ -356,6 +427,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             txtHeaderSubtitle.Text = country != null || region != null ? $"{name}  ·  {transport}" : transport;
         }
 
+        RefreshStatePill();
         var unprotected = state == ProtectionState.Unprotected;
         btnConnect.Content = unprotected ? L.Connect : L.Disconnect;
         btnConnect.Classes.Set("accent", unprotected);
@@ -387,6 +459,46 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _statusView?.SetServer(item, FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId));
     }
 
+    // The pill combines the proxy mode with the last connection check, so "Protected" means the check passed.
+    private void RefreshStatePill()
+    {
+        var state = CurrentState();
+        var delay = ViewModel?.StatusBarViewModel.AvailabilityDelay ?? 0;
+        var checking = state != ProtectionState.Unprotected && delay == -2;
+        var failed = state != ProtectionState.Unprotected && delay == -1;
+
+        string kind;
+        string text;
+        if (state == ProtectionState.Unprotected)
+        {
+            (kind, text) = ("unsafe", L.Unprotected);
+        }
+        else if (checking)
+        {
+            (kind, text) = ("checking", L.StateChecking);
+        }
+        else if (failed)
+        {
+            (kind, text) = ("warn", L.StateNoResponse);
+        }
+        else if (state == ProtectionState.LocalOnly)
+        {
+            (kind, text) = ("warn", L.LocalOnly);
+        }
+        else
+        {
+            (kind, text) = ("safe", delay > 0 ? $"{L.Protected} · {L.Ms(delay)}" : L.Protected);
+        }
+
+        foreach (var c in new[] { "safe", "unsafe", "warn", "checking" })
+        {
+            pillState.Classes.Set(c, c == kind);
+        }
+        txtStatePill.Text = text.ToUpper(CultureInfo.CurrentUICulture);
+        spinState.IsVisible = checking;
+        dotState.IsVisible = !checking;
+    }
+
     private static async Task<int> StoredDelayAsync(string? indexId)
     {
         if (indexId.IsNullOrEmpty())
@@ -407,7 +519,16 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _statusView.SetServer(item, FindModel(_activeIndexId)?.Delay ?? await StoredDelayAsync(_activeIndexId));
     }
 
-    private void BtnConnect_Click(object? sender, RoutedEventArgs e) => ToggleConnection(CurrentState() == ProtectionState.Unprotected);
+    private void BtnConnect_Click(object? sender, RoutedEventArgs e)
+    {
+        var connect = CurrentState() == ProtectionState.Unprotected;
+        ToggleConnection(connect);
+        if (connect)
+        {
+            // Turning the proxy on proves nothing by itself; check that traffic actually goes through.
+            _ = ViewModel?.StatusBarViewModel.TestServerAvailability();
+        }
+    }
 
     private void ToggleConnection(bool connect)
     {
@@ -467,33 +588,113 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _sidebar.Tab = (SidebarTab)lstTabs.SelectedIndex;
     }
 
-    private async void SideServer_Click(object? sender, RoutedEventArgs e)
+    private void SideServer_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
+
+    private void SideCountry_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
+
+    private void SideSub_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
+
+    private void SideAction_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
+
+    private async void ActivateRow(SideRow? target)
     {
-        if (sender is Control { DataContext: SideServerRow row })
+        if (_sidebar == null || ViewModel == null)
         {
-            await ConnectToAsync(row.Model.IndexId);
+            return;
+        }
+        switch (target)
+        {
+            case SideServerRow server:
+                await ConnectToAsync(server.Model.IndexId);
+                return;
+
+            case SideCountryRow country:
+                _sidebar.ToggleCountry(country.Code);
+                SelectRow(r => r is SideCountryRow c && c.Code == country.Code);
+                return;
+
+            case SideSubRow sub:
+                _sidebar.OpenedSub = sub.Sub;
+                return;
+
+            case SideActionRow action:
+                await RunActionAsync(action);
+                return;
         }
     }
 
-    private void SideCountry_Click(object? sender, RoutedEventArgs e)
+    // Rows are rebuilt on expand/collapse; keep keyboard focus on the same logical row.
+    private void SelectRow(Func<SideRow, bool> match)
     {
-        if (sender is Control { DataContext: SideCountryRow row })
+        if (!lstRows.IsKeyboardFocusWithin)
         {
-            _sidebar?.ToggleCountry(row.Code);
+            return;
+        }
+        Dispatcher.UIThread.Post(() =>
+        {
+            var row = _sidebar?.Rows.FirstOrDefault(match);
+            if (row == null)
+            {
+                return;
+            }
+            lstRows.SelectedItem = row;
+            lstRows.ContainerFromItem(row)?.Focus(NavigationMethod.Directional);
+        }, DispatcherPriority.Background);
+    }
+
+    private void LstRows_KeyDown(object? sender, KeyEventArgs e)
+    {
+        if (e.Key is Key.Enter or Key.Space && lstRows.SelectedItem is SideRow row)
+        {
+            e.Handled = true;
+            ActivateRow(row);
+        }
+        else if (e.Key == Key.Right && lstRows.SelectedItem is SideCountryRow { IsExpanded: false }
+                 || e.Key == Key.Left && lstRows.SelectedItem is SideCountryRow { IsExpanded: true })
+        {
+            e.Handled = true;
+            ActivateRow((SideRow)lstRows.SelectedItem);
+        }
+        else if (e.Key == Key.Back && _sidebar?.OpenedSub != null)
+        {
+            e.Handled = true;
+            _sidebar.OpenedSub = null;
         }
     }
 
-    private void SideSub_Click(object? sender, RoutedEventArgs e)
+    // The menu key or Shift+F10 on a focused row (the row buttons themselves are mouse targets).
+    private void LstRows_ContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (sender is Control { DataContext: SideSubRow row } && _sidebar != null)
+        if (e.Handled || lstRows.SelectedItem is not SideRow row || lstRows.ContainerFromItem(row) is not Control container)
         {
-            _sidebar.OpenedSub = row.Sub;
+            return;
+        }
+        e.Handled = true;
+        switch (row)
+        {
+            case SideServerRow server:
+                ShowServerMenu(container, server, PlacementMode.BottomEdgeAlignedLeft);
+                break;
+
+            case SideSubRow sub:
+                ShowSubMenu(container, sub, PlacementMode.BottomEdgeAlignedLeft);
+                break;
         }
     }
 
-    private async void SideAction_Click(object? sender, RoutedEventArgs e)
+    private void TxtSearch_KeyDown(object? sender, KeyEventArgs e)
     {
-        if (sender is not Control { DataContext: SideActionRow row } || _sidebar == null || ViewModel == null)
+        if (e.Key == Key.Down && _sidebar?.Rows.FirstOrDefault(r => r is SideServerRow or SideCountryRow or SideSubRow or SideActionRow) is { } first)
+        {
+            e.Handled = true;
+            lstRows.SelectedItem = first;
+            lstRows.ContainerFromItem(first)?.Focus(NavigationMethod.Directional);
+        }
+    }
+
+    private async Task RunActionAsync(SideActionRow row)
+    {
+        if (_sidebar == null || ViewModel == null)
         {
             return;
         }
@@ -517,10 +718,110 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
     }
 
+    private async void SidePing_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (_sidebar != null)
+        {
+            await _sidebar.TogglePingAsync();
+        }
+    }
+
+    private async void SideStar_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideServerRow row } && ViewModel != null)
+        {
+            await ViewModel.ProfilesViewModel.ToggleFavoriteAsync(row.Model);
+        }
+    }
+
+    private async void SideCountryConnect_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideCountryRow row } && row.BestId.IsNotEmpty())
+        {
+            await ConnectToAsync(row.BestId);
+        }
+    }
+
+    private void SideSubUpdate_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideSubRow row })
+        {
+            UpdateSubscription(row.Sub.Id);
+        }
+    }
+
+    private void SideBackUpdate_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideActionRow row } && row.TargetId.IsNotEmpty())
+        {
+            UpdateSubscription(row.TargetId);
+        }
+    }
+
+    private void UpdateSubscription(string? subId)
+    {
+        if (ViewModel == null || subId.IsNullOrEmpty())
+        {
+            return;
+        }
+        _ = ViewModel.UpdateSubscriptionProcess(subId, false);
+    }
+
     private void SideServerMenu_Click(object? sender, RoutedEventArgs e)
     {
         e.Handled = true;
-        if (sender is not Button { DataContext: SideServerRow row } button || ViewModel == null)
+        if (sender is Button { DataContext: SideServerRow row } button)
+        {
+            ShowServerMenu(button, row, PlacementMode.BottomEdgeAlignedRight);
+        }
+    }
+
+    // Right-click or the menu key on a row opens the same menu as its ⋮ button.
+    private void SideServer_ContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideServerRow row } control)
+        {
+            ShowServerMenu(control, row, ContextPlacement(e, control));
+        }
+    }
+
+    private void SideSub_ContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideSubRow row } control)
+        {
+            ShowSubMenu(control, row, ContextPlacement(e, control));
+        }
+    }
+
+    private void SideCountry_ContextRequested(object? sender, ContextRequestedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is not Control { DataContext: SideCountryRow row } control || ViewModel == null)
+        {
+            return;
+        }
+        var profiles = ViewModel.ProfilesViewModel;
+        var flyout = new MenuFlyout { Placement = ContextPlacement(e, control) };
+        var connect = Item(L.ConnectFastestIn, async () => await ConnectToAsync(row.BestId));
+        connect.IsEnabled = row.BestId.IsNotEmpty();
+        flyout.Items.Add(connect);
+        flyout.Items.Add(Item(L.TestPing, () => profiles.PingProfilesAsync(row.Servers)));
+        flyout.ShowAt(control, flyout.Placement == PlacementMode.Pointer);
+    }
+
+    private static PlacementMode ContextPlacement(ContextRequestedEventArgs e, Control control) =>
+        e.TryGetPosition(control, out _) ? PlacementMode.Pointer : PlacementMode.BottomEdgeAlignedLeft;
+
+    private void ShowServerMenu(Control target, SideServerRow row, PlacementMode placement)
+    {
+        if (ViewModel == null)
         {
             return;
         }
@@ -533,7 +834,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             profiles.SelectedProfiles = [model];
         }
 
-        var flyout = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedRight };
+        var flyout = new MenuFlyout { Placement = placement };
         flyout.Items.Add(Item(L.Connect, async () => await ConnectToAsync(model.IndexId)));
         flyout.Items.Add(Item(model.IsFavorite ? L.Unfavorite : L.Favorite, async () => await profiles.ToggleFavoriteAsync(model)));
         flyout.Items.Add(new Separator());
@@ -546,13 +847,21 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         flyout.Items.Add(Item(ResUI.menuExport2ShareUrl, async () => { Select(); await profiles.Export2ShareUrlAsync(false); }));
         flyout.Items.Add(new Separator());
         flyout.Items.Add(Item(ResUI.menuRemoveServer, async () => { Select(); await profiles.RemoveServerAsync(); }));
-        flyout.ShowAt(button);
+        flyout.ShowAt(target, placement == PlacementMode.Pointer);
     }
 
     private void SideSubMenu_Click(object? sender, RoutedEventArgs e)
     {
         e.Handled = true;
-        if (sender is not Button { DataContext: SideSubRow row } button || ViewModel == null || _sidebar == null)
+        if (sender is Button { DataContext: SideSubRow row } button)
+        {
+            ShowSubMenu(button, row, PlacementMode.BottomEdgeAlignedRight);
+        }
+    }
+
+    private void ShowSubMenu(Control target, SideSubRow row, PlacementMode placement)
+    {
+        if (ViewModel == null || _sidebar == null)
         {
             return;
         }
@@ -561,13 +870,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         // Subscription commands act on the current group, so open the subscription first.
         void Open() => _sidebar.OpenedSub = row.Sub;
 
-        var flyout = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedRight };
-        flyout.Items.Add(Item(ResUI.menuSubGroupUpdate, () => { Open(); vm.SubGroupUpdateCmd.Execute().Subscribe(); return Task.CompletedTask; }));
-        flyout.Items.Add(Item(ResUI.menuSubGroupUpdateViaProxy, () => { Open(); vm.SubGroupUpdateViaProxyCmd.Execute().Subscribe(); return Task.CompletedTask; }));
+        var flyout = new MenuFlyout { Placement = placement };
+        flyout.Items.Add(Item(ResUI.menuSubGroupUpdate, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, false)));
+        flyout.Items.Add(Item(ResUI.menuSubGroupUpdateViaProxy, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, true)));
         flyout.Items.Add(new Separator());
         flyout.Items.Add(Item(ResUI.menuSubEdit, () => { Open(); vm.ProfilesViewModel.EditSubCmd.Execute().Subscribe(); return Task.CompletedTask; }));
         flyout.Items.Add(Item(ResUI.menuSubDelete, () => { Open(); vm.ProfilesViewModel.DeleteSubCmd.Execute().Subscribe(); return Task.CompletedTask; }));
-        flyout.ShowAt(button);
+        flyout.ShowAt(target, placement == PlacementMode.Pointer);
     }
 
     private static MenuItem Item(string header, Func<Task> action)

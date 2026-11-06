@@ -1,3 +1,4 @@
+using Avalonia.Controls.Templates;
 using Avalonia.Data;
 using v2rayN.Desktop.ViewModels;
 
@@ -14,6 +15,8 @@ public partial class ThemeSettingView : ReactiveUserControl<ThemeSettingViewMode
         ViewModel = new ThemeSettingViewModel();
 
         cmbCurrentTheme.ItemsSource = Utils.GetEnumNames<ETheme>();
+        // The values stay enum names (they are what the config stores); only the labels are translated.
+        cmbCurrentTheme.ItemTemplate = new FuncDataTemplate<string>((name, _) => new TextBlock { Text = L.ThemeName(name) });
         cmbCurrentFontSize.ItemsSource = Enumerable.Range(Global.MinFontSize, Global.MinFontSizeCount).ToList();
         cmbCurrentLanguage.ItemsSource = Global.LanguageOptions;
         cmbCurrentLanguage.DisplayMemberBinding = new Binding(nameof(LanguageOption.Display));

@@ -89,6 +89,14 @@ public partial class StatusBarViewModel : MyReactiveObject
     [Reactive]
     public partial string RunningInfoDisplay { get; set; }
 
+    /// <summary>Last connection check: 0 not run, -2 running, -1 failed, otherwise the delay in ms.</summary>
+    [Reactive]
+    public partial int AvailabilityDelay { get; set; }
+
+    /// <summary>Exit IP reported by the last connection check, when the check could see it.</summary>
+    [Reactive]
+    public partial string AvailabilityIp { get; set; }
+
     [Reactive]
     public partial string SpeedProxyDisplay { get; set; }
 
@@ -108,6 +116,7 @@ public partial class StatusBarViewModel : MyReactiveObject
         _config = AppManager.Instance.Config;
         SelectedRouting = new();
         SelectedServer = new();
+        AvailabilityIp = string.Empty;
         RunningServerToolTipText = GetRunningServerToolTipText("-");
         BlSystemProxyPacVisible = Utils.IsWindows();
         BlIsNonWindows = Utils.IsNonWindows();
@@ -324,8 +333,14 @@ public partial class StatusBarViewModel : MyReactiveObject
         }
 
         await TestServerAvailabilitySub(ResUI.Speedtesting);
+        RxSchedulers.MainThreadScheduler.Schedule(() => AvailabilityDelay = -2);
 
         var result = await Task.Run(ConnectionHandler.RunAvailabilityCheck);
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
+        {
+            AvailabilityDelay = result.Time > 0 ? result.Time : -1;
+            AvailabilityIp = result.GetValidIp() ?? string.Empty;
+        });
         var msg = string.Format(ResUI.TestMeOutput, result.Time, result.Ip);
 
         var ip = result.GetValidIp();

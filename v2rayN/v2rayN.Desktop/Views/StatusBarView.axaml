@@ -27,12 +27,12 @@
 
     <Border
         MaxWidth="980"
-        Padding="18,14,18,14"
+        Padding="18,12,18,14"
         Classes="floating">
         <Grid ColumnDefinitions="*,28,1.15*" RowDefinitions="Auto,Auto">
             <Grid
                 Grid.ColumnSpan="3"
-                Margin="0,0,0,12"
+                Margin="0,0,0,10"
                 ColumnDefinitions="Auto,*,Auto">
                 <StackPanel Orientation="Horizontal" Spacing="8">
                     <PathIcon
@@ -49,16 +49,39 @@
                         VerticalAlignment="Center"
                         Classes="muted num" />
                 </StackPanel>
-                <TextBlock
-                    x:Name="txtRunningInfoDisplay"
+
+                <!--  Connection check: result chip plus the action that runs it.  -->
+                <StackPanel
                     Grid.Column="2"
-                    MaxWidth="420"
-                    VerticalAlignment="Center"
-                    Background="Transparent"
-                    Classes="faint small"
-                    Cursor="Hand"
-                    TextTrimming="CharacterEllipsis"
-                    ToolTip.Tip="{x:Static loc:L.CheckAvailability}" />
+                    Orientation="Horizontal"
+                    Spacing="6">
+                    <Border
+                        x:Name="chipCheck"
+                        Classes="check"
+                        IsVisible="False">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <PathIcon x:Name="iconCheck" Classes="i12" />
+                            <TextBlock x:Name="txtCheck" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Border>
+                    <Button
+                        x:Name="btnCheck"
+                        Classes="ghost tiny"
+                        Theme="{StaticResource V2Button}"
+                        ToolTip.Tip="{x:Static loc:L.CheckAvailability}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <PathIcon
+                                x:Name="iconCheckIdle"
+                                Classes="i12"
+                                Data="{StaticResource SemiIconRefresh}" />
+                            <Path
+                                x:Name="spinCheck"
+                                Classes="spinner"
+                                IsVisible="False" />
+                            <TextBlock x:Name="txtCheckAction" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                </StackPanel>
             </Grid>
 
             <Grid
@@ -131,7 +154,7 @@
                             <PathIcon
                                 Width="11"
                                 Height="11"
-                                Foreground="{DynamicResource V2Accent}"
+                                Foreground="{DynamicResource V2Folder}"
                                 Data="{StaticResource SemiIconArrowUp}" />
                             <TextBlock
                                 x:Name="txtSpeedUp"
@@ -140,10 +163,14 @@
                         </StackPanel>
                     </StackPanel>
                 </Grid>
+
+                <!--  Drawn at the real pixel size so the strokes stay crisp at any width.  -->
                 <Panel
+                    x:Name="chartHost"
                     Grid.Row="1"
-                    Height="58"
-                    Margin="0,8,0,0">
+                    Height="56"
+                    Margin="0,8,0,0"
+                    ClipToBounds="True">
                     <Border
                         Height="1"
                         VerticalAlignment="Bottom"
@@ -153,28 +180,31 @@
                         VerticalAlignment="Center"
                         Background="{DynamicResource V2Border}"
                         Opacity="0.5" />
-                    <Viewbox Stretch="Fill">
-                        <Canvas Width="300" Height="58">
-                            <Path x:Name="pathDownFill" Fill="{DynamicResource V2SafeSoft}" />
-                            <Path
-                                x:Name="pathDown"
-                                Stroke="{DynamicResource V2Safe}"
-                                StrokeJoin="Round"
-                                StrokeThickness="1.6" />
-                            <Path
-                                x:Name="pathUp"
-                                Opacity="0.85"
-                                Stroke="{DynamicResource V2Accent}"
-                                StrokeJoin="Round"
-                                StrokeThickness="1.2" />
-                        </Canvas>
-                    </Viewbox>
+                    <Canvas>
+                        <Path x:Name="pathDownFill" Fill="{DynamicResource V2SafeSoft}" />
+                        <Path
+                            x:Name="pathDown"
+                            Stroke="{DynamicResource V2Safe}"
+                            StrokeJoin="Round"
+                            StrokeThickness="1.6" />
+                        <Path
+                            x:Name="pathUp"
+                            Stroke="{DynamicResource V2Folder}"
+                            StrokeJoin="Round"
+                            StrokeThickness="1.3" />
+                    </Canvas>
                     <TextBlock
                         x:Name="txtChartMax"
-                        HorizontalAlignment="Left"
+                        HorizontalAlignment="Right"
                         VerticalAlignment="Top"
                         Classes="faint num"
                         FontSize="10" />
+                    <TextBlock
+                        x:Name="txtChartIdle"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Classes="faint small"
+                        Text="{x:Static loc:L.NoTraffic}" />
                 </Panel>
             </Grid>
         </Grid>

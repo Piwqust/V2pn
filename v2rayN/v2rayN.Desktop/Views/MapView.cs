@@ -5,13 +5,18 @@ using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
+/// <summary>A country with servers, shown as a dot on the map.</summary>
+public sealed record MapLocation(string Code, string Name, int Count, int BestDelay);
+
 /// <summary>
 /// World map that glides to the country of the active server. The pin stays fixed in the
-/// middle of the view and the map pans under it.
+/// middle of the view and the map pans under it; every other country with servers gets a dot.
 /// </summary>
 public sealed class MapView : UserControl
 {
     private readonly Canvas _canvas;
+    private readonly Canvas _dots = new() { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
+    private readonly List<(MapLocation Location, MapCountry Country, Ellipse Dot)> _dotItems = [];
     private readonly Panel _root;
     private readonly Panel _pin;
     private readonly Ellipse _pinCore;
@@ -57,7 +62,7 @@ public sealed class MapView : UserControl
             e.VerticalAlignment = VerticalAlignment.Center;
         }
 
-        _root = new Panel { Children = { _canvas, _pin } };
+        _root = new Panel { Children = { _canvas, _dots, _pin } };
         Content = _root;
 
         SizeChanged += (_, _) => Apply(animate: false);
@@ -65,7 +70,36 @@ public sealed class MapView : UserControl
         AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(Build, DispatcherPriority.Background);
     }
 
-    /// <summary>Moves the map to the given country; null shows the whole map.</summary>
+    /// <summary>Raised with the country code when a location dot is clicked.</summary>
+    public event Action<string>? LocationClicked;
+
+    /// <summary>Replaces the location dots.</summary>
+    public void SetLocations(IEnumerable<MapLocation> locations)
+    {
+        _dots.Children.Clear();
+        _dotItems.Clear();
+        foreach (var location in locations)
+        {
+            var country = WorldMap.Instance.Get(location.Code);
+            if (country == null)
+            {
+                continue;
+            }
+            var dot = new Ellipse { Classes = { "mapdot" } };
+            var ping = location.BestDelay > 0 ? $" · {L.Ms(location.BestDelay)}" : string.Empty;
+            ToolTip.SetTip(dot, $"{location.Name}\n{L.ServerCount(location.Count)}{ping}");
+            ToolTip.SetShowDelay(dot, 150);
+            var code = location.Code;
+            dot.PointerPressed += (_, e) =>
+            {
+                e.Handled = true;
+                LocationClicked?.Invoke(code);
+            };
+            _dots.Children.Add(dot);
+            _dotItems.Add((location, country, dot));
+        }
+        PlaceDots();
+    }
     public void Focus(string? countryCode, ProtectionState state)
     {
         var changed = !string.Equals(_focusCode, countryCode, StringComparison.OrdinalIgnoreCase);
@@ -137,6 +171,7 @@ public sealed class MapView : UserControl
         // A white core vanishes on the light map, so there the pin is a solid dot.
         _pinCore.Fill = IsDark() ? Brush("V2PinCore") : accent;
         _pin.IsVisible = Anchor() != null;
+        PlaceDots();
     }
 
     // "EU" servers have no single country: aim at central Europe without highlighting anything.
@@ -225,6 +260,22 @@ public sealed class MapView : UserControl
     {
         _now = v;
         _canvas.RenderTransform = new MatrixTransform(new Matrix(v.S, 0, 0, v.S, v.X, v.Y));
+        PlaceDots();
+    }
+
+    // Dots keep their screen size, so they follow the map transform by position only.
+    private const double DotSize = 9;
+
+    private void PlaceDots()
+    {
+        foreach (var (location, country, dot) in _dotItems)
+        {
+            var focused = string.Equals(location.Code, _focusCode, StringComparison.OrdinalIgnoreCase)
+                          || (string.Equals(_focusCode, "EU", StringComparison.OrdinalIgnoreCase) && location.Code == "DE");
+            dot.IsVisible = !focused;
+            Canvas.SetLeft(dot, (country.X * _now.S) + _now.X - (DotSize / 2));
+            Canvas.SetTop(dot, (country.Y * _now.S) + _now.Y - (DotSize / 2));
+        }
     }
 
     private bool IsDark() =>

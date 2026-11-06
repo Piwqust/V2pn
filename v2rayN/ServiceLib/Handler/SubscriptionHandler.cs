@@ -41,6 +41,9 @@ public static class SubscriptionHandler
                 if (await ProcessDownloadResult(config, item.Id, result, hashCode, updateFunc))
                 {
                     successCount++;
+                    // Upstream records the time only for scheduled updates; the UI shows it for every update.
+                    item.UpdateTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+                    await ConfigHandler.AddSubItem(config, item);
                 }
 
                 await updateFunc?.Invoke(false, "-------------------------------------------------------");

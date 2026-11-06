@@ -20,14 +20,28 @@ public enum SideActionKind
 
 public abstract class SideRow : ReactiveObject;
 
-public sealed class SideHeaderRow(string title) : SideRow
+/// <summary>Progress of the ping run started from the sidebar, shared by every list header.</summary>
+public sealed partial class PingState : ReactiveObject
+{
+    [Reactive]
+    public partial bool IsTesting { get; set; }
+
+    [Reactive]
+    public partial string Label { get; set; } = L.TestPing;
+}
+
+public sealed class SideHeaderRow(string title, PingState? ping = null) : SideRow
 {
     public string Title { get; } = title;
+    public PingState? Ping { get; } = ping;
+    public bool ShowPing => Ping != null;
+    public override string ToString() => Title;
 }
 
 public sealed class SideHintRow(string text) : SideRow
 {
     public string Text { get; } = text;
+    public override string ToString() => Text;
 }
 
 public sealed class SideServerRow : SideRow
@@ -44,9 +58,15 @@ public sealed class SideServerRow : SideRow
             ? model.SubRemarks
             : string.Join(" · ", new[] { country, protocol }.Where(t => t.IsNotEmpty()));
         Indent = indent;
+        Monogram = V2pnConverters.ProtocolMonogram.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string ?? string.Empty;
     }
 
     public ProfileItemModel Model { get; }
+    public string Monogram { get; }
+
+    // Inside a country group the flag repeats the group's own, so those rows show the protocol instead.
+    public bool ShowFlag => !Indent && HasFlag;
+    public bool ShowGlobe => !Indent && !HasFlag;
     public string? Code { get; }
     public Bitmap? Flag { get; }
     public bool HasFlag => Flag != null;
@@ -54,6 +74,7 @@ public sealed class SideServerRow : SideRow
     public string Subtitle { get; }
     public bool IsActive => Model.IsActive;
     public bool Indent { get; }
+    public override string ToString() => Title;
 }
 
 public sealed class SideCountryRow : SideRow
@@ -66,9 +87,14 @@ public sealed class SideCountryRow : SideRow
         Servers = servers;
         IsExpanded = expanded;
         HasActive = servers.Any(s => s.IsActive);
-        var best = servers.Where(s => s.Delay > 0).Select(s => s.Delay).DefaultIfEmpty(0).Min();
-        Info = best > 0 ? $"{servers.Count} · {best} ms" : $"{servers.Count}";
+        var best = servers.Where(s => s.Delay > 0).MinBy(s => s.Delay);
+        BestDelay = best?.Delay ?? 0;
+        BestId = best?.IndexId;
+        Info = L.ServerCount(servers.Count);
     }
+
+    public int BestDelay { get; }
+    public string? BestId { get; }
 
     public string Code { get; }
     public string Name { get; }
@@ -78,12 +104,14 @@ public sealed class SideCountryRow : SideRow
     public bool IsExpanded { get; }
     public bool HasActive { get; }
     public string Info { get; }
+    public override string ToString() => Name;
 }
 
 public sealed class SideSubRow(SubItemModel sub, string info) : SideRow
 {
     public SubItemModel Sub { get; } = sub;
     public string Info { get; } = info;
+    public override string ToString() => Sub.Remarks;
 }
 
 public sealed class SideActionRow(SideActionKind kind, string title, string subtitle, string? targetId = null) : SideRow
@@ -93,8 +121,10 @@ public sealed class SideActionRow(SideActionKind kind, string title, string subt
     public string Subtitle { get; } = subtitle;
     public string? TargetId { get; } = targetId;
     public bool IsFastest => Kind == SideActionKind.Fastest;
+    public override string ToString() => Title;
     public bool IsBack => Kind == SideActionKind.Back;
-    public bool IsPlus => Kind is SideActionKind.AddSubscription or SideActionKind.UpdateAll;
+    public bool IsAdd => Kind == SideActionKind.AddSubscription;
+    public bool IsRefresh => Kind == SideActionKind.UpdateAll;
 }
 
 /// <summary>
@@ -106,6 +136,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private readonly ProfilesViewModel _profiles;
     private readonly HashSet<string> _expanded = [];
     private bool _rebuildQueued;
+    private List<ProfileItemModel> _pingScope = [];
+
+    public PingState Ping { get; } = new();
 
     public BulkObservableCollection<SideRow> Rows { get; } = [];
 
@@ -126,9 +159,43 @@ public sealed partial class SidebarViewModel : ReactiveObject
         profiles.ProfileItems.CollectionChanged += (_, _) => QueueRebuild();
         profiles.FavoriteItems.CollectionChanged += (_, _) => QueueRebuild();
         profiles.SubNavItems.CollectionChanged += (_, _) => QueueRebuild();
+        // Fastest server and the best ping per country are computed on rebuild.
+        profiles.PingTestFinished.AsObservable()
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(_ => QueueRebuild());
+        profiles.WhenAnyValue(x => x.IsPingTesting, x => x.PingDone, x => x.PingTotal, (testing, done, total) => (testing, done, total))
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(t =>
+            {
+                Ping.IsTesting = t.testing;
+                Ping.Label = t.testing ? string.Format(L.PingProgress, t.done, t.total) : L.TestPing;
+            });
 
         this.WhenAnyValue(x => x.Tab, x => x.Search, x => x.OpenedSub)
             .Subscribe(_ => ApplyNavigation());
+    }
+
+    /// <summary>Pings what the list shows now, or stops a run in progress.</summary>
+    public async Task TogglePingAsync()
+    {
+        if (Ping.IsTesting)
+        {
+            _profiles.ServerSpeedtestStop();
+            return;
+        }
+        await _profiles.PingProfilesAsync(_pingScope);
+    }
+
+    /// <summary>Opens the Countries tab with only this country expanded; returns its row.</summary>
+    public SideCountryRow? RevealCountry(string code)
+    {
+        Search = string.Empty;
+        OpenedSub = null;
+        _expanded.Clear();
+        _expanded.Add(code);
+        Tab = SidebarTab.Countries;
+        Rebuild();
+        return Rows.OfType<SideCountryRow>().FirstOrDefault(r => string.Equals(r.Code, code, StringComparison.OrdinalIgnoreCase));
     }
 
     public void ToggleCountry(string code)
@@ -186,8 +253,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
                     || m.Address?.Contains(q, StringComparison.OrdinalIgnoreCase) == true
                     || (WorldMap.Instance.Get(CountryResolver.Resolve(m.Remarks))?.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
                 .ToList();
-            rows.Add(new SideHeaderRow($"{L.SearchResults} ({found.Count})"));
-            rows.AddRange(found.Take(400).Select(m => new SideServerRow(m, true, false)));
+            _pingScope = found;
+            rows.Add(new SideHeaderRow($"{L.SearchResults} ({found.Count})", found.Count > 0 ? Ping : null));
+            rows.AddRange(ByPing(found).Take(400).Select(m => new SideServerRow(m, true, false)));
             if (found.Count == 0)
             {
                 rows.Add(new SideHintRow(L.NothingFound));
@@ -218,11 +286,12 @@ public sealed partial class SidebarViewModel : ReactiveObject
     {
         var fastest = all.Concat(_profiles.FavoriteItems).Where(m => m.Delay > 0).MinBy(m => m.Delay);
         rows.Add(fastest != null
-            ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.StripFlag(fastest.Remarks)} · {fastest.Delay} ms", fastest.IndexId)
+            ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.StripFlag(fastest.Remarks)} · {L.Ms(fastest.Delay)}", fastest.IndexId)
             : new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone));
 
         var favorites = _profiles.FavoriteItems.ToList();
-        rows.Add(new SideHeaderRow($"{L.TabFavorites} ({favorites.Count})"));
+        _pingScope = favorites;
+        rows.Add(new SideHeaderRow($"{L.TabFavorites} ({favorites.Count})", favorites.Count > 0 ? Ping : null));
         rows.AddRange(favorites.Select(m => new SideServerRow(m, true, false)));
         if (favorites.Count == 0)
         {
@@ -234,12 +303,13 @@ public sealed partial class SidebarViewModel : ReactiveObject
     {
         var groups = all
             .GroupBy(m => CountryResolver.Resolve(m.Remarks) ?? string.Empty)
-            .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: g.ToList()))
+            .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: ByPing(g).ToList()))
             .OrderBy(g => g.Code.IsNullOrEmpty() ? 1 : 0)
             .ThenBy(g => g.Name, StringComparer.CurrentCulture)
             .ToList();
 
-        rows.Add(new SideHeaderRow($"{L.TabCountries} ({groups.Count(g => g.Code.IsNotEmpty())})"));
+        _pingScope = all;
+        rows.Add(new SideHeaderRow($"{L.TabCountries} ({groups.Count(g => g.Code.IsNotEmpty())})", all.Count > 0 ? Ping : null));
         foreach (var (code, name, items) in groups)
         {
             var expanded = _expanded.Contains(code);
@@ -255,6 +325,11 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
     }
 
+    // Picking a server is mostly picking the fastest one: tested servers first, quickest on top,
+    // the rest keep their own order.
+    private static IEnumerable<ProfileItemModel> ByPing(IEnumerable<ProfileItemModel> items) =>
+        items.OrderBy(m => m.Delay > 0 ? m.Delay : int.MaxValue);
+
     private static string CountryName(string code) => code switch
     {
         "" => L.NoCountry,
@@ -266,8 +341,13 @@ public sealed partial class SidebarViewModel : ReactiveObject
     {
         if (OpenedSub != null)
         {
-            rows.Add(new SideActionRow(SideActionKind.Back, OpenedSub.Remarks, $"{all.Count} {L.ServersCount} · {Fmt.SubUpdated(OpenedSub.Item)}"));
-            rows.AddRange(all.Select(m => new SideServerRow(m, false, false)));
+            _pingScope = all;
+            rows.Add(new SideActionRow(SideActionKind.Back, OpenedSub.Remarks, $"{L.ServerCount(all.Count)} · {Fmt.SubUpdated(OpenedSub.Item)}", OpenedSub.Id));
+            if (all.Count > 0)
+            {
+                rows.Add(new SideHeaderRow(L.TabServers, Ping));
+            }
+            rows.AddRange(ByPing(all).Select(m => new SideServerRow(m, false, false)));
             if (all.Count == 0)
             {
                 rows.Add(new SideHintRow(L.SubEmpty));
@@ -275,10 +355,11 @@ public sealed partial class SidebarViewModel : ReactiveObject
             return;
         }
 
+        _pingScope = [];
         rows.Add(new SideHeaderRow($"{L.TabSubscriptions} ({_profiles.SubNavItems.Count})"));
         foreach (var sub in _profiles.SubNavItems)
         {
-            rows.Add(new SideSubRow(sub, $"{sub.Count} {L.ServersCount} · {Fmt.SubUpdated(sub.Item)}"));
+            rows.Add(new SideSubRow(sub, $"{L.ServerCount(sub.Count)} · {Fmt.SubUpdated(sub.Item)}"));
         }
         rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, string.Empty));
         if (_profiles.SubNavItems.Count > 0)

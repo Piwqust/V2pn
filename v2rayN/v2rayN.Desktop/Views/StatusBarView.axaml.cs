@@ -17,8 +17,6 @@ public enum ProtectionState
 public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 {
     private const int ChartPoints = 60;
-    private const double ChartWidth = 300;
-    private const double ChartHeight = 58;
 
     private static Config _config;
     private readonly Queue<double> _down = new(Enumerable.Repeat(0d, ChartPoints));
@@ -33,13 +31,17 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         InitializeComponent();
 
         _config = AppManager.Instance.Config;
-        txtRunningInfoDisplay.Tapped += (_, _) => ViewModel?.TestServerAvailability();
+        btnCheck.Click += (_, _) => _ = CheckConnectionAsync();
+        chartHost.SizeChanged += (_, _) => DrawChart();
 
         _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => UpdateClock());
 
         this.WhenActivated(disposables =>
         {
-            this.OneWayBind(ViewModel, vm => vm.RunningInfoDisplay, v => v.txtRunningInfoDisplay.Text).DisposeWith(disposables);
+            this.WhenAnyValue(v => v.ViewModel.AvailabilityDelay)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(ShowCheck)
+                .DisposeWith(disposables);
 
             ViewModel.SetClipboardDataInteraction.RegisterHandler(async interaction =>
             {
@@ -70,6 +72,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
         SetState(ProtectionState.Unprotected);
         SetServer(null, 0);
+        ShowCheck(0);
         DrawChart();
 
         // This view is created before the first DispatcherRefreshIconInteraction can reach it.
@@ -118,7 +121,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         {
             0 => "—",
             < 0 => L.Timeout,
-            _ => $"{delay} ms",
+            _ => L.Ms(delay),
         };
         var tier = delay switch
         {
@@ -155,30 +158,68 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         DrawChart();
     }
 
+    private async Task CheckConnectionAsync()
+    {
+        if (ViewModel == null || ViewModel.AvailabilityDelay == -2)
+        {
+            return;
+        }
+        await ViewModel.TestServerAvailability();
+    }
+
+    // AvailabilityDelay: 0 not run, -2 running, -1 failed, otherwise the delay in ms.
+    private void ShowCheck(int delay)
+    {
+        var running = delay == -2;
+        spinCheck.IsVisible = running;
+        iconCheckIdle.IsVisible = !running;
+        txtCheckAction.Text = running ? L.Checking : L.CheckConnection;
+
+        chipCheck.IsVisible = delay is -1 or > 0;
+        chipCheck.Classes.Set("ok", delay > 0);
+        chipCheck.Classes.Set("fail", delay == -1);
+        iconCheck.Data = this.FindResource(delay > 0 ? "SemiIconTickCircle" : "SemiIconAlertCircle") as Geometry;
+        txtCheck.Text = delay > 0 ? string.Format(L.CheckWorks, delay) : L.CheckFailed;
+        var ip = ViewModel?.AvailabilityIp;
+        ToolTip.SetTip(chipCheck, ip.IsNotEmpty() ? $"IP {ip}" : null);
+    }
+
     private void DrawChart()
     {
-        var max = Math.Max(Math.Max(_down.Max(), _up.Max()), 1024);
-        txtChartMax.Text = Fmt.Speed(max);
-        pathDown.Data = BuildLine(_down, max, closed: false);
-        pathDownFill.Data = BuildLine(_down, max, closed: true);
-        pathUp.Data = BuildLine(_up, max, closed: false);
+        var w = chartHost.Bounds.Width;
+        var h = chartHost.Bounds.Height;
+        var peak = Math.Max(_down.Max(), _up.Max());
+        var idle = peak <= 0;
+        txtChartIdle.IsVisible = idle;
+        txtChartMax.IsVisible = !idle;
         if (txtSpeedDown.Text.IsNullOrEmpty())
         {
             txtSpeedDown.Text = Fmt.Speed(0);
             txtSpeedUp.Text = Fmt.Speed(0);
             txtStatTotal.Text = Fmt.Bytes(0);
         }
+        if (w <= 0 || h <= 0 || idle)
+        {
+            pathDown.Data = pathDownFill.Data = pathUp.Data = null;
+            return;
+        }
+
+        var max = Math.Max(peak, 1024) * 1.15;
+        txtChartMax.Text = Fmt.Speed(max);
+        pathDown.Data = BuildLine(_down, max, w, h, closed: false);
+        pathDownFill.Data = BuildLine(_down, max, w, h, closed: true);
+        pathUp.Data = BuildLine(_up, max, w, h, closed: false);
     }
 
-    private static StreamGeometry BuildLine(IEnumerable<double> values, double max, bool closed)
+    private static StreamGeometry BuildLine(IEnumerable<double> values, double max, double w, double h, bool closed)
     {
         var points = values.ToArray();
         var geometry = new StreamGeometry();
         using var ctx = geometry.Open();
-        var step = ChartWidth / (points.Length - 1);
-        Point P(int i) => new(i * step, ChartHeight - (points[i] / max * (ChartHeight - 4)) - 1);
+        var step = w / (points.Length - 1);
+        Point P(int i) => new(i * step, h - 1 - (points[i] / max * (h - 2)));
 
-        ctx.BeginFigure(closed ? new Point(0, ChartHeight) : P(0), closed);
+        ctx.BeginFigure(closed ? new Point(0, h) : P(0), closed);
         if (closed)
         {
             ctx.LineTo(P(0));
@@ -189,7 +230,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         }
         if (closed)
         {
-            ctx.LineTo(new Point(ChartWidth, ChartHeight));
+            ctx.LineTo(new Point(w, h));
         }
         ctx.EndFigure(closed);
         return geometry;

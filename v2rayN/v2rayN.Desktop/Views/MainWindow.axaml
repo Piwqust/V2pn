@@ -399,7 +399,10 @@
                                                         <TextBlock Text="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.PingText}}" />
                                                     </Border>
                                                     <Border Classes="pill" IsVisible="{Binding Model.DelayVal, Converter={x:Static conv:V2pnConverters.IsTesting}}">
-                                                        <Path HorizontalAlignment="Center" Classes="spinner" />
+                                                        <Path
+                                                            HorizontalAlignment="Center"
+                                                            Classes="spinner"
+                                                            IsVisible="{Binding Model.DelayVal, Converter={x:Static conv:V2pnConverters.IsTesting}}" />
                                                     </Border>
                                                 </Panel>
                                                 <StackPanel
@@ -853,7 +856,7 @@
                                                         Classes="routebusy"
                                                         IsVisible="False">
                                                         <StackPanel Orientation="Horizontal" Spacing="8">
-                                                            <Path Classes="spinner" />
+                                                            <Path Classes="spinner" IsVisible="{Binding #borderRouteBusy.IsVisible}" />
                                                             <TextBlock
                                                                 x:Name="txtRouteBusy"
                                                                 VerticalAlignment="Center"

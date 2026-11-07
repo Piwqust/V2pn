@@ -171,6 +171,8 @@ public sealed class MapView : UserControl
         // A white core vanishes on the light map, so there the pin is a solid dot.
         _pinCore.Fill = IsDark() ? Brush("V2PinCore") : accent;
         _pin.IsVisible = Anchor() != null;
+        // The halo pulses forever; hidden with the pin, its animation stops too.
+        _pinHalo.IsVisible = _pin.IsVisible;
         PlaceDots();
     }
 

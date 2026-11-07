@@ -39,8 +39,6 @@ if (-not (git remote | Where-Object { $_ -eq 'upstream' })) {
 }
 Write-Host 'Fetching v2rayN...'
 Invoke-Git fetch upstream --quiet
-# Keeps V2pn's version of the views marked merge=ours; harmless when already set.
-Invoke-Git config merge.ours.driver true
 
 $branch = git rev-parse --abbrev-ref HEAD
 $target = git rev-parse $Ref
@@ -74,7 +72,9 @@ $conflicts = @()
 $buildLog = ''
 $testSummary = ''
 
-git merge --no-ff --no-edit -m "Merge v2rayN $toVersion ($short) into V2pn" $target 2>&1 | Out-Host
+# merge.ours.driver is set for this merge only: the views marked merge=ours keep V2pn's version
+# against v2rayN, while merges of V2pn's own branches must still bring their view changes in.
+git -c merge.ours.driver=true merge --no-ff --no-edit -m "Merge v2rayN $toVersion ($short) into V2pn" $target 2>&1 | Out-Host
 if ($LASTEXITCODE -ne 0) {
     $conflicts = @(git diff --name-only --diff-filter=U)
     $status = 'conflicts'

@@ -286,8 +286,11 @@
         <Setter Property="Margin" Value="0,-2,-6,0" />
     </Style>
 
-    <!--  Map pin pulse  -->
-    <Style Selector="Ellipse.halo">
+    <!--
+        Map pin pulse. Endless animations keep the renderer ticking every frame even for a hidden
+        control, so they run only while the element itself is visible.
+    -->
+    <Style Selector="Ellipse.halo[IsVisible=True]">
         <Style.Animations>
             <Animation IterationCount="Infinite" Duration="0:0:2.4">
                 <KeyFrame Cue="0%">
@@ -462,7 +465,7 @@
         <Setter Property="Height" Value="12" />
     </Style>
 
-    <!--  Busy indicator: an arc that turns.  -->
+    <!--  Busy indicator: an arc that turns, only while it is shown (see the halo above).  -->
     <Style Selector="Path.spinner">
         <Setter Property="Width" Value="12" />
         <Setter Property="Height" Value="12" />
@@ -472,6 +475,8 @@
         <Setter Property="StrokeLineCap" Value="Round" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="RenderTransform" Value="rotate(0deg)" />
+    </Style>
+    <Style Selector="Path.spinner[IsVisible=True]">
         <Style.Animations>
             <Animation IterationCount="Infinite" Duration="0:0:0.8">
                 <KeyFrame Cue="0%">

@@ -1,7 +1,8 @@
 # V2pn owns these views: it rewrote them, so a merge from v2rayN keeps the V2pn version
 # instead of mixing two layouts into one file. What v2rayN changed in them is listed by
-# tools/sync-upstream.ps1 so it can be ported by hand. Needs `git config merge.ours.driver true`
-# (the sync script sets it).
+# tools/sync-upstream.ps1 so it can be ported by hand. The driver is defined only for
+# that merge (git -c merge.ours.driver=true): merging V2pn's own branches must keep their view
+# changes, so never set it in the repository config.
 #
 # Code-behind (.axaml.cs) merges normally unless V2pn rewrote it too: a new control that
 # v2rayN binds there then fails the build, which says exactly what to port.

@@ -7,6 +7,7 @@
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:views="using:v2rayN.Desktop.Views"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuSubSetting}"
     Width="740"
@@ -34,6 +35,55 @@
             <StackPanel Margin="28,20,28,28" Spacing="6">
                 <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SubEditTitle}" />
                 <TextBlock Classes="spagehint" Text="{x:Static loc:L.SubEditHint}" />
+                <!--  What the provider's panel reported with the last update (Common/SubUsage.cs).  -->
+                <StackPanel x:Name="grpProvider" Classes="sgroup" IsVisible="False">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProvider}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel x:Name="panelProvider">
+                            <Border x:Name="rowTraffic" Classes="srow stack">
+                                <StackPanel Spacing="8">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.Traffic}" />
+                                        <TextBlock x:Name="txtTraffic" Grid.Column="1" Classes="usagevalue" />
+                                    </Grid>
+                                    <views:UsageBar x:Name="barTraffic" />
+                                    <TextBlock x:Name="txtTrafficHint" Classes="srowhint" Margin="0" />
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="rowExpiry" Classes="srow">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubValidity}" />
+                                    </StackPanel>
+                                    <TextBlock x:Name="txtExpiry" Grid.Column="1" Classes="usagevalue" VerticalAlignment="Center" />
+                                </Grid>
+                            </Border>
+                            <Border x:Name="rowAnnounce" Classes="srow stack">
+                                <StackPanel Spacing="6">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubAnnounce}" />
+                                    <SelectableTextBlock x:Name="txtAnnounce" Classes="announce" />
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="rowLinks" Classes="srow">
+                                <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                                    <Button x:Name="btnSupport" Theme="{StaticResource V2Button}">
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconHelpCircleStroked}" />
+                                            <TextBlock Text="{x:Static loc:L.SubSupport}" />
+                                        </StackPanel>
+                                    </Button>
+                                    <Button x:Name="btnWebPage" Theme="{StaticResource V2Button}">
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconExternalOpenStroked}" />
+                                            <TextBlock Text="{x:Static loc:L.SubWebPage}" />
+                                        </StackPanel>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock x:Name="txtInfoAsOf" Classes="sgroupnote" />
+                </StackPanel>
                 <StackPanel Classes="sgroup">
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpSource}" />
                     <Border Classes="sgroupcard">
@@ -42,9 +92,10 @@
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubName}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SubNameHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtRemarks" Width="280" PlaceholderText="{x:Static loc:L.SubNamePlaceholder}" />
+                                        <TextBox x:Name="txtRemarks" Width="280" PlaceholderText="{x:Static loc:L.SubNameAuto}" />
                                     </Panel>
                                 </Grid>
                             </Border>
@@ -79,7 +130,7 @@
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubInterval}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSubInterval}" />
+                                        <TextBlock x:Name="txtIntervalHint" Classes="srowhint" Text="{x:Static loc:L.HintSubInterval}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
                                         <TextBox x:Name="txtAutoUpdateInterval" Width="140" PlaceholderText="0" />

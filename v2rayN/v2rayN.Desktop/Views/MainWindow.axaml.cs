@@ -54,6 +54,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();
+        SubEditWindow.SubscriptionAdded += subId => _ = UpdateAddedSubscriptionAsync(subId);
         menuRegionalPresetsRussia.Icon = new Image { Source = V2pnConverters.Flag("RU"), Width = 16, Height = 12 };
         menuRegionalPresetsIran.Icon = new Image { Source = V2pnConverters.Flag("IR"), Width = 16, Height = 12 };
         btnMinimize.Click += (_, _) => WindowState = WindowState.Minimized;
@@ -1116,6 +1117,25 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         if (sender is Control { DataContext: SideActionRow row } && row.TargetId.IsNotEmpty())
         {
             UpdateSubscription(row.TargetId);
+        }
+    }
+
+    // A new subscription is fetched at once, so its servers, name and traffic fill themselves in.
+    private async Task UpdateAddedSubscriptionAsync(string subId)
+    {
+        if (ViewModel == null)
+        {
+            return;
+        }
+        var busy = _sidebar?.SubBusy(subId);
+        busy?.IsBusy = true;
+        try
+        {
+            await ViewModel.UpdateSubscriptionProcess(subId, false);
+        }
+        finally
+        {
+            busy?.IsBusy = false;
         }
     }
 

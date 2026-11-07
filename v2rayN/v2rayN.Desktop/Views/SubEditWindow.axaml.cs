@@ -5,12 +5,22 @@ namespace v2rayN.Desktop.Views;
 
 public partial class SubEditWindow : WindowBase<SubEditViewModel>
 {
+    /// <summary>A new subscription with a link was saved; the main window updates it right away.</summary>
+    public static event Action<string>? SubscriptionAdded;
+
+    private bool _isNew;
+
     public SubEditWindow()
     {
         InitializeComponent();
 
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
+        // Click runs before the bound save command, so an empty name is filled in before v2rayN checks it.
+        btnSave.Click += (s, e) => FillEmptyName();
+        btnSupport.Click += (s, e) => ProcUtils.ProcessStart(btnSupport.Tag as string);
+        btnWebPage.Click += (s, e) => ProcUtils.ProcessStart(btnWebPage.Tag as string);
+        Closed += (s, e) => AnnounceIfAdded();
         SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
 
         cmbConvertTarget.ItemsSource = Global.SubConvertTargets;
@@ -44,7 +54,17 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
 
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {
-        txtRemarks.Focus();
+        _isNew = ViewModel?.SelectedSource.Id.IsNullOrEmpty() ?? false;
+        ShowProviderInfo();
+        // The name is optional now; a new subscription starts at the link.
+        if (_isNew)
+        {
+            txtUrl.Focus();
+        }
+        else
+        {
+            txtRemarks.Focus();
+        }
     }
 
     private bool HasExtras()

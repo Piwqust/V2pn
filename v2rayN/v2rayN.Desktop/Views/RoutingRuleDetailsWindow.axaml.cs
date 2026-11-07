@@ -1,9 +1,16 @@
 using v2rayN.Desktop.Base;
+using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
 public partial class RoutingRuleDetailsWindow : WindowBase<RoutingRuleDetailsViewModel>
 {
+    // The plain "what to do" choice writes one of these into the outbound tag; any other tag
+    // (a server name, a custom outbound) leaves it unselected and lives in the advanced row.
+    private static readonly string[] ActionTags = [Global.ProxyTag, Global.DirectTag, Global.BlockTag];
+
+    private bool _syncingAction;
+
     public RoutingRuleDetailsWindow()
     {
         InitializeComponent();
@@ -12,6 +19,9 @@ public partial class RoutingRuleDetailsWindow : WindowBase<RoutingRuleDetailsVie
         btnCancel.Click += (s, e) => Close();
         clbProtocol.SelectionChanged += ClbProtocol_SelectionChanged;
         clbInboundTag.SelectionChanged += ClbInboundTag_SelectionChanged;
+        lstAction.SelectionChanged += LstAction_SelectionChanged;
+        cmbOutboundTag.GetObservable(ComboBox.TextProperty).Subscribe(SyncAction);
+        SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
 
         cmbOutboundTag.ItemsSource = Global.OutboundTags;
         clbProtocol.ItemsSource = Global.RuleProtocols;
@@ -61,7 +71,36 @@ public partial class RoutingRuleDetailsWindow : WindowBase<RoutingRuleDetailsVie
 
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {
-        txtRemarks.Focus();
+        // The name sits behind "Show more fields"; with it hidden, start in the sites list.
+        if (!txtRemarks.IsEffectivelyVisible || !txtRemarks.Focus())
+        {
+            txtDomain.Focus();
+        }
+    }
+
+    private static bool IsPlainAction(string? tag) => ActionTags.Contains(tag ?? string.Empty, StringComparer.Ordinal);
+
+    private void SyncAction(string? tag)
+    {
+        _syncingAction = true;
+        lstAction.SelectedIndex = Array.IndexOf(ActionTags, tag ?? string.Empty);
+        _syncingAction = false;
+    }
+
+    private void LstAction_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        if (_syncingAction || lstAction.SelectedIndex < 0)
+        {
+            return;
+        }
+        cmbOutboundTag.Text = ActionTags[lstAction.SelectedIndex];
+    }
+
+    private bool HasExtras()
+    {
+        var customOutbound = cmbOutboundTag.Text.IsNotEmpty() && !IsPlainAction(cmbOutboundTag.Text);
+        return SettingsKit.AnySet(customOutbound, txtPort.Text, cmbNetwork.SelectedValue as string, cmbRuleType.SelectedValue as string,
+            clbProtocol.SelectedItems?.Count ?? 0, clbInboundTag.SelectedItems?.Count ?? 0);
     }
 
     private void ClbProtocol_SelectionChanged(object? sender, SelectionChangedEventArgs e)

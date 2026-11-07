@@ -2,14 +2,15 @@
     x:Class="v2rayN.Desktop.Views.RoutingSettingWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuRoutingSetting}"
-    Width="940"
-    Height="600"
+    Title="{x:Static loc:L.RtListTitle}"
+    Width="860"
+    Height="620"
     x:DataType="vms:RoutingSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.RoutingSetting}"
     ShowInTaskbar="False"
@@ -17,104 +18,129 @@
     mc:Ignorable="d">
 
     <DockPanel>
-        <Menu Margin="{StaticResource Margin4}" DockPanel.Dock="Top">
-            <MenuItem x:Name="menuRoutingAdvancedAdd2" Header="{x:Static resx:ResUI.menuRoutingAdvancedAdd}" />
-            <MenuItem x:Name="menuRoutingAdvancedImportRules2" Header="{x:Static resx:ResUI.menuRoutingAdvancedImportRules}" />
-        </Menu>
+        <StackPanel Margin="24,20,24,0" DockPanel.Dock="Top" Spacing="6">
+            <TextBlock Classes="spagetitle" Text="{x:Static loc:L.RtListTitle}" />
+            <TextBlock Classes="spagehint" Text="{x:Static loc:L.RtListHint}" />
+        </StackPanel>
 
-        <StackPanel Margin="16,6,16,0" DockPanel.Dock="Top">
+        <!--  Expert settings for every set, behind "Show more fields" under the list.  -->
+        <StackPanel Margin="24,0,24,16" DockPanel.Dock="Bottom" Spacing="6">
             <StackPanel Classes="sgroup">
+                <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.RtGrpDomains}" />
                 <Border Classes="sgroupcard">
                     <StackPanel>
-                        <Border Classes="srow">
+                        <Border x:Name="rowDomainStrategy" Classes="srow adv">
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel Classes="srowtext">
-                                    <TextBlock Classes="srowtitle">
-                                        <HyperlinkButton Classes="WithIcon" Click="linkdomainStrategy_Click">
-                                            <TextBlock Text="{x:Static resx:ResUI.TbdomainStrategy}" />
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtDomainStrategy}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Classes="srowhint" VerticalAlignment="Center" Text="{x:Static loc:L.RtDomainStrategyHint}" />
+                                        <HyperlinkButton
+                                            Margin="0,3,0,0"
+                                            Padding="0"
+                                            VerticalAlignment="Center"
+                                            Classes="WithIcon"
+                                            Click="linkdomainStrategy_Click">
+                                            <TextBlock FontSize="12" Text="{x:Static loc:L.RtLearnMore}" />
                                         </HyperlinkButton>
-                                    </TextBlock>
+                                    </StackPanel>
                                 </StackPanel>
                                 <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                    <ComboBox x:Name="cmbdomainStrategy" />
+                                    <ComboBox x:Name="cmbdomainStrategy" Width="200" />
                                 </Panel>
                             </Grid>
                         </Border>
-                        <Border Classes="srow">
+                        <Border Classes="srow adv">
                             <Grid ColumnDefinitions="*,Auto">
                                 <StackPanel Classes="srowtext">
-                                    <TextBlock Classes="srowtitle">
-                                        <HyperlinkButton Classes="WithIcon" Click="linkdomainStrategy4Singbox_Click">
-                                            <TextBlock Text="{x:Static resx:ResUI.TbdomainStrategy4Singbox}" />
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtDomainStrategySb}" />
+                                    <StackPanel Orientation="Horizontal" Spacing="6">
+                                        <TextBlock Classes="srowhint" VerticalAlignment="Center" Text="{x:Static loc:L.RtDomainStrategySbHint}" />
+                                        <HyperlinkButton
+                                            Margin="0,3,0,0"
+                                            Padding="0"
+                                            VerticalAlignment="Center"
+                                            Classes="WithIcon"
+                                            Click="linkdomainStrategy4Singbox_Click">
+                                            <TextBlock FontSize="12" Text="{x:Static loc:L.RtLearnMore}" />
                                         </HyperlinkButton>
-                                    </TextBlock>
+                                    </StackPanel>
                                 </StackPanel>
                                 <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                    <ComboBox x:Name="cmbdomainStrategy4Singbox" />
+                                    <ComboBox x:Name="cmbdomainStrategy4Singbox" Width="200" />
                                 </Panel>
                             </Grid>
                         </Border>
                     </StackPanel>
                 </Border>
             </StackPanel>
+            <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
         </StackPanel>
 
-        <TabControl x:Name="tabAdvanced">
-            <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.TbRoutingTabRuleList}">
-                <DataGrid
-                    x:Name="lstRoutings"
-                    AutoGenerateColumns="False"
-                    Background="Transparent"
-                    BorderThickness="1"
-                    CanUserResizeColumns="True"
-                    GridLinesVisibility="All"
-                    HeadersVisibility="Column"
-                    IsReadOnly="True"
-                    ItemsSource="{Binding RoutingItems}">
-                    <DataGrid.KeyBindings>
-                        <KeyBinding Command="{Binding RoutingAdvancedSetDefaultCmd}" Gesture="Enter" />
-                    </DataGrid.KeyBindings>
-                    <DataGrid.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem x:Name="menuRoutingAdvancedAdd" Header="{x:Static resx:ResUI.menuRoutingAdvancedAdd}" />
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedRemove"
-                                Header="{x:Static resx:ResUI.menuRoutingAdvancedRemove}"
-                                InputGesture="Back" />
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedSelectAll"
-                                Header="{x:Static resx:ResUI.menuSelectAll}"
-                                InputGesture="Ctrl+A" />
-                            <MenuItem
-                                x:Name="menuRoutingAdvancedSetDefault"
-                                Header="{x:Static resx:ResUI.menuRoutingAdvancedSetDefault}"
-                                InputGesture="Enter" />
-                            <Separator />
-                            <MenuItem x:Name="menuRoutingAdvancedImportRules" Header="{x:Static resx:ResUI.menuRoutingAdvancedImportRules}" />
-                        </ContextMenu>
-                    </DataGrid.ContextMenu>
+        <Panel Margin="24,12,24,8">
+            <TabControl x:Name="tabAdvanced">
+                <TabItem HorizontalAlignment="Left" Header="{x:Static loc:L.RtSetsTab}">
+                    <DataGrid
+                        x:Name="lstRoutings"
+                        AutoGenerateColumns="False"
+                        Background="Transparent"
+                        BorderThickness="1"
+                        CanUserResizeColumns="True"
+                        GridLinesVisibility="All"
+                        HeadersVisibility="Column"
+                        IsReadOnly="True"
+                        ItemsSource="{Binding RoutingItems}">
+                        <DataGrid.KeyBindings>
+                            <KeyBinding Command="{Binding RoutingAdvancedSetDefaultCmd}" Gesture="Enter" />
+                        </DataGrid.KeyBindings>
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem x:Name="menuRoutingAdvancedAdd" Header="{x:Static loc:L.RtNewSet}" />
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedRemove"
+                                    Header="{x:Static loc:L.RtDelete}"
+                                    InputGesture="Back" />
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedSelectAll"
+                                    Header="{x:Static loc:L.RtSelectAll}"
+                                    InputGesture="Ctrl+A" />
+                                <MenuItem
+                                    x:Name="menuRoutingAdvancedSetDefault"
+                                    Header="{x:Static loc:L.RtUseSet}"
+                                    InputGesture="Enter" />
+                                <Separator />
+                                <MenuItem x:Name="menuRoutingAdvancedImportRules" Header="{x:Static loc:L.RtAddBuiltin}" />
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
 
-                    <DataGrid.Columns>
-                        <DataGridCheckBoxColumn Width="40" Binding="{Binding IsActive}" />
-                        <DataGridTextColumn
-                            Width="*"
-                            Binding="{Binding Remarks}"
-                            Header="{x:Static resx:ResUI.LvRemarks}" />
-                        <DataGridTextColumn
-                            Width="60"
-                            Binding="{Binding RuleNum}"
-                            Header="{x:Static resx:ResUI.LvCount}" />
-                        <DataGridTextColumn
-                            Width="60"
-                            Binding="{Binding Sort}"
-                            Header="{x:Static resx:ResUI.LvSort}" />
-                        <DataGridTextColumn
-                            Width="*"
-                            Binding="{Binding Url}"
-                            Header="{x:Static resx:ResUI.LvUrl}" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-        </TabControl>
+                        <!--  Columns 3 and 4 (order, link) are expert details: shown together with the extra fields.  -->
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn Width="40" Binding="{Binding IsActive}" />
+                            <DataGridTextColumn
+                                Width="*"
+                                Binding="{Binding Remarks}"
+                                Header="{x:Static loc:L.RtColName}" />
+                            <DataGridTextColumn
+                                Width="80"
+                                Binding="{Binding RuleNum}"
+                                Header="{x:Static loc:L.RtColRules}" />
+                            <DataGridTextColumn
+                                Width="80"
+                                Binding="{Binding Sort}"
+                                Header="{x:Static loc:L.RtColOrder}" />
+                            <DataGridTextColumn
+                                Width="*"
+                                Binding="{Binding Url}"
+                                Header="{x:Static loc:L.RtColLink}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
+            <!--  The actions sit on the tab strip's line, to the right of the "Rule sets" tab.  -->
+            <Menu HorizontalAlignment="Right" VerticalAlignment="Top">
+                <MenuItem x:Name="menuRoutingAdvancedAdd2" Header="{x:Static loc:L.RtNewSet}" />
+                <MenuItem x:Name="menuRoutingAdvancedImportRules2" Header="{x:Static loc:L.RtAddBuiltin}" />
+            </Menu>
+        </Panel>
     </DockPanel>
 </Window>

@@ -151,13 +151,16 @@
             </Grid>
 
             <!--  ───────── Body ─────────  -->
+            <!--  Sidebar side and width follow the Appearance page (MainWindow.Appearance.cs).  -->
             <Grid
+                x:Name="gridBody"
                 Grid.Row="1"
                 Margin="10,0,10,10"
                 ColumnDefinitions="312,*">
 
                 <!--  Sidebar: a raised panel on the window backdrop  -->
                 <Border
+                    x:Name="borderSidebar"
                     Grid.Column="0"
                     Margin="0,0,10,0"
                     Background="{DynamicResource V2SidebarFill}"
@@ -692,13 +695,15 @@
                 <!--  Stage: map, header, feature rail, stats. The outer border casts the shadow,
                       the inner one clips the map to the rounded corners.  -->
                 <Border
+                    x:Name="borderStage"
                     Grid.Column="1"
                     BorderBrush="{DynamicResource V2PanelBorder}"
                     BorderThickness="1"
                     BoxShadow="{DynamicResource V2PanelShadow}"
                     CornerRadius="{DynamicResource V2RadiusPanel}">
-                    <Border ClipToBounds="True" CornerRadius="17">
-                    <Panel>
+                    <Border ClipToBounds="True" CornerRadius="{DynamicResource V2RadiusPanelInner}">
+                    <!--  The ocean colour behind the map is also the plain stage when the map is turned off.  -->
+                    <Panel Background="{DynamicResource V2MapOcean}">
                         <views:MapView x:Name="mapView" />
 
                         <Border
@@ -749,6 +754,7 @@
                                 <TextBlock
                                     x:Name="txtHeaderTitle"
                                     VerticalAlignment="Center"
+                                    FontFamily="{DynamicResource V2DisplayFont}"
                                     FontSize="28"
                                     FontWeight="SemiBold"
                                     Foreground="{DynamicResource V2Ink}"

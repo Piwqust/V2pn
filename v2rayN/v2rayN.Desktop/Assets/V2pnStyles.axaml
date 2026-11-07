@@ -506,6 +506,12 @@
         <Setter Property="Stroke" Value="{Binding $parent[Button].Foreground}" />
     </Style>
 
+    <!--  Compact rows (Appearance → Rows): more servers fit on screen.  -->
+    <Style Selector=":is(Window).dense Button.siderow">
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="Margin" Value="0" />
+    </Style>
+
     <Style Selector="Button.siderow StackPanel.rowactions">
         <Setter Property="Opacity" Value="0" />
         <Setter Property="IsHitTestVisible" Value="False" />
@@ -678,6 +684,7 @@
         <Setter Property="BorderThickness" Value="0,0,1,0" />
     </Style>
     <Style Selector="TextBlock.spagetitle">
+        <Setter Property="FontFamily" Value="{DynamicResource V2DisplayFont}" />
         <Setter Property="FontSize" Value="22" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
@@ -730,7 +737,7 @@
         <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
         <Setter Property="BorderBrush" Value="{DynamicResource V2PanelBorder}" />
         <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusTile}" />
         <Setter Property="BoxShadow" Value="{DynamicResource V2CardShadow}" />
     </Style>
     <Style Selector="Border.srow">

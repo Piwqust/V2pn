@@ -67,9 +67,10 @@ if ($All) {
     foreach ($h in $wins) { [void](Save-Window $h (Join-Path $Out ("window-{0}.png" -f $i++))) }
 }
 else {
-    $best = $wins | Sort-Object {
+    # Popup layers can be as large as the window but untitled and empty; prefer titled windows.
+    $best = $wins | Sort-Object @{ Expression = { [V2pnShot]::Title($_) -eq '' } }, @{ Expression = {
         $r = New-Object V2pnShot+RECT; [void][V2pnShot]::GetWindowRect($_, [ref]$r); - (($r.R - $r.L) * ($r.B - $r.T))
-    } | Select-Object -First 1
+    } } | Select-Object -First 1
     New-Item -ItemType Directory -Force (Split-Path -Parent ([IO.Path]::GetFullPath($Out))) | Out-Null
     [void](Save-Window $best $Out)
 }

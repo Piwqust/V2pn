@@ -128,6 +128,14 @@ internal static class Motion
 
     private static bool DetectEnabled()
     {
+        // The Appearance page can override Windows' setting; it takes effect at the next start.
+        switch (Appearance.Current.Motion)
+        {
+            case "on":
+                return true;
+            case "off":
+                return false;
+        }
         if (!OperatingSystem.IsWindows())
         {
             return true;

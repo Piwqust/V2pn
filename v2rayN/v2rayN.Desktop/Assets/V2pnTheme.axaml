@@ -336,6 +336,8 @@
     <CornerRadius x:Key="ComboBoxPopupBoxCornerRadius">12</CornerRadius>
     <Thickness x:Key="ComboBoxPopupBorderPadding">4</Thickness>
     <CornerRadius x:Key="V2RadiusPanel">18</CornerRadius>
+    <!--  The stage clips the map one pixel inside its border.  -->
+    <CornerRadius x:Key="V2RadiusPanelInner">17</CornerRadius>
     <!--  Semi menus and toasts: rounder, roomier, rows inset inside the panel (14 - 6 = 8).  -->
     <CornerRadius x:Key="MenuFlyoutCornerRadius">14</CornerRadius>
     <CornerRadius x:Key="MenuItemCornerRadius">8</CornerRadius>

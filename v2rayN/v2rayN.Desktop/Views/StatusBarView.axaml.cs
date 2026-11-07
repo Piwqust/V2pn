@@ -80,6 +80,17 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         RefreshIcon();
     }
 
+    /// <summary>The live speed graph can be turned off on the Appearance page; the stats then use the full width.</summary>
+    public void ShowSpeedChart(bool show)
+    {
+        panelSpeed.IsVisible = show;
+        if (panelSpeed.Parent is Grid grid && grid.ColumnDefinitions.Count == 3)
+        {
+            grid.ColumnDefinitions[1].Width = show ? new GridLength(28) : new GridLength(0);
+            grid.ColumnDefinitions[2].Width = show ? new GridLength(1.15, GridUnitType.Star) : new GridLength(0);
+        }
+    }
+
     /// <summary>Pauses the clock while the window is minimized or in the tray; nobody reads it there.</summary>
     public void SetSeen(bool seen)
     {

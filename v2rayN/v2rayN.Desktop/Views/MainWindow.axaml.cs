@@ -86,7 +86,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             txtSearch.Focus();
         };
 
-        conTheme.Content ??= new ThemeSettingView();
+        // The palette button opens the Appearance page. The theme view model still loads at start:
+        // it applies the saved light/dark mode and text size.
+        _themeSettings = new ThemeSettingViewModel();
+        conTheme.Content ??= AppearanceView.HeaderButton(() => DialogHost.Show(new AppearanceView(_themeSettings)));
+        Appearance.Changed += () => Dispatcher.UIThread.Post(ApplyLayout);
 
         this.WhenActivated(disposables =>
         {
@@ -276,6 +280,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var vm = ViewModel!;
         _statusView ??= new StatusBarView { ViewModel = vm.StatusBarViewModel };
         contentStatusBarView.Content = _statusView;
+        ApplyLayout();
 
         _msgView ??= new MsgView { DataContext = vm.MsgViewModel };
         _profilesView ??= new ProfilesView { DataContext = vm.ProfilesViewModel };

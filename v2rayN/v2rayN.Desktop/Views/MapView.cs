@@ -154,6 +154,9 @@ public sealed class MapView : UserControl
         Apply(animate: false);
     }
 
+    /// <summary>Takes the current colours again, after the Appearance page changed them.</summary>
+    public void Repaint() => Paint();
+
     private void Paint()
     {
         _root.Background = Brush("V2MapOcean");

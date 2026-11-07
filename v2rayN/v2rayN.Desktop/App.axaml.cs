@@ -10,6 +10,7 @@ public partial class App : Application
         AvaloniaXamlLoader.Load(this);
         Common.SemiRounding.Apply(this);
         Common.Motion.Install(this);
+        Common.Appearance.Install(this); // V2pn
 
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;

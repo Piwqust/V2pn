@@ -1,0 +1,423 @@
+using Avalonia.Automation;
+using Avalonia.Controls.Shapes;
+using Avalonia.Controls.Templates;
+using Avalonia.Data;
+using Avalonia.Layout;
+using DialogHostAvalonia;
+using v2rayN.Desktop.Common;
+using v2rayN.Desktop.ViewModels;
+
+namespace v2rayN.Desktop.Views;
+
+/// <summary>
+/// The Appearance page: light or dark, palette, accent, corners, fonts, text size and the layout
+/// of the main window. Every change is applied and saved at once, so the window behind the dialog
+/// is the preview.
+/// </summary>
+public sealed class AppearanceView : UserControl
+{
+    private readonly ThemeSettingViewModel _theme;
+    private readonly WrapPanel _palettes = new() { Orientation = Orientation.Horizontal };
+    private readonly WrapPanel _accents = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+    private readonly TextBox _customAccent = new() { Width = 120, Watermark = "#RRGGBB", MaxLength = 7 };
+    private readonly List<(ListBox Box, Func<AppearanceSettings, int> Read)> _segments = [];
+    private readonly List<(ToggleSwitch Switch, Func<AppearanceSettings, bool> Read)> _switches = [];
+    private bool _refreshing;
+
+    private static readonly string[] CornerIds = ["sharp", "normal", "round"];
+    private static readonly string[] WidthIds = ["narrow", "normal", "wide"];
+    private static readonly string[] MotionIds = ["system", "on", "off"];
+
+    /// <summary>The palette button in the window header.</summary>
+    public static Control HeaderButton(Action open)
+    {
+        var icon = new PathIcon { Classes = { "i16" } };
+        icon.Bind(PathIcon.DataProperty, icon.GetResourceObservable("SemiIconColorPalette"));
+        var button = new Button { Classes = { "ghost", "icon" }, Content = icon };
+        button.Bind(ThemeProperty, button.GetResourceObservable("V2Button"));
+        ToolTip.SetTip(button, L.ApTitle);
+        AutomationProperties.SetName(button, L.ApTitle);
+        button.Click += (_, _) => open();
+        return button;
+    }
+
+    public AppearanceView(ThemeSettingViewModel theme)
+    {
+        _theme = theme;
+        Width = 700;
+
+        var close = new Button { Classes = { "ghost", "icon" }, VerticalAlignment = VerticalAlignment.Top };
+        close.Bind(ThemeProperty, close.GetResourceObservable("V2Button"));
+        var closeIcon = new PathIcon { Classes = { "i14" } };
+        closeIcon.Bind(PathIcon.DataProperty, closeIcon.GetResourceObservable("SemiIconClose"));
+        close.Content = closeIcon;
+        ToolTip.SetTip(close, L.Close);
+        AutomationProperties.SetName(close, L.Close);
+        close.Click += (_, _) => DialogHost.Close(null);
+
+        var header = new Grid { ColumnDefinitions = new("*,Auto"), Margin = new Thickness(28, 22, 18, 4) };
+        header.Children.Add(new StackPanel
+        {
+            Spacing = 4,
+            Children =
+            {
+                new TextBlock { Classes = { "spagetitle" }, Text = L.ApTitle },
+                new TextBlock { Classes = { "spagehint" }, Text = L.ApHint },
+            },
+        });
+        Grid.SetColumn(close, 1);
+        header.Children.Add(close);
+
+        var reset = new Button { Content = L.ApReset, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
+        reset.Bind(ThemeProperty, reset.GetResourceObservable("V2Button"));
+        reset.Click += (_, _) =>
+        {
+            Appearance.Reset();
+            Refresh();
+        };
+
+        var body = new StackPanel
+        {
+            Margin = new Thickness(28, 6, 28, 24),
+            Spacing = 6,
+            Children =
+            {
+                Group(L.ApGrpTheme,
+                    Row(L.ApMode, null, ModeSegment()),
+                    Stacked(L.ApPalette, _palettes),
+                    Row(L.ApAccent, L.ApAccentHint, new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { _accents, _customAccent } })),
+                Group(L.ApGrpShape,
+                    Row(L.ApCorners, null, Segment([L.ApCornersSharp, L.ApCornersNormal, L.ApCornersRound],
+                        s => Index(CornerIds, s.Corners, 1), (s, i) => s.Corners = CornerIds[i])),
+                    Row(L.ApFont, null, Segment([L.ApFontInter, L.ApFontSegoe],
+                        s => s.Font == "segoe" ? 1 : 0, (s, i) => s.Font = i == 1 ? "segoe" : "inter")),
+                    Row(L.ApHeadings, null, Segment([L.ApHeadingsSans, L.ApHeadingsSerif],
+                        s => s.Headings == "serif" ? 1 : 0, (s, i) => s.Headings = i == 1 ? "serif" : "inter")),
+                    Row(L.ApTextSize, null, FontSizeBox())),
+                Group(L.ApGrpLayout,
+                    Row(L.ApSidebar, null, Segment([L.ApSideLeft, L.ApSideRight],
+                        s => s.SidebarSide == "right" ? 1 : 0, (s, i) => s.SidebarSide = i == 1 ? "right" : "left")),
+                    Row(L.ApWidth, null, Segment([L.ApWidthNarrow, L.ApWidthNormal, L.ApWidthWide],
+                        s => Index(WidthIds, s.SidebarWidth, 1), (s, i) => s.SidebarWidth = WidthIds[i])),
+                    Row(L.ApDensity, null, Segment([L.ApDensityComfortable, L.ApDensityCompact],
+                        s => s.Density == "compact" ? 1 : 0, (s, i) => s.Density = i == 1 ? "compact" : "comfortable")),
+                    Row(L.ApMap, L.ApMapHint, Switch(s => s.ShowMap, (s, v) => s.ShowMap = v)),
+                    Row(L.ApStatusCard, null, Switch(s => s.ShowStatusCard, (s, v) => s.ShowStatusCard = v)),
+                    Row(L.ApSpeedChart, null, Switch(s => s.ShowSpeedChart, (s, v) => s.ShowSpeedChart = v))),
+                Group(L.ApGrpMotion,
+                    Row(L.ApMotion, L.ApMotionHint, Segment([L.ApMotionSystem, L.ApMotionOn, L.ApMotionOff],
+                        s => Index(MotionIds, s.Motion, 0), (s, i) => s.Motion = MotionIds[i])),
+                    Row(L.ApLanguage, null, LanguageBox())),
+                reset,
+            },
+        };
+
+        var scroll = new ScrollViewer
+        {
+            Content = body,
+            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
+        };
+        var root = new DockPanel { MaxHeight = 720 };
+        DockPanel.SetDock(header, Dock.Top);
+        root.Children.Add(header);
+        root.Children.Add(scroll);
+        Content = root;
+
+        _customAccent.LostFocus += (_, _) => ApplyCustomAccent();
+        _customAccent.KeyDown += (_, e) =>
+        {
+            if (e.Key == Key.Enter)
+            {
+                ApplyCustomAccent();
+            }
+        };
+        ActualThemeVariantChanged += (_, _) => Refresh();
+        Refresh();
+    }
+
+    private static int Index(string[] ids, string value, int fallback)
+    {
+        var i = Array.IndexOf(ids, value);
+        return i < 0 ? fallback : i;
+    }
+
+    private static void Change(Action<AppearanceSettings> edit)
+    {
+        var next = Appearance.Current.Clone();
+        edit(next);
+        Appearance.Set(next);
+    }
+
+    private void Refresh()
+    {
+        _refreshing = true;
+        var s = Appearance.Current;
+        foreach (var (box, read) in _segments)
+        {
+            box.SelectedIndex = read(s);
+        }
+        foreach (var (toggle, read) in _switches)
+        {
+            toggle.IsChecked = read(s);
+        }
+        BuildPalettes();
+        BuildAccents();
+        _customAccent.Text = s.Accent.StartsWith('#') ? s.Accent : string.Empty;
+        _refreshing = false;
+    }
+
+    private Control ModeSegment()
+    {
+        string[] themes = [nameof(ETheme.FollowSystem), nameof(ETheme.Light), nameof(ETheme.Dark)];
+        var box = SegmentBox([L.ApModeSystem, L.ApModeLight, L.ApModeDark]);
+        box.SelectedIndex = Array.IndexOf(themes, _theme.CurrentTheme);
+        box.SelectionChanged += (_, _) =>
+        {
+            if (box.SelectedIndex >= 0)
+            {
+                _theme.CurrentTheme = themes[box.SelectedIndex];
+            }
+        };
+        return box;
+    }
+
+    private Control Segment(string[] labels, Func<AppearanceSettings, int> read, Action<AppearanceSettings, int> write)
+    {
+        var box = SegmentBox(labels);
+        _segments.Add((box, read));
+        box.SelectionChanged += (_, _) =>
+        {
+            if (!_refreshing && box.SelectedIndex >= 0 && box.SelectedIndex != read(Appearance.Current))
+            {
+                Change(s => write(s, box.SelectedIndex));
+            }
+        };
+        return box;
+    }
+
+    private static ListBox SegmentBox(string[] labels)
+    {
+        var box = new ListBox { ItemsSource = labels };
+        box.Bind(ThemeProperty, box.GetResourceObservable("V2Segmented"));
+        return box;
+    }
+
+    private Control Switch(Func<AppearanceSettings, bool> read, Action<AppearanceSettings, bool> write)
+    {
+        var toggle = new ToggleSwitch { OnContent = string.Empty, OffContent = string.Empty, MinWidth = 0 };
+        _switches.Add((toggle, read));
+        toggle.IsCheckedChanged += (_, _) =>
+        {
+            if (!_refreshing && toggle.IsChecked != read(Appearance.Current))
+            {
+                Change(s => write(s, toggle.IsChecked == true));
+            }
+        };
+        return toggle;
+    }
+
+    private Control FontSizeBox()
+    {
+        var box = new ComboBox
+        {
+            Width = 120,
+            ItemsSource = Enumerable.Range(Global.MinFontSize, Global.MinFontSizeCount).ToList(),
+            SelectedItem = _theme.CurrentFontSize,
+            // 0 in the config means the theme's own size.
+            PlaceholderText = L.ApTextSizeDefault,
+        };
+        box.SelectionChanged += (_, _) =>
+        {
+            if (box.SelectedItem is int size)
+            {
+                _theme.CurrentFontSize = size;
+            }
+        };
+        return box;
+    }
+
+    private Control LanguageBox()
+    {
+        var box = new ComboBox
+        {
+            Width = 180,
+            ItemsSource = Global.LanguageOptions,
+            DisplayMemberBinding = new Binding(nameof(LanguageOption.Display)),
+            SelectedValueBinding = new Binding(nameof(LanguageOption.Value)),
+            SelectedValue = _theme.CurrentLanguage,
+        };
+        box.SelectionChanged += (_, _) =>
+        {
+            if (box.SelectedValue is string language)
+            {
+                _theme.CurrentLanguage = language;
+            }
+        };
+        return box;
+    }
+
+    private void BuildPalettes()
+    {
+        _palettes.Children.Clear();
+        // Built before the view is attached, so the app's variant is the one to ask.
+        var variant = Application.Current?.ActualThemeVariant;
+        var dark = variant == ThemeVariant.Dark || variant?.InheritVariant == ThemeVariant.Dark;
+        var accent = Appearance.AccentColor;
+        foreach (var palette in Appearance.Palettes)
+        {
+            var selected = palette.Id == Appearance.Current.Palette;
+            var surface = dark ? palette.Swatch : palette.SwatchLight;
+            var side = Shade(surface, dark ? 0.06 : -0.05);
+            var line = Shade(surface, dark ? 0.16 : -0.12);
+
+            var preview = new Grid { ColumnDefinitions = new("34,*"), Height = 52 };
+            preview.Children.Add(new Border { Background = new SolidColorBrush(side) });
+            var content = new StackPanel { Margin = new Thickness(8, 9), Spacing = 5 };
+            content.Children.Add(new Border { Height = 5, Width = 40, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3), Background = new SolidColorBrush(line) });
+            content.Children.Add(new Border { Height = 5, Width = 26, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3), Background = new SolidColorBrush(line) });
+            content.Children.Add(new Border { Height = 10, Width = 30, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(5), Background = new SolidColorBrush(accent), Margin = new Thickness(0, 2, 0, 0) });
+            Grid.SetColumn(content, 1);
+            preview.Children.Add(content);
+
+            var frame = new Border
+            {
+                Width = 96,
+                ClipToBounds = true,
+                CornerRadius = new CornerRadius(10),
+                Background = new SolidColorBrush(surface),
+                BorderThickness = new Thickness(selected ? 2 : 1),
+                BorderBrush = selected ? new SolidColorBrush(accent) : new SolidColorBrush(Shade(surface, dark ? 0.2 : -0.18)),
+                Child = preview,
+            };
+            var card = new Button
+            {
+                Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 10, 10),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Content = new StackPanel
+                {
+                    Spacing = 6,
+                    Children =
+                    {
+                        frame,
+                        new TextBlock { Text = L.ApPaletteName(palette.Id), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center, Classes = { selected ? "srowtitle" : "muted" } },
+                    },
+                },
+            };
+            AutomationProperties.SetName(card, L.ApPaletteName(palette.Id));
+            var id = palette.Id;
+            card.Click += (_, _) =>
+            {
+                Change(s => s.Palette = id);
+                Refresh();
+            };
+            _palettes.Children.Add(card);
+        }
+    }
+
+    private void BuildAccents()
+    {
+        _accents.Children.Clear();
+        foreach (var (id, color) in Appearance.Accents)
+        {
+            var selected = Appearance.Current.Accent == id;
+            var dot = new Ellipse { Width = 22, Height = 22, Fill = new SolidColorBrush(color) };
+            var ring = new Ellipse
+            {
+                Width = 30,
+                Height = 30,
+                StrokeThickness = selected ? 2 : 0,
+                Stroke = new SolidColorBrush(color),
+            };
+            var button = new Button
+            {
+                Width = 32,
+                Height = 32,
+                Padding = new Thickness(0),
+                Margin = new Thickness(0, 0, 4, 0),
+                Background = Brushes.Transparent,
+                BorderThickness = new Thickness(0),
+                Content = new Panel { Children = { ring, dot } },
+            };
+            AutomationProperties.SetName(button, id);
+            button.Click += (_, _) =>
+            {
+                Change(s => s.Accent = id);
+                Refresh();
+            };
+            _accents.Children.Add(button);
+        }
+    }
+
+    private void ApplyCustomAccent()
+    {
+        var text = _customAccent.Text?.Trim() ?? string.Empty;
+        if (!text.StartsWith('#'))
+        {
+            text = "#" + text;
+        }
+        if (text.Length == 7 && Color.TryParse(text, out _) && text != Appearance.Current.Accent)
+        {
+            Change(s => s.Accent = text.ToUpperInvariant());
+            Refresh();
+        }
+    }
+
+    private static Color Shade(Color c, double amount)
+    {
+        var hsl = c.ToHsl();
+        return HslColor.ToRgb(hsl.H, hsl.S, Math.Clamp(hsl.L + amount, 0, 1), 1);
+    }
+
+    private static Control Group(string title, params Control[] rows)
+    {
+        var list = new StackPanel();
+        foreach (var row in rows)
+        {
+            list.Children.Add(row);
+        }
+        return new StackPanel
+        {
+            Spacing = 8,
+            Margin = new Thickness(0, 10, 0, 0),
+            Children =
+            {
+                new TextBlock { Classes = { "sgrouplabel" }, Text = title },
+                new Border { Classes = { "sgroupcard" }, Child = list },
+            },
+        };
+    }
+
+    private static Control Row(string title, string? hint, Control control)
+    {
+        var text = new StackPanel { Classes = { "srowtext" }, VerticalAlignment = VerticalAlignment.Center };
+        text.Children.Add(new TextBlock { Classes = { "srowtitle" }, Text = title });
+        if (hint != null)
+        {
+            text.Children.Add(new TextBlock { Classes = { "srowhint" }, Text = hint });
+        }
+        var grid = new Grid { ColumnDefinitions = new("*,Auto") };
+        grid.Children.Add(text);
+        control.VerticalAlignment = VerticalAlignment.Center;
+        control.Margin = new Thickness(16, 0, 0, 0);
+        // Screen readers (and UI tests) find each switch and list by the row it belongs to.
+        AutomationProperties.SetName(control, title);
+        Grid.SetColumn(control, 1);
+        grid.Children.Add(control);
+        return new Border { Classes = { "srow" }, Child = grid };
+    }
+
+    private static Control Stacked(string title, Control content)
+    {
+        return new Border
+        {
+            Classes = { "srow" },
+            Child = new StackPanel
+            {
+                Spacing = 12,
+                Children = { new TextBlock { Classes = { "srowtitle" }, Text = title }, content },
+            },
+        };
+    }
+}

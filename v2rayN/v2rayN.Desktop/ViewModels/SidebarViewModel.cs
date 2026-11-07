@@ -236,12 +236,19 @@ public sealed partial class SidebarViewModel : ReactiveObject
     // An update may have renamed the subscription from its panel; the cached items still hold the old name.
     private async Task OnSubInfoChangedAsync(string id)
     {
-        var stored = await AppManager.Instance.GetSubItem(id);
-        var cached = _profiles.SubNavItems.FirstOrDefault(s => s.Id == id)?.Item;
-        if (stored != null && cached != null)
+        try
         {
-            cached.Remarks = stored.Remarks;
-            cached.AutoUpdateInterval = stored.AutoUpdateInterval;
+            var stored = await AppManager.Instance.GetSubItem(id);
+            var cached = _profiles.SubNavItems.FirstOrDefault(s => s.Id == id)?.Item;
+            if (stored != null && cached != null)
+            {
+                cached.Remarks = stored.Remarks;
+                cached.AutoUpdateInterval = stored.AutoUpdateInterval;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("Sidebar", ex);
         }
         QueueRebuild();
     }

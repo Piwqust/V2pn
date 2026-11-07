@@ -1,0 +1,152 @@
+namespace v2rayN.Desktop;
+
+// Server editor and custom-config editor: everyday fields in plain words, expert ones behind "Show more fields".
+public static partial class L
+{
+    // Server editor: page and groups.
+    public static string SvTitle => T("{0} server", "Сервер {0}");
+    public static string SvTitlePlain => T("Server", "Сервер");
+    public static string SvHint => T("Your provider gives you the address, port and key. The rest usually stays as it is.", "Адрес, порт и ключ выдаёт провайдер. Остальное обычно менять не нужно.");
+    public static string SvGrpServer => T("Server", "Сервер");
+    public static string SvGrpAccess => T("Sign-in", "Доступ");
+    public static string SvGrpTransport => T("Transport", "Транспорт");
+    public static string SvGrpSecurity => T("TLS and Reality", "TLS и Reality");
+    public static string SvGrpMask => T("Obfuscation", "Маскировка");
+
+    // Everyday rows.
+    public static string SvName => T("Name", "Название");
+    public static string SvNameHint => T("How the server shows up in your list.", "Как сервер будет называться в списке.");
+    public static string SvNamePlaceholder => T("Germany 1", "Германия 1");
+    public static string SvAddress => T("Server address", "Адрес сервера");
+    public static string SvAddressHint => T("The domain or IP from your provider.", "Домен или IP, который дал провайдер.");
+    public static string SvPort => T("Port", "Порт");
+    public static string SvPortHint => T("A number from your provider, often 443.", "Число от провайдера, часто 443.");
+    public static string SvUuid => T("User ID (UUID)", "Идентификатор (UUID)");
+    public static string SvUuidHint => T("Your personal key from the provider.", "Ваш личный ключ от провайдера.");
+    public static string SvPassword => T("Password", "Пароль");
+    public static string SvPasswordHint => T("The password from your provider.", "Пароль, который дал провайдер.");
+    public static string SvUser => T("Username", "Имя пользователя");
+    public static string SvUserHint => T("Leave empty if the server has no sign-in.", "Оставьте пустым, если вход на сервер не нужен.");
+    public static string SvSsMethod => T("Encryption", "Шифрование");
+    public static string SvSsMethodHint => T("The method your provider named.", "Метод, который указал провайдер.");
+    public static string SvWgPrivateKey => T("Your private key", "Ваш закрытый ключ");
+    public static string SvWgPrivateKeyHint => T("PrivateKey from the [Interface] section of the config.", "PrivateKey из раздела [Interface] конфига.");
+    public static string SvWgPublicKey => T("Server public key", "Открытый ключ сервера");
+    public static string SvWgPublicKeyHint => T("PublicKey from the [Peer] section of the config.", "PublicKey из раздела [Peer] конфига.");
+
+    // Expert rows: server and protocols.
+    public static string SvCore => T("Core", "Ядро");
+    public static string SvCoreHint => T("Which core runs this server. Empty: chosen automatically.", "Каким ядром запускать сервер. Пусто — выбирается само.");
+    public static string SvAlterId => T("Alter ID", "Alter ID");
+    public static string SvAlterIdHint => T("An old VMess setting. Usually 0.", "Устаревшая настройка VMess. Обычно 0.");
+    public static string SvVmessSecurity => T("Encryption method", "Метод шифрования");
+    public static string SvVmessSecurityHint => T("Usually auto.", "Обычно auto.");
+    public static string SvMux => T("Multiplexing (Mux)", "Мультиплексирование (Mux)");
+    public static string SvMuxHint => T("Several connections share one. Turn on only if the provider recommends it.", "Несколько соединений идут через одно. Включайте, только если советует провайдер.");
+    public static string SvUot => T("UDP over TCP", "UDP поверх TCP");
+    public static string SvUotHint => T("Sends UDP inside TCP. Only if the server supports it.", "Передаёт UDP внутри TCP. Только если сервер это умеет.");
+    public static string SvHttpHeaders => T("Extra headers (JSON)", "Дополнительные заголовки (JSON)");
+    public static string SvFlow => T("Flow", "Режим flow");
+    public static string SvFlowHint => T("For XTLS, usually xtls-rprx-vision. Otherwise empty.", "Для XTLS обычно xtls-rprx-vision, иначе пусто.");
+    public static string SvVlessEnc => T("VLESS encryption", "Шифрование VLESS");
+    public static string SvVlessEncHint => T("Usually none.", "Обычно none.");
+    public static string SvHy2Extra => T("Obfuscation and more", "Обфускация и прочее");
+    public static string SvHy2ExtraHint => T("Salamander password, packet size, Realm.", "Пароль Salamander, размер пакетов, Realm.");
+    public static string SvPorts => T("Port hopping", "Смена портов");
+    public static string SvPortsHint => T("Ports to jump between, if the server supports it. Replaces the port above.", "Порты, между которыми переключаться, если сервер это умеет. Заменяет порт выше.");
+    public static string SvHopInt => T("Hop interval, seconds", "Интервал смены портов, с");
+    public static string SvHopIntHint => T("How often to switch the port.", "Как часто менять порт.");
+    public static string SvBandwidth => T("Speed, Mbit/s", "Скорость, Мбит/с");
+    public static string SvBandwidthHint => T("Upload and download of your connection. Empty: automatic.", "Отдача и загрузка вашего канала. Пусто — автоматически.");
+    public static string SvCongestion => T("Congestion control", "Управление перегрузкой");
+    public static string SvCongestionHint => T("Usually bbr or cubic.", "Обычно bbr или cubic.");
+    public static string SvWgPsk => T("Pre-shared key", "Общий ключ (PresharedKey)");
+    public static string SvWgPskHint => T("Only if the config has one.", "Только если он есть в конфиге.");
+    public static string SvWgReserved => T("Reserved", "Reserved");
+    public static string SvWgReservedHint => T("Three numbers, needed for Cloudflare WARP.", "Три числа, нужны для Cloudflare WARP.");
+    public static string SvWgAddress => T("Your address in the tunnel", "Ваш адрес в туннеле");
+    public static string SvWgAddressHint => T("Address from the [Interface] section.", "Address из раздела [Interface].");
+    public static string SvMtu => T("MTU", "MTU");
+    public static string SvMtuHint => T("The largest packet size. Usually 1280.", "Наибольший размер пакета. Обычно 1280.");
+    public static string SvWgDns => T("DNS servers", "DNS-серверы");
+    public static string SvWgDnsHint => T("DNS used inside the tunnel.", "Какие DNS использовать внутри туннеля.");
+    public static string SvQuic => T("QUIC", "QUIC");
+    public static string SvQuicHint => T("Connect over QUIC instead of HTTP/2.", "Подключаться по QUIC вместо HTTP/2.");
+    public static string SvConcurrency => T("Parallel connections", "Параллельные соединения");
+    public static string SvConcurrencyHint => T("Several tunnels at once. Usually empty.", "Несколько туннелей сразу. Обычно пусто.");
+    public static string SvMasquePath => T("Path", "Путь");
+    public static string SvMasquePathHint => T("The request path on the server.", "Путь запроса на сервере.");
+    public static string SvMasqueHeaders => T("HTTP headers", "HTTP-заголовки");
+    public static string SvMasqueHeadersHint => T("One per line.", "По одному на строку.");
+    public static string SvWarp => T("WARP keys", "Ключи WARP");
+    public static string SvWarpHint => T("Keys and address of WARP, Xray only.", "Ключи и адрес WARP, только для Xray.");
+
+    // Expert rows: transport.
+    public static string SvNetwork => T("Transport", "Транспорт");
+    public static string SvNetworkHint => T("How traffic travels to the server: raw, ws, grpc and others.", "Как трафик идёт до сервера: raw, ws, grpc и другие.");
+    public static string SvRawHeader => T("Disguise", "Маскировка");
+    public static string SvRawHeaderHint => T("none: as is, http: looks like a web request.", "none — как есть, http — под обычный веб-запрос.");
+    public static string SvHost => T("Host", "Хост (Host)");
+    public static string SvHostHint => T("The domain written into the request.", "Домен, который подставляется в запрос.");
+    public static string SvPath => T("Path", "Путь");
+    public static string SvPathHint => T("The request path, as the provider set it.", "Путь запроса, как у провайдера.");
+    public static string SvXhttpMode => T("XHTTP mode", "Режим XHTTP");
+    public static string SvXhttpModeHint => T("Usually auto.", "Обычно auto.");
+    public static string SvXhttpExtra => T("Extra XHTTP settings", "Дополнительные настройки XHTTP");
+    public static string SvKcpHeader => T("Packet disguise", "Маскировка пакетов");
+    public static string SvKcpHeaderHint => T("What mKCP packets look like.", "Подо что маскировать пакеты mKCP.");
+    public static string SvKcpSeed => T("Seed", "Ключ mKCP (seed)");
+    public static string SvKcpSeedHint => T("Must match the server.", "Должен совпадать с сервером.");
+    public static string SvGrpcMode => T("gRPC mode", "Режим gRPC");
+    public static string SvGrpcModeHint => T("gun or multi.", "gun или multi.");
+    public static string SvGrpcAuthority => T("Authority", "Authority");
+    public static string SvGrpcAuthorityHint => T("Usually empty.", "Обычно пусто.");
+    public static string SvGrpcService => T("Service name", "Имя сервиса");
+    public static string SvGrpcServiceHint => T("From the provider's settings.", "Из настроек провайдера.");
+    public static string SvFinalmask => T("Finalmask", "Finalmask");
+    public static string SvFinalmaskHint => T("Xray traffic disguise, as JSON.", "Маскировка трафика Xray в формате JSON.");
+
+    // Expert rows: TLS and Reality.
+    public static string SvTls => T("Connection protection", "Защита соединения");
+    public static string SvTlsHint => T("tls or reality, as the provider says.", "tls или reality — как у провайдера.");
+    public static string SvSni => T("Server name (SNI)", "Имя сервера (SNI)");
+    public static string SvSniHint => T("The domain shown when the connection opens.", "Домен, который виден при установке соединения.");
+    public static string SvFingerprint => T("Browser fingerprint", "Отпечаток браузера");
+    public static string SvFingerprintHint => T("Which browser the connection looks like.", "На какой браузер похоже соединение.");
+    public static string SvAlpn => T("ALPN", "ALPN");
+    public static string SvAlpnHint => T("Protocols offered over TLS. Usually empty.", "Протоколы, которые предлагаются в TLS. Обычно пусто.");
+    public static string SvInsecure => T("Skip the certificate check", "Не проверять сертификат");
+    public static string SvInsecureHint => T("Unsafe. Only for self-signed certificates.", "Небезопасно. Только для самоподписанных сертификатов.");
+    public static string SvEch => T("ECH config", "Настройка ECH");
+    public static string SvEchHint => T("Hides the server name. Usually empty.", "Скрывает имя сервера. Обычно пусто.");
+    public static string SvVerifyName => T("Check the certificate name", "Сверять имя в сертификате");
+    public static string SvVerifyNameHint => T("The domain the certificate must be issued for.", "Домен, на который должен быть выписан сертификат.");
+    public static string SvPinning => T("Pinned certificate", "Закреплённый сертификат");
+    public static string SvPinningHint => T("Trust only this certificate.", "Доверять только этому сертификату.");
+    public static string SvRealityKey => T("Public key", "Открытый ключ");
+    public static string SvRealityKeyHint => T("The Reality key from the provider.", "Ключ Reality от провайдера.");
+    public static string SvShortId => T("Short ID", "Short ID");
+    public static string SvShortIdHint => T("Usually comes with the key.", "Обычно выдаётся вместе с ключом.");
+    public static string SvSpiderX => T("SpiderX", "SpiderX");
+    public static string SvSpiderXHint => T("The Reality start path. Usually empty.", "Начальный путь Reality. Обычно пусто.");
+    public static string SvMldsa => T("ML-DSA-65 key", "Ключ ML-DSA-65");
+    public static string SvMldsaHint => T("Post-quantum check. Usually empty.", "Постквантовая проверка. Обычно пусто.");
+
+    // Custom-config editor.
+    public static string SvCustomTitle => T("Server from a config file", "Сервер из файла настроек");
+    public static string SvCustomHint => T("Pick a ready config file and give it a name.", "Выберите готовый файл настроек и дайте ему название.");
+    public static string SvOutboundTitle => T("Server from an outbound", "Сервер из outbound");
+    public static string SvOutboundHint => T("Pick a file with one outbound block from Xray or sing-box and give it a name.", "Выберите файл с одним блоком outbound из Xray или sing-box и дайте ему название.");
+    public static string SvConfigFile => T("Config file", "Файл настроек");
+    public static string SvConfigFileHint => T("Choose the file. Edit opens it in your editor.", "Выберите файл. «Редактировать» откроет его в редакторе.");
+    public static string SvCustomCore => T("Core", "Ядро");
+    public static string SvCustomCoreHint => T("The program that runs this file.", "Программа, которая запустит этот файл.");
+    public static string SvShowLog => T("Show the core's log", "Показывать журнал ядра");
+    public static string SvShowLogHint => T("Turn off if the connection keeps dropping.", "Выключите, если соединение обрывается.");
+    public static string SvSocksPort => T("SOCKS port of the file", "Порт SOCKS из файла");
+    public static string SvSocksPortHint => T("Optional. Turns on speed display and traffic splitting.", "Необязательно. Включает показ скорости и разделение трафика.");
+    public static string SvCustomNote => T("Good to know", "Важно");
+    public static string SvCustomNoteHint => T("The file runs as is, so some V2pn settings don't apply to it. For the system proxy, set its listening port by hand.", "Файл работает как есть, и часть настроек V2pn к нему не применяется. Для системного прокси укажите в нём порт прослушивания вручную.");
+    public static string SvSbEndpoint => T("sing-box endpoint", "Это endpoint sing-box");
+    public static string SvSbEndpointHint => T("Turn on if the file holds an endpoint, not an outbound.", "Включите, если в файле endpoint, а не outbound.");
+}

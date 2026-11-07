@@ -9,8 +9,8 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuAddCustomServer}"
-    Width="740"
-    Height="500"
+    Width="760"
+    Height="520"
     x:DataType="vms:AddServer2ViewModel"
     Design.DataContext="{x:Static dd:DesignData.AddServer2}"
     ShowInTaskbar="False"
@@ -33,109 +33,110 @@
         </Border>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="28,20,28,28" Spacing="6">
+                <TextBlock x:Name="tbPageTitle" Classes="spagetitle" Text="{x:Static loc:L.SvCustomTitle}" />
+                <TextBlock x:Name="tbPageHint" Classes="spagehint" Text="{x:Static loc:L.SvCustomHint}" />
                 <StackPanel Classes="sgroup">
-                    <TextBlock Classes="sgrouplabel" Text="{x:Static resx:ResUI.menuServers}" />
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.SvGrpServer}" />
                     <Border Classes="sgroupcard">
                         <StackPanel>
                             <Border Classes="srow">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRemarks}" />
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconEditStroked}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvName}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvNameHint}" />
                                     </StackPanel>
-                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtRemarks" />
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtRemarks" PlaceholderText="{x:Static loc:L.SvNamePlaceholder}" />
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbAddress}" />
-                                    </StackPanel>
-                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBox x:Name="txtAddress" IsReadOnly="True" />
-                                            <StackPanel Orientation="Horizontal">
-                                                <Button x:Name="btnBrowse" Margin="{StaticResource MarginLr4}" Content="{x:Static resx:ResUI.TbBrowse}" />
-                                                <Button x:Name="btnEdit" Margin="{StaticResource MarginLr4}" Content="{x:Static resx:ResUI.TbEdit}" />
-                                            </StackPanel>
+                            <Border Classes="srow stack">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <Border Classes="srowicon" VerticalAlignment="Top"><PathIcon Data="{StaticResource SemiIconFile}" /></Border>
+                                    <StackPanel Grid.Column="1" Spacing="10">
+                                        <StackPanel>
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvConfigFile}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvConfigFileHint}" />
                                         </StackPanel>
-                                    </Panel>
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <TextBox x:Name="txtAddress" IsReadOnly="True" PlaceholderText="config.json" />
+                                            <StackPanel Grid.Column="1" Margin="8,0,0,0" Orientation="Horizontal" Spacing="8">
+                                                <Button x:Name="btnBrowse" Content="{x:Static resx:ResUI.TbBrowse}" />
+                                                <Button x:Name="btnEdit" Content="{x:Static resx:ResUI.TbEdit}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </StackPanel>
                                 </Grid>
                             </Border>
                             <Border Classes="srow">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbCoreType}" />
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconSetting}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvCustomCore}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvCustomCoreHint}" />
                                     </StackPanel>
-                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
                                         <ComboBox x:Name="cmbCoreType" MaxDropDownHeight="1000" />
                                     </Panel>
                                 </Grid>
                             </Border>
                         </StackPanel>
                     </Border>
-                    <StackPanel Classes="sgroup" x:Name="gridCustomServer">
-                        <Border Classes="sgroupcard">
-                            <StackPanel>
-                                <Border Classes="srow">
+                </StackPanel>
+
+                <!--  Expert fields; the code-behind shows the set for a custom config or for an outbound.  -->
+                <StackPanel Classes="sgroup">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpMore}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <StackPanel Classes="srowset" x:Name="gridCustomServer">
+                                <Border Classes="srow adv">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbDisplayLog}" />
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvShowLog}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvShowLogHint}" />
                                         </StackPanel>
                                         <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <StackPanel Orientation="Horizontal">
-                                                <ToggleSwitch x:Name="togDisplayLog" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" />
-                                                <TextBlock Margin="{StaticResource MarginLr8}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TipDisplayLog}" />
-                                            </StackPanel>
+                                            <ToggleSwitch x:Name="togDisplayLog" />
                                         </Panel>
                                     </Grid>
                                 </Border>
-                                <Border Classes="srow">
+                                <Border Classes="srow adv">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbPreSocksPort}" />
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvSocksPort}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvSocksPortHint}" />
                                         </StackPanel>
                                         <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBox x:Name="txtPreSocksPort" />
+                                            <TextBox x:Name="txtPreSocksPort" Width="140" PlaceholderText="10808" />
                                         </Panel>
                                     </Grid>
                                 </Border>
-                                <Border Classes="srow stack">
-                                    <StackPanel Spacing="10">
-                                        <StackPanel>
-                                            <TextBlock Width="500" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TipPreSocksPort}" TextWrapping="Wrap" />
-                                            <TextBlock Width="500" Margin="{StaticResource MarginLr8}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.CustomServerTips}" TextWrapping="Wrap" />
-                                        </StackPanel>
+                                <Border Classes="srow stack adv">
+                                    <StackPanel>
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvCustomNote}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvCustomNoteHint}" />
                                     </StackPanel>
                                 </Border>
                             </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    <StackPanel Classes="sgroup" x:Name="gridCustomOutbound" IsVisible="False">
-                        <Border Classes="sgroupcard">
-                            <StackPanel>
-                                <Border Classes="srow">
+                            <StackPanel Classes="srowset" x:Name="gridCustomOutbound" IsVisible="False">
+                                <Border Classes="srow adv">
                                     <Grid ColumnDefinitions="*,Auto">
                                         <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="Sing-Box Endpoint" />
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvSbEndpoint}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvSbEndpointHint}" />
                                         </StackPanel>
                                         <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
                                             <ToggleSwitch x:Name="togSingBoxEndpoint" />
                                         </Panel>
                                     </Grid>
                                 </Border>
-                                <Border Classes="srow stack">
-                                    <StackPanel Spacing="10">
-                                        <StackPanel>
-                                            <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbCustomOutboundTip}" TextWrapping="Wrap" />
-                                        </StackPanel>
-                                    </StackPanel>
-                                </Border>
                             </StackPanel>
-                        </Border>
-                    </StackPanel>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
+                <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

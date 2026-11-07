@@ -9,6 +9,8 @@ public partial class AddServer2Window : WindowBase<AddServer2ViewModel>
     {
         InitializeComponent();
 
+        SettingsKit.InstallMoreFields(this, btnMoreFields, () => false);
+
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
 
@@ -43,6 +45,8 @@ public partial class AddServer2Window : WindowBase<AddServer2ViewModel>
         if (profileItem.ConfigType is EConfigType.Custom)
         {
             Title = ResUI.menuAddCustomServer;
+            tbPageTitle.Text = L.SvCustomTitle;
+            tbPageHint.Text = L.SvCustomHint;
             cmbCoreType.ItemsSource = Utils.GetEnumNames<ECoreType>().Where(t => t != nameof(ECoreType.v2rayN)).ToList();
             gridCustomServer.IsVisible = true;
             gridCustomOutbound.IsVisible = false;
@@ -50,6 +54,8 @@ public partial class AddServer2Window : WindowBase<AddServer2ViewModel>
         else if (profileItem.ConfigType is EConfigType.Outbound)
         {
             Title = ResUI.menuAddCustomOutboundServer;
+            tbPageTitle.Text = L.SvOutboundTitle;
+            tbPageHint.Text = L.SvOutboundHint;
             cmbCoreType.ItemsSource = Global.CoreTypes;
             gridCustomServer.IsVisible = false;
             gridCustomOutbound.IsVisible = true;

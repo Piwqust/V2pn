@@ -1,4 +1,5 @@
 using v2rayN.Desktop.Base;
+using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
@@ -7,6 +8,12 @@ public partial class AddServerWindow : WindowBase<AddServerViewModel>
     public AddServerWindow()
     {
         InitializeComponent();
+
+        // Expert fields start hidden even when filled: an existing server always has transport values,
+        // and hidden fields keep their values and still save.
+        SettingsKit.InstallMoreFields(this, btnMoreFields, () => false);
+        // The HTTP headers row is shown from code for HTTP only; without its title the row collapses.
+        SettingsKit.FollowTitles(this);
 
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
@@ -209,6 +216,7 @@ public partial class AddServerWindow : WindowBase<AddServerViewModel>
     private void InitializeData(ProfileItem profileItem)
     {
         Title = $"{profileItem.ConfigType}";
+        tbPageTitle.Text = string.Format(L.SvTitle, profileItem.ConfigType);
         var lstStreamSecurity = new List<string> { string.Empty, Global.StreamSecurity };
         switch (profileItem.ConfigType)
         {

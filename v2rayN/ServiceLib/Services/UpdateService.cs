@@ -10,12 +10,19 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
     {
         var url = string.Empty;
         var fileName = string.Empty;
+        string? expectedHash = null; // V2pn
 
         DownloadService downloadHandle = new();
         downloadHandle.UpdateCompleted += (sender2, args) =>
         {
             if (args.Success)
             {
+                // V2pn: AmazTool installs whatever it gets, so a package must match its published hash.
+                if (!V2pnInfo.VerifyPackage(fileName, expectedHash, out var hashError))
+                {
+                    _ = UpdateFunc(false, hashError);
+                    return;
+                }
                 _ = UpdateFunc(false, ResUI.MsgDownloadV2rayCoreSuccessfully);
                 _ = UpdateFunc(true, Utils.UrlEncode(fileName));
             }
@@ -38,6 +45,7 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
 
             url = result.Url!;
             fileName = Utils.GetTempPath(Utils.GetGuid());
+            expectedHash = await V2pnInfo.GetPublishedHashAsync(downloadHandle, url, blProxy, cancellationToken); // V2pn
             await downloadHandle.DownloadFileAsync(new() { FileUrl = url, FilePath = fileName }, blProxy, cancellationToken);
         }
         else
@@ -291,7 +299,7 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
                     }
                 case ECoreType.v2rayN:
                     {
-                        curVersion = new SemanticVersion(Utils.GetVersionInfo());
+                        curVersion = new SemanticVersion(V2pnInfo.Version); // V2pn: its own release number
                         message = string.Format(ResUI.IsLatestN, type, curVersion.ToStandardVersionString("v"));
                         url = string.Format(coreUrl, version);
                         break;
@@ -327,7 +335,8 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
                 _ => null,
             };
 
-            if (coreInfo?.CoreType != ECoreType.v2rayN)
+            // V2pn: its packages have one name per architecture, without v2rayN's -desktop/-aot variants.
+            if (coreInfo?.CoreType != ECoreType.v2rayN || V2pnInfo.SelfUpdateSupported)
             {
                 return url;
             }

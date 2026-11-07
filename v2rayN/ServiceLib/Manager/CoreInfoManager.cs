@@ -76,8 +76,8 @@ public sealed class CoreInfoManager
     {
         return type switch
         {
-            // V2pn has no release channel of its own yet; the upstream one would replace V2pn with v2rayN.
-            ECoreType.v2rayN => false,
+            // V2pn: the app updates from V2pn's releases (see V2pnInfo), never from v2rayN's.
+            ECoreType.v2rayN => V2pnInfo.SelfUpdateSupported,
             ECoreType.Xray => true,
             ECoreType.mihomo => true,
             ECoreType.sing_box => true,
@@ -291,6 +291,7 @@ public sealed class CoreInfoManager
                     },
                 },
         ];
+        V2pnInfo.ApplyTo(_coreInfo.First(t => t.CoreType == ECoreType.v2rayN)); // V2pn
     }
 
     private static string PortableMode()

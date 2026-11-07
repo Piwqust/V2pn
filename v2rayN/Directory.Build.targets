@@ -1,0 +1,22 @@
+<Project>
+  <!--
+    V2pn's own release number. v2rayN's <Version> in Directory.Build.props is left alone so that
+    merges from v2rayN never conflict on it, and because ServiceLib must keep reporting it:
+    subscription panels pick the config format from the "v2rayN/x.y.z" User-Agent.
+    The release script and CI pass -p:V2pnVersion=x.y.z; this default is for local builds.
+  -->
+  <PropertyGroup>
+    <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.0.0</V2pnVersion>
+  </PropertyGroup>
+
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop'">
+    <Version>$(V2pnVersion)</Version>
+    <AssemblyVersion>$(V2pnVersion)</AssemblyVersion>
+    <FileVersion>$(V2pnVersion)</FileVersion>
+    <InformationalVersion>$(V2pnVersion)</InformationalVersion>
+  </PropertyGroup>
+
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'ServiceLib'">
+    <AssemblyMetadata Include="V2pnVersion" Value="$(V2pnVersion)" />
+  </ItemGroup>
+</Project>

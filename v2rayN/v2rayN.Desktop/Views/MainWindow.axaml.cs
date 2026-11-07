@@ -232,7 +232,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
         if (Utils.IsWindows())
         {
-            Title = $"{L.AppName} {Utils.GetVersionInfo()} - {(Utils.IsAdministrator() ? ResUI.RunAsAdmin : ResUI.NotRunAsAdmin)}";
+            Title = $"{L.AppName} {V2pnInfo.Version} - {(Utils.IsAdministrator() ? ResUI.RunAsAdmin : ResUI.NotRunAsAdmin)}";
 
             if (!Design.IsDesignMode)
             {
@@ -242,7 +242,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         else
         {
-            Title = $"{L.AppName} {Utils.GetVersionInfo()}";
+            Title = $"{L.AppName} {V2pnInfo.Version}";
             menuAddServerViaScan.IsVisible = false;
             menuGlobalHotkeySetting.IsVisible = false;
             menuRebootAsAdmin.IsVisible = false;

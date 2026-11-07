@@ -46,7 +46,8 @@ internal class Utils
             : StringComparison.Ordinal;
     }
 
-    public static string V2rayN => "v2rayN";
+    // V2pn: the app exe is V2pn.exe; AmazTool stops and restarts it by this name.
+    public static string V2rayN => "V2pn";
 
     public static void StartV2RayN()
     {

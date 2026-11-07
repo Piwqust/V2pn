@@ -18,7 +18,6 @@ public sealed class MapView : UserControl
     private readonly Canvas _dots = new() { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
     private readonly List<(MapLocation Location, MapCountry Country, Ellipse Dot)> _dotItems = [];
     private readonly Panel _root;
-    private readonly MapGlass _glass;
     private readonly Panel _pin;
     private readonly Ellipse _pinCore;
     private readonly Ellipse _pinRing;
@@ -74,9 +73,7 @@ public sealed class MapView : UserControl
             Children = { _canvas },
             CacheMode = new BitmapCache(),
         };
-        // While protected, the countries and dots sit behind the brand's ribbed glass; the pin stays sharp on top.
-        _glass = new MapGlass(countries);
-        _root = new Panel { Children = { countries, _dots, _glass, _pin } };
+        _root = new Panel { Children = { countries, _dots, _pin } };
         Content = _root;
 
         SizeChanged += (_, _) => Apply(animate: false);
@@ -196,17 +193,6 @@ public sealed class MapView : UserControl
             Pulse();
         }
         PlaceDots();
-
-        // Glass whenever traffic goes through a server, system-wide or only through the local port.
-        var protectedNow = _state != ProtectionState.Unprotected;
-        _glass.Ground = _root.Background ?? Brushes.Black;
-        _glass.Tint = Brush("V2Accent") is ISolidColorBrush tint ? tint.Color : _glass.Tint;
-        _glass.Dark = IsDark();
-        _glass.LightAt = new Point(0.5, FocusY);
-        _glass.Invalidate();
-        _glass.SetOn(protectedNow);
-        // Dots behind the glass are out of reach until it slides away.
-        _dots.IsHitTestVisible = !protectedNow;
     }
 
     private string? _pulsedCode;
@@ -279,7 +265,6 @@ public sealed class MapView : UserControl
         {
             _animating = false;
             SetMatrix(_to);
-            _glass.Invalidate();
             return;
         }
         _from = _now;
@@ -305,8 +290,6 @@ public sealed class MapView : UserControl
         if (t >= 1)
         {
             _animating = false;
-            // The glass keeps the old picture while the map glides; refresh it where the map stopped.
-            _glass.Invalidate();
             return;
         }
         TopLevel.GetTopLevel(this)?.RequestAnimationFrame(OnFrame);

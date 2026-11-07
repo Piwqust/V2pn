@@ -154,6 +154,24 @@ public static class CountryResolver
         return _cache.GetOrAdd(remarks, Detect);
     }
 
+    /// <summary>
+    /// The name to show for a server: its remark without flag emoji, or, when a link came with no
+    /// name at all, its address, so a row or the header is never blank.
+    /// </summary>
+    public static string ServerName(ProfileItem item) => ServerName(item.Remarks, item.Address, item.ConfigType);
+
+    public static string ServerName(ProfileItemModel item) => ServerName(item.Remarks, item.Address, item.ConfigType);
+
+    private static string ServerName(string? remarks, string? address, EConfigType type)
+    {
+        var name = StripFlag(remarks);
+        if (name.IsNotEmpty())
+        {
+            return name;
+        }
+        return address.IsNotEmpty() ? address! : type.ToString();
+    }
+
     /// <summary>Removes flag emoji so the image flag beside the name is not duplicated.</summary>
     public static string StripFlag(string? remarks)
     {

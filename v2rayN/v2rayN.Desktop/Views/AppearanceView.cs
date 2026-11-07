@@ -197,7 +197,8 @@ public sealed class AppearanceView : UserControl
 
     private static ListBox SegmentBox(string[] labels)
     {
-        var box = new ListBox { ItemsSource = labels };
+        // Without this, selecting the stored value scrolls the dialog to that row on open.
+        var box = new ListBox { ItemsSource = labels, AutoScrollToSelectedItem = false };
         box.Bind(ThemeProperty, box.GetResourceObservable("V2Segmented"));
         return box;
     }
@@ -270,8 +271,16 @@ public sealed class AppearanceView : UserControl
             var side = Shade(surface, dark ? 0.06 : -0.05);
             var line = Shade(surface, dark ? 0.16 : -0.12);
 
+            // Every card has the same 2 px frame (selection only recolours it), so nothing shifts.
+            // Children are not clipped to rounded corners: the side strip rounds its own outer corners
+            // to the frame's inner radius, or its square corners poke out over the frame.
+            const double radius = 10, frameWidth = 2;
             var preview = new Grid { ColumnDefinitions = new("34,*"), Height = 52 };
-            preview.Children.Add(new Border { Background = new SolidColorBrush(side) });
+            preview.Children.Add(new Border
+            {
+                Background = new SolidColorBrush(side),
+                CornerRadius = new CornerRadius(radius - frameWidth, 0, 0, radius - frameWidth),
+            });
             var content = new StackPanel { Margin = new Thickness(8, 9), Spacing = 5 };
             content.Children.Add(new Border { Height = 5, Width = 40, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3), Background = new SolidColorBrush(line) });
             content.Children.Add(new Border { Height = 5, Width = 26, HorizontalAlignment = HorizontalAlignment.Left, CornerRadius = new CornerRadius(3), Background = new SolidColorBrush(line) });
@@ -283,18 +292,18 @@ public sealed class AppearanceView : UserControl
             {
                 Width = 96,
                 ClipToBounds = true,
-                CornerRadius = new CornerRadius(10),
+                CornerRadius = new CornerRadius(radius),
                 Background = new SolidColorBrush(surface),
-                BorderThickness = new Thickness(selected ? 2 : 1),
-                BorderBrush = selected ? new SolidColorBrush(accent) : new SolidColorBrush(Shade(surface, dark ? 0.2 : -0.18)),
+                BorderThickness = new Thickness(frameWidth),
+                BorderBrush = selected ? new SolidColorBrush(accent) : new SolidColorBrush(Shade(surface, dark ? 0.12 : -0.1)),
                 Child = preview,
             };
+            // A ghost V2pn button: a soft rounded plate on hover instead of Semi's grey rectangle.
             var card = new Button
             {
-                Padding = new Thickness(0),
-                Margin = new Thickness(0, 0, 10, 10),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
+                Classes = { "ghost" },
+                Padding = new Thickness(4),
+                Margin = new Thickness(0, 0, 6, 6),
                 Content = new StackPanel
                 {
                     Spacing = 6,
@@ -305,6 +314,7 @@ public sealed class AppearanceView : UserControl
                     },
                 },
             };
+            card.Bind(ThemeProperty, card.GetResourceObservable("V2Button"));
             AutomationProperties.SetName(card, L.ApPaletteName(palette.Id));
             var id = palette.Id;
             card.Click += (_, _) =>

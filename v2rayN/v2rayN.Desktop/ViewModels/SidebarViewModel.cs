@@ -62,7 +62,7 @@ public sealed class SideServerRow : SideRow
         Model = model;
         Code = CountryResolver.Resolve(model.Remarks);
         Flag = V2pnConverters.Flag(Code);
-        Title = CountryResolver.StripFlag(model.Remarks);
+        Title = CountryResolver.ServerName(model);
         var country = WorldMap.Instance.Get(Code)?.Name;
         var protocol = V2pnConverters.ProtocolName.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string;
         Subtitle = showSubscription && model.SubRemarks.IsNotEmpty()
@@ -373,7 +373,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
         var fastest = all.Concat(_profiles.FavoriteItems).Where(m => m.Delay > 0).MinBy(m => m.Delay);
         rows.Add(fastest != null
-            ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.StripFlag(fastest.Remarks)} · {L.Ms(fastest.Delay)}", fastest.IndexId)
+            ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.ServerName(fastest)} · {L.Ms(fastest.Delay)}", fastest.IndexId)
             : new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone));
 
         // Recent connections, Proton-style: the last few servers, newest first, unless they are favorites already.

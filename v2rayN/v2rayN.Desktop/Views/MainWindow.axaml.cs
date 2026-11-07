@@ -505,7 +505,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         else
         {
-            var name = CountryResolver.StripFlag(item.Remarks);
+            var name = CountryResolver.ServerName(item);
             var region = string.Equals(code, "EU", StringComparison.OrdinalIgnoreCase) ? L.Europe : null;
             txtHeaderTitle.Text = country?.Name ?? region ?? name;
             var transport = string.Join(" · ", new[] { item.ConfigType.ToString(), item.StreamSecurity }.Where(t => t.IsNotEmpty()));

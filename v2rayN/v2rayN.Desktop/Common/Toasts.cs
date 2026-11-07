@@ -72,7 +72,7 @@ internal static class Toasts
     {
         var code = CountryResolver.Resolve(item.Remarks);
         var country = WorldMap.Instance.Get(code);
-        var name = CountryResolver.StripFlag(item.Remarks);
+        var name = CountryResolver.ServerName(item);
         var flag = V2pnConverters.Flag(code);
 
         Control badge;

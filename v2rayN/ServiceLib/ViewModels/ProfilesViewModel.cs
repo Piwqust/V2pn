@@ -587,6 +587,8 @@ public partial class ProfilesViewModel : MyReactiveObject
 
         SubItems.ReplaceRange(subItems);
         SubNavItems.ReplaceRange(subItems.Skip(1).Select(t => new SubItemModel(t)));
+        // V2pn: fresh models start at zero servers; count them again so the sidebar never shows "0 servers".
+        await RefreshNavCounts();
 
         SelectedSub = (_config.SubIndexId.IsNotEmpty()
                         ? subItems.FirstOrDefault(t => t.Id == _config.SubIndexId)

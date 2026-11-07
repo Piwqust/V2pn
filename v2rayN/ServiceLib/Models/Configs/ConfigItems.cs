@@ -111,6 +111,9 @@ public class UIItem
     public bool V2pnSettingsAdvanced { get; set; }
 
     public List<string>? V2pnRecent { get; set; }
+
+    // Null means on: new versions download in the background and install at the next start.
+    public bool? V2pnAutoUpdate { get; set; }
 }
 
 public class ConstItem

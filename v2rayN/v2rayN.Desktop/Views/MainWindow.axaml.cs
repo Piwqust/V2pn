@@ -114,7 +114,15 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
             this.BindCommand(ViewModel, vm => vm.ReloadCmd, v => v.menuReload).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.BlReloadEnabled, v => v.menuReload.IsEnabled).DisposeWith(disposables);
-            this.OneWayBind(ViewModel, vm => vm.BlNewUpdate, v => v.btnNewUpdate.IsVisible).DisposeWith(disposables);
+            // The header badge serves both V2pn's own update and v2rayN's core updates.
+            this.WhenAnyValue(v => v.ViewModel.BlNewUpdate)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => RefreshUpdateBadge())
+                .DisposeWith(disposables);
+            V2pnAppUpdater.Instance.WhenAnyValue(u => u.State)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(OnAppUpdateState)
+                .DisposeWith(disposables);
 
             //add servers
             this.BindCommand(ViewModel, vm => vm.AddServerViaScanCmd, v => v.menuAddServerViaScan).DisposeWith(disposables);
@@ -1313,6 +1321,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return;
         }
+        // With no servers yet the welcome card says what to do; v2rayN's "invalid configuration"
+        // would greet a new person with an error.
+        if (content == ResUI.CheckServerSettings && (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) == 0)
+        {
+            return;
+        }
         // v2rayN announces a started core with the server summary; show the server instead of its raw summary.
         var item = await AppManager.Instance.GetProfileItem(_config.IndexId);
         if (item != null && content == item.GetSummary())
@@ -1451,6 +1465,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _checkUpdateView.ViewModel = ViewModel?.CheckUpdateViewModel;
         DialogHost.Show(_checkUpdateView);
 
+        // Only v2rayN's core notice is dismissed by looking; V2pn's own stays until it is installed.
         AppEvents.HasUpdateNotified.Publish(false);
     }
 
@@ -1533,13 +1548,48 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         AppManager.Instance.ShowInTaskbar = bl;
     }
 
-    protected override void OnLoaded(object? sender, RoutedEventArgs e)
+    protected override async void OnLoaded(object? sender, RoutedEventArgs e)
     {
         base.OnLoaded(sender, e);
         if (_config.UiItem.AutoHideStartup)
         {
             ShowHideWindow(false);
         }
+        if (await AppUpdates.InstallPendingAtStartAsync(_config, message => ShowToast(ToastKind.Info, message)))
+        {
+            return;
+        }
+        AppUpdates.Start(_config);
+    }
+
+    private string? _announcedVersion;
+
+    private void OnAppUpdateState(EV2pnUpdateState state)
+    {
+        RefreshUpdateBadge();
+        var updater = V2pnAppUpdater.Instance;
+        // One toast per version: when it is ready, or found while automatic updates are off.
+        var worthTelling = state == EV2pnUpdateState.Ready
+            || (state == EV2pnUpdateState.Available && !AppUpdates.Auto(_config));
+        if (!worthTelling || updater.LatestVersion == _announcedVersion)
+        {
+            return;
+        }
+        _announcedVersion = updater.LatestVersion;
+        ShowToast(ToastKind.Info, string.Format(state == EV2pnUpdateState.Ready ? L.UpdToastReady : L.UpdToastAvailable, updater.LatestVersion));
+    }
+
+    private void RefreshUpdateBadge()
+    {
+        var state = V2pnAppUpdater.Instance.State;
+        var app = state is EV2pnUpdateState.Available or EV2pnUpdateState.Downloading or EV2pnUpdateState.Ready;
+        btnNewUpdate.IsVisible = app || ViewModel?.BlNewUpdate == true;
+        txtNewUpdate.Text = state == EV2pnUpdateState.Ready ? L.UpdBadgeReady : app ? L.UpdBadgeAvailable : L.NewVersion;
+    }
+
+    private void ShowToast(ToastKind kind, string message)
+    {
+        _manager?.Show(Toasts.Message(kind, null, message), Toasts.TypeOf(kind), TimeSpan.FromSeconds(6));
     }
 
     private void StorageUI()

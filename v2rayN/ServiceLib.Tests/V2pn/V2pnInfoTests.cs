@@ -50,16 +50,22 @@ public class V2pnInfoTests
     }
 
     [Test]
-    public async Task AppUpdates_ComeFromV2pnReleases_NotFromV2rayN()
+    public async Task Packages_ComeFromV2pnReleases_OnePerArchitecture()
     {
-        var info = CoreInfoManager.Instance.GetCoreInfo(ECoreType.v2rayN)!;
+        await V2pnInfo.ReleasesUrl.Should().BeEqualTo($"https://github.com/{V2pnInfo.Repo}/releases");
+        await V2pnInfo.PackageName(Architecture.X64).Should().BeEqualTo("V2pn-windows-x64.zip");
+        await V2pnInfo.PackageName(Architecture.Arm64).Should().BeEqualTo("V2pn-windows-arm64.zip");
+        await V2pnInfo.PackageName(Architecture.X86).Should().BeNull();
+        await V2pnInfo.PackageUrl("v1.2.3", "V2pn-windows-x64.zip")
+            .Should().BeEqualTo($"https://github.com/{V2pnInfo.Repo}/releases/download/v1.2.3/V2pn-windows-x64.zip");
+    }
 
-        await info.Url!.Should().BeEqualTo(V2pnInfo.ReleasesUrl);
-        await info.Url!.Contains("2dust").Should().BeFalse();
-        await info.DownloadUrlWin64!.Should().EndWith("/download/{0}/" + V2pnInfo.PackageWin64);
-        await info.DownloadUrlWinArm64!.Should().EndWith("/download/{0}/" + V2pnInfo.PackageWinArm64);
-        await info.DownloadUrlLinux64.Should().BeNull();
-        await info.DownloadUrlOSXArm64.Should().BeNull();
+    [Test]
+    public async Task AppUpdates_NeverGoThroughV2rayNsChannel()
+    {
+        // v2rayN's update entry would download v2rayN over V2pn.
+        await CoreInfoManager.Instance.IsCheckUpdateSupported(ECoreType.v2rayN).Should().BeFalse();
+        await CoreInfoManager.Instance.GetCheckUpdateCoreTypes().Contains(ECoreType.v2rayN).Should().BeFalse();
     }
 
     [Test]

@@ -62,7 +62,9 @@
                             <MenuItem x:Name="menuSubSetting" Header="{x:Static resx:ResUI.menuSubSetting}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconFolderStroked}" /></MenuItem.Icon></MenuItem>
                             <Separator />
                             <MenuItem x:Name="menuReload" Header="{x:Static resx:ResUI.menuReload}" InputGesture="F5"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconRotate}" /></MenuItem.Icon></MenuItem>
-                            <MenuItem x:Name="menuHelp" Header="{x:Static loc:L.Help}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconHelpCircleStroked}" /></MenuItem.Icon><MenuItem x:Name="menuCheckUpdate" Header="{x:Static resx:ResUI.menuCheckUpdate}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconDownloadStroked}" /></MenuItem.Icon></MenuItem><MenuItem x:Name="menuPromotion" Header="{x:Static resx:ResUI.menuPromotion}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconExternalOpenStroked}" /></MenuItem.Icon></MenuItem></MenuItem>
+                            <MenuItem x:Name="menuCheckUpdate" Header="{x:Static loc:L.UpdCheckNow}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconDownloadStroked}" /></MenuItem.Icon></MenuItem>
+                            <!--  v2rayN's sponsor link stays in the tree for its code-behind but is not V2pn's to show.  -->
+                            <MenuItem x:Name="menuHelp" Header="{x:Static loc:L.Help}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconHelpCircleStroked}" /></MenuItem.Icon><MenuItem x:Name="menuPromotion" Header="{x:Static resx:ResUI.menuPromotion}" IsVisible="False" /></MenuItem>
                             <Separator />
                             <MenuItem x:Name="menuClose" Header="{x:Static loc:L.MenuQuit}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconExit}" /></MenuItem.Icon></MenuItem>
                         </MenuFlyout>
@@ -109,7 +111,7 @@
                     Theme="{StaticResource V2Button}">
                     <StackPanel Orientation="Horizontal" Spacing="6">
                         <Ellipse Classes="dot live" />
-                        <TextBlock Text="{x:Static loc:L.NewVersion}" />
+                        <TextBlock x:Name="txtNewUpdate" Text="{x:Static loc:L.NewVersion}" />
                     </StackPanel>
                 </Button>
                 <ContentControl

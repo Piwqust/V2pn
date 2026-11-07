@@ -8,7 +8,7 @@
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    d:DesignHeight="560"
+    d:DesignHeight="640"
     d:DesignWidth="660"
     x:DataType="vms:CheckUpdateViewModel"
     Design.DataContext="{x:Static dd:DesignData.CheckUpdate}"
@@ -34,21 +34,96 @@
                 </StackPanel>
                 <StackPanel Classes="footer">
                     <Button x:Name="btnCheckOnly" Content="{x:Static loc:L.TlUpdCheck}" />
-                    <Button
-                        x:Name="btnCheckUpdate"
-                        Classes="primary"
-                        Content="{x:Static loc:L.TlUpdUpdate}" />
+                    <Button x:Name="btnCheckUpdate" Content="{x:Static loc:L.TlUpdUpdate}" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
         <StackPanel Margin="28,22,28,0" DockPanel.Dock="Top" Spacing="6">
             <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlUpdTitle}" />
-            <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlUpdHint}" />
+        </StackPanel>
+
+        <!--  V2pn itself: version, what is happening, one action.  -->
+        <Border
+            x:Name="cardApp"
+            Margin="28,14,28,0"
+            Classes="formcard"
+            DockPanel.Dock="Top">
+            <StackPanel Margin="8,8,8,6" Spacing="12">
+                <Grid ColumnDefinitions="Auto,*,Auto">
+                    <Border
+                        Width="44"
+                        Height="44"
+                        Margin="0,0,14,0"
+                        VerticalAlignment="Center"
+                        Background="{DynamicResource V2NeutralFill}"
+                        CornerRadius="12">
+                        <Image
+                            Width="26"
+                            Height="26"
+                            Source="/Assets/V2pn.ico" />
+                    </Border>
+                    <StackPanel
+                        Grid.Column="1"
+                        VerticalAlignment="Center"
+                        Spacing="2">
+                        <TextBlock x:Name="txtAppVersion" Classes="srowtitle" />
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <Path
+                                x:Name="spinApp"
+                                Classes="spinner"
+                                IsVisible="False" />
+                            <TextBlock
+                                x:Name="txtAppState"
+                                Classes="srowhint"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                        <TextBlock
+                            x:Name="txtAppBase"
+                            Classes="muted small" />
+                    </StackPanel>
+                    <StackPanel
+                        Grid.Column="2"
+                        Margin="14,0,0,0"
+                        VerticalAlignment="Center"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Button
+                            x:Name="btnWhatsNew"
+                            Classes="subtle"
+                            Content="{x:Static loc:L.UpdWhatsNew}"
+                            IsVisible="False"
+                            Theme="{StaticResource V2Button}" />
+                        <Button
+                            x:Name="btnAppAction"
+                            MinWidth="150"
+                            Theme="{StaticResource V2Button}" />
+                    </StackPanel>
+                </Grid>
+                <Border Height="1" Background="{DynamicResource V2PanelBorder}" />
+                <Grid ColumnDefinitions="*,Auto">
+                    <StackPanel Classes="srowtext">
+                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.UpdAuto}" />
+                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.UpdAutoHint}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Name="togAutoUpdate"
+                        Grid.Column="1"
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        OffContent=""
+                        OnContent="" />
+                </Grid>
+            </StackPanel>
+        </Border>
+
+        <StackPanel Margin="28,18,28,0" DockPanel.Dock="Top" Spacing="2">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.UpdComponents}" />
+            <TextBlock Classes="muted small" Text="{x:Static loc:L.UpdComponentsHint}" />
         </StackPanel>
 
         <Border
-            Margin="28,14,28,20"
+            Margin="28,8,28,20"
             Classes="formcard">
 
             <ListBox
@@ -62,7 +137,7 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Grid Margin="0,6" ColumnDefinitions="Auto,*,Auto">
+                        <Grid Margin="0,4" ColumnDefinitions="Auto,*,Auto">
                             <ToggleSwitch
                                 x:Name="togAutoRefresh"
                                 Grid.Column="0"
@@ -76,7 +151,8 @@
                                 <TextBlock Classes="srowtitle" Text="{Binding CoreTypeForStorage, Converter={x:Static views:CheckUpdateView.PartName}}" />
                                 <TextBlock
                                     Classes="srowhint"
-                                    Text="{Binding Remarks}"
+                                    IsVisible="{Binding Remarks, Converter={x:Static views:CheckUpdateView.HasNews}}"
+                                    Text="{Binding Remarks, Converter={x:Static views:CheckUpdateView.Plain}}"
                                     TextWrapping="WrapWithOverflow" />
                             </StackPanel>
                             <StackPanel

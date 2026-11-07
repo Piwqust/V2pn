@@ -1,23 +1,19 @@
 namespace ServiceLib;
 
 /// <summary>
-/// What sets V2pn's own releases apart from v2rayN's: its version, where its packages live and
-/// how a downloaded package is checked before AmazTool installs it. v2rayN's update code calls in
-/// here through a few marked hooks, so a merge from v2rayN keeps working on V2pn's channel.
+/// What sets V2pn's own releases apart from v2rayN's: its version, where its packages live and how
+/// a downloaded package is checked before AmazTool installs it.
 /// </summary>
 public static class V2pnInfo
 {
     /// <summary>GitHub repository whose releases carry V2pn packages.</summary>
     public const string Repo = "Piwqust/V2pn";
 
-    public const string PackageWin64 = "V2pn-windows-x64.zip";
-    public const string PackageWinArm64 = "V2pn-windows-arm64.zip";
-
     /// <summary>Published next to every package; holds its SHA-256.</summary>
     public const string HashSuffix = ".sha256";
 
-    // Points the update check at another copy of the releases page. tools/update-e2e.ps1 uses it
-    // to install older builds and update them from a local server without publishing anything.
+    // Points update checks at another copy of the releases page. tools/update-e2e.ps1 uses it to
+    // install older builds and update them from a local server without publishing anything.
     private const string ReleasesUrlEnv = "V2PN_RELEASES_URL";
 
     public static string Version { get; } = typeof(V2pnInfo).Assembly
@@ -36,35 +32,21 @@ public static class V2pnInfo
         }
     }
 
-    private static string ReleasesApiUrl
-    {
-        get
-        {
-            var custom = Environment.GetEnvironmentVariable(ReleasesUrlEnv);
-            return custom.IsNullOrEmpty() ? $"{Global.GithubApiUrl}/{Repo}/releases" : $"{custom.TrimEnd('/')}/api";
-        }
-    }
-
     /// <summary>
     /// V2pn publishes portable Windows packages only. Elsewhere, and where a package manager owns
     /// the install, the app does not offer to replace itself.
     /// </summary>
-    public static bool SelfUpdateSupported => Utils.IsWindows() && !Utils.IsPackagedInstall();
+    public static bool SelfUpdateSupported => Utils.IsWindows() && !Utils.IsPackagedInstall() && PackageName() != null;
 
-    /// <summary>Points v2rayN's "update the app" entry at V2pn's releases instead of v2rayN's.</summary>
-    public static void ApplyTo(CoreInfo info)
+    /// <summary>The package for this machine, or null for an architecture V2pn does not ship.</summary>
+    public static string? PackageName(Architecture? arch = null) => (arch ?? RuntimeInformation.ProcessArchitecture) switch
     {
-        info.Url = ReleasesUrl;
-        info.ReleaseApiUrl = ReleasesApiUrl;
-        info.DownloadUrlWin64 = $"{ReleasesUrl}/download/{{0}}/{PackageWin64}";
-        info.DownloadUrlWinArm64 = $"{ReleasesUrl}/download/{{0}}/{PackageWinArm64}";
-        info.DownloadUrlLinux64 = null;
-        info.DownloadUrlLinuxArm64 = null;
-        info.DownloadUrlLinuxRiscV64 = null;
-        info.DownloadUrlLinuxLoong64 = null;
-        info.DownloadUrlOSX64 = null;
-        info.DownloadUrlOSXArm64 = null;
-    }
+        Architecture.X64 => "V2pn-windows-x64.zip",
+        Architecture.Arm64 => "V2pn-windows-arm64.zip",
+        _ => null,
+    };
+
+    public static string PackageUrl(string tag, string packageName) => $"{ReleasesUrl}/download/{tag}/{packageName}";
 
     /// <summary>Reads the SHA-256 published for a package, or null when there is none.</summary>
     public static async Task<string?> GetPublishedHashAsync(DownloadService download, string packageUrl, bool blProxy, CancellationToken cancellationToken = default)
@@ -97,7 +79,7 @@ public static class V2pnInfo
         error = string.Empty;
         if (expectedHash.IsNullOrEmpty())
         {
-            error = "V2pn: the release has no checksum, the update was not installed.";
+            error = "The release has no checksum.";
             return false;
         }
         try
@@ -108,7 +90,7 @@ public static class V2pnInfo
             {
                 return true;
             }
-            error = "V2pn: the downloaded update is damaged (checksum mismatch), it was not installed.";
+            error = "The downloaded package is damaged (checksum mismatch).";
             return false;
         }
         catch (Exception ex)

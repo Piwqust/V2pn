@@ -10,6 +10,27 @@ namespace v2rayN.Desktop.Views;
 public partial class MainWindow
 {
     private ThemeSettingViewModel? _themeSettings;
+    private TextBlock? _connectLabel;
+
+    // Built once: changing only the text keeps the button from re-creating its content on every refresh.
+    private void SetConnectLabel(string text)
+    {
+        if (_connectLabel == null)
+        {
+            _connectLabel = new TextBlock { VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
+            var power = new PathIcon();
+            power.Bind(PathIcon.DataProperty, power.GetResourceObservable("SemiIconPower"));
+            btnConnect.Content = new StackPanel
+            {
+                Orientation = Avalonia.Layout.Orientation.Horizontal,
+                Spacing = 9,
+                HorizontalAlignment = Avalonia.Layout.HorizontalAlignment.Center,
+                Children = { power, _connectLabel },
+            };
+        }
+        _connectLabel.Text = text;
+        Avalonia.Automation.AutomationProperties.SetName(btnConnect, text);
+    }
 
     private void ApplyLayout()
     {

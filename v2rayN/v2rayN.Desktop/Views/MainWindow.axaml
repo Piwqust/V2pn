@@ -213,17 +213,17 @@
                                 <Button.Flyout>
                                     <MenuFlyout Placement="BottomEdgeAlignedLeft">
                                         <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpImport}" IsEnabled="False" />
-                                        <MenuItem x:Name="menuAddServerViaClipboard" AutomationProperties.Name="{x:Static loc:L.WelcomePaste}" InputGesture="Ctrl+V" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileBlue}"><PathIcon Data="{StaticResource SemiIconCopyAdd}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.WelcomePaste}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuPasteDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                        <MenuItem x:Name="menuAddSubscription" AutomationProperties.Name="{x:Static loc:L.AddSubscription}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileGreen}"><PathIcon Data="{StaticResource SemiIconLink}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.AddSubscription}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuSubDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                        <MenuItem x:Name="menuAddServerViaScan" Header="{x:Static loc:L.MenuScanScreen}" InputGesture="Ctrl+S" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TilePurple}"><PathIcon Data="{StaticResource SemiIconScan}" /></Border></MenuItem.Icon></MenuItem>
-                                        <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static loc:L.MenuScanImage}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileAmber}"><PathIcon Data="{StaticResource SemiIconImage}" /></Border></MenuItem.Icon></MenuItem>
+                                        <MenuItem x:Name="menuAddServerViaClipboard" AutomationProperties.Name="{x:Static loc:L.WelcomePaste}" InputGesture="Ctrl+V" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconCopyAdd}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.WelcomePaste}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuPasteDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                        <MenuItem x:Name="menuAddSubscription" AutomationProperties.Name="{x:Static loc:L.AddSubscription}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconLink}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.AddSubscription}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuSubDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                        <MenuItem x:Name="menuAddServerViaScan" Header="{x:Static loc:L.MenuScanScreen}" InputGesture="Ctrl+S" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconScan}" /></MenuItem.Icon></MenuItem>
+                                        <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static loc:L.MenuScanImage}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconImage}" /></MenuItem.Icon></MenuItem>
                                         <Separator />
                                         <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpManual}" IsEnabled="False" />
-                                        <MenuItem x:Name="menuAddServerByProtocol" AutomationProperties.Name="{x:Static loc:L.MenuServerByProtocol}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileGray}"><PathIcon Data="{StaticResource SemiIconServer}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuServerByProtocol}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuServerDesc}" /></StackPanel></MenuItem.Header><MenuItem x:Name="menuAddVlessServer" Header="{x:Static resx:ResUI.menuAddVlessServer}" /><MenuItem x:Name="menuAddVmessServer" Header="{x:Static resx:ResUI.menuAddVmessServer}" /><MenuItem x:Name="menuAddShadowsocksServer" Header="{x:Static resx:ResUI.menuAddShadowsocksServer}" /><MenuItem x:Name="menuAddTrojanServer" Header="{x:Static resx:ResUI.menuAddTrojanServer}" /><MenuItem x:Name="menuAddHysteria2Server" Header="{x:Static resx:ResUI.menuAddHysteria2Server}" /><MenuItem x:Name="menuAddTuicServer" Header="{x:Static resx:ResUI.menuAddTuicServer}" /><MenuItem x:Name="menuAddWireguardServer" Header="{x:Static resx:ResUI.menuAddWireguardServer}" /><MenuItem x:Name="menuAddAnytlsServer" Header="{x:Static resx:ResUI.menuAddAnytlsServer}" /><MenuItem x:Name="menuAddNaiveServer" Header="{x:Static resx:ResUI.menuAddNaiveServer}" /><MenuItem x:Name="menuAddMasqueServer" Header="{x:Static resx:ResUI.menuAddMasqueServer}" /><MenuItem x:Name="menuAddSocksServer" Header="{x:Static resx:ResUI.menuAddSocksServer}" /><MenuItem x:Name="menuAddHttpServer" Header="{x:Static resx:ResUI.menuAddHttpServer}" /></MenuItem>
-                                        <MenuItem x:Name="menuAddPolicyGroupServer" AutomationProperties.Name="{x:Static loc:L.MenuPolicyGroup}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileTeal}"><PathIcon Data="{StaticResource SemiIconBranch}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuPolicyGroup}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuGroupDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                        <MenuItem x:Name="menuAddProxyChainServer" AutomationProperties.Name="{x:Static loc:L.MenuProxyChain}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileAmber}"><PathIcon Data="{StaticResource SemiIconChainStroked}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuProxyChain}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuChainDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                        <MenuItem x:Name="menuAddCustomServer" Header="{x:Static loc:L.MenuCustomConfig}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileGray}"><PathIcon Data="{StaticResource SemiIconCode}" /></Border></MenuItem.Icon></MenuItem>
-                                        <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static loc:L.MenuCustomOutbound}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileGray}"><PathIcon Data="{StaticResource SemiIconComponent}" /></Border></MenuItem.Icon></MenuItem>
+                                        <MenuItem x:Name="menuAddServerByProtocol" AutomationProperties.Name="{x:Static loc:L.MenuServerByProtocol}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconServer}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuServerByProtocol}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuServerDesc}" /></StackPanel></MenuItem.Header><MenuItem x:Name="menuAddVlessServer" Header="{x:Static resx:ResUI.menuAddVlessServer}" /><MenuItem x:Name="menuAddVmessServer" Header="{x:Static resx:ResUI.menuAddVmessServer}" /><MenuItem x:Name="menuAddShadowsocksServer" Header="{x:Static resx:ResUI.menuAddShadowsocksServer}" /><MenuItem x:Name="menuAddTrojanServer" Header="{x:Static resx:ResUI.menuAddTrojanServer}" /><MenuItem x:Name="menuAddHysteria2Server" Header="{x:Static resx:ResUI.menuAddHysteria2Server}" /><MenuItem x:Name="menuAddTuicServer" Header="{x:Static resx:ResUI.menuAddTuicServer}" /><MenuItem x:Name="menuAddWireguardServer" Header="{x:Static resx:ResUI.menuAddWireguardServer}" /><MenuItem x:Name="menuAddAnytlsServer" Header="{x:Static resx:ResUI.menuAddAnytlsServer}" /><MenuItem x:Name="menuAddNaiveServer" Header="{x:Static resx:ResUI.menuAddNaiveServer}" /><MenuItem x:Name="menuAddMasqueServer" Header="{x:Static resx:ResUI.menuAddMasqueServer}" /><MenuItem x:Name="menuAddSocksServer" Header="{x:Static resx:ResUI.menuAddSocksServer}" /><MenuItem x:Name="menuAddHttpServer" Header="{x:Static resx:ResUI.menuAddHttpServer}" /></MenuItem>
+                                        <MenuItem x:Name="menuAddPolicyGroupServer" AutomationProperties.Name="{x:Static loc:L.MenuPolicyGroup}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconBranch}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuPolicyGroup}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuGroupDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                        <MenuItem x:Name="menuAddProxyChainServer" AutomationProperties.Name="{x:Static loc:L.MenuProxyChain}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconChainStroked}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuProxyChain}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuChainDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                        <MenuItem x:Name="menuAddCustomServer" Header="{x:Static loc:L.MenuCustomConfig}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconCode}" /></MenuItem.Icon></MenuItem>
+                                        <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static loc:L.MenuCustomOutbound}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconComponent}" /></MenuItem.Icon></MenuItem>
                                     </MenuFlyout>
                                 </Button.Flyout>
                             </Button>
@@ -766,15 +766,17 @@
                                 Classes="muted"
                                 TextAlignment="Center"
                                 TextTrimming="CharacterEllipsis" />
+                            <!--  Content (power icon + label) is set by RefreshConnectionAsync.  -->
                             <Button
                                 x:Name="btnConnect"
-                                Width="232"
-                                Height="44"
-                                CornerRadius="22"
-                                Margin="0,10,0,0"
-                                FontSize="14"
+                                Width="248"
+                                Height="50"
+                                CornerRadius="25"
+                                Margin="0,12,0,0"
+                                FontSize="15"
                                 FontWeight="SemiBold"
                                 HorizontalAlignment="Center"
+                                Classes="connectbtn"
                                 Theme="{StaticResource V2Button}" />
 
                             <!--  The two decisions behind Connect: how the computer is protected and what goes
@@ -784,7 +786,10 @@
                                 Margin="0,12,0,0"
                                 HorizontalAlignment="Center"
                                 Classes="floating modebar">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                <!--  Each half says what it decides, so the bar reads without hovering.  -->
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <StackPanel Spacing="3">
+                                    <TextBlock Classes="barcaption" Text="{x:Static loc:L.BarMode}" />
                                     <ListBox
                                         x:Name="lstMode"
                                         Classes="mode"
@@ -799,13 +804,18 @@
                                             <StackPanel Orientation="Horizontal" Spacing="7">
                                                 <PathIcon Classes="i14" Data="{StaticResource SemiIconShieldStroked}" />
                                                 <TextBlock Text="{x:Static loc:L.ModeVpn}" />
-                                                <Border x:Name="badgeAdmin" Classes="adminbadge">
-                                                    <TextBlock Text="{x:Static loc:L.AdminShort}" />
-                                                </Border>
+                                                <!--  A lock, not a warning: VPN mode asks for administrator rights once.  -->
+                                                <PathIcon
+                                                    x:Name="badgeAdmin"
+                                                    Classes="i12 adminlock"
+                                                    Data="{StaticResource SemiIconLock}" />
                                             </StackPanel>
                                         </ListBoxItem>
                                     </ListBox>
+                                    </StackPanel>
                                     <Border Classes="vsep" />
+                                    <StackPanel Spacing="3">
+                                    <TextBlock Classes="barcaption" Text="{x:Static loc:L.BarRoute}" />
                                     <Button
                                         x:Name="btnRoute"
                                         Classes="ghost routechip"
@@ -943,6 +953,7 @@
                                             </Flyout>
                                         </Button.Flyout>
                                     </Button>
+                                    </StackPanel>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -1093,21 +1104,21 @@
                                         <Button.Flyout>
                                             <MenuFlyout Placement="LeftEdgeAlignedTop">
                                                 <MenuItem Classes="menuheader" Header="{x:Static loc:L.Settings}" IsEnabled="False" />
-                                                <MenuItem x:Name="menuOptionSetting" AutomationProperties.Name="{x:Static loc:L.MenuOptions}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileGray}"><PathIcon Data="{StaticResource SemiIconSetting}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuOptions}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuOptionsDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                                <MenuItem x:Name="menuRoutingSetting" AutomationProperties.Name="{x:Static loc:L.MenuRouting}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileGreen}"><PathIcon Data="{StaticResource SemiIconRoute}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuRouting}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuRoutingDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                                <MenuItem x:Name="menuDNSSetting" AutomationProperties.Name="DNS" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileBlue}"><PathIcon Data="{StaticResource SemiIconServer}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="DNS" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuDnsDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                                <MenuItem x:Name="menuGlobalHotkeySetting" AutomationProperties.Name="{x:Static loc:L.MenuHotkeys}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TilePurple}"><PathIcon Data="{StaticResource SemiIconCommand}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuHotkeys}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuHotkeysDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                                <MenuItem x:Name="menuFullConfigTemplate" AutomationProperties.Name="{x:Static loc:L.MenuTemplate}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileAmber}"><PathIcon Data="{StaticResource SemiIconCode}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuTemplate}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuTemplateDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                                <MenuItem x:Name="menuOptionSetting" AutomationProperties.Name="{x:Static loc:L.MenuOptions}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconSetting}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuOptions}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuOptionsDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                                <MenuItem x:Name="menuRoutingSetting" AutomationProperties.Name="{x:Static loc:L.MenuRouting}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconRoute}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuRouting}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuRoutingDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                                <MenuItem x:Name="menuDNSSetting" AutomationProperties.Name="DNS" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconServer}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="DNS" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuDnsDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                                <MenuItem x:Name="menuGlobalHotkeySetting" AutomationProperties.Name="{x:Static loc:L.MenuHotkeys}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconCommand}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuHotkeys}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuHotkeysDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                                <MenuItem x:Name="menuFullConfigTemplate" AutomationProperties.Name="{x:Static loc:L.MenuTemplate}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconCode}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuTemplate}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuTemplateDesc}" /></StackPanel></MenuItem.Header></MenuItem>
                                                 <Separator />
                                                 <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpSystem}" IsEnabled="False" />
-                                                <MenuItem x:Name="menuRebootAsAdmin" Header="{x:Static loc:L.MenuRestartAdmin}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileRed}"><PathIcon Data="{StaticResource SemiIconShield}" /></Border></MenuItem.Icon></MenuItem>
-                                                <MenuItem x:Name="menuSettingsSetUWP" AutomationProperties.Name="{x:Static loc:L.MenuUwp}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileBlue}"><PathIcon Data="{StaticResource SemiIconDesktop}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuUwp}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuUwpDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                                <MenuItem AutomationProperties.Name="{x:Static loc:L.MenuRegion}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileTeal}"><PathIcon Data="{StaticResource SemiIconGlobe}" /></Border></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuRegion}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuRegionDesc}" /></StackPanel></MenuItem.Header><MenuItem x:Name="menuRegionalPresetsRussia" Header="{x:Static resx:ResUI.menuRegionalPresetsRussia}"></MenuItem><MenuItem x:Name="menuRegionalPresetsIran" Header="{x:Static resx:ResUI.menuRegionalPresetsIran}"></MenuItem><MenuItem x:Name="menuRegionalPresetsDefault" Header="{x:Static resx:ResUI.menuRegionalPresetsDefault}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconGlobeStroke}" /></MenuItem.Icon></MenuItem></MenuItem>
+                                                <MenuItem x:Name="menuRebootAsAdmin" Header="{x:Static loc:L.MenuRestartAdmin}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconShield}" /></MenuItem.Icon></MenuItem>
+                                                <MenuItem x:Name="menuSettingsSetUWP" AutomationProperties.Name="{x:Static loc:L.MenuUwp}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconDesktop}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuUwp}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuUwpDesc}" /></StackPanel></MenuItem.Header></MenuItem>
+                                                <MenuItem AutomationProperties.Name="{x:Static loc:L.MenuRegion}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconGlobe}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuRegion}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuRegionDesc}" /></StackPanel></MenuItem.Header><MenuItem x:Name="menuRegionalPresetsRussia" Header="{x:Static resx:ResUI.menuRegionalPresetsRussia}"></MenuItem><MenuItem x:Name="menuRegionalPresetsIran" Header="{x:Static resx:ResUI.menuRegionalPresetsIran}"></MenuItem><MenuItem x:Name="menuRegionalPresetsDefault" Header="{x:Static resx:ResUI.menuRegionalPresetsDefault}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconGlobeStroke}" /></MenuItem.Icon></MenuItem></MenuItem>
                                                 <Separator />
                                                 <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpData}" IsEnabled="False" />
-                                                <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static loc:L.MenuBackup}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileGray}"><PathIcon Data="{StaticResource SemiIconArchive}" /></Border></MenuItem.Icon></MenuItem>
-                                                <MenuItem x:Name="menuOpenTheFileLocation" Header="{x:Static loc:L.MenuOpenFolder}" Classes="rich"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileBlue}"><PathIcon Data="{StaticResource SemiIconFolderOpen}" /></Border></MenuItem.Icon></MenuItem>
-                                                <MenuItem x:Name="menuClearServerStatistics" Header="{x:Static loc:L.MenuClearStats}" Classes="rich danger"><MenuItem.Icon><Border Classes="mitile" Background="{DynamicResource V2TileRed}"><PathIcon Data="{StaticResource SemiIconDelete}" /></Border></MenuItem.Icon></MenuItem>
+                                                <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static loc:L.MenuBackup}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconArchive}" /></MenuItem.Icon></MenuItem>
+                                                <MenuItem x:Name="menuOpenTheFileLocation" Header="{x:Static loc:L.MenuOpenFolder}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconFolderOpen}" /></MenuItem.Icon></MenuItem>
+                                                <MenuItem x:Name="menuClearServerStatistics" Header="{x:Static loc:L.MenuClearStats}" Classes="rich danger"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconDelete}" /></MenuItem.Icon></MenuItem>
                                             </MenuFlyout>
                                         </Button.Flyout>
                                     </Button>

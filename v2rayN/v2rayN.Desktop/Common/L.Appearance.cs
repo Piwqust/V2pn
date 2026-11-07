@@ -53,6 +53,9 @@ public static partial class L
     public static string ApMotionOff => T("Off", "Выключены");
     public static string ApLanguage => T("Language", "Язык");
 
+    public static string BarMode => T("Mode", "Режим");
+    public static string BarRoute => T("What goes through VPN", "Что идёт через VPN");
+
     public static string ApReset => T("Reset to default", "Вернуть как было");
 
     public static string KeepModeNoDisconnect => T(

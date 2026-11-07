@@ -826,6 +826,25 @@
         <Setter Property="CornerRadius" Value="13" />
         <Setter Property="FontSize" Value="13" />
     </Style>
+    <!--  Captions over the two halves of the connection bar.  -->
+    <Style Selector="TextBlock.barcaption">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Margin" Value="8,2,0,0" />
+    </Style>
+    <Style Selector="PathIcon.adminlock">
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!--  Connect: a power glyph next to the label; when connected the glyph turns green.  -->
+    <Style Selector="Button.connectbtn PathIcon">
+        <Setter Property="Width" Value="17" />
+        <Setter Property="Height" Value="17" />
+    </Style>
+    <Style Selector="Button.connectbtn.disconnect PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
     <Style Selector="Border.adminbadge">
         <Setter Property="Background" Value="{DynamicResource V2PingMidSoft}" />
         <Setter Property="CornerRadius" Value="6" />
@@ -961,9 +980,15 @@
     </Style>
 
     <!--  Rich menu rows: a coloured icon tile, a title and a short description.  -->
+    <!--  Rich items (title + hint) carry a plain icon like every other menu, slightly larger.  -->
     <Style Selector="MenuItem.rich /template/ Viewbox#PART_IconPresenter">
-        <Setter Property="Width" Value="28" />
-        <Setter Property="Height" Value="28" />
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="Margin" Value="4,0,8,0" />
+    </Style>
+    <Style Selector="MenuItem.rich PathIcon.mi">
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
     </Style>
     <Style Selector="MenuItem.rich">
         <Setter Property="Padding" Value="8,6,12,6" />

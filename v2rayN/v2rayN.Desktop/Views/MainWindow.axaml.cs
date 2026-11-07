@@ -536,7 +536,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         RefreshStatePill();
         var unprotected = state == ProtectionState.Unprotected;
-        btnConnect.Content = unprotected ? L.Connect : L.Disconnect;
+        SetConnectLabel(unprotected ? L.Connect : L.Disconnect);
         btnConnect.Classes.Set("accent", unprotected);
         btnConnect.Classes.Set("disconnect", !unprotected);
         btnConnect.IsEnabled = item != null || !unprotected;

@@ -130,11 +130,50 @@ public static class L
     public static string WelcomeQr => T("Scan QR code", "Сканировать QR-код");
     public static string WelcomeHint => T("Subscriptions update on their own; favorites survive the updates.",
         "Подписки обновляются сами, избранное сохраняется после обновлений.");
+    public static string ToastServerStarted => T("Server running", "Сервер запущен");
     public static string Recent => T("Recent", "Недавние");
     public static string RemoveDead => T("Remove servers that didn't respond", "Удалить серверы без ответа");
     public static string RemoveDeadConfirm => T("Remove the servers of “{0}” that didn't respond to the last ping? The next subscription update may bring them back.",
         "Удалить серверы подписки «{0}», которые не ответили на последнюю проверку? Следующее обновление подписки может вернуть их.");
     public static string RemoveDeadNone => T("Ping the servers first: nothing has failed a check yet.", "Сначала проверьте пинг: пока ни один сервер не провалил проверку.");
+
+    // Menus (⋮, +, settings tile) and context menus.
+    public static string MenuGrpView => T("Open", "Открыть");
+    public static string MenuMore => T("Current subscription", "Текущая подписка");
+    public static string MenuQuit => T("Quit V2pn", "Выйти из V2pn");
+    public static string MenuGrpImport => T("Import", "Импорт");
+    public static string MenuScanScreen => T("Scan QR code on screen", "QR-код с экрана");
+    public static string MenuScanImage => T("QR code from an image", "QR-код из картинки");
+    public static string MenuGrpManual => T("Create manually", "Создать вручную");
+    public static string MenuServerByProtocol => T("Server", "Сервер");
+    public static string MenuOptions => T("Settings", "Параметры");
+    public static string MenuOptionsDesc => T("Modes, ports, cores, updates", "Режимы, порты, ядра, обновления");
+    public static string MenuRouting => T("Routing rules", "Правила маршрутизации");
+    public static string MenuRoutingDesc => T("Rule sets: domains, IPs, apps", "Наборы правил: домены, IP, программы");
+    public static string MenuDnsDesc => T("DNS servers and their rules", "DNS-серверы и их правила");
+    public static string MenuHotkeys => T("Hotkeys", "Горячие клавиши");
+    public static string MenuHotkeysDesc => T("Show the window, switch the proxy", "Показ окна, переключение прокси");
+    public static string MenuTemplate => T("Config template", "Шаблон конфигурации");
+    public static string MenuTemplateDesc => T("Raw core config, for experts", "Конфиг ядра целиком, для опытных");
+    public static string MenuPolicyGroup => T("Server group", "Группа серверов");
+    public static string MenuProxyChain => T("Proxy chain", "Цепочка прокси");
+    public static string MenuCustomConfig => T("Custom config", "Своя конфигурация");
+    public static string MenuCustomOutbound => T("Custom outbound", "Свой outbound");
+    public static string MenuPasteDesc => T("A subscription or vless://, vmess://… links", "Подписка или ссылки vless://, vmess://…");
+    public static string MenuSubDesc => T("A link that updates the server list", "Ссылка, по которой обновляется список");
+    public static string MenuServerDesc => T("Enter the parameters by hand", "Ввести параметры вручную");
+    public static string MenuGroupDesc => T("Picks the fastest of several servers", "Выбирает самый быстрый из нескольких");
+    public static string MenuChainDesc => T("Traffic goes through servers in turn", "Трафик идёт через серверы по очереди");
+    public static string MenuGrpSystem => T("System tools", "Система");
+    public static string MenuRestartAdmin => T("Restart as administrator", "Перезапустить от администратора");
+    public static string MenuUwp => T("Allow Microsoft Store apps", "Пустить приложения Microsoft Store");
+    public static string MenuUwpDesc => T("Loopback exemption for UWP apps", "Исключение loopback для UWP");
+    public static string MenuRegion => T("Region", "Регион");
+    public static string MenuRegionDesc => T("Geo files, rules and DNS for a country", "Геофайлы, правила и DNS для страны");
+    public static string MenuGrpData => T("Data", "Данные");
+    public static string MenuBackup => T("Backup and restore", "Резервная копия");
+    public static string MenuOpenFolder => T("Open data folder", "Открыть папку с данными");
+    public static string MenuClearStats => T("Clear traffic statistics", "Сбросить статистику трафика");
 
     // Connection mode and routing presets (the bar under Connect).
     public static string ModeProxy => T("Proxy", "Прокси");

@@ -216,42 +216,51 @@ public sealed class MapView : UserControl
         _pin.Margin = new Thickness(cx - (_pin.Width / 2), cy - (_pin.Height / 2), 0, 0);
     }
 
-    private readonly DispatcherTimer _anim = new() { Interval = TimeSpan.FromMilliseconds(15) };
     private (double S, double X, double Y) _from;
     private (double S, double X, double Y) _to;
     private (double S, double X, double Y) _now = (1, 0, 0);
-    private DateTime _animStart;
-    private static readonly TimeSpan AnimDuration = TimeSpan.FromMilliseconds(900);
+    private TimeSpan? _animStart;
+    private bool _animating;
+    private static readonly TimeSpan AnimDuration = TimeSpan.FromMilliseconds(700);
 
     // Matrix animation keeps the math explicit: screen = scale * map + translation.
+    // Driven by the compositor's frame clock (RequestAnimationFrame), so it moves once per frame.
     private void AnimateTo(double scale, double tx, double ty, bool animate)
     {
         _to = (scale, tx, ty);
-        if (!animate)
+        var top = TopLevel.GetTopLevel(this);
+        if (!animate || !Common.Motion.Enabled || top == null)
         {
-            _anim.Stop();
+            _animating = false;
             SetMatrix(_to);
             return;
         }
         _from = _now;
-        _animStart = DateTime.Now;
-        if (!_anim.IsEnabled)
+        _animStart = null;
+        if (!_animating)
         {
-            _anim.Tick -= OnAnimTick;
-            _anim.Tick += OnAnimTick;
-            _anim.Start();
+            _animating = true;
+            top.RequestAnimationFrame(OnFrame);
         }
     }
 
-    private void OnAnimTick(object? sender, EventArgs e)
+    private void OnFrame(TimeSpan time)
     {
-        var t = Math.Clamp((DateTime.Now - _animStart) / AnimDuration, 0, 1);
+        if (!_animating)
+        {
+            return;
+        }
+        _animStart ??= time;
+        var t = Math.Clamp((time - _animStart.Value) / AnimDuration, 0, 1);
+        // The map is already on screen and moves, so ease in and out.
         var k = t < 0.5 ? 4 * t * t * t : 1 - (Math.Pow((-2 * t) + 2, 3) / 2);
         SetMatrix((Lerp(_from.S, _to.S, k), Lerp(_from.X, _to.X, k), Lerp(_from.Y, _to.Y, k)));
         if (t >= 1)
         {
-            _anim.Stop();
+            _animating = false;
+            return;
         }
+        TopLevel.GetTopLevel(this)?.RequestAnimationFrame(OnFrame);
     }
 
     private static double Lerp(double a, double b, double k) => a + ((b - a) * k);

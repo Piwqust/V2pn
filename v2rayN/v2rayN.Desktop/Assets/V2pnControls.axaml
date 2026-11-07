@@ -269,10 +269,7 @@
         <Style Selector="^:selected">
             <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
         </Style>
-        <Style Selector="^:selected /template/ Border#PART_Chip">
-            <Setter Property="Background" Value="{DynamicResource V2Selected}" />
-            <Setter Property="BoxShadow" Value="{DynamicResource V2NavShadow}" />
-        </Style>
+        <!--  The selected chip is drawn by the segmented control's sliding thumb (see SegmentThumb).  -->
     </ControlTheme>
 
     <ControlTheme x:Key="V2Segmented" TargetType="ListBox">
@@ -291,7 +288,17 @@
                     Padding="{TemplateBinding Padding}"
                     Background="{TemplateBinding Background}"
                     CornerRadius="{TemplateBinding CornerRadius}">
-                    <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                    <Panel>
+                        <Border
+                            Name="PART_Thumb"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Background="{DynamicResource V2Selected}"
+                            BoxShadow="{DynamicResource V2NavShadow}"
+                            IsHitTestVisible="False"
+                            IsVisible="False" />
+                        <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
+                    </Panel>
                 </Border>
             </ControlTemplate>
         </Setter>
@@ -540,5 +547,114 @@
                 </DockPanel>
             </ControlTemplate>
         </Setter>
+    </ControlTheme>
+
+    <!--  Toasts. Semi's card bounces in for 450 ms and flies 800 px away for 750 ms; V2pn's settles in
+          260 ms (ease-out, short rise) and leaves in 180 ms with a small slide. The still variant is used
+          when Windows animations are off: it only has to raise IsClosed.  -->
+    <ControlTheme x:Key="V2ToastMotion" TargetType="NotificationCard">
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Background" Value="{DynamicResource NotificationCardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource NotificationCardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource NotificationCardCornerRadius}" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="NotificationCard">
+                <LayoutTransformControl Name="PART_LayoutTransformControl" UseRenderTransform="True">
+                    <Border
+                        Margin="{DynamicResource NotificationCardMargin}"
+                        Padding="{DynamicResource NotificationCardPadding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        BoxShadow="{DynamicResource NotificationCardBoxShadows}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentControl
+                            Name="PART_Content"
+                            MinWidth="{DynamicResource NotificationCardMinWidth}"
+                            Content="{TemplateBinding Content}">
+                            <ContentControl.DataTemplates>
+                                <DataTemplate DataType="x:String">
+                                    <TextBlock Classes="toastmsg" Text="{Binding}" />
+                                </DataTemplate>
+                            </ContentControl.DataTemplates>
+                        </ContentControl>
+                    </Border>
+                </LayoutTransformControl>
+            </ControlTemplate>
+        </Setter>
+        <ControlTheme.Animations>
+            <Animation Easing="0.32,0.72,0,1" FillMode="Forward" Duration="0:0:0.26">
+                <KeyFrame Cue="0%">
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="TranslateTransform.Y" Value="12" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="0.97" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="0.97" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="TranslateTransform.Y" Value="0" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                </KeyFrame>
+            </Animation>
+        </ControlTheme.Animations>
+        <Style Selector="^[IsClosing=true]">
+            <Style.Animations>
+                <Animation Easing="CubicEaseIn" FillMode="Forward" Duration="0:0:0.18">
+                    <KeyFrame Cue="0%">
+                        <Setter Property="Opacity" Value="1" />
+                        <Setter Property="TranslateTransform.X" Value="0" />
+                    </KeyFrame>
+                    <KeyFrame Cue="100%">
+                        <Setter Property="Opacity" Value="0" />
+                        <Setter Property="TranslateTransform.X" Value="24" />
+                        <Setter Property="IsClosed" Value="True" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
+    </ControlTheme>
+
+    <ControlTheme x:Key="V2ToastStill" TargetType="NotificationCard">
+        <Setter Property="UseLayoutRounding" Value="True" />
+        <Setter Property="Background" Value="{DynamicResource NotificationCardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource NotificationCardBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource NotificationCardCornerRadius}" />
+        <Setter Property="Template">
+            <ControlTemplate TargetType="NotificationCard">
+                <LayoutTransformControl Name="PART_LayoutTransformControl" UseRenderTransform="True">
+                    <Border
+                        Margin="{DynamicResource NotificationCardMargin}"
+                        Padding="{DynamicResource NotificationCardPadding}"
+                        Background="{TemplateBinding Background}"
+                        BorderBrush="{TemplateBinding BorderBrush}"
+                        BorderThickness="{TemplateBinding BorderThickness}"
+                        BoxShadow="{DynamicResource NotificationCardBoxShadows}"
+                        CornerRadius="{TemplateBinding CornerRadius}">
+                        <ContentControl
+                            Name="PART_Content"
+                            MinWidth="{DynamicResource NotificationCardMinWidth}"
+                            Content="{TemplateBinding Content}">
+                            <ContentControl.DataTemplates>
+                                <DataTemplate DataType="x:String">
+                                    <TextBlock Classes="toastmsg" Text="{Binding}" />
+                                </DataTemplate>
+                            </ContentControl.DataTemplates>
+                        </ContentControl>
+                    </Border>
+                </LayoutTransformControl>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^[IsClosing=true]">
+            <Style.Animations>
+                <Animation FillMode="Forward" Duration="0:0:0.01">
+                    <KeyFrame Cue="100%">
+                        <Setter Property="IsClosed" Value="True" />
+                    </KeyFrame>
+                </Animation>
+            </Style.Animations>
+        </Style>
     </ControlTheme>
 </ResourceDictionary>

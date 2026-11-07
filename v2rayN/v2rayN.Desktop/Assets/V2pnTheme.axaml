@@ -110,6 +110,21 @@
             <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #59FFFFFF, inset 0 -1 0 0 #33000000, 0 1 2 0 #66000000, 0 10 22 -8 #B3E5483E</BoxShadows>
             <BoxShadows x:Key="V2NeutralShadow">inset 0 1 0 0 #1FFFFFFF, 0 1 2 0 #66000000, 0 6 14 -6 #73000000</BoxShadows>
             <BoxShadows x:Key="V2PrimaryShadow">inset 0 -1 0 0 #26000000, 0 1 2 0 #66000000, 0 6 14 -6 #73000000</BoxShadows>
+            <!--  Semi menus and toasts in the V2pn palette  -->
+            <SolidColorBrush x:Key="MenuFlyoutBackground" Color="#1F1F27" />
+            <SolidColorBrush x:Key="MenuFlyoutBorderBrush" Color="#34343F" />
+            <BoxShadows x:Key="MenuFlyoutBorderBoxShadow">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 14 30 -8 #8C000000</BoxShadows>
+            <SolidColorBrush x:Key="MenuItemPointeroverBackground" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="MenuItemPressedBackground" Color="#21FFFFFF" />
+            <SolidColorBrush x:Key="MenuItemSeparatorBackground" Color="#2C2C36" />
+            <SolidColorBrush x:Key="MenuItemForeground" Color="#E4E4EA" />
+            <SolidColorBrush x:Key="MenuItemExpandIconForeground" Color="#6C6C78" />
+            <SolidColorBrush x:Key="MenuItemInputGestureTextForeground" Color="#6C6C78" />
+            <SolidColorBrush x:Key="NotificationCardBackground" Color="#1F1F27" />
+            <SolidColorBrush x:Key="NotificationCardBorderBrush" Color="#34343F" />
+            <BoxShadows x:Key="NotificationCardBoxShadows">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 16 36 -10 #99000000</BoxShadows>
+            <SolidColorBrush x:Key="V2ToastInfo" Color="#5C9DF0" />
+            <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#245C9DF0" />
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="V2WindowBackground" Color="#E3E4E9" />
@@ -216,13 +231,52 @@
             <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #66FFFFFF, inset 0 -1 0 0 #26000000, 0 1 2 0 #33D4362C, 0 10 20 -8 #A6E0443A</BoxShadows>
             <BoxShadows x:Key="V2NeutralShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1A16161B, 0 1 2 0 #1416161B, 0 5 12 -5 #2416161B</BoxShadows>
             <BoxShadows x:Key="V2PrimaryShadow">inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #4016161B, 0 8 16 -6 #5916161B</BoxShadows>
+            <!--  Semi menus and toasts in the V2pn palette  -->
+            <SolidColorBrush x:Key="MenuFlyoutBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="MenuFlyoutBorderBrush" Color="#1416161B" />
+            <BoxShadows x:Key="MenuFlyoutBorderBoxShadow">0 2 4 0 #1416161B, 0 14 30 -8 #2E16161B</BoxShadows>
+            <SolidColorBrush x:Key="MenuItemPointeroverBackground" Color="#0D16161B" />
+            <SolidColorBrush x:Key="MenuItemPressedBackground" Color="#1716161B" />
+            <SolidColorBrush x:Key="MenuItemSeparatorBackground" Color="#1416161B" />
+            <SolidColorBrush x:Key="MenuItemForeground" Color="#16161B" />
+            <SolidColorBrush x:Key="MenuItemExpandIconForeground" Color="#8E8E9A" />
+            <SolidColorBrush x:Key="MenuItemInputGestureTextForeground" Color="#8E8E9A" />
+            <SolidColorBrush x:Key="NotificationCardBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="NotificationCardBorderBrush" Color="#1416161B" />
+            <BoxShadows x:Key="NotificationCardBoxShadows">0 2 4 0 #1416161B, 0 16 36 -10 #3316161B</BoxShadows>
+            <SolidColorBrush x:Key="V2ToastInfo" Color="#3A7BD5" />
+            <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#1A3A7BD5" />
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
     <FontFamily x:Key="V2UiFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
     <FontFamily x:Key="V2DisplayFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
     <!--  Radii nest: inner = outer - padding (panel 18 with 6 padding -> rows 12; floating 20 with 6 -> tiles 14).  -->
+    <!--  Icon tiles of the settings menu: one hue per kind of setting, white glyph, same in both themes.  -->
+    <LinearGradientBrush x:Key="V2TileGray" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#9A9AA6" /><GradientStop Offset="1" Color="#73737F" /></LinearGradientBrush>
+    <LinearGradientBrush x:Key="V2TileGreen" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#4CD99A" /><GradientStop Offset="1" Color="#22B36F" /></LinearGradientBrush>
+    <LinearGradientBrush x:Key="V2TileBlue" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#6AA8F5" /><GradientStop Offset="1" Color="#3D7FE0" /></LinearGradientBrush>
+    <LinearGradientBrush x:Key="V2TilePurple" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#B39AFB" /><GradientStop Offset="1" Color="#8B6CF0" /></LinearGradientBrush>
+    <LinearGradientBrush x:Key="V2TileAmber" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#F7C266" /><GradientStop Offset="1" Color="#EAA23A" /></LinearGradientBrush>
+    <LinearGradientBrush x:Key="V2TileRed" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#F2766C" /><GradientStop Offset="1" Color="#DF4B41" /></LinearGradientBrush>
+    <LinearGradientBrush x:Key="V2TileTeal" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#4FCBD6" /><GradientStop Offset="1" Color="#22A6B3" /></LinearGradientBrush>
     <CornerRadius x:Key="V2RadiusPanel">18</CornerRadius>
+    <!--  Semi menus and toasts: rounder, roomier, rows inset inside the panel (14 - 6 = 8).  -->
+    <CornerRadius x:Key="MenuFlyoutCornerRadius">14</CornerRadius>
+    <CornerRadius x:Key="MenuItemCornerRadius">8</CornerRadius>
+    <Thickness x:Key="MenuFlyoutPadding">6</Thickness>
+    <Thickness x:Key="MenuItemPadding">10,7,12,7</Thickness>
+    <Thickness x:Key="MenuItemIconMargin">0,0,11,0</Thickness>
+    <Thickness x:Key="MenuItemSeparatorMargin">6,5</Thickness>
+    <x:Double x:Key="MenuFlyoutMinWidth">220</x:Double>
+    <x:Double x:Key="MenuFlyoutMaxHeight">560</x:Double>
+    <CornerRadius x:Key="NotificationCardCornerRadius">16</CornerRadius>
+    <Thickness x:Key="NotificationCardPadding">14,12,16,12</Thickness>
+    <x:Double x:Key="NotificationCardMinWidth">300</x:Double>
+    <!--  V2pn toasts draw their own icon badge; Semi's type icon takes no space.  -->
+    <x:Double x:Key="NotificationCardIconWidth">0</x:Double>
+    <x:Double x:Key="NotificationCardIconHeight">0</x:Double>
+    <Thickness x:Key="NotificationCardIconMargin">0</Thickness>
     <CornerRadius x:Key="V2RadiusFloating">20</CornerRadius>
     <CornerRadius x:Key="V2RadiusCard">18</CornerRadius>
     <CornerRadius x:Key="V2RadiusTile">14</CornerRadius>

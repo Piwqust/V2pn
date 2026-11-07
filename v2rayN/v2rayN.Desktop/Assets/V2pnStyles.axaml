@@ -834,4 +834,124 @@
         <Setter Property="LetterSpacing" Value="0.4" />
         <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
     </Style>
+
+    <!--  Menus: icon column, quiet icons that light up with the row, section headers, destructive rows.  -->
+    <Style Selector="MenuItem">
+        <Setter Property="CornerRadius" Value="{DynamicResource MenuItemCornerRadius}" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="MenuItem PathIcon.mi">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+    </Style>
+    <Style Selector="MenuItem:pointerover PathIcon.mi, MenuItem:selected PathIcon.mi, MenuItem:open PathIcon.mi">
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+    <Style Selector="MenuItem.danger">
+        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+    </Style>
+    <Style Selector="MenuItem.danger PathIcon.mi, MenuItem.danger:pointerover PathIcon.mi">
+        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+    </Style>
+    <Style Selector="MenuItem.menuheader">
+        <Setter Property="IsHitTestVisible" Value="False" />
+        <Setter Property="Focusable" Value="False" />
+        <Setter Property="Padding" Value="10,8,10,3" />
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
+    <Style Selector="MenuItem.menuheader /template/ PathIcon#PART_ExpandIcon">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="MenuItem.menuheader:disabled /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
+    <!--  Two-line items: a title and a muted description (settings menu).  -->
+    <Style Selector="MenuItem TextBlock.mititle">
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="MenuItem TextBlock.midesc">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Margin" Value="0,1,0,0" />
+    </Style>
+
+    <!--  Toasts: the card comes from Semi (keeps its enter/exit animation); V2pn supplies the content.  -->
+    <Style Selector="NotificationCard">
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource NotificationCardBorderBrush}" />
+    </Style>
+    <Style Selector="NotificationCard /template/ PathIcon#NotificationIcon">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border.toastbadge">
+        <Setter Property="Width" Value="32" />
+        <Setter Property="Height" Value="32" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="ClipToBounds" Value="True" />
+    </Style>
+    <Style Selector="TextBlock.toasttitle">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+    <Style Selector="TextBlock.toastmsg">
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="LineHeight" Value="17" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+    </Style>
+
+    <!--  Rich menu rows: a coloured icon tile, a title and a short description.  -->
+    <Style Selector="MenuItem.rich /template/ Viewbox#PART_IconPresenter">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+    </Style>
+    <Style Selector="MenuItem.rich">
+        <Setter Property="Padding" Value="8,6,12,6" />
+    </Style>
+    <Style Selector="Border.mitile">
+        <Setter Property="Width" Value="28" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="BoxShadow" Value="inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #33000000" />
+    </Style>
+    <Style Selector="Border.mitile > PathIcon">
+        <Setter Property="Width" Value="15" />
+        <Setter Property="Height" Value="15" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="MenuItem.rich.danger /template/ ContentPresenter#PART_HeaderPresenter">
+        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+    </Style>
+
+    <!--  Sidebar view switch.  -->
+    <Style Selector="ListBox.sidetabs">
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Padding" Value="3" />
+    </Style>
+    <Style Selector="ListBox.sidetabs > ListBoxItem">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="Padding" Value="6,0" />
+        <Setter Property="FontSize" Value="12.5" />
+    </Style>
+    <Style Selector="ListBox.sidetabs > ListBoxItem:selected PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+
+    <!--  Tooltips match the menus: same surface, rounder, a little roomier.  -->
+    <Style Selector="ToolTip">
+        <Setter Property="Background" Value="{DynamicResource MenuFlyoutBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource MenuFlyoutBorderBrush}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="10,7" />
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="MaxWidth" Value="320" />
+    </Style>
 </Styles>

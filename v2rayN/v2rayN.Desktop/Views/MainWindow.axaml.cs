@@ -54,6 +54,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();
+        menuRegionalPresetsRussia.Icon = new Image { Source = V2pnConverters.Flag("RU"), Width = 16, Height = 12 };
+        menuRegionalPresetsIran.Icon = new Image { Source = V2pnConverters.Flag("IR"), Width = 16, Height = 12 };
         btnMinimize.Click += (_, _) => WindowState = WindowState.Minimized;
         btnMaximize.Click += (_, _) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         btnCloseWindow.Click += (_, _) => Close();
@@ -315,11 +317,21 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         txtPageTitle.Text = title;
         pageHost.Content = page;
+        var opening = !pageOverlay.IsVisible;
         pageOverlay.IsVisible = true;
+        if (opening)
+        {
+            _ = Motion.Enter(pageOverlay, dx: 18, dy: 0, ms: 240);
+        }
     }
 
-    private void ClosePage()
+    private async void ClosePage()
     {
+        if (!pageOverlay.IsVisible)
+        {
+            return;
+        }
+        await Motion.Exit(pageOverlay, dx: 14, ms: 160);
         pageOverlay.IsVisible = false;
         pageHost.Content = null;
     }
@@ -415,6 +427,21 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _sidebar?.QueueRebuild();
     }
 
+    private bool _shownOnce;
+    private ProtectionState _shownState;
+
+    private static async Task DelayedEnter(Visual target, int delayMs)
+    {
+        if (!Motion.Enabled)
+        {
+            return;
+        }
+        target.Opacity = 0;
+        await Task.Delay(delayMs);
+        target.Opacity = 1;
+        await Motion.Enter(target, dy: 6, ms: 240);
+    }
+
     private ProfileItemModel? FindModel(string? indexId)
     {
         var profiles = ViewModel?.ProfilesViewModel;
@@ -430,7 +457,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     {
         var state = CurrentState();
         var item = await AppManager.Instance.GetProfileItem(_config.IndexId);
+        // Motion only for changes the user caused after the first paint, never for the initial state.
+        var serverChanged = _shownOnce && item?.IndexId != _activeIndexId;
+        var stateChanged = _shownOnce && state != _shownState;
         _activeIndexId = item?.IndexId;
+        _shownState = state;
 
         var code = CountryResolver.Resolve(item?.Remarks);
         var country = WorldMap.Instance.Get(code);
@@ -455,6 +486,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         Remember(item?.IndexId, state);
         // No servers at all: the welcome card replaces Connect and the mode bar.
         var empty = (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) == 0 && item == null;
+        if (empty && !cardWelcome.IsVisible && _shownOnce)
+        {
+            _ = Motion.Enter(cardWelcome, dy: 10, ms: 260, scale: 0.97);
+        }
         cardWelcome.IsVisible = empty;
         btnConnect.IsVisible = !empty;
         barConnection.IsVisible = !empty;
@@ -483,6 +518,20 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         };
 
         SyncModeSelection();
+
+        if (serverChanged)
+        {
+            // The new server settles into the header: flag and name first, the details a beat later.
+            _ = Motion.Enter(borderHeaderFlag, dy: 8, ms: 240);
+            _ = Motion.Enter(txtHeaderTitle, dy: 8, ms: 240);
+            _ = DelayedEnter(txtHeaderSubtitle, 40);
+        }
+        if (stateChanged)
+        {
+            _ = Motion.Enter(pillState, dy: 0, ms: 220, scale: 0.9);
+            _ = Motion.Enter(stateTint, dy: 0, ms: 420);
+        }
+        _shownOnce = true;
 
         mapView.Focus(country?.Code ?? code, state);
         _statusView?.SetState(state);
@@ -1085,10 +1134,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var profiles = ViewModel.ProfilesViewModel;
         var flyout = new MenuFlyout { Placement = ContextPlacement(e, control) };
-        var connect = Item(L.ConnectFastestIn, async () => await ConnectToAsync(row.BestId));
+        var connect = Item(L.ConnectFastestIn, async () => await ConnectToAsync(row.BestId), "SemiIconBolt");
         connect.IsEnabled = row.BestId.IsNotEmpty();
         flyout.Items.Add(connect);
-        flyout.Items.Add(Item(L.TestPing, () => profiles.PingProfilesAsync(row.Servers)));
+        flyout.Items.Add(Item(L.TestPing, () => profiles.PingProfilesAsync(row.Servers), "SemiIconPulse"));
         flyout.ShowAt(control, flyout.Placement == PlacementMode.Pointer);
     }
 
@@ -1111,18 +1160,18 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
 
         var flyout = new MenuFlyout { Placement = placement };
-        flyout.Items.Add(Item(L.Connect, async () => await ConnectToAsync(model.IndexId)));
-        flyout.Items.Add(Item(model.IsFavorite ? L.Unfavorite : L.Favorite, async () => await profiles.ToggleFavoriteAsync(model)));
+        flyout.Items.Add(Item(L.Connect, async () => await ConnectToAsync(model.IndexId), "SemiIconPlayCircle"));
+        flyout.Items.Add(Item(model.IsFavorite ? L.Unfavorite : L.Favorite, async () => await profiles.ToggleFavoriteAsync(model), model.IsFavorite ? "SemiIconStar" : "SemiIconStarStroked"));
         flyout.Items.Add(new Separator());
-        flyout.Items.Add(Item(ResUI.menuRealPingServer, async () => await profiles.PingProfileAsync(model)));
-        flyout.Items.Add(Item(ResUI.menuTcpingServer, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Tcping); }));
-        flyout.Items.Add(Item(ResUI.menuSpeedServer, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Speedtest); }));
+        flyout.Items.Add(Item(ResUI.menuRealPingServer, async () => await profiles.PingProfileAsync(model), "SemiIconBolt"));
+        flyout.Items.Add(Item(ResUI.menuTcpingServer, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Tcping); }, "SemiIconPulse"));
+        flyout.Items.Add(Item(ResUI.menuSpeedServer, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Speedtest); }, "SemiIconStopwatchStroked"));
         flyout.Items.Add(new Separator());
-        flyout.Items.Add(Item(ResUI.menuEditServer, async () => { Select(); await profiles.EditServerAsync(); }));
-        flyout.Items.Add(Item(ResUI.menuShareServer, async () => { Select(); await profiles.ShareServerAsync(); }));
-        flyout.Items.Add(Item(ResUI.menuExport2ShareUrl, async () => { Select(); await profiles.Export2ShareUrlAsync(false); }));
+        flyout.Items.Add(Item(ResUI.menuEditServer, async () => { Select(); await profiles.EditServerAsync(); }, "SemiIconEditStroked"));
+        flyout.Items.Add(Item(ResUI.menuShareServer, async () => { Select(); await profiles.ShareServerAsync(); }, "SemiIconQrCode"));
+        flyout.Items.Add(Item(ResUI.menuExport2ShareUrl, async () => { Select(); await profiles.Export2ShareUrlAsync(false); }, "SemiIconCopyStroked"));
         flyout.Items.Add(new Separator());
-        flyout.Items.Add(Item(ResUI.menuRemoveServer, async () => { Select(); await profiles.RemoveServerAsync(); }));
+        flyout.Items.Add(Item(ResUI.menuRemoveServer, async () => { Select(); await profiles.RemoveServerAsync(); }, "SemiIconDeleteStroked", danger: true));
         flyout.ShowAt(target, placement == PlacementMode.Pointer);
     }
 
@@ -1147,19 +1196,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         void Open() => _sidebar.OpenedSub = row.Sub;
 
         var flyout = new MenuFlyout { Placement = placement };
-        flyout.Items.Add(Item(ResUI.menuSubGroupUpdate, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, false)));
-        flyout.Items.Add(Item(ResUI.menuSubGroupUpdateViaProxy, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, true)));
+        flyout.Items.Add(Item(ResUI.menuSubGroupUpdate, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, false), "SemiIconRefresh"));
+        flyout.Items.Add(Item(ResUI.menuSubGroupUpdateViaProxy, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, true), "SemiIconRefresh2"));
         flyout.Items.Add(Item(L.TestPing, async () =>
         {
             var servers = await AppManager.Instance.ProfileModels(row.Sub.Id ?? string.Empty, string.Empty);
             var ids = servers?.Select(s => s.IndexId).ToHashSet() ?? [];
             var models = vm.ProfilesViewModel.ProfileItems.Where(m => ids.Contains(m.IndexId)).ToList();
             await vm.ProfilesViewModel.PingProfilesAsync(models);
-        }));
-        flyout.Items.Add(Item(L.RemoveDead, async () => await RemoveDeadAsync(row)));
+        }, "SemiIconPulse"));
+        flyout.Items.Add(Item(L.RemoveDead, async () => await RemoveDeadAsync(row), "SemiIconMinusCircleStroked"));
         flyout.Items.Add(new Separator());
-        flyout.Items.Add(Item(ResUI.menuSubEdit, () => { Open(); vm.ProfilesViewModel.EditSubCmd.Execute().Subscribe(); return Task.CompletedTask; }));
-        flyout.Items.Add(Item(ResUI.menuSubDelete, () => { Open(); vm.ProfilesViewModel.DeleteSubCmd.Execute().Subscribe(); return Task.CompletedTask; }));
+        flyout.Items.Add(Item(ResUI.menuSubEdit, () => { Open(); vm.ProfilesViewModel.EditSubCmd.Execute().Subscribe(); return Task.CompletedTask; }, "SemiIconEditStroked"));
+        flyout.Items.Add(Item(ResUI.menuSubDelete, () => { Open(); vm.ProfilesViewModel.DeleteSubCmd.Execute().Subscribe(); return Task.CompletedTask; }, "SemiIconDeleteStroked", danger: true));
         flyout.ShowAt(target, placement == PlacementMode.Pointer);
     }
 
@@ -1189,9 +1238,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         NoticeManager.Instance.Enqueue(string.Format(ResUI.RemoveInvalidServerResultTip, Math.Max(count, 0)));
     }
 
-    private static MenuItem Item(string header, Func<Task> action)
+    private static MenuItem Item(string header, Func<Task> action, string? icon = null, bool danger = false)
     {
         var item = new MenuItem { Header = header };
+        if (icon != null)
+        {
+            var glyph = new PathIcon { Classes = { "mi" } };
+            glyph.Bind(PathIcon.DataProperty, glyph.GetResourceObservable(icon));
+            item.Icon = glyph;
+        }
+        if (danger)
+        {
+            item.Classes.Add("danger");
+        }
         item.Click += async (_, _) =>
         {
             try
@@ -1219,8 +1278,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private async Task DelegateSnackMsg(string content)
     {
-        _manager?.Show(new Avalonia.Controls.Notifications.Notification(null, content, NotificationType.Information));
-        await Task.CompletedTask;
+        if (_manager == null || content.IsNullOrEmpty())
+        {
+            return;
+        }
+        // v2rayN announces a started core with the server summary; show the server instead of its raw summary.
+        var item = await AppManager.Instance.GetProfileItem(_config.IndexId);
+        if (item != null && content == item.GetSummary())
+        {
+            _manager.Show(Toasts.Server(item), NotificationType.Success, TimeSpan.FromSeconds(4));
+            return;
+        }
+        var kind = Toasts.Guess(content);
+        _manager.Show(Toasts.Message(kind, null, content), Toasts.TypeOf(kind), TimeSpan.FromSeconds(kind == ToastKind.Error ? 8 : 5));
     }
 
     private void OnHotkeyHandler(EGlobalHotkey e)

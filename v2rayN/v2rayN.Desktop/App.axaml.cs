@@ -9,6 +9,7 @@ public partial class App : Application
     {
         AvaloniaXamlLoader.Load(this);
         Common.SemiRounding.Apply(this);
+        Common.Motion.Install(this);
 
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;

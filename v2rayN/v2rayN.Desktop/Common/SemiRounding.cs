@@ -22,7 +22,8 @@ internal static class SemiRounding
         Collect(semi.Resources, found, 0);
         foreach (var (key, radius) in found)
         {
-            if (!app.Resources.ContainsKey(key))
+            // Keys V2pn sets itself (menus, toasts) keep their value.
+            if (!app.Resources.TryGetResource(key, null, out _))
             {
                 app.Resources[key] = new CornerRadius(
                     Soften(radius.TopLeft), Soften(radius.TopRight), Soften(radius.BottomRight), Soften(radius.BottomLeft));

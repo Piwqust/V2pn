@@ -1,0 +1,132 @@
+<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <!--
+        Style-driven motion, loaded only when Windows animations are on (Common/Motion.cs).
+        Hover and press: 120-150 ms. Things that appear: 160-220 ms ease-out from 96-97 % scale.
+        Only opacity, transforms and colours animate, never layout.
+    -->
+
+    <!--  Buttons: colour and shadow fade on hover, a short squeeze on press.  -->
+    <Style Selector="Button, ToggleButton">
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+                <BrushTransition Property="Foreground" Duration="0:0:0.15" />
+                <TransformOperationsTransition
+                    Easing="0.32,0.72,0,1"
+                    Property="RenderTransform"
+                    Duration="0:0:0.16" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter, ToggleButton /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.rail:pressed, ToggleButton:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.96)" />
+    </Style>
+    <Style Selector="Button.routeoption:pressed, Button.accent:pressed, Button.disconnect:pressed">
+        <Setter Property="RenderTransform" Value="scale(0.97)" />
+    </Style>
+
+    <!--  List chips and rows fade between rest, hover and selected.  -->
+    <Style Selector="ListBoxItem /template/ Border#PART_Chip, ListBoxItem /template/ Border#PART_Row">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.12" />
+                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ListBox.mode > ListBoxItem, ListBox.sidetabs > ListBoxItem">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Foreground" Duration="0:0:0.2" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="MenuItem /template/ Border#PART_LayoutRoot">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.1" />
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!--  Popovers, menus and tooltips grow out of their trigger side instead of popping in.  -->
+    <Style Selector="FlyoutPresenter, MenuFlyoutPresenter, ContextMenu">
+        <Setter Property="RenderTransformOrigin" Value="50%,0%" />
+        <Style.Animations>
+            <Animation Easing="0.32,0.72,0,1" FillMode="Forward" Duration="0:0:0.18">
+                <KeyFrame Cue="0%">
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="0.96" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="0.96" />
+                    <Setter Property="TranslateTransform.Y" Value="-4" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                    <Setter Property="TranslateTransform.Y" Value="0" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+    <Style Selector="ToolTip">
+        <Style.Animations>
+            <Animation Easing="0.32,0.72,0,1" FillMode="Forward" Duration="0:0:0.15">
+                <KeyFrame Cue="0%">
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="0.97" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="0.97" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!--  The chosen routing preset's tick lands with a small pop.  -->
+    <Style Selector="Button.routeoption.active PathIcon.routetick">
+        <Style.Animations>
+            <Animation Easing="0.34,1.36,0.64,1" FillMode="Forward" Duration="0:0:0.22">
+                <KeyFrame Cue="0%">
+                    <Setter Property="Opacity" Value="0" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="0.6" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="0.6" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="Opacity" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!--  Sidebar hover actions (ping, star, more) fade in rather than blink.  -->
+    <Style Selector="StackPanel.rowactions, Panel.rowinfo">
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Button.siderow Button.reveal">
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+</Styles>

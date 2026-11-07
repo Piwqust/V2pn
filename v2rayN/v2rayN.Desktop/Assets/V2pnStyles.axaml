@@ -1078,4 +1078,9 @@
         <Setter Property="CornerRadius" Value="8" />
         <Setter Property="Margin" Value="4,1" />
     </Style>
+
+    <!--  A tab control with a single page doesn't need its strip.  -->
+    <Style Selector="TabControl.single /template/ Border#PART_TabStrip">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
 </Styles>

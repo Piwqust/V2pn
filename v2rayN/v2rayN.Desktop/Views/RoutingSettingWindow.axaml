@@ -77,8 +77,16 @@
             <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
         </StackPanel>
 
-        <Panel Margin="24,12,24,8">
-            <TabControl x:Name="tabAdvanced">
+        <DockPanel Margin="24,12,24,8">
+            <!--  Actions above the list.  -->
+            <Menu
+                Margin="0,0,0,10"
+                HorizontalAlignment="Left"
+                DockPanel.Dock="Top">
+                <MenuItem x:Name="menuRoutingAdvancedAdd2" Header="{x:Static loc:L.RtNewSet}" />
+                <MenuItem x:Name="menuRoutingAdvancedImportRules2" Header="{x:Static loc:L.RtAddBuiltin}" />
+            </Menu>
+            <TabControl x:Name="tabAdvanced" Classes="single">
                 <TabItem HorizontalAlignment="Left" Header="{x:Static loc:L.RtSetsTab}">
                     <DataGrid
                         x:Name="lstRoutings"
@@ -136,11 +144,6 @@
                     </DataGrid>
                 </TabItem>
             </TabControl>
-            <!--  The actions sit on the tab strip's line, to the right of the "Rule sets" tab.  -->
-            <Menu HorizontalAlignment="Right" VerticalAlignment="Top">
-                <MenuItem x:Name="menuRoutingAdvancedAdd2" Header="{x:Static loc:L.RtNewSet}" />
-                <MenuItem x:Name="menuRoutingAdvancedImportRules2" Header="{x:Static loc:L.RtAddBuiltin}" />
-            </Menu>
-        </Panel>
+        </DockPanel>
     </DockPanel>
 </Window>

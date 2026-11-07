@@ -1,92 +1,118 @@
 <#
 .SYNOPSIS
-  Measures a V2pn build: start time, CPU at rest (window open and minimized) and memory, empty
-  and with many servers.
+  Measures a V2pn (or plain v2rayN) build: start time, CPU at rest with the window open and
+  minimized, and memory, empty and with many servers.
 
 .DESCRIPTION
-  Runs the build in a sandbox (tools/sandbox.ps1, system proxy untouched), loads -Servers servers
-  from a local made-up subscription (tools/fake_sub.py, TEST-NET addresses only) and prints one
-  table. CPU is "% of one core" averaged over -Seconds.
+  Works the same for V2pn and the original v2rayN, so the two can be compared: nothing depends on
+  V2pn's own buttons. The build runs in a sandbox (tools/sandbox.ps1: system proxy untouched, own
+  port). Servers come from a local made-up subscription (tools/fake_sub.py, TEST-NET addresses
+  only) that the app's own scheduler fetches about a minute after start.
+
+  CPU is "% of one core" averaged over -Seconds, starting -Settle seconds after the state is
+  reached. Start time is from launch until the main window shows its content.
 
 .EXAMPLE
   tools/perf.ps1
-  tools/perf.ps1 -From dist/V2pn-win-x64 -Servers 3000
+  tools/perf.ps1 -From <upstream checkout>/v2rayN/v2rayN.Desktop/bin/Release/net10.0 -Label v2rayN
 #>
 param(
     [string]$From = (Join-Path (Split-Path -Parent $PSScriptRoot) 'v2rayN/v2rayN.Desktop/bin/Release/net10.0'),
+    [string]$Label,
     [int]$Servers = 1000,
     [string]$WorkDir = (Join-Path ([IO.Path]::GetTempPath()) 'v2pn-perf'),
     [int]$Port = 18780,
-    [int]$Seconds = 20
+    [int]$Seconds = 20,
+    [int]$Settle = 10
 )
 
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
+Add-Type @"
+using System;
+using System.Runtime.InteropServices;
+public static class PerfWin {
+    [DllImport("user32.dll")] public static extern bool ShowWindow(IntPtr h, int cmd);
+}
+"@
 $AE = [Windows.Automation.AutomationElement]
 $dir = Join-Path $WorkDir 'app'
+$exeName = @('V2pn.exe', 'v2rayN.exe') | Where-Object { Test-Path (Join-Path $From $_) } | Select-Object -First 1
+if (-not $exeName) { throw "Neither V2pn.exe nor v2rayN.exe in $From" }
+if (-not $Label) { $Label = [IO.Path]::GetFileNameWithoutExtension($exeName) }
 $rows = @()
 
-function Find-Element([int]$processId, [string]$automationId, [string]$name, [int]$tries = 100) {
-    $byProcess = New-Object Windows.Automation.PropertyCondition($AE::ProcessIdProperty, $processId)
-    $byWhat = if ($automationId) { New-Object Windows.Automation.PropertyCondition($AE::AutomationIdProperty, $automationId) }
-    else { New-Object Windows.Automation.PropertyCondition($AE::NameProperty, $name) }
-    $cond = New-Object Windows.Automation.AndCondition($byProcess, $byWhat)
-    for ($i = 0; $i -lt $tries; $i++) {
-        $el = $AE::RootElement.FindFirst([Windows.Automation.TreeScope]::Descendants, $cond)
-        if ($el) { return $el }
-        Start-Sleep -Milliseconds 100
+function Wait-Window([Diagnostics.Process]$p, [int]$seconds = 60) {
+    # "Shows its content": the window's UI tree has its controls, not only the frame.
+    $cond = New-Object Windows.Automation.PropertyCondition($AE::ProcessIdProperty, $p.Id)
+    $deadline = (Get-Date).AddSeconds($seconds)
+    while ((Get-Date) -lt $deadline) {
+        $win = $AE::RootElement.FindFirst([Windows.Automation.TreeScope]::Children, $cond)
+        if ($win) {
+            $buttons = $win.FindAll([Windows.Automation.TreeScope]::Descendants,
+                (New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [Windows.Automation.ControlType]::Button)))
+            if ($buttons.Count -ge 5) { return }
+        }
+        Start-Sleep -Milliseconds 50
     }
-    throw "UI element '$automationId$name' not found"
+    throw 'The main window did not appear.'
 }
 
-function Invoke-Element($el) {
-    $pattern = $null
-    if ($el.TryGetCurrentPattern([Windows.Automation.ExpandCollapsePattern]::Pattern, [ref]$pattern)) { $pattern.Expand() }
-    else { $el.GetCurrentPattern([Windows.Automation.InvokePattern]::Pattern).Invoke() }
-    Start-Sleep -Milliseconds 500
-}
-
-function Start-Measured {
+function Start-App {
     $sw = [Diagnostics.Stopwatch]::StartNew()
-    $p = Start-Process (Join-Path $dir 'V2pn.exe') -WorkingDirectory $dir -PassThru
-    [void](Find-Element $p.Id 'btnAppMenu')
+    $p = Start-Process (Join-Path $dir $exeName) -WorkingDirectory $dir -PassThru
+    Wait-Window $p
     $sw.Stop()
     return @{ Process = $p; StartMs = $sw.ElapsedMilliseconds }
 }
 
-function Measure-Rest([Diagnostics.Process]$p, [string]$label) {
-    Start-Sleep 5
+function Measure-Rest([Diagnostics.Process]$p, [string]$state) {
+    Start-Sleep $Settle
     $p.Refresh()
     $cpu0 = $p.TotalProcessorTime
     $t0 = Get-Date
     Start-Sleep $Seconds
     $p.Refresh()
     $cpu = ($p.TotalProcessorTime - $cpu0).TotalMilliseconds / ((Get-Date) - $t0).TotalMilliseconds * 100
-    Write-Host ("  {0}: CPU {1:N2}%, RAM {2} MB" -f $label, $cpu, [int]($p.WorkingSet64 / 1MB))
+    Write-Host ("  {0}: CPU {1:N2}%, RAM {2} MB" -f $state, $cpu, [int]($p.WorkingSet64 / 1MB))
     return [pscustomobject]@{
-        State      = $label
-        'CPU %'    = [math]::Round($cpu, 2)
-        'RAM MB'   = [int]($p.WorkingSet64 / 1MB)
+        App          = $Label
+        State        = $state
+        'CPU %'      = [math]::Round($cpu, 2)
+        'RAM MB'     = [int]($p.WorkingSet64 / 1MB)
         'Private MB' = [int]($p.PrivateMemorySize64 / 1MB)
     }
 }
 
-function Minimize([int]$processId) {
-    Invoke-Element (Find-Element $processId 'btnMinimize')
+function Minimize([Diagnostics.Process]$p) {
+    $p.Refresh()
+    [void][PerfWin]::ShowWindow($p.MainWindowHandle, 6)
 }
 
 function Stop-App { & (Join-Path $PSScriptRoot 'sandbox.ps1') -Dest $dir -Stop | Out-Null }
 
+function Invoke-Sql([string]$db, [string]$sql) {
+    # Windows quoting mangles inline python, so the statement goes through a file.
+    $py = Join-Path $WorkDir 'sql.py'
+    Set-Content -Encoding ascii $py "import sqlite3,sys`nc=sqlite3.connect(sys.argv[1])`nr=c.execute(open(sys.argv[2]).read()).fetchall()`nc.commit()`nprint(r[0][0] if r else '')"
+    $sqlFile = Join-Path $WorkDir 'stmt.sql'
+    Set-Content -Encoding ascii $sqlFile $sql
+    python $py $db $sqlFile
+}
+
+Write-Host "== $Label ($exeName)"
+
 # --- empty ------------------------------------------------------------------------------------
 & (Join-Path $PSScriptRoot 'sandbox.ps1') -From $From -Dest $dir | Out-Null
-$run = Start-Measured
+# The first start creates the database and caches; measure the next one, as a person sees it daily.
+$run = Start-App
+Start-Sleep 3
 Stop-App
-# The first start creates the database and caches; measure the second, as a person sees it daily.
-$run = Start-Measured
+$run = Start-App
 $startEmpty = $run.StartMs
 Write-Host "  start, empty: $startEmpty ms"
 $rows += Measure-Rest $run.Process 'empty, window open'
-Minimize $run.Process.Id
+Minimize $run.Process
 $rows += Measure-Rest $run.Process 'empty, minimized'
 Stop-App
 
@@ -95,53 +121,35 @@ $sub = Start-Process python -ArgumentList @((Join-Path $PSScriptRoot 'fake_sub.p
 try {
     Start-Sleep 1
     $db = Join-Path $dir 'guiConfigs/guiNDB.db'
-    $insert = @"
-import sqlite3, sys
-c = sqlite3.connect(sys.argv[1])
-c.execute("DELETE FROM SubItem WHERE Id='perf'")
-c.execute("INSERT INTO SubItem (Id, Remarks, Url, Enabled, UserAgent, Sort, AutoUpdateInterval, UpdateTime) VALUES ('perf', 'Perf', ?, 1, '', 1, 0, 0)", (sys.argv[2],))
-c.commit()
-"@
-    $insert | python - $db "http://127.0.0.1:$Port/sub"
+    # Due at once (never updated), then not again for months: the scheduler fetches it one time.
+    Invoke-Sql $db "DELETE FROM SubItem WHERE Id='perf'" | Out-Null
+    Invoke-Sql $db "INSERT INTO SubItem (Id, Remarks, Url, Enabled, UserAgent, Sort, AutoUpdateInterval, UpdateTime) VALUES ('perf', 'Perf', 'http://127.0.0.1:$Port/sub', 1, '', 1, 100000, 0)" | Out-Null
 
-    $run = Start-Measured
+    $run = Start-App
     $p = $run.Process
-    # Let the first load settle; a menu opened during it can close again on its own.
-    Start-Sleep 3
-    $sw = [Diagnostics.Stopwatch]::StartNew()
-    $item = $null
-    for ($attempt = 0; $attempt -lt 3 -and -not $item; $attempt++) {
-        Invoke-Element (Find-Element $p.Id 'btnAppMenu')
-        try { $item = Find-Element $p.Id 'menuSubUpdate' -tries 30 } catch { $item = $null }
-    }
-    if (-not $item) { throw 'The subscription menu did not open.' }
-    $sw.Restart()
-    Invoke-Element $item
     $count = 0
-    # Windows quoting mangles inline python, so the query lives in a file.
-    $countPy = Join-Path $WorkDir 'count.py'
-    Set-Content -Encoding ascii $countPy "import sqlite3,sys`nprint(sqlite3.connect(sys.argv[1]).execute(""SELECT COUNT(*) FROM ProfileItem WHERE Subid='perf'"").fetchone()[0])"
-    while ($sw.Elapsed.TotalSeconds -lt 120) {
-        $count = [int](python $countPy $db)
+    $deadline = (Get-Date).AddSeconds(150)
+    while ((Get-Date) -lt $deadline) {
+        $count = [int](Invoke-Sql $db "SELECT COUNT(*) FROM ProfileItem WHERE Subid='perf'")
         if ($count -ge $Servers) { break }
-        Start-Sleep -Milliseconds 300
+        Start-Sleep 1
     }
-    $importMs = $sw.ElapsedMilliseconds
+    if ($count -lt $Servers) { throw "Only $count of $Servers servers arrived." }
     $rows += Measure-Rest $p "$count servers, window open"
-    Minimize $p.Id
+    Minimize $p
     $rows += Measure-Rest $p "$count servers, minimized"
     Stop-App
 
-    $run = Start-Measured
+    $run = Start-App
     $startFull = $run.StartMs
+    Write-Host "  start, $count servers: $startFull ms"
     Stop-App
 }
 finally {
     if (-not $sub.HasExited) { $sub.Kill() }
 }
 
+$size = [math]::Round(((Get-ChildItem $dir -File | Where-Object { $_.Extension -in '.exe', '.dll' } | Measure-Object Length -Sum).Sum) / 1MB, 0)
 Write-Host ''
-Write-Host "Start, empty:            $startEmpty ms"
-Write-Host "Start, $count servers:   $startFull ms"
-Write-Host "Import of $count servers: $importMs ms (menu click to all stored)"
+Write-Host "$Label  start empty: $startEmpty ms, start with $count servers: $startFull ms, app files: $size MB"
 $rows | Format-Table -AutoSize | Out-String | Write-Host

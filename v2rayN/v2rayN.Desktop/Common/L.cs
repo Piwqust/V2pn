@@ -205,6 +205,9 @@ public static partial class L
     public static string RouteBlockedOnlyHint => T("Only sites blocked in Russia, YouTube, Discord, Telegram and AI services go through the VPN. The rest opens directly and faster.",
         "Через VPN идут только сайты, заблокированные в России, а ещё YouTube, Discord, Telegram и ИИ-сервисы. Остальное открывается напрямую и быстрее.");
     public static string RouteAll => T("Everything through VPN", "Всё через VPN");
+    public static string RouteBuiltinWhitelist => T("Everything except China (v2rayN)", "Всё, кроме Китая (v2rayN)");
+    public static string RouteBuiltinBlacklist => T("Sites blocked in China (v2rayN)", "Заблокированное в Китае (v2rayN)");
+    public static string RouteBuiltinGlobal => T("Everything, v2rayN rules", "Всё, правила v2rayN");
     public static string RouteAllHint => T("All traffic except the local network goes through the server. Some Russian banks and Gosuslugi may refuse a foreign IP.",
         "Весь трафик, кроме локальной сети, идёт через сервер. Некоторые банки и Госуслуги могут не пустить с иностранного IP.");
     public static string Recommended => T("Recommended", "Рекомендуем");

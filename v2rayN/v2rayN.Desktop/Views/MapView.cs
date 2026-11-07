@@ -167,13 +167,29 @@ public sealed class MapView : UserControl
             _ => "V2Unsafe",
         });
         _pinRing.Stroke = accent;
+        var replay = !Equals(_pinHalo.Fill, accent) || _pulsedCode != _focusCode;
         _pinHalo.Fill = accent;
         // A white core vanishes on the light map, so there the pin is a solid dot.
         _pinCore.Fill = IsDark() ? Brush("V2PinCore") : accent;
         _pin.IsVisible = Anchor() != null;
-        // The halo pulses forever; hidden with the pin, its animation stops too.
+        // Hidden with the pin, so a pulse never runs for a pin nobody sees.
         _pinHalo.IsVisible = _pin.IsVisible;
+        if (replay && _pin.IsVisible)
+        {
+            Pulse();
+        }
         PlaceDots();
+    }
+
+    private string? _pulsedCode;
+
+    // A few waves when the pin lands somewhere new or the protection state changes its colour.
+    private void Pulse()
+    {
+        _pulsedCode = _focusCode;
+        _pinHalo.Classes.Remove("pulse");
+        // Re-adding the class in a later dispatcher pass starts the animation over.
+        Dispatcher.UIThread.Post(() => _pinHalo.Classes.Add("pulse"), DispatcherPriority.Background);
     }
 
     // "EU" servers have no single country: aim at central Europe without highlighting anything.

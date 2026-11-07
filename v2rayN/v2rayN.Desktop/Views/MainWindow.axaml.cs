@@ -829,7 +829,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var active = status.SelectedRouting;
         var kind = RoutingPresets.KindOf(active?.Id);
-        txtRoute.Text = kind is { } k ? RoutingPresets.Title(k) : active?.Remarks ?? L.RouteTitle;
+        txtRoute.Text = kind is { } k ? RoutingPresets.Title(k) : active != null ? RoutingPresets.DisplayName(active.Remarks) : L.RouteTitle;
         btnRouteRussia.Classes.Set("active", kind == RoutingPresetKind.RussiaDirect);
         btnRouteBlocked.Classes.Set("active", kind == RoutingPresetKind.BlockedOnly);
         btnRouteAll.Classes.Set("active", kind == RoutingPresetKind.All);

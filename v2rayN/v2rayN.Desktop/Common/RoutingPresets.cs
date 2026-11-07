@@ -42,6 +42,29 @@ public static class RoutingPresets
 
     public static bool IsPreset(string? id) => KindOf(id) != null;
 
+    /// <summary>
+    /// The name to show for any rule set. v2rayN creates its three built-in sets with Chinese names
+    /// ("V4-绕过大陆(Whitelist)"…); they are shown by what they do, in the interface language.
+    /// </summary>
+    public static string DisplayName(string? remarks)
+    {
+        if (remarks.IsNullOrEmpty())
+        {
+            return string.Empty;
+        }
+        if (remarks.EndsWith("绕过大陆(Whitelist)", StringComparison.Ordinal))
+        {
+            return L.RouteBuiltinWhitelist;
+        }
+        if (remarks.EndsWith("黑名单(Blacklist)", StringComparison.Ordinal))
+        {
+            return L.RouteBuiltinBlacklist;
+        }
+        return remarks.EndsWith("全局(Global)", StringComparison.Ordinal) ? L.RouteBuiltinGlobal : remarks;
+    }
+
+    public static readonly Avalonia.Data.Converters.FuncValueConverter<string?, string> NameConverter = new(DisplayName);
+
     public static string Title(RoutingPresetKind kind) => kind switch
     {
         RoutingPresetKind.All => L.RouteAll,

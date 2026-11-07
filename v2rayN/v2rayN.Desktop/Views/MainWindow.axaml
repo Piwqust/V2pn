@@ -4,6 +4,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:chrome="using:Avalonia.Controls.Chrome"
     xmlns:conv="using:v2rayN.Desktop.Converters"
+    xmlns:common="using:v2rayN.Desktop.Common"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
@@ -920,7 +921,7 @@
                                                                 PlaceholderText="{x:Static loc:L.RouteCustomPick}">
                                                                 <ComboBox.ItemTemplate>
                                                                     <DataTemplate x:DataType="ent:RoutingItem">
-                                                                        <TextBlock Text="{Binding Remarks}" TextTrimming="CharacterEllipsis" />
+                                                                        <TextBlock Text="{Binding Remarks, Converter={x:Static common:RoutingPresets.NameConverter}}" TextTrimming="CharacterEllipsis" />
                                                                     </DataTemplate>
                                                                 </ComboBox.ItemTemplate>
                                                             </ComboBox>

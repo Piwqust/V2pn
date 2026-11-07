@@ -288,12 +288,13 @@
     </Style>
 
     <!--
-        Map pin pulse. Endless animations keep the renderer ticking every frame even for a hidden
-        control, so they run only while the element itself is visible.
+        Map pin pulse: a few waves when the pin lands or the protection changes, then a still halo.
+        Every frame of it redraws the map under the pin; pulsing for as long as V2pn stays
+        connected cost a third of a CPU core, minimized too. MapView adds .pulse to replay it.
     -->
-    <Style Selector="Ellipse.halo[IsVisible=True]">
+    <Style Selector="Ellipse.halo.pulse[IsVisible=True]">
         <Style.Animations>
-            <Animation IterationCount="Infinite" Duration="0:0:2.4">
+            <Animation IterationCount="3" Duration="0:0:2.4">
                 <KeyFrame Cue="0%">
                     <Setter Property="ScaleTransform.ScaleX" Value="0.35" />
                     <Setter Property="ScaleTransform.ScaleY" Value="0.35" />

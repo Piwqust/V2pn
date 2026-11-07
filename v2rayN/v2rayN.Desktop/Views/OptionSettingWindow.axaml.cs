@@ -11,6 +11,10 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
     {
         InitializeComponent();
 
+        SettingsKit.ApplyPlatform(this);
+        lstNav.SelectionChanged += (_, _) => ShowPage(lstNav.SelectedIndex);
+        txtSearch.TextChanged += (_, _) => ApplySearch();
+
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
         _config = AppManager.Instance.Config;
@@ -231,5 +235,41 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {
         btnCancel.Focus();
+    }
+
+    private Control[] Pages => [pageGeneral, pageInbound, pageSysProxy, pageTun, pageTraffic, pageTests, pageUpdates, pageCores, pageLogs];
+
+    private void ShowPage(int index)
+    {
+        if (txtSearch.Text.IsNotEmpty() || index < 0)
+        {
+            return;
+        }
+        var pages = Pages;
+        for (var i = 0; i < pages.Length; i++)
+        {
+            pages[i].IsVisible = i == index;
+        }
+        svContent.Offset = default;
+    }
+
+    // While searching every page is shown, filtered down to the matching rows.
+    private void ApplySearch()
+    {
+        var query = txtSearch.Text;
+        var found = SettingsKit.Search(Pages, query);
+        if (query.IsNullOrEmpty())
+        {
+            ShowPage(Math.Max(lstNav.SelectedIndex, 0));
+        }
+        else
+        {
+            foreach (var page in Pages)
+            {
+                page.IsVisible = !page.Classes.Contains("nomatch");
+            }
+            svContent.Offset = default;
+        }
+        txtNoResults.IsVisible = !found;
     }
 }

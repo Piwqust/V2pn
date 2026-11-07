@@ -337,6 +337,8 @@
     <Style Selector=":is(Window).dialog DataGrid">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
+        <!--  Room for two-line cells (long subscription URLs) and an easier click target.  -->
+        <Setter Property="RowHeight" Value="44" />
     </Style>
 
     <!--  Form text: labels in ink, the explanatory third column muted and smaller.  -->
@@ -346,9 +348,22 @@
         <Setter Property="FontSize" Value="12" />
     </Style>
 
-    <!--  Menus used as toolbars above tables.  -->
+    <!--  Menus used as toolbars above tables: each top-level item is a raised key.  -->
     <Style Selector=":is(Window).dialog Menu">
-        <Setter Property="Margin" Value="12,10,12,0" />
+        <Setter Property="Margin" Value="16,14,16,2" />
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
+    <Style Selector=":is(Window).dialog Menu > MenuItem">
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="Margin" Value="0,0,8,0" />
+        <Setter Property="FontWeight" Value="Medium" />
+    </Style>
+    <Style Selector=":is(Window).dialog Menu > MenuItem:pointerover /template/ Border">
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
     </Style>
 
 
@@ -631,5 +646,99 @@
     <Style Selector="DockPanel.page DataGrid">
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="BorderThickness" Value="0" />
+    </Style>
+
+    <!--
+        Settings kit: a navigation column, pages with a title, and rounded groups of rows.
+        A row is a title with an optional hint on the left and its control on the right
+        (or below, for wide inputs: Border.srow.stack).
+    -->
+    <Style Selector="Border.settingsnav">
+        <Setter Property="Background" Value="{DynamicResource V2SidebarFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PanelBorder}" />
+        <Setter Property="BorderThickness" Value="0,0,1,0" />
+    </Style>
+    <Style Selector="TextBlock.spagetitle">
+        <Setter Property="FontSize" Value="22" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+    <Style Selector="TextBlock.spagehint">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="Margin" Value="0,4,0,2" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.sgrouplabel">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="Margin" Value="4,22,0,8" />
+    </Style>
+    <Style Selector="TextBlock.sgroupnote">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Margin" Value="4,8,0,0" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Border.sgroupcard">
+        <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PanelBorder}" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="14" />
+        <Setter Property="BoxShadow" Value="{DynamicResource V2CardShadow}" />
+    </Style>
+    <Style Selector="Border.srow">
+        <Setter Property="Padding" Value="16,11" />
+        <Setter Property="MinHeight" Value="54" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+    </Style>
+    <Style Selector="Border.srow:nth-child(1)">
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Border.srow > Grid">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="TextBlock.srowtitle">
+        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="TextBlock.srowhint">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="Margin" Value="0,3,0,0" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <Style Selector="Border.srow StackPanel.srowtext">
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Margin" Value="0,0,24,0" />
+    </Style>
+    <Style Selector="Border.srow ToggleSwitch">
+        <Setter Property="OnContent" Value="" />
+        <Setter Property="OffContent" Value="" />
+        <Setter Property="MinWidth" Value="0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.srow ComboBox, Border.srow TextBox, Border.srow NumericUpDown">
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Panel.srowctl > TextBox, Panel.srowctl > ComboBox, Panel.srowctl > NumericUpDown, Panel.srowctl > StackPanel > TextBox, Panel.srowctl > StackPanel > ComboBox">
+        <Setter Property="Width" Value="280" />
+    </Style>
+    <Style Selector="Border.srow.stack TextBox, Border.srow.stack ComboBox">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <!--  Tab pages that already hold settings groups don't need the page card around them.  -->
+    <Style Selector="TabControl.plain /template/ Border.formcard">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="BoxShadow" Value="none" />
+        <Setter Property="Padding" Value="0" />
+    </Style>
+    <Style Selector="Border.srow.hidden, Border.srow.collapsed, Border.srow.nomatch, StackPanel.sgroup.nomatch, StackPanel.spage.nomatch">
+        <Setter Property="IsVisible" Value="False" />
     </Style>
 </Styles>

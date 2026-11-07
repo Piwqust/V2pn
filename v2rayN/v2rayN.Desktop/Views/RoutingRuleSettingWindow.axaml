@@ -38,135 +38,69 @@
         </StackPanel>
         </Border>
 
-        <Border
-            Margin="16,14,16,0"
-            Classes="formcard"
-            DockPanel.Dock="Top">
-            <Grid
-            ColumnDefinitions="Auto,Auto,Auto"
-            RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
-            <TextBlock
-                Grid.Row="0"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Text="{x:Static resx:ResUI.LvRemarks}" />
-            <StackPanel
-                Grid.Row="0"
-                Grid.Column="1"
-                Orientation="Horizontal">
-
-                <TextBox
-                    x:Name="txtRemarks"
-                    Grid.Row="0"
-                    Grid.Column="1"
-                    Width="300"
-                    Margin="{StaticResource Margin4}"
-                    HorizontalAlignment="Left"
-                    VerticalAlignment="Center"
-                    TextWrapping="Wrap" />
-
-                <TextBlock
-                    Margin="{StaticResource Margin4}"
-                    VerticalAlignment="Center"
-                    Text="{x:Static resx:ResUI.LvSort}" />
-                <TextBox
-                    x:Name="txtSort"
-                    Width="100"
-                    Margin="{StaticResource Margin4}"
-                    HorizontalAlignment="Left" />
+        <StackPanel Margin="16,6,16,0" DockPanel.Dock="Top">
+            <StackPanel Classes="sgroup">
+                <Border Classes="sgroupcard">
+                    <StackPanel>
+                        <Border Classes="srow">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvRemarks}" />
+                                </StackPanel>
+                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <TextBox x:Name="txtRemarks" Grid.Row="0" Grid.Column="1" Width="300" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" VerticalAlignment="Center" TextWrapping="Wrap" />
+                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.LvSort}" />
+                                        <TextBox x:Name="txtSort" Width="100" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" />
+                                    </StackPanel>
+                                </Panel>
+                            </Grid>
+                        </Border>
+                        <Border Classes="srow">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbdomainStrategy}" />
+                                </StackPanel>
+                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal">
+                                        <ComboBox x:Name="cmbdomainStrategy" Width="200" Margin="{StaticResource Margin4}" />
+                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbdomainStrategy4Singbox}" />
+                                        <ComboBox x:Name="cmbdomainStrategy4Singbox" Width="200" Margin="{StaticResource Margin4}" />
+                                    </StackPanel>
+                                </Panel>
+                            </Grid>
+                        </Border>
+                        <Border Classes="srow">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvUrl}" />
+                                </StackPanel>
+                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBox x:Name="txtUrl" TextWrapping="Wrap" />
+                                </Panel>
+                            </Grid>
+                        </Border>
+                        <Border Classes="srow">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle">
+                                        <HyperlinkButton Classes="WithIcon" Click="linkCustomRulesetPath4Singbox">
+                                            <TextBlock Text="{x:Static resx:ResUI.LvCustomRulesetPath4Singbox}" />
+                                        </HyperlinkButton>
+                                    </TextBlock>
+                                </StackPanel>
+                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                        <TextBox x:Name="txtCustomRulesetPath4Singbox" TextWrapping="Wrap" />
+                                        <Button x:Name="btnBrowseCustomRulesetPath4Singbox" Content="{x:Static resx:ResUI.TbBrowse}" />
+                                    </StackPanel>
+                                </Panel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
             </StackPanel>
-
-            <TextBlock
-                Grid.Row="1"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Text="{x:Static resx:ResUI.TbdomainStrategy}" />
-            <StackPanel
-                Grid.Row="1"
-                Grid.Column="1"
-                Orientation="Horizontal">
-                <ComboBox
-                    x:Name="cmbdomainStrategy"
-                    Width="200"
-                    Margin="{StaticResource Margin4}" />
-                <TextBlock
-                    Margin="{StaticResource Margin4}"
-                    VerticalAlignment="Center"
-                    Text="{x:Static resx:ResUI.TbdomainStrategy4Singbox}" />
-                <ComboBox
-                    x:Name="cmbdomainStrategy4Singbox"
-                    Width="200"
-                    Margin="{StaticResource Margin4}" />
-            </StackPanel>
-
-            <TextBlock
-                Grid.Row="2"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Text="{x:Static resx:ResUI.LvUrl}" />
-            <TextBox
-                x:Name="txtUrl"
-                Grid.Row="2"
-                Grid.Column="1"
-                Width="600"
-                Margin="{StaticResource Margin4}"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                TextWrapping="Wrap" />
-
-            <!--
-            <TextBlock
-                Grid.Row="3"
-                Grid.Column="0"
-                VerticalAlignment="Center"
-                Margin="{StaticResource Margin4}"
-                Text="{x:Static resx:ResUI.LvCustomIcon}" />
-            <TextBox
-                x:Name="txtCustomIcon"
-                Grid.Row="3"
-                Grid.Column="1"
-                Width="600"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                Margin="{StaticResource Margin4}"
-                TextWrapping="Wrap" />
-            <Button
-                x:Name="btnBrowseCustomIcon"
-                Grid.Row="3"
-                Grid.Column="2"
-                Margin="{StaticResource Margin4}"
-                Content="{x:Static resx:ResUI.TbBrowse}" />
-            -->
-
-            <TextBlock
-                Grid.Row="4"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center">
-                <HyperlinkButton Classes="WithIcon" Click="linkCustomRulesetPath4Singbox">
-                    <TextBlock Text="{x:Static resx:ResUI.LvCustomRulesetPath4Singbox}" />
-                </HyperlinkButton>
-            </TextBlock>
-            <TextBox
-                x:Name="txtCustomRulesetPath4Singbox"
-                Grid.Row="4"
-                Grid.Column="1"
-                Width="600"
-                Margin="{StaticResource Margin4}"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Center"
-                TextWrapping="Wrap" />
-            <Button
-                x:Name="btnBrowseCustomRulesetPath4Singbox"
-                Grid.Row="4"
-                Grid.Column="2"
-                Margin="{StaticResource Margin4}"
-                Content="{x:Static resx:ResUI.TbBrowse}" />
-        </Grid>
-        </Border>
+        </StackPanel>
 
         <TabControl x:Name="tabAdvanced">
             <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.menuRuleList}">

@@ -2,6 +2,7 @@
     x:Class="v2rayN.Desktop.Views.GlobalHotkeySettingWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -34,98 +35,70 @@
                 IsCancel="True" />
         </StackPanel>
         </Border>
-        <Border Classes="formcard">
-            <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Auto">
-            <Grid RowDefinitions="Auto,Auto,Auto">
-                <Grid
-                    x:Name="gridText"
-                    Grid.Row="0"
-                    ColumnDefinitions="Auto,400"
-                    RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto">
-
-                    <TextBlock
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        Text="{x:Static resx:ResUI.TbGlobalHotkeySetting}" />
-
-                    <TextBlock
-                        Grid.Row="1"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.TbDisplayGUI}" />
-
-                    <TextBox
-                        x:Name="txtGlobalHotkey0"
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        IsReadOnly="True" />
-
-                    <TextBlock
-                        Grid.Row="2"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.TbClearSystemProxy}" />
-                    <TextBox
-                        x:Name="txtGlobalHotkey1"
-                        Grid.Row="2"
-                        Grid.Column="1"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        IsReadOnly="True" />
-
-                    <TextBlock
-                        Grid.Row="3"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.TbSetSystemProxy}" />
-                    <TextBox
-                        x:Name="txtGlobalHotkey2"
-                        Grid.Row="3"
-                        Grid.Column="1"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        IsReadOnly="True" />
-                    <TextBlock
-                        Grid.Row="4"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.TbNotChangeSystemProxy}" />
-                    <TextBox
-                        x:Name="txtGlobalHotkey3"
-                        Grid.Row="4"
-                        Grid.Column="1"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        IsReadOnly="True" />
-                    <TextBlock
-                        Grid.Row="5"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.TbSystemProxyPac}" />
-                    <TextBox
-                        x:Name="txtGlobalHotkey4"
-                        Grid.Row="5"
-                        Grid.Column="1"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        IsReadOnly="True" />
-                </Grid>
-
-                <TextBlock
-                    Grid.Row="1"
-                    Margin="{StaticResource Margin4}"
-                    VerticalAlignment="Center"
-                    Text="{x:Static resx:ResUI.TbGlobalHotkeySettingTip}" />
-            </Grid>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="28,20,28,28" Spacing="6">
+                
+                <StackPanel Spacing="4">
+                    <StackPanel Classes="sgroup" x:Name="gridText">
+                        <TextBlock Classes="sgrouplabel" Text="{x:Static resx:ResUI.TbGlobalHotkeySetting}" />
+                        <Border Classes="sgroupcard">
+                            <StackPanel>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbDisplayGUI}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtGlobalHotkey0" IsReadOnly="True" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbClearSystemProxy}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtGlobalHotkey1" IsReadOnly="True" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSetSystemProxy}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtGlobalHotkey2" IsReadOnly="True" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbNotChangeSystemProxy}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtGlobalHotkey3" IsReadOnly="True" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSystemProxyPac}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtGlobalHotkey4" IsReadOnly="True" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                    <TextBlock Text="{x:Static resx:ResUI.TbGlobalHotkeySettingTip}" />
+                </StackPanel>
+            </StackPanel>
         </ScrollViewer>
-        </Border>
     </DockPanel>
 </Window>

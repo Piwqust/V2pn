@@ -27,6 +27,10 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
 
     protected virtual void OnLoaded(object? sender, RoutedEventArgs e)
     {
+        if (Classes.Contains("dialog"))
+        {
+            Common.SettingsKit.FollowTitles(this);
+        }
         try
         {
             var sizeItem = ConfigHandler.GetWindowSizeItem(AppManager.Instance.Config, GetType().Name);

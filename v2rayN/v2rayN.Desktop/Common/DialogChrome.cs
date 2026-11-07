@@ -25,6 +25,9 @@ internal static class DialogChrome
         }
         window.Opened += (_, _) => Apply(window);
         window.ActualThemeVariantChanged += (_, _) => Apply(window);
+        // Re-assert on focus changes: the frame is redrawn for the inactive state.
+        window.Activated += (_, _) => Apply(window);
+        window.Deactivated += (_, _) => Apply(window);
     }
 
     private static void Apply(Window window)

@@ -32,112 +32,88 @@
         </StackPanel>
         </Border>
 
-        <Border
-            Margin="16,14,16,0"
-            Classes="formcard"
-            DockPanel.Dock="Top">
-            <Grid
-            ColumnDefinitions="300,Auto,Auto"
-            RowDefinitions="Auto,Auto,Auto,Auto">
-            <TextBlock
-                Grid.Row="0"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                Text="{x:Static resx:ResUI.menuServers}" />
+        <StackPanel Margin="16,6,16,0" DockPanel.Dock="Top">
+            <StackPanel Classes="sgroup">
+                <TextBlock Classes="sgrouplabel" Text="{x:Static resx:ResUI.menuServers}" />
+                <Border Classes="sgroupcard">
+                    <StackPanel>
+                        <Border Classes="srow">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRemarks}" />
+                                </StackPanel>
+                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBox x:Name="txtRemarks" />
+                                </Panel>
+                            </Grid>
+                        </Border>
+                        <Border Classes="srow">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbCoreType}" />
+                                </StackPanel>
+                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                    <ComboBox x:Name="cmbCoreType" />
+                                </Panel>
+                            </Grid>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <StackPanel Classes="sgroup" x:Name="gridPolicyGroup">
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbPolicyGroupType}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbPolicyGroupType" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </StackPanel>
+        </StackPanel>
 
-            <TextBlock
-                Grid.Row="1"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Text="{x:Static resx:ResUI.TbRemarks}" />
-            <TextBox
-                x:Name="txtRemarks"
-                Grid.Row="1"
-                Grid.Column="1"
-                Width="400"
-                Margin="{StaticResource Margin4}" />
-
-            <TextBlock
-                Grid.Row="2"
-                Grid.Column="0"
-                Margin="{StaticResource Margin4}"
-                VerticalAlignment="Center"
-                Text="{x:Static resx:ResUI.TbCoreType}" />
-            <ComboBox
-                x:Name="cmbCoreType"
-                Grid.Row="2"
-                Grid.Column="1"
-                Width="200"
-                Margin="{StaticResource Margin4}" />
-
-            <Grid
-                x:Name="gridPolicyGroup"
-                Grid.Row="3"
-                Grid.Column="0"
-                Grid.ColumnSpan="3"
-                ColumnDefinitions="300,Auto,Auto">
-                <TextBlock
-                    Grid.Column="0"
-                    Margin="{StaticResource Margin4}"
-                    VerticalAlignment="Center"
-                    Text="{x:Static resx:ResUI.TbPolicyGroupType}" />
-                <ComboBox
-                    x:Name="cmbPolicyGroupType"
-                    Grid.Column="1"
-                    Width="200"
-                    Margin="{StaticResource Margin4}" />
-            </Grid>
-        </Grid>
-        </Border>
-
-        <TabControl
+        <TabControl Classes="plain"
             x:Name="tabControl"
             HorizontalContentAlignment="Stretch"
             DockPanel.Dock="Top">
             <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.menuServerList}">
-                <Grid
-                    Margin="{StaticResource Margin8}"
-                    ColumnDefinitions="Auto,Auto,Auto"
-                    RowDefinitions="Auto,Auto,Auto">
-
-                    <TextBlock
-                        Grid.Row="0"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.menuSubscription}" />
-                    <ComboBox
-                        x:Name="cmbSubChildItems"
-                        Grid.Row="0"
-                        Grid.Column="1"
-                        Width="600"
-                        Margin="{StaticResource Margin4}"
-                        DisplayMemberBinding="{Binding Remarks}"
-                        ItemsSource="{Binding SubItems}" />
-                    <TextBlock
-                        Grid.Row="0"
-                        Grid.Column="2"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.TbPolicyGroupSubChildTip}"
-                        TextWrapping="Wrap" />
-
-                    <TextBlock
-                        Grid.Row="1"
-                        Grid.Column="0"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        Text="{x:Static resx:ResUI.LvFilter}" />
-                    <ComboBox
-                        x:Name="cmbFilter"
-                        Grid.Row="1"
-                        Grid.Column="1"
-                        Width="600"
-                        Margin="{StaticResource Margin4}"
-                        VerticalAlignment="Center"
-                        IsEditable="True" />
-                </Grid>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="4,4,4,8" Spacing="6">
+                        <StackPanel Classes="sgroup">
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.menuSubscription}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbPolicyGroupSubChildTip}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbSubChildItems" DisplayMemberBinding="{Binding Remarks}" ItemsSource="{Binding SubItems}" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvFilter}" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbFilter" IsEditable="True" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                </ScrollViewer>
             </TabItem>
 
             <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.menuServerList2}">

@@ -32,400 +32,224 @@
         </StackPanel>
         </Border>
 
-        <TabControl HorizontalContentAlignment="Stretch">
+        <TabControl Classes="plain" HorizontalContentAlignment="Stretch">
             <TabItem Header="{x:Static resx:ResUI.ThBasicDNSSettings}">
-                <ScrollViewer VerticalScrollBarVisibility="Visible">
-                    <Grid
-                        x:Name="gridBasicDNSSettings"
-                        Margin="{StaticResource Margin8}"
-                        ColumnDefinitions="Auto,Auto,*"
-                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto">
-
-                        <TextBlock
-                            x:Name="txtBasicDNSSettingsInvalid"
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbCustomDNSEnabledPageInvalid}" />
-
-                        <TextBlock
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbDomesticDNS}" />
-                        <ComboBox
-                            x:Name="cmbDirectDNS"
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Width="300"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            IsEditable="True" />
-                        <TextBlock
-                            Grid.Row="1"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbDomesticDNSTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbRemoteDNS}" />
-                        <ComboBox
-                            x:Name="cmbRemoteDNS"
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Width="300"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            IsEditable="True" />
-                        <TextBlock
-                            Grid.Row="2"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbRemoteDNSTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbBootstrapDNS}" />
-                        <ComboBox
-                            x:Name="cmbBootstrapDNS"
-                            Grid.Row="3"
-                            Grid.Column="1"
-                            Width="300"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            IsEditable="True" />
-                        <TextBlock
-                            Grid.Row="3"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbBootstrapDNSTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="5"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbDirectResolveStrategy}" />
-                        <ComboBox
-                            x:Name="cmbDirectDNSStrategy"
-                            Grid.Row="5"
-                            Grid.Column="1"
-                            Width="200"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            PlaceholderText="Default" />
-                        <TextBlock
-                            Grid.Row="5"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbDirectResolveStrategyTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="6"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbRemoteResolveStrategy}" />
-                        <ComboBox
-                            x:Name="cmbRemoteDNSStrategy"
-                            Grid.Row="6"
-                            Grid.Column="1"
-                            Width="200"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            PlaceholderText="Default" />
-                        <TextBlock
-                            Grid.Row="6"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbRemoteResolveStrategyTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="7"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbProxyDialResolveStrategy}" />
-                        <ComboBox
-                            x:Name="cmbProxyDialDNSStrategy"
-                            Grid.Row="7"
-                            Grid.Column="1"
-                            Width="200"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            PlaceholderText="Default" />
-                        <TextBlock
-                            Grid.Row="7"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbProxyDialResolveStrategyTip}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="8"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbParallelQuery}" />
-                        <ToggleSwitch
-                            x:Name="togParallelQuery"
-                            Grid.Row="8"
-                            Grid.Column="1"
-                            Margin="{StaticResource Margin4}"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
-
-                        <TextBlock
-                            Grid.Row="9"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbServeStale}" />
-                        <ToggleSwitch
-                            x:Name="togServeStale"
-                            Grid.Row="9"
-                            Grid.Column="1"
-                            Margin="{StaticResource Margin4}"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
-
-                        <TextBlock
-                            Grid.Row="10"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbEnableHappyEyeballs}" />
-                        <ToggleSwitch
-                            x:Name="togEnableHappyEyeballs"
-                            Grid.Row="10"
-                            Grid.Column="1"
-                            Margin="{StaticResource Margin4}"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
-                        <TextBlock
-                            Grid.Row="10"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbEnableHappyEyeballsTip}"
-                            TextWrapping="Wrap" />
-                    </Grid>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="4,4,4,8" Spacing="6">
+                        <StackPanel Classes="sgroup" x:Name="gridBasicDNSSettings">
+                            <TextBlock Classes="sgrouplabel" x:Name="txtBasicDNSSettingsInvalid" Text="{x:Static resx:ResUI.TbCustomDNSEnabledPageInvalid}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbDomesticDNS}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbDomesticDNSTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbDirectDNS" IsEditable="True" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRemoteDNS}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbRemoteDNSTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbRemoteDNS" IsEditable="True" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbBootstrapDNS}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbBootstrapDNSTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbBootstrapDNS" IsEditable="True" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbDirectResolveStrategy}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbDirectResolveStrategyTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbDirectDNSStrategy" PlaceholderText="Default" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRemoteResolveStrategy}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbRemoteResolveStrategyTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbRemoteDNSStrategy" PlaceholderText="Default" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbProxyDialResolveStrategy}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbProxyDialResolveStrategyTip}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbProxyDialDNSStrategy" PlaceholderText="Default" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbParallelQuery}" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togParallelQuery" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbServeStale}" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togServeStale" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbEnableHappyEyeballs}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbEnableHappyEyeballsTip}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togEnableHappyEyeballs" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
 
             <TabItem Header="{x:Static resx:ResUI.ThAdvancedDNSSettings}">
-                <ScrollViewer VerticalScrollBarVisibility="Visible">
-                    <Grid
-                        x:Name="gridAdvancedDNSSettings"
-                        Margin="{StaticResource Margin8}"
-                        ColumnDefinitions="Auto,Auto,*"
-                        RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,Auto,*">
-
-                        <TextBlock
-                            x:Name="txtAdvancedDNSSettingsInvalid"
-                            Grid.Row="0"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbCustomDNSEnabledPageInvalid}" />
-
-                        <TextBlock
-                            Grid.Row="1"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbSettingsUseSystemHosts}" />
-                        <ToggleSwitch
-                            x:Name="togUseSystemHosts"
-                            Grid.Row="1"
-                            Grid.Column="1"
-                            Margin="{StaticResource Margin4}"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
-
-                        <TextBlock
-                            Grid.Row="2"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbAddCommonDNSHosts}" />
-                        <ToggleSwitch
-                            x:Name="togAddCommonHosts"
-                            Grid.Row="2"
-                            Grid.Column="1"
-                            Margin="{StaticResource Margin4}"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
-
-                        <TextBlock
-                            Grid.Row="3"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbFakeIP}" />
-                        <Grid
-                            Grid.Row="3"
-                            Grid.Column="1"
-                            ColumnDefinitions="Auto,*">
-                            <ToggleSwitch
-                                x:Name="togFakeIP"
-                                Grid.Column="0"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center" />
-                            <ComboBox
-                                x:Name="cmbFakeIPRange"
-                                Grid.Column="1"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                IsEditable="True" />
-                        </Grid>
-                        <TextBlock
-                            Grid.Row="3"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbFakeIPTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="4"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbFakeIPv6}" />
-                        <Grid x:Name="gridFakeIPv6" Grid.Row="4" Grid.Column="1">
-                            <Grid.ColumnDefinitions>
-                                <ColumnDefinition Width="Auto" />
-                                <ColumnDefinition Width="*" />
-                            </Grid.ColumnDefinitions>
-                            <ToggleSwitch
-                                x:Name="togFakeIPv6"
-                                Grid.Column="0"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Left"
-                                VerticalAlignment="Center" />
-                            <ComboBox
-                                x:Name="cmbFakeIPv6Range"
-                                Grid.Column="1"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Stretch"
-                                VerticalAlignment="Center"
-                                IsEditable="True" />
-                        </Grid>
-                        <TextBlock
-                            Grid.Row="4"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbFakeIPv6Tips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="5"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbBlockSVCBHTTPSQueries}" />
-                        <ToggleSwitch
-                            x:Name="togBlockBindingQuery"
-                            Grid.Row="5"
-                            Grid.Column="1"
-                            Margin="{StaticResource Margin4}"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
-                        <TextBlock
-                            Grid.Row="5"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbBlockSVCBHTTPSQueriesTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="6"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbBlockAAAAQueries}" />
-                        <ToggleSwitch
-                            x:Name="togBlockAAAAQuery"
-                            Grid.Row="6"
-                            Grid.Column="1"
-                            Margin="{StaticResource Margin4}"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Center" />
-                        <TextBlock
-                            Grid.Row="6"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbBlockAAAAQueriesTips}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="7"
-                            Grid.Column="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbValidateDirectExpectedIPs}" />
-                        <ComboBox
-                            x:Name="cmbDirectExpectedIPs"
-                            Grid.Row="7"
-                            Grid.Column="1"
-                            Width="200"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            IsEditable="True" />
-                        <TextBlock
-                            Grid.Row="7"
-                            Grid.Column="2"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbValidateDirectExpectedIPsDesc}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="8"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="3"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbDNSHostsConfig}" />
-
-                        <TextBox
-                            x:Name="txtHosts"
-                            Grid.Row="9"
-                            Grid.Column="0"
-                            Grid.ColumnSpan="3"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Stretch"
-                            BorderThickness="1"
-                            Classes="TextArea"
-                            PlaceholderText="{x:Static resx:ResUI.TbDNSHostsConfig}"
-                            TextWrapping="Wrap" />
-                    </Grid>
+                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Margin="4,4,4,8" Spacing="6">
+                        <StackPanel Classes="sgroup" x:Name="gridAdvancedDNSSettings">
+                            <TextBlock Classes="sgrouplabel" x:Name="txtAdvancedDNSSettingsInvalid" Text="{x:Static resx:ResUI.TbCustomDNSEnabledPageInvalid}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUseSystemHosts}" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togUseSystemHosts" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbAddCommonDNSHosts}" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togAddCommonHosts" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbFakeIP}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbFakeIPTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <ToggleSwitch x:Name="togFakeIP" Grid.Column="0" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                                    <ComboBox x:Name="cmbFakeIPRange" Grid.Column="1" Margin="{StaticResource Margin4}" HorizontalAlignment="Stretch" VerticalAlignment="Center" IsEditable="True" />
+                                                </Grid>
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbFakeIPv6}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbFakeIPv6Tips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <Grid x:Name="gridFakeIPv6">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="Auto" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <ToggleSwitch x:Name="togFakeIPv6" Grid.Column="0" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" VerticalAlignment="Center" />
+                                                    <ComboBox x:Name="cmbFakeIPv6Range" Grid.Column="1" Margin="{StaticResource Margin4}" HorizontalAlignment="Stretch" VerticalAlignment="Center" IsEditable="True" />
+                                                </Grid>
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbBlockSVCBHTTPSQueries}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbBlockSVCBHTTPSQueriesTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togBlockBindingQuery" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbBlockAAAAQueries}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbBlockAAAAQueriesTips}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togBlockAAAAQuery" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbValidateDirectExpectedIPs}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbValidateDirectExpectedIPsDesc}" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbDirectExpectedIPs" IsEditable="True" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Classes="sgrouplabel" Text="{x:Static resx:ResUI.TbDNSHostsConfig}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow stack">
+                                        <StackPanel Spacing="10">
+                                            <TextBox x:Name="txtHosts" BorderThickness="1" Classes="TextArea" PlaceholderText="{x:Static resx:ResUI.TbDNSHostsConfig}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
                 </ScrollViewer>
             </TabItem>
 

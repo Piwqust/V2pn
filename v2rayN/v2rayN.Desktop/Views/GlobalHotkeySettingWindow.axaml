@@ -8,9 +8,9 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuGlobalHotkeySetting}"
+    Title="{x:Static loc:L.TlKeysTitle}"
     Width="740"
-    Height="500"
+    Height="560"
     x:DataType="vms:GlobalHotkeySettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.GlobalHotkeySetting}"
     ShowInTaskbar="False"
@@ -22,7 +22,7 @@
             <Button
                 x:Name="btnReset"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbReset}" />
+                Content="{x:Static loc:L.TlKeysClear}" />
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
@@ -37,66 +37,69 @@
         </Border>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="28,20,28,28" Spacing="6">
-                
-                <StackPanel Spacing="4">
-                    <StackPanel Classes="sgroup" x:Name="gridText">
-                        <TextBlock Classes="sgrouplabel" Text="{x:Static resx:ResUI.TbGlobalHotkeySetting}" />
-                        <Border Classes="sgroupcard">
-                            <StackPanel>
-                                <Border Classes="srow">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbDisplayGUI}" />
-                                        </StackPanel>
-                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBox x:Name="txtGlobalHotkey0" IsReadOnly="True" />
-                                        </Panel>
-                                    </Grid>
-                                </Border>
-                                <Border Classes="srow">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbClearSystemProxy}" />
-                                        </StackPanel>
-                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBox x:Name="txtGlobalHotkey1" IsReadOnly="True" />
-                                        </Panel>
-                                    </Grid>
-                                </Border>
-                                <Border Classes="srow">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSetSystemProxy}" />
-                                        </StackPanel>
-                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBox x:Name="txtGlobalHotkey2" IsReadOnly="True" />
-                                        </Panel>
-                                    </Grid>
-                                </Border>
-                                <Border Classes="srow">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbNotChangeSystemProxy}" />
-                                        </StackPanel>
-                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBox x:Name="txtGlobalHotkey3" IsReadOnly="True" />
-                                        </Panel>
-                                    </Grid>
-                                </Border>
-                                <Border Classes="srow">
-                                    <Grid ColumnDefinitions="*,Auto">
-                                        <StackPanel Classes="srowtext">
-                                            <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSystemProxyPac}" />
-                                        </StackPanel>
-                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <TextBox x:Name="txtGlobalHotkey4" IsReadOnly="True" />
-                                        </Panel>
-                                    </Grid>
-                                </Border>
-                            </StackPanel>
-                        </Border>
-                    </StackPanel>
-                    <TextBlock Text="{x:Static resx:ResUI.TbGlobalHotkeySettingTip}" />
+                <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlKeysTitle}" />
+                <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlKeysHint}" />
+                <StackPanel Classes="sgroup" x:Name="gridText">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.TlGrpActions}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconDesktop}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyShow}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtGlobalHotkey0" Width="240" IsReadOnly="True" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconUnlink}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyProxyOff}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtGlobalHotkey1" Width="240" IsReadOnly="True" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconLink}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyProxyOn}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtGlobalHotkey2" Width="240" IsReadOnly="True" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconMinusCircleStroked}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyProxyKeep}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtGlobalHotkey3" Width="240" IsReadOnly="True" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconFilterStroked}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyPac}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtGlobalHotkey4" Width="240" IsReadOnly="True" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
                 </StackPanel>
             </StackPanel>
         </ScrollViewer>

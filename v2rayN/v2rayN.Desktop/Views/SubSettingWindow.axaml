@@ -2,14 +2,15 @@
     x:Class="v2rayN.Desktop.Views.SubSettingWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuSubSetting}"
-    Width="940"
+    Title="{x:Static loc:L.TlSubsTitle}"
+    Width="820"
     Height="600"
     x:DataType="vms:SubSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.SubSetting}"
@@ -21,12 +22,16 @@
         DisableOpeningAnimation="True"
         Identifier="dialogHostSub">
         <DockPanel>
-            <Menu Margin="{StaticResource Margin4}" DockPanel.Dock="Top">
-                <MenuItem x:Name="menuSubAdd" Header="{x:Static resx:ResUI.menuSubAdd}" />
-                <MenuItem x:Name="menuSubDelete" Header="{x:Static resx:ResUI.menuSubDelete}" />
-                <MenuItem x:Name="menuSubEdit" Header="{x:Static resx:ResUI.menuSubEdit}" />
-                <MenuItem x:Name="menuSubShare" Header="{x:Static resx:ResUI.menuSubShare}" />
-                <MenuItem x:Name="menuClose" Header="{x:Static resx:ResUI.menuClose}" />
+            <StackPanel Margin="18,20,16,0" DockPanel.Dock="Top">
+                <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlSubsTitle}" />
+                <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlSubsHint}" />
+            </StackPanel>
+            <Menu DockPanel.Dock="Top">
+                <MenuItem x:Name="menuSubAdd" Header="{x:Static loc:L.TlSubAdd}" />
+                <MenuItem x:Name="menuSubEdit" Header="{x:Static loc:L.TlSubEdit}" />
+                <MenuItem x:Name="menuSubShare" Header="{x:Static loc:L.TlSubShare}" />
+                <MenuItem x:Name="menuSubDelete" Header="{x:Static loc:L.TlSubDelete}" />
+                <MenuItem x:Name="menuClose" Header="{x:Static loc:L.TlSubClose}" />
             </Menu>
 
             <Border Classes="formcard table">
@@ -44,37 +49,40 @@
                 </DataGrid.KeyBindings>
                 <DataGrid.ContextMenu>
                     <ContextMenu>
-                        <MenuItem x:Name="menuSubAdd2" Header="{x:Static resx:ResUI.menuSubAdd}" />
-                        <MenuItem x:Name="menuSubDelete2" Header="{x:Static resx:ResUI.menuSubDelete}" />
-                        <MenuItem x:Name="menuSubEdit2" Header="{x:Static resx:ResUI.menuSubEdit}" />
-                        <MenuItem x:Name="menuSubShare2" Header="{x:Static resx:ResUI.menuSubShare}" />
+                        <MenuItem x:Name="menuSubAdd2" Header="{x:Static loc:L.TlSubAdd}" />
+                        <MenuItem x:Name="menuSubEdit2" Header="{x:Static loc:L.TlSubEdit}" />
+                        <MenuItem x:Name="menuSubShare2" Header="{x:Static loc:L.TlSubShare}" />
+                        <MenuItem x:Name="menuSubDelete2" Header="{x:Static loc:L.TlSubDelete}" />
                     </ContextMenu>
                 </DataGrid.ContextMenu>
                 <DataGrid.Columns>
                     <DataGridTextColumn
                         Width="*"
                         Binding="{Binding Remarks}"
-                        Header="{x:Static resx:ResUI.LvRemarks}" />
+                        Header="{x:Static loc:L.TlColName}" />
                     <DataGridTextColumn
-                        Width="*"
+                        Width="2*"
                         Binding="{Binding Url}"
-                        Header="{x:Static resx:ResUI.LvUrl}" />
+                        Header="{x:Static loc:L.TlColLink}" />
                     <DataGridCheckBoxColumn
-                        Width="100"
+                        Width="140"
                         Binding="{Binding Enabled}"
-                        Header="{x:Static resx:ResUI.LvEnabled}" />
+                        Header="{x:Static loc:L.TlColAutoUpdate}" />
                     <DataGridTextColumn
                         Width="150"
                         Binding="{Binding AutoUpdateInterval}"
-                        Header="{x:Static resx:ResUI.LvAutoUpdateInterval}" />
+                        Header="{x:Static resx:ResUI.LvAutoUpdateInterval}"
+                        IsVisible="False" />
                     <DataGridTextColumn
                         Width="150"
                         Binding="{Binding UserAgent}"
-                        Header="{x:Static resx:ResUI.LvUserAgent}" />
+                        Header="{x:Static resx:ResUI.LvUserAgent}"
+                        IsVisible="False" />
                     <DataGridTextColumn
                         Width="80"
                         Binding="{Binding Sort}"
-                        Header="{x:Static resx:ResUI.LvSort}" />
+                        Header="{x:Static resx:ResUI.LvSort}"
+                        IsVisible="False" />
                 </DataGrid.Columns>
             </DataGrid>
             </Border>

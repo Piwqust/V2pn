@@ -2,18 +2,19 @@
     x:Class="v2rayN.Desktop.Views.CheckUpdateView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
+    xmlns:views="using:v2rayN.Desktop.Views"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    d:DesignHeight="600"
-    d:DesignWidth="800"
+    d:DesignHeight="560"
+    d:DesignWidth="660"
     x:DataType="vms:CheckUpdateViewModel"
     Design.DataContext="{x:Static dd:DesignData.CheckUpdate}"
     mc:Ignorable="d">
 
-    <DockPanel>
+    <DockPanel Width="660">
         <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
             <DockPanel>
                 <StackPanel
@@ -21,29 +22,38 @@
                     DockPanel.Dock="Left"
                     Orientation="Horizontal"
                     Spacing="8">
-                    <ToggleSwitch x:Name="togEnableUpdateViaProxy" />
+                    <ToggleSwitch
+                        x:Name="togEnableUpdateViaProxy"
+                        MinWidth="0"
+                        OffContent=""
+                        OnContent="" />
                     <TextBlock
                         VerticalAlignment="Center"
                         Classes="muted"
-                        Text="{x:Static resx:ResUI.TbSettingsEnableUpdateViaProxy}" />
+                        Text="{x:Static loc:L.TlUpdViaVpn}" />
                 </StackPanel>
                 <StackPanel Classes="footer">
-                    <Button x:Name="btnCheckOnly" Content="{x:Static resx:ResUI.menuCheckOnly}" />
+                    <Button x:Name="btnCheckOnly" Content="{x:Static loc:L.TlUpdCheck}" />
                     <Button
                         x:Name="btnCheckUpdate"
                         Classes="primary"
-                        Content="{x:Static resx:ResUI.menuCheckAndUpdate}" />
+                        Content="{x:Static loc:L.TlUpdUpdate}" />
                 </StackPanel>
             </DockPanel>
         </Border>
 
+        <StackPanel Margin="28,22,28,0" DockPanel.Dock="Top" Spacing="6">
+            <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlUpdTitle}" />
+            <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlUpdHint}" />
+        </StackPanel>
+
         <Border
-            Margin="16"
+            Margin="28,14,28,20"
             Classes="formcard">
 
             <ListBox
                 x:Name="lstCheckUpdates"
-                BorderThickness="1"
+                BorderThickness="0"
                 ItemsSource="{Binding CheckUpdateModels}">
                 <ItemsControl.ItemsPanel>
                     <ItemsPanelTemplate>
@@ -52,47 +62,42 @@
                 </ItemsControl.ItemsPanel>
                 <ItemsControl.ItemTemplate>
                     <DataTemplate>
-                        <Panel Width="680" VerticalAlignment="Center">
-                            <Grid ColumnDefinitions="1*,3*,1*,3*" RowDefinitions="Auto">
-                                <ToggleSwitch
-                                    x:Name="togAutoRefresh"
-                                    Grid.Column="0"
-                                    Margin="{StaticResource Margin4}"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    IsChecked="{Binding IsSelected}" />
-
-                                <DockPanel
-                                    Grid.Column="1"
-                                    Margin="{StaticResource MarginLr4}"
-                                    IsVisible="{Binding ShowCheckPreRelease}">
-                                    <ToggleSwitch
-                                        Margin="{StaticResource Margin4}"
-                                        HorizontalAlignment="Left"
-                                        VerticalAlignment="Center"
-                                        IsChecked="{Binding IsCheckPreRelease}"
-                                        OffContent=""
-                                        OnContent="" />
-                                    <TextBlock
-                                        Margin="{StaticResource Margin4}"
-                                        VerticalAlignment="Center"
-                                        Text="{x:Static resx:ResUI.TbSettingsEnableCheckPreReleaseUpdate}"
-                                        TextWrapping="Wrap" />
-                                </DockPanel>
-
+                        <Grid Margin="0,6" ColumnDefinitions="Auto,*,Auto">
+                            <ToggleSwitch
+                                x:Name="togAutoRefresh"
+                                Grid.Column="0"
+                                MinWidth="0"
+                                Margin="0,0,14,0"
+                                VerticalAlignment="Center"
+                                IsChecked="{Binding IsSelected}"
+                                OffContent=""
+                                OnContent="" />
+                            <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                <TextBlock Classes="srowtitle" Text="{Binding CoreTypeForStorage, Converter={x:Static views:CheckUpdateView.PartName}}" />
                                 <TextBlock
-                                    Grid.Column="2"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
-                                    Text="{Binding CoreTypeForStorage}" />
-                                <TextBlock
-                                    Grid.Column="3"
-                                    HorizontalAlignment="Left"
-                                    VerticalAlignment="Center"
+                                    Classes="srowhint"
                                     Text="{Binding Remarks}"
                                     TextWrapping="WrapWithOverflow" />
-                            </Grid>
-                        </Panel>
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Column="2"
+                                Margin="14,0,0,0"
+                                VerticalAlignment="Center"
+                                IsVisible="{Binding ShowCheckPreRelease}"
+                                Orientation="Horizontal"
+                                Spacing="6">
+                                <ToggleSwitch
+                                    MinWidth="0"
+                                    VerticalAlignment="Center"
+                                    IsChecked="{Binding IsCheckPreRelease}"
+                                    OffContent=""
+                                    OnContent="" />
+                                <TextBlock
+                                    VerticalAlignment="Center"
+                                    Classes="muted small"
+                                    Text="{x:Static loc:L.TlUpdBeta}" />
+                            </StackPanel>
+                        </Grid>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ListBox>

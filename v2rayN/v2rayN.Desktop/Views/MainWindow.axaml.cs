@@ -13,9 +13,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 {
     private static Config _config;
     private readonly WindowNotificationManager? _manager;
-    // The active server's models (list and favorites); their ping updates the status card.
-    private readonly List<ProfileItemModel> _watchedModels = [];
-    private bool _hasServer;
+    private readonly DispatcherTimer _pingTimer;
     private CheckUpdateView? _checkUpdateView;
     private BackupAndRestoreView? _backupAndRestoreView;
     private bool _blCloseByUser = false;
@@ -28,6 +26,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private ClashProxiesView? _clashProxiesView;
 
     private string? _activeIndexId;
+    private bool _hasServer;
 
     public MainWindow()
     {
@@ -41,6 +40,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             Position = NotificationPosition.BottomRight,
             Margin = new Thickness(0, 0, 20, 196),
         };
+        _pingTimer = new DispatcherTimer(TimeSpan.FromSeconds(1.5), DispatcherPriority.Background, (_, _) => RefreshActivePing());
 
         KeyDown += MainWindow_KeyDown;
         menuSettingsSetUWP.Click += MenuSettingsSetUWP_Click;
@@ -238,6 +238,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
               .ObserveOn(RxSchedulers.MainThreadScheduler)
               .Subscribe(Shutdown)
               .DisposeWith(disposables);
+
+            _pingTimer.Start();
         });
 
         if (Utils.IsWindows())
@@ -506,7 +508,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
 
         Remember(item?.IndexId, state);
-        WatchActiveModel(item?.IndexId);
         // No servers at all: the welcome card replaces the header, Connect, the mode bar and the
         // statistics, which would only show dashes.
         var empty = (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) == 0 && item == null;
@@ -624,34 +625,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var exs = await ProfileExManager.Instance.GetProfileExs();
         return exs.FirstOrDefault(t => t.IndexId == indexId)?.Delay ?? 0;
-    }
-
-    private void WatchActiveModel(string? indexId)
-    {
-        foreach (var model in _watchedModels)
-        {
-            model.PropertyChanged -= ActiveModel_PropertyChanged;
-        }
-        _watchedModels.Clear();
-        var profiles = ViewModel?.ProfilesViewModel;
-        if (profiles == null || indexId.IsNullOrEmpty())
-        {
-            return;
-        }
-        _watchedModels.AddRange(profiles.ProfileItems.Where(t => t.IndexId == indexId));
-        _watchedModels.AddRange(profiles.FavoriteItems.Where(t => t.IndexId == indexId));
-        foreach (var model in _watchedModels)
-        {
-            model.PropertyChanged += ActiveModel_PropertyChanged;
-        }
-    }
-
-    private void ActiveModel_PropertyChanged(object? sender, System.ComponentModel.PropertyChangedEventArgs e)
-    {
-        if (e.PropertyName == nameof(ProfileItemModel.Delay))
-        {
-            Dispatcher.UIThread.Post(RefreshActivePing, DispatcherPriority.Background);
-        }
     }
 
     private async void RefreshActivePing()

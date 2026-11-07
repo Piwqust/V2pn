@@ -1,4 +1,7 @@
-<Styles xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+<Styles
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:views="using:v2rayN.Desktop.Views">
     <!--
         Style-driven motion, loaded only when Windows animations are on (Common/Motion.cs).
         Hover and press: 120-150 ms. Things that appear: 160-220 ms ease-out from 96-97 % scale.
@@ -109,6 +112,18 @@
         <Setter Property="Transitions">
             <Transitions>
                 <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!--  A subscription's traffic meter glides to the new value after an update.  -->
+    <Style Selector="views|UsageBar">
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition
+                    Easing="0.32,0.72,0,1"
+                    Property="Value"
+                    Duration="0:0:0.45" />
             </Transitions>
         </Setter>
     </Style>

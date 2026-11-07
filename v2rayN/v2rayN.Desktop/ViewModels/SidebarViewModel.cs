@@ -143,9 +143,14 @@ public sealed class SideSubRow : SideRow
         IsStale = age >= TimeSpan.FromDays(1);
         Info = $"{L.ServerCount(sub.Count)} · {Fmt.SubUpdated(sub.Item)}";
         Freshness = age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
+        Usage = SubUsage.From(SubInfoManager.Instance.Get(sub.Id));
     }
 
     public SubItemModel Sub { get; }
+
+    /// <summary>Traffic and expiry the provider reported; null keeps the plain two-line row.</summary>
+    public SubUsage? Usage { get; }
+    public bool HasUsage => Usage != null;
     public BusyState Busy { get; }
     public string Monogram { get; }
     public IBrush? Tint { get; }
@@ -223,6 +228,22 @@ public sealed partial class SidebarViewModel : ReactiveObject
 
         this.WhenAnyValue(x => x.Tab, x => x.Search, x => x.OpenedSub)
             .Subscribe(_ => ApplyNavigation());
+
+        SubInfoManager.Instance.Changed += id => Dispatcher.UIThread.Post(async () => await OnSubInfoChangedAsync(id));
+        SubInfoManager.Instance.LoadAsync().ContinueWith(_ => Dispatcher.UIThread.Post(QueueRebuild), TaskScheduler.Default);
+    }
+
+    // An update may have renamed the subscription from its panel; the cached items still hold the old name.
+    private async Task OnSubInfoChangedAsync(string id)
+    {
+        var stored = await AppManager.Instance.GetSubItem(id);
+        var cached = _profiles.SubNavItems.FirstOrDefault(s => s.Id == id)?.Item;
+        if (stored != null && cached != null)
+        {
+            cached.Remarks = stored.Remarks;
+            cached.AutoUpdateInterval = stored.AutoUpdateInterval;
+        }
+        QueueRebuild();
     }
 
     /// <summary>Pings what the list shows now, or stops a run in progress.</summary>

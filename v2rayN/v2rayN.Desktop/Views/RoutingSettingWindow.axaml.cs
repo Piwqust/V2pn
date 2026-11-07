@@ -5,6 +5,9 @@ namespace v2rayN.Desktop.Views;
 
 public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
 {
+    // Order and link: shown only with the extra fields.
+    private static readonly int[] AdvancedColumns = [3, 4];
+
     public RoutingSettingWindow()
     {
         InitializeComponent();
@@ -18,6 +21,9 @@ public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
 
         cmbdomainStrategy.ItemsSource = Global.DomainStrategies;
         cmbdomainStrategy4Singbox.ItemsSource = Global.DomainStrategies4Sbox;
+
+        rowDomainStrategy.Classes.CollectionChanged += (_, _) => ShowAdvancedColumns(!rowDomainStrategy.Classes.Contains("advhidden"));
+        SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
 
         this.WhenActivated(disposables =>
         {
@@ -41,6 +47,19 @@ public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
                 interaction.SetOutput(result == ButtonResult.Yes);
             }).DisposeWith(disposables);
         });
+    }
+
+    // AsIs is the default strategy, so only another choice counts as set.
+    private bool HasExtras() =>
+        SettingsKit.AnySet(cmbdomainStrategy.SelectedValue is string s && s.IsNotEmpty() && s != Global.DomainStrategies.First(),
+            cmbdomainStrategy4Singbox.SelectedValue as string);
+
+    private void ShowAdvancedColumns(bool show)
+    {
+        foreach (var index in AdvancedColumns.Where(i => i < lstRoutings.Columns.Count))
+        {
+            lstRoutings.Columns[index].IsVisible = show;
+        }
     }
 
     private bool _closed = false;

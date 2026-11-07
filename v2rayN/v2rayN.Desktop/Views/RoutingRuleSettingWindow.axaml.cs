@@ -5,6 +5,9 @@ namespace v2rayN.Desktop.Views;
 
 public partial class RoutingRuleSettingWindow : WindowBase<RoutingRuleSettingViewModel>
 {
+    // Rule type, port, protocol, inbound tag and network: shown only with the extra fields.
+    private static readonly int[] AdvancedColumns = [2, 4, 5, 6, 7];
+
     public RoutingRuleSettingWindow()
     {
         InitializeComponent();
@@ -20,6 +23,9 @@ public partial class RoutingRuleSettingWindow : WindowBase<RoutingRuleSettingVie
 
         cmbdomainStrategy.ItemsSource = Global.DomainStrategies.AppendEmpty();
         cmbdomainStrategy4Singbox.ItemsSource = Global.DomainStrategies4Sbox;
+
+        rowSort.Classes.CollectionChanged += (_, _) => ShowAdvancedColumns(!rowSort.Classes.Contains("advhidden"));
+        SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
 
         this.WhenActivated(disposables =>
         {
@@ -81,6 +87,18 @@ public partial class RoutingRuleSettingWindow : WindowBase<RoutingRuleSettingVie
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {
         txtRemarks.Focus();
+    }
+
+    private bool HasExtras() =>
+        SettingsKit.AnySet(cmbdomainStrategy.SelectedValue as string, cmbdomainStrategy4Singbox.SelectedValue as string,
+            txtUrl.Text, txtCustomRulesetPath4Singbox.Text);
+
+    private void ShowAdvancedColumns(bool show)
+    {
+        foreach (var index in AdvancedColumns.Where(i => i < lstRules.Columns.Count))
+        {
+            lstRules.Columns[index].IsVisible = show;
+        }
     }
 
     private void RoutingRuleSettingWindow_KeyDown(object? sender, KeyEventArgs e)

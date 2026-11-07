@@ -2,192 +2,229 @@
     x:Class="v2rayN.Desktop.Views.RoutingRuleSettingWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuRoutingRuleSetting}"
+    Title="{x:Static loc:L.RtSetTitle}"
     Width="940"
-    Height="600"
+    Height="680"
     x:DataType="vms:RoutingRuleSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.RoutingRuleSetting}"
     ShowInTaskbar="False"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
     <DockPanel>
-        <Menu Margin="{StaticResource Margin4}" DockPanel.Dock="Top">
-            <MenuItem x:Name="menuRuleAdd" Header="{x:Static resx:ResUI.menuRuleAdd}" />
-            <MenuItem x:Name="menuImportRulesFromFile" Header="{x:Static resx:ResUI.menuImportRulesFromFile}" />
-            <MenuItem x:Name="menuImportRulesFromClipboard" Header="{x:Static resx:ResUI.menuImportRulesFromClipboard}" />
-            <MenuItem x:Name="menuImportRulesFromUrl" Header="{x:Static resx:ResUI.menuImportRulesFromUrl}" />
-        </Menu>
-
         <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
             <StackPanel Classes="footer">
-            <Button
-                x:Name="btnSave"
-                MinWidth="100"
-                Content="{x:Static resx:ResUI.TbConfirm}"
-                IsDefault="True" />
-            <Button
-                x:Name="btnCancel"
-                MinWidth="100"
-                Content="{x:Static resx:ResUI.TbCancel}"
-                IsCancel="True" />
-        </StackPanel>
+                <Button
+                    x:Name="btnSave"
+                    MinWidth="100"
+                    Content="{x:Static resx:ResUI.TbConfirm}"
+                    IsDefault="True" />
+                <Button
+                    x:Name="btnCancel"
+                    MinWidth="100"
+                    Content="{x:Static resx:ResUI.TbCancel}"
+                    IsCancel="True" />
+            </StackPanel>
         </Border>
 
-        <StackPanel Margin="16,6,16,0" DockPanel.Dock="Top">
-            <StackPanel Classes="sgroup">
-                <Border Classes="sgroupcard">
-                    <StackPanel>
-                        <Border Classes="srow">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Classes="srowtext">
-                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvRemarks}" />
-                                </StackPanel>
-                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <TextBox x:Name="txtRemarks" Grid.Row="0" Grid.Column="1" Width="300" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" VerticalAlignment="Center" TextWrapping="Wrap" />
-                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.LvSort}" />
-                                        <TextBox x:Name="txtSort" Width="100" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" />
+        <!--  The set's own fields; capped so the rules below keep their room when everything is shown.  -->
+        <ScrollViewer MaxHeight="330" DockPanel.Dock="Top" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="24,20,24,4" Spacing="6">
+                <TextBlock Classes="spagetitle" Text="{x:Static loc:L.RtSetTitle}" />
+                <TextBlock Classes="spagehint" Text="{x:Static loc:L.RtSetHint}" />
+                <StackPanel Classes="sgroup">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.RtGrpSet}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconEditStroked}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtSetName}" />
                                     </StackPanel>
-                                </Panel>
-                            </Grid>
-                        </Border>
-                        <Border Classes="srow">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Classes="srowtext">
-                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbdomainStrategy}" />
-                                </StackPanel>
-                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal">
-                                        <ComboBox x:Name="cmbdomainStrategy" Width="200" Margin="{StaticResource Margin4}" />
-                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbdomainStrategy4Singbox}" />
-                                        <ComboBox x:Name="cmbdomainStrategy4Singbox" Width="200" Margin="{StaticResource Margin4}" />
+                                    <Panel Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtRemarks" Width="300" PlaceholderText="{x:Static loc:L.RtSetNamePlaceholder}" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border x:Name="rowSort" Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtSetOrder}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtSetOrderHint}" />
                                     </StackPanel>
-                                </Panel>
-                            </Grid>
-                        </Border>
-                        <Border Classes="srow">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Classes="srowtext">
-                                    <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvUrl}" />
-                                </StackPanel>
-                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                    <TextBox x:Name="txtUrl" TextWrapping="Wrap" />
-                                </Panel>
-                            </Grid>
-                        </Border>
-                        <Border Classes="srow">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Classes="srowtext">
-                                    <TextBlock Classes="srowtitle">
-                                        <HyperlinkButton Classes="WithIcon" Click="linkCustomRulesetPath4Singbox">
-                                            <TextBlock Text="{x:Static resx:ResUI.LvCustomRulesetPath4Singbox}" />
-                                        </HyperlinkButton>
-                                    </TextBlock>
-                                </StackPanel>
-                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <TextBox x:Name="txtCustomRulesetPath4Singbox" TextWrapping="Wrap" />
-                                        <Button x:Name="btnBrowseCustomRulesetPath4Singbox" Content="{x:Static resx:ResUI.TbBrowse}" />
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtSort" Width="140" PlaceholderText="0" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtDomainStrategy}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtSetDomainStrategyHint}" />
                                     </StackPanel>
-                                </Panel>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbdomainStrategy" Width="200" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtDomainStrategySb}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtSetDomainStrategyHint}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbdomainStrategy4Singbox" Width="200" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtSetUrl}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtSetUrlHint}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtUrl" PlaceholderText="https://…" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtSetRuleset}" />
+                                        <StackPanel Orientation="Horizontal" Spacing="6">
+                                            <TextBlock Classes="srowhint" VerticalAlignment="Center" Text="{x:Static loc:L.RtSetRulesetHint}" />
+                                            <HyperlinkButton
+                                                Margin="0,3,0,0"
+                                                Padding="0"
+                                                VerticalAlignment="Center"
+                                                Classes="WithIcon"
+                                                Click="linkCustomRulesetPath4Singbox">
+                                                <TextBlock FontSize="12" Text="{x:Static loc:L.RtExample}" />
+                                            </HyperlinkButton>
+                                        </StackPanel>
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBox x:Name="txtCustomRulesetPath4Singbox" Width="200" />
+                                            <Button x:Name="btnBrowseCustomRulesetPath4Singbox" Content="{x:Static resx:ResUI.TbBrowse}" />
+                                        </StackPanel>
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
             </StackPanel>
-        </StackPanel>
+        </ScrollViewer>
 
-        <TabControl x:Name="tabAdvanced">
-            <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.menuRuleList}">
-                <DataGrid
-                    x:Name="lstRules"
-                    AutoGenerateColumns="False"
-                    Background="Transparent"
-                    BorderThickness="1"
-                    CanUserResizeColumns="True"
-                    GridLinesVisibility="All"
-                    HeadersVisibility="Column"
-                    IsReadOnly="True"
-                    ItemsSource="{Binding RulesItems}">
-                    <DataGrid.KeyBindings>
-                        <KeyBinding Command="{Binding RuleExportSelectedCmd}" Gesture="Ctrl+C" />
-                    </DataGrid.KeyBindings>
-                    <DataGrid.ContextMenu>
-                        <ContextMenu>
-                            <MenuItem x:Name="menuRuleAdd2" Header="{x:Static resx:ResUI.menuRuleAdd}" />
-                            <MenuItem
-                                x:Name="menuRuleRemove"
-                                Header="{x:Static resx:ResUI.menuRuleRemove}"
-                                InputGesture="Back" />
-                            <MenuItem
-                                x:Name="menuRuleSelectAll"
-                                Header="{x:Static resx:ResUI.menuSelectAll}"
-                                InputGesture="Ctrl+A" />
-                            <MenuItem x:Name="menuRuleExportSelected" Header="{x:Static resx:ResUI.menuRuleExportSelected}" />
-                            <Separator />
-                            <MenuItem
-                                x:Name="menuMoveTop"
-                                Header="{x:Static resx:ResUI.menuMoveTop}"
-                                InputGesture="T" />
-                            <MenuItem
-                                x:Name="menuMoveUp"
-                                Header="{x:Static resx:ResUI.menuMoveUp}"
-                                InputGesture="U" />
-                            <MenuItem
-                                x:Name="menuMoveDown"
-                                Header="{x:Static resx:ResUI.menuMoveDown}"
-                                InputGesture="D" />
-                            <MenuItem
-                                x:Name="menuMoveBottom"
-                                Header="{x:Static resx:ResUI.menuMoveBottom}"
-                                InputGesture="B" />
-                        </ContextMenu>
-                    </DataGrid.ContextMenu>
-                    <DataGrid.Columns>
-                        <DataGridCheckBoxColumn
-                            Width="60"
-                            Binding="{Binding Enabled}"
-                            Header="" />
-                        <DataGridTextColumn
-                            Width="150"
-                            Binding="{Binding Remarks}"
-                            Header="{x:Static resx:ResUI.LvRemarks}" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding RuleTypeName}"
-                            Header="{x:Static resx:ResUI.TbRuleType}" />
-                        <DataGridTextColumn
-                            Width="130"
-                            Binding="{Binding OutboundTag}"
-                            Header="outboundTag" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding Port}"
-                            Header="port" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding Protocols}"
-                            Header="protocol" />
-                        <DataGridTextColumn
-                            Width="120"
-                            Binding="{Binding InboundTags}"
-                            Header="inboundTag" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding Network}"
-                            Header="network" />
-                        <DataGridTextColumn
-                            Width="*"
-                            Binding="{Binding Domains}"
-                            Header="domain / ip / process" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </TabItem>
-        </TabControl>
+        <Panel Margin="24,12,24,16">
+            <TabControl x:Name="tabAdvanced">
+                <TabItem HorizontalAlignment="Left" Header="{x:Static loc:L.RtRulesTab}">
+                    <DataGrid
+                        x:Name="lstRules"
+                        AutoGenerateColumns="False"
+                        Background="Transparent"
+                        BorderThickness="1"
+                        CanUserResizeColumns="True"
+                        GridLinesVisibility="All"
+                        HeadersVisibility="Column"
+                        IsReadOnly="True"
+                        ItemsSource="{Binding RulesItems}">
+                        <DataGrid.KeyBindings>
+                            <KeyBinding Command="{Binding RuleExportSelectedCmd}" Gesture="Ctrl+C" />
+                        </DataGrid.KeyBindings>
+                        <DataGrid.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem x:Name="menuRuleAdd2" Header="{x:Static loc:L.RtAddRule}" />
+                                <MenuItem
+                                    x:Name="menuRuleRemove"
+                                    Header="{x:Static loc:L.RtDelete}"
+                                    InputGesture="Back" />
+                                <MenuItem
+                                    x:Name="menuRuleSelectAll"
+                                    Header="{x:Static loc:L.RtSelectAll}"
+                                    InputGesture="Ctrl+A" />
+                                <MenuItem x:Name="menuRuleExportSelected" Header="{x:Static loc:L.RtCopySelected}" />
+                                <Separator />
+                                <MenuItem
+                                    x:Name="menuMoveTop"
+                                    Header="{x:Static loc:L.RtMoveTop}"
+                                    InputGesture="T" />
+                                <MenuItem
+                                    x:Name="menuMoveUp"
+                                    Header="{x:Static loc:L.RtMoveUp}"
+                                    InputGesture="U" />
+                                <MenuItem
+                                    x:Name="menuMoveDown"
+                                    Header="{x:Static loc:L.RtMoveDown}"
+                                    InputGesture="D" />
+                                <MenuItem
+                                    x:Name="menuMoveBottom"
+                                    Header="{x:Static loc:L.RtMoveBottom}"
+                                    InputGesture="B" />
+                            </ContextMenu>
+                        </DataGrid.ContextMenu>
+                        <!--  Columns 2 and 4-7 are expert details: shown together with the extra fields.  -->
+                        <DataGrid.Columns>
+                            <DataGridCheckBoxColumn
+                                Width="60"
+                                Binding="{Binding Enabled}"
+                                Header="" />
+                            <DataGridTextColumn
+                                Width="170"
+                                Binding="{Binding Remarks}"
+                                Header="{x:Static loc:L.RtColName}" />
+                            <DataGridTextColumn
+                                Width="100"
+                                Binding="{Binding RuleTypeName}"
+                                Header="{x:Static loc:L.RtColApplies}" />
+                            <DataGridTextColumn
+                                Width="110"
+                                Binding="{Binding OutboundTag}"
+                                Header="{x:Static loc:L.RtColWhere}" />
+                            <DataGridTextColumn
+                                Width="90"
+                                Binding="{Binding Port}"
+                                Header="{x:Static loc:L.RtColPort}" />
+                            <DataGridTextColumn
+                                Width="100"
+                                Binding="{Binding Protocols}"
+                                Header="{x:Static loc:L.RtColProtocol}" />
+                            <DataGridTextColumn
+                                Width="100"
+                                Binding="{Binding InboundTags}"
+                                Header="{x:Static loc:L.RtColEntry}" />
+                            <DataGridTextColumn
+                                Width="90"
+                                Binding="{Binding Network}"
+                                Header="{x:Static loc:L.RtColNetwork}" />
+                            <DataGridTextColumn
+                                Width="*"
+                                Binding="{Binding Domains}"
+                                Header="{x:Static loc:L.RtColMatch}" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </TabItem>
+            </TabControl>
+            <!--  The actions sit on the tab strip's line, to the right of the "Rules" tab.  -->
+            <Menu HorizontalAlignment="Right" VerticalAlignment="Top">
+                <MenuItem x:Name="menuRuleAdd" Header="{x:Static loc:L.RtAddRule}" />
+                <MenuItem Header="{x:Static loc:L.RtImport}">
+                    <MenuItem x:Name="menuImportRulesFromFile" Header="{x:Static loc:L.RtFromFile}" />
+                    <MenuItem x:Name="menuImportRulesFromClipboard" Header="{x:Static loc:L.RtFromClipboard}" />
+                    <MenuItem x:Name="menuImportRulesFromUrl" Header="{x:Static loc:L.RtFromUrl}" />
+                </MenuItem>
+            </Menu>
+        </Panel>
     </DockPanel>
 </Window>

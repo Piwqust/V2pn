@@ -1,4 +1,5 @@
 using v2rayN.Desktop.Base;
+using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
@@ -13,6 +14,7 @@ public partial class DNSSettingWindow : WindowBase<DNSSettingViewModel>
         _config = AppManager.Instance.Config;
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
+        SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
 
         cmbDirectDNSStrategy.ItemsSource = Global.DomainStrategy;
         cmbRemoteDNSStrategy.ItemsSource = Global.DomainStrategy;
@@ -91,5 +93,23 @@ public partial class DNSSettingWindow : WindowBase<DNSSettingViewModel>
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {
         btnCancel.Focus();
+    }
+
+    // Fields that always hold a value (bootstrap DNS, Fake IP range, common hosts, HTTPS records)
+    // are left out: their defaults would keep the expert rows open for everyone.
+    private bool HasExtras()
+    {
+        return SettingsKit.AnySet(
+            cmbDirectDNSStrategy.SelectedItem as string,
+            cmbRemoteDNSStrategy.SelectedItem as string,
+            cmbProxyDialDNSStrategy.SelectedItem as string,
+            cmbDirectExpectedIPs.Text,
+            txtHosts.Text,
+            togUseSystemHosts.IsChecked,
+            togBlockAAAAQuery.IsChecked,
+            togFakeIPv6.IsChecked,
+            togParallelQuery.IsChecked,
+            togServeStale.IsChecked,
+            togEnableHappyEyeballs.IsChecked);
     }
 }

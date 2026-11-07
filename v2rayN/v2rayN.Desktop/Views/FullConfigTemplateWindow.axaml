@@ -2,6 +2,7 @@
     x:Class="v2rayN.Desktop.Views.FullConfigTemplateWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -10,7 +11,7 @@
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static resx:ResUI.menuFullConfigTemplate}"
     Width="940"
-    Height="600"
+    Height="720"
     x:DataType="vms:FullConfigTemplateViewModel"
     Design.DataContext="{x:Static dd:DesignData.FullConfigTemplate}"
     ShowInTaskbar="False"
@@ -32,70 +33,65 @@
         </StackPanel>
         </Border>
 
-        <TabControl HorizontalContentAlignment="Stretch">
-            <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.TbRayFullConfigTemplate}">
-                <DockPanel Margin="{StaticResource Margin4}">
-                    <Grid DockPanel.Dock="Top" RowDefinitions="Auto,Auto,Auto">
+        <StackPanel Margin="20,16,20,4" DockPanel.Dock="Top" Spacing="6">
+            <TextBlock Classes="spagetitle" Text="{x:Static loc:L.DnFcTitle}" />
+            <TextBlock Classes="spagehint" Text="{x:Static loc:L.DnFcHint}" />
+        </StackPanel>
 
-                        <TextBlock
-                            Grid.Row="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbFullConfigTemplateDesc}"
-                            TextWrapping="Wrap" />
+        <TabControl Classes="plain" HorizontalContentAlignment="Stretch">
+            <TabItem HorizontalAlignment="Left" Header="Xray">
+                <DockPanel Margin="12,12,12,8">
+                    <StackPanel Classes="sgroup" DockPanel.Dock="Top">
+                        <Border Classes="sgroupcard">
+                            <StackPanel>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconCode}" /></Border>
+                                        <StackPanel Grid.Column="1" Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DnFcUseRay}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.DnFcUseHint}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="12">
+                                            <HyperlinkButton VerticalAlignment="Center" Classes="WithIcon" Click="linkFullConfigTemplateDoc_Click">
+                                                <TextBlock Text="{x:Static loc:L.DnFcHowItWorks}" />
+                                            </HyperlinkButton>
+                                            <ToggleSwitch x:Name="rayFullConfigTemplateEnable" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DnFcProxyOnly}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.DnFcProxyOnlyHint}" />
+                                        </StackPanel>
+                                        <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <ToggleSwitch x:Name="togAddProxyProtocolOutboundOnly4Ray" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DnFcDetour}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.DnFcDetourHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtProxyDetour4Ray" Width="200" PlaceholderText="proxy" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
-                        <TextBlock
-                            Grid.Row="1"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center">
-                            <HyperlinkButton Classes="WithIcon" Click="linkFullConfigTemplateDoc_Click">
-                                <TextBlock Text="{x:Static resx:ResUI.TbRayFullConfigTemplateDesc}" />
-                            </HyperlinkButton>
-                        </TextBlock>
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal">
-                            <TextBlock
-                                Margin="{StaticResource Margin4}"
-                                VerticalAlignment="Center"
-                                Text="{x:Static resx:ResUI.TbFullConfigTemplateEnable}" />
-                            <ToggleSwitch
-                                x:Name="rayFullConfigTemplateEnable"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Left" />
-                        </StackPanel>
-                    </Grid>
-
-                    <WrapPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="{StaticResource Margin4}"
-                                VerticalAlignment="Center"
-                                Text="{x:Static resx:ResUI.TbAddProxyProtocolOutboundOnly}" />
-                            <ToggleSwitch
-                                x:Name="togAddProxyProtocolOutboundOnly4Ray"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Left" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="{StaticResource Margin4}"
-                                VerticalAlignment="Center"
-                                Text="{x:Static resx:ResUI.TbSetUpstreamProxyDetour}" />
-                            <TextBox
-                                x:Name="txtProxyDetour4Ray"
-                                Width="200"
-                                Margin="{StaticResource Margin4}" />
-                        </StackPanel>
-                    </WrapPanel>
-
-                    <Grid Margin="{StaticResource Margin4}" ColumnDefinitions="*,10,*">
+                    <Grid Margin="0,12,0,0" ColumnDefinitions="*,10,*">
 
                         <HeaderedContentControl
                             Grid.Column="0"
                             BorderBrush="Gray"
                             BorderThickness="1"
-                            Header="xray config template json">
+                            Header="{x:Static loc:L.DnFcProxyMode}">
                             <views:JsonEditor x:Name="rayFullConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
 
@@ -105,75 +101,65 @@
                             Grid.Column="2"
                             BorderBrush="Gray"
                             BorderThickness="1"
-                            Header="xray tun config template json">
+                            Header="{x:Static loc:L.DnFcTunMode}">
                             <views:JsonEditor x:Name="rayFullTunConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
                     </Grid>
                 </DockPanel>
             </TabItem>
-            <TabItem HorizontalAlignment="Left" Header="{x:Static resx:ResUI.TbSBFullConfigTemplate}">
-                <DockPanel Margin="{StaticResource Margin4}">
-                    <Grid DockPanel.Dock="Top" RowDefinitions="Auto,Auto,Auto">
+            <TabItem HorizontalAlignment="Left" Header="sing-box">
+                <DockPanel Margin="12,12,12,8">
+                    <StackPanel Classes="sgroup" DockPanel.Dock="Top">
+                        <Border Classes="sgroupcard">
+                            <StackPanel>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="Auto,*,Auto">
+                                        <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconCode}" /></Border>
+                                        <StackPanel Grid.Column="1" Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DnFcUseSingbox}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.DnFcUseHint}" />
+                                        </StackPanel>
+                                        <StackPanel Grid.Column="2" VerticalAlignment="Center" Orientation="Horizontal" Spacing="12">
+                                            <HyperlinkButton VerticalAlignment="Center" Classes="WithIcon" Click="linkFullConfigTemplateDoc_Click">
+                                                <TextBlock Text="{x:Static loc:L.DnFcHowItWorks}" />
+                                            </HyperlinkButton>
+                                            <ToggleSwitch x:Name="sbFullConfigTemplateEnable" />
+                                        </StackPanel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DnFcProxyOnly}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.DnFcProxyOnlyHint}" />
+                                        </StackPanel>
+                                        <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <ToggleSwitch x:Name="togAddProxyProtocolOutboundOnly4Singbox" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DnFcDetour}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.DnFcDetourHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtProxyDetour4Singbox" Width="200" PlaceholderText="proxy" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
 
-                        <TextBlock
-                            Grid.Row="0"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbFullConfigTemplateDesc}"
-                            TextWrapping="Wrap" />
-
-                        <TextBlock
-                            Grid.Row="1"
-                            Margin="{StaticResource Margin4}"
-                            VerticalAlignment="Center">
-                            <HyperlinkButton Classes="WithIcon" Click="linkFullConfigTemplateDoc_Click">
-                                <TextBlock Text="{x:Static resx:ResUI.TbSBFullConfigTemplateDesc}" />
-                            </HyperlinkButton>
-                        </TextBlock>
-
-                        <StackPanel Grid.Row="2" Orientation="Horizontal">
-                            <TextBlock
-                                Margin="{StaticResource Margin4}"
-                                VerticalAlignment="Center"
-                                Text="{x:Static resx:ResUI.TbFullConfigTemplateEnable}" />
-                            <ToggleSwitch
-                                x:Name="sbFullConfigTemplateEnable"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Left" />
-                        </StackPanel>
-                    </Grid>
-
-                    <WrapPanel DockPanel.Dock="Bottom" Orientation="Horizontal">
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="{StaticResource Margin4}"
-                                VerticalAlignment="Center"
-                                Text="{x:Static resx:ResUI.TbAddProxyProtocolOutboundOnly}" />
-                            <ToggleSwitch
-                                x:Name="togAddProxyProtocolOutboundOnly4Singbox"
-                                Margin="{StaticResource Margin4}"
-                                HorizontalAlignment="Left" />
-                        </StackPanel>
-
-                        <StackPanel Orientation="Horizontal">
-                            <TextBlock
-                                Margin="{StaticResource Margin4}"
-                                VerticalAlignment="Center"
-                                Text="{x:Static resx:ResUI.TbSetUpstreamProxyDetour}" />
-                            <TextBox
-                                x:Name="txtProxyDetour4Singbox"
-                                Width="200"
-                                Margin="{StaticResource Margin4}" />
-                        </StackPanel>
-                    </WrapPanel>
-
-                    <Grid Margin="{StaticResource Margin4}" ColumnDefinitions="*,10,*">
+                    <Grid Margin="0,12,0,0" ColumnDefinitions="*,10,*">
 
                         <HeaderedContentControl
                             Grid.Column="0"
                             BorderBrush="Gray"
                             BorderThickness="1"
-                            Header="sing-box config template json">
+                            Header="{x:Static loc:L.DnFcProxyMode}">
                             <views:JsonEditor x:Name="sbFullConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
 
@@ -183,7 +169,7 @@
                             Grid.Column="2"
                             BorderBrush="Gray"
                             BorderThickness="1"
-                            Header="sing-box tun config template json">
+                            Header="{x:Static loc:L.DnFcTunMode}">
                             <views:JsonEditor x:Name="sbFullTunConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
                     </Grid>

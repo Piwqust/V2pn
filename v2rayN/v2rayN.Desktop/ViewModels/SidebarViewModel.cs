@@ -30,11 +30,22 @@ public sealed partial class PingState : ReactiveObject
     public partial string Label { get; set; } = L.TestPing;
 }
 
-public sealed class SideHeaderRow(string title, PingState? ping = null) : SideRow
+/// <summary>Something running in the background that a row shows a spinner for (a subscription update).</summary>
+public sealed partial class BusyState : ReactiveObject
+{
+    [Reactive]
+    public partial bool IsBusy { get; set; }
+}
+
+public sealed class SideHeaderRow(string title, PingState? ping = null, BusyState? subsUpdate = null) : SideRow
 {
     public string Title { get; } = title;
     public PingState? Ping { get; } = ping;
     public bool ShowPing => Ping != null;
+
+    /// <summary>Set on the subscriptions header: it carries "update all" and "add" instead of rows below the list.</summary>
+    public BusyState? SubsUpdate { get; } = subsUpdate;
+    public bool ShowSubActions => SubsUpdate != null;
     public override string ToString() => Title;
 }
 
@@ -107,10 +118,41 @@ public sealed class SideCountryRow : SideRow
     public override string ToString() => Name;
 }
 
-public sealed class SideSubRow(SubItemModel sub, string info) : SideRow
+public sealed class SideSubRow : SideRow
 {
-    public SubItemModel Sub { get; } = sub;
-    public string Info { get; } = info;
+    // Tile hues shared with the settings menu; a subscription keeps its colour across restarts.
+    private static readonly string[] Tints = ["V2TileBlue", "V2TileGreen", "V2TilePurple", "V2TileAmber", "V2TileTeal", "V2TileRed"];
+
+    public SideSubRow(SubItemModel sub, BusyState busy)
+    {
+        Sub = sub;
+        Busy = busy;
+        var name = sub.Remarks?.Trim() ?? string.Empty;
+        var letter = name.FirstOrDefault(char.IsLetterOrDigit);
+        Monogram = letter == default ? "?" : char.ToUpper(letter, CultureInfo.CurrentCulture).ToString();
+        var hash = 0;
+        foreach (var c in sub.Id ?? name)
+        {
+            hash = unchecked((hash * 31) + c);
+        }
+        Tint = Application.Current?.TryGetResource(Tints[Math.Abs(hash % Tints.Length)], null, out var brush) == true ? brush as IBrush : null;
+
+        var updated = sub.Item.UpdateTime > 0 ? DateTimeOffset.FromUnixTimeSeconds(sub.Item.UpdateTime).LocalDateTime : (DateTime?)null;
+        var age = updated.HasValue ? DateTime.Now - updated.Value : (TimeSpan?)null;
+        IsFresh = age < TimeSpan.FromDays(1);
+        IsStale = age >= TimeSpan.FromDays(1);
+        Info = $"{L.ServerCount(sub.Count)} · {Fmt.SubUpdated(sub.Item)}";
+        Freshness = age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
+    }
+
+    public SubItemModel Sub { get; }
+    public BusyState Busy { get; }
+    public string Monogram { get; }
+    public IBrush? Tint { get; }
+    public string Info { get; }
+    public bool IsFresh { get; }
+    public bool IsStale { get; }
+    public string Freshness { get; }
     public override string ToString() => Sub.Remarks;
 }
 
@@ -139,6 +181,14 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private List<ProfileItemModel> _pingScope = [];
 
     public PingState Ping { get; } = new();
+
+    /// <summary>"Update all subscriptions" running (driven by the window from the update command).</summary>
+    public BusyState SubsUpdate { get; } = new();
+
+    // Per-subscription update spinners outlive the rows, which are rebuilt when counts change.
+    private readonly Dictionary<string, BusyState> _subBusy = [];
+
+    public BusyState SubBusy(string? id) => _subBusy.TryGetValue(id ?? string.Empty, out var b) ? b : _subBusy[id ?? string.Empty] = new BusyState();
 
     public BulkObservableCollection<SideRow> Rows { get; } = [];
 
@@ -370,15 +420,15 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
 
         _pingScope = [];
-        rows.Add(new SideHeaderRow($"{L.TabSubscriptions} ({_profiles.SubNavItems.Count})"));
-        foreach (var sub in _profiles.SubNavItems)
+        var subs = _profiles.SubNavItems.ToList();
+        if (subs.Count == 0)
         {
-            rows.Add(new SideSubRow(sub, $"{L.ServerCount(sub.Count)} · {Fmt.SubUpdated(sub.Item)}"));
+            rows.Add(new SideHeaderRow(L.TabSubscriptions));
+            rows.Add(new SideHintRow(L.SubsEmpty));
+            rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, L.SubsEmptyAction));
+            return;
         }
-        rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, string.Empty));
-        if (_profiles.SubNavItems.Count > 0)
-        {
-            rows.Add(new SideActionRow(SideActionKind.UpdateAll, L.UpdateAll, string.Empty));
-        }
+        rows.Add(new SideHeaderRow($"{L.TabSubscriptions} · {subs.Count}", subsUpdate: SubsUpdate));
+        rows.AddRange(subs.Select(sub => new SideSubRow(sub, SubBusy(sub.Id))));
     }
 }

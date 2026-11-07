@@ -290,6 +290,11 @@ internal static class LTranslations
             ["Open data folder"] = "打开数据文件夹",
             ["Clear traffic statistics"] = "清除流量统计",
             ["System tools"] = "系统工具",
+            ["A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date."] = "订阅是服务商提供的链接；V2pn 会下载其中的节点并保持更新。",
+            ["Paste the link from your provider"] = "粘贴服务商提供的链接",
+            ["Updated within a day"] = "一天内已更新",
+            ["Not updated for over a day"] = "超过一天未更新",
+            ["Never updated"] = "从未更新",
         },
         ["zh-Hant"] = new()
         {
@@ -563,6 +568,11 @@ internal static class LTranslations
             ["Open data folder"] = "開啟資料資料夾",
             ["Clear traffic statistics"] = "清除流量統計",
             ["System tools"] = "系統工具",
+            ["A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date."] = "訂閱是服務商提供的連結；V2pn 會下載其中的節點並保持更新。",
+            ["Paste the link from your provider"] = "貼上服務商提供的連結",
+            ["Updated within a day"] = "一天內已更新",
+            ["Not updated for over a day"] = "超過一天未更新",
+            ["Never updated"] = "從未更新",
         },
         ["fa"] = new()
         {
@@ -836,6 +846,11 @@ internal static class LTranslations
             ["Open data folder"] = "باز کردن پوشه داده‌ها",
             ["Clear traffic statistics"] = "پاک کردن آمار ترافیک",
             ["System tools"] = "ابزارهای سیستم",
+            ["A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date."] = "اشتراک پیوندی از ارائه‌دهنده شماست؛ V2pn سرورهای آن را دریافت و به‌روز نگه می‌دارد.",
+            ["Paste the link from your provider"] = "پیوند ارائه‌دهنده را جای‌گذاری کنید",
+            ["Updated within a day"] = "در یک روز اخیر به‌روز شده",
+            ["Not updated for over a day"] = "بیش از یک روز به‌روز نشده",
+            ["Never updated"] = "هرگز به‌روز نشده",
         },
         ["fr"] = new()
         {
@@ -1109,6 +1124,11 @@ internal static class LTranslations
             ["Open data folder"] = "Ouvrir le dossier des données",
             ["Clear traffic statistics"] = "Effacer les statistiques de trafic",
             ["System tools"] = "Outils système",
+            ["A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date."] = "Un abonnement est un lien fourni par votre fournisseur ; V2pn en télécharge les serveurs et les tient à jour.",
+            ["Paste the link from your provider"] = "Collez le lien de votre fournisseur",
+            ["Updated within a day"] = "Mis à jour il y a moins d’un jour",
+            ["Not updated for over a day"] = "Pas mis à jour depuis plus d’un jour",
+            ["Never updated"] = "Jamais mis à jour",
         },
         ["hu"] = new()
         {
@@ -1382,6 +1402,11 @@ internal static class LTranslations
             ["Open data folder"] = "Adatmappa megnyitása",
             ["Clear traffic statistics"] = "Forgalmi statisztika törlése",
             ["System tools"] = "Rendszereszközök",
+            ["A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date."] = "Az előfizetés a szolgáltatótól kapott link; a V2pn letölti a szervereit, és naprakészen tartja őket.",
+            ["Paste the link from your provider"] = "Illessze be a szolgáltató linkjét",
+            ["Updated within a day"] = "Egy napon belül frissült",
+            ["Not updated for over a day"] = "Több mint egy napja nem frissült",
+            ["Never updated"] = "Még nem frissült",
         },
         ["id"] = new()
         {
@@ -1655,6 +1680,11 @@ internal static class LTranslations
             ["Open data folder"] = "Buka folder data",
             ["Clear traffic statistics"] = "Hapus statistik lalu lintas",
             ["System tools"] = "Alat sistem",
+            ["A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date."] = "Langganan adalah tautan dari penyedia Anda; V2pn mengunduh servernya dan menjaganya tetap terbaru.",
+            ["Paste the link from your provider"] = "Tempel tautan dari penyedia Anda",
+            ["Updated within a day"] = "Diperbarui dalam sehari terakhir",
+            ["Not updated for over a day"] = "Tidak diperbarui lebih dari sehari",
+            ["Never updated"] = "Belum pernah diperbarui",
         },
         ["az"] = new()
         {
@@ -1928,6 +1958,11 @@ internal static class LTranslations
             ["Open data folder"] = "Məlumat qovluğunu aç",
             ["Clear traffic statistics"] = "Trafik statistikasını təmizlə",
             ["System tools"] = "Sistem alətləri",
+            ["A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date."] = "Abunəlik provayderinizdən gələn keçiddir; V2pn onun serverlərini yükləyir və yeni saxlayır.",
+            ["Paste the link from your provider"] = "Provayderin keçidini yapışdırın",
+            ["Updated within a day"] = "Son bir gündə yenilənib",
+            ["Not updated for over a day"] = "Bir gündən çoxdur yenilənməyib",
+            ["Never updated"] = "Heç vaxt yenilənməyib",
         },
     };
 }

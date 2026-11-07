@@ -139,6 +139,16 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
             BuildViews();
             InitConnectionBar();
+            vm.SubUpdateCmd.IsExecuting
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(busy =>
+                {
+                    if (_sidebar != null)
+                    {
+                        _sidebar.SubsUpdate.IsBusy = busy;
+                    }
+                })
+                .DisposeWith(disposables);
             _ = InitRoutingPresetsAsync();
 
             // Connection header, map and statistics follow the proxy mode, TUN and the running server.
@@ -1070,13 +1080,34 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
     }
 
-    private void SideSubUpdate_Click(object? sender, RoutedEventArgs e)
+    private async void SideSubUpdate_Click(object? sender, RoutedEventArgs e)
     {
         e.Handled = true;
-        if (sender is Control { DataContext: SideSubRow row })
+        if (sender is not Control { DataContext: SideSubRow row } || ViewModel == null || row.Sub.Id.IsNullOrEmpty() || row.Busy.IsBusy)
         {
-            UpdateSubscription(row.Sub.Id);
+            return;
         }
+        row.Busy.IsBusy = true;
+        try
+        {
+            await ViewModel.UpdateSubscriptionProcess(row.Sub.Id, false);
+        }
+        finally
+        {
+            row.Busy.IsBusy = false;
+        }
+    }
+
+    private void SideSubsUpdate_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        ViewModel?.SubUpdateCmd.Execute().Subscribe();
+    }
+
+    private void SideSubsAdd_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
     }
 
     private void SideBackUpdate_Click(object? sender, RoutedEventArgs e)

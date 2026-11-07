@@ -954,4 +954,60 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="MaxWidth" Value="320" />
     </Style>
+
+    <!--  Subscriptions list: monogram tile, freshness dot, chevron that gives way to actions on hover.  -->
+    <Style Selector="ListBox.sidetabs > ListBoxItem">
+        <Setter Property="MinHeight" Value="46" />
+        <Setter Property="FontSize" Value="11.5" />
+    </Style>
+    <Style Selector="Button.subrow">
+        <Setter Property="MinHeight" Value="56" />
+    </Style>
+    <Style Selector="Border.subtile">
+        <Setter Property="Width" Value="34" />
+        <Setter Property="Height" Value="34" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="BoxShadow" Value="inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #33000000" />
+    </Style>
+    <Style Selector="Border.subtile TextBlock">
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="FontSize" Value="15" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Border.subtile Path.spinner">
+        <Setter Property="Stroke" Value="White" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Ellipse.fresh">
+        <Setter Property="Width" Value="6" />
+        <Setter Property="Height" Value="6" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Fill" Value="{DynamicResource V2PingNone}" />
+    </Style>
+    <Style Selector="Ellipse.fresh.ok">
+        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Ellipse.fresh.old">
+        <Setter Property="Fill" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="PathIcon.subchevron">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="Margin" Value="4,0,8,0" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
+    <Style Selector="Button.subrow:pointerover PathIcon.subchevron">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Button.subrow Button.reveal">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Button.subrow:pointerover Button.reveal, Button.subrow Button.reveal:focus-visible">
+        <Setter Property="IsVisible" Value="True" />
+    </Style>
 </Styles>

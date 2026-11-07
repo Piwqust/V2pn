@@ -230,21 +230,21 @@
                             SelectedIndex="0"
                             Theme="{StaticResource V2Segmented}">
                             <ListBoxItem ToolTip.Tip="Ctrl+1">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconStarStroked}" />
-                                    <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TabFavorites}" />
+                                <StackPanel Spacing="3">
+                                    <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconStarStroked}" />
+                                    <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabFavorites}" />
                                 </StackPanel>
                             </ListBoxItem>
                             <ListBoxItem ToolTip.Tip="Ctrl+2">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconGlobeStroke}" />
-                                    <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TabCountries}" />
+                                <StackPanel Spacing="3">
+                                    <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconGlobeStroke}" />
+                                    <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabCountries}" />
                                 </StackPanel>
                             </ListBoxItem>
                             <ListBoxItem ToolTip.Tip="Ctrl+3">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconFolderStroked}" />
-                                    <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TabSubscriptions}" />
+                                <StackPanel Spacing="3">
+                                    <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconFolderStroked}" />
+                                    <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabSubscriptions}" />
                                 </StackPanel>
                             </ListBoxItem>
                         </ListBox>
@@ -263,6 +263,36 @@
                                             VerticalAlignment="Center"
                                             Classes="muted small"
                                             Text="{Binding Title}" />
+                                        <StackPanel
+                                            Grid.Column="1"
+                                            Margin="0,-4,-2,-4"
+                                            IsVisible="{Binding ShowSubActions}"
+                                            Orientation="Horizontal"
+                                            Spacing="2">
+                                            <Button
+                                                AutomationProperties.Name="{x:Static loc:L.UpdateAll}"
+                                                Classes="ghost small icon"
+                                                Click="SideSubsUpdate_Click"
+                                                IsEnabled="{Binding !SubsUpdate.IsBusy, FallbackValue=True}"
+                                                Theme="{StaticResource V2Button}"
+                                                ToolTip.Tip="{x:Static loc:L.UpdateAll}">
+                                                <Panel>
+                                                    <PathIcon
+                                                        Classes="i14"
+                                                        Data="{StaticResource SemiIconRefresh}"
+                                                        IsVisible="{Binding !SubsUpdate.IsBusy, FallbackValue=True}" />
+                                                    <Path Classes="spinner" IsVisible="{Binding SubsUpdate.IsBusy, FallbackValue=False}" />
+                                                </Panel>
+                                            </Button>
+                                            <Button
+                                                AutomationProperties.Name="{x:Static loc:L.AddSubscription}"
+                                                Classes="ghost small icon"
+                                                Click="SideSubsAdd_Click"
+                                                Theme="{StaticResource V2Button}"
+                                                ToolTip.Tip="{x:Static loc:L.AddSubscription}">
+                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconPlus}" />
+                                            </Button>
+                                        </StackPanel>
                                         <Button
                                             Grid.Column="1"
                                             AutomationProperties.Name="{Binding Ping.Label, FallbackValue=''}"
@@ -481,60 +511,72 @@
                                 <DataTemplate x:DataType="side:SideSubRow">
                                     <Button
                                         AutomationProperties.Name="{Binding Sub.Remarks}"
-                                        Classes="siderow"
+                                        Classes="siderow subrow"
                                         Click="SideSub_Click"
                                         ContextRequested="SideSub_ContextRequested"
                                         Theme="{StaticResource V2SideRow}">
-                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
-                                            <Canvas
-                                                Width="20"
-                                                Height="16"
-                                                Margin="3,0,3,0"
-                                                VerticalAlignment="Center">
-                                                <Path
-                                                    Data="{StaticResource V2FolderBack}"
-                                                    Fill="{DynamicResource V2Folder}"
-                                                    Opacity="0.55" />
-                                                <Path Data="{StaticResource V2FolderFront}" Fill="{DynamicResource V2Folder}" />
-                                            </Canvas>
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="subtile" Background="{Binding Tint}">
+                                                <Panel>
+                                                    <TextBlock Text="{Binding Monogram}" IsVisible="{Binding !Busy.IsBusy}" />
+                                                    <Path Classes="spinner" IsVisible="{Binding Busy.IsBusy}" />
+                                                </Panel>
+                                            </Border>
                                             <StackPanel
                                                 Grid.Column="1"
-                                                Margin="10,0,8,0"
+                                                Margin="12,0,8,0"
                                                 VerticalAlignment="Center"
-                                                Spacing="1">
+                                                Spacing="2">
                                                 <TextBlock
                                                     Classes="title"
                                                     Text="{Binding Sub.Remarks}"
                                                     TextTrimming="CharacterEllipsis"
                                                     ToolTip.Tip="{Binding Sub.Remarks}" />
-                                                <TextBlock
-                                                    Classes="faint small"
-                                                    Text="{Binding Info}"
-                                                    TextTrimming="CharacterEllipsis" />
+                                                <Grid ColumnDefinitions="Auto,*">
+                                                    <Ellipse
+                                                        Margin="0,0,6,0"
+                                                        Classes="fresh"
+                                                        Classes.ok="{Binding IsFresh}"
+                                                        Classes.old="{Binding IsStale}"
+                                                        ToolTip.Tip="{Binding Freshness}" />
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        Classes="faint small"
+                                                        Text="{Binding Info}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </Grid>
                                             </StackPanel>
-                                            <Button
+                                            <StackPanel
                                                 Grid.Column="2"
-                                                AutomationProperties.Name="{x:Static loc:L.UpdateSubscription}"
-                                                Classes="ghost small icon reveal"
-                                                Click="SideSubUpdate_Click"
-                                                Theme="{StaticResource V2Button}"
-                                                ToolTip.Tip="{x:Static loc:L.UpdateSubscription}">
-                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconRefresh}" />
-                                            </Button>
-                                            <Button
-                                                Grid.Column="3"
                                                 Margin="0,0,-4,0"
-                                                AutomationProperties.Name="{x:Static loc:L.More}"
-                                                Classes="ghost small icon kebab reveal"
-                                                Click="SideSubMenu_Click"
-                                                Theme="{StaticResource V2Button}"
-                                                ToolTip.Tip="{x:Static loc:L.More}">
-                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}">
-                                                    <PathIcon.RenderTransform>
-                                                        <RotateTransform Angle="90" />
-                                                    </PathIcon.RenderTransform>
-                                                </PathIcon>
-                                            </Button>
+                                                VerticalAlignment="Center"
+                                                Orientation="Horizontal"
+                                                Spacing="2">
+                                                <Button
+                                                    AutomationProperties.Name="{x:Static loc:L.UpdateSubscription}"
+                                                    Classes="ghost small icon reveal"
+                                                    Click="SideSubUpdate_Click"
+                                                    IsEnabled="{Binding !Busy.IsBusy}"
+                                                    Theme="{StaticResource V2Button}"
+                                                    ToolTip.Tip="{x:Static loc:L.UpdateSubscription}">
+                                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconRefresh}" />
+                                                </Button>
+                                                <Button
+                                                    AutomationProperties.Name="{x:Static loc:L.More}"
+                                                    Classes="ghost small icon kebab reveal"
+                                                    Click="SideSubMenu_Click"
+                                                    Theme="{StaticResource V2Button}"
+                                                    ToolTip.Tip="{x:Static loc:L.More}">
+                                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}">
+                                                        <PathIcon.RenderTransform>
+                                                            <RotateTransform Angle="90" />
+                                                        </PathIcon.RenderTransform>
+                                                    </PathIcon>
+                                                </Button>
+                                                <PathIcon
+                                                    Classes="subchevron"
+                                                    Data="{StaticResource SemiIconChevronRight}" />
+                                            </StackPanel>
                                         </Grid>
                                     </Button>
                                 </DataTemplate>

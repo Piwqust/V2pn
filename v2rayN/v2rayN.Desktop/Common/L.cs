@@ -131,6 +131,12 @@ public static class L
     public static string WelcomeHint => T("Subscriptions update on their own; favorites survive the updates.",
         "Подписки обновляются сами, избранное сохраняется после обновлений.");
     public static string ToastServerStarted => T("Server running", "Сервер запущен");
+    public static string SubsEmpty => T("A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date.",
+        "Подписка — это ссылка от провайдера. V2pn скачивает по ней серверы и сам их обновляет.");
+    public static string SubsEmptyAction => T("Paste the link from your provider", "Вставьте ссылку от провайдера");
+    public static string SubFresh => T("Updated within a day", "Обновлялась за последние сутки");
+    public static string SubStale => T("Not updated for over a day", "Не обновлялась больше суток");
+    public static string SubNeverUpdated => T("Never updated", "Ещё не обновлялась");
     public static string Recent => T("Recent", "Недавние");
     public static string RemoveDead => T("Remove servers that didn't respond", "Удалить серверы без ответа");
     public static string RemoveDeadConfirm => T("Remove the servers of “{0}” that didn't respond to the last ping? The next subscription update may bring them back.",

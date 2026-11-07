@@ -1,0 +1,64 @@
+name: V2pn upstream sync
+
+# Every Monday, merges the latest v2rayN on a sync branch, builds, tests and opens a pull request
+# with the report from tools/sync-upstream.ps1. A red build or test run still opens the pull
+# request (as a draft) so the breakage is visible; the main branch never changes on its own.
+on:
+  schedule:
+    - cron: '0 6 * * 1'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  sync:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Merge, build, test
+        id: sync
+        shell: pwsh
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          ./tools/sync-upstream.ps1
+          $code = $LASTEXITCODE
+          "code=$code" >> $env:GITHUB_OUTPUT
+          $branch = git branch --list 'sync/v2rayN-*' --format='%(refname:short)' | Select-Object -First 1
+          "branch=$branch" >> $env:GITHUB_OUTPUT
+          $report = Get-ChildItem docs/upstream-sync -Filter *.md | Sort-Object LastWriteTime | Select-Object -Last 1
+          "report=$($report.FullName)" >> $env:GITHUB_OUTPUT
+          exit 0
+
+      - name: Open pull request
+        if: steps.sync.outputs.branch != ''
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $branch = '${{ steps.sync.outputs.branch }}'
+          $code = [int]'${{ steps.sync.outputs.code }}'
+          if ($code -ne 0) {
+            # Keep what the merge produced so the failure can be fixed on the branch.
+            git switch $branch
+            git add -A
+            git commit -q -m "V2pn: v2rayN merge needs work (sync exit code $code)" 2>$null
+          }
+          git push --force origin $branch
+          $existing = gh pr list --head $branch --json number --jq '.[0].number'
+          if ($existing) { gh pr edit $existing --body-file '${{ steps.sync.outputs.report }}'; exit 0 }
+          $title = Get-Content '${{ steps.sync.outputs.report }}' -TotalCount 1
+          $draft = if ($code -ne 0) { '--draft' } else { '' }
+          gh pr create --head $branch --base ${{ github.ref_name }} --title ($title -replace '^# ', '') --body-file '${{ steps.sync.outputs.report }}' $draft

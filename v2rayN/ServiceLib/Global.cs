@@ -608,6 +608,16 @@ public class Global
         "mixed"
     ];
 
+    public const string TunDnsModeDefault = "Default";
+
+    public static readonly List<string> TunDnsModes =
+    [
+        TunDnsModeDefault,
+        "disabled",
+        "native",
+        "hijack"
+    ];
+
     public static readonly List<string> PresetMsgFilters =
     [
         "proxy",

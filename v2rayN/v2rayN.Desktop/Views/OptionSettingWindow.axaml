@@ -587,6 +587,17 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunDnsMode}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintTunDnsMode}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbDnsMode" Width="180" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow adv">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableIPv6Address}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">

@@ -340,6 +340,7 @@ public static partial class L
     public static string HintAutoRoute => T("Adds routes so that all traffic enters the TUN adapter.", "Добавляет маршруты, чтобы весь трафик шёл в TUN-адаптер.");
     public static string HintStrictRoute => T("Blocks traffic that tries to go around the adapter.", "Не пускает трафик в обход адаптера.");
     public static string HintStack => T("gvisor is the most compatible, system is the fastest.", "gvisor совместимее всего, system быстрее всего.");
+    public static string HintTunDnsMode => T("How sing-box handles DNS inside the VPN. Change it only if sites stop opening.", "Как sing-box обрабатывает DNS внутри VPN. Меняйте, только если перестали открываться сайты.");
     public static string HintSniffing => T("Reads the domain from each connection so routing rules can match it.", "Определяет домен соединения, чтобы к нему сработали правила маршрутизации.");
     public static string HintRouteOnly => T("Use the detected domain for routing only and keep connecting by IP.", "Использовать домен только для маршрутизации, а подключаться по IP.");
     public static string HintFragment => T("Splits the TLS handshake so DPI cannot read it. Needed only when a server is blocked.", "Дробит TLS-рукопожатие, чтобы его не прочитал DPI. Нужно, только если сервер блокируют.");

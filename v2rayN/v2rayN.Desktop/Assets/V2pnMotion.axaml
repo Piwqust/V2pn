@@ -10,8 +10,6 @@
         <Setter Property="RenderTransform" Value="scale(1)" />
         <Setter Property="Transitions">
             <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.15" />
-                <BrushTransition Property="Foreground" Duration="0:0:0.15" />
                 <TransformOperationsTransition
                     Easing="0.32,0.72,0,1"
                     Property="RenderTransform"
@@ -19,14 +17,8 @@
             </Transitions>
         </Setter>
     </Style>
-    <Style Selector="Button /template/ ContentPresenter#PART_ContentPresenter, ToggleButton /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Transitions">
-            <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.15" />
-                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.15" />
-            </Transitions>
-        </Setter>
-    </Style>
+    <!--  No brush transitions on buttons and list chips: their fills are gradients, which Avalonia
+          can't interpolate, and the half-way frame got stuck as a flat grey.  -->
     <Style Selector="Button.rail:pressed, ToggleButton:pressed">
         <Setter Property="RenderTransform" Value="scale(0.96)" />
     </Style>
@@ -35,14 +27,6 @@
     </Style>
 
     <!--  List chips and rows fade between rest, hover and selected.  -->
-    <Style Selector="ListBoxItem /template/ Border#PART_Chip, ListBoxItem /template/ Border#PART_Row">
-        <Setter Property="Transitions">
-            <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.12" />
-                <BoxShadowsTransition Property="BoxShadow" Duration="0:0:0.12" />
-            </Transitions>
-        </Setter>
-    </Style>
     <Style Selector="ListBox.mode > ListBoxItem, ListBox.sidetabs > ListBoxItem">
         <Setter Property="Transitions">
             <Transitions>
@@ -125,7 +109,6 @@
         <Setter Property="Transitions">
             <Transitions>
                 <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
-                <BrushTransition Property="Background" Duration="0:0:0.15" />
             </Transitions>
         </Setter>
     </Style>

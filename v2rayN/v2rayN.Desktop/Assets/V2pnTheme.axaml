@@ -125,6 +125,40 @@
             <BoxShadows x:Key="NotificationCardBoxShadows">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 16 36 -10 #99000000</BoxShadows>
             <SolidColorBrush x:Key="V2ToastInfo" Color="#5C9DF0" />
             <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#245C9DF0" />
+            <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches blue when on.  -->
+            <SolidColorBrush x:Key="TextBoxDefaultBackground" Color="#17171D" />
+            <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#30303A" />
+            <SolidColorBrush x:Key="TextBoxPointeroverBackground" Color="#1A1A21" />
+            <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#41414D" />
+            <SolidColorBrush x:Key="TextBoxPressedBackground" Color="#17171D" />
+            <SolidColorBrush x:Key="TextBoxFocusBorderBrush" Color="#5C9DF0" />
+            <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#6C6C78" />
+            <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#665C9DF0" />
+            <SolidColorBrush x:Key="ComboBoxSelectorBackground" Color="#17171D" />
+            <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#30303A" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBackground" Color="#1A1A21" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBorderBrush" Color="#41414D" />
+            <SolidColorBrush x:Key="ComboBoxSelectorFocusBackground" Color="#1A1A21" />
+            <SolidColorBrush x:Key="ComboBoxSelectorFocusBorderBrush" Color="#5C9DF0" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPressedBackground" Color="#1A1A21" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPressedBorderBrush" Color="#5C9DF0" />
+            <SolidColorBrush x:Key="ComboBoxPopupBackground" Color="#1F1F27" />
+            <SolidColorBrush x:Key="ComboBoxPopupBorderBrush" Color="#34343F" />
+            <BoxShadows x:Key="ComboBoxPopupBoxShadow">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 14 30 -8 #8C000000</BoxShadows>
+            <SolidColorBrush x:Key="ComboBoxItemPointeroverBackground" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="ComboBoxItemFocusBackground" Color="#14FFFFFF" />
+            <SolidColorBrush x:Key="ComboBoxItemSelectedBackground" Color="#265C9DF0" />
+            <SolidColorBrush x:Key="ComboBoxItemSelectedForeground" Color="#ECECF1" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedDefaultBackground" Color="#42424E" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPointeroverBackground" Color="#4C4C59" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPressedBackground" Color="#474754" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDefaultBackground" Color="#3D84EB" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPointeroverBackground" Color="#5293F0" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPressedBackground" Color="#336FC9" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDisabledBackground" Color="#663D84EB" />
+            <BoxShadows x:Key="ToggleSwitchIndicatorBoxShadow">0 1 1 0 #40000000, 0 2 6 0 #4D000000</BoxShadows>
+            <BoxShadows x:Key="V2SwitchTrackShadow">inset 0 1 2 0 #4D000000</BoxShadows>
+            <BoxShadows x:Key="V2InputFocusShadow">0 0 0 3 #335C9DF0</BoxShadows>
         </ResourceDictionary>
         <ResourceDictionary x:Key="Light">
             <SolidColorBrush x:Key="V2WindowBackground" Color="#E3E4E9" />
@@ -246,6 +280,40 @@
             <BoxShadows x:Key="NotificationCardBoxShadows">0 2 4 0 #1416161B, 0 16 36 -10 #3316161B</BoxShadows>
             <SolidColorBrush x:Key="V2ToastInfo" Color="#3A7BD5" />
             <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#1A3A7BD5" />
+            <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches blue when on.  -->
+            <SolidColorBrush x:Key="TextBoxDefaultBackground" Color="#F5F6F8" />
+            <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#2116161B" />
+            <SolidColorBrush x:Key="TextBoxPointeroverBackground" Color="#F1F2F5" />
+            <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#3316161B" />
+            <SolidColorBrush x:Key="TextBoxPressedBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="TextBoxFocusBorderBrush" Color="#3A7BD5" />
+            <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#8E8E9A" />
+            <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#553A7BD5" />
+            <SolidColorBrush x:Key="ComboBoxSelectorBackground" Color="#F5F6F8" />
+            <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#2116161B" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBackground" Color="#F1F2F5" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBorderBrush" Color="#3316161B" />
+            <SolidColorBrush x:Key="ComboBoxSelectorFocusBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ComboBoxSelectorFocusBorderBrush" Color="#3A7BD5" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPressedBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPressedBorderBrush" Color="#3A7BD5" />
+            <SolidColorBrush x:Key="ComboBoxPopupBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="ComboBoxPopupBorderBrush" Color="#1416161B" />
+            <BoxShadows x:Key="ComboBoxPopupBoxShadow">0 2 4 0 #1416161B, 0 14 30 -8 #2E16161B</BoxShadows>
+            <SolidColorBrush x:Key="ComboBoxItemPointeroverBackground" Color="#0D16161B" />
+            <SolidColorBrush x:Key="ComboBoxItemFocusBackground" Color="#0D16161B" />
+            <SolidColorBrush x:Key="ComboBoxItemSelectedBackground" Color="#1A3A7BD5" />
+            <SolidColorBrush x:Key="ComboBoxItemSelectedForeground" Color="#16161B" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedDefaultBackground" Color="#D9DBE1" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPointeroverBackground" Color="#CFD2D9" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPressedBackground" Color="#C3C6CE" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDefaultBackground" Color="#2F74DC" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPointeroverBackground" Color="#3F82E4" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPressedBackground" Color="#2662BD" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDisabledBackground" Color="#662F74DC" />
+            <BoxShadows x:Key="ToggleSwitchIndicatorBoxShadow">0 1 2 0 #3316161B, 0 2 6 0 #1F16161B</BoxShadows>
+            <BoxShadows x:Key="V2SwitchTrackShadow">inset 0 1 2 0 #1A16161B</BoxShadows>
+            <BoxShadows x:Key="V2InputFocusShadow">0 0 0 3 #2B3A7BD5</BoxShadows>
         </ResourceDictionary>
     </ResourceDictionary.ThemeDictionaries>
 
@@ -260,6 +328,13 @@
     <LinearGradientBrush x:Key="V2TileAmber" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#F7C266" /><GradientStop Offset="1" Color="#EAA23A" /></LinearGradientBrush>
     <LinearGradientBrush x:Key="V2TileRed" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#F2766C" /><GradientStop Offset="1" Color="#DF4B41" /></LinearGradientBrush>
     <LinearGradientBrush x:Key="V2TileTeal" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#4FCBD6" /><GradientStop Offset="1" Color="#22A6B3" /></LinearGradientBrush>
+    <!--  Inputs: 36 px tall, 10 px corners (rows inside 18 px cards), switches keep Semi's geometry.  -->
+    <x:Double x:Key="TextBoxDefaultHeight">36</x:Double>
+    <x:Double x:Key="ComboBoxDefaultHeight">36</x:Double>
+    <CornerRadius x:Key="TextBoxDefaultCornerRadius">10</CornerRadius>
+    <CornerRadius x:Key="ComboBoxSelectorCornerRadius">10</CornerRadius>
+    <CornerRadius x:Key="ComboBoxPopupBoxCornerRadius">12</CornerRadius>
+    <Thickness x:Key="ComboBoxPopupBorderPadding">4</Thickness>
     <CornerRadius x:Key="V2RadiusPanel">18</CornerRadius>
     <!--  Semi menus and toasts: rounder, roomier, rows inset inside the panel (14 - 6 = 8).  -->
     <CornerRadius x:Key="MenuFlyoutCornerRadius">14</CornerRadius>

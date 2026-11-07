@@ -30,12 +30,6 @@
                     RecognizesAccessKey="True" />
             </ControlTemplate>
         </Setter>
-        <Setter Property="Transitions">
-            <Transitions>
-                <BrushTransition Property="Background" Duration="0:0:0.12" />
-            </Transitions>
-        </Setter>
-
         <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
         </Style>
@@ -655,6 +649,82 @@
                     </KeyFrame>
                 </Animation>
             </Style.Animations>
+        </Style>
+    </ControlTheme>
+
+    <!--  Switch: a 44x26 track with an even 3 px inset around a 20 px knob. Replaces Semi's (an 18 px
+          knob in a 24 px track looked squashed). ToggleSwitch moves PART_MovingKnobs by the width of
+          PART_SwitchKnob, so that canvas is exactly the knob's travel (38 inner - 20 knob = 18).  -->
+    <ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch">
+        <Setter Property="HorizontalAlignment" Value="Left" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        <Setter Property="KnobTransitions">
+            <Transitions>
+                <DoubleTransition
+                    Easing="0.32,0.72,0,1"
+                    Property="Canvas.Left"
+                    Duration="0:0:0.22" />
+            </Transitions>
+        </Setter>
+        <Setter Property="Template">
+            <ControlTemplate TargetType="ToggleSwitch">
+                <StackPanel Orientation="Horizontal" Spacing="10">
+                    <Border
+                        Name="PART_Track"
+                        Width="44"
+                        Height="26"
+                        Padding="3"
+                        Background="{DynamicResource ToggleSwitchContainerUnCheckedDefaultBackground}"
+                        BoxShadow="{DynamicResource V2SwitchTrackShadow}"
+                        CornerRadius="13"
+                        TemplatedControl.IsTemplateFocusTarget="True">
+                        <Border.Transitions>
+                            <Transitions>
+                                <BrushTransition Property="Background" Duration="0:0:0.18" />
+                            </Transitions>
+                        </Border.Transitions>
+                        <Canvas
+                            Name="PART_SwitchKnob"
+                            Width="18"
+                            Height="20"
+                            HorizontalAlignment="Left">
+                            <Panel Name="PART_MovingKnobs" Width="20" Height="20">
+                                <Border
+                                    Name="PART_Knob"
+                                    Background="White"
+                                    BoxShadow="{DynamicResource ToggleSwitchIndicatorBoxShadow}"
+                                    CornerRadius="10" />
+                            </Panel>
+                        </Canvas>
+                    </Border>
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Content}"
+                        ContentTemplate="{TemplateBinding ContentTemplate}"
+                        IsVisible="{TemplateBinding Content, Converter={x:Static ObjectConverters.IsNotNull}}" />
+                </StackPanel>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover /template/ Border#PART_Track">
+            <Setter Property="Background" Value="{DynamicResource ToggleSwitchContainerUnCheckedPointeroverBackground}" />
+        </Style>
+        <Style Selector="^:checked /template/ Border#PART_Track">
+            <Setter Property="Background" Value="{DynamicResource ToggleSwitchContainerCheckedDefaultBackground}" />
+        </Style>
+        <Style Selector="^:checked:pointerover /template/ Border#PART_Track">
+            <Setter Property="Background" Value="{DynamicResource ToggleSwitchContainerCheckedPointeroverBackground}" />
+        </Style>
+        <Style Selector="^:pressed /template/ Border#PART_Knob">
+            <Setter Property="Opacity" Value="0.92" />
+        </Style>
+        <Style Selector="^:disabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
+        <Style Selector="^:focus-visible /template/ Border#PART_Track">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
         </Style>
     </ControlTheme>
 </ResourceDictionary>

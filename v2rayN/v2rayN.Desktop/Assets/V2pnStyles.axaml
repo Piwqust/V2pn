@@ -1060,4 +1060,22 @@
     <Style Selector="Button.morefields:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource V2Hover}" />
     </Style>
+
+    <!--  Focus: the input keeps its blue border and gets a soft halo, like the buttons' focus ring.  -->
+    <Style Selector="TextBox:focus /template/ Border#PART_ContentPresenterBorder, TextBox:focus-within /template/ Border#PART_ContentPresenterBorder">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2InputFocusShadow}" />
+    </Style>
+    <Style Selector="ComboBox:focus /template/ Border#Background, ComboBox:dropdownopen /template/ Border#Background">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2InputFocusShadow}" />
+    </Style>
+    <Style Selector="TextBox">
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="ComboBox">
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="ComboBoxItem">
+        <Setter Property="CornerRadius" Value="8" />
+        <Setter Property="Margin" Value="4,1" />
+    </Style>
 </Styles>

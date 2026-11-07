@@ -23,7 +23,7 @@ internal static class Toasts
         ["fail", "error", "invalid", "not found", "cannot", "can't", "unable", "失败", "错误", "无效", "ошибк", "не удалось", "не найден", "недейств", "невозможно"];
 
     private static readonly string[] SuccessWords =
-        ["success", "succeeded", "成功", "успешн", "готово", "сохранен"];
+        ["success", "succeeded", "done", "成功", "успешн", "готово", "сохранен"];
 
     private static readonly string[] WarningWords =
         ["please", "warning", "请", "警告", "внимание", "сначала"];

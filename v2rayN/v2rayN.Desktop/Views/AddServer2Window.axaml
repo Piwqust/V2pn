@@ -22,7 +22,7 @@
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbConfirm}"
+                Content="{x:Static loc:L.Save}"
                 IsDefault="True" />
             <Button
                 x:Name="btnCancel"

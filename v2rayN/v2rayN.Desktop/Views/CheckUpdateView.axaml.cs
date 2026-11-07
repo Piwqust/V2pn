@@ -30,6 +30,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
     public CheckUpdateView()
     {
         InitializeComponent();
+        btnCloseDialog.Click += (_, _) => DialogHostAvalonia.DialogHost.Close(null);
 
         txtAppBase.Text = string.Format(L.UpdBasedOn, V2pnInfo.UpstreamVersion);
         cardApp.IsVisible = _updater.Supported;

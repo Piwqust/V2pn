@@ -21,7 +21,19 @@
             TextWrapping="Wrap" />
 
         <StackPanel Margin="28,22,28,16" Spacing="6">
-            <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlBackupTitle}" />
+            <Grid Margin="0,0,-10,0" ColumnDefinitions="*,Auto">
+                <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlBackupTitle}" />
+                <Button
+                    x:Name="btnCloseDialog"
+                    Grid.Column="1"
+                    VerticalAlignment="Top"
+                    AutomationProperties.Name="{x:Static loc:L.Close}"
+                    Classes="ghost icon"
+                    Theme="{StaticResource V2Button}"
+                    ToolTip.Tip="{x:Static loc:L.Close}">
+                    <PathIcon Classes="i14" Data="{StaticResource SemiIconClose}" />
+                </Button>
+            </Grid>
             <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlBackupHint}" />
 
             <StackPanel Classes="sgroup">

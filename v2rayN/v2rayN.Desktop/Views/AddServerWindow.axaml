@@ -9,7 +9,7 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:views="clr-namespace:v2rayN.Desktop.Views"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuServers}"
+    Title="{x:Static loc:L.SvTitlePlain}"
     Width="800"
     Height="640"
     x:DataType="vms:AddServerViewModel"
@@ -29,7 +29,7 @@
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbConfirm}"
+                Content="{x:Static loc:L.Save}"
                 IsDefault="True" />
             <Button
                 x:Name="btnCancel"

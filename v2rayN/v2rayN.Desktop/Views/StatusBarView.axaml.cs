@@ -24,6 +24,9 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     private readonly DispatcherTimer _clock;
     private ProtectionState _state;
     private DateTime? _since;
+    private bool _active;
+    private bool _hasServer;
+    private string? _pingTier;
     private double _sessionBytes;
 
     public StatusBarView()
@@ -34,7 +37,14 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         btnCheck.Click += (_, _) => _ = CheckConnectionAsync();
         chartHost.SizeChanged += (_, _) => DrawChart();
 
-        _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => UpdateClock());
+        // Ticks only while connected: the duration is the only thing on this card that changes by itself.
+        _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) =>
+        {
+            if (!IsWindowHidden())
+            {
+                UpdateClock();
+            }
+        });
 
         this.WhenActivated(disposables =>
         {
@@ -66,8 +76,13 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
                 .Subscribe(AddSample)
                 .DisposeWith(disposables);
 
-            _clock.Start();
-            new ActionDisposable(_clock.Stop).DisposeWith(disposables);
+            _active = true;
+            SyncClock();
+            new ActionDisposable(() =>
+            {
+                _active = false;
+                _clock.Stop();
+            }).DisposeWith(disposables);
         });
 
         SetState(ProtectionState.Unprotected);
@@ -98,13 +113,33 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
             _ => (L.Unprotected, "V2Unsafe"),
         };
         txtState.Text = text;
+        ToolTip.SetTip(txtState, state == ProtectionState.LocalOnly
+            ? string.Format(L.LocalOnlyTip, AppManager.Instance.GetLocalPort(EInboundProtocol.socks))
+            : null);
         SetBrush(txtState, TextBlock.ForegroundProperty, brush);
         SetBrush(iconState, PathIcon.ForegroundProperty, brush);
         UpdateClock();
+        SyncClock();
+    }
+
+    private void SyncClock()
+    {
+        if (_active && _since != null)
+        {
+            _clock.Start();
+        }
+        else
+        {
+            _clock.Stop();
+        }
     }
 
     public void SetServer(ProfileItem? item, int delay)
     {
+        // Nothing to check without a server; the check result of a previous server would mislead.
+        _hasServer = item != null;
+        btnCheck.IsVisible = _hasServer;
+        chipCheck.IsVisible = _hasServer && ViewModel?.AvailabilityDelay is -1 or > 0;
         if (item == null)
         {
             txtStatServer.Text = "—";
@@ -130,7 +165,12 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
             <= 800 => "V2PingMid",
             _ => "V2PingBad",
         };
-        SetBrush(barPing, Border.BackgroundProperty, tier);
+        // A new resource binding on every refresh would re-resolve the brush each time.
+        if (tier != _pingTier)
+        {
+            _pingTier = tier;
+            SetBrush(barPing, Border.BackgroundProperty, tier);
+        }
         // Lower is better: a full bar means a fast server, like a quality meter.
         barPing.Width = delay > 0 ? Math.Clamp(48 * (1 - (delay / 1000.0)), 6, 48) : 0;
     }
@@ -152,10 +192,56 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         {
             _sessionBytes += down + up;
         }
+        // Hidden in the tray or minimized: keep the samples, draw when the window is back.
+        if (IsWindowHidden())
+        {
+            _chartStale = true;
+            return;
+        }
         txtSpeedDown.Text = Fmt.Speed(down);
         txtSpeedUp.Text = Fmt.Speed(up);
         txtStatTotal.Text = Fmt.Bytes(_sessionBytes);
         DrawChart();
+    }
+
+    private bool _chartStale;
+
+    private bool IsWindowHidden() =>
+        TopLevel.GetTopLevel(this) is Window { IsVisible: false } or Window { WindowState: WindowState.Minimized };
+
+    protected override void OnAttachedToVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        base.OnAttachedToVisualTree(e);
+        if (TopLevel.GetTopLevel(this) is Window window)
+        {
+            window.PropertyChanged += Window_PropertyChanged;
+        }
+    }
+
+    protected override void OnDetachedFromVisualTree(VisualTreeAttachmentEventArgs e)
+    {
+        if (TopLevel.GetTopLevel(this) is Window window)
+        {
+            window.PropertyChanged -= Window_PropertyChanged;
+        }
+        base.OnDetachedFromVisualTree(e);
+    }
+
+    private void Window_PropertyChanged(object? sender, AvaloniaPropertyChangedEventArgs e)
+    {
+        if ((e.Property != Visual.IsVisibleProperty && e.Property != Window.WindowStateProperty) || IsWindowHidden())
+        {
+            return;
+        }
+        UpdateClock();
+        if (_chartStale)
+        {
+            _chartStale = false;
+            txtSpeedDown.Text = Fmt.Speed(_down.Last());
+            txtSpeedUp.Text = Fmt.Speed(_up.Last());
+            txtStatTotal.Text = Fmt.Bytes(_sessionBytes);
+            DrawChart();
+        }
     }
 
     private async Task CheckConnectionAsync()
@@ -175,7 +261,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         iconCheckIdle.IsVisible = !running;
         txtCheckAction.Text = running ? L.Checking : L.CheckConnection;
 
-        chipCheck.IsVisible = delay is -1 or > 0;
+        chipCheck.IsVisible = _hasServer && delay is -1 or > 0;
         chipCheck.Classes.Set("ok", delay > 0);
         chipCheck.Classes.Set("fail", delay == -1);
         iconCheck.Data = this.FindResource(delay > 0 ? "SemiIconTickCircle" : "SemiIconAlertCircle") as Geometry;

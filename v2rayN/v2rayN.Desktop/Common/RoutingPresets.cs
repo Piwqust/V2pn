@@ -65,6 +65,12 @@ public static class RoutingPresets
 
     public static readonly Avalonia.Data.Converters.FuncValueConverter<string?, string> NameConverter = new(DisplayName);
 
+    /// <summary>One of the three sets v2rayN creates on its own.</summary>
+    public static bool IsV2rayNBuiltin(string? remarks) =>
+        remarks != null && (remarks.EndsWith("绕过大陆(Whitelist)", StringComparison.Ordinal)
+                            || remarks.EndsWith("黑名单(Blacklist)", StringComparison.Ordinal)
+                            || remarks.EndsWith("全局(Global)", StringComparison.Ordinal));
+
     public static string Title(RoutingPresetKind kind) => kind switch
     {
         RoutingPresetKind.All => L.RouteAll,

@@ -26,7 +26,7 @@
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbConfirm}"
+                Content="{x:Static loc:L.Save}"
                 IsDefault="True" />
             <Button
                 x:Name="btnCancel"
@@ -50,7 +50,7 @@
                                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyShow}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtGlobalHotkey0" Width="240" IsReadOnly="True" />
+                                        <TextBox x:Name="txtGlobalHotkey0" Width="240" IsReadOnly="True" PlaceholderText="{x:Static loc:L.HotkeyNotSet}" />
                                     </Panel>
                                 </Grid>
                             </Border>
@@ -61,7 +61,7 @@
                                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyProxyOff}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtGlobalHotkey1" Width="240" IsReadOnly="True" />
+                                        <TextBox x:Name="txtGlobalHotkey1" Width="240" IsReadOnly="True" PlaceholderText="{x:Static loc:L.HotkeyNotSet}" />
                                     </Panel>
                                 </Grid>
                             </Border>
@@ -72,7 +72,7 @@
                                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyProxyOn}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtGlobalHotkey2" Width="240" IsReadOnly="True" />
+                                        <TextBox x:Name="txtGlobalHotkey2" Width="240" IsReadOnly="True" PlaceholderText="{x:Static loc:L.HotkeyNotSet}" />
                                     </Panel>
                                 </Grid>
                             </Border>
@@ -83,7 +83,7 @@
                                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyProxyKeep}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtGlobalHotkey3" Width="240" IsReadOnly="True" />
+                                        <TextBox x:Name="txtGlobalHotkey3" Width="240" IsReadOnly="True" PlaceholderText="{x:Static loc:L.HotkeyNotSet}" />
                                     </Panel>
                                 </Grid>
                             </Border>
@@ -94,7 +94,7 @@
                                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlKeyPac}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtGlobalHotkey4" Width="240" IsReadOnly="True" />
+                                        <TextBox x:Name="txtGlobalHotkey4" Width="240" IsReadOnly="True" PlaceholderText="{x:Static loc:L.HotkeyNotSet}" />
                                     </Panel>
                                 </Grid>
                             </Border>

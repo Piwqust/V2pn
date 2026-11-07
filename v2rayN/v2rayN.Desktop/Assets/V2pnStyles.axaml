@@ -2,6 +2,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
+    xmlns:common="using:v2rayN.Desktop.Common"
     xmlns:views="using:v2rayN.Desktop.Views">
 
     <!--  Surfaces  -->
@@ -429,6 +430,14 @@
     <Style Selector="Border.dialogfooter Button[IsDefault=True]:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource V2PrimaryFillHover}" />
     </Style>
+    <!--  A destructive answer ("Delete") reads as one: red, not the glossy primary.  -->
+    <Style Selector="Border.dialogfooter Button.danger, Border.dialogfooter Button.danger[IsDefault=True]">
+        <Setter Property="Background" Value="{DynamicResource V2AccentFill}" />
+        <Setter Property="Foreground" Value="White" />
+    </Style>
+    <Style Selector="Border.dialogfooter Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource V2AccentFillHover}" />
+    </Style>
 
     <!--  Sidebar rows: secondary actions appear on hover or keyboard focus; a set favorite stays visible.  -->
     <Style Selector="Button.siderow Button.reveal">
@@ -480,7 +489,10 @@
     </Style>
     <Style Selector="Path.spinner[IsVisible=True]">
         <Style.Animations>
-            <Animation IterationCount="Infinite" Duration="0:0:0.8">
+            <Animation IterationCount="Infinite" Duration="0:0:0.9">
+                <Animation.Easing>
+                    <common:StepEasing Steps="24" />
+                </Animation.Easing>
                 <KeyFrame Cue="0%">
                     <Setter Property="RotateTransform.Angle" Value="0" />
                 </KeyFrame>
@@ -688,6 +700,32 @@
         <Setter Property="Margin" Value="4,8,0,0" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
+    <!--  A JSON editor with its caption: the same card as a settings group, the caption above it.  -->
+    <Style Selector="HeaderedContentControl.editor">
+        <Setter Property="Template">
+            <ControlTemplate>
+                <DockPanel>
+                    <TextBlock
+                        Margin="4,0,0,8"
+                        DockPanel.Dock="Top"
+                        FontSize="12"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource V2Muted}"
+                        Text="{TemplateBinding Header}" />
+                    <Border
+                        Padding="4,8"
+                        Background="{DynamicResource V2ChipFill}"
+                        BorderBrush="{DynamicResource V2PanelBorder}"
+                        BorderThickness="1"
+                        ClipToBounds="True"
+                        CornerRadius="12">
+                        <ContentPresenter Content="{TemplateBinding Content}" />
+                    </Border>
+                </DockPanel>
+            </ControlTemplate>
+        </Setter>
+    </Style>
+
     <Style Selector="Border.sgroupcard">
         <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
         <Setter Property="BorderBrush" Value="{DynamicResource V2PanelBorder}" />

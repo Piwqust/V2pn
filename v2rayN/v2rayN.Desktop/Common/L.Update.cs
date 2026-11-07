@@ -24,7 +24,7 @@ public static partial class L
     public static string UpdAuto => T("Update V2pn automatically", "Обновлять V2pn автоматически");
     public static string UpdAutoHint => T("New versions download in the background and install the next time V2pn starts.", "Новые версии скачиваются в фоне и ставятся при следующем запуске V2pn.");
     public static string UpdComponents => T("Cores and lists", "Ядра и списки");
-    public static string UpdComponentsHint => T("Turn on what to check, then press Update.", "Отметьте, что проверять, и нажмите «Обновить».");
+    public static string UpdComponentsHint => Tk("Turn on what to check, then press Update.", "Turn on what to check, then press Update selected.", "Отметьте, что проверять, и нажмите «Обновить отмеченное».");
 
     public static string UpdBadgeAvailable => T("Update available", "Есть обновление");
     public static string UpdBadgeReady => T("Restart to update", "Перезапустить и обновить");

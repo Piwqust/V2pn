@@ -39,9 +39,20 @@
             </DockPanel>
         </Border>
 
-        <StackPanel Margin="28,22,28,0" DockPanel.Dock="Top" Spacing="6">
+        <!--  The dialog also closes on a click outside it; the button makes that discoverable.  -->
+        <Grid Margin="28,22,18,0" ColumnDefinitions="*,Auto" DockPanel.Dock="Top">
             <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlUpdTitle}" />
-        </StackPanel>
+            <Button
+                x:Name="btnCloseDialog"
+                Grid.Column="1"
+                VerticalAlignment="Top"
+                AutomationProperties.Name="{x:Static loc:L.Close}"
+                Classes="ghost icon"
+                Theme="{StaticResource V2Button}"
+                ToolTip.Tip="{x:Static loc:L.Close}">
+                <PathIcon Classes="i14" Data="{StaticResource SemiIconClose}" />
+            </Button>
+        </Grid>
 
         <!--  V2pn itself: version, what is happening, one action.  -->
         <Border

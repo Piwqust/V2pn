@@ -15,6 +15,18 @@ namespace v2rayN.Desktop.Common;
 /// move (segment thumbs, the map) ease in and out. Nothing animates on keyboard-only paths, and
 /// everything turns off when Windows' "Show animations" is off.
 /// </summary>
+/// <summary>
+/// Jumps between a fixed number of positions instead of moving every frame. A busy spinner turned at
+/// the display's rate (143 Hz here) made the compositor redraw that many frames a second; 24 steps per
+/// turn look the same at 12 px and change the picture about 27 times a second.
+/// </summary>
+public sealed class StepEasing : Easing
+{
+    public int Steps { get; set; } = 24;
+
+    public override double Ease(double progress) => Math.Floor(progress * Steps) / Steps;
+}
+
 internal static class Motion
 {
     /// <summary>Strong ease-out (cubic-bezier(0.32, 0.72, 0, 1)): instant response, soft landing.</summary>

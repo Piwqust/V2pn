@@ -9,7 +9,7 @@ public partial class MessageBoxDialog : Window
     {
     }
 
-    public MessageBoxDialog(string caption, string message)
+    public MessageBoxDialog(string caption, string message, string? yes = null, bool danger = false)
     {
         InitializeComponent();
         Classes.Add("dialog");
@@ -23,6 +23,12 @@ public partial class MessageBoxDialog : Window
 
         Title = caption;
         txtMessage.Text = message;
+        // V2pn: the button says what happens ("Delete", "Quit"), not a generic "Confirm".
+        if (yes.IsNotEmpty())
+        {
+            btnYes.Content = yes;
+        }
+        btnYes.Classes.Set("danger", danger);
 
         btnYes.Click += BtnYes_Click;
         btnNo.Click += BtnNo_Click;

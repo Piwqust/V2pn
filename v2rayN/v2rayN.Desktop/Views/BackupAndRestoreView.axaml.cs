@@ -7,6 +7,7 @@ public partial class BackupAndRestoreView : ReactiveUserControl<BackupAndRestore
     public BackupAndRestoreView()
     {
         InitializeComponent();
+        btnCloseDialog.Click += (_, _) => DialogHostAvalonia.DialogHost.Close(null); // V2pn: the dialog had no close button
         menuLocalBackup.Click += MenuLocalBackup_Click;
         menuLocalRestore.Click += MenuLocalRestore_Click;
 

@@ -31,7 +31,8 @@
                 <MenuItem x:Name="menuSubEdit" Header="{x:Static loc:L.TlSubEdit}" />
                 <MenuItem x:Name="menuSubShare" Header="{x:Static loc:L.TlSubShare}" />
                 <MenuItem x:Name="menuSubDelete" Header="{x:Static loc:L.TlSubDelete}" />
-                <MenuItem x:Name="menuClose" Header="{x:Static loc:L.TlSubClose}" />
+                <!--  The window has its own close button; kept for the code-behind.  -->
+                <MenuItem x:Name="menuClose" Header="{x:Static loc:L.TlSubClose}" IsVisible="False" />
             </Menu>
 
             <Border Classes="formcard table">

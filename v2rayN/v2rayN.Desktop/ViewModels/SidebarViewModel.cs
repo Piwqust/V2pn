@@ -362,6 +362,15 @@ public sealed partial class SidebarViewModel : ReactiveObject
 
     private void BuildFavorites(List<SideRow> rows, List<ProfileItemModel> all)
     {
+        // Nothing added yet: "fastest server" and favorites hints would point at servers that don't exist.
+        if (_profiles.AllServersCount == 0 && _profiles.FavoriteItems.Count == 0)
+        {
+            _pingScope = [];
+            rows.Add(new SideHeaderRow(L.TabFavorites));
+            rows.Add(new SideHintRow(L.NoServersYet));
+            rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, L.SubsEmptyAction));
+            return;
+        }
         var fastest = all.Concat(_profiles.FavoriteItems).Where(m => m.Delay > 0).MinBy(m => m.Delay);
         rows.Add(fastest != null
             ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.StripFlag(fastest.Remarks)} · {L.Ms(fastest.Delay)}", fastest.IndexId)
@@ -413,7 +422,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
         if (groups.Count == 0)
         {
-            rows.Add(new SideHintRow(L.SubEmpty));
+            rows.Add(new SideHintRow(_profiles.AllServersCount == 0 ? L.NoServersYet : L.SubEmpty));
         }
     }
 

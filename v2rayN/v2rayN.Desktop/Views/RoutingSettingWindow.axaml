@@ -3,6 +3,7 @@
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:loc="using:v2rayN.Desktop"
+    xmlns:common="using:v2rayN.Desktop.Common"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
@@ -126,7 +127,7 @@
                             <DataGridCheckBoxColumn Width="40" Binding="{Binding IsActive}" />
                             <DataGridTextColumn
                                 Width="*"
-                                Binding="{Binding Remarks}"
+                                Binding="{Binding Remarks, Converter={x:Static common:RoutingPresets.NameConverter}}"
                                 Header="{x:Static loc:L.RtColName}" />
                             <DataGridTextColumn
                                 Width="80"

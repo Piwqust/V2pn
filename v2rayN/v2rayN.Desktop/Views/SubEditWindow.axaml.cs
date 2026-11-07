@@ -10,6 +10,9 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
 
     private bool _isNew;
 
+    // Twice a day, what panels usually ask for in their profile-update-interval header.
+    private const int NewSubUpdateMinutes = 720;
+
     public SubEditWindow()
     {
         InitializeComponent();
@@ -59,6 +62,17 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
         // The name is optional now; a new subscription starts at the link.
         if (_isNew)
         {
+            Title = txtPageTitle.Text = L.NewSubscription;
+            btnSave.Content = L.AddServer;
+            // V2pn: subscriptions keep themselves up to date unless the person turns it off; v2rayN's 0 never updates.
+            // Posted: the bindings fill the fields after Loaded.
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (ViewModel?.SelectedSource is { AutoUpdateInterval: 0 } && txtAutoUpdateInterval.Text is null or "" or "0")
+                {
+                    txtAutoUpdateInterval.Text = NewSubUpdateMinutes.ToString(CultureInfo.InvariantCulture);
+                }
+            }, DispatcherPriority.Background);
             txtUrl.Focus();
         }
         else

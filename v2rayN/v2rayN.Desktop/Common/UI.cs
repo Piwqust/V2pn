@@ -8,10 +8,15 @@ internal class UI
 {
     private static readonly string caption = Global.AppName;
 
-    public static async Task<ButtonResult> ShowYesNo(string msg)
+    public static async Task<ButtonResult> ShowYesNo(string msg, string? yes = null, bool danger = false)
     {
+        // V2pn: v2rayN asks its delete question with one generic sentence for servers, rules and subscriptions.
+        if (msg == ResUI.RemoveServer)
+        {
+            (msg, yes, danger) = (L.RemoveConfirm, L.MenuDelete, true);
+        }
         var owner = WindowDialog.TryGetOwnerWindow();
-        var box = new MessageBoxDialog(caption, msg);
+        var box = new MessageBoxDialog(caption, msg, yes, danger);
         var result = await box.ShowDialog<ButtonResult>(owner);
         return result == ButtonResult.Yes ? ButtonResult.Yes : ButtonResult.No;
     }

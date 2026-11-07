@@ -23,7 +23,7 @@
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbConfirm}"
+                Content="{x:Static loc:L.Save}"
                 IsDefault="True" />
             <Button
                 x:Name="btnCancel"
@@ -385,8 +385,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="0"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnProxyMode}">
                             <local:JsonEditor Name="txtnormalDNSCompatible" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
@@ -395,8 +394,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="2"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnTunMode}">
                             <local:JsonEditor Name="txttunDNSCompatible" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
@@ -467,8 +465,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="0"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnProxyMode}">
                             <local:JsonEditor Name="txtnormalDNS2Compatible" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
@@ -477,8 +474,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="2"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnTunMode}">
                             <local:JsonEditor Name="txttunDNS2Compatible" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>

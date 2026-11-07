@@ -43,7 +43,7 @@ public static partial class L
     public static string TlSubDelete => T("Delete", "Удалить");
     public static string TlSubClose => T("Close", "Закрыть");
     public static string TlColLink => T("Link", "Ссылка");
-    public static string TlColAutoUpdate => T("Auto-update", "Автообновление");
+    public static string TlColAutoUpdate => Tk("Auto-update", "Update with all", "Обновлять со всеми");
 
     public static string TlKeysTitle => T("Hotkeys", "Горячие клавиши");
     public static string TlKeysHint => T("Click a field and press the keys you want. They work after V2pn restarts.", "Щёлкните по полю и нажмите нужное сочетание клавиш. Заработает после перезапуска V2pn.");
@@ -83,8 +83,8 @@ public static partial class L
     public static string TlUpdTitle => T("Updates", "Обновления");
     public static string TlUpdHint => T("Turn on what to check, then press Update.", "Отметьте, что проверять, и нажмите «Обновить».");
     public static string TlUpdViaVpn => T("Download through the VPN", "Скачивать через VPN");
-    public static string TlUpdCheck => T("Check", "Проверить");
-    public static string TlUpdUpdate => T("Update", "Обновить");
+    public static string TlUpdCheck => Tk("Check", "Check selected", "Проверить отмеченное");
+    public static string TlUpdUpdate => Tk("Update", "Update selected", "Обновить отмеченное");
     public static string TlUpdBeta => T("Beta versions", "Бета-версии");
     public static string TlUpdApp => T("The V2pn app", "Приложение V2pn");
     public static string TlUpdXray => T("Xray core", "Ядро Xray");

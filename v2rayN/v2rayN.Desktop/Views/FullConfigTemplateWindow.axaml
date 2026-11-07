@@ -9,7 +9,7 @@
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:views="clr-namespace:v2rayN.Desktop.Views"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuFullConfigTemplate}"
+    Title="{x:Static loc:L.DnFcTitle}"
     Width="940"
     Height="720"
     x:DataType="vms:FullConfigTemplateViewModel"
@@ -23,7 +23,7 @@
             <Button
                 x:Name="btnSave"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbConfirm}"
+                Content="{x:Static loc:L.Save}"
                 IsDefault="True" />
             <Button
                 x:Name="btnCancel"
@@ -89,8 +89,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="0"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnFcProxyMode}">
                             <views:JsonEditor x:Name="rayFullConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
@@ -99,8 +98,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="2"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnFcTunMode}">
                             <views:JsonEditor x:Name="rayFullTunConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
@@ -157,8 +155,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="0"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnFcProxyMode}">
                             <views:JsonEditor x:Name="sbFullConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>
@@ -167,8 +164,7 @@
 
                         <HeaderedContentControl
                             Grid.Column="2"
-                            BorderBrush="Gray"
-                            BorderThickness="1"
+                            Classes="editor"
                             Header="{x:Static loc:L.DnFcTunMode}">
                             <views:JsonEditor x:Name="sbFullTunConfigTemplate" VerticalAlignment="Stretch" />
                         </HeaderedContentControl>

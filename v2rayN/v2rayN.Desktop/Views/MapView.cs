@@ -62,7 +62,18 @@ public sealed class MapView : UserControl
             e.VerticalAlignment = VerticalAlignment.Center;
         }
 
-        _root = new Panel { Children = { _canvas, _dots, _pin } };
+        // The countries are a few thousand vector paths. Anything animating above them (a spinner in the
+        // header, a toast, the status card) makes the renderer redraw what lies beneath, and redrawing
+        // the paths cost two thirds of a core while a connection check spun. Cached as a bitmap, they are
+        // drawn again only when the map itself moves or changes colour. The layer is screen-aligned
+        // (the zoom sits on the canvas inside it), so the bitmap stays sharp at any zoom.
+        var countries = new Panel
+        {
+            ClipToBounds = true,
+            Children = { _canvas },
+            CacheMode = new BitmapCache(),
+        };
+        _root = new Panel { Children = { countries, _dots, _pin } };
         Content = _root;
 
         SizeChanged += (_, _) => Apply(animate: false);

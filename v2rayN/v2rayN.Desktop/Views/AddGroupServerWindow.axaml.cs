@@ -1,4 +1,6 @@
+using Avalonia.Controls.Templates;
 using v2rayN.Desktop.Base;
+using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
@@ -24,6 +26,13 @@ public partial class AddGroupServerWindow : WindowBase<AddGroupServerViewModel>
         };
         cmbFilter.ItemsSource = Global.PolicyGroupDefaultFilterList;
 
+        // The view model stores the v2rayN labels; only what the person sees is reworded.
+        var policyTemplate = new FuncDataTemplate<string>((s, _) => new TextBlock { Text = PolicyLabel(s) });
+        cmbPolicyGroupType.ItemTemplate = policyTemplate;
+        cmbPolicyGroupType.SelectionBoxItemTemplate = policyTemplate;
+
+        SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
+
         this.WhenActivated(disposables =>
         {
             this.WhenAnyValue(v => v.ViewModel.SelectedSource)
@@ -42,6 +51,8 @@ public partial class AddGroupServerWindow : WindowBase<AddGroupServerViewModel>
 
             this.BindCommand(ViewModel, vm => vm.AddCmd, v => v.menuAddChildServer).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RemoveCmd, v => v.menuRemoveChildServer).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.AddCmd, v => v.btnAddChild).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.RemoveCmd, v => v.btnRemoveChild).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.MoveTopCmd, v => v.menuMoveTop).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.MoveUpCmd, v => v.menuMoveUp).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.MoveDownCmd, v => v.menuMoveDown).DisposeWith(disposables);
@@ -62,11 +73,15 @@ public partial class AddGroupServerWindow : WindowBase<AddGroupServerViewModel>
         switch (profileItem.ConfigType)
         {
             case EConfigType.PolicyGroup:
-                Title = ResUI.TbConfigTypePolicyGroup;
+                Title = L.TlGroupTitle;
+                tbPageTitle.Text = L.TlGroupTitle;
+                tbPageHint.Text = L.TlGroupHint;
                 break;
 
             case EConfigType.ProxyChain:
-                Title = ResUI.TbConfigTypeProxyChain;
+                Title = L.TlChainTitle;
+                tbPageTitle.Text = L.TlChainTitle;
+                tbPageHint.Text = L.TlChainHint;
                 gridPolicyGroup.IsVisible = false;
                 if (tabControl.Items.Count > 0)
                 {
@@ -75,6 +90,19 @@ public partial class AddGroupServerWindow : WindowBase<AddGroupServerViewModel>
                 break;
         }
     }
+
+    private static string PolicyLabel(string? value) => value switch
+    {
+        _ when value == ResUI.TbLeastPing => L.TlPolicyFastest,
+        _ when value == ResUI.TbFallback => L.TlPolicyFallback,
+        _ when value == ResUI.TbRandom => L.TlPolicyRandom,
+        _ when value == ResUI.TbRoundRobin => L.TlPolicyRoundRobin,
+        _ when value == ResUI.TbLeastLoad => L.TlPolicyStable,
+        _ => value ?? string.Empty,
+    };
+
+    private bool HasExtras() =>
+        SettingsKit.AnySet(cmbFilter.Text, cmbCoreType.SelectedValue is string core && core.IsNotEmpty() && core != Global.CoreTypes[0]);
 
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {

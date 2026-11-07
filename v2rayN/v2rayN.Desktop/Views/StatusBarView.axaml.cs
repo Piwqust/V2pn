@@ -79,6 +79,20 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         RefreshIcon();
     }
 
+    /// <summary>Pauses the clock while the window is minimized or in the tray; nobody reads it there.</summary>
+    public void SetSeen(bool seen)
+    {
+        if (seen)
+        {
+            UpdateClock();
+            _clock.Start();
+        }
+        else
+        {
+            _clock.Stop();
+        }
+    }
+
     public void SetState(ProtectionState state)
     {
         if (state != _state || _since == null)

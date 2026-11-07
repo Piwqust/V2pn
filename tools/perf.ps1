@@ -23,7 +23,9 @@ param(
     [string]$WorkDir = (Join-Path ([IO.Path]::GetTempPath()) 'v2pn-perf'),
     [int]$Port = 18780,
     [int]$Seconds = 20,
-    [int]$Settle = 10
+    [int]$Settle = 10,
+    # Only the empty measurements: a quick A/B check of a change.
+    [switch]$EmptyOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -115,6 +117,11 @@ $rows += Measure-Rest $run.Process 'empty, window open'
 Minimize $run.Process
 $rows += Measure-Rest $run.Process 'empty, minimized'
 Stop-App
+
+if ($EmptyOnly) {
+    $rows | Format-Table -AutoSize | Out-String | Write-Host
+    return
+}
 
 # --- with servers -----------------------------------------------------------------------------
 $sub = Start-Process python -ArgumentList @((Join-Path $PSScriptRoot 'fake_sub.py'), $Servers, $Port) -PassThru -WindowStyle Hidden

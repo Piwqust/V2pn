@@ -57,15 +57,6 @@
                                     <TextBox x:Name="txtUrl" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="https://…" />
                                 </StackPanel>
                             </Border>
-                            <Border Classes="srow stack adv">
-                                <StackPanel Spacing="10">
-                                    <StackPanel>
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvMoreUrl}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintMoreUrl}" />
-                                    </StackPanel>
-                                    <TextBox x:Name="txtMoreUrl" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="{x:Static resx:ResUI.SubUrlTips}" />
-                                </StackPanel>
-                            </Border>
                         </StackPanel>
                     </Border>
                 </StackPanel>
@@ -95,48 +86,86 @@
                                     </Panel>
                                 </Grid>
                             </Border>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+                <StackPanel Classes="sgroup">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpMore}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow stack adv">
+                                <StackPanel Spacing="10">
+                                    <StackPanel>
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeMoreUrl}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeMoreUrlHint}" />
+                                    </StackPanel>
+                                    <TextBox x:Name="txtMoreUrl" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="https://…" />
+                                </StackPanel>
+                            </Border>
                             <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvUserAgent}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeFilter}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeFilterHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtUserAgent" Width="280" PlaceholderText="{x:Static resx:ResUI.SubUrlTips}" />
+                                        <TextBox x:Name="txtFilter" Width="280" PlaceholderText="Germany|Netherlands" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SePrev}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SePrevHint}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBox x:Name="txtPrevProfile" Width="200" />
+                                            <Button x:Name="btnSelectPrevProfile" Content="{x:Static loc:L.SeChoose}" />
+                                        </StackPanel>
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeNext}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeNextHint}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                            <TextBox x:Name="txtNextProfile" Width="200" />
+                                            <Button x:Name="btnSelectNextProfile" Content="{x:Static loc:L.SeChoose}" />
+                                        </StackPanel>
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeUa}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeUaHint}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtUserAgent" Width="280" />
                                     </Panel>
                                 </Grid>
                             </Border>
                             <Border Classes="srow stack adv">
                                 <StackPanel Spacing="10">
                                     <StackPanel>
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvRequestHeaders}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.SubRequestHeadersTips}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeHeaders}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeHeadersHint}" />
                                     </StackPanel>
-                                    <TextBox x:Name="txtRequestHeaders" MinHeight="80" AcceptsReturn="True" TextWrapping="Wrap" />
+                                    <TextBox x:Name="txtRequestHeaders" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-                <StackPanel Classes="sgroup">
-                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProcessing}" />
-                    <Border Classes="sgroupcard">
-                        <StackPanel>
                             <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvFilter}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSubFilter}" />
-                                    </StackPanel>
-                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtFilter" Width="280" PlaceholderText="{x:Static resx:ResUI.SubUrlTips}" />
-                                    </Panel>
-                                </Grid>
-                            </Border>
-                            <Border Classes="srow adv">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvConvertTarget}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintConvertTarget}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeConvert}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeConvertHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
                                         <ComboBox x:Name="cmbConvertTarget" Width="200" />
@@ -146,53 +175,19 @@
                             <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvPreResolve}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintPreResolve}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SePreResolve}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SePreResolveHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <ComboBox x:Name="cmbPreResolve" Width="280" IsEditable="True" PlaceholderText="{x:Static resx:ResUI.SubUrlTips}"/>
-                                    </Panel>
-                                </Grid>
-                            </Border>
-                        </StackPanel>
-                    </Border>
-                </StackPanel>
-                <StackPanel Classes="sgroup">
-                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpChain}" />
-                    <Border Classes="sgroupcard">
-                        <StackPanel>
-                            <Border Classes="srow adv">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvPrevProfile}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintPrevProfile}" />
-                                    </StackPanel>
-                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBox x:Name="txtPrevProfile" Width="220" PlaceholderText="{x:Static resx:ResUI.LvPrevProfileTip}" />
-                                            <Button x:Name="btnSelectPrevProfile" Content="{x:Static resx:ResUI.TbSelectProfile}" />
-                                        </StackPanel>
+                                        <ComboBox x:Name="cmbPreResolve" Width="280" IsEditable="True" />
                                     </Panel>
                                 </Grid>
                             </Border>
                             <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvNextProfile}" />
-                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintNextProfile}" />
-                                    </StackPanel>
-                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <TextBox x:Name="txtNextProfile" Width="220" PlaceholderText="{x:Static resx:ResUI.LvPrevProfileTip}" />
-                                            <Button x:Name="btnSelectNextProfile" Content="{x:Static resx:ResUI.TbSelectProfile}" />
-                                        </StackPanel>
-                                    </Panel>
-                                </Grid>
-                            </Border>
-                            <Border Classes="srow adv">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvCustomCoreType}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeCore}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeCoreHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
                                         <ComboBox x:Name="cmbCustomCoreType" Width="200" />
@@ -202,35 +197,29 @@
                             <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbPreSocksPort4Sub}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SePreSocks}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SePreSocksHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtPreSocksPort" Width="140" PlaceholderText="{x:Static resx:ResUI.TipPreSocksPort}" />
+                                        <TextBox x:Name="txtPreSocksPort" Width="140" PlaceholderText="0" />
                                     </Panel>
                                 </Grid>
                             </Border>
-                        </StackPanel>
-                    </Border>
-                    <TextBlock Classes="sgroupnote" Text="{x:Static loc:L.HintChainNote}" />
-                </StackPanel>
-                <StackPanel Classes="sgroup">
-                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpOther}" />
-                    <Border Classes="sgroupcard">
-                        <StackPanel>
                             <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvSort}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeSort}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeSortHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtSort" Width="140" />
+                                        <TextBox x:Name="txtSort" Width="140" PlaceholderText="0" />
                                     </Panel>
                                 </Grid>
                             </Border>
                             <Border Classes="srow stack adv">
                                 <StackPanel Spacing="10">
                                     <StackPanel>
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvMemo}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeMemo}" />
                                     </StackPanel>
                                     <TextBox x:Name="txtMemo" MinHeight="56" AcceptsReturn="True" TextWrapping="Wrap" />
                                 </StackPanel>
@@ -238,12 +227,7 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
-                <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}">
-                    <StackPanel Orientation="Horizontal" Spacing="8">
-                        <TextBlock x:Name="txtMoreFields" Text="{x:Static loc:L.MoreFields}" />
-                        <PathIcon x:Name="iconMoreFields" Classes="i12" Data="{StaticResource SemiIconChevronDown}" />
-                    </StackPanel>
-                </Button>
+                <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

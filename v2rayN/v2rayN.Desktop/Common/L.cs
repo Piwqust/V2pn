@@ -5,7 +5,7 @@ namespace v2rayN.Desktop;
 /// <see cref="LTranslations"/>, English as the fallback. Everything inherited from v2rayN keeps using
 /// <see cref="ResUI"/>.
 /// </summary>
-public static class L
+public static partial class L
 {
     private static bool Ru => CultureInfo.CurrentUICulture.Name.StartsWith("ru", StringComparison.OrdinalIgnoreCase);
 
@@ -233,7 +233,7 @@ public static class L
     public static string ClearSearch => T("Clear search", "Очистить поиск");
     public static string AppMenu => T("Menu", "Меню");
 
-    public static string SubEditHint => T("Where the servers come from and how they are processed.", "Откуда берутся серверы и как они обрабатываются.");
+    public static string SubEditHint => T("Where V2pn gets the servers from.", "Откуда V2pn берёт серверы.");
     public static string ServerEditHint => T("Connection details of the server. The fields depend on the protocol.", "Параметры подключения к серверу. Набор полей зависит от протокола.");
     public static string HotkeysHint => T("Click a field and press the key combination; it applies after a restart.", "Нажмите на поле и сочетание клавиш; заработает после перезапуска.");
 

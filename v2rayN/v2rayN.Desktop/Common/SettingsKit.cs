@@ -68,6 +68,56 @@ internal static class SettingsKit
         }
     }
 
+    /// <summary>
+    /// The "Show more fields" pattern of V2pn forms: rows tagged "adv" stay hidden behind
+    /// <paramref name="button"/>, and open by themselves when <paramref name="hasExtras"/> says the edited
+    /// item already uses one of them (checked on Loaded and again after the bindings have landed).
+    /// </summary>
+    public static void InstallMoreFields(Window window, Button button, Func<bool> hasExtras)
+    {
+        var text = new TextBlock { Text = L.MoreFields, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
+        var chevron = new PathIcon { Classes = { "i12" } };
+        chevron.Bind(PathIcon.DataProperty, chevron.GetResourceObservable("SemiIconChevronDown"));
+        button.Content = new StackPanel
+        {
+            Orientation = Avalonia.Layout.Orientation.Horizontal,
+            Spacing = 8,
+            Children = { text, chevron },
+        };
+        var open = false;
+        void Show(bool show)
+        {
+            open = show;
+            ApplyAdvanced(window, show);
+            text.Text = show ? L.FewerFields : L.MoreFields;
+            chevron.RenderTransform = show ? new RotateTransform(180) : null;
+        }
+        button.Click += (_, _) => Show(!open);
+        Show(false);
+        window.Loaded += (_, _) =>
+        {
+            Show(hasExtras());
+            Dispatcher.UIThread.Post(() =>
+            {
+                if (!open && hasExtras())
+                {
+                    Show(true);
+                }
+            }, DispatcherPriority.Background);
+        };
+    }
+
+    /// <summary>True when any of the values is filled in (empty, "0" and "False" count as not set).</summary>
+    public static bool AnySet(params object?[] values) =>
+        values.Any(v => v switch
+        {
+            null => false,
+            bool b => b,
+            string s => s.Trim().Length > 0 && s.Trim() != "0",
+            int i => i != 0,
+            _ => v.ToString().IsNotEmpty(),
+        });
+
     /// <summary>Filters the pages; returns true when something matched (or the query is empty).</summary>
     public static bool Search(IEnumerable<Control> pages, string? query)
     {

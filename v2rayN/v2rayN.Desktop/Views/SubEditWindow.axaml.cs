@@ -1,4 +1,5 @@
 using v2rayN.Desktop.Base;
+using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
@@ -10,6 +11,7 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
 
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
+        btnMoreFields.Click += (_, _) => ShowMore(!_more);
 
         cmbConvertTarget.ItemsSource = Global.SubConvertTargets;
         cmbPreResolve.ItemsSource = Global.DomainDNS4PreResolveAddress;
@@ -40,8 +42,36 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
         });
     }
 
+    private bool _more;
+
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {
+        // Most subscriptions only need a name and a link; the rest opens on demand, or right away
+        // when this subscription already uses one of those fields.
+        ShowMore(HasExtras());
+        // The view-model bindings may land after Loaded; check once more when they have.
+        Dispatcher.UIThread.Post(() =>
+        {
+            if (!_more && HasExtras())
+            {
+                ShowMore(true);
+            }
+        }, DispatcherPriority.Background);
         txtRemarks.Focus();
+    }
+
+    private bool HasExtras()
+    {
+        string?[] extras = [txtMoreUrl.Text, txtUserAgent.Text, txtRequestHeaders.Text, txtFilter.Text, cmbConvertTarget.SelectedValue as string,
+            cmbPreResolve.Text, txtPrevProfile.Text, txtNextProfile.Text, txtPreSocksPort.Text, txtMemo.Text, cmbCustomCoreType.SelectedValue as string];
+        return extras.Any(t => t.IsNotEmpty() && t != "0");
+    }
+
+    private void ShowMore(bool show)
+    {
+        _more = show;
+        SettingsKit.ApplyAdvanced(this, show);
+        txtMoreFields.Text = show ? L.FewerFields : L.MoreFields;
+        iconMoreFields.RenderTransform = show ? new RotateTransform(180) : null;
     }
 }

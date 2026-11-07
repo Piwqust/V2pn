@@ -43,6 +43,31 @@ internal static class SettingsKit
         }
     }
 
+    /// <summary>
+    /// Simple / advanced. Rows and pages tagged "adv" get "advhidden" unless advanced is on; a group
+    /// whose rows are all hidden disappears with them, so simple pages show no empty headers.
+    /// </summary>
+    public static void ApplyAdvanced(Control root, bool show)
+    {
+        foreach (var row in Rows(root))
+        {
+            row.Classes.Set("advhidden", !show && row.Classes.Contains("adv"));
+        }
+        foreach (var group in root.GetLogicalDescendants().OfType<StackPanel>().Where(p => p.Classes.Contains("sgroup")))
+        {
+            var anyShown = Rows(group).Any(r => !r.Classes.Contains("advhidden") && !r.Classes.Contains("hidden"));
+            group.Classes.Set("advhidden", !anyShown);
+        }
+        // Navigation entries of expert-only pages (nobody else drives their visibility).
+        foreach (var list in root.GetLogicalDescendants().OfType<ListBox>())
+        {
+            foreach (var item in list.Items.OfType<ListBoxItem>().Where(i => i.Classes.Contains("adv")))
+            {
+                item.IsVisible = show;
+            }
+        }
+    }
+
     /// <summary>Filters the pages; returns true when something matched (or the query is empty).</summary>
     public static bool Search(IEnumerable<Control> pages, string? query)
     {
@@ -58,7 +83,7 @@ internal static class SettingsKit
                 {
                     var hit = q.Length == 0 || Texts(row).Any(t => t.Contains(q, StringComparison.CurrentCultureIgnoreCase));
                     row.Classes.Set("nomatch", !hit);
-                    groupHit |= hit && !row.Classes.Contains("hidden");
+                    groupHit |= hit && !row.Classes.Contains("hidden") && !row.Classes.Contains("advhidden");
                 }
                 group.Classes.Set("nomatch", !groupHit);
                 pageHit |= groupHit;

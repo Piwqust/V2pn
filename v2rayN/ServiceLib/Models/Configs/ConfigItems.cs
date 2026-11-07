@@ -107,6 +107,9 @@ public class UIItem
 
     public bool V2pnBlockAds { get; set; }
 
+    // Settings window shows the expert rows and pages.
+    public bool V2pnSettingsAdvanced { get; set; }
+
     public List<string>? V2pnRecent { get; set; }
 }
 

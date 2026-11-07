@@ -254,8 +254,33 @@ public static class L
 
     // Settings window
     public static string SearchSettings => T("Search settings", "Поиск по настройкам");
+    // Simple settings: the everyday rows, in plain words.
+    public static string SetAutoRun => T("Start with the system", "Запускать вместе с системой");
+    public static string SetAutoRunHint => T("V2pn starts in the tray when you sign in.", "V2pn запустится в трее при входе в систему.");
+    public static string SetStartHidden => T("Start minimized", "Запускать свёрнутым");
+    public static string SetStartHiddenHint => T("Only the tray icon appears; the window stays closed.", "Появится только значок в трее, окно не откроется.");
+    public static string SetShowSpeed => T("Show connection speed", "Показывать скорость соединения");
+    public static string SetShowSpeedHint => T("The speed chart under the map. Takes effect after a restart.", "График скорости под картой. Включится после перезапуска.");
+    public static string SetPort => T("Local port", "Локальный порт");
+    public static string SetPortHint => T("Apps that ignore the system proxy can be pointed at 127.0.0.1 and this port.", "Программы, которые не видят системный прокси, можно направить на 127.0.0.1 и этот порт.");
+    public static string SetLan => T("Allow devices on your network", "Пускать устройства из локальной сети");
+    public static string SetLanHint => T("A phone or another computer on the same Wi-Fi can go online through V2pn.", "Телефон или другой компьютер в той же Wi-Fi-сети смогут выходить в интернет через V2pn.");
+    public static string SetGeoInterval => T("Update rule lists every, hours", "Обновлять списки правил, часов");
+    public static string SetGeoIntervalHint => T("Lists of sites and addresses the routing modes use. 0 turns updates off.", "Списки сайтов и адресов для режимов маршрутизации. 0 — не обновлять.");
+    public static string SubEditTitle => T("Subscription", "Подписка");
+    public static string SubName => T("Name", "Название");
+    public static string SubNamePlaceholder => T("For example, the provider's name", "Например, название провайдера");
+    public static string SubLink => T("Subscription link", "Ссылка на подписку");
+    public static string SubLinkHint => T("The link from your provider. Leave it empty for a group of servers you add by hand.", "Ссылка от провайдера. Оставьте пустой, если это группа для серверов, добавленных вручную.");
+    public static string SubAutoUpdate => T("Include in updates", "Обновлять вместе со всеми");
+    public static string SubInterval => T("Update every, minutes", "Обновлять каждые, мин");
+    public static string MoreFields => T("Show more fields", "Показать дополнительные поля");
+    public static string FewerFields => T("Hide extra fields", "Скрыть дополнительные поля");
+    public static string SetAdvanced => T("Advanced settings", "Расширенные настройки");
+    public static string SetAdvancedHint => T("Ports, cores, TUN, traffic tricks", "Порты, ядра, TUN, обработка трафика");
+
     public static string SetGeneral => T("General", "Общие");
-    public static string SetGeneralHint => T("Startup, the window and the server list.", "Запуск, окно и список серверов.");
+    public static string SetGeneralHint => T("How V2pn starts and what the window shows.", "Как запускается V2pn и что показывает окно.");
     public static string SetInbound => T("Local proxy", "Локальный прокси");
     public static string SetInboundHint => T("The port that apps and the system connect to.", "Порт, к которому подключаются приложения и система.");
     public static string SetSysProxy => T("Proxy mode", "Режим «Прокси»");
@@ -266,8 +291,8 @@ public static class L
     public static string SetTrafficHint => T("Sniffing, fragmentation, multiplexing and outbound connections.", "Сниффинг, фрагментация, мультиплексирование и исходящие соединения.");
     public static string SetTests => T("Testing", "Проверки");
     public static string SetTestsHint => T("How ping, speed and connection checks run.", "Как работают пинг, тест скорости и проверка соединения.");
-    public static string SetUpdates => T("Updates and sources", "Обновления и источники");
-    public static string SetUpdatesHint => T("Where geo files, rule sets and subscription conversion come from.", "Откуда берутся геофайлы, наборы правил и конвертация подписок.");
+    public static string SetUpdates => T("Updates", "Обновления");
+    public static string SetUpdatesHint => T("How often V2pn refreshes the lists behind the routing modes.", "Как часто V2pn обновляет списки, на которых работают режимы маршрутизации.");
     public static string SetCores => T("Cores", "Ядра");
     public static string SetCoresHint => T("Which core runs each protocol.", "Какое ядро обслуживает каждый протокол.");
     public static string SetLogs => T("Logs", "Журнал");

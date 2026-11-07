@@ -12,6 +12,10 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         InitializeComponent();
 
         SettingsKit.ApplyPlatform(this);
+        _advanced = AppManager.Instance.Config.UiItem.V2pnSettingsAdvanced;
+        togAdvanced.IsChecked = _advanced;
+        SettingsKit.ApplyAdvanced(this, _advanced);
+        togAdvanced.IsCheckedChanged += (_, _) => SetAdvanced(togAdvanced.IsChecked == true);
         lstNav.SelectionChanged += (_, _) => ShowPage(lstNav.SelectedIndex);
         txtSearch.TextChanged += (_, _) => ApplySearch();
 
@@ -235,6 +239,8 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
 
     private void Window_Loaded(object? sender, RoutedEventArgs e)
     {
+        // Again once the list has realised its items: preparing them resets their visibility.
+        SettingsKit.ApplyAdvanced(this, _advanced);
         btnCancel.Focus();
     }
 
@@ -254,10 +260,26 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         svContent.Offset = default;
     }
 
-    // While searching every page is shown, filtered down to the matching rows.
+    private bool _advanced;
+
+    private void SetAdvanced(bool show)
+    {
+        _advanced = show;
+        _config.UiItem.V2pnSettingsAdvanced = show;
+        SettingsKit.ApplyAdvanced(this, show || txtSearch.Text.IsNotEmpty());
+        // Leaving an expert-only page when going back to simple settings.
+        if (!show && lstNav.SelectedItem is ListBoxItem { } item && item.Classes.Contains("adv"))
+        {
+            lstNav.SelectedIndex = 0;
+        }
+    }
+
+    // While searching every page is shown, filtered down to the matching rows; search also reaches
+    // the advanced rows, so a setting can always be found by name.
     private void ApplySearch()
     {
         var query = txtSearch.Text;
+        SettingsKit.ApplyAdvanced(this, _advanced || query.IsNotEmpty());
         var found = SettingsKit.Search(Pages, query);
         if (query.IsNullOrEmpty())
         {

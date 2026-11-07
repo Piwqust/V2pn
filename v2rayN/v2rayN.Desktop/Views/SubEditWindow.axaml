@@ -32,7 +32,7 @@
         </Border>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
             <StackPanel Margin="28,20,28,28" Spacing="6">
-                <TextBlock Classes="spagetitle" Text="{x:Static resx:ResUI.menuSubscription}" />
+                <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SubEditTitle}" />
                 <TextBlock Classes="spagehint" Text="{x:Static loc:L.SubEditHint}" />
                 <StackPanel Classes="sgroup">
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpSource}" />
@@ -41,26 +41,27 @@
                             <Border Classes="srow">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvRemarks}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubName}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <TextBox x:Name="txtRemarks" Width="280" />
+                                        <TextBox x:Name="txtRemarks" Width="280" PlaceholderText="{x:Static loc:L.SubNamePlaceholder}" />
                                     </Panel>
                                 </Grid>
                             </Border>
                             <Border Classes="srow stack">
                                 <StackPanel Spacing="10">
                                     <StackPanel>
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvUrl}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubLink}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.SubLinkHint}" />
                                     </StackPanel>
-                                    <TextBox x:Name="txtUrl" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="{x:Static resx:ResUI.SubUrlTips}" />
+                                    <TextBox x:Name="txtUrl" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="https://…" />
                                 </StackPanel>
                             </Border>
-                            <Border Classes="srow stack">
+                            <Border Classes="srow stack adv">
                                 <StackPanel Spacing="10">
                                     <StackPanel>
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvMoreUrl}" />
-                                        
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintMoreUrl}" />
                                     </StackPanel>
                                     <TextBox x:Name="txtMoreUrl" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="{x:Static resx:ResUI.SubUrlTips}" />
                                 </StackPanel>
@@ -75,7 +76,7 @@
                             <Border Classes="srow">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvEnabled}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubAutoUpdate}" />
                                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSubEnabled}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
@@ -86,7 +87,7 @@
                             <Border Classes="srow">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvAutoUpdateInterval}" />
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubInterval}" />
                                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSubInterval}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
@@ -94,7 +95,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvUserAgent}" />
@@ -104,7 +105,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow stack">
+                            <Border Classes="srow stack adv">
                                 <StackPanel Spacing="10">
                                     <StackPanel>
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvRequestHeaders}" />
@@ -120,7 +121,7 @@
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProcessing}" />
                     <Border Classes="sgroupcard">
                         <StackPanel>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvFilter}" />
@@ -131,7 +132,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvConvertTarget}" />
@@ -142,7 +143,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvPreResolve}" />
@@ -160,7 +161,7 @@
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpChain}" />
                     <Border Classes="sgroupcard">
                         <StackPanel>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvPrevProfile}" />
@@ -174,7 +175,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvNextProfile}" />
@@ -188,7 +189,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvCustomCoreType}" />
@@ -198,7 +199,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbPreSocksPort4Sub}" />
@@ -216,7 +217,7 @@
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpOther}" />
                     <Border Classes="sgroupcard">
                         <StackPanel>
-                            <Border Classes="srow">
+                            <Border Classes="srow adv">
                                 <Grid ColumnDefinitions="*,Auto">
                                     <StackPanel Classes="srowtext">
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvSort}" />
@@ -226,7 +227,7 @@
                                     </Panel>
                                 </Grid>
                             </Border>
-                            <Border Classes="srow stack">
+                            <Border Classes="srow stack adv">
                                 <StackPanel Spacing="10">
                                     <StackPanel>
                                         <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.LvMemo}" />
@@ -237,6 +238,12 @@
                         </StackPanel>
                     </Border>
                 </StackPanel>
+                <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}">
+                    <StackPanel Orientation="Horizontal" Spacing="8">
+                        <TextBlock x:Name="txtMoreFields" Text="{x:Static loc:L.MoreFields}" />
+                        <PathIcon x:Name="iconMoreFields" Classes="i12" Data="{StaticResource SemiIconChevronDown}" />
+                    </StackPanel>
+                </Button>
             </StackPanel>
         </ScrollViewer>
     </DockPanel>

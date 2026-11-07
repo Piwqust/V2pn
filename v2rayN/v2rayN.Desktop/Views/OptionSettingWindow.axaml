@@ -54,6 +54,19 @@
                                 Data="{StaticResource SemiIconSearch}" />
                         </TextBox.InnerLeftContent>
                     </TextBox>
+                    <Border Classes="advswitch" DockPanel.Dock="Bottom">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel VerticalAlignment="Center" Spacing="1">
+                                <TextBlock Classes="advtitle" Text="{x:Static loc:L.SetAdvanced}" />
+                                <TextBlock Classes="advhint" Text="{x:Static loc:L.SetAdvancedHint}" />
+                            </StackPanel>
+                            <ToggleSwitch
+                                x:Name="togAdvanced"
+                                Grid.Column="1"
+                                OffContent=""
+                                OnContent="" />
+                        </Grid>
+                    </Border>
                     <ListBox
                         x:Name="lstNav"
                         SelectedIndex="0"
@@ -82,13 +95,13 @@
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetTun}" />
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem>
+                        <ListBoxItem Classes="adv">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <PathIcon Classes="nav" Data="{StaticResource SemiIconFilterStroked}" />
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetTraffic}" />
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem>
+                        <ListBoxItem Classes="adv">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <PathIcon Classes="nav" Data="{StaticResource SemiIconPulse}" />
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetTests}" />
@@ -100,13 +113,13 @@
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetUpdates}" />
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem>
+                        <ListBoxItem Classes="adv">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <PathIcon Classes="nav" Data="{StaticResource SemiIconServerStroked}" />
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetCores}" />
                             </StackPanel>
                         </ListBoxItem>
-                        <ListBoxItem>
+                        <ListBoxItem Classes="adv">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <PathIcon Classes="nav" Data="{StaticResource SemiIconTerminal}" />
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetLogs}" />
@@ -129,44 +142,48 @@
                             <Border Classes="sgroupcard">
                                 <StackPanel>
                                     <Border Classes="srow">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
-                                                <TextBlock x:Name="tbAutoRun" Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsStartBoot}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsStartBootTip}" />
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconPlayCircle}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock x:Name="tbAutoRun" Classes="srowtitle" Text="{x:Static loc:L.SetAutoRun}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetAutoRunHint}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togAutoRun" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsAutoHideStartup}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintAutoHide}" />
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconShrink}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetStartHidden}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetStartHiddenHint}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togAutoHideStartup" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow linux">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconMinimize}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsHide2TrayWhenClose}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsHide2TrayWhenCloseTip}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togHide2TrayWhenClose" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow mac">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconApps}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMacOSShowInDock}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togMacOSShowInDock" />
                                             </Panel>
                                         </Grid>
@@ -178,7 +195,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpInterface}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsCurrentFontFamily}" />
@@ -190,16 +207,18 @@
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDisplayRealTimeSpeed}" />
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconActivity}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetShowSpeed}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetShowSpeedHint}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togDisplayRealTimeSpeed" />
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsStatistics}" />
@@ -209,7 +228,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMainGirdOrientation}" />
@@ -227,7 +246,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpServerList}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDoubleClick2Activate}" />
@@ -237,7 +256,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableDragDropSort}" />
@@ -247,7 +266,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableAutoAdjustMainLvColWidth}" />
@@ -257,7 +276,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsKeepOlderDedupl}" />
@@ -280,17 +299,18 @@
                             <Border Classes="sgroupcard">
                                 <StackPanel>
                                     <Border Classes="srow">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSocksPort}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsSocksPortTip}" />
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconLink}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetPort}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetPortHint}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtlocalPort" Width="140" />
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSecondLocalPortEnabled}" />
@@ -301,7 +321,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUdpEnabled}" />
@@ -320,17 +340,18 @@
                             <Border Classes="sgroupcard">
                                 <StackPanel>
                                     <Border Classes="srow">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsAllowLAN}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintAllowLan}" />
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconWifi}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetLan}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetLanHint}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togAllowLANConn" />
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsNewPort4LAN}" />
@@ -341,7 +362,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUser}" />
@@ -351,7 +372,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsPass}" />
@@ -373,12 +394,13 @@
                             <Border Classes="sgroupcard">
                                 <StackPanel>
                                     <Border Classes="srow">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconGlobeStroke}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static loc:L.ProxyMethod}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.ProxyMethodHint}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbProxyMethod" Width="280" />
                                             </Panel>
                                         </Grid>
@@ -390,7 +412,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProxyRules}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow win">
+                                    <Border Classes="srow win adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsNotProxyLocalAddress}" />
@@ -401,7 +423,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow win">
+                                    <Border Classes="srow win adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsAdvancedProtocol}" />
@@ -418,7 +440,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpExceptions}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow stack">
+                                    <Border Classes="srow stack adv">
                                         <StackPanel Spacing="10">
                                             <StackPanel>
                                                 <TextBlock Classes="srowtitle" Text="{x:Static loc:L.ProxyExceptions}" />
@@ -435,7 +457,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpFiles}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow win">
+                                    <Border Classes="srow win adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsCustomSystemProxyPacPath}" />
@@ -449,7 +471,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow nonwin">
+                                    <Border Classes="srow nonwin adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsCustomSystemProxyScriptPath}" />
@@ -475,12 +497,13 @@
                             <Border Classes="sgroupcard">
                                 <StackPanel>
                                     <Border Classes="srow win">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconShieldStroked}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TunAdminTitle}" />
                                                 <TextBlock x:Name="txtTunAdminState" Classes="srowhint" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <Button x:Name="btnTunRestartAdmin" Content="{x:Static resx:ResUI.menuRebootAsAdmin}" />
                                             </Panel>
                                         </Grid>
@@ -492,7 +515,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpRouting}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunAutoRoute}" />
@@ -503,7 +526,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunStrictRoute}" />
@@ -514,7 +537,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow stack">
+                                    <Border Classes="srow stack adv">
                                         <StackPanel Spacing="10">
                                             <StackPanel>
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRouteExcludeAddress}" />
@@ -530,7 +553,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpStack}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunStack}" />
@@ -541,7 +564,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbMtu}" />
@@ -551,7 +574,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbIcmpRoutingPolicy}" />
@@ -561,7 +584,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableIPv6Address}" />
@@ -571,7 +594,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbIpv4Address}" />
@@ -581,7 +604,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbIpv6Address}" />
@@ -591,7 +614,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbLegacyProtect}" />
@@ -606,14 +629,14 @@
                             </Border>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel x:Name="pageTraffic" Classes="spage" IsVisible="False">
+                    <StackPanel x:Name="pageTraffic" Classes="spage adv" IsVisible="False">
                         <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetTraffic}" />
                         <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetTrafficHint}" />
                         <StackPanel Classes="sgroup">
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpSniffing}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSniffingEnabled}" />
@@ -624,7 +647,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow stack">
+                                    <Border Classes="srow stack adv">
                                         <StackPanel Spacing="10">
                                             <StackPanel>
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDestOverride}" />
@@ -632,7 +655,7 @@
                                             <ListBox x:Name="clbdestOverride" SelectionMode="Multiple,Toggle" Theme="{DynamicResource CardCheckGroupListBox}" />
                                         </StackPanel>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsRouteOnly}" />
@@ -650,7 +673,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpFragment}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableFragment}" />
@@ -661,7 +684,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentPackets}" />
@@ -672,7 +695,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentLength}" />
@@ -683,7 +706,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentInterval}" />
@@ -694,7 +717,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentMaxSplit}" />
@@ -705,7 +728,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbEnableFinalFragment}" />
@@ -723,7 +746,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpMux}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4RayConcurrency}" />
@@ -734,7 +757,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4RayXudpConcurrency}" />
@@ -744,7 +767,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4RayXudpProxyUDP443}" />
@@ -754,7 +777,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4SboxProtocol}" />
@@ -771,7 +794,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpOutbound}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDefFingerprint}" />
@@ -782,7 +805,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDefUserAgent}" />
@@ -793,7 +816,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsHysteriaBandwidth}" />
@@ -807,7 +830,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsBindInterface}" />
@@ -818,7 +841,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSendThrough}" />
@@ -829,7 +852,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableCacheFile4Sbox}" />
@@ -844,14 +867,14 @@
                             </Border>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel x:Name="pageTests" Classes="spage" IsVisible="False">
+                    <StackPanel x:Name="pageTests" Classes="spage adv" IsVisible="False">
                         <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetTests}" />
                         <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetTestsHint}" />
                         <StackPanel Classes="sgroup">
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpTestRun}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMixedConcurrencyCount}" />
@@ -861,7 +884,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSpeedTestTimeout}" />
@@ -878,7 +901,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpTestTargets}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSpeedPingTestUrl}" />
@@ -888,7 +911,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSpeedTestUrl}" />
@@ -898,7 +921,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUdpTestUrl}" />
@@ -908,7 +931,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsIPAPIUrl}" />
@@ -930,17 +953,18 @@
                             <Border Classes="sgroupcard">
                                 <StackPanel>
                                     <Border Classes="srow">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsAutoUpdateInterval}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintGeoInterval}" />
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconRefresh}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetGeoInterval}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetGeoIntervalHint}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtautoUpdateInterval" Width="140" />
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsGeoFilesSource}" />
@@ -951,7 +975,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSrsFilesSource}" />
@@ -962,7 +986,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsRoutingRulesSource}" />
@@ -980,7 +1004,7 @@
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpNetwork}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSubConvert}" />
@@ -991,7 +1015,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRootCertificateProvider}" />
@@ -1006,13 +1030,13 @@
                             </Border>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel x:Name="pageCores" Classes="spage" IsVisible="False">
+                    <StackPanel x:Name="pageCores" Classes="spage adv" IsVisible="False">
                         <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetCores}" />
                         <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetCoresHint}" />
                         <StackPanel Classes="sgroup">
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="VLESS" />
@@ -1022,7 +1046,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="VMess" />
@@ -1032,7 +1056,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="Trojan" />
@@ -1042,7 +1066,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="Shadowsocks" />
@@ -1052,7 +1076,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="Hysteria2" />
@@ -1062,7 +1086,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="Wireguard" />
@@ -1072,7 +1096,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="MASQUE" />
@@ -1082,7 +1106,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="Socks" />
@@ -1092,7 +1116,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="Custom Pre" />
@@ -1106,13 +1130,13 @@
                             </Border>
                         </StackPanel>
                     </StackPanel>
-                    <StackPanel x:Name="pageLogs" Classes="spage" IsVisible="False">
+                    <StackPanel x:Name="pageLogs" Classes="spage adv" IsVisible="False">
                         <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetLogs}" />
                         <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetLogsHint}" />
                         <StackPanel Classes="sgroup">
                             <Border Classes="sgroupcard">
                                 <StackPanel>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsLogEnabledToFile}" />
@@ -1123,7 +1147,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsLogLevel}" />

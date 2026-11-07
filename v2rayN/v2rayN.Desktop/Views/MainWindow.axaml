@@ -40,16 +40,13 @@
                 ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
                 <Button
                     x:Name="btnAppMenu"
+                    chrome:WindowDecorationProperties.ElementRole="User"
                     AutomationProperties.Name="{x:Static loc:L.AppMenu}"
                     Margin="8,0,2,0"
                     Classes="ghost icon"
                     Theme="{StaticResource V2Button}"
                     ToolTip.Tip="{x:Static loc:L.AppMenu}">
-                    <PathIcon Classes="i16" Data="{StaticResource SemiIconMore}">
-                        <PathIcon.RenderTransform>
-                            <RotateTransform Angle="90" />
-                        </PathIcon.RenderTransform>
-                    </PathIcon>
+                    <PathIcon Classes="i16" Data="{StaticResource SemiIconMenu}" />
                     <Button.Flyout>
                         <MenuFlyout Placement="BottomEdgeAlignedLeft">
                             <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpView}" IsEnabled="False" />
@@ -104,6 +101,7 @@
                 </StackPanel>
                 <Button
                     x:Name="btnNewUpdate"
+                    chrome:WindowDecorationProperties.ElementRole="User"
                     Grid.Column="2"
                     Margin="12,0,0,0"
                     Classes="subtle small"
@@ -116,6 +114,7 @@
                 </Button>
                 <ContentControl
                     x:Name="conTheme"
+                    chrome:WindowDecorationProperties.ElementRole="User"
                     Grid.Column="4"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center"
@@ -123,6 +122,7 @@
                 <StackPanel Grid.Column="5" Orientation="Horizontal">
                     <Button
                         x:Name="btnMinimize"
+                    chrome:WindowDecorationProperties.ElementRole="User"
                     AutomationProperties.Name="Minimize"
                         Classes="caption"
                         Theme="{StaticResource V2Caption}">
@@ -130,6 +130,7 @@
                     </Button>
                     <Button
                         x:Name="btnMaximize"
+                    chrome:WindowDecorationProperties.ElementRole="User"
                     AutomationProperties.Name="Maximize"
                         Classes="caption"
                         Theme="{StaticResource V2Caption}">
@@ -137,6 +138,7 @@
                     </Button>
                     <Button
                         x:Name="btnCloseWindow"
+                    chrome:WindowDecorationProperties.ElementRole="User"
                     AutomationProperties.Name="Close"
                         Classes="caption close"
                         Theme="{StaticResource V2Caption}">

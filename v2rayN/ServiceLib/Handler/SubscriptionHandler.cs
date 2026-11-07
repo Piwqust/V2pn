@@ -38,7 +38,10 @@ public static class SubscriptionHandler
                 var result = await DownloadAllSubscriptions(config, item, blProxy, downloadHandle);
 
                 // Process download result
-                if (await ProcessDownloadResult(config, item.Id, result, hashCode, updateFunc))
+                var imported = await ProcessDownloadResult(config, item.Id, result, hashCode, updateFunc);
+                // V2pn: name, traffic and expiry from the panel's response headers.
+                await SubInfoManager.Instance.ApplyAsync(config, item, downloadHandle.ResponseHeaders, imported);
+                if (imported)
                 {
                     successCount++;
                     // Upstream records the time only for scheduled updates; the UI shows it for every update.

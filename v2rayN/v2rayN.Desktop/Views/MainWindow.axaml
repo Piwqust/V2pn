@@ -519,6 +519,7 @@
                                     <Button
                                         AutomationProperties.Name="{Binding Sub.Remarks}"
                                         Classes="siderow subrow"
+                                        Classes.usage="{Binding HasUsage}"
                                         Click="SideSub_Click"
                                         ContextRequested="SideSub_ContextRequested"
                                         Theme="{StaticResource V2SideRow}">
@@ -552,6 +553,32 @@
                                                         Text="{Binding Info}"
                                                         TextTrimming="CharacterEllipsis" />
                                                 </Grid>
+                                                <!--  What the provider reports: traffic of the plan and how long it lasts.  -->
+                                                <StackPanel
+                                                    Classes="subusage"
+                                                    IsVisible="{Binding HasUsage}"
+                                                    ToolTip.Tip="{Binding Usage.Tooltip, FallbackValue=''}">
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <TextBlock
+                                                            Classes="usage"
+                                                            Classes.bad="{Binding Usage.RowStartBad, FallbackValue=False}"
+                                                            Classes.warn="{Binding Usage.RowStartWarn, FallbackValue=False}"
+                                                            Text="{Binding Usage.RowStart, FallbackValue=''}"
+                                                            TextTrimming="CharacterEllipsis" />
+                                                        <TextBlock
+                                                            Grid.Column="1"
+                                                            Margin="8,0,0,0"
+                                                            Classes="usage"
+                                                            Classes.bad="{Binding Usage.RowEndBad, FallbackValue=False}"
+                                                            Classes.warn="{Binding Usage.RowEndWarn, FallbackValue=False}"
+                                                            Text="{Binding Usage.RowEnd, FallbackValue=''}" />
+                                                    </Grid>
+                                                    <views:UsageBar
+                                                        Classes.bad="{Binding Usage.TrafficBad, FallbackValue=False}"
+                                                        Classes.warn="{Binding Usage.TrafficWarn, FallbackValue=False}"
+                                                        IsVisible="{Binding Usage.ShowBar, FallbackValue=False}"
+                                                        Value="{Binding Usage.Fraction, FallbackValue=0}" />
+                                                </StackPanel>
                                             </StackPanel>
                                             <StackPanel
                                                 Grid.Column="2"

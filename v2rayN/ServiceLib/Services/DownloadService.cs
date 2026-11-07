@@ -5,7 +5,7 @@ namespace ServiceLib.Services;
 /// <summary>
 /// Download
 /// </summary>
-public class DownloadService
+public partial class DownloadService
 {
     public event EventHandler<UpdateResult>? UpdateCompleted;
 
@@ -271,7 +271,8 @@ public class DownloadService
                 handler.SslOptions.RemoteCertificateValidationCallback = null;
             }
 
-            using var client = new HttpClient(HttpRequestHeadersHelper.CreateHandler(handler, RequestHeaders));
+            // V2pn: keeps the response headers, where panels put a subscription's name, traffic and expiry.
+            using var client = new HttpClient(KeepResponseHeaders(HttpRequestHeadersHelper.CreateHandler(handler, RequestHeaders)));
             client.Timeout = Timeout.InfiniteTimeSpan;
 
             if (userAgent.IsNullOrEmpty())

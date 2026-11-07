@@ -109,8 +109,10 @@ public class TaskManager
                     Logging.SaveLog($"Update subscription end. {msg}");
                 }
             });
-            item.UpdateTime = updateTime;
-            await ConfigHandler.AddSubItem(_config, item);
+            // V2pn: UpdateProcess may have renamed the subscription from its panel; save over that, not this older copy.
+            var fresh = await AppManager.Instance.GetSubItem(item.Id) ?? item;
+            fresh.UpdateTime = updateTime;
+            await ConfigHandler.AddSubItem(_config, fresh);
             await Task.Delay(1000);
         }
     }

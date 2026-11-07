@@ -59,7 +59,8 @@ public static class Appearance
 
     public static readonly (string Id, Color Color)[] Accents =
     [
-        ("red", Color.Parse("#E5483E")),
+        // V2pn Signal, the brand red.
+        ("red", Color.Parse("#FF3D1F")),
         ("orange", Color.Parse("#F07B2C")),
         ("amber", Color.Parse("#E8A21E")),
         ("green", Color.Parse("#22B573")),
@@ -143,6 +144,8 @@ public static class Appearance
                         themed[key] = changed;
                     }
                 }
+                // Labels on the accent: near-black like the brand's Signal buttons, white on a dark custom accent.
+                themed["V2OnAccent"] = new SolidColorBrush(OnAccent(accent));
                 dict.ThemeDictionaries[variant] = themed;
             }
         }
@@ -276,6 +279,27 @@ public static class Appearance
             s *= 0.35;
         }
         return HslColor.ToRgb(palette.Hue, Math.Clamp(s, 0, 1), Math.Clamp(l, 0, 1), c.A / 255.0);
+    }
+
+    private static readonly Color Ink = Color.Parse("#0B0B0D");
+
+    /// <summary>Ink or white, whichever reads better on the accent (WCAG contrast).</summary>
+    internal static Color OnAccent(Color accent) =>
+        Contrast(Ink, accent) >= Contrast(Colors.White, accent) ? Ink : Colors.White;
+
+    private static double Contrast(Color a, Color b)
+    {
+        static double Lum(Color c)
+        {
+            static double Channel(byte v)
+            {
+                var x = v / 255.0;
+                return x <= 0.04045 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4);
+            }
+            return (0.2126 * Channel(c.R)) + (0.7152 * Channel(c.G)) + (0.0722 * Channel(c.B));
+        }
+        var (l1, l2) = (Lum(a), Lum(b));
+        return (Math.Max(l1, l2) + 0.05) / (Math.Min(l1, l2) + 0.05);
     }
 
     internal static Color ToAccent(Color c, Color from, Color to)

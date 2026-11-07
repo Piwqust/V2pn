@@ -6,9 +6,9 @@
     -->
     <ResourceDictionary.ThemeDictionaries>
         <ResourceDictionary x:Key="Dark">
-            <SolidColorBrush x:Key="V2WindowBackground" Color="#111115" />
+            <SolidColorBrush x:Key="V2WindowBackground" Color="#0D0D10" />
             <SolidColorBrush x:Key="V2SidebarBackground" Color="#1C1C23" />
-            <SolidColorBrush x:Key="V2ContentBackground" Color="#121217" />
+            <SolidColorBrush x:Key="V2ContentBackground" Color="#0E0E11" />
             <SolidColorBrush x:Key="V2CardBackground" Color="#1E1E25" />
             <SolidColorBrush x:Key="V2CardFloating" Color="#EB1E1E25" />
             <SolidColorBrush x:Key="V2CardMutedBackground" Color="#26262F" />
@@ -23,10 +23,10 @@
             <SolidColorBrush x:Key="V2InkSoft" Color="#C9C9D3" />
             <SolidColorBrush x:Key="V2Muted" Color="#9B9BA8" />
             <SolidColorBrush x:Key="V2Faint" Color="#6C6C78" />
-            <SolidColorBrush x:Key="V2Accent" Color="#E5483E" />
-            <SolidColorBrush x:Key="V2AccentHover" Color="#EF5A50" />
-            <SolidColorBrush x:Key="V2AccentSoft" Color="#33E5483E" />
-            <SolidColorBrush x:Key="V2OnAccent" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="V2Accent" Color="#FF3D1F" />
+            <SolidColorBrush x:Key="V2AccentHover" Color="#FF5A3F" />
+            <SolidColorBrush x:Key="V2AccentSoft" Color="#33FF3D1F" />
+            <SolidColorBrush x:Key="V2OnAccent" Color="#0B0B0D" />
             <SolidColorBrush x:Key="V2Primary" Color="#ECECF1" />
             <SolidColorBrush x:Key="V2PrimaryHover" Color="#FFFFFF" />
             <SolidColorBrush x:Key="V2OnPrimary" Color="#16161B" />
@@ -35,8 +35,8 @@
             <SolidColorBrush x:Key="V2PinCore" Color="#FFFFFF" />
             <SolidColorBrush x:Key="V2Safe" Color="#3DD68C" />
             <SolidColorBrush x:Key="V2SafeSoft" Color="#263DD68C" />
-            <SolidColorBrush x:Key="V2Unsafe" Color="#F0625A" />
-            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#26F0625A" />
+            <SolidColorBrush x:Key="V2Unsafe" Color="#FF5A3D" />
+            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#26FF5A3D" />
             <SolidColorBrush x:Key="V2Folder" Color="#5C9DF0" />
             <SolidColorBrush x:Key="V2FolderSoft" Color="#1E2B3E" />
             <SolidColorBrush x:Key="V2Star" Color="#F2B14E" />
@@ -44,24 +44,24 @@
             <SolidColorBrush x:Key="V2PingGoodSoft" Color="#1F3DD68C" />
             <SolidColorBrush x:Key="V2PingMid" Color="#F2B84B" />
             <SolidColorBrush x:Key="V2PingMidSoft" Color="#1FF2B84B" />
-            <SolidColorBrush x:Key="V2PingBad" Color="#F0625A" />
-            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FF0625A" />
+            <SolidColorBrush x:Key="V2PingBad" Color="#FF5A3D" />
+            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FFF5A3D" />
             <SolidColorBrush x:Key="V2PingNone" Color="#6C6C78" />
             <SolidColorBrush x:Key="V2PingNoneSoft" Color="#14FFFFFF" />
-            <SolidColorBrush x:Key="V2MapOcean" Color="#131318" />
+            <SolidColorBrush x:Key="V2MapOcean" Color="#0E0E11" />
             <SolidColorBrush x:Key="V2MapLand" Color="#24242C" />
             <SolidColorBrush x:Key="V2MapBorder" Color="#34343F" />
             <SolidColorBrush x:Key="V2MapDot" Color="#8A8A99" />
             <SolidColorBrush x:Key="V2MapActiveSafe" Color="#2A4A3A" />
-            <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#4A2D2C" />
+            <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#4A2A22" />
             <SolidColorBrush x:Key="V2MapActiveLocal" Color="#463D27" />
             <BoxShadows x:Key="V2CardShadow">inset 0 1 0 0 #0FFFFFFF, 0 1 2 0 #4D000000, 0 6 16 -4 #59000000, 0 20 40 -14 #73000000</BoxShadows>
             <BoxShadows x:Key="V2RaisedShadow">inset 0 1 0 0 #14FFFFFF, 0 2 4 0 #4D000000, 0 12 28 -8 #73000000, 0 32 64 -20 #8C000000</BoxShadows>
             <BoxShadows x:Key="V2NavShadow">inset 0 1 0 0 #14FFFFFF, 0 1 2 0 #66000000, 0 4 10 -3 #4D000000</BoxShadows>
             <BoxShadows x:Key="V2FocusShadow">0 0 0 2 #A05C9DF0</BoxShadows>
             <LinearGradientBrush x:Key="V2StageFade" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#00121217" />
-                <GradientStop Offset="1" Color="#E6121217" />
+                <GradientStop Offset="0" Color="#000E0E11" />
+                <GradientStop Offset="1" Color="#E60E0E11" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2SidebarFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#1F1F27" />
@@ -76,12 +76,12 @@
                 <GradientStop Offset="1" Color="#EE1C1C24" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2AccentFill" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#F45B51" />
-                <GradientStop Offset="1" Color="#D53A30" />
+                <GradientStop Offset="0" Color="#FF5236" />
+                <GradientStop Offset="1" Color="#EF3518" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2AccentFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#F8695F" />
-                <GradientStop Offset="1" Color="#DF443A" />
+                <GradientStop Offset="0" Color="#FF6447" />
+                <GradientStop Offset="1" Color="#F7401F" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#3B3C48" />
@@ -107,7 +107,7 @@
             <BoxShadows x:Key="V2DefaultButtonShadow">inset 0 1 0 0 #33FFFFFF, 0 1 2 0 #66000000, 0 8 18 -8 #994F8FEA</BoxShadows>
             <BoxShadows x:Key="V2PanelShadow">0 1 1 0 #40000000, 0 10 28 -8 #73000000</BoxShadows>
             <BoxShadows x:Key="V2ChipShadow">inset 0 1 0 0 #14FFFFFF, 0 1 2 0 #66000000, 0 4 10 -3 #4D000000</BoxShadows>
-            <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #59FFFFFF, inset 0 -1 0 0 #33000000, 0 1 2 0 #66000000, 0 10 22 -8 #B3E5483E</BoxShadows>
+            <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #59FFFFFF, inset 0 -1 0 0 #33000000, 0 1 2 0 #66000000, 0 10 22 -8 #B3FF3D1F</BoxShadows>
             <BoxShadows x:Key="V2NeutralShadow">inset 0 1 0 0 #1FFFFFFF, 0 1 2 0 #66000000, 0 6 14 -6 #73000000</BoxShadows>
             <BoxShadows x:Key="V2PrimaryShadow">inset 0 -1 0 0 #26000000, 0 1 2 0 #66000000, 0 6 14 -6 #73000000</BoxShadows>
             <!--  Semi menus and toasts in the V2pn palette  -->
@@ -178,10 +178,10 @@
             <SolidColorBrush x:Key="V2InkSoft" Color="#34343F" />
             <SolidColorBrush x:Key="V2Muted" Color="#666673" />
             <SolidColorBrush x:Key="V2Faint" Color="#8E8E9A" />
-            <SolidColorBrush x:Key="V2Accent" Color="#E0443A" />
-            <SolidColorBrush x:Key="V2AccentHover" Color="#D2382E" />
-            <SolidColorBrush x:Key="V2AccentSoft" Color="#1FE0443A" />
-            <SolidColorBrush x:Key="V2OnAccent" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="V2Accent" Color="#E8391B" />
+            <SolidColorBrush x:Key="V2AccentHover" Color="#D4300F" />
+            <SolidColorBrush x:Key="V2AccentSoft" Color="#1FE8391B" />
+            <SolidColorBrush x:Key="V2OnAccent" Color="#0B0B0D" />
             <SolidColorBrush x:Key="V2Primary" Color="#16161B" />
             <SolidColorBrush x:Key="V2PrimaryHover" Color="#2C2C35" />
             <SolidColorBrush x:Key="V2OnPrimary" Color="#FFFFFF" />
@@ -190,8 +190,8 @@
             <SolidColorBrush x:Key="V2PinCore" Color="#FFFFFF" />
             <SolidColorBrush x:Key="V2Safe" Color="#17A463" />
             <SolidColorBrush x:Key="V2SafeSoft" Color="#2217A463" />
-            <SolidColorBrush x:Key="V2Unsafe" Color="#E0443A" />
-            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#22E0443A" />
+            <SolidColorBrush x:Key="V2Unsafe" Color="#E8391B" />
+            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#22E8391B" />
             <SolidColorBrush x:Key="V2Folder" Color="#3A7BD5" />
             <SolidColorBrush x:Key="V2FolderSoft" Color="#E3ECFA" />
             <SolidColorBrush x:Key="V2Star" Color="#E39A1C" />
@@ -199,8 +199,8 @@
             <SolidColorBrush x:Key="V2PingGoodSoft" Color="#1F17A463" />
             <SolidColorBrush x:Key="V2PingMid" Color="#C98510" />
             <SolidColorBrush x:Key="V2PingMidSoft" Color="#1FC98510" />
-            <SolidColorBrush x:Key="V2PingBad" Color="#E0443A" />
-            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FE0443A" />
+            <SolidColorBrush x:Key="V2PingBad" Color="#E8391B" />
+            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FE8391B" />
             <SolidColorBrush x:Key="V2PingNone" Color="#8E8E9A" />
             <SolidColorBrush x:Key="V2PingNoneSoft" Color="#0F16161B" />
             <SolidColorBrush x:Key="V2MapOcean" Color="#E6E9F0" />
@@ -231,12 +231,12 @@
                 <GradientStop Offset="1" Color="#EFF8F9FB" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2AccentFill" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#F2584E" />
-                <GradientStop Offset="1" Color="#D4362C" />
+                <GradientStop Offset="0" Color="#FF5236" />
+                <GradientStop Offset="1" Color="#EF3518" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2AccentFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#F6665C" />
-                <GradientStop Offset="1" Color="#DC3F35" />
+                <GradientStop Offset="0" Color="#FF6447" />
+                <GradientStop Offset="1" Color="#F7401F" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#FFFFFF" />
@@ -262,7 +262,7 @@
             <BoxShadows x:Key="V2DefaultButtonShadow">inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #26000000, 0 8 18 -8 #803A7BD5</BoxShadows>
             <BoxShadows x:Key="V2PanelShadow">0 1 2 0 #0F16161B, 0 10 28 -10 #2416161B</BoxShadows>
             <BoxShadows x:Key="V2ChipShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1416161B, 0 1 2 0 #1416161B, 0 4 10 -3 #1A16161B</BoxShadows>
-            <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #66FFFFFF, inset 0 -1 0 0 #26000000, 0 1 2 0 #33D4362C, 0 10 20 -8 #A6E0443A</BoxShadows>
+            <BoxShadows x:Key="V2AccentShadow">inset 0 1 0 0 #66FFFFFF, inset 0 -1 0 0 #26000000, 0 1 2 0 #33EF3518, 0 10 20 -8 #A6FF3D1F</BoxShadows>
             <BoxShadows x:Key="V2NeutralShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1A16161B, 0 1 2 0 #1416161B, 0 5 12 -5 #2416161B</BoxShadows>
             <BoxShadows x:Key="V2PrimaryShadow">inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #4016161B, 0 8 16 -6 #5916161B</BoxShadows>
             <!--  Semi menus and toasts in the V2pn palette  -->
@@ -361,7 +361,8 @@
     <CornerRadius x:Key="V2RadiusControl">12</CornerRadius>
     <CornerRadius x:Key="V2RadiusPill">999</CornerRadius>
     <StreamGeometry x:Key="V2SpinnerArc">M6,1 A5,5 0 1 1 1,6</StreamGeometry>
-    <StreamGeometry x:Key="V2BrandWave">M2,9 C4.5,9 4.5,4 7,4 C9.5,4 9.5,14 12,14 C14.5,14 14.5,7 17,7 C18.4,7 19,8 20,9</StreamGeometry>
+    <!--  The fork: one stroke wide (32), 3.25 x 3.5 strokes, every diagonal 45 degrees. Same drawing as the app icon.  -->
+    <StreamGeometry x:Key="V2BrandFork">M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z</StreamGeometry>
     <StreamGeometry x:Key="V2FolderBack">M0,2.5 C0,1.4 0.9,0.5 2,0.5 L5.6,0.5 C6.1,0.5 6.6,0.7 7,1.1 L8,2 L14,2 C15.1,2 16,2.9 16,4 L16,11.5 C16,12.6 15.1,13.5 14,13.5 L2,13.5 C0.9,13.5 0,12.6 0,11.5 Z</StreamGeometry>
     <StreamGeometry x:Key="V2FolderFront">M0,5.5 C0,4.4 0.9,3.5 2,3.5 L14,3.5 C15.1,3.5 16,4.4 16,5.5 L16,11.5 C16,12.6 15.1,13.5 14,13.5 L2,13.5 C0.9,13.5 0,12.6 0,11.5 Z</StreamGeometry>
 </ResourceDictionary>

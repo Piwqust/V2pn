@@ -545,7 +545,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             ProtectionState.Protected => Color.Parse("#3DD68C"),
             ProtectionState.LocalOnly => Color.Parse("#F2B84B"),
-            _ => Color.Parse("#F0625A"),
+            _ => Color.Parse("#FF5A3D"),
         };
         stateTint.Background = new LinearGradientBrush
         {

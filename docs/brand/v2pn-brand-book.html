@@ -1,0 +1,1216 @@
+<!doctype html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;padding-top:env(safe-area-inset-top);padding-bottom:env(safe-area-inset-bottom)}body{margin:0;font:14px system-ui}img{max-width:100%}[hidden]{display:none!important}</style></head><body><title>V2pn Brand Book</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@200;400;500;600;700;800&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: one long book. Dark chapters are the brand's ground, paper chapters hold the systems,
+   Signal appears full-bleed only as an event. Every chapter opens the same way: label, title, big numeral. */
+:root{
+  --ink:#0B0B0D;        /* Tunnel */
+  --graphite:#19191E;
+  --graphite-2:#24242B;
+  --paper:#F2F0EC;
+  --paper-2:#E4E1DB;
+  --silver:#BDBAB4;
+  --signal:#FF3D1F;
+  --flare:#FF8A2A;
+  --white:#FFFFFF;
+  --protected:#3DD68C;
+  --caution:#F2B84B;
+  --mute:#8F8D94;
+  --mute-paper:#5F5C57;
+  --line:rgba(255,255,255,.12);
+  --line-paper:rgba(11,11,13,.14);
+  --display:"Inter Tight","Inter",system-ui,sans-serif;
+  --text:"Inter",system-ui,-apple-system,"Segoe UI",sans-serif;
+  --mono:"JetBrains Mono",ui-monospace,"Cascadia Mono",Consolas,monospace;
+  --gut:max(16px,env(safe-area-inset-left,0px));
+  --gut-r:max(16px,env(safe-area-inset-right,0px));
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:72px}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}}
+body{background:var(--ink);color:var(--white);font:400 16px/1.55 var(--text);-webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;overflow-x:hidden}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:60;background:var(--ink)}
+::selection{background:var(--signal);color:var(--ink)}
+a{color:inherit}
+:focus-visible{outline:2px solid var(--signal);outline-offset:3px}
+h1,h2,h3,h4{margin:0;font-family:var(--display);font-weight:600;text-wrap:balance}
+p{margin:0}
+svg{display:block}
+.wrap{max-width:1360px;margin:0 auto;padding-left:var(--gut);padding-right:var(--gut-r)}
+.mono{font-family:var(--mono);font-size:12px;letter-spacing:.02em}
+.label{font-family:var(--mono);font-size:11.5px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+.paper .label{color:var(--mute-paper)}
+.lead{font-size:clamp(18px,1.6vw,22px);line-height:1.45;max-width:36em;color:#D9D7DD}
+.paper .lead{color:#2B2A27}
+.body{max-width:38em;color:#C9C7CE}
+.paper .body{color:#3A3834}
+.sec{padding-block:clamp(72px,9vw,136px)}
+.paper{background:var(--paper);color:var(--ink)}
+.graphite{background:var(--graphite)}
+.grid{display:grid;gap:clamp(16px,2vw,28px)}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+@media (max-width:900px){.g3,.g4{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media (max-width:620px){.g2,.g3,.g4{grid-template-columns:minmax(0,1fr)}}
+.stack{display:flex;flex-direction:column;gap:14px}
+.mt-s{margin-top:24px}.mt-m{margin-top:clamp(40px,5vw,72px)}.mt-l{margin-top:clamp(64px,8vw,120px)}
+.rule{height:1px;background:var(--line);border:0;margin:0}
+.paper .rule{background:var(--line-paper)}
+
+/* top bar */
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:50;background:rgba(11,11,13,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-bottom:1px solid var(--line)}
+.top .wrap{display:flex;align-items:center;gap:24px;height:56px}
+.top .brand{display:flex;align-items:center;flex:none;height:20px}
+.top nav{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none;min-width:0;margin-left:auto}
+.top nav::-webkit-scrollbar{display:none}
+.top nav a{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;text-decoration:none;color:var(--mute);padding:8px 10px;white-space:nowrap;border-radius:2px}
+.top nav a:hover{color:var(--white)}
+.top nav a.on{color:var(--signal)}
+
+/* cover */
+.cover{position:relative;height:clamp(560px,78vh,820px);overflow:hidden;background:var(--signal)}
+.cover canvas{position:absolute;inset:0;width:100%;height:100%}
+.cover .wrap{position:relative;height:100%;display:flex;flex-direction:column;justify-content:space-between;padding-block:clamp(28px,4vw,48px)}
+.cover .meta{display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;color:rgba(255,255,255,.86)}
+.cover .lock{width:min(760px,82%)}
+.cover .sub{display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap}
+.cover .tag{font:500 clamp(22px,2.6vw,34px)/1.1 var(--display);letter-spacing:-.02em;color:#fff}
+
+/* chapter opener */
+.chap{position:relative;display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:end;gap:24px;padding-bottom:clamp(32px,4vw,56px);border-bottom:1px solid var(--line);margin-bottom:clamp(40px,5vw,72px)}
+.paper .chap{border-color:var(--line-paper)}
+.chap h2{font-size:clamp(52px,8.6vw,136px);line-height:.9;letter-spacing:-.045em;font-weight:600}
+.chap .num{font:200 clamp(84px,15vw,232px)/.72 var(--display);letter-spacing:-.06em;color:var(--signal);font-variant-numeric:tabular-nums}
+.chap .label{grid-column:1/-1;order:-1}
+
+/* contents */
+.toc{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));border-top:1px solid var(--line)}
+.toc a{display:grid;grid-template-columns:56px minmax(0,1fr) auto;align-items:baseline;gap:12px;padding:18px 0;border-bottom:1px solid var(--line);text-decoration:none}
+.toc a:nth-child(odd){padding-right:28px}.toc a:nth-child(even){padding-left:28px;border-left:1px solid var(--line)}
+.toc .n{font-family:var(--mono);font-size:12px;color:var(--signal)}
+.toc .t{font:500 clamp(22px,2.4vw,32px)/1.1 var(--display);letter-spacing:-.02em}
+.toc .d{color:var(--mute);font-size:14px}
+.toc a:hover .t{color:var(--signal)}
+@media (max-width:760px){.toc{grid-template-columns:minmax(0,1fr)}.toc a:nth-child(n){padding-left:0;padding-right:0;border-left:0}.toc .d{display:none}}
+
+/* story */
+.facts{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line)}
+.facts div{padding:18px 18px 18px 0;border-right:1px solid var(--line);min-width:0}
+.facts div+div{padding-left:18px}
+.facts div:last-child{border-right:0}
+.facts b{display:block;font:500 17px/1.3 var(--display);margin-top:8px}
+@media (max-width:900px){.facts{grid-template-columns:repeat(2,minmax(0,1fr))}.facts div{border-right:0;border-bottom:1px solid var(--line);padding-left:0!important}}
+.big-idea{font:600 clamp(40px,6.4vw,104px)/.95 var(--display);letter-spacing:-.045em}
+.big-idea em{font-style:normal;color:var(--signal)}
+.principle{padding-top:18px;border-top:2px solid var(--signal)}
+.principle h3{font-size:26px;letter-spacing:-.02em;margin:10px 0 10px}
+.name-row{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.name-row div{background:var(--ink);padding:22px;min-width:0}
+.name-row .w{font:600 30px/1 var(--display);letter-spacing:-.02em;margin-top:12px}
+.name-row .no{text-decoration:line-through;text-decoration-color:var(--signal);text-decoration-thickness:3px;color:var(--mute)}
+@media (max-width:760px){.name-row{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* logo */
+.hero-logo{display:flex;align-items:center;justify-content:center;background:var(--ink);border:1px solid var(--line);aspect-ratio:16/8;max-width:100%;padding:8%}
+.tile{position:relative;display:flex;align-items:center;justify-content:center;aspect-ratio:4/3;max-width:100%;padding:14%;min-width:0}
+.tile .cap{position:absolute;left:14px;bottom:12px;right:14px;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;opacity:.75}
+.on-ink{background:var(--ink);color:var(--white);border:1px solid var(--line)}
+.on-graphite{background:var(--graphite);color:var(--white)}
+.on-signal{background:var(--signal);color:var(--ink)}
+.on-paper{background:var(--paper);color:var(--ink)}
+.on-paper2{background:var(--paper-2);color:var(--ink)}
+.on-white{background:#fff;color:var(--ink)}
+.anat{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:clamp(24px,4vw,64px);align-items:center}
+@media (max-width:820px){.anat{grid-template-columns:minmax(0,1fr)}}
+.anat ol{list-style:none;margin:0;padding:0;display:grid;gap:0;border-top:1px solid var(--line)}
+.anat li{display:grid;grid-template-columns:40px minmax(0,1fr);gap:12px;padding:16px 0;border-bottom:1px solid var(--line)}
+.anat li b{font:500 19px/1.3 var(--display);display:block}
+.anat li span.k{font-family:var(--mono);color:var(--signal);font-size:13px;padding-top:3px}
+.construct{background:var(--paper);color:var(--ink);padding:clamp(16px,3vw,36px);max-width:100%}
+.spec{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 18px;font-size:14px}
+.spec dt{font-family:var(--mono);font-size:12px;color:var(--mute);padding-top:2px}
+.paper .spec dt{color:var(--mute-paper)}
+.spec dd{margin:0}
+.minsize{display:flex;align-items:flex-end;gap:28px;flex-wrap:wrap}
+.minsize figure{margin:0;display:flex;flex-direction:column;gap:10px;align-items:flex-start}
+.dont{position:relative}
+.dont::after{content:"";position:absolute;top:12px;right:12px;width:22px;height:22px;background:
+ linear-gradient(45deg,transparent 45%,var(--signal) 45%,var(--signal) 55%,transparent 55%),
+ linear-gradient(-45deg,transparent 45%,var(--signal) 45%,var(--signal) 55%,transparent 55%)}
+.icons-app{display:flex;align-items:flex-end;gap:clamp(16px,3vw,40px);flex-wrap:wrap}
+.appicon{display:flex;align-items:center;justify-content:center;background:var(--signal);color:#fff;border-radius:22%}
+.appicon.dark{background:var(--ink);color:var(--signal);box-shadow:inset 0 0 0 1px var(--line)}
+.taskbar{display:flex;align-items:center;justify-content:flex-end;gap:14px;background:#1F1F24;border-top:1px solid #2C2C33;height:48px;padding:0 16px;font:12px var(--text);color:#D6D5DA;max-width:100%;overflow:hidden}
+.taskbar .ti{display:flex;align-items:center;gap:6px}
+@media (max-width:560px){.tray-tip{display:none}}
+.tray-tip{background:#2A2A31;border:1px solid #3A3A43;border-radius:6px;padding:7px 10px;font-size:12px;color:#ECECF1;white-space:nowrap}
+
+/* color */
+.strips{display:flex;min-height:clamp(440px,62vh,640px)}
+.strip{flex:1 1 0;min-width:0;display:flex;flex-direction:column;justify-content:space-between;padding:22px 18px 26px;position:relative}
+.strip .nm{writing-mode:vertical-rl;transform:rotate(180deg);font-family:var(--mono);font-size:12px;letter-spacing:.1em;text-transform:uppercase;align-self:flex-start}
+.strip .val{font-family:var(--mono);font-size:11.5px;line-height:1.7;font-variant-numeric:tabular-nums}
+.strip .role{font:500 15px/1.25 var(--display);margin-bottom:12px;max-width:12em}
+@media (max-width:820px){.strips{flex-direction:column;min-height:0}.strip{min-height:132px;flex-direction:row;align-items:flex-end;gap:16px}.strip .nm{writing-mode:horizontal-tb;transform:none;align-self:flex-start}.strip .info{margin-left:auto;text-align:right}}
+.ratio{display:flex;height:64px;border:1px solid var(--line);overflow:hidden}
+.ratio div{display:flex;align-items:flex-end;padding:8px;font-family:var(--mono);font-size:11px;min-width:0;overflow:hidden;white-space:nowrap}
+table{border-collapse:collapse;width:100%;font-size:14px}
+th,td{text-align:left;padding:12px 14px 12px 0;border-bottom:1px solid var(--line);vertical-align:top}
+.paper th,.paper td{border-color:var(--line-paper)}
+th{font-family:var(--mono);font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute);font-weight:400}
+.paper th{color:var(--mute-paper)}
+.tbl{overflow-x:auto;max-width:100%}
+.pair{display:inline-flex;align-items:center;justify-content:center;width:84px;height:40px;font:600 16px var(--display);border:1px solid var(--line)}
+.pill{display:inline-block;font-family:var(--mono);font-size:11px;letter-spacing:.04em;padding:3px 8px;border-radius:999px;border:1px solid currentColor;white-space:nowrap}
+.pill.ok{color:var(--protected)}.pill.lg{color:var(--caution)}.pill.no{color:var(--signal)}
+.num-t{font-variant-numeric:tabular-nums;font-family:var(--mono);font-size:13px}
+
+/* type */
+.type-poster{font:700 clamp(64px,13.4vw,214px)/.86 var(--display);letter-spacing:-.06em}
+.faces{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:1px solid var(--line-paper)}
+.faces>div{padding:22px 22px 26px 0;min-width:0}
+.faces>div+div{padding-left:22px;border-left:1px solid var(--line-paper)}
+.faces .aa{font-size:clamp(80px,9vw,132px);line-height:1;letter-spacing:-.04em;margin:14px 0 18px}
+@media (max-width:820px){.faces{grid-template-columns:minmax(0,1fr)}.faces>div+div{padding-left:0;border-left:0;border-top:1px solid var(--line-paper)}}
+.weights{border-top:1px solid var(--signal);color:var(--signal)}
+.weights .row{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:18px;border-bottom:1px solid var(--signal);padding:6px 0}
+.weights .w{font-family:var(--display);font-size:clamp(48px,8vw,118px);line-height:1;letter-spacing:-.05em}
+.weights .s{font-family:var(--mono);font-size:11px;line-height:1.7;text-align:right;text-transform:uppercase;letter-spacing:.04em}
+.tags{display:flex;gap:6px;justify-content:flex-end;margin-top:4px}
+.tags span{border:1px solid currentColor;border-radius:999px;padding:0 7px}
+.huge-name{font:600 clamp(110px,24vw,380px)/.78 var(--display);letter-spacing:-.075em;color:var(--signal);white-space:nowrap;overflow:hidden;margin-top:28px;margin-bottom:calc(-1 * clamp(72px,9vw,136px))}
+.scale-row{display:grid;grid-template-columns:120px 90px minmax(0,1fr);align-items:baseline;gap:14px;padding:12px 0;border-bottom:1px solid var(--line-paper)}
+.scale-row .sample{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0}
+@media (max-width:620px){.scale-row{grid-template-columns:minmax(0,1fr)}}
+
+/* glass */
+.glass-hero{position:relative;aspect-ratio:16/8;max-width:100%;overflow:hidden;background:var(--signal)}
+.glass-hero canvas,.gtile canvas{position:absolute;inset:0;width:100%;height:100%}
+.glass-hero .over{position:absolute;left:5%;bottom:8%;right:5%;display:flex;justify-content:space-between;align-items:flex-end;gap:20px;flex-wrap:wrap}
+.glass-hero .over h3{font-size:clamp(30px,4.6vw,72px);line-height:.95;letter-spacing:-.04em;color:#fff;max-width:11em}
+.gtile{position:relative;aspect-ratio:3/4;max-width:100%;overflow:hidden;background:var(--graphite)}
+.gtile .cap{position:absolute;left:14px;right:14px;bottom:12px;display:flex;justify-content:space-between;font-family:var(--mono);font-size:11px;letter-spacing:.06em;text-transform:uppercase;color:#fff;text-shadow:0 1px 6px rgba(0,0,0,.35)}
+.lab{display:grid;grid-template-columns:minmax(0,1.6fr) minmax(0,1fr);gap:clamp(16px,2.4vw,32px);align-items:stretch}
+@media (max-width:900px){.lab{grid-template-columns:minmax(0,1fr)}}
+.lab .view{position:relative;aspect-ratio:16/10;max-width:100%;overflow:hidden;background:var(--signal)}
+.lab .view canvas{position:absolute;inset:0;width:100%;height:100%}
+.controls{display:flex;flex-direction:column;gap:18px;background:var(--graphite);padding:22px;border:1px solid var(--line)}
+.ctl{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 12px;align-items:center}
+.ctl label{font-size:14px}
+.ctl output{font-family:var(--mono);font-size:12px;color:var(--signal);font-variant-numeric:tabular-nums}
+.ctl input[type=range]{grid-column:1/-1;width:100%;accent-color:var(--signal)}
+.seg{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px;background:var(--ink);padding:4px;border:1px solid var(--line)}
+.seg button{font:500 13px var(--text);color:var(--mute);background:transparent;border:0;padding:9px 4px;cursor:pointer;border-radius:2px}
+.seg button[aria-pressed=true]{background:var(--signal);color:var(--ink)}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 14px var(--text);padding:11px 16px;border:1px solid var(--line);background:transparent;color:var(--white);cursor:pointer;border-radius:2px;text-decoration:none}
+.btn:hover{border-color:var(--white)}
+.btn.primary{background:var(--signal);border-color:var(--signal);color:var(--ink)}
+.btn.primary:hover{background:#ff5638}
+.paper .btn{color:var(--ink);border-color:var(--line-paper)}
+.anatomy-g{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:1px solid var(--line)}
+.anatomy-g div{padding:16px 16px 16px 0;min-width:0}
+.anatomy-g div+div{padding-left:16px;border-left:1px solid var(--line)}
+.anatomy-g b{display:block;font:500 28px/1.1 var(--display);letter-spacing:-.02em;margin:8px 0 6px}
+@media (max-width:760px){.anatomy-g{grid-template-columns:repeat(2,minmax(0,1fr))}.anatomy-g div:nth-child(3){padding-left:0;border-left:0}}
+.dd{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:clamp(16px,2vw,28px)}
+@media (max-width:700px){.dd{grid-template-columns:minmax(0,1fr)}}
+.dd ul{margin:0;padding:0;list-style:none;border-top:1px solid var(--line)}
+.dd li{padding:12px 0 12px 26px;border-bottom:1px solid var(--line);position:relative;color:#D3D1D8}
+.paper .dd ul,.paper .dd li{border-color:var(--line-paper)}
+.paper .dd li{color:#2F2D2A}
+.dd li::before{content:"";position:absolute;left:0;top:20px;width:12px;height:2px;background:var(--protected)}
+.dd .no li::before{background:var(--signal);transform:rotate(45deg);box-shadow:0 0 0 0 var(--signal)}
+.dd .no li::after{content:"";position:absolute;left:0;top:20px;width:12px;height:2px;background:var(--signal);transform:rotate(-45deg)}
+.dd h4{font:500 13px var(--mono);letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+.dd .yes h4{color:var(--protected)}.dd .no h4{color:var(--signal)}
+.paper .dd .yes h4{color:#167A4B}
+.paper .dd .yes li::before{background:#167A4B}
+
+/* map */
+.mapbox{position:relative;max-width:100%;aspect-ratio:2400/1560;background:var(--ink);border:1px solid var(--line)}
+.mapbox canvas{position:absolute;inset:0;width:100%;height:100%}
+.dither{position:relative;aspect-ratio:4/5;max-width:100%;background:var(--ink)}
+.dither canvas{position:absolute;inset:0;width:100%;height:100%;image-rendering:pixelated}
+
+/* icons */
+.icon-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));border-top:1px solid var(--line-paper);border-left:1px solid var(--line-paper)}
+.icon-grid figure{margin:0;display:flex;flex-direction:column;align-items:flex-start;justify-content:space-between;gap:34px;padding:18px;border-right:1px solid var(--line-paper);border-bottom:1px solid var(--line-paper);min-width:0}
+.icon-grid svg{width:48px;height:48px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter}
+.icon-grid figcaption{font-size:13px}
+@media (max-width:760px){.icon-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.icon-states{display:flex;gap:10px;flex-wrap:wrap}
+.icon-states>span{display:flex;align-items:center;gap:8px;padding:8px 12px;font-size:13px;border:1px solid var(--line-paper)}
+.icon-states svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:square;stroke-linejoin:miter}
+
+/* motion */
+.curves{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:1px;background:var(--line);border:1px solid var(--line)}
+.curves figure{margin:0;background:var(--ink);padding:18px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.curves svg{width:100%;height:auto;overflow:visible}
+.curves b{font:500 18px var(--display)}
+@media (max-width:820px){.curves{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.demo{position:relative;height:140px;border:1px solid var(--line);overflow:hidden;background:var(--graphite)}
+.demo .pane{position:absolute;inset:0;background:repeating-linear-gradient(90deg,rgba(255,255,255,.10) 0 2px,rgba(255,61,31,.88) 2px 9px,rgba(170,30,10,.92) 18px 22px);transform:translateX(-101%);transition:transform 640ms cubic-bezier(.7,0,.2,1)}
+.demo.go .pane{transform:none}
+.demo .dot{position:absolute;left:50%;top:50%;width:14px;height:14px;margin:-7px;border-radius:50%;background:#fff;box-shadow:0 0 0 6px rgba(255,61,31,.35)}
+@media (prefers-reduced-motion:reduce){.demo .pane{transition:opacity 120ms linear;transform:none;opacity:0}.demo.go .pane{opacity:1}}
+
+/* voice */
+.say{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid var(--line-paper)}
+.say div{padding:16px 18px 16px 0;border-bottom:1px solid var(--line-paper);min-width:0}
+.say div:nth-child(even){padding-left:18px;border-left:1px solid var(--line-paper)}
+.say .h{font:500 12px var(--mono);letter-spacing:.08em;text-transform:uppercase}
+.say .y{font:500 19px/1.35 var(--display)}
+.say .n{color:#8A3A2C;font-size:16px;text-decoration:line-through;text-decoration-color:rgba(255,61,31,.6)}
+.micro{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:clamp(16px,2vw,24px)}
+@media (max-width:820px){.micro{grid-template-columns:minmax(0,1fr)}}
+.micro .card{background:#fff;border:1px solid var(--line-paper);padding:18px;display:flex;flex-direction:column;gap:10px;min-width:0}
+.backr{display:flex;flex-wrap:wrap;gap:10px}
+.backr span{font:500 clamp(18px,2vw,24px)/1.2 var(--display);letter-spacing:-.01em;padding:10px 14px;border:1px solid var(--line-paper);background:#fff}
+.backr b{color:var(--signal)}
+
+/* app mockup */
+.app{container-type:inline-size;max-width:100%;aspect-ratio:1296/809;background:#0E0E11;border:1px solid #2A2A31;border-radius:10px;overflow:hidden;box-shadow:0 30px 80px -30px rgba(0,0,0,.8);display:grid;grid-template-rows:4.2cqw minmax(0,1fr);font-family:var(--text);color:#ECECF1;user-select:none}
+.app .bar{display:flex;align-items:center;gap:1.1cqw;padding:0 1.4cqw;font-size:1.25cqw;font-weight:600}
+.app .bar .ctrl{margin-left:auto;display:flex;gap:2.2cqw;color:#9B9BA8;font-weight:400;font-size:1.3cqw}
+.app .win{display:grid;grid-template-columns:24.6cqw minmax(0,1fr);gap:1.1cqw;padding:0 1.4cqw 1.4cqw}
+.app .side{background:#19191E;border:1px solid #26262D;border-radius:1cqw;padding:1cqw;display:flex;flex-direction:column;gap:.9cqw;min-height:0}
+.app .search{height:2.8cqw;border:1px solid #2C2C34;border-radius:.8cqw;display:flex;align-items:center;padding:0 1cqw;color:#7C7B84;font-size:1.05cqw}
+.app .tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:.3cqw;background:#121216;border-radius:.8cqw;padding:.3cqw}
+.app .tabs span{text-align:center;font-size:.98cqw;padding:.7cqw 0;border-radius:.6cqw;color:#9B9BA8}
+.app .tabs span.on{background:#26262D;color:#fff}
+.app .row{display:grid;grid-template-columns:2.2cqw minmax(0,1fr) auto;gap:.8cqw;align-items:center;padding:.8cqw;border-radius:.8cqw;font-size:1.1cqw}
+.app .row.sel{background:#24242B}
+.app .row small{display:block;color:#8F8D94;font-size:.9cqw}
+.app .row .ms{font-family:var(--mono);font-size:.9cqw;color:#3DD68C}
+.app .flag{width:2.2cqw;height:1.5cqw;border-radius:.2cqw}
+.f-de{background:linear-gradient(#000 33%,#DD0000 33% 66%,#FFCE00 66%)}
+.f-nl{background:linear-gradient(#AE1C28 33%,#fff 33% 66%,#21468B 66%)}
+.f-fi{background:linear-gradient(90deg,transparent 30%,#003580 30% 45%,transparent 45%),linear-gradient(transparent 38%,#003580 38% 62%,transparent 62%),#fff}
+.f-se{background:linear-gradient(90deg,transparent 30%,#FECC00 30% 45%,transparent 45%),linear-gradient(transparent 38%,#FECC00 38% 62%,transparent 62%),#006AA7}
+.app .grp{font-size:.95cqw;color:#8F8D94;padding:.4cqw .8cqw 0}
+.app .main{position:relative;border-radius:1cqw;overflow:hidden;background:#0B0B0D;border:1px solid #23232A}
+.app .main canvas{position:absolute;inset:0;width:100%;height:100%}
+.app .main .glassc{clip-path:inset(0 100% 0 0);transition:clip-path 640ms cubic-bezier(.7,0,.2,1)}
+.app[data-state=on] .main .glassc{clip-path:inset(0 0 0 0)}
+@media (prefers-reduced-motion:reduce){.app .main .glassc{transition:none}}
+.app .head{position:absolute;left:0;right:0;top:2.6cqw;display:flex;flex-direction:column;align-items:center;gap:.8cqw;text-align:center}
+.app .chip{font-size:.9cqw;font-weight:600;letter-spacing:.06em;padding:.45cqw 1cqw;border-radius:99px;display:inline-flex;align-items:center;gap:.6cqw}
+.app .chip i{width:.7cqw;height:.7cqw;border-radius:50%;background:currentColor}
+.app[data-state=off] .chip{color:var(--signal);background:rgba(255,61,31,.14)}
+.app[data-state=on] .chip{color:#3DD68C;background:rgba(61,214,140,.14)}
+.app .country{font:600 2.6cqw/1 var(--display);letter-spacing:-.03em;display:flex;align-items:center;gap:1cqw}
+.app .country .flag{width:3.2cqw;height:2.2cqw}
+.app .meta2{font-size:1.02cqw;color:#9B9BA8}
+.app .cbtn{margin-top:.4cqw;width:17cqw;height:3.6cqw;border-radius:99px;border:0;font:700 1.35cqw var(--text);cursor:pointer;transition:background 200ms cubic-bezier(.2,0,0,1),color 200ms}
+.app[data-state=off] .cbtn{background:var(--signal);color:var(--ink)}
+.app[data-state=on] .cbtn{background:#2A2A31;color:#fff}
+.app .modes{display:flex;align-items:center;gap:.4cqw;background:rgba(25,25,30,.92);border:1px solid #2C2C34;border-radius:1cqw;padding:.4cqw;font-size:1.02cqw;margin-top:.6cqw}
+.app .modes span{padding:.6cqw 1.2cqw;border-radius:.7cqw;color:#9B9BA8;display:flex;gap:.5cqw;align-items:center}
+.app .modes span.on{background:#2A2A31;color:#fff}
+.app .modes .route{color:#ECECF1;border-left:1px solid #2C2C34;border-radius:0;margin-left:.3cqw}
+.app .stat{position:absolute;left:1.2cqw;right:1.2cqw;bottom:1.2cqw;background:rgba(22,22,27,.94);border:1px solid #2C2C34;border-radius:1cqw;padding:1.2cqw 1.6cqw;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.9cqw 1.6cqw;font-size:.92cqw;color:#8F8D94}
+.app .stat b{display:block;color:#ECECF1;font:600 1.1cqw var(--mono);margin-top:.2cqw}
+.app .stat .top2{grid-column:1/-1;display:flex;justify-content:space-between;color:#ECECF1;font-weight:600;font-size:1cqw}
+.app[data-state=on] .stat .top2 .s{color:#3DD68C}
+.app[data-state=off] .stat .top2 .s{color:var(--signal)}
+
+/* in use */
+.social{container-type:inline-size;position:relative;aspect-ratio:2/1;max-width:100%;overflow:hidden;background:var(--signal)}
+.social canvas{position:absolute;inset:0;width:100%;height:100%}
+.social .in{position:absolute;inset:6.5cqw 6cqw;display:flex;flex-direction:column;justify-content:space-between;color:#fff}
+.social .l{width:38cqw}
+.social h4{font:600 7.4cqw/.92 var(--display);letter-spacing:-.05em}
+.social .ft{display:flex;justify-content:space-between;font:500 1.9cqw var(--mono);letter-spacing:.02em}
+.tg{background:#17171C;border:1px solid var(--line);border-radius:14px;overflow:hidden;max-width:460px}
+.tg .hd{display:flex;gap:12px;align-items:center;padding:14px 16px}
+.tg .av{width:42px;height:42px;border-radius:50%;background:var(--signal);display:flex;align-items:center;justify-content:center;color:#fff;flex:none}
+.tg .img{position:relative;aspect-ratio:16/9;overflow:hidden;background:var(--signal)}
+.tg .img canvas{position:absolute;inset:0;width:100%;height:100%}
+.tg .img .v{position:absolute;left:18px;bottom:14px;font:600 54px/1 var(--display);letter-spacing:-.05em;color:#fff}
+.tg .tx{padding:14px 16px 16px;font-size:15px;line-height:1.5;color:#E3E2E8}
+.tg .tx ul{margin:8px 0;padding-left:18px}
+.toast{display:flex;align-items:center;gap:14px;background:#1C1C22;border:1px solid #2E2E36;border-radius:12px;padding:14px 14px 14px 16px;max-width:460px;box-shadow:0 18px 40px -18px rgba(0,0,0,.7)}
+.toast .m{flex:none;color:var(--signal)}
+.toast .t1{font-weight:600}
+.toast .t2{font-size:13px;color:#9B9BA8}
+.toast .btn{margin-left:auto;padding:9px 14px;font-size:13px;border-radius:99px;flex:none}
+
+/* assets */
+pre{margin:0;background:var(--graphite);border:1px solid var(--line);padding:18px;overflow:auto;font:12.5px/1.65 var(--mono);color:#D7D5DC;max-height:420px}
+.assets{display:flex;flex-wrap:wrap;gap:10px}
+.copied{color:var(--protected)!important;border-color:var(--protected)!important}
+footer{border-top:1px solid var(--line);padding-block:40px 56px;color:var(--mute);font-size:13px}
+footer .wrap{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:24px;align-items:end}
+@media (max-width:700px){footer .wrap{grid-template-columns:minmax(0,1fr)}}
+.note{font-size:13px;color:var(--mute)}
+.paper .note{color:var(--mute-paper)}
+</style>
+
+<div class="top"><div class="wrap">
+  <a class="brand" href="#cover" aria-label="V2pn Brand Book, back to top"><span data-lockup="h" data-mark="#FF3D1F" data-text="#FFFFFF" style="height:20px;display:block"></span></a>
+  <nav aria-label="Chapters">
+    <a href="#story">Story</a><a href="#logo">Logo</a><a href="#color">Color</a><a href="#type">Type</a><a href="#glass">Glass</a><a href="#map">Map</a><a href="#icons">Icons</a><a href="#motion">Motion</a><a href="#voice">Voice</a><a href="#use">In use</a><a href="#assets">Assets</a>
+  </nav>
+</div></div>
+
+<header class="cover" id="cover">
+  <canvas id="c-cover" aria-hidden="true"></canvas>
+  <div class="wrap">
+    <div class="meta label" style="color:rgba(255,255,255,.86)"><span>Brand book · v1.0</span><span>November 2026</span></div>
+    <div>
+      <div class="lock" data-lockup="h" data-mark="#FFFFFF" data-text="#FFFFFF" role="img" aria-label="V2pn logo"></div>
+    </div>
+    <div class="sub">
+      <p class="tag">Always two ways.</p>
+      <p class="label" style="color:rgba(255,255,255,.86)">Desktop client built on v2rayN</p>
+    </div>
+  </div>
+</header>
+
+<section class="sec" id="contents"><div class="wrap">
+  <p class="label">Contents</p>
+  <div class="toc mt-s">
+    <a href="#story"><span class="n">01</span><span class="t">Story</span><span class="d">What V2pn is and the idea behind it</span></a>
+    <a href="#logo"><span class="n">02</span><span class="t">Logo</span><span class="d">The fork, its grid, lockups and rules</span></a>
+    <a href="#color"><span class="n">03</span><span class="t">Color</span><span class="d">Six colors, each with one job</span></a>
+    <a href="#type"><span class="n">04</span><span class="t">Type</span><span class="d">Inter Tight, Inter, JetBrains Mono</span></a>
+    <a href="#glass"><span class="n">05</span><span class="t">Glass</span><span class="d">The signature: private things behind ribbed glass</span></a>
+    <a href="#map"><span class="n">06</span><span class="t">Map</span><span class="d">The world as dots and dither</span></a>
+    <a href="#icons"><span class="n">07</span><span class="t">Icons</span><span class="d">Ten pictograms on the fork's angles</span></a>
+    <a href="#motion"><span class="n">08</span><span class="t">Motion</span><span class="d">One long move: the pane slides in</span></a>
+    <a href="#voice"><span class="n">09</span><span class="t">Voice</span><span class="d">Plain words, real places</span></a>
+    <a href="#use"><span class="n">10</span><span class="t">In use</span><span class="d">App, icon, social, updates</span></a>
+  </div>
+</div></section>
+
+<!-- 01 STORY -->
+<section class="sec" id="story"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 01</p><h2>Story</h2><span class="num">01</span></header>
+  <p class="big-idea">One way in.<br><em>Two ways out.</em></p>
+  <div class="grid g2 mt-m" style="align-items:start">
+    <p class="lead">V2pn is a desktop client for people who want the internet to just work. Underneath it is v2rayN with Xray and sing-box. On top it is one screen: pick a place on the map and press Connect.</p>
+    <p class="body">Every connection has two ways out. Local sites go direct, so banks and government services keep working. Everything else goes through a server the person chose. The logo draws that fork. The glass shows the second way: light gets through, the details stay behind the ribs.</p>
+  </div>
+  <div class="facts mt-m">
+    <div><span class="label">Built on</span><b>v2rayN 7.25.6</b></div>
+    <div><span class="label">Cores</span><b>Xray · sing-box · mihomo</b></div>
+    <div><span class="label">Modes</span><b>Proxy · VPN (TUN)</b></div>
+    <div><span class="label">Route presets</span><b>Russian sites direct · Only blocked · Everything</b></div>
+    <div><span class="label">Ships for</span><b>Windows x64 · arm64</b></div>
+  </div>
+
+  <div class="grid g3 mt-l">
+    <div class="principle"><span class="label">Principle</span><h3>One tap, then quiet.</h3><p class="body">The app asks for one decision, the place. Mode and route have good defaults. After Connect, it gets out of the way.</p></div>
+    <div class="principle"><span class="label">Principle</span><h3>Show the route.</h3><p class="body">People should always see which way their traffic goes: direct or through a server, and which server.</p></div>
+    <div class="principle"><span class="label">Principle</span><h3>Plain words.</h3><p class="body">Name places, not protocols. VLESS and Reality live behind “Show more fields”, not on the main screen.</p></div>
+  </div>
+
+  <h3 class="mt-l" style="font-size:clamp(28px,3vw,40px);letter-spacing:-.03em">Writing the name</h3>
+  <div class="name-row mt-s">
+    <div><span class="label">In text</span><div class="w">V2pn</div></div>
+    <div><span class="label">Wordmark</span><div class="w" style="font-weight:800;letter-spacing:-.035em">v2pn</div></div>
+    <div><span class="label">Never</span><div class="w no">V2PN</div></div>
+    <div><span class="label">Never</span><div class="w no">V2pn VPN</div></div>
+  </div>
+  <p class="note mt-s">Say it “vee-two-pee-en”. Capital V, numeral 2, lowercase pn. The tagline is “Always two ways.”</p>
+</div></section>
+
+<!-- 02 LOGO -->
+<section class="sec graphite" id="logo"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 02</p><h2>Logo</h2><span class="num">02</span></header>
+  <div class="hero-logo"><div data-lockup="h" data-mark="#FF3D1F" data-text="#FFFFFF" style="width:100%" role="img" aria-label="V2pn primary lockup"></div></div>
+
+  <div class="anat mt-l">
+    <div class="tile on-ink" style="aspect-ratio:1/1;padding:16%"><div data-mark-svg="#FF3D1F" data-anat="1" style="width:100%"></div></div>
+    <div>
+      <p class="label">The fork</p>
+      <h3 style="font-size:clamp(30px,3.4vw,48px);letter-spacing:-.03em;margin:10px 0 18px">A road seen from above.</h3>
+      <ol>
+        <li><span class="k">A</span><div><b>Stem: you</b><span class="body">One way in. The mark is anchored at the bottom, where the person is.</span></div></li>
+        <li><span class="k">B</span><div><b>Left branch: direct</b><span class="body">Goes straight up after one step aside. Local sites take this way.</span></div></li>
+        <li><span class="k">C</span><div><b>Right branch: through a server</b><span class="body">Turns out at 45° toward the world, then stops square.</span></div></li>
+        <li><span class="k">D</span><div><b>Square cuts</b><span class="body">Both ways end somewhere real. No arrowheads, no rounding.</span></div></li>
+      </ol>
+    </div>
+  </div>
+
+  <div class="grid g2 mt-l" style="align-items:center">
+    <div class="construct"><div id="construction"></div></div>
+    <div class="stack">
+      <p class="label">Construction</p>
+      <h3 style="font-size:clamp(28px,3vw,42px);letter-spacing:-.03em">Built from one stroke.</h3>
+      <p class="body">The unit <b>u</b> is the stroke width. Everything else is a multiple of it, and every diagonal is 45°. Redraw the mark from these numbers, never by tracing.</p>
+      <dl class="spec mt-s">
+        <dt>Box</dt><dd>3.25u wide × 3.5u tall</dd>
+        <dt>Stroke</dt><dd>1u everywhere, measured across the stroke</dd>
+        <dt>Notch</dt><dd>1.25u down from the top, on the stem's left edge</dd>
+        <dt>Cap</dt><dd>Right branch ends in a 1u × 1u square corner</dd>
+        <dt>Step</dt><dd>Left branch steps 1u aside over 1u of height</dd>
+      </dl>
+    </div>
+  </div>
+
+  <div class="grid g2 mt-l" style="align-items:center">
+    <div class="stack">
+      <p class="label">Wordmark</p>
+      <h3 style="font-size:clamp(28px,3vw,42px);letter-spacing:-.03em">Drawn, not typed.</h3>
+      <p class="body">The wordmark is Inter ExtraBold turned into outlines, tracked −3.5% with three pairs spaced by hand: v2 closer, 2p looser. Always use the artwork. Typing “v2pn” in a font gives a different word.</p>
+      <dl class="spec mt-s">
+        <dt>Mark height</dt><dd>2.15 × the x-height of the wordmark</dd>
+        <dt>Alignment</dt><dd>The mark's center sits on the middle of the x-height</dd>
+        <dt>Gap</dt><dd>0.6u between the mark and the v</dd>
+      </dl>
+    </div>
+    <div class="tile on-paper" style="aspect-ratio:16/9;padding:9%"><div id="wm-lines" style="width:100%"></div></div>
+  </div>
+
+  <p class="label mt-l">Lockups</p>
+  <div class="grid g3 mt-s">
+    <div class="tile on-ink"><div data-lockup="h" data-mark="#FF3D1F" data-text="#FFFFFF" style="width:100%"></div><span class="cap">Horizontal · primary</span></div>
+    <div class="tile on-ink"><div data-lockup="v" data-mark="#FF3D1F" data-text="#FFFFFF" style="width:52%"></div><span class="cap">Stacked · square spaces</span></div>
+    <div class="tile on-ink"><div data-mark-svg="#FF3D1F" style="width:32%"></div><span class="cap">Mark · icons, avatars, favicons</span></div>
+  </div>
+
+  <div class="grid g2 mt-l" style="align-items:center">
+    <div class="tile on-paper" style="aspect-ratio:16/9;padding:6%"><div id="clearspace" style="width:100%"></div></div>
+    <div class="stack">
+      <p class="label">Clear space and size</p>
+      <h3 style="font-size:clamp(28px,3vw,42px);letter-spacing:-.03em">Give it one stroke of air.</h3>
+      <p class="body">Keep 1u clear on every side: no text, edges or other logos inside the dashed line. On a full-bleed background, use 2u from the frame edge.</p>
+      <div class="minsize mt-s" id="minsize"></div>
+    </div>
+  </div>
+
+  <p class="label mt-l">Color versions</p>
+  <div class="grid g3 mt-s">
+    <div class="tile on-ink"><div data-lockup="h" data-mark="#FF3D1F" data-text="#FFFFFF" style="width:100%"></div><span class="cap">Signal + white on Tunnel</span></div>
+    <div class="tile on-signal"><div data-lockup="h" data-mark="#FFFFFF" data-text="#FFFFFF" style="width:100%"></div><span class="cap">White on Signal</span></div>
+    <div class="tile on-paper"><div data-lockup="h" data-mark="#FF3D1F" data-text="#0B0B0D" style="width:100%"></div><span class="cap">Signal + Tunnel on Paper</span></div>
+    <div class="tile on-ink"><div data-lockup="h" data-mark="#FFFFFF" data-text="#FFFFFF" style="width:100%"></div><span class="cap">White, one color</span></div>
+    <div class="tile on-signal"><div data-lockup="h" data-mark="#0B0B0D" data-text="#0B0B0D" style="width:100%"></div><span class="cap">Tunnel on Signal</span></div>
+    <div class="tile on-white"><div data-lockup="h" data-mark="#0B0B0D" data-text="#0B0B0D" style="width:100%"></div><span class="cap">Black, one color</span></div>
+  </div>
+
+  <p class="label mt-l">Don't</p>
+  <div class="grid g3 mt-s" id="misuse"></div>
+
+  <div class="grid g2 mt-l" style="align-items:end">
+    <div class="stack">
+      <p class="label">App icon and tray</p>
+      <h3 style="font-size:clamp(28px,3vw,42px);letter-spacing:-.03em">White fork on a Signal tile.</h3>
+      <p class="body">The tile is Signal with a 22% corner radius, the fork centered at 56% of the tile. In the tray the fork stands alone and its color carries the state.</p>
+      <div class="icons-app mt-s" id="appicons"></div>
+    </div>
+    <div class="stack">
+      <div class="taskbar" id="taskbar" aria-label="Windows taskbar with V2pn tray icons"></div>
+      <div class="grid" id="traystates" style="grid-template-columns:repeat(3,minmax(0,1fr))"></div>
+    </div>
+  </div>
+</div></section>
+
+<!-- 03 COLOR -->
+<section id="color" class="sec" style="padding-bottom:0"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 03</p><h2>Color</h2><span class="num">03</span></header>
+  <p class="lead">Six colors. Tunnel is the ground, Signal is the one thing to look at. Flare only exists as light inside the glass.</p>
+</div>
+<div class="strips mt-m" id="strips"></div>
+</section>
+<section class="sec" style="padding-top:clamp(48px,6vw,88px)"><div class="wrap">
+  <p class="label">Proportion on a typical screen</p>
+  <div class="ratio mt-s" id="ratio"></div>
+  <div class="grid g2 mt-l" style="align-items:start">
+    <div class="stack">
+      <p class="label">Contrast, measured</p>
+      <h3 style="font-size:clamp(28px,3vw,42px);letter-spacing:-.03em">Red asks you to act.</h3>
+      <p class="body">Signal fills the one button that starts a connection and marks “not protected”. Text on Signal is Tunnel, not white: white only clears 3:1, enough for the logo and large type. Ratios below are WCAG 2.2, computed from the HEX values on this page.</p>
+      <div class="dd mt-s" style="grid-template-columns:minmax(0,1fr)">
+        <div class="yes"><h4>Product states</h4><ul>
+          <li><b style="color:var(--protected)">Protected #3DD68C</b> — connected, traffic goes the chosen way.</li>
+          <li><b style="color:var(--caution)">Caution #F2B84B</b> — server not responding, proxy on one port only.</li>
+          <li><b style="color:var(--signal)">Signal #FF3D1F</b> — not connected, or a step the person must take.</li>
+        </ul></div>
+      </div>
+    </div>
+    <div class="tbl"><table id="contrast"><thead><tr><th>Pair</th><th>Ratio</th><th>Use</th></tr></thead><tbody></tbody></table></div>
+  </div>
+</div></section>
+
+<!-- 04 TYPE -->
+<section class="sec paper" id="type" style="overflow:hidden"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 04</p><h2>Type</h2><span class="num">04</span></header>
+  <p class="type-poster">Always<br>two ways.</p>
+  <div class="faces mt-l">
+    <div><p class="label">Display</p><div class="aa" style="font-family:var(--display);font-weight:600">Aa</div><b style="font:600 22px var(--display)">Inter Tight</b><p class="body mt-s">Headlines and posters. Weights 200–800, tight tracking, set large. The tightened cut of the app's own face.</p></div>
+    <div><p class="label">Text and interface</p><div class="aa" style="font-family:var(--text);font-weight:500">Aa</div><b style="font:600 22px var(--text)">Inter</b><p class="body mt-s">Everything inside the app and every paragraph. V2pn already ships Inter Regular, Medium and SemiBold.</p></div>
+    <div><p class="label">Data</p><div class="aa" style="font-family:var(--mono);font-weight:400;letter-spacing:-.06em">Aa</div><b style="font:500 20px var(--mono)">JetBrains Mono</b><p class="body mt-s">Addresses, ports, ping, protocols, version numbers: <span class="mono">192.0.2.1:443 · 42 ms</span></p></div>
+  </div>
+  <p class="note mt-s">All three are free under the SIL Open Font License, have Cyrillic, and load from Google Fonts.</p>
+
+  <div class="weights mt-l">
+    <div class="row"><span class="w" style="font-weight:800">Extrabold</span><div class="s">Tracking −5%<br>Leading 0.9<br>Weight 800<div class="tags"><span>Logo</span><span>Posters</span></div></div></div>
+    <div class="row"><span class="w" style="font-weight:600">Semibold</span><div class="s">Tracking −4.5%<br>Leading 0.92<br>Weight 600<div class="tags"><span>Headlines</span></div></div></div>
+    <div class="row"><span class="w" style="font-weight:400">Regular</span><div class="s">Tracking −3%<br>Leading 1.0<br>Weight 400<div class="tags"><span>Large leads</span></div></div></div>
+    <div class="row"><span class="w" style="font-weight:200">Extralight</span><div class="s">Tracking −6%<br>Leading 0.72<br>Weight 200<div class="tags"><span>Numerals</span></div></div></div>
+  </div>
+
+  <div class="grid g2 mt-l" style="align-items:start">
+    <div>
+      <p class="label">Product scale · Inter</p>
+      <div class="mt-s" id="scale-ui"></div>
+    </div>
+    <div>
+      <p class="label">Brand scale · Inter Tight</p>
+      <div class="mt-s" id="scale-brand"></div>
+    </div>
+  </div>
+  <div class="dd mt-l">
+    <div class="yes"><h4>Do</h4><ul>
+      <li>Tighten as it grows: −0.06em at 140px and up, −0.02em at 28px, zero at body size.</li>
+      <li>Set labels in mono capitals with +0.08em of tracking.</li>
+      <li>Use tabular figures wherever numbers sit in a column.</li>
+    </ul></div>
+    <div class="no"><h4>Don't</h4><ul>
+      <li>Italics. The family has none in the brand.</li>
+      <li>Signal for paragraphs or anything under 32px on Paper.</li>
+      <li>More than two weights in one block of text.</li>
+    </ul></div>
+  </div>
+</div>
+<div class="wrap"><p class="huge-name" aria-hidden="true">Inter Tight</p></div>
+</section>
+
+<!-- 05 GLASS -->
+<section class="sec" id="glass"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 05</p><h2>Glass</h2><span class="num">05</span></header>
+  <div class="glass-hero"><canvas id="c-glass-hero" aria-hidden="true"></canvas>
+    <div class="over"><h3>Light gets through. The details stay yours.</h3><span class="label" style="color:#fff">Scene: people · 44 ribs</span></div>
+  </div>
+  <div class="grid g2 mt-m" style="align-items:start">
+    <p class="lead">Ribbed glass is what offices and bathrooms use for privacy: you see that someone is there, never who. V2pn uses it for everything that goes through a server.</p>
+    <p class="body">The rule is literal. Things that are private sit behind glass. Things that are direct, like the logo, text and buttons, stay sharp on top of it. Never put words behind the ribs.</p>
+  </div>
+
+  <p class="label mt-l">Anatomy</p>
+  <div class="anatomy-g mt-s">
+    <div><span class="label">Ribs</span><b>36–64</b><span class="body">across the frame, always vertical, all the same width</span></div>
+    <div><span class="label">Refraction</span><b>1.6–2.0×</b><span class="body">each rib squeezes a slice that much wider than itself</span></div>
+    <div><span class="label">Softness</span><b>4–8%</b><span class="body">of frame height, how far the subject is blurred before the glass</span></div>
+    <div><span class="label">Edge</span><b>16% · 42%</b><span class="body">white highlight on the left edge, shade on the right, a 1px glint between ribs</span></div>
+  </div>
+
+  <p class="label mt-l">Four subjects</p>
+  <div class="grid g4 mt-s">
+    <div class="gtile"><canvas data-glass="people" data-ribs="18" aria-hidden="true"></canvas><span class="cap"><span>People</span><span>Privacy</span></span></div>
+    <div class="gtile"><canvas data-glass="mark" data-ribs="18" aria-hidden="true"></canvas><span class="cap"><span>The fork</span><span>Brand</span></span></div>
+    <div class="gtile"><canvas data-glass="map" data-ribs="18" aria-hidden="true"></canvas><span class="cap"><span>The map</span><span>Places</span></span></div>
+    <div class="gtile"><canvas data-glass="light" data-ribs="18" aria-hidden="true"></canvas><span class="cap"><span>Light trail</span><span>Speed</span></span></div>
+  </div>
+
+  <p class="label mt-l">Glass lab</p>
+  <div class="lab mt-s">
+    <div class="view"><canvas id="c-lab" aria-label="Fluted glass preview, changes with the controls"></canvas></div>
+    <div class="controls">
+      <div class="seg" role="group" aria-label="Subject behind the glass">
+        <button type="button" data-scene="people" aria-pressed="true">People</button>
+        <button type="button" data-scene="mark" aria-pressed="false">Fork</button>
+        <button type="button" data-scene="map" aria-pressed="false">Map</button>
+        <button type="button" data-scene="light" aria-pressed="false">Light</button>
+      </div>
+      <div class="ctl"><label for="g-ribs">Ribs</label><output id="o-ribs" for="g-ribs">40</output><input id="g-ribs" type="range" min="12" max="80" step="1" value="40"></div>
+      <div class="ctl"><label for="g-refr">Refraction</label><output id="o-refr" for="g-refr">1.8×</output><input id="g-refr" type="range" min="0" max="1" step="0.05" value="0.5"></div>
+      <div class="ctl"><label for="g-soft">Softness</label><output id="o-soft" for="g-soft">6%</output><input id="g-soft" type="range" min="2" max="12" step="1" value="6"></div>
+      <div class="ctl"><label for="g-grain">Grain</label><output id="o-grain" for="g-grain">5%</output><input id="g-grain" type="range" min="0" max="15" step="1" value="5"></div>
+      <button class="btn" type="button" id="copy-glass">Copy settings as JSON</button>
+      <p class="note">Values outside the brand range still render, so you can see why the range exists.</p>
+    </div>
+  </div>
+
+  <div class="dd mt-l">
+    <div class="yes"><h4>Do</h4><ul>
+      <li>Keep ribs vertical and even, like a real pane.</li>
+      <li>Put one subject behind the glass and let it fill the frame.</li>
+      <li>Place the logo and text sharp, on top, in white.</li>
+      <li>Stay inside Signal, Flare and Tunnel.</li>
+    </ul></div>
+    <div class="no"><h4>Don't</h4><ul>
+      <li>Horizontal, curved or uneven ribs.</li>
+      <li>Rainbow edges, chrome or chromatic split.</li>
+      <li>Text, UI or the logo behind the glass.</li>
+      <li>Glass on anything a person has to read or tap.</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<!-- 06 MAP -->
+<section class="sec graphite" id="map"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 06</p><h2>Map</h2><span class="num">06</span></header>
+  <div class="mapbox"><canvas id="c-dots" aria-label="Dot map of the world with V2pn server locations"></canvas></div>
+  <div class="grid g2 mt-m" style="align-items:start">
+    <p class="lead">The map is the app's home screen, so it is also the brand's landscape. It is drawn from the same data as the app: Natural Earth countries in Mercator, 2400 × 1560.</p>
+    <p class="body">Land is a grid of graphite dots. Servers are white dots; the active one is Signal with a ring. Labels are mono, set next to the dot, never inside it.</p>
+  </div>
+  <div class="grid g2 mt-l" style="align-items:center">
+    <div class="dither"><canvas id="c-dither" aria-label="Dithered map of Europe in Signal red"></canvas></div>
+    <div class="stack">
+      <p class="label">Dither</p>
+      <h3 style="font-size:clamp(28px,3vw,42px);letter-spacing:-.03em">The editorial version.</h3>
+      <p class="body">For posters, release covers and articles, the map goes one-bit: Signal pixels on Tunnel, an 8 × 8 ordered dither, light falling from the active server. It reads like an old engraving made of packets.</p>
+      <dl class="spec mt-s">
+        <dt>Pattern</dt><dd>Bayer 8 × 8, square pixels, no smoothing</dd>
+        <dt>Pixel</dt><dd>4–8px on screen, 0.5mm in print</dd>
+        <dt>Colors</dt><dd>Signal on Tunnel, or Tunnel on Paper</dd>
+      </dl>
+    </div>
+  </div>
+</div></section>
+
+<!-- 07 ICONS -->
+<section class="sec paper" id="icons"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 07</p><h2>Icons</h2><span class="num">07</span></header>
+  <div class="grid g2" style="align-items:start">
+    <p class="lead">Ten pictograms built like the fork: a 2px stroke, square ends, sharp corners, angles of 0°, 45° and 90°.</p>
+    <dl class="spec"><dt>Grid</dt><dd>24 × 24 with 2px padding</dd><dt>Stroke</dt><dd>2px at 24px, scales with the icon</dd><dt>Ends</dt><dd>Square caps, miter joins</dd><dt>Size</dt><dd>16, 20, 24px in the app</dd></dl>
+  </div>
+  <div class="icon-grid mt-m" id="icon-grid"></div>
+  <p class="label mt-l">States</p>
+  <div class="icon-states mt-s" id="icon-states"></div>
+</div></section>
+
+<!-- 08 MOTION -->
+<section class="sec" id="motion"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 08</p><h2>Motion</h2><span class="num">08</span></header>
+  <div class="grid g2" style="align-items:start">
+    <p class="lead">One long move in the whole product: when a connection starts, a pane of glass slides over the map. Everything else is short and quiet.</p>
+    <div class="stack">
+      <div class="demo" id="demo"><span class="dot"></span><span class="pane"></span></div>
+      <button class="btn primary" type="button" id="demo-btn" style="align-self:flex-start">Play: connect</button>
+    </div>
+  </div>
+  <div class="curves mt-m" id="curves"></div>
+  <div class="dd mt-l">
+    <div class="yes"><h4>Do</h4><ul>
+      <li>Slide the pane left to right on connect, right to left on disconnect.</li>
+      <li>Change colors with the standard curve in 200ms.</li>
+      <li>With reduced motion, crossfade in 120ms instead.</li>
+    </ul></div>
+    <div class="no"><h4>Don't</h4><ul>
+      <li>Bounce, overshoot or spring.</li>
+      <li>Spin the logo or animate it while loading.</li>
+      <li>Move the map itself. The world stays still; the glass moves.</li>
+    </ul></div>
+  </div>
+</div></section>
+
+<!-- 09 VOICE -->
+<section class="sec paper" id="voice"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 09</p><h2>Voice</h2><span class="num">09</span></header>
+  <p class="lead">Calm and exact, like a good dispatcher. Say what happened and what to do next. Name the place, the number, the button.</p>
+  <div class="say mt-m">
+    <div><span class="h" style="color:#167A4B">We say</span></div><div><span class="h" style="color:var(--signal)">We don't say</span></div>
+    <div><span class="y">Connected via Germany 1 · 42 ms</span></div><div><span class="n">You are now 100% anonymous!</span></div>
+    <div><span class="y">Russian sites go direct. Everything else goes through the server.</span></div><div><span class="n">Bypass any block in one click</span></div>
+    <div><span class="y">The server isn't answering. Try another one.</span></div><div><span class="n">Error: core exited with code 1</span></div>
+    <div><span class="y">Restart to update</span></div><div><span class="n">A new version is available. Would you like to update now?</span></div>
+    <div><span class="y">Paste a link</span></div><div><span class="n">Import configuration from clipboard (vless://, vmess://…)</span></div>
+  </div>
+  <p class="label mt-l">Microcopy</p>
+  <div class="micro mt-s">
+    <div class="card"><span class="label">Empty state</span><b style="font:600 20px var(--display)">Add your first server</b><span class="body">Paste a subscription link or a vless:// link, or scan a QR code.</span></div>
+    <div class="card"><span class="label">Admin prompt</span><b style="font:600 20px var(--display)">VPN mode needs admin rights</b><span class="body">V2pn will restart as administrator and switch to VPN. Your server stays selected.</span></div>
+    <div class="card"><span class="label">Status</span><b style="font:600 20px var(--display)">Proxy on port 20808 only</b><span class="body">Browsers use it. Games and apps without proxy support go direct.</span></div>
+  </div>
+  <p class="label mt-l">The name, read out loud</p>
+  <p class="body mt-s">Hidden in the About window: a different reading of the letters every time it opens.</p>
+  <div class="backr mt-s"><span><b>V</b>irtually <b>2</b> <b>P</b>laces <b>N</b>ow</span><span><b>V</b>room, <b>2</b> <b>P</b>ackets, <b>N</b>yoom</span><span><b>V</b>ery <b>2</b>-<b>P</b>ath <b>N</b>etwork</span></div>
+</div></section>
+
+<!-- 10 IN USE -->
+<section class="sec" id="use"><div class="wrap">
+  <header class="chap"><p class="label">Chapter 10</p><h2>In use</h2><span class="num">10</span></header>
+  <div class="app" id="app" data-state="off" role="group" aria-label="V2pn main window, example">
+    <div class="bar"><span style="color:#9B9BA8">☰</span><span data-mark-svg="#FF3D1F" style="width:1.5cqw;display:block"></span><span>V2pn</span><span class="ctrl"><span>—</span><span>▢</span><span>✕</span></span></div>
+    <div class="win">
+      <div class="side">
+        <div class="search">Search</div>
+        <div class="tabs"><span class="on">Favorites</span><span>Countries</span><span>Subscriptions</span></div>
+        <div class="row"><span style="width:2.2cqw;height:2.2cqw;border-radius:.6cqw;background:rgba(61,214,140,.15);display:block"></span><div>Fastest server<small>Netherlands 2 · 31 ms</small></div><span></span></div>
+        <div class="grp">Recent</div>
+        <div class="row sel"><span class="flag f-de"></span><div>Germany 1<small>Perf</small></div><span class="ms">42 ms</span></div>
+        <div class="row"><span class="flag f-nl"></span><div>Netherlands 2<small>Perf</small></div><span class="ms">31 ms</span></div>
+        <div class="row"><span class="flag f-fi"></span><div>Finland 1<small>Home</small></div><span class="ms">58 ms</span></div>
+        <div class="grp">Favorites</div>
+        <div class="row"><span class="flag f-se"></span><div>Sweden 3<small>Perf</small></div><span class="ms">64 ms</span></div>
+      </div>
+      <div class="main">
+        <canvas id="c-app-map" aria-hidden="true"></canvas>
+        <canvas id="c-app-glass" class="glassc" aria-hidden="true"></canvas>
+        <div class="head">
+          <span class="chip"><i></i><span id="chip-t">NOT CONNECTED</span></span>
+          <div class="country"><span class="flag f-de"></span>Germany</div>
+          <div class="meta2">Germany 1 · VLESS · Reality</div>
+          <button class="cbtn" type="button" id="cbtn">Connect</button>
+          <div class="modes"><span class="on">Proxy</span><span>VPN</span><span class="route">Russian sites direct ▾</span></div>
+        </div>
+        <div class="stat">
+          <div class="top2"><span class="s" id="stat-s">Not connected</span><span style="color:#9B9BA8;font-weight:400">Check connection</span></div>
+          <div>Server<b>192.0.2.1:443</b></div><div>Ping<b id="stat-p">—</b></div><div>Protocol<b>VLESS · Reality</b></div><div>Session<b id="stat-t">0 B</b></div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <p class="note mt-s">Press Connect in the mockup. The layout is the real V2pn 1.0 window; colors and type follow this book. The address is from the documentation range.</p>
+
+  <div class="grid g2 mt-l" style="align-items:start">
+    <div class="stack">
+      <p class="label">GitHub social preview · 1280 × 640</p>
+      <div class="social"><canvas data-glass="people" data-ribs="40" aria-hidden="true"></canvas>
+        <div class="in"><div class="l" data-lockup="h" data-mark="#FFFFFF" data-text="#FFFFFF"></div><h4>Always<br>two ways.</h4><div class="ft"><span>github.com/Piwqust/V2pn</span><span>Windows</span></div></div>
+      </div>
+    </div>
+    <div class="stack">
+      <p class="label">Update toast</p>
+      <div class="toast"><span class="m" data-mark-svg="#FF3D1F" style="width:26px"></span><div><div class="t1">V2pn 1.0.1 is ready</div><div class="t2">It installs on restart. Your connection stays up until then.</div></div><button class="btn primary" type="button">Restart</button></div>
+      <p class="label mt-m">Release post · example</p>
+      <div class="tg">
+        <div class="hd"><span class="av" data-mark-svg="#FFFFFF" style="width:42px;padding:11px"></span><div><b>V2pn</b><div class="note">channel · example</div></div></div>
+        <div class="img"><canvas data-glass="light" data-ribs="30" aria-hidden="true"></canvas><span class="v">1.0.1</span></div>
+        <div class="tx"><b>V2pn 1.0.1 is out.</b><ul><li>Updates now check their SHA-256 before installing.</li><li>The TUN DNS setting from v2rayN is on the settings page.</li></ul>Existing installs update on the next restart.</div>
+      </div>
+    </div>
+  </div>
+</div></section>
+
+<!-- ASSETS -->
+<section class="sec graphite" id="assets"><div class="wrap">
+  <p class="label">Assets</p>
+  <h2 style="font-size:clamp(40px,5vw,72px);letter-spacing:-.04em;margin:10px 0 24px">Take the files.</h2>
+  <p class="body">Every copy button puts clean SVG or CSS on your clipboard. Paste it into Figma, a code editor or an .svg file.</p>
+  <div class="assets mt-m">
+    <button class="btn primary" type="button" data-copy="mark">Mark · Signal</button>
+    <button class="btn" type="button" data-copy="lockup-dark">Lockup · for dark</button>
+    <button class="btn" type="button" data-copy="lockup-light">Lockup · for light</button>
+    <button class="btn" type="button" data-copy="stacked">Stacked · for dark</button>
+    <button class="btn" type="button" data-copy="icon">App icon 256</button>
+    <button class="btn" type="button" data-copy="tokens">CSS tokens</button>
+  </div>
+  <pre class="mt-m" id="tokens-pre"></pre>
+</div></section>
+
+<footer><div class="wrap">
+  <div>V2pn Brand Book v1.0 · November 2026. Built on v2rayN (GPL-3.0). Map data: Natural Earth, public domain. Fonts: Inter, Inter Tight, JetBrains Mono, SIL Open Font License 1.1. The fork was found in orvey and redrawn on a 1u grid.</div>
+  <div data-lockup="h" data-mark="#FF3D1F" data-text="#8F8D94" style="width:120px"></div>
+</div></footer>
+
+<script>
+const DATA = {"wordmark":{"d":"M1645 -1536 1118 0H558L32 -1536H547L830 -478H846L1130 -1536Z M1719.44 0V-356L2466.44 -1010Q2550.44 -1086 2609.44 -1149.5Q2668.44 -1213 2699.44 -1277.5Q2730.44 -1342 2730.44 -1418Q2730.44 -1503 2693.44 -1563.5Q2656.44 -1624 2591.44 -1657.0Q2526.44 -1690 2442.44 -1690Q2357.44 -1690 2293.44 -1655.5Q2229.44 -1621 2193.94 -1556.0Q2158.44 -1491 2158.44 -1398H1689.44Q1689.44 -1607 1783.44 -1759.0Q1877.44 -1911 2047.94 -1993.5Q2218.44 -2076 2444.44 -2076Q2677.44 -2076 2849.44 -1998.0Q3021.44 -1920 3115.94 -1780.5Q3210.44 -1641 3210.44 -1457Q3210.44 -1340 3163.44 -1225.0Q3116.44 -1110 2994.94 -971.0Q2873.44 -832 2650.44 -638L2405.44 -412V-399H3235.44V0Z M3435.88 576V-1536H3919.88V-1273H3934.88Q3964.88 -1343 4020.38 -1408.0Q4075.88 -1473 4162.38 -1514.5Q4248.88 -1556 4369.88 -1556Q4529.88 -1556 4669.38 -1472.0Q4808.88 -1388 4894.88 -1213.0Q4980.88 -1038 4980.88 -767Q4980.88 -506 4898.38 -330.0Q4815.88 -154 4676.38 -66.0Q4536.88 22 4366.88 22Q4250.88 22 4165.88 -16.0Q4080.88 -54 4023.38 -116.0Q3965.88 -178 3934.88 -249H3924.88V576ZM3914.88 -768Q3914.88 -644 3948.38 -552.0Q3981.88 -460 4045.38 -409.5Q4108.88 -359 4197.88 -359Q4287.88 -359 4350.88 -409.5Q4413.88 -460 4446.38 -552.0Q4478.88 -644 4478.88 -768Q4478.88 -892 4446.38 -983.0Q4413.88 -1074 4351.38 -1124.0Q4288.88 -1174 4197.88 -1174Q4107.88 -1174 4044.88 -1125.0Q3981.88 -1076 3948.38 -985.0Q3914.88 -894 3914.88 -768Z M5632.32 -876V0H5143.32V-1536H5608.32V-1254H5625.32Q5676.32 -1395 5799.32 -1475.5Q5922.32 -1556 6092.32 -1556Q6254.32 -1556 6373.82 -1483.5Q6493.32 -1411 6559.82 -1281.5Q6626.32 -1152 6625.32 -979V0H6136.32V-883Q6137.32 -1011 6071.82 -1083.0Q6006.32 -1155 5890.32 -1155Q5813.32 -1155 5754.82 -1121.5Q5696.32 -1088 5664.82 -1026.0Q5633.32 -964 5632.32 -876Z","viewBox":[32,-2076,6742.320000000001,2652],"xHeight":1536,"baselineFromTop":2076,"asc":2076,"desc":-576,"upm":2816},"mask":{"w":480,"h":312,"src":[2400,1560],"b64":"AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAN///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP///4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8AAAAB///9YAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB/+AAAAD////4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf//0AAAD////8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf///AAAD////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////AAAB/////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////AAAG/////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////gAAP/////wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAz////4ADH/////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA7////4BTn/////gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////4P7z////+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////wf75///4ACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////x/98///752AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//////H//+////53AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//////P////////zHAAAAAAAAAAAAAAABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////+P////////wPwAAAAAAAAAAAAAABxwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////4P////////2f4AAAAAAAAAAAAAAADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/////8P////////3f4AAAAAAAAAAAAAADgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAx/////cP////////3/4AAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8/////4P//////////wAAAAAAAAAAAAAAPwAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA8/////x///////////wAAAAAAAAAAAAAQPAYAAAAB44AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8/////z///////////gAAAAAAAAAAAAAY7ucAAAAAz4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8f////n///////////AAAAAAAAAAAAAAw/v8AAHAAH8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+f/3//H///////////AAAAAAAAAAAAAPw//4AAHAAH+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/P///+P//////////+AAAAAAAAAAAAA/8/f4AAAAAD+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/j/f/+f//////////4AAAAAAAAAAAAB/5seAAAAAAH8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/4g//8///////////4AAAAAAAMwAAAAfjj8AAAAAAP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/9X//8///////////4AAAAAAA98AAAAPnfwAAAAAAP8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////4///////////4AAAAAAA//AIAAP3fAAAAAAAP+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADn/////4//////////8gAAAAAAH//gwAAG4PwAAAAAAb/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADn/////wH//////////gAAAAAAH//gAAAA4AwAAAAAAf/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADn/////wH//////////gAAAAAP3//gAAAAAAAAAAAAAf/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAj/////gH//////////gAAAAAP///AAAAAAAAAABgAAP/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD////+AH/////////+AAAAAAP//+AAAAAAAAAABwAAD/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAD////8AH/////////+AAAAAAP/3+AAAAAAAAAAAAAAD/3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHgBv///4AP/////////+AAAAAAP/w8AAAAAAAAAAAAAAB/3AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH4Af/f/4B//////////+AAAAAAH/8IAAAAAAAAAAAAAAA//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8A/+f/4D//////////8AAAAAAH/8AcAAAAAAAAAAAAAA//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD+Y////wP//////////8AAAAAAP/+BcAAAAAAAAAAAAAAHv4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAcB+8f///4///////////wAAAAAAP/+BgAAAAAAAAAAAAAAAf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB+D/ef///5///////////4AAAAAAP//AAAAAAAAAAAAAAAAAf4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB+D/fP///x///////////yAAAAAAP/3AAAAAAAAAAAAAAAAAfyAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABeD/fP3//x///////////yAAAAAAD/3wAAAAAAAAAAAAAAAA/nAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEcAn/Dn//h///////////yAAAAAAA/3wAAAAAAAAAAAAAAAA4HAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP8AfvAG//h///////////6gAAAAAA/j4AAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8MfPwP/8A////////////gAAAAAA/j8AAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAh8OYHzP/+AP///////////gAAAAAA/n4AAAAAAAAAAAAAAAAB4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAx8GADzn/8Bn//////////4AAAAAAA/jwAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAH4gGAADn/8Bn///////////AAAAAAA/AwAAAAAAAAAAAAADAAD9AAAAAAAAAAAAAAAAAAAAAAAAAAAAAPwAGACBP/4Af///////////AAAAAAAfAAAAAAAAAAAAAAABAYH4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAfyAAAHwf/8Af///////////AAAAAAAPAAAAAAAAAABwAAAAAYP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAf+DAGPx//+Af//////////7AAAAAAAGAAAAAAAAAADwAAAAAAP/+AAAAAAAAwAAAAAAAAAAAAAAAAAAA/wDDP3///8AH//////////zAAAAAAAGAAAAAAAAAAH4AAAAAGP//gAAAAAABwAAAAAAAAAAAAAAAAAAD/8HDvz///4AH//////////zAAAAAAAAAAAAAAAAAAPwAAAAAB///gAAAAAAAAAAAAAAAAAAAAAAAAAAD/fHD/5/xw4AH//////////9AAAAAAAAAAAAAAAAAH/wAAAAAd///wAAAABAABAAAAAAAAAAAAAAAAAAD//j7/4PAAoAD8P////////9AAAAAAAAAAAAAAAAAP/AAAAAD////wAAAAHsABAAAAAAAAAAAAAAAAAAD//39/xvgCYAAwH////////8AAAAAAAAAAAAAAAAA/+AAAAAH////wAAAAX/AAAAAAAAAAAAAAAAAAAAAn/z8/9n4/gAAAB////////+AAAAAAAAAAAAAAAAB/4AAAAAf////wAAAA3/gAAAAAAAAAAAAAAAAAAAAP//8f/v//wAAAA////////+AAAAAAAAAAAAAAAAB/gAAAQB/////wAAAA3/0AAAAAAAAAAAAAAAAAAAAB///H////4AAAB/////////gAAAAAAAAAAAAAAAH+AAAAwD/////wAAAA//3gAAAAAAAAAAAAAAAAAAAB//7D3///wAAAA/////////gAAAAAAAAAAAAAAAP8AAAAQf/////gAAAAP/v8AAAAAAAAAAAAAAAAAAAAZ/zD33//4AAAAf///////9gAAAAAAAAAAAAAAAP4AAAAAf/////gAAAAH+j4AAAAAAAAAAAAAAAAAAAAH8AAD3//wAAAAP///////8AAAAAAAAAAAAAAAAP4AAAAA//////AAAAAH2B4AAAAAAAAAAAAAAAAAABgH4AAbz//wAAAAP///////+AAAAAAAAQAAAAAAAPwAAAAD//////gAAAABAAAAAAAAAAAAAAAAAAAAAfwDgAAQAECAAAAAP///////+AAAAAAAAQAAAAAAAfgAAAAD//////wAAAAAQAAAAAAAAAAAAAAAAAAAAf/gAAAR4AAAAAAAf///////+AAAAAAAAAAAAAAAAfgAAAAcf////5wAAAAw4AAAAAAAAAAAAAAAAAAAAP/gAAD5/AAAAAAAH///////4AAAAAAAAAAAAAAAA/AAAAAMf////+gAGAAQcAAAAAAAAAAAAAAAAAAAAP/wAcH7/Pn8AAAAH///////4AAAAAAAAAAAAAAAB/AAAAAf/////v3AOAAAeAAAAAAAAAAAAAAAAAAAAP/4AeP7/P//AAAAH///////4AAAAAAAAAAAAAAAA+AAHDh//////f/4P4AA/AAAAAAAAAAAAAAAAAAAAf/8B+P7+f//AAAAH///////wAAAAAAAAAAAAAAAB+AAHCh/////+//4P8AA/AAAAAAAAAAAAAAAAAAAAf/+J+b/+e//gAAAH///////AAAAAAAAAAAAAAAAB8AAHOF////////+f+AABAAAAAAAAAAAAAAAAAAAAf//u8b/8///gAAAH///////gAAAAAAAAAAAAAAAD8AAPmP//////////+AAYAAAAAAAAAAAAAAAAAAAAf///8f/8///wAAAH///////gAAAAAAAAAAAAAAAD4AAP2X//////////+AAPwAAAAAAAAAAAAAAAAAAA/7//8P9w///wAAAH///////gAAAAAAAAAAAAAAADwAAfz9//////////+AA/+AAAAAAAAAAAAAAAAAAA////8P9g+//4AAAH///////gAAAAAAAAAAAAAAAH4AAfj/f/////////+AB//wAAAAAAAAAAAAAAAAAA/3//+D9g///8AAAD///////gAAAAAAAAAAAAAAAPwAAfv/f/////////+IB//4AAAAAAAAAAAAAAAAAAf3//+B/w///+AAAH///////gAAAAAAAAAAAAAAAP4AAfv///////////+MA//wAAAAAA4AAAAQAAAAAAHz//+B7w////gAAH///////wAAAAAAAAAAAAAAAP4AA/////////////+P///4AAAAAB8AAAA4AAAAAAHj//+Bn4////wAAB///////wAAQAAAAAAAAAAAAH4AB/////////////+f///+AAAAAD8AAAB9AAAAAAGD///AH4////wAAAv//////wAAwAAAAAAPwAAAAD8AD//////////////////+fyAAADAAAAH/wAAAAAAD///AH4f///+AAB///////wABgAAAAAB/+AAAAB+AD/3//////////////////6AAADAAAAf//AAAAEAB///2H8f///+AAB//////7wAAAAAAAAB/+AAAAAegD/3//////////////////8AAAAAAAA///8AAAWAA///4H+P////AAB//////+AAAAAAAAAf//AAAAAAwB/v//////////////////8AAAAAAAB////4AD+YB///8H+H////gAD///////gAAAAAAAAf/+gAAAAA4B/v//////////////////8AJ8AAAAD////8A3//h///8f8A+///gAD///////AAAAAAAAA///4AAAAA/h/v//////////////////+Yf/wAAAD/////h///w///8//A+///gAB//////+AAAAAAAAD///4AADAAP5/v//////////////////////+AAAD/////x///+f///+/w/P//wAB3/////8AAAAAAAAP////AADwAP8/v////////////////////9//gAA///////////7/v///4/N//AAAH/////4AAAAAAAAf////gADxhv/f/////////////////////8//4AA/////////////9+//5/J//AAAf/////wAAAAAAAAf////4GDHv//P3///////////////////////8AB////////////5+A8/9/I//wAA/////+AAAAAAAAAf////8Dwf////////////////////////////+AA///////////+D/g//7+J//8AA/////8AAAAAAAAB//////B4/////3////////////////////////AAP//////////8e////7+B//+AA/////AAAAAAAAABf/////h5/////3////////////////////////gAH////////////////7/Bx/+AA////+AAAAAAAAAAf/////jn/////3////////////////////////gAH//////////////////Bx//gA////8AAAAAAAAAAf/////zn/////P/////////////////////////AD//////////////////AD//wA////4AAAAAAAAAA//////z3/////P/////////////////////////AN/////////////////+AD//4A////4AAAAAAAAAB//////9//////f/////////////////////////w8/////////////////8AH//4A////4ABgOAAAAAB////7/v////////////////////////////////x//////////////////8AP//wA////wAD/+AAAAAD////8e/////////////////////////////////j//////////////////8AH/vgAf///AAH//AAAAAH////+B///////////////////////////////v/n//////////////////8Dv/ngAf//+AAH//AAAAAH//H/+B///////////////////////////////h+B//////////////////4D//nAAP//wAAA//gAAAAD/+P//Z///////////////////////////////B+A/////////////////98H//5AAP//gAAD//AAAAAP/+P//9///////////////////////////////AeA/////////////////7/H//8AAP//gAAA//AAAAAP/+P/+f//////////////////////////////+AMABf///////////////7/jz/8AAP//gAAB/+AAAAAf/+f/////////////////////////////////+AAAAf///////////////z/yB/+AAH//gAAB/4AAAAB//8//////////////////////////////////+ABwB////////////////H7nB/+AAH//gAAAPgAAAAD//9//////////////////////////////////+AB8P////////////////AwHA/+AAD//AAAABAAAAAD//z///////////////////////////////////AAYP////////////////AOAA/8AAD/+AAAAAAAAAAH//j///////////////////////////////////AAAf///////////////8AObMf2AAB/+AAAAAAAAAAf//j///////////////////////////////////AAAf///////////////4AMf/D+AAB/8AAAAAAAMAA///D//////////////////////////////////yAAA////////////////4AAf/AcAAB/8AAAAAAAMAA///D//////////////////////////////////AAAA////////////////wAAT/gMAAA/8AAAAAAAMAA///D//////////////////////////////H//8AAAAf///////////////gAAD/8AAAA/8AAAAAAAAAA///D/////////////////////////////+HP/4AAEAf///////////////gAAH/8AAAAf8AAAAAAAADA///D/////////////////////////////8Gf/wAAGB////////////////gAAD//GAAAD4AAAAAAAAGA///v/////////////////////////////8A//gAAAD////x///////////AAAT/9GAAAB4AAAAAAAAGA////8P///////////////////////////4B/jAAAAAm//+xD//////////AAAz/8PAAAAQAAAAAAAAAA///w3f///////////////////////////4D3AAAAAAA//cAB//////////AAAH/8PAAAAAAAAAAAAAYA///gf///////////////////////////v4H0AAAAAAA//AAAf/////////wAAH/+fgAAAAAAAAAAAAYAf//h//////////////////////////8APwP8AAAAAAB3/wAAP/////////wAAH///gAAAAAAAAAAAF4Afn+B//////////////////////////4AAAPoAAAAAAAB/wAAH/////////4AAD///wAAAAAAAAAAAPwAPH+Rv/////////////////////////wAAA/wAAAAAAAB/wAAD/////////4AAR///wAAAAAAAAAAAP8AAf+xv/////////////////////////wAAB/wAAAAAwAD/gAAD/////////7AAR///wAAAAAAAAAAAP8AA/+zv/////////////////////////gAAB/wAAAAAAAHzAAAB//////////wAY///4AAAAAAAAAAAP8ABz+j//////////////////////////AAAD/wAAAAAYAPmAAAB//////////4Ac///4AAAAAAAAAAAH4AD7+D/////////////////////////+AAAD/wAAAAAAA/IAAAA//////////+Ad///8AAAAAAAAAAAH8AD/+D/////////////////////////8AAAH/wAAAAAAB8IAAAAf//////////gZ///8AAAAAAAAAAAH8AD/wD/////////////////////////4AAAH/AAAAAAAH8AAAAAf//////////+H////AAAAAAAAAAA/+AB/4H/////////////////////////+AAAH/BAAAAAAPMAAAAAP//////////+f////wAAAAAAAAAA/+AB/r//////////////////////////+AAAH/h4AAAAA9AAAAAAJ//////////+P////wAAAAAAAAAD//AB/n///////////////////////////mAAH/AIAAAABwAAAAAAP//////////+P////4AAAAAAAAAD/fgB/////////////////////////////yAAH8AAAAAAHgAAAAAAO//////////+f////8AAAAAAAAAD8/g///////////////////////////////AAD8AAAAAAeAAAAAAAG///////////v////8AAAAAAAAAB//w///////////////////////////////AAD8AAMAAawAAAAAAAHf//////////n////8AAAAAAAAAD9/4///////////////////////////////AADwAAMAP+AAAAAAAADP///////////////+AAAAAAAAAD9/5///////////////////////////////AADwAAELPAAAAAAAAAAH///////////////+AAAAAAAAADx/z///////////////////////////////AADgAAALAAAAAAAAAAAH///////////////+AAAAAAAAAAA////////////////////////////////3AADgAAABAAAAAAAAAAAP///////////////eAAAAAAAAAAB////////////////////////////////3AAGAAAAAAAAAAAAAAAAH//////////////+cAAAAAAAAAADwf//////////////////////////////3AAGAAAAAAAAAAAAAAAAD/////////////jg/gAAAAAAAAAAG///////////////////////////////3gAIAAAAAAAAAAAAAAAAB//////////////w/gAAAAAAAAAAP///////////////////////////////3gAIAAAAAAAAAAAAAAAAA/////////////+B/wAAAAAAAAAA////////////////////////////////2wAQAAAAAAAAAAAAAAAAAf////////////+B/wAAAAAAAAAB////////////////////////////////mAAAAAAAAAAAAAAAAAAAAf////////////+b/wAAAAAAAAAB////////////////////////////////mAAgAAAAAAAAAAAAAAAAAP////////////+QPwAAAAAAAAAAP///////////////////////////////GADAAAAAAAAAAAAAAAAAAP/////////////MPwAAAAAAAAAAH//////////////////////////////+HACAAAAAAAAAAAAAAAAAAP/////////////+AAAAAAAAAAAAH////////P//D//////////////////+FAIAAAAAAAAAAAAAAAAAAP/////////////+AAAAAAAAAAAAD//////+eP//D//////////////////8EA4AAAAAAAAAAAAAAAAAAP/////////////4AAAAAAAAAAAAD//+///8f//+///////////////////4MDgAAAAAAAAAAAAAAAAAAP/////////////wAAAAAAAAAAAAD//+///8Of/4///////////////////4GOAAAAAAAAAAAAAAAAAAAP////////////eGAAAAAAAAAAAAD///f//4EH/8f//////////////////wP8AAAAAAAAAAAAAAAAAAAP///////////8cAAAAAAAAAAAA///+fv//4AD/8P//////////////////gf8AAAAAAAAAAAAAAAAAAAP///////////wAAAAAAAAAAAAB//+c/n//wAB/8P//////////////////Af4AAAAAAAAAAAAAAAAAAAP///////////wAAAAAAAAAAAAA//+B/x//wAAf+D/////////////////0A/AAAAAAAAAAAAAAAAAAAAP///////////4AAAAAAAAAAAAA//+Bn8f/wfgf+D/////////////////AB7AAAAAAAAAAAAAAAAAAAAP///////////4AAAAAAAAAAAAA//8Bj+P///4//C/////////////////AA4AAAAAAAAAAAAAAAAAAAAP///////////gAAAAAAAAAAAAA//wBw////////j/////////////////AA4AAAAAAAAAAAAAAAAAAAAP//////////8AAAAAAAAAAAAAA//hBwP///////z//////////////+/+AA8AAAAAAAAAAAAAAAAAAAAP//////////8AAAAAAAAAgAAAB//nBwGv//////D//////////////9/4AA8AAAAAAAAAAAAAAAAAAAAH//////////4AAAAAAAAAgAAAB//+BgGP7/////D//////////////5z4AA8AAAAAAAAAAAAAAAAAAAAH//////////4AAAAAAAAAHgAAB//4AAOH//////D//////////////xD8AC4AAAAAAAAAAAAAAAAAAAAD//////////wAAAAAAAAAAYAAA//AAD8H//////B//////////////7D+AD4AAAAAAAAAAAAAAAAAAAAD//////////wAAAAAAAAAAAAAA//AO74D//////x///////////////w+gP4AAAAAAAAAAAAAAAAAAAAB//////////gAAAAAAAAAAIAAA38f/6YBv/////////////////////w+AP4AAAAAAAAAAAAAAAAAAAAB//////////wAAAAAAAAAAAAAAHB//4QAmed///////////////////A+EfwAAAAAAAAAAAAAAAAAAAAA//////////wAAAAAAAAAAAAAAD7//4QAfgB//////////////////+A+P/wAAAAAAAAAAAAAAAAAAAAA//////////wAAAAAAAAAAAAAAH///8AAPAd//////////////////8A+f/wAAAAAAAAAAAAAAAAAAAAAf/////////AAAAAAAAAAAAAAAH///4AAAAJ//////////////////+A6/6AAAAAAAAAAAAAAAAAAAAAAb////////+AAAAAAAAAAAAAAAf///4AAAAB//////////////////+Az/wAAAAAAAAAAAAAAAAAAAAAAP////////4AAAAAAAAAAAAAQA/////gDgAD///////////////////A3/AgAAAAAAAAAAAAAAAAAAAAAB////////wAAEAAAAAAAAAAQB/////4PwAD///////////////////gFwAAAAAAAAAAAAAAAAAAAAAAAA////////gAAAAAAAAAAAAAAB/////4P/Dn///////////////////gBwAAAAAAAAAAAAAAAAAAAAAAAA////////AAAAAAAAAAAAAAAD//////v//////////////////////gBwAAAAAAAAAAAAAAAAAAAAAAAAd///////AAAAAAAAAAAAAAAD/////////////////////////////gBgAAAAAAAAAAAAAAAAAAAAAAAAf/////x/AAAAAAAAAAAAAAAD/////////////////////////////wAAAAAAAAAAAAAAAAAAAAAAAAACP////nwHgAAAAAAAAAAAAABn////////////+f///////////////gAAAAAAAAAAAAAAAAAAAAAAAAAAP///+AAHgAAAAAAAAAAAAA5P////////////+f///////////////gDAAAAAAAAAAAAAAAAAAAAAAAAAP///8AAHwAAAAAAAAAAAAB///////////////P///////////////AGAAAAAAAAAAAAAAAAAAAAAAAAAHv//4AAHyAAAAAAAAAAAAAA//////////9///j//////////////+AAAAAAAAAAAAAAAAAAAAAAAAAAAD3//4AAD/AAAAAAAAAAAAAD//////////8///x//////////////+AMAAEAAAAAAAAAAAAAAAAAAAAAAAz//4AABzAAAAAAAAAAAAAD//////////+///4P/////////////8AIAAAAAAAAAAAAAAAAAAAAAAAAAA7//4AAB3gAAAAAAAAAAAAD//////////+f//4c/////////////9hAAAAAAAAAAAAAAAAAAAAAAAAAAA8//wAABmwAAAAAAAAAAAAH///////////f///8AB///////////7lAAAAAAAAAAAAAAAAAAAAAAAAAAAOf/wAAAC4AAAAAAAAAAAAP///////////P////gB///////////zgAAAAAAAAAAAAAAAAAAAAAAAAAAAGP/wAAHwcAAAAAAAAAAAAP///////////H////wAf//////////DgAAAAAAAAAAAAAAAAEAAAAAAAAAAAP/wAAf+HAAAAAAAAAAAAf///////////j////wAP/////////+DAAAAAAAAAAAAAAAAANAAAAAAAAAAAf/4Ae//DgAAAAAAAAAAAf///////////z////wAP/////////wBAAAAAAAAAAAAAAAAAB4AAAAAAAAAAH/4B+AH2AAAAAAAAAAAAf///////////z////gAH///4P///MAAgAAAAAAAAAAAAAAAAAYAAAAAAAAAAH/8B+AD/AAAAAAAAAAAAf///////////z////gAAf//4H//+MAAgAAAAAAAAAAAAAAAAAMAAAAAAAAAAH/8B8BT78AAAAAAAAAAAP///////////w////AAA///wH//8+ABgAAAAAAAAAAAAAAAAAMAAAAAAAAAID//P8BAP+CAAAAAAAAAAP///////////4////AAAf//AD//88ABgAAAAIAAAAAAAAAAAAAAAAAAAAAAAB///8AHv//gAAAAAAAAAP///////////8f//8AAAf/+AB//+YADwAAAAIAAAAAAAAAAAAAAAAAAAAAAAAP//8ADgwEwAAAAAAAIAP///////////8P//4AAAf/8AA//+AADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//5AAAAA4AAAAAAAPAP///////////+f//wAAAf/wAB///AADwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA///wAAAAYAAAAAAABAP////////////H/+AAAAP/wAB7//gAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEf/8AAAAIAAAAAAAHAf////////////P/8AAAAP/AAAT//wADgAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAP/8AAAAIAAAAAAAGA/////////////3/wAAAAP/AAAD//wADwAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAH/8AAAAIAAAAAAAAAf//////////////AAAAAH/AAAD//wAD8AAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAA/4AAAAKAAAAAAAAAf/////////////4AAAAAH/AAGB//wAD8AAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAH4AB/AQAAAAAAAAAf/////////////gBgAAAD/AAGD//4AH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AB/AQAAAAAAAAAP////////////8A4AAAAD+AAGDz/wAG/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB4Af/f8AAAAAAAAAP////////////8B4AAAAR+AAEDh/wAE/AAAAAAAAAgAAAAAAAAAAAAAAAAAAAAAAB8Af//4AAAAAAAAAD////////////8B4AAAAB+AAEDg/AAO/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+c///8AAAAAAAAAB////////////+BwAAAAB/AAEDweAAYfgACAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////+AAAAAAAAAA/////////////jwAAAAA7gAEBwaAAwPgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////AAAAAAAAAA//////////////gAAAAA7wACBwAAAg/gBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD3////gAAAAAAAAA//////////////gAAAAADwADA4AABg/gBAAACAwAMwAAAAAAAAAAAAAAAAAAAAAAAD////wAAAAAAAAAP/////////////AAAAAADwABA+AABw3gAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAD/////wAAAAAAAAD//w/////////+AAAAAADgAAQfAAD9HAAAAAAAAACAAAAAAAAAAAAAAAAAAAAAAAAD/////4AAAAAAAAB//Af////////+AAAAAAAAAAefAAP+AAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAD/////8AAAAAAAAAYAAf////////+AAAAAIAAAAfPggf4AwAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAD/////+AAAAAAAAAAAAB////////4AAAAAYAAAAP/kg/wBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/////+AAAAAAAAAAAAAf///////wAAAAAAAAAAf30T/wBEwAAAAAAAAIAAAAABgAAAAAAAAAAAAAAAAP//////AAAAAAAAAAAAGf///////wAAAAAAAAAAP/wf/wCMAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAf//////AAAAAAAAAAAAG////////AAAAAAAAAAAH/wf/7/cAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAf//////AAAAAAAAAAAAM///////+AAAAAAAAAAAC/wf//+cAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAHAA///////wAAAAAAAAAAAI///////8AAAAAAAAAAAB/4f/mob8AAAAAAAAAAAAAAAAAAAAAAAAAAAAADwA////////gAAAAAAAAAAB///////4AAAAAAAAAAAB/wf/n4d/wAAAAAACDAAAAAAAAAAAAAAAAAAAABAA////////gAAAAAAAAAAA///////wAAAAAAAAAAAB/8f/H/5//AGQAAAAAAABAAAAAAAAAAAAAAAAAAAA////////+gAAAAAAAAAA///////gAAAAAAAAAAAA//v/PhiPf4HOAAAAAAABAAAAAAAAAAAAAAAAAAAA/////////4AAAAAAAAAAf//////AAAAAAAAAAAAAf/n/Pw/v//AHAAAAAAAAAAAAAAAAAAAAAAAAAAAB/////////8AAAAAAAAAAP//////AAAAAAAAAAAAAD8APH49n//wDgAAAAAARAAAAAAAAAAAAAAAAAAAB//////////gAAAAAAAAAH//////AAAYAAAAAAAAAB8AAG4AA//4PoAAAAAAAAAAIAAAAAAAAAAAAAAAB//////////wAAAAAAAAAD//////AAAAAAAAAAAAAC8AgG4ANH//+MAAAAAAAAAAAAAAAAAAAAAAAAAAB//////////wAAAAAAAAAD/////+AAAAAAAAAAAAAAfmgCEAPD//8MAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////////wAAAAAAAAAD/////+AAAAAAAgAAAAAAP/+DAEbD//AHAAAAAAAAAAAAAAAAAAAAAAAAAAAf/////////wAAADAAAAAB//////AAAAAAAgAAAAAAH/4AB7wH//AD4AAAAAAAAAAAABAAAAAAAAAAAAAP/////////wAAAAAAAAAB/////+AAAAAAAAAAAAAAAH///5wH/PkD+AAAAAAAAAAAABgAAAAAAAAAAAAH/////////wAAAAAAAAAB/////+AAAAAAAAAAAAAAAAH/ngAAfH9g/AAAAAAAAAAAAAgAAAAAAAAAAAAH/////////gAAAAAAAAAB//////AAAAAAAAAAAAAAAAAPOAAAAD8APAAAAAAAAAAAAAQAAAAAAAAAAAAD/////////AAAAAAAAAAA//////gAAAAAAAAAAAAAAAAC8AAAAAcABhAAAAAAAAAQAAAAAAAAAAAAAAAD////////+AAAAAAAAAAA//////kAAAAAAAAAAAAAAAAAAAAAAAAwGAgAAAAAAAAAAAAAAAAAAAAAAAAB////////8AAAAAAAAAAA//////nBgAAAAAAAAAAAAAAAAAAAAAAAGAAAAAAAAAAAAAAAAAAAAAAAAAAB////////8AAAAAAAAAAB//////gjgAAAAAAAAAAAAAAAAAAAAAAAAAAAIBHAAAAAAAAAAAAAAAAAAAAA////////4AAAAAAAAAAD//////gHgAAAAAAAAAAAAAAAAAAAAAAAAAQAAIDgAAAAAAAAAAAAAAAAAAAA////////4AAAAAAAAAAD//////gHwAAAAAAAAAAAAAAAAAAAAAAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAf///////4AAAAAAAAAAD//////gPwAAAAAAAAAAAAAAAAAAAAAAAAA4AAAAAAAAAGIAAAAAAAAAAAAAAf///////4AAAAAACAAAH//////g/wAAAAAAAAAAAAAAAAAAAAAAAAA4AAgAAAAAIGoAAAAAAAAAAAAAAH///////4AAAAAAAAAAH//////B/gAAAAAAAAAAAAAAAAAAAAAAAAAYADwAAAAAKAAAAAAAAAAAAAAAAB///////wAAAAAAAAAAH/////+D/gAAAAAAAAAAAAAAAAAAAAAAAAAIAPYAAAAADACAAAAAAAAAAAAAAA///////wAAAAAAAAAAH/////4D/gAAAAAAAAAAAAAAAAAAAAAAAAAIAPgIQAAAAACGAAAAAAAAAAAAAAP//////wAAAAAAAAAAD/////wD/AAAAAAAAAAAAAAAAAAAAAAAAAAEAE4AQAAAAAAAAAAAAAAAAAAAAAP//////wAAAAAAAAAAB/////AB/AAAAAAAAAAAAAAAAAAAAAAAAEAGAGAAAAAAAAAAAAAAAAAAAAAAAAP//////gAAAAAAAAAAB////+AB/ADAAAAAAAAAAAAAAAAAAAAAAAMCAAQgAAAAAAAQAAAAAAAAAAAAAAP//////gAAAAAAAAAAB////+AD+AbAAAAAAAAAAAAAAAAAAAAAAAOwAAAgAAMAAAAAAAAAAAAAAAAAAAP//////AAAAAAAAAAAA/////AH+AYAAAAAAAAAAAAAAAAAAAAAAAHYAAAAAAAAAAAAAAAAAAAAAAAAAAP//////AAAAAAAAAAAAf////AH+AAAAAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAP/////+AAAAAAAAAAAAf////AH8AAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAf/////wAAAAAAAAAAAAf////AD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAP////9AAAAAAAAAAAAAf////AD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP////4AAAAAAAAAAAAAf///+AD8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////4AAAAAAAAAAAAAf///4ABwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////wAAAAAAAAAAAAAP///4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAAAAAAAf////wAAAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////wAAAAAAAAAAAAAP///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf////wAAAAAAAAAAAAAH///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////wAAAAAAAAAAAAAD///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAA/////AAAAAAAAAAAAAAD///AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/////AAAAAAAAAAAAAAB///AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////+AAAAAAAAAAAAAAB//+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////+AAAAAAAAAAAAAAA//+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////8AAAAAAAAAAAAAAA//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////4AAAAAAAAAAAAAAB//4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMA////wAAAAAAAAAAAAAAA//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA////gAAAAAAAAAAAAAAA//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB////gAAAAAAAAAAAAAAA/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAB///yAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAOAAAAAAAAAAAAAAAAAAAAAAAAB///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHgAAAAAAAAAAAAAAAAAAAAAAAD///4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgAAAAAAAAAAAAAAAAAAAAAAAH///4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADgAAAAAAAAAAAAAAAAAAAAAAAH///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB+AAAAAAAAAAAAAAAAAAAAAAAD///wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAD///AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD8AAAAAAAAAAAAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH8AAAAAAAAAAAAAAAAAAAAAAAH//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4AAAAAAAAAAAAAAAAAAAAAAAH//wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfwAAAAAAAAAAAAAAAAAAAAAAAH//gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfwAAAAAAAAAAAAAAAAAAAAAAAH/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAAAAAAAAAAAAAAAAH//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA+AAAAAAAAAAAAAAAAAAAAAAAAH//AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAB8AAAAAAAAAAAAAAAAAAAAAAAAP/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD4ADAAAAAAAAAAAAAAAAAAAAAAP/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP4ABAAAAAAAAAAAAAAAAAAAAAAP/8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAfgAAAAAAAAAAAAAAAAAAAAAAAAf/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/gAAAAAAAAAAAAAAAAAAAAAAAAP/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/AAAAAAAAAAAAAAAAAAAAAAAAAP/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/AAAAAAAAAAAAAAAAAAAAAAAAAf/gAAAAAAAAAAAAAAAAAAAAAAAAAMAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAAAAAAAAAf/4AAAAAAAAAAAAAAAAAAAAAAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAf/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/4AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/wAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAeAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAf8AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAf+AHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAf+APgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAP+AHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAP/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAH/gAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD/wAAAAAHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//AAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA/+AAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAHwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"},"points":{"DE":{"en":"Germany","x":1269,"y":699},"NL":{"en":"Netherlands","x":1238,"y":685},"FI":{"en":"Finland","x":1375,"y":532},"SE":{"en":"Sweden","x":1308,"y":559},"PL":{"en":"Poland","x":1329,"y":687},"FR":{"en":"France","x":1216,"y":744},"GB":{"en":"United Kingdom","x":1184,"y":668},"US":{"en":"United States of America","x":541,"y":805},"JP":{"en":"Japan","x":2119,"y":833},"KZ":{"en":"Kazakhstan","x":1648,"y":726},"AE":{"en":"United Arab Emirates","x":1562,"y":932},"SG":{"en":"Singapore","x":1892,"y":1087},"TR":{"en":"T\u00fcrkiye","x":1436,"y":812},"EE":{"en":"Estonia","x":1372,"y":610},"LV":{"en":"Latvia","x":1366,"y":633},"CH":{"en":"Switzerland","x":1255,"y":742},"RU":{"en":"Russian Federation","x":1837,"y":506}}};
+(() => {
+'use strict';
+const C = {ink:'#0B0B0D', graphite:'#19191E', paper:'#F2F0EC', paper2:'#E4E1DB', silver:'#BDBAB4', signal:'#FF3D1F', flare:'#FF8A2A', white:'#FFFFFF', protected:'#3DD68C', caution:'#F2B84B'};
+const RM = matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+/* ---------- logo geometry ---------- */
+const MARK = [0,0, 32,0, 32,40, 72,0, 104,0, 104,32, 85.255,32, 64,53.255, 64,112, 32,112, 32,72, 0,40];
+const MARK_W = 104, MARK_H = 112, U = 32;
+const MARK_PTS = MARK.reduce((a,v,i)=> a + (i%2 ? ',' : (i ? ' ' : '')) + v, '');
+const WM = DATA.wordmark;
+const XH = MARK_H / 2.15, S = XH / WM.xHeight;
+const GAP = 0.6 * U;
+const WM_W = (WM.viewBox[0] + WM.viewBox[2]) * S;   // width from glyph origin
+const markPoly = (fill, dx=0, dy=0, k=1) => `<polygon points="${MARK.reduce((a,v,i)=> a + (i%2 ? ',' : (i ? ' ' : '')) + (+(i%2 ? dy + v*k : dx + v*k).toFixed(3)), '')}" fill="${fill}"/>`;
+const wmPath = (fill, x, baseline) => `<path transform="translate(${(x - WM.viewBox[0]*S).toFixed(3)} ${baseline.toFixed(3)}) scale(${S.toFixed(6)})" d="${WM.d}" fill="${fill}"/>`;
+function lockupH(mark, text){
+  const x = MARK_W + GAP, base = MARK_H/2 + XH/2, w = Math.ceil(x + WM_W - WM.viewBox[0]*S);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${MARK_H}" width="100%" style="display:block;height:100%;max-width:100%">${markPoly(mark)}${wmPath(text, x, base)}</svg>`;
+}
+function lockupV(mark, text){
+  const ww = WM_W - WM.viewBox[0]*S, w = Math.ceil(Math.max(ww, MARK_W)), gap = 0.75*U;
+  const base = MARK_H + gap + WM.asc*S, h = Math.ceil(base + (-WM.desc)*S);
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${w} ${h}" width="100%" style="display:block;max-width:100%">${markPoly(mark, (w-MARK_W)/2)}${wmPath(text, (w-ww)/2, base)}</svg>`;
+}
+const markSVG = (fill) => `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${MARK_W} ${MARK_H}" width="100%" style="display:block;max-width:100%">${markPoly(fill)}</svg>`;
+function appIconSVG(size=256){
+  const k = size*0.56/MARK_H, w = MARK_W*k, h = MARK_H*k;
+  return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${size} ${size}" width="${size}" height="${size}"><rect width="${size}" height="${size}" rx="${size*0.22}" fill="${C.signal}"/>${markPoly('#FFFFFF', (size-w)/2, (size-h)/2, k)}</svg>`;
+}
+document.querySelectorAll('[data-lockup]').forEach(el => {
+  el.innerHTML = el.dataset.lockup === 'v' ? lockupV(el.dataset.mark, el.dataset.text) : lockupH(el.dataset.mark, el.dataset.text);
+});
+document.querySelectorAll('[data-mark-svg]').forEach(el => { el.innerHTML = markSVG(el.dataset.markSvg); });
+
+/* anatomy labels on the big mark */
+const anat = document.querySelector('[data-anat]');
+if (anat) {
+  const lab = (x,y,t) => `<g><circle cx="${x}" cy="${y}" r="7" fill="${C.ink}" stroke="#fff" stroke-width="1.2"/><text x="${x}" y="${y+3.4}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="9" fill="#fff">${t}</text></g>`;
+  anat.innerHTML = `<svg viewBox="-14 -14 132 140" width="100%">${markPoly(C.signal)}${lab(48,96,'A')}${lab(16,20,'B')}${lab(86,16,'C')}${lab(104,32,'D')}</svg>`;
+}
+
+/* construction drawing */
+(function(){
+  const pad = 30, w = MARK_W + pad*2, h = MARK_H + pad*2;
+  let g = '';
+  for (let x = 0; x <= MARK_W; x += 8) g += `<line x1="${x}" y1="-6" x2="${x}" y2="${MARK_H+6}" stroke="${x % 32 === 0 ? 'rgba(11,11,13,.28)' : 'rgba(11,11,13,.08)'}" stroke-width=".5"/>`;
+  for (let y = 0; y <= MARK_H; y += 8) g += `<line x1="-6" y1="${y}" x2="${MARK_W+6}" y2="${y}" stroke="${y % 32 === 0 ? 'rgba(11,11,13,.28)' : 'rgba(11,11,13,.08)'}" stroke-width=".5"/>`;
+  g += `<line x1="104" y1="-6" x2="104" y2="${MARK_H+6}" stroke="rgba(11,11,13,.28)" stroke-width=".5"/><line x1="-6" y1="112" x2="${MARK_W+6}" y2="112" stroke="rgba(11,11,13,.28)" stroke-width=".5"/>`;
+  const dash = 'stroke="#FF3D1F" stroke-width=".6" stroke-dasharray="2 2" fill="none"';
+  const lines = `<line x1="32" y1="40" x2="${32+40}" y2="0" ${dash}/><line x1="-8" y1="32" x2="72" y2="112" ${dash}/><line x1="24" y1="80" x2="96" y2="8" ${dash} /><line x1="56" y1="61.3" x2="112" y2="5.3" ${dash}/>`;
+  const t = (x,y,s,a='start') => `<text x="${x}" y="${y}" font-family="JetBrains Mono, monospace" font-size="5.2" fill="#0B0B0D" text-anchor="${a}">${s}</text>`;
+  const dim = `<line x1="0" y1="-14" x2="104" y2="-14" stroke="#0B0B0D" stroke-width=".5"/><line x1="0" y1="-17" x2="0" y2="-11" stroke="#0B0B0D" stroke-width=".5"/><line x1="104" y1="-17" x2="104" y2="-11" stroke="#0B0B0D" stroke-width=".5"/>${t(52,-17,'3.25u','middle')}
+    <line x1="${MARK_W+14}" y1="0" x2="${MARK_W+14}" y2="112" stroke="#0B0B0D" stroke-width=".5"/><line x1="${MARK_W+11}" y1="0" x2="${MARK_W+17}" y2="0" stroke="#0B0B0D" stroke-width=".5"/><line x1="${MARK_W+11}" y1="112" x2="${MARK_W+17}" y2="112" stroke="#0B0B0D" stroke-width=".5"/>${t(MARK_W+19,58,'3.5u')}
+    ${t(33.5,48,'1.25u')}${t(40,124,'u','middle')}<line x1="32" y1="119" x2="64" y2="119" stroke="#0B0B0D" stroke-width=".5"/>${t(80,47,'45°')}${t(-2,-3,'0,0','end')}`;
+  document.getElementById('construction').innerHTML = `<svg viewBox="${-pad} ${-pad} ${w} ${h}" width="100%" role="img" aria-label="Construction of the fork on a grid of one stroke unit">${g}<polygon points="${MARK_PTS}" fill="rgba(255,61,31,.9)"/>${lines}${dim}</svg>`;
+})();
+
+/* wordmark with metric lines */
+(function(){
+  const x = 0, base = 70, ww = WM_W - WM.viewBox[0]*S, k = 1;
+  const top = base - WM.asc*S, bot = base - WM.desc*S, xh = base - XH;
+  const ln = (y, n) => `<line x1="-6" y1="${y}" x2="${ww+6}" y2="${y}" stroke="#FF3D1F" stroke-width=".5"/><text x="${ww+8}" y="${y+1.8}" font-family="JetBrains Mono, monospace" font-size="5" fill="#5F5C57">${n}</text>`;
+  document.getElementById('wm-lines').innerHTML = `<svg viewBox="-8 ${top-10} ${ww+48} ${bot-top+20}" width="100%" role="img" aria-label="Wordmark v2pn with baseline and x-height lines">${ln(base,'baseline')}${ln(xh,'x-height')}${ln(top,'ascender')}${ln(bot,'descender')}${wmPath(C.ink, x, base)}</svg>`;
+})();
+
+/* clear space */
+(function(){
+  const x = MARK_W + GAP, base = MARK_H/2 + XH/2, w = Math.ceil(x + WM_W - WM.viewBox[0]*S);
+  const m = U, vbw = w + m*2 + 20, vbh = MARK_H + m*2 + 20;
+  const sq = (cx,cy) => `<rect x="${cx}" y="${cy}" width="${U}" height="${U}" fill="rgba(255,61,31,.18)" stroke="#FF3D1F" stroke-width=".6"/>`;
+  document.getElementById('clearspace').innerHTML = `<svg viewBox="${-m-10} ${-m-10} ${vbw} ${vbh}" width="100%" role="img" aria-label="Clear space of one stroke unit around the lockup">
+    <rect x="${-m}" y="${-m}" width="${w+m*2}" height="${MARK_H+m*2}" fill="none" stroke="#FF3D1F" stroke-width=".8" stroke-dasharray="4 3"/>
+    ${sq(-m,-m)}${sq(w,-m)}${sq(-m,MARK_H)}${sq(w,MARK_H)}
+    ${markPoly(C.ink)}${wmPath(C.ink, x, base)}
+    <text x="${-m+U/2}" y="${-m+U/2+2}" text-anchor="middle" font-family="JetBrains Mono, monospace" font-size="8" fill="#FF3D1F">u</text></svg>`;
+  const ms = document.getElementById('minsize');
+  ms.innerHTML = [[72,'Lockup · 72px wide · 18mm print','h'],[12,'Mark · 12px · 4mm print','m']].map(([px,cap,k]) =>
+    `<figure><div style="${k==='h' ? `width:${px}px` : `height:${px}px;width:${px*MARK_W/MARK_H}px`}">${k==='h' ? lockupH(C.ink,C.ink) : markSVG(C.signal)}</div><figcaption class="note">${cap}</figcaption></figure>`).join('');
+})();
+
+/* misuse */
+(function(){
+  const base = lockupH(C.signal, '#FFFFFF');
+  const items = [
+    ['Don\'t stretch or squash', `<div style="width:100%;transform:scaleX(1.35) scaleY(.8)">${base}</div>`, 'on-ink'],
+    ['Don\'t rotate', `<div style="width:90%;transform:rotate(-12deg)">${base}</div>`, 'on-ink'],
+    ['Don\'t outline', `<div style="width:100%">${lockupH('none','none').replace(/fill="none"/g,'fill="none" stroke="#FF3D1F" stroke-width="1.5" vector-effect="non-scaling-stroke"')}</div>`, 'on-ink'],
+    ['Don\'t add glow or gradients', `<div style="width:100%;filter:drop-shadow(0 0 10px #FF8A2A) drop-shadow(0 0 22px #FF3D1F)">${lockupH('#FF8A2A','#FFFFFF')}</div>`, 'on-ink'],
+    ['Don\'t recolor the branches', `<div style="width:30%">${(()=>{const s=markSVG(C.signal); return s.replace('</svg>', `<polygon points="72,0 104,0 104,32 85.255,32 64,53.255 64,40 32,40" fill="#3DD68C"/></svg>`);})()}</div>`, 'on-ink'],
+    ['Don\'t put it behind the glass', `<canvas data-glass="behind" data-ribs="16" data-soft="1.2" style="position:absolute;inset:0;width:100%;height:100%"></canvas>`, 'on-signal'],
+  ];
+  document.getElementById('misuse').innerHTML = items.map(([cap, inner, cls]) => `<div class="tile dont ${cls}" style="overflow:hidden">${inner}<span class="cap" style="color:#fff">${cap}</span></div>`).join('');
+})();
+
+/* app icons + tray */
+(function(){
+  const el = document.getElementById('appicons');
+  el.innerHTML = [128,64,32,16].map(s => `<figure style="margin:0;display:flex;flex-direction:column;gap:8px"><div class="appicon" style="width:${s}px;height:${s}px"><div style="width:${s*0.56*MARK_W/MARK_H}px">${markSVG('#FFFFFF')}</div></div><span class="note">${s}px</span></figure>`).join('');
+  const tray = (fill, op=1) => `<span style="width:16px;height:16px;display:flex;align-items:center;justify-content:center"><span style="width:${16*MARK_W/MARK_H*.9}px;opacity:${op}">${markSVG(fill)}</span></span>`;
+  document.getElementById('taskbar').innerHTML = `<span class="tray-tip">V2pn · Connected via Germany 1</span><span class="ti">⌃</span><span class="ti">${tray(C.signal)}</span><span class="ti">ENG</span><span class="ti" style="flex-direction:column;align-items:flex-end;line-height:1.2"><span>17:42</span><span>07.11.2026</span></span>`;
+  document.getElementById('traystates').innerHTML = [['Off', '#FFFFFF', .55],['Connected', C.signal, 1],['Needs attention', C.caution, 1]].map(([n,c,o]) =>
+    `<figure style="margin:0;min-width:0"><div class="tile on-ink" style="aspect-ratio:3/2;padding:0"><div style="transform:scale(2.4)">${tray(c,o)}</div></div><figcaption class="note" style="margin-top:8px">${n}</figcaption></figure>`).join('');
+})();
+
+/* ---------- color ---------- */
+const PALETTE = [
+  {k:'ink', n:'Tunnel', hex:C.ink, fg:'#fff', role:'The ground. App background, dark pages, text on light.'},
+  {k:'graphite', n:'Graphite', hex:C.graphite, fg:'#fff', role:'Surfaces inside the app: sidebar, cards, menus.'},
+  {k:'signal', n:'Signal', hex:C.signal, fg:C.ink, role:'The fork, the Connect button, the active server.'},
+  {k:'flare', n:'Flare', hex:C.flare, fg:C.ink, role:'Light inside the glass only. Never a flat fill.'},
+  {k:'silver', n:'Silver', hex:C.silver, fg:C.ink, role:'Lines and secondary marks on Paper.'},
+  {k:'paper', n:'Paper', hex:C.paper, fg:C.ink, role:'Light pages, documents, print.'},
+];
+const hexRgb = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+const lin = c => { c /= 255; return c <= .04045 ? c/12.92 : Math.pow((c+.055)/1.055, 2.4); };
+const lum = h => { const [r,g,b] = hexRgb(h).map(lin); return .2126*r + .7152*g + .0722*b; };
+const ratio = (a,b) => { const [x,y] = [lum(a), lum(b)].sort((p,q)=>q-p); return (x+.05)/(y+.05); };
+const cmyk = h => { const [r,g,b] = hexRgb(h).map(v=>v/255); const k = 1-Math.max(r,g,b); if (k >= 1) return [0,0,0,100]; return [r,g,b].map(v => Math.round((1-v-k)/(1-k)*100)).concat(Math.round(k*100)); };
+document.getElementById('strips').innerHTML = PALETTE.map(p => `<div class="strip" style="background:${p.hex};color:${p.fg}">
+  <span class="nm">${p.n}</span>
+  <div class="info"><div class="role">${p.role}</div><div class="val">HEX ${p.hex}<br>RGB ${hexRgb(p.hex).join(' ')}<br>CMYK ${cmyk(p.hex).join(' ')}</div></div></div>`).join('');
+document.getElementById('ratio').innerHTML = [[C.ink,'#fff','Tunnel 58%',58],[C.graphite,'#fff','Graphite 22%',22],[C.paper,C.ink,'Paper 8%',8],[C.signal,C.ink,'Signal 9%',9],[C.flare,C.ink,'Flare 3%',3]]
+  .map(([b,f,t,w]) => `<div style="background:${b};color:${f};flex:${w} 1 0" title="${t}">${w >= 8 ? t : ''}</div>`).join('');
+const PAIRS = [[C.white,C.ink,'Text and logo on dark'],[C.signal,C.ink,'Fork, active pin, links on dark'],[C.ink,C.signal,'Button labels on Signal'],[C.white,C.signal,'Logo and large type only'],[C.ink,C.paper,'Text on light'],[C.signal,C.paper,'Display type 32px and up'],['#8F8D94',C.ink,'Secondary text on dark'],[C.protected,C.graphite,'Connected status']];
+document.querySelector('#contrast tbody').innerHTML = PAIRS.map(([f,b,use]) => { const r = ratio(f,b); const cls = r >= 4.5 ? 'ok' : r >= 3 ? 'lg' : 'no'; const tag = r >= 7 ? 'AAA' : r >= 4.5 ? 'AA' : r >= 3 ? 'Large only' : 'Avoid';
+  return `<tr><td><span class="pair" style="background:${b};color:${f}">Aa</span></td><td><span class="num-t">${r.toFixed(2)}:1</span><br><span class="pill ${cls}">${tag}</span></td><td>${use}</td></tr>`; }).join('');
+
+/* ---------- type scales ---------- */
+document.getElementById('scale-ui').innerHTML = [['Display',40,600,'-0.03em','Germany'],['Headline',28,600,'-0.02em','Connected'],['Title',20,600,'-0.01em','Add your first server'],['Body',14,400,'0','Russian sites go direct.'],['Label',12,500,'0','Session traffic'],['Data',12,400,'0','192.0.2.1:443 · 42 ms','mono']]
+  .map(([n,s,w,t,ex,f]) => `<div class="scale-row"><span class="label">${n}</span><span class="num-t">${s} / ${w}</span><span class="sample" style="font:${w} ${s}px/1.2 ${f==='mono' ? 'var(--mono)' : 'var(--text)'};letter-spacing:${t}">${ex}</span></div>`).join('');
+document.getElementById('scale-brand').innerHTML = [['Poster',144,700,'-0.06em','Two ways'],['Chapter',96,600,'-0.05em','Glass'],['Headline',56,600,'-0.04em','One tap'],['Lead',28,500,'-0.02em','Pick a place'],['Body',18,400,'0','Light gets through.']]
+  .map(([n,s,w,t,ex]) => `<div class="scale-row"><span class="label">${n}</span><span class="num-t">${s} / ${w}</span><span class="sample" style="font:${w} ${Math.min(s,64)}px/1 var(--display);letter-spacing:${t}">${ex}</span></div>`).join('');
+
+/* ---------- map data ---------- */
+const M = DATA.mask; const MASK = new Uint8Array(M.w*M.h);
+(function(){ const bin = atob(M.b64); for (let i = 0; i < M.w*M.h; i++) MASK[i] = (bin.charCodeAt(i>>3) >> (7-(i&7))) & 1; })();
+const SX = M.w / M.src[0];  // mask px per source px
+const land = (sx, sy) => { const x = Math.floor(sx*SX), y = Math.floor(sy*SX); return x>=0 && y>=0 && x<M.w && y<M.h ? MASK[y*M.w+x] : 0; };
+let LAND_CANVAS = null;
+function landCanvas(color){
+  const c = document.createElement('canvas'); c.width = M.w; c.height = M.h; const x = c.getContext('2d'); const d = x.createImageData(M.w, M.h); const [r,g,b] = hexRgb(color);
+  for (let i = 0; i < MASK.length; i++) if (MASK[i]) { d.data[i*4]=r; d.data[i*4+1]=g; d.data[i*4+2]=b; d.data[i*4+3]=255; }
+  x.putImageData(d,0,0); return c;
+}
+
+/* ---------- glass renderer ---------- */
+const POOL = {};
+function pc(key, w, h){ let c = POOL[key]; if (!c) c = POOL[key] = document.createElement('canvas'); if (c.width !== w) c.width = w; if (c.height !== h) c.height = h; return c; }
+let NOISE = null;
+function noise(){ if (NOISE) return NOISE; const c = pc('noise',160,160), x = c.getContext('2d'), d = x.createImageData(160,160); let s = 7; for (let i = 0; i < d.data.length; i += 4){ s = (s*16807) % 2147483647; const v = s % 255; d.data[i]=d.data[i+1]=d.data[i+2]=v; d.data[i+3]=255; } x.putImageData(d,0,0); NOISE = c; return c; }
+const STRIP = (() => { const c = document.createElement('canvas'); c.width = 96; c.height = 1; const x = c.getContext('2d'); const g = x.createLinearGradient(0,0,96,0);
+  g.addColorStop(0,'rgba(255,255,255,.16)'); g.addColorStop(.1,'rgba(255,255,255,.05)'); g.addColorStop(.5,'rgba(0,0,0,0)'); g.addColorStop(.86,'rgba(0,0,0,.2)'); g.addColorStop(1,'rgba(0,0,0,.42)'); x.fillStyle = g; x.fillRect(0,0,96,1); return c; })();
+function forkPath(x, ox, oy, k){ x.beginPath(); for (let i = 0; i < MARK.length; i += 2){ const px = ox + MARK[i]*k, py = oy + MARK[i+1]*k; i ? x.lineTo(px,py) : x.moveTo(px,py); } x.closePath(); }
+function radial(x, cx, cy, r, stops){ const g = x.createRadialGradient(cx,cy,0,cx,cy,r); stops.forEach(([p,c]) => g.addColorStop(p,c)); x.fillStyle = g; x.fillRect(0,0,x.canvas.width,x.canvas.height); }
+function person(x, cx, base, s, a){ x.fillStyle = `rgba(11,11,13,${a})`; x.beginPath(); x.arc(cx, base - s*1.62, s*.34, 0, Math.PI*2); x.fill(); x.beginPath(); x.ellipse(cx, base - s*.2, s*.62, s*1.12, 0, Math.PI, 0); x.lineTo(cx + s*.62, base + s); x.lineTo(cx - s*.62, base + s); x.closePath(); x.fill(); }
+const SCENES = {
+  people(x, w, h, o){
+    const t = o.t || 0, px = (o.px || 0);
+    const g = x.createLinearGradient(0,0,w*.3,h); g.addColorStop(0,'#FF9A3C'); g.addColorStop(.45,C.signal); g.addColorStop(1,'#B81F0A'); x.fillStyle = g; x.fillRect(0,0,w,h);
+    radial(x, w*(.62 + px*.05), h*.28, h*.8, [[0,'rgba(255,170,80,.75)'],[1,'rgba(255,138,42,0)']]);
+    const P = [[.16,1.0,.62],[.37,.78,.45],[.58,1.25,.82],[.82,.92,.55]];
+    P.forEach(([cx,s,a],i) => person(x, w*(cx + px*.03*(i%2 ? -1 : 1)) + Math.sin(t*.5 + i)*w*.006, h*.78, h*.26*s, a));
+    radial(x, w*.5, h*.5, Math.max(w,h)*.75, [[.55,'rgba(11,11,13,0)'],[1,'rgba(11,11,13,.45)']]);
+  },
+  mark(x, w, h, o){
+    const t = o.t || 0, px = o.px || 0;
+    const g = x.createLinearGradient(0,0,0,h); g.addColorStop(0,'#FF9A3C'); g.addColorStop(.5,C.signal); g.addColorStop(1,'#9E1A08'); x.fillStyle = g; x.fillRect(0,0,w,h);
+    radial(x, w*(.3 + Math.sin(t*.3)*.04), h*.2, h*.9, [[0,'rgba(255,190,110,.7)'],[1,'rgba(255,138,42,0)']]);
+    const k = h*1.05/MARK_H; forkPath(x, w*(o.markX ?? .62) - MARK_W*k/2 + px*w*.04, h*.02, k); x.fillStyle = 'rgba(11,11,13,.86)'; x.fill();
+    radial(x, w*.5, h*.5, Math.max(w,h)*.8, [[.5,'rgba(11,11,13,0)'],[1,'rgba(11,11,13,.5)']]);
+  },
+  map(x, w, h, o){
+    x.fillStyle = C.ink; x.fillRect(0,0,w,h);
+    if (!LAND_CANVAS) LAND_CANVAS = landCanvas(C.signal);
+    const r = o.region || [980, 360, 1700, 900]; // source px
+    x.globalAlpha = .55; x.imageSmoothingEnabled = true; x.drawImage(LAND_CANVAS, r[0]*SX, r[1]*SX, (r[2]-r[0])*SX, (r[3]-r[1])*SX, 0, 0, w, h); x.globalAlpha = 1;
+    const de = DATA.points.DE; const cx = (de.x - r[0])/(r[2]-r[0])*w, cy = (de.y - r[1])/(r[3]-r[1])*h;
+    radial(x, cx, cy, h*.5, [[0,'rgba(255,170,90,.95)'],[.25,'rgba(255,61,31,.55)'],[1,'rgba(255,61,31,0)']]);
+  },
+  behind(x, w, h, o){
+    SCENES.people(x, w, h, o);
+    const lw = w*.8, k = lw/352, ox = (w - lw)/2, oy = (h - MARK_H*k)/2;
+    x.fillStyle = '#FFFFFF'; forkPath(x, ox, oy, k); x.fill();
+    const p = new Path2D(WM.d); x.save(); x.translate(ox + (MARK_W + GAP - WM.viewBox[0]*S)*k, oy + (MARK_H/2 + XH/2)*k); x.scale(S*k, S*k); x.fill(p); x.restore();
+  },
+  light(x, w, h, o){
+    const t = o.t || 0;
+    x.fillStyle = C.ink; x.fillRect(0,0,w,h);
+    radial(x, w*.62, h*.48, w*.6, [[0,'rgba(255,61,31,.9)'],[.5,'rgba(190,30,10,.5)'],[1,'rgba(11,11,13,0)']]);
+    x.fillStyle = 'rgba(11,11,13,.92)'; x.beginPath(); x.ellipse(w*(.42 + Math.sin(t*.4)*.02), h*.56, w*.38, h*.14, 0, 0, Math.PI*2); x.fill();
+    x.fillStyle = 'rgba(255,150,70,.9)'; x.fillRect(0, h*.5, w, Math.max(1,h*.018));
+    x.fillStyle = 'rgba(255,61,31,.6)'; x.fillRect(0, h*.62, w, Math.max(1,h*.01));
+  },
+};
+function renderGlass(canvas, o){
+  const r = canvas.getBoundingClientRect(); const dpr = Math.min(window.devicePixelRatio || 1, o.maxDpr || 2);
+  const W = Math.round(r.width*dpr), H = Math.round(r.height*dpr); if (W < 2 || H < 2) return;
+  if (canvas.width !== W) canvas.width = W; if (canvas.height !== H) canvas.height = H;
+  const ctx = canvas.getContext('2d');
+  const soft = Math.max(.01, (o.soft ?? 6)/100);
+  const div = Math.max(2, soft*H/2.2);
+  const sw = Math.max(6, Math.round(W/div)), sh = Math.max(6, Math.round(H/div));
+  const s = pc('s',sw,sh), sx = s.getContext('2d'); sx.setTransform(1,0,0,1,0,0); sx.globalAlpha = 1; sx.globalCompositeOperation = 'source-over'; sx.clearRect(0,0,sw,sh);
+  (SCENES[o.scene] || SCENES.people)(sx, sw, sh, o);
+  const m = pc('m', Math.max(1,Math.round(W/3)), Math.max(1,Math.round(H/3))), mx = m.getContext('2d'); mx.imageSmoothingEnabled = true; mx.imageSmoothingQuality = 'high'; mx.clearRect(0,0,m.width,m.height); mx.drawImage(s,0,0,m.width,m.height);
+  const f = pc('f', W, H), fx = f.getContext('2d'); fx.imageSmoothingEnabled = true; fx.imageSmoothingQuality = 'high'; fx.clearRect(0,0,W,H); fx.drawImage(m,0,0,W,H);
+  ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; ctx.clearRect(0,0,W,H);
+  const n = Math.max(1, Math.round(o.ribs || 40)), rw = W/n, refr = o.refr ?? .5;
+  const sl = rw*(1 + refr*1.6);
+  for (let i = 0; i < n; i++){
+    const x0 = i*rw, c = x0 + rw/2; let s0 = c - sl/2 + Math.sin(i*1.37)*rw*.1; s0 = Math.max(0, Math.min(W - sl, s0));
+    ctx.drawImage(f, s0, 0, Math.min(sl, W), H, Math.floor(x0), 0, Math.ceil(rw)+1, H);
+  }
+  for (let i = 0; i < n; i++) ctx.drawImage(STRIP, Math.floor(i*rw), 0, Math.ceil(rw)+1, H);
+  ctx.fillStyle = 'rgba(255,255,255,.10)'; for (let i = 1; i < n; i++) ctx.fillRect(Math.floor(i*rw), 0, Math.max(1, dpr*.6), H);
+  const gr = o.grain ?? .05;
+  if (gr > 0){ ctx.globalAlpha = gr; ctx.globalCompositeOperation = 'overlay'; ctx.fillStyle = ctx.createPattern(noise(), 'repeat'); ctx.fillRect(0,0,W,H); ctx.globalAlpha = 1; ctx.globalCompositeOperation = 'source-over'; }
+}
+
+/* all static glass canvases */
+const GLASS = [];
+document.querySelectorAll('canvas[data-glass]').forEach(cv => GLASS.push({cv, o:{scene: cv.dataset.glass, ribs: +cv.dataset.ribs || 40, refr: .5, soft: +cv.dataset.soft || 6, grain: .05}}));
+const cover = {cv: document.getElementById('c-cover'), o:{scene:'mark', ribs: 44, refr: .55, soft: 5, grain: .06, maxDpr: 1.5, markX: .68}};
+const ghero = {cv: document.getElementById('c-glass-hero'), o:{scene:'people', ribs: 44, refr: .5, soft: 6, grain: .05}};
+const lab = {cv: document.getElementById('c-lab'), o:{scene:'people', ribs: 40, refr: .5, soft: 6, grain: .05}};
+GLASS.push(ghero, lab);
+function coverRibs(){ const w = cover.cv.getBoundingClientRect().width; cover.o.ribs = Math.max(18, Math.round(w/34)); }
+coverRibs();
+
+/* ---------- dot map ---------- */
+const PINS = ['DE','NL','FI','SE','PL','GB','FR','CH','EE','LV','TR','KZ','AE','US','JP','SG'];
+function renderDots(canvas, opt){
+  const r = canvas.getBoundingClientRect(), dpr = Math.min(devicePixelRatio || 1, 2), W = Math.round(r.width*dpr), H = Math.round(r.height*dpr); if (W < 2) return;
+  canvas.width = W; canvas.height = H; const x = canvas.getContext('2d');
+  const reg = opt.region || [0,0,M.src[0],M.src[1]], rw = reg[2]-reg[0], rh = reg[3]-reg[1];
+  const step = opt.step, cols = Math.floor(rw/step), rows = Math.floor(rh/step), cw = W/cols, ch = H/rows, rad = Math.max(.6, Math.min(cw,ch)*(opt.dot || .32));
+  x.fillStyle = opt.bg || C.ink; x.fillRect(0,0,W,H); x.fillStyle = opt.land || '#3A3A43';
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++){ if (land(reg[0] + (i+.5)*step, reg[1] + (j+.5)*step)) { x.beginPath(); x.arc((i+.5)*cw, (j+.5)*ch, rad, 0, Math.PI*2); x.fill(); } }
+  const P = (code) => { const p = DATA.points[code]; return p && [(p.x - reg[0])/rw*W, (p.y - reg[1])/rh*H]; };
+  (opt.pins || []).forEach(code => { const q = P(code); if (!q || q[0] < 0 || q[1] < 0 || q[0] > W || q[1] > H) return; x.fillStyle = '#ECECF1'; x.beginPath(); x.arc(q[0], q[1], 3.2*dpr*(opt.pinScale||1), 0, Math.PI*2); x.fill(); });
+  if (opt.active){ const q = P(opt.active); if (q){ const k = dpr*(opt.pinScale||1);
+    x.fillStyle = 'rgba(255,61,31,.22)'; x.beginPath(); x.arc(q[0],q[1],22*k,0,Math.PI*2); x.fill();
+    x.strokeStyle = C.signal; x.lineWidth = 2*k; x.beginPath(); x.arc(q[0],q[1],11*k,0,Math.PI*2); x.stroke();
+    x.fillStyle = C.signal; x.beginPath(); x.arc(q[0],q[1],5.5*k,0,Math.PI*2); x.fill(); } }
+  if (opt.labels){ x.font = `${11*dpr}px "JetBrains Mono", monospace`; x.textBaseline = 'middle';
+    opt.labels.forEach(code => { const q = P(code); if (!q) return; const p = DATA.points[code]; const name = code === 'US' ? 'United States' : p.en;
+      x.fillStyle = code === opt.active ? C.signal : '#9B9BA8'; x.fillText(name.toUpperCase(), q[0] + 10*dpr, q[1]); }); }
+}
+
+/* ---------- dither ---------- */
+const BAYER = [0,32,8,40,2,34,10,42,48,16,56,24,50,18,58,26,12,44,4,36,14,46,6,38,60,28,52,20,62,30,54,22,3,35,11,43,1,33,9,41,51,19,59,27,49,17,57,25,15,47,7,39,13,45,5,37,63,31,55,23,61,29,53,21];
+function renderDither(canvas){
+  const r = canvas.getBoundingClientRect(); if (r.width < 2) return;
+  const cell = r.width < 420 ? 3 : 4; const cols = Math.round(r.width/cell), rows = Math.round(r.height/cell);
+  canvas.width = cols; canvas.height = rows; const x = canvas.getContext('2d'); const d = x.createImageData(cols, rows); const [sr,sg,sb] = hexRgb(C.signal); const [ir,ig,ib] = hexRgb(C.ink);
+  const reg = [1000, 380, 1560, 1080]; const de = DATA.points.DE; const ax = (de.x - reg[0])/(reg[2]-reg[0]), ay = (de.y - reg[1])/(reg[3]-reg[1]);
+  for (let j = 0; j < rows; j++) for (let i = 0; i < cols; i++){
+    const u = i/cols, v = j/rows; const L = land(reg[0] + u*(reg[2]-reg[0]), reg[1] + v*(reg[3]-reg[1]));
+    const dd = Math.hypot((u-ax)*1.0, (v-ay)*1.25);
+    let f = (L ? .34 : .05) + (1-v)*.12 + Math.exp(-dd*dd/.035)*(L ? .62 : .32);
+    const on = f > (BAYER[(j%8)*8 + (i%8)] + .5)/64; const k = (j*cols + i)*4;
+    d.data[k] = on ? sr : ir; d.data[k+1] = on ? sg : ig; d.data[k+2] = on ? sb : ib; d.data[k+3] = 255;
+  }
+  x.putImageData(d,0,0);
+}
+
+/* ---------- icons ---------- */
+const ICONS = [
+  ['Connect','M12 3v8M6.65 7.05A8 8 0 1 0 17.35 7.05'],
+  ['Route presets','M12 21v-7l-5-5V3M12 14l7-7'],
+  ['Direct','M3 12h17M15 7l5 5-5 5'],
+  ['Through a server','M7 5v14M10 5v14M13 12h8M17 8l4 4-4 4M2 12h2'],
+  ['Proxy mode','M3 4h18v16H3zM3 9h18M6 6.5h0'],
+  ['VPN mode','M3 4h18v12H3zM8 20h8M12 16v4'],
+  ['Server','M4 4h16v6H4zM4 14h16v6H4zM8 7h0M8 17h0'],
+  ['Subscription','M4 6h12M4 12h12M4 18h8M18 15v6M15 18h6'],
+  ['Ping','M5 20v-3M10 20v-7M15 20V9M20 20V4'],
+  ['Location','M12 21l-6.2-7.6A7.5 7.5 0 1 1 18.2 13.4zM12 9.5h0'],
+];
+const ico = (d) => `<svg viewBox="0 0 24 24" aria-hidden="true"><path d="${d}"/></svg>`;
+document.getElementById('icon-grid').innerHTML = ICONS.map(([n,d]) => `<figure>${ico(d)}<figcaption>${n}</figcaption></figure>`).join('');
+document.getElementById('icon-states').innerHTML = [['Default', C.ink, '#fff'],['Active', C.signal, '#fff'],['Connected', '#167A4B', '#fff'],['On Tunnel', '#fff', C.ink]]
+  .map(([n,c,b]) => `<span style="color:${c};background:${b}">${ico(ICONS[1][1])}<span style="color:${b === C.ink ? '#fff' : C.ink}">${n}</span></span>`).join('');
+
+/* ---------- motion curves ---------- */
+const CURVES = [['Standard','0.2, 0, 0, 1','200ms','Buttons, colors, menus',[.2,0,0,1]],['Glass','0.7, 0, 0.2, 1','640ms','The pane on connect',[.7,0,.2,1]],['Exit','0.4, 0, 1, 1','160ms','Things that leave',[.4,0,1,1]],['Linear','0, 0, 1, 1','120ms','Reduced-motion fades',[0,0,1,1]]];
+document.getElementById('curves').innerHTML = CURVES.map(([n,v,d,u,[a,b,c,e]]) => `<figure>
+  <svg viewBox="-6 -6 112 112" role="img" aria-label="${n} easing curve"><rect x="0" y="0" width="100" height="100" fill="none" stroke="rgba(255,255,255,.12)"/>
+  <line x1="0" y1="100" x2="100" y2="0" stroke="rgba(255,255,255,.12)" stroke-dasharray="2 3"/>
+  <line x1="0" y1="100" x2="${a*100}" y2="${100-b*100}" stroke="rgba(255,255,255,.3)"/><line x1="100" y1="0" x2="${c*100}" y2="${100-e*100}" stroke="rgba(255,255,255,.3)"/>
+  <path d="M0 100C${a*100} ${100-b*100} ${c*100} ${100-e*100} 100 0" fill="none" stroke="#FF3D1F" stroke-width="2.2"/>
+  <circle cx="${a*100}" cy="${100-b*100}" r="2.4" fill="#fff"/><circle cx="${c*100}" cy="${100-e*100}" r="2.4" fill="#fff"/></svg>
+  <b>${n}</b><span class="mono" style="color:#C9C7CE">cubic-bezier(${v}) · ${d}</span><span class="note">${u}</span></figure>`).join('');
+const demo = document.getElementById('demo');
+document.getElementById('demo-btn').addEventListener('click', e => { const on = demo.classList.toggle('go'); e.currentTarget.textContent = on ? 'Play: disconnect' : 'Play: connect'; });
+
+/* ---------- app mockup ---------- */
+const app = document.getElementById('app'), appMap = document.getElementById('c-app-map'), appGlass = document.getElementById('c-app-glass');
+const APP_REGION = [1050, 420, 1660, 900];
+function renderApp(){
+  renderDots(appMap, {region: APP_REGION, step: 4.2, dot: .3, land: '#2E2E36', bg: '#0B0B0D', pins: PINS, active: 'DE', pinScale: .7});
+  const r = appMap.getBoundingClientRect(); const dpr = Math.min(devicePixelRatio||1,2);
+  // the glass layer refracts the same map
+  const tmp = pc('appsrc', appMap.width, appMap.height); tmp.getContext('2d').drawImage(appMap,0,0);
+  const de = DATA.points.DE, gx = (de.x - APP_REGION[0])/(APP_REGION[2]-APP_REGION[0]), gy = (de.y - APP_REGION[1])/(APP_REGION[3]-APP_REGION[1]);
+  SCENES.appmap = (x, w, h) => { x.drawImage(tmp, 0, 0, w, h); x.fillStyle = 'rgba(255,61,31,.16)'; x.fillRect(0,0,w,h);
+    radial(x, gx*w, gy*h, h*.75, [[0,'rgba(255,138,42,.55)'],[.3,'rgba(255,61,31,.28)'],[1,'rgba(255,61,31,0)']]); };
+  renderGlass(appGlass, {scene:'appmap', ribs: Math.max(16, Math.round(r.width/22)), refr: .6, soft: 1.2, grain: .04});
+}
+const chipT = document.getElementById('chip-t'), cbtn = document.getElementById('cbtn');
+cbtn.addEventListener('click', () => {
+  const on = app.dataset.state !== 'on'; app.dataset.state = on ? 'on' : 'off';
+  chipT.textContent = on ? 'CONNECTED · 42 MS' : 'NOT CONNECTED'; cbtn.textContent = on ? 'Disconnect' : 'Connect';
+  document.getElementById('stat-s').textContent = on ? 'Protected · Proxy' : 'Not connected';
+  document.getElementById('stat-p').textContent = on ? '42 ms' : '—'; document.getElementById('stat-t').textContent = on ? '1.24 GB' : '0 B';
+});
+
+/* ---------- glass lab controls ---------- */
+const $ = id => document.getElementById(id);
+function syncLab(){
+  lab.o.ribs = +$('g-ribs').value; lab.o.refr = +$('g-refr').value; lab.o.soft = +$('g-soft').value; lab.o.grain = +$('g-grain').value/100;
+  $('o-ribs').textContent = lab.o.ribs; $('o-refr').textContent = (1 + lab.o.refr*1.6).toFixed(1) + '×'; $('o-soft').textContent = lab.o.soft + '%'; $('o-grain').textContent = $('g-grain').value + '%';
+  renderGlass(lab.cv, lab.o);
+}
+['g-ribs','g-refr','g-soft','g-grain'].forEach(id => $(id).addEventListener('input', syncLab));
+document.querySelectorAll('.seg button').forEach(b => b.addEventListener('click', () => { document.querySelectorAll('.seg button').forEach(x => x.setAttribute('aria-pressed', String(x === b))); lab.o.scene = b.dataset.scene; syncLab(); }));
+
+/* ---------- copy ---------- */
+const TOKENS = `:root {
+  /* V2pn brand tokens v1.0 */
+  --v2-tunnel: #0B0B0D;
+  --v2-graphite: #19191E;
+  --v2-graphite-2: #24242B;
+  --v2-signal: #FF3D1F;
+  --v2-flare: #FF8A2A;   /* light inside glass only */
+  --v2-silver: #BDBAB4;
+  --v2-paper: #F2F0EC;
+  --v2-protected: #3DD68C;
+  --v2-caution: #F2B84B;
+  --v2-on-signal: #0B0B0D;
+
+  --v2-font-display: "Inter Tight", "Inter", system-ui, sans-serif;
+  --v2-font-text: "Inter", system-ui, sans-serif;
+  --v2-font-data: "JetBrains Mono", ui-monospace, monospace;
+
+  --v2-space: 4px;       /* 4 8 12 16 24 32 48 64 */
+  --v2-radius-control: 8px;
+  --v2-radius-card: 14px;
+  --v2-radius-pill: 999px;
+  --v2-radius-brand: 0;  /* brand graphics stay sharp */
+
+  --v2-ease-standard: cubic-bezier(0.2, 0, 0, 1);    /* 200ms */
+  --v2-ease-glass: cubic-bezier(0.7, 0, 0.2, 1);     /* 640ms */
+  --v2-ease-exit: cubic-bezier(0.4, 0, 1, 1);        /* 160ms */
+
+  --v2-glass-ribs: 44;           /* 36 to 64 across the frame */
+  --v2-glass-refraction: 1.8;    /* slice width per rib, 1.6 to 2.0 */
+  --v2-glass-softness: 6%;       /* of frame height, 4 to 8 */
+}`;
+$('tokens-pre').textContent = TOKENS;
+const COPY = {
+  mark: () => markSVG(C.signal).replace(' width="100%" style="display:block;max-width:100%"', ' width="104" height="112"'),
+  'lockup-dark': () => lockupH(C.signal, '#FFFFFF').replace(/ width="100%" style="[^"]*"/, ''),
+  'lockup-light': () => lockupH(C.signal, C.ink).replace(/ width="100%" style="[^"]*"/, ''),
+  stacked: () => lockupV(C.signal, '#FFFFFF').replace(/ width="100%" style="[^"]*"/, ''),
+  icon: () => appIconSVG(256),
+  tokens: () => TOKENS,
+};
+async function copyText(btn, text){
+  const label = btn.textContent;
+  try { await navigator.clipboard.writeText(text); btn.textContent = 'Copied'; btn.classList.add('copied'); }
+  catch (e) { $('tokens-pre').textContent = text; const sel = getSelection(), rg = document.createRange(); rg.selectNodeContents($('tokens-pre')); sel.removeAllRanges(); sel.addRange(rg); btn.textContent = 'Selected below, press Ctrl+C'; }
+  setTimeout(() => { btn.textContent = label; btn.classList.remove('copied'); }, 1800);
+}
+document.querySelectorAll('[data-copy]').forEach(b => b.addEventListener('click', () => copyText(b, COPY[b.dataset.copy]())));
+$('copy-glass').addEventListener('click', e => copyText(e.currentTarget, JSON.stringify({subject: lab.o.scene, ribs: lab.o.ribs, refraction: +(1 + lab.o.refr*1.6).toFixed(2), softness: lab.o.soft/100, grain: lab.o.grain}, null, 2)));
+
+/* ---------- render all ---------- */
+function renderAll(){
+  coverRibs(); renderGlass(cover.cv, cover.o);
+  GLASS.forEach(g => renderGlass(g.cv, g.o));
+  renderDots(document.getElementById('c-dots'), {step: 9, dot: .34, land: '#34343C', bg: C.graphite, pins: PINS, active: 'DE', labels: ['DE','FI','US','JP','SG','AE','KZ','TR']});
+  renderDither(document.getElementById('c-dither'));
+  renderApp();
+}
+renderAll();
+let rt = 0, lastW = innerWidth;
+addEventListener('resize', () => { if (Math.abs(innerWidth - lastW) < 4) return; lastW = innerWidth; clearTimeout(rt); rt = setTimeout(renderAll, 160); });
+if (document.fonts && document.fonts.ready) document.fonts.ready.then(() => renderDots(document.getElementById('c-dots'), {step: 9, dot: .34, land: '#34343C', bg: C.graphite, pins: PINS, active: 'DE', labels: ['DE','FI','US','JP','SG','AE','KZ','TR']}));
+
+/* cover: slow drift and pointer parallax while visible */
+if (!RM){
+  let vis = true, tx = 0, cx = 0, t0 = performance.now(), last = 0;
+  new IntersectionObserver(es => { vis = es[0].isIntersecting; if (vis) requestAnimationFrame(loop); }).observe(cover.cv);
+  cover.cv.parentElement.addEventListener('pointermove', e => { const r = cover.cv.getBoundingClientRect(); tx = ((e.clientX - r.left)/r.width - .5)*2; });
+  function loop(now){ if (!vis) return; if (now - last > 40){ last = now; cx += (tx - cx)*.08; cover.o.t = (now - t0)/1000; cover.o.px = cx; renderGlass(cover.cv, cover.o); } requestAnimationFrame(loop); }
+  requestAnimationFrame(loop);
+}
+
+/* active chapter in the top bar */
+const links = [...document.querySelectorAll('.top nav a')];
+const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) links.forEach(a => a.classList.toggle('on', a.getAttribute('href') === '#' + e.target.id)); }), {rootMargin: '-45% 0px -50% 0px'});
+links.forEach(a => { const s = document.querySelector(a.getAttribute('href')); if (s) io.observe(s); });
+})();
+</script>
+</body></html>

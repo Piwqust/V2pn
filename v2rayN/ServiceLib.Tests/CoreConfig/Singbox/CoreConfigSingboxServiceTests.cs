@@ -751,4 +751,24 @@ public class CoreConfigSingboxServiceTests
         await proxyOutbound.method.Should().BeEqualTo("aes-128-gcm");
         await proxyOutbound.password.Should().BeEqualTo("custom_password");
     }
+
+    [Test]
+    public async Task GenerateClientConfigContent_RoutingItemIPOnDemand_ShouldResolveBeforeRules()
+    {
+        // V2pn's Russian presets set IPOnDemand on the routing item while the global strategy stays AsIs;
+        // without the resolve step their geoip rules never match domain traffic on sing-box.
+        var config = CoreConfigTestFactory.CreateConfig(ECoreType.sing_box);
+        config.RoutingBasicItem.DomainStrategy = Global.AsIs;
+        CoreConfigTestFactory.BindAppManagerConfig(config);
+        var node = CoreConfigTestFactory.CreateSocksNode(ECoreType.sing_box);
+        var context = CoreConfigTestFactory.CreateContext(config, node, ECoreType.sing_box);
+        context.RoutingItem.DomainStrategy = Global.IPOnDemand;
+        context.RoutingItem.RuleSet = """[{"outboundTag":"direct","ip":["10.0.0.0/8"]},{"outboundTag":"proxy","port":"0-65535"}]""";
+
+        var result = new CoreConfigSingboxService(context).GenerateClientConfigContent();
+
+        await result.Success.Should().BeTrue().Because($"ret msg: {result.Msg}");
+        var cfg = JsonUtils.Deserialize<SingboxConfig>(result.Data!.ToString())!;
+        await cfg.route.rules.Should().Contain(r => r.action == "resolve");
+    }
 }

@@ -476,7 +476,7 @@ public partial class StatusBarViewModel : MyReactiveObject
         ReloadRequested.Publish();
     }
 
-    private bool AllowEnableTun()
+    public bool AllowEnableTun()
     {
         if (Utils.IsWindows())
         {

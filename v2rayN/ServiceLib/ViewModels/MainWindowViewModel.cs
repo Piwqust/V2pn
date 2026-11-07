@@ -796,5 +796,17 @@ public partial class MainWindowViewModel : MyReactiveObject
         await Reload();
     }
 
+    /// <summary>
+    /// Switches geo files, rule templates and DNS to the Russian sources and downloads the files,
+    /// without reloading the core (the caller selects a routing next, which reloads it).
+    /// </summary>
+    public async Task UseRussianSourcesAsync()
+    {
+        await ConfigHandler.ApplyRegionalPreset(_config, EPresetType.Russia);
+        await ConfigHandler.InitRouting(_config);
+        await ConfigHandler.SaveConfig(_config);
+        await new UpdateService(_config, UpdateTaskHandler).UpdateGeoFileAll();
+    }
+
     #endregion Presets
 }

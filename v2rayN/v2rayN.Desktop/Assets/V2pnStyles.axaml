@@ -741,4 +741,97 @@
     <Style Selector="Border.srow.hidden, Border.srow.collapsed, Border.srow.nomatch, StackPanel.sgroup.nomatch, StackPanel.spage.nomatch">
         <Setter Property="IsVisible" Value="False" />
     </Style>
+
+    <!--  Connection bar under the Connect button: mode segments and the routing chip.  -->
+    <Style Selector="Border.modebar">
+        <Setter Property="Padding" Value="5" />
+        <Setter Property="CornerRadius" Value="18" />
+    </Style>
+    <Style Selector="ListBox.mode">
+        <Setter Property="CornerRadius" Value="13" />
+        <Setter Property="Padding" Value="3" />
+    </Style>
+    <Style Selector="ListBox.mode > ListBoxItem">
+        <Setter Property="MinHeight" Value="32" />
+        <Setter Property="Padding" Value="14,0" />
+        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="ListBox.mode > ListBoxItem:selected PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Border.vsep">
+        <Setter Property="Width" Value="1" />
+        <Setter Property="Margin" Value="2,8" />
+        <Setter Property="Background" Value="{DynamicResource V2Border}" />
+    </Style>
+    <Style Selector="Button.routechip">
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="Padding" Value="12,0,10,0" />
+        <Setter Property="CornerRadius" Value="13" />
+        <Setter Property="FontSize" Value="13" />
+    </Style>
+    <Style Selector="Border.adminbadge">
+        <Setter Property="Background" Value="{DynamicResource V2PingMidSoft}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="5,1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.adminbadge > TextBlock">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="Border.recommend">
+        <Setter Property="Background" Value="{DynamicResource V2SafeSoft}" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="Padding" Value="6,1" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.recommend > TextBlock">
+        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Button.routeoption">
+        <Setter Property="Padding" Value="12,10" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="TextBlock.routetitle">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+    <Style Selector="TextBlock.routehint">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="TextWrapping" Value="Wrap" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="Margin" Value="0,0,12,0" />
+    </Style>
+    <Style Selector="PathIcon.routetick">
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Button.routeoption.active PathIcon.routetick">
+        <Setter Property="IsVisible" Value="True" />
+    </Style>
+    <Style Selector="Border.routebusy">
+        <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusRow}" />
+        <Setter Property="Padding" Value="12,10" />
+    </Style>
+    <Style Selector="Border.routebusy TextBlock">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+    </Style>
+    <Style Selector="TextBlock.sectionlabel">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="0.4" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
 </Styles>

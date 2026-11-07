@@ -246,7 +246,10 @@ public partial class CoreConfigSingboxService
                 action = "resolve",
                 strategy = domainStrategy,
             };
-            if (_config.RoutingBasicItem.DomainStrategy == Global.IPOnDemand)
+            // A routing item's own strategy wins, as it does for Xray; otherwise geoip rules of presets
+            // such as "Russian sites direct" never see the resolved address on sing-box.
+            var strategy = routing?.DomainStrategy.NullIfEmpty() ?? _config.RoutingBasicItem.DomainStrategy;
+            if (strategy == Global.IPOnDemand)
             {
                 _coreConfig.route.rules.Add(resolveRule);
             }
@@ -275,7 +278,7 @@ public partial class CoreConfigSingboxService
                     }
                 }
             }
-            if (_config.RoutingBasicItem.DomainStrategy == Global.IPIfNonMatch)
+            if (strategy == Global.IPIfNonMatch)
             {
                 _coreConfig.route.rules.Add(resolveRule);
                 foreach (var item2 in ipRules)

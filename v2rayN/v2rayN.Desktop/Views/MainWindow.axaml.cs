@@ -25,8 +25,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private ClashConnectionsView? _clashConnectionsView;
     private ClashProxiesView? _clashProxiesView;
 
-    // The proxy mode to restore on Connect after a Disconnect (On or PAC).
-    private int _lastProtectedMode = (int)ESysProxyType.ForcedChange;
     private string? _activeIndexId;
 
     public MainWindow()
@@ -52,6 +50,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuClose.Click += MenuClose_Click;
         menuAddServerViaClipboard.Click += async (_, _) => await AddServerViaClipboardAsync();
         btnConnect.Click += BtnConnect_Click;
+        btnWelcomePaste.Click += async (_, _) => await AddServerViaClipboardAsync();
+        btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
+        btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
+        btnWelcomeQr.IsVisible = Utils.IsWindows();
         btnMinimize.Click += (_, _) => WindowState = WindowState.Minimized;
         btnMaximize.Click += (_, _) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         btnCloseWindow.Click += (_, _) => Close();
@@ -134,6 +136,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.AddCustomOutboundServerCmd, v => v.menuAddCustomOutboundServer).DisposeWith(disposables);
 
             BuildViews();
+            InitConnectionBar();
+            _ = InitRoutingPresetsAsync();
 
             // Connection header, map and statistics follow the proxy mode, TUN and the running server.
             this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.SystemProxySelected,
@@ -151,6 +155,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             profiles.PingTestFinished.AsObservable()
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
                 .Subscribe(_ => QueueMapLocations())
+                .DisposeWith(disposables);
+            this.WhenAnyValue(v => v.ViewModel.ProfilesViewModel.AllServersCount)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .SubscribeAsync(async _ => await RefreshConnectionAsync())
                 .DisposeWith(disposables);
             this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.AvailabilityDelay)
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
@@ -227,10 +235,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             menuGlobalHotkeySetting.IsVisible = false;
             menuRebootAsAdmin.IsVisible = false;
             menuSettingsSetUWP.IsVisible = false;
-            if (lstProxyMode.Items.Count > 3)
-            {
-                lstProxyMode.Items.RemoveAt(3);
-            }
         }
 
         if (_config.UiItem.AutoHideStartup && Utils.IsWindows())
@@ -390,6 +394,27 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         };
     }
 
+    // Servers the user actually connected through, newest first, for the "Recent" section.
+    private void Remember(string? indexId, ProtectionState state)
+    {
+        if (indexId.IsNullOrEmpty() || state == ProtectionState.Unprotected)
+        {
+            return;
+        }
+        var recent = _config.UiItem.V2pnRecent ??= [];
+        if (recent.FirstOrDefault() == indexId)
+        {
+            return;
+        }
+        recent.Remove(indexId);
+        recent.Insert(0, indexId);
+        if (recent.Count > 8)
+        {
+            recent.RemoveRange(8, recent.Count - 8);
+        }
+        _sidebar?.QueueRebuild();
+    }
+
     private ProfileItemModel? FindModel(string? indexId)
     {
         var profiles = ViewModel?.ProfilesViewModel;
@@ -427,6 +452,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             txtHeaderSubtitle.Text = country != null || region != null ? $"{name}  ·  {transport}" : transport;
         }
 
+        Remember(item?.IndexId, state);
+        // No servers at all: the welcome card replaces Connect and the mode bar.
+        var empty = (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) == 0 && item == null;
+        cardWelcome.IsVisible = empty;
+        btnConnect.IsVisible = !empty;
+        barConnection.IsVisible = !empty;
         RefreshStatePill();
         var unprotected = state == ProtectionState.Unprotected;
         btnConnect.Content = unprotected ? L.Connect : L.Disconnect;
@@ -451,8 +482,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             },
         };
 
-        var proxyMode = (ESysProxyType)(ViewModel?.StatusBarViewModel.SystemProxySelected ?? 0);
-        dotRailProxy.IsVisible = proxyMode is ESysProxyType.ForcedChange or ESysProxyType.Pac;
+        SyncModeSelection();
 
         mapView.Focus(country?.Code ?? code, state);
         _statusView?.SetState(state);
@@ -530,7 +560,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
     }
 
-    private void ToggleConnection(bool connect)
+    private async void ToggleConnection(bool connect)
     {
         var status = ViewModel?.StatusBarViewModel;
         if (status == null)
@@ -545,14 +575,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 NoticeManager.Instance.Enqueue(L.PickServer);
                 return;
             }
-            status.SystemProxySelected = _lastProtectedMode;
+            if (_config.UiItem.V2pnPreferTun && !await EnsureTunAllowedAsync(connectAfterRestart: true))
+            {
+                return;
+            }
+            ApplyMode(status, _config.UiItem.V2pnPreferTun);
             return;
         }
 
-        if ((ESysProxyType)status.SystemProxySelected is ESysProxyType.ForcedChange or ESysProxyType.Pac)
-        {
-            _lastProtectedMode = status.SystemProxySelected;
-        }
         if (status.EnableTun)
         {
             status.EnableTun = false;
@@ -575,6 +605,252 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     }
 
     #endregion Connection
+
+    #region Mode and routing
+
+    private bool _modeSync;
+    private bool _routeSync;
+    private bool _routeBusy;
+
+    private static bool IsConnected(StatusBarViewModel status) =>
+        status.EnableTun || (ESysProxyType)status.SystemProxySelected != ESysProxyType.ForcedClear;
+
+    private static void ApplyMode(StatusBarViewModel status, bool tun)
+    {
+        if (tun)
+        {
+            status.EnableTun = true;
+            // TUN already carries everything; a system proxy left behind would outlive a crash.
+            status.SystemProxySelected = (int)ESysProxyType.ForcedClear;
+        }
+        else
+        {
+            status.SystemProxySelected = (int)ConnectionPrefs.ProxyMethod(_config);
+            status.EnableTun = false;
+        }
+    }
+
+    private void InitConnectionBar()
+    {
+        var needsAdmin = Utils.IsWindows() && !Utils.IsAdministrator();
+        badgeAdmin.IsVisible = needsAdmin;
+        ToolTip.SetTip(itemModeProxy, L.ModeProxyTip);
+        ToolTip.SetTip(itemModeVpn, needsAdmin ? $"{L.ModeVpnTip} {L.ModeVpnNeedsAdmin}" : L.ModeVpnTip);
+        lstMode.SelectionChanged += LstMode_SelectionChanged;
+
+        btnRouteRussia.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.RussiaDirect);
+        btnRouteBlocked.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.BlockedOnly);
+        btnRouteAll.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.All);
+        togBlockAds.IsChecked = _config.UiItem.V2pnBlockAds;
+        togBlockAds.IsCheckedChanged += async (_, _) => await SetBlockAdsAsync(togBlockAds.IsChecked == true);
+        lstCustomRoutes.SelectionChanged += async (_, _) =>
+        {
+            if (!_routeSync && lstCustomRoutes.SelectedItem is RoutingItem item)
+            {
+                await ActivateRoutingAsync(item.Id, sourcesChanged: false);
+            }
+        };
+        SyncModeSelection();
+    }
+
+    private void SyncModeSelection()
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        if (status == null)
+        {
+            return;
+        }
+        var tun = IsConnected(status) ? status.EnableTun : _config.UiItem.V2pnPreferTun;
+        _modeSync = true;
+        lstMode.SelectedIndex = tun ? 1 : 0;
+        _modeSync = false;
+    }
+
+    private async void LstMode_SelectionChanged(object? sender, SelectionChangedEventArgs e)
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        if (_modeSync || status == null || lstMode.SelectedIndex < 0)
+        {
+            return;
+        }
+        var tun = lstMode.SelectedIndex == 1;
+        var connected = IsConnected(status);
+        if (tun && !await EnsureTunAllowedAsync(connectAfterRestart: connected))
+        {
+            SyncModeSelection();
+            return;
+        }
+
+        _config.UiItem.V2pnPreferTun = tun;
+        await ConfigHandler.SaveConfig(_config);
+        if (connected && tun != status.EnableTun)
+        {
+            ApplyMode(status, tun);
+            if (!tun)
+            {
+                // Switching to the proxy doesn't reload the core, so nothing re-checks the connection by itself.
+                _ = status.TestServerAvailability();
+            }
+        }
+    }
+
+    /// <summary>
+    /// TUN needs administrator rights on Windows. Instead of restarting silently (v2rayN's behaviour),
+    /// ask first and restart with TUN already switched on, so the choice survives the restart.
+    /// </summary>
+    private async Task<bool> EnsureTunAllowedAsync(bool connectAfterRestart)
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        if (status == null)
+        {
+            return false;
+        }
+        if (status.AllowEnableTun() || !Utils.IsWindows())
+        {
+            // Linux and macOS ask for the password when TUN turns on.
+            return true;
+        }
+        if (await UI.ShowYesNo(L.VpnRestartAsAdmin) != ButtonResult.Yes)
+        {
+            return false;
+        }
+        _config.UiItem.V2pnPreferTun = true;
+        if (connectAfterRestart)
+        {
+            _config.TunModeItem.EnableTun = true;
+            _config.SystemProxyItem.SysProxyType = ESysProxyType.ForcedClear;
+        }
+        await ConfigHandler.SaveConfig(_config);
+        await AppManager.Instance.RebootAsAdmin();
+        return false;
+    }
+
+    private async Task InitRoutingPresetsAsync()
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        if (status == null)
+        {
+            return;
+        }
+        try
+        {
+            var changed = await RoutingPresets.EnsureAsync(_config);
+            await status.RefreshRoutingsMenu();
+            if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id))
+            {
+                status.ReloadRequested.Publish();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn routing presets", ex);
+        }
+        status.RoutingItems.CollectionChanged += (_, _) => RefreshRouteUi();
+        status.WhenAnyValue(s => s.SelectedRouting)
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(_ => RefreshRouteUi());
+        RefreshRouteUi();
+    }
+
+    private void RefreshRouteUi()
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        if (status == null)
+        {
+            return;
+        }
+        var active = status.SelectedRouting;
+        var kind = RoutingPresets.KindOf(active?.Id);
+        txtRoute.Text = kind is { } k ? RoutingPresets.Title(k) : active?.Remarks ?? L.RouteTitle;
+        btnRouteRussia.Classes.Set("active", kind == RoutingPresetKind.RussiaDirect);
+        btnRouteBlocked.Classes.Set("active", kind == RoutingPresetKind.BlockedOnly);
+        btnRouteAll.Classes.Set("active", kind == RoutingPresetKind.All);
+
+        var custom = status.RoutingItems.Where(t => !RoutingPresets.IsPreset(t.Id)).ToList();
+        _routeSync = true;
+        lstCustomRoutes.ItemsSource = custom;
+        lstCustomRoutes.SelectedItem = kind == null ? custom.FirstOrDefault(t => t.Id == active?.Id) : null;
+        _routeSync = false;
+        panelCustomRoutes.IsVisible = custom.Count > 0;
+    }
+
+    private void ShowRouteBusy(string? text)
+    {
+        borderRouteBusy.IsVisible = text != null;
+        txtRouteBusy.Text = text;
+    }
+
+    private async Task SelectPresetAsync(RoutingPresetKind kind)
+    {
+        var vm = ViewModel;
+        if (_routeBusy || vm == null)
+        {
+            return;
+        }
+        _routeBusy = true;
+        try
+        {
+            var sourcesChanged = RoutingPresets.NeedsRussianSources(_config, kind);
+            if (sourcesChanged)
+            {
+                ShowRouteBusy(L.RouteDownloading);
+                await vm.UseRussianSourcesAsync();
+            }
+            await RoutingPresets.EnsureAsync(_config);
+            await ActivateRoutingAsync(RoutingPresets.Id(kind), sourcesChanged);
+            btnRoute.Flyout?.Hide();
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn routing presets", ex);
+            NoticeManager.Instance.Enqueue(L.RouteFailed);
+        }
+        finally
+        {
+            ShowRouteBusy(null);
+            _routeBusy = false;
+        }
+    }
+
+    /// <summary>
+    /// Activates a routing item directly instead of through StatusBarViewModel.SelectedRouting: setting
+    /// that property twice in a row (refresh, then the new choice) races two async handlers.
+    /// </summary>
+    private async Task ActivateRoutingAsync(string id, bool sourcesChanged)
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        var item = await AppManager.Instance.GetRoutingItem(id);
+        if (status == null || item == null)
+        {
+            return;
+        }
+        var changed = await ConfigHandler.SetDefaultRouting(_config, item) == 0;
+        await status.RefreshRoutingsMenu();
+        if (changed || sourcesChanged)
+        {
+            NoticeManager.Instance.SendMessageEx(ResUI.TipChangeRouting);
+            status.ReloadRequested.Publish();
+        }
+    }
+
+    private async Task SetBlockAdsAsync(bool on)
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        if (status == null || _config.UiItem.V2pnBlockAds == on)
+        {
+            return;
+        }
+        _config.UiItem.V2pnBlockAds = on;
+        await ConfigHandler.SaveConfig(_config);
+        var changed = await RoutingPresets.EnsureAsync(_config);
+        await status.RefreshRoutingsMenu();
+        if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id))
+        {
+            status.ReloadRequested.Publish();
+        }
+    }
+
+    #endregion Mode and routing
 
     #region Sidebar
 
@@ -873,10 +1149,44 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var flyout = new MenuFlyout { Placement = placement };
         flyout.Items.Add(Item(ResUI.menuSubGroupUpdate, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, false)));
         flyout.Items.Add(Item(ResUI.menuSubGroupUpdateViaProxy, () => vm.UpdateSubscriptionProcess(row.Sub.Id ?? string.Empty, true)));
+        flyout.Items.Add(Item(L.TestPing, async () =>
+        {
+            var servers = await AppManager.Instance.ProfileModels(row.Sub.Id ?? string.Empty, string.Empty);
+            var ids = servers?.Select(s => s.IndexId).ToHashSet() ?? [];
+            var models = vm.ProfilesViewModel.ProfileItems.Where(m => ids.Contains(m.IndexId)).ToList();
+            await vm.ProfilesViewModel.PingProfilesAsync(models);
+        }));
+        flyout.Items.Add(Item(L.RemoveDead, async () => await RemoveDeadAsync(row)));
         flyout.Items.Add(new Separator());
         flyout.Items.Add(Item(ResUI.menuSubEdit, () => { Open(); vm.ProfilesViewModel.EditSubCmd.Execute().Subscribe(); return Task.CompletedTask; }));
         flyout.Items.Add(Item(ResUI.menuSubDelete, () => { Open(); vm.ProfilesViewModel.DeleteSubCmd.Execute().Subscribe(); return Task.CompletedTask; }));
         flyout.ShowAt(target, placement == PlacementMode.Pointer);
+    }
+
+    private async Task RemoveDeadAsync(SideSubRow row)
+    {
+        var profiles = ViewModel?.ProfilesViewModel;
+        var subId = row.Sub.Id ?? string.Empty;
+        if (profiles == null)
+        {
+            return;
+        }
+        var exs = await ProfileExManager.Instance.GetProfileExs();
+        var failed = exs.Where(t => t.Delay == -1).Select(t => t.IndexId).ToHashSet();
+        var servers = await AppManager.Instance.ProfileModels(subId, string.Empty) ?? [];
+        if (!servers.Any(s => failed.Contains(s.IndexId)))
+        {
+            NoticeManager.Instance.Enqueue(L.RemoveDeadNone);
+            return;
+        }
+        if (await UI.ShowYesNo(string.Format(L.RemoveDeadConfirm, row.Sub.Remarks)) != ButtonResult.Yes)
+        {
+            return;
+        }
+        var count = await ConfigHandler.RemoveInvalidServerResult(_config, subId);
+        await profiles.RefreshServersBiz();
+        await profiles.RefreshNavCounts();
+        NoticeManager.Instance.Enqueue(string.Format(ResUI.RemoveInvalidServerResultTip, Math.Max(count, 0)));
     }
 
     private static MenuItem Item(string header, Func<Task> action)

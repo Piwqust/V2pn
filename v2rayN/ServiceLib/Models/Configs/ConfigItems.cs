@@ -97,6 +97,17 @@ public class UIItem
     public List<ColumnItem> MainColumnItem { get; set; }
     public List<WindowSizeItem> WindowSizeItem { get; set; }
     public bool HideColumnIpInfo { get; set; }
+
+    // V2pn: how Connect protects the computer. The live state stays in SystemProxyItem/TunModeItem;
+    // these remember the choice while disconnected.
+    public bool V2pnPreferTun { get; set; }
+
+    // Null until first used: then taken from the mode v2rayN had (On, PAC or Keep).
+    public ESysProxyType? V2pnProxyMethod { get; set; }
+
+    public bool V2pnBlockAds { get; set; }
+
+    public List<string>? V2pnRecent { get; set; }
 }
 
 public class ConstItem

@@ -289,6 +289,20 @@ public sealed partial class SidebarViewModel : ReactiveObject
             ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.StripFlag(fastest.Remarks)} · {L.Ms(fastest.Delay)}", fastest.IndexId)
             : new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone));
 
+        // Recent connections, Proton-style: the last few servers, newest first, unless they are favorites already.
+        var byId = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).ToDictionary(g => g.Key, g => g.First());
+        var favoriteIds = _profiles.FavoriteItems.Select(m => m.IndexId).ToHashSet();
+        var recent = (AppManager.Instance.Config.UiItem.V2pnRecent ?? [])
+            .Where(id => !favoriteIds.Contains(id) && byId.ContainsKey(id))
+            .Take(3)
+            .Select(id => byId[id])
+            .ToList();
+        if (recent.Count > 0)
+        {
+            rows.Add(new SideHeaderRow(L.Recent));
+            rows.AddRange(recent.Select(m => new SideServerRow(m, true, false)));
+        }
+
         var favorites = _profiles.FavoriteItems.ToList();
         _pingScope = favorites;
         rows.Add(new SideHeaderRow($"{L.TabFavorites} ({favorites.Count})", favorites.Count > 0 ? Ping : null));

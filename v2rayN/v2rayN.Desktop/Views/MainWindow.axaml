@@ -728,9 +728,229 @@
                                 FontWeight="SemiBold"
                                 HorizontalAlignment="Center"
                                 Theme="{StaticResource V2Button}" />
+
+                            <!--  The two decisions behind Connect: how the computer is protected and what goes
+                                  through the server. Both work while disconnected too, then they apply on Connect.  -->
+                            <Border
+                                x:Name="barConnection"
+                                Margin="0,12,0,0"
+                                HorizontalAlignment="Center"
+                                Classes="floating modebar">
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <ListBox
+                                        x:Name="lstMode"
+                                        Classes="mode"
+                                        Theme="{StaticResource V2Segmented}">
+                                        <ListBoxItem x:Name="itemModeProxy">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconGlobeStroke}" />
+                                                <TextBlock Text="{x:Static loc:L.ModeProxy}" />
+                                            </StackPanel>
+                                        </ListBoxItem>
+                                        <ListBoxItem x:Name="itemModeVpn">
+                                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconShieldStroked}" />
+                                                <TextBlock Text="{x:Static loc:L.ModeVpn}" />
+                                                <Border x:Name="badgeAdmin" Classes="adminbadge">
+                                                    <TextBlock Text="{x:Static loc:L.AdminShort}" />
+                                                </Border>
+                                            </StackPanel>
+                                        </ListBoxItem>
+                                    </ListBox>
+                                    <Border Classes="vsep" />
+                                    <Button
+                                        x:Name="btnRoute"
+                                        Classes="ghost routechip"
+                                        Theme="{StaticResource V2Button}"
+                                        ToolTip.Tip="{x:Static loc:L.RouteTitle}">
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconRoute}" />
+                                            <TextBlock
+                                                x:Name="txtRoute"
+                                                MaxWidth="230"
+                                                TextTrimming="CharacterEllipsis" />
+                                            <PathIcon Classes="i12" Data="{StaticResource SemiIconChevronDown}" />
+                                        </StackPanel>
+                                        <Button.Flyout>
+                                            <Flyout Placement="Bottom">
+                                                <StackPanel Width="380" Spacing="12">
+                                                    <StackPanel Spacing="3">
+                                                        <TextBlock Classes="title" Text="{x:Static loc:L.RouteTitle}" />
+                                                        <TextBlock
+                                                            Classes="faint small"
+                                                            Text="{x:Static loc:L.RouteSubtitle}"
+                                                            TextWrapping="Wrap" />
+                                                    </StackPanel>
+                                                    <StackPanel Spacing="4">
+                                                        <Button
+                                                            x:Name="btnRouteRussia"
+                                                            Classes="routeoption"
+                                                            Theme="{StaticResource V2SideRow}">
+                                                            <Grid ColumnDefinitions="*,Auto">
+                                                                <StackPanel Spacing="2">
+                                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                        <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteRussiaDirect}" />
+                                                                        <Border Classes="recommend">
+                                                                            <TextBlock Text="{x:Static loc:L.Recommended}" />
+                                                                        </Border>
+                                                                    </StackPanel>
+                                                                    <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteRussiaDirectHint}" />
+                                                                </StackPanel>
+                                                                <PathIcon
+                                                                    x:Name="tickRouteRussia"
+                                                                    Grid.Column="1"
+                                                                    Classes="routetick"
+                                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                            </Grid>
+                                                        </Button>
+                                                        <Button
+                                                            x:Name="btnRouteBlocked"
+                                                            Classes="routeoption"
+                                                            Theme="{StaticResource V2SideRow}">
+                                                            <Grid ColumnDefinitions="*,Auto">
+                                                                <StackPanel Spacing="2">
+                                                                    <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteBlockedOnly}" />
+                                                                    <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteBlockedOnlyHint}" />
+                                                                </StackPanel>
+                                                                <PathIcon
+                                                                    x:Name="tickRouteBlocked"
+                                                                    Grid.Column="1"
+                                                                    Classes="routetick"
+                                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                            </Grid>
+                                                        </Button>
+                                                        <Button
+                                                            x:Name="btnRouteAll"
+                                                            Classes="routeoption"
+                                                            Theme="{StaticResource V2SideRow}">
+                                                            <Grid ColumnDefinitions="*,Auto">
+                                                                <StackPanel Spacing="2">
+                                                                    <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteAll}" />
+                                                                    <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteAllHint}" />
+                                                                </StackPanel>
+                                                                <PathIcon
+                                                                    x:Name="tickRouteAll"
+                                                                    Grid.Column="1"
+                                                                    Classes="routetick"
+                                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                            </Grid>
+                                                        </Button>
+                                                    </StackPanel>
+
+                                                    <Border
+                                                        x:Name="borderRouteBusy"
+                                                        Classes="routebusy"
+                                                        IsVisible="False">
+                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                            <Path Classes="spinner" />
+                                                            <TextBlock
+                                                                x:Name="txtRouteBusy"
+                                                                VerticalAlignment="Center"
+                                                                TextWrapping="Wrap" />
+                                                        </StackPanel>
+                                                    </Border>
+
+                                                    <Border Classes="hairline" />
+                                                    <Grid ColumnDefinitions="*,Auto">
+                                                        <StackPanel Spacing="2">
+                                                            <TextBlock Classes="routetitle" Text="{x:Static loc:L.BlockAds}" />
+                                                            <TextBlock Classes="routehint" Text="{x:Static loc:L.BlockAdsHint}" />
+                                                        </StackPanel>
+                                                        <ToggleSwitch
+                                                            x:Name="togBlockAds"
+                                                            Grid.Column="1"
+                                                            VerticalAlignment="Center"
+                                                            OffContent=""
+                                                            OnContent="" />
+                                                    </Grid>
+
+                                                    <StackPanel x:Name="panelCustomRoutes" Spacing="12">
+                                                        <Border Classes="hairline" />
+                                                        <Grid ColumnDefinitions="*,Auto">
+                                                            <StackPanel Spacing="2">
+                                                                <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteCustom}" />
+                                                                <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteCustomHint}" />
+                                                            </StackPanel>
+                                                            <ComboBox
+                                                                x:Name="lstCustomRoutes"
+                                                                Grid.Column="1"
+                                                                Width="170"
+                                                                VerticalAlignment="Center"
+                                                                PlaceholderText="{x:Static loc:L.RouteCustomPick}">
+                                                                <ComboBox.ItemTemplate>
+                                                                    <DataTemplate x:DataType="ent:RoutingItem">
+                                                                        <TextBlock Text="{Binding Remarks}" TextTrimming="CharacterEllipsis" />
+                                                                    </DataTemplate>
+                                                                </ComboBox.ItemTemplate>
+                                                            </ComboBox>
+                                                        </Grid>
+                                                    </StackPanel>
+                                                    <Button
+                                                        x:Name="btnRoutingSettings"
+                                                        HorizontalAlignment="Stretch"
+                                                        Classes="subtle small"
+                                                        Content="{x:Static loc:L.RoutingSettings}"
+                                                        Theme="{StaticResource V2Button}" />
+                                                </StackPanel>
+                                            </Flyout>
+                                        </Button.Flyout>
+                                    </Button>
+                                </StackPanel>
+                            </Border>
                         </StackPanel>
 
-                        <!--  Feature rail (system proxy, TUN, routing, DNS, settings)  -->
+                        <!--  First run: nothing to connect to yet, so the stage asks for a server instead.  -->
+                        <Border
+                            x:Name="cardWelcome"
+                            Width="440"
+                            Margin="0,40,0,0"
+                            Padding="28,26,28,24"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            Classes="floating"
+                            IsVisible="False">
+                            <StackPanel Spacing="16">
+                                <StackPanel Spacing="6">
+                                    <TextBlock
+                                        Classes="display h3"
+                                        Text="{x:Static loc:L.WelcomeTitle}"
+                                        TextWrapping="Wrap" />
+                                    <TextBlock
+                                        Classes="muted"
+                                        LineHeight="20"
+                                        Text="{x:Static loc:L.WelcomeText}"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                                <StackPanel Spacing="8">
+                                    <Button
+                                        x:Name="btnWelcomePaste"
+                                        Height="42"
+                                        HorizontalAlignment="Stretch"
+                                        Classes="accent"
+                                        Content="{x:Static loc:L.WelcomePaste}"
+                                        Theme="{StaticResource V2Button}" />
+                                    <Grid ColumnDefinitions="*,8,*">
+                                        <Button
+                                            x:Name="btnWelcomeSub"
+                                            HorizontalAlignment="Stretch"
+                                            Content="{x:Static loc:L.AddSubscription}"
+                                            Theme="{StaticResource V2Button}" />
+                                        <Button
+                                            x:Name="btnWelcomeQr"
+                                            Grid.Column="2"
+                                            HorizontalAlignment="Stretch"
+                                            Content="{x:Static loc:L.WelcomeQr}"
+                                            Theme="{StaticResource V2Button}" />
+                                    </Grid>
+                                </StackPanel>
+                                <TextBlock
+                                    Classes="faint small"
+                                    Text="{x:Static loc:L.WelcomeHint}"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Border>
+
+                        <!--  Feature rail: DNS and settings. Mode and routing live under the Connect button.  -->
                         <Panel
                             x:Name="railHost"
                             Margin="0,16,16,0"
@@ -742,116 +962,6 @@
                                 x:DataType="vms:StatusBarViewModel"
                                 Classes="floating">
                                 <StackPanel Spacing="4">
-                                    <Button
-                                        x:Name="btnRailProxy"
-                                        Classes="rail"
-                                        Theme="{StaticResource V2RailTile}"
-                                        ToolTip.Tip="{x:Static resx:ResUI.menuSystemproxy}">
-                                        <StackPanel Spacing="6">
-                                            <Panel HorizontalAlignment="Center">
-                                                <PathIcon Classes="rail" Data="{StaticResource SemiIconGlobeStroke}" />
-                                                <Ellipse x:Name="dotRailProxy" Classes="railDot" />
-                                            </Panel>
-                                            <StackPanel Spacing="1">
-                                                <TextBlock Classes="rail" Text="{x:Static loc:L.RailProxy}" />
-                                                <TextBlock
-                                                    Classes="railvalue"
-                                                    Classes.on="{Binding SystemProxySelected, Converter={x:Static conv:V2pnConverters.IsProxyRouting}}"
-                                                    Text="{Binding SystemProxySelected, Converter={x:Static conv:V2pnConverters.ProxyModeShort}}" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <Button.Flyout>
-                                            <Flyout Placement="LeftEdgeAlignedTop">
-                                                <StackPanel Width="280" Spacing="8">
-                                                    <TextBlock Classes="title" Text="{x:Static resx:ResUI.menuSystemproxy}" />
-                                                    <ListBox
-                                                        x:Name="lstProxyMode"
-                                                        SelectedIndex="{Binding SystemProxySelected}"
-                                                        Theme="{StaticResource V2NavList}">
-                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModeOff}" />
-                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModeOn}" />
-                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModeKeep}" />
-                                                        <ListBoxItem Content="{x:Static loc:L.ProxyModePac}" />
-                                                    </ListBox>
-                                                    <TextBlock
-                                                        Classes="faint small"
-                                                        Text="{Binding InboundDisplay}"
-                                                        TextWrapping="Wrap" />
-                                                    <TextBlock
-                                                        Classes="faint small"
-                                                        Text="{Binding InboundLanDisplay}"
-                                                        TextWrapping="Wrap" />
-                                                </StackPanel>
-                                            </Flyout>
-                                        </Button.Flyout>
-                                    </Button>
-
-                                    <ToggleButton
-                                        x:Name="btnRailTun"
-                                        IsChecked="{Binding EnableTun}"
-                                        Theme="{StaticResource V2RailToggle}"
-                                        ToolTip.Tip="{x:Static resx:ResUI.TbEnableTunAs}">
-                                        <StackPanel Spacing="6">
-                                            <Panel HorizontalAlignment="Center">
-                                                <PathIcon Classes="rail" Data="{StaticResource SemiIconShieldStroked}" />
-                                                <Ellipse Classes="railDot" IsVisible="{Binding EnableTun}" />
-                                            </Panel>
-                                            <StackPanel Spacing="1">
-                                                <TextBlock Classes="rail" Text="{x:Static loc:L.RailTun}" />
-                                                <TextBlock
-                                                    Classes="railvalue"
-                                                    Classes.on="{Binding EnableTun}"
-                                                    Text="{Binding EnableTun, Converter={x:Static conv:V2pnConverters.OnOff}}" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                    </ToggleButton>
-
-                                    <Button
-                                        Classes="rail"
-                                        Theme="{StaticResource V2RailTile}"
-                                        ToolTip.Tip="{x:Static resx:ResUI.menuRouting}">
-                                        <StackPanel Spacing="6">
-                                            <PathIcon
-                                                HorizontalAlignment="Center"
-                                                Classes="rail"
-                                                Data="{StaticResource SemiIconRoute}" />
-                                            <StackPanel Spacing="1">
-                                                <TextBlock Classes="rail" Text="{x:Static loc:L.RailRouting}" />
-                                                <TextBlock
-                                                    MaxWidth="78"
-                                                    Classes="railvalue"
-                                                    Text="{Binding SelectedRouting.Remarks, FallbackValue=''}"
-                                                    TextTrimming="CharacterEllipsis"
-                                                    TextWrapping="NoWrap"
-                                                    ToolTip.Tip="{Binding SelectedRouting.Remarks, FallbackValue=''}" />
-                                            </StackPanel>
-                                        </StackPanel>
-                                        <Button.Flyout>
-                                            <Flyout Placement="LeftEdgeAlignedTop">
-                                                <StackPanel Width="280" Spacing="8">
-                                                    <TextBlock Classes="title" Text="{x:Static resx:ResUI.menuRouting}" />
-                                                    <ListBox
-                                                        MaxHeight="320"
-                                                        ItemsSource="{Binding RoutingItems}"
-                                                        SelectedItem="{Binding SelectedRouting}"
-                                                        Theme="{StaticResource V2NavList}">
-                                                        <ListBox.ItemTemplate>
-                                                            <DataTemplate x:DataType="ent:RoutingItem">
-                                                                <TextBlock Text="{Binding Remarks}" TextTrimming="CharacterEllipsis" />
-                                                            </DataTemplate>
-                                                        </ListBox.ItemTemplate>
-                                                    </ListBox>
-                                                    <Button
-                                                        x:Name="btnRoutingSettings"
-                                                        HorizontalAlignment="Stretch"
-                                                        Classes="subtle small"
-                                                        Content="{x:Static loc:L.RoutingSettings}"
-                                                        Theme="{StaticResource V2Button}" />
-                                                </StackPanel>
-                                            </Flyout>
-                                        </Button.Flyout>
-                                    </Button>
-
                                     <Button
                                         x:Name="btnRailDns"
                                         Classes="rail"

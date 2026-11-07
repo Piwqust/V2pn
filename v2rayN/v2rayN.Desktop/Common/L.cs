@@ -104,7 +104,7 @@ public static class L
     public static string SubEmpty => T("No servers yet. Update the subscription to load them.", "Серверов пока нет. Обновите подписку, чтобы загрузить их.");
     public static string Protected => T("Protected", "Защищено");
     public static string Unprotected => T("Unprotected", "Не защищено");
-    public static string LocalOnly => T("Local proxy only", "Только локальный прокси");
+    public static string LocalOnly => string.Format(T("Proxy on port {0} only", "Только прокси на порту {0}"), AppManager.Instance.GetLocalPort(EInboundProtocol.socks));
     public static string Disconnect => T("Disconnect", "Отключиться");
     public static string ServerIp => T("Server", "Сервер");
     public static string Protocol => T("Protocol", "Протокол");
@@ -122,6 +122,55 @@ public static class L
     public static string ProxyModeKeep => T("Keep current OS setting", "Не менять настройки системы");
     public static string ProxyModePac => T("PAC — automatic per site", "PAC — автоматически по сайтам");
     public static string RoutingSettings => T("Routing settings…", "Настроить маршруты…");
+
+    public static string WelcomeTitle => T("Add your first server", "Добавьте первый сервер");
+    public static string WelcomeText => T("Copy a subscription link or a vless://, vmess://, trojan://… link from your provider and paste it here.",
+        "Скопируйте ссылку на подписку или ссылку вида vless://, vmess://, trojan://… от вашего провайдера и вставьте её сюда.");
+    public static string WelcomePaste => T("Paste from clipboard", "Вставить из буфера");
+    public static string WelcomeQr => T("Scan QR code", "Сканировать QR-код");
+    public static string WelcomeHint => T("Subscriptions update on their own; favorites survive the updates.",
+        "Подписки обновляются сами, избранное сохраняется после обновлений.");
+    public static string Recent => T("Recent", "Недавние");
+    public static string RemoveDead => T("Remove servers that didn't respond", "Удалить серверы без ответа");
+    public static string RemoveDeadConfirm => T("Remove the servers of “{0}” that didn't respond to the last ping? The next subscription update may bring them back.",
+        "Удалить серверы подписки «{0}», которые не ответили на последнюю проверку? Следующее обновление подписки может вернуть их.");
+    public static string RemoveDeadNone => T("Ping the servers first: nothing has failed a check yet.", "Сначала проверьте пинг: пока ни один сервер не провалил проверку.");
+
+    // Connection mode and routing presets (the bar under Connect).
+    public static string ModeProxy => T("Proxy", "Прокси");
+    public static string ModeVpn => T("VPN", "VPN");
+    public static string AdminShort => T("Admin", "Админ");
+    public static string ModeProxyTip => T("Browsers and apps that follow the system proxy settings go through the server. No administrator rights needed.",
+        "Через сервер идут браузеры и программы, которые используют системный прокси. Права администратора не нужны.");
+    public static string ModeVpnTip => T("All traffic of the computer goes through a virtual network adapter (TUN), including games and apps that ignore the proxy.",
+        "Весь трафик компьютера идёт через виртуальный сетевой адаптер (TUN), в том числе игры и программы, которые не видят прокси.");
+    public static string ModeVpnNeedsAdmin => T("Needs administrator rights.", "Нужны права администратора.");
+    public static string VpnRestartAsAdmin => T("VPN mode needs administrator rights. Restart V2pn as administrator? VPN mode turns on after the restart.",
+        "Для режима VPN нужны права администратора. Перезапустить V2pn от имени администратора? Режим VPN включится после перезапуска.");
+    public static string VpnNeedsSudo => T("VPN mode needs the administrator password.", "Для режима VPN нужен пароль администратора.");
+    public static string ModeLocalPort => T("Local port only", "Только локальный порт");
+
+    public static string RouteTitle => T("What goes through the VPN", "Что идёт через VPN");
+    public static string RouteSubtitle => T("Sites that go direct see your real IP address. Changes apply right away.",
+        "Сайты, которые идут напрямую, видят ваш настоящий IP. Изменения применяются сразу.");
+    public static string RouteRussiaDirect => T("Russian sites direct", "Российские сайты напрямую");
+    public static string RouteRussiaDirectHint => T("Sites in .ru and .рф, banks, Gosuslugi and Russian IPs open directly. Everything else goes through the VPN, including blocked .ru sites.",
+        "Сайты в зонах .ru и .рф, банки, Госуслуги и российские IP открываются напрямую. Остальное идёт через VPN, включая заблокированные сайты в .ru.");
+    public static string RouteBlockedOnly => T("Only blocked sites", "Только заблокированное");
+    public static string RouteBlockedOnlyHint => T("Only sites blocked in Russia, YouTube, Discord, Telegram and AI services go through the VPN. The rest opens directly and faster.",
+        "Через VPN идут только сайты, заблокированные в России, а ещё YouTube, Discord, Telegram и ИИ-сервисы. Остальное открывается напрямую и быстрее.");
+    public static string RouteAll => T("Everything through VPN", "Всё через VPN");
+    public static string RouteAllHint => T("All traffic except the local network goes through the server. Some Russian banks and Gosuslugi may refuse a foreign IP.",
+        "Весь трафик, кроме локальной сети, идёт через сервер. Некоторые банки и Госуслуги могут не пустить с иностранного IP.");
+    public static string Recommended => T("Recommended", "Рекомендуем");
+    public static string BlockAds => T("Block ads and trackers", "Блокировать рекламу и трекеры");
+    public static string BlockAdsHint => T("By the category-ads-all list, in the three modes above.", "По списку category-ads-all, в трёх режимах выше.");
+    public static string RouteCustom => T("Your rules", "Свои правила");
+    public static string RouteCustomHint => T("Sets from the routing settings.", "Наборы из настройки маршрутов.");
+    public static string RouteCustomPick => T("Choose…", "Выбрать…");
+    public static string RouteDownloading => T("Downloading the rule lists for Russia…", "Скачиваю списки правил для России…");
+    public static string RouteApplying => T("Applying…", "Применяю…");
+    public static string RouteFailed => T("Couldn't switch the routing. Details are in the log.", "Не удалось переключить маршруты. Подробности в журнале.");
     public static string MenuLog => T("Log", "Журнал");
     public static string MenuTable => T("Server table", "Таблица серверов");
     public static string MenuClashProxies => T("Clash proxies", "Прокси Clash");
@@ -164,9 +213,9 @@ public static class L
     public static string SetGeneralHint => T("Startup, the window and the server list.", "Запуск, окно и список серверов.");
     public static string SetInbound => T("Local proxy", "Локальный прокси");
     public static string SetInboundHint => T("The port that apps and the system connect to.", "Порт, к которому подключаются приложения и система.");
-    public static string SetSysProxy => T("System proxy", "Системный прокси");
-    public static string SetSysProxyHint => T("How the operating system hands its traffic to V2pn.", "Как операционная система передаёт трафик в V2pn.");
-    public static string SetTun => T("TUN mode", "Режим TUN");
+    public static string SetSysProxy => T("Proxy mode", "Режим «Прокси»");
+    public static string SetSysProxyHint => T("What Connect does in Proxy mode: how the operating system hands its traffic to V2pn.", "Что делает кнопка подключения в режиме «Прокси»: как система передаёт трафик в V2pn.");
+    public static string SetTun => T("VPN mode (TUN)", "Режим VPN (TUN)");
     public static string SetTunHint => T("Sends all traffic of the device through a virtual network adapter, including apps that ignore the system proxy.", "Весь трафик устройства идёт через виртуальный сетевой адаптер, даже у приложений, которые не смотрят на системный прокси.");
     public static string SetTraffic => T("Traffic handling", "Обработка трафика");
     public static string SetTrafficHint => T("Sniffing, fragmentation, multiplexing and outbound connections.", "Сниффинг, фрагментация, мультиплексирование и исходящие соединения.");
@@ -184,6 +233,17 @@ public static class L
     public static string GrpPort => T("Port", "Порт");
     public static string GrpLan => T("Local network", "Локальная сеть");
     public static string GrpProxyRules => T("Rules", "Правила");
+    public static string GrpProxyMethod => T("On connect", "При подключении");
+    public static string ProxyMethod => T("Turn on", "Что включать");
+    public static string ProxyMethodHint => T("With “Don't change system settings” only apps you point at the local port go through the server.",
+        "При «Не менять настройки системы» через сервер пойдут только программы, которым вы сами укажете локальный порт.");
+    public static string ProxyMethodSystem => T("System proxy", "Системный прокси");
+    public static string ProxyMethodPac => T("PAC script", "PAC-скрипт");
+    public static string GrpTunAccess => T("Access", "Доступ");
+    public static string TunAdminTitle => T("Administrator rights", "Права администратора");
+    public static string TunAdminYes => T("Granted, VPN mode works.", "Есть, режим VPN работает.");
+    public static string TunAdminNo => T("Not granted. When you turn on VPN mode, V2pn offers to restart as administrator.",
+        "Нет. При включении режима VPN V2pn предложит перезапуститься от имени администратора.");
     public static string GrpExceptions => T("Exceptions", "Исключения");
     public static string GrpFiles => T("Custom files", "Свои файлы");
     public static string GrpRouting => T("Routing", "Маршрутизация");

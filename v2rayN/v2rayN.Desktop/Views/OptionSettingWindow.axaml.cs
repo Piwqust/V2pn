@@ -68,6 +68,7 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         cmbMainGirdOrientation.ItemsSource = Utils.GetEnumNames<EGirdOrientation>();
 
         _ = InitSettingFont();
+        InitConnectionModes();
 
         this.WhenActivated(disposables =>
         {
@@ -271,5 +272,49 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
             svContent.Offset = default;
         }
         txtNoResults.IsVisible = !found;
+    }
+
+    // V2pn: the main window's Proxy / VPN switch; these rows say what each one does on Connect.
+    private static readonly ESysProxyType[] ProxyMethods = Utils.IsWindows()
+        ? [ESysProxyType.ForcedChange, ESysProxyType.Pac, ESysProxyType.Unchanged]
+        : [ESysProxyType.ForcedChange, ESysProxyType.Unchanged];
+
+    private void InitConnectionModes()
+    {
+        cmbProxyMethod.ItemsSource = ProxyMethods.Select(m => m switch
+        {
+            ESysProxyType.Pac => L.ProxyMethodPac,
+            ESysProxyType.Unchanged => L.ProxyModeKeep,
+            _ => L.ProxyMethodSystem,
+        }).ToList();
+        var current = ConnectionPrefs.ProxyMethod(_config);
+        cmbProxyMethod.SelectedIndex = Math.Max(0, Array.IndexOf(ProxyMethods, current));
+        btnSave.Click += (_, _) => SaveProxyMethod();
+
+        var admin = Utils.IsAdministrator();
+        txtTunAdminState.Text = admin ? L.TunAdminYes : L.TunAdminNo;
+        btnTunRestartAdmin.IsVisible = !admin;
+        btnTunRestartAdmin.Click += async (_, _) => await AppManager.Instance.RebootAsAdmin();
+    }
+
+    private static void SaveProxyMethodTo(ESysProxyType method)
+    {
+        _config.UiItem.V2pnProxyMethod = method;
+        // Connected in Proxy mode: switch the live mode too, so the change shows right away.
+        var status = StatusBarViewModel.Instance;
+        var live = (ESysProxyType)status.SystemProxySelected;
+        if (!status.EnableTun && live != ESysProxyType.ForcedClear && live != method)
+        {
+            status.SystemProxySelected = (int)method;
+        }
+    }
+
+    // Runs before the Save command (Click is raised before Command executes), so the command saves it.
+    private void SaveProxyMethod()
+    {
+        if (cmbProxyMethod.SelectedIndex >= 0)
+        {
+            SaveProxyMethodTo(ProxyMethods[cmbProxyMethod.SelectedIndex]);
+        }
     }
 }

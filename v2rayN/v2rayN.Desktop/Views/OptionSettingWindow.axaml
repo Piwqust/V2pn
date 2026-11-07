@@ -369,6 +369,24 @@
                         <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetSysProxy}" />
                         <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetSysProxyHint}" />
                         <StackPanel Classes="sgroup">
+                            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProxyMethod}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.ProxyMethod}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.ProxyMethodHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbProxyMethod" Width="280" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Classes="sgroup">
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProxyRules}" />
                             <Border Classes="sgroupcard">
                                 <StackPanel>
@@ -452,6 +470,24 @@
                     <StackPanel x:Name="pageTun" Classes="spage" IsVisible="False">
                         <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetTun}" />
                         <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetTunHint}" />
+                        <StackPanel Classes="sgroup">
+                            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpTunAccess}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow win">
+                                        <Grid ColumnDefinitions="*,Auto">
+                                            <StackPanel Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TunAdminTitle}" />
+                                                <TextBlock x:Name="txtTunAdminState" Classes="srowhint" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                <Button x:Name="btnTunRestartAdmin" Content="{x:Static resx:ResUI.menuRebootAsAdmin}" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                         <StackPanel Classes="sgroup">
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpRouting}" />
                             <Border Classes="sgroupcard">

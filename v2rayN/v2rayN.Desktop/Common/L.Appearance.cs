@@ -55,6 +55,10 @@ public static partial class L
 
     public static string ApReset => T("Reset to default", "Вернуть как было");
 
+    public static string KeepModeNoDisconnect => T(
+        "In \"Keep system settings\" mode V2pn does not touch the Windows proxy, so there is nothing to switch off. Port {0} works while V2pn is open.",
+        "В режиме «Не менять настройки системы» V2pn не трогает прокси Windows, отключать нечего. Порт {0} работает, пока V2pn открыт.");
+
     public static string ApPaletteName(string id) => id switch
     {
         "midnight" => T("Midnight", "Полночь"),

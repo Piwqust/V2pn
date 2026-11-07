@@ -676,6 +676,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return;
         }
 
+        // "Keep system settings" means V2pn never writes the Windows proxy. Clearing it here would
+        // remove a proxy that another app (often another VPN client) set.
+        if (!status.EnableTun && ConnectionPrefs.ProxyMethod(_config) == ESysProxyType.Unchanged)
+        {
+            NoticeManager.Instance.Enqueue(string.Format(L.KeepModeNoDisconnect, AppManager.Instance.GetLocalPort(EInboundProtocol.socks)));
+            return;
+        }
         if (status.EnableTun)
         {
             status.EnableTun = false;

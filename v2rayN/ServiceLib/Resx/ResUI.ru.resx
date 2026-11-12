@@ -286,7 +286,7 @@
     <value>Пользовательская конфигурация успешно импортирована</value>
   </data>
   <data name="SuccessfullyImportedServerViaClipboard" xml:space="preserve">
-    <value>Из буфера обмена импортировано конфигураций: {0}</value>
+    <value>Добавлено серверов: {0}</value>
   </data>
   <data name="SuccessfullyImportedServerViaScan" xml:space="preserve">
     <value>Ссылка общего доступа успешно отсканирована и импортирована</value>
@@ -1907,5 +1907,8 @@
   </data>
   <data name="menuAddMasqueServer" xml:space="preserve">
     <value>Добавить сервер [MASQUE]</value>
+  </data>
+  <data name="MsgV2pnLocalPortBusy" xml:space="preserve">
+    <value>Порт {0} уже занят другой программой, скорее всего другим VPN-клиентом. Закройте её или смените локальный порт в настройках, иначе V2pn не подключится.</value>
   </data>
 </root>

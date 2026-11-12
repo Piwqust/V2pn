@@ -20,7 +20,7 @@ public enum ToastKind
 internal static class Toasts
 {
     private static readonly string[] ErrorWords =
-        ["fail", "error", "invalid", "not found", "cannot", "can't", "unable", "失败", "错误", "无效", "ошибк", "не удалось", "не найден", "недейств", "невозможно"];
+        ["fail", "error", "invalid", "not found", "cannot", "can't", "couldn't", "could not", "unable", "失败", "错误", "无效", "ошибк", "не удалось", "не удалась", "не получилось", "не найден", "недейств", "невозможно"];
 
     private static readonly string[] SuccessWords =
         ["success", "succeeded", "done", "成功", "успешн", "готово", "сохранен"];

@@ -19,13 +19,13 @@
     mc:Ignorable="d">
 
     <DockPanel>
-        <StackPanel Margin="24,20,24,0" DockPanel.Dock="Top" Spacing="6">
+        <StackPanel Classes="spagehead" DockPanel.Dock="Top">
             <TextBlock Classes="spagetitle" Text="{x:Static loc:L.RtListTitle}" />
             <TextBlock Classes="spagehint" Text="{x:Static loc:L.RtListHint}" />
         </StackPanel>
 
         <!--  Expert settings for every set, behind "Show more fields" under the list.  -->
-        <StackPanel Margin="24,0,24,16" DockPanel.Dock="Bottom" Spacing="6">
+        <StackPanel Margin="28,0,28,16" DockPanel.Dock="Bottom" Spacing="6">
             <StackPanel Classes="sgroup">
                 <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.RtGrpDomains}" />
                 <Border Classes="sgroupcard">
@@ -78,7 +78,7 @@
             <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
         </StackPanel>
 
-        <DockPanel Margin="24,12,24,8">
+        <DockPanel Margin="28,12,28,8">
             <!--  Actions above the list.  -->
             <Menu
                 Margin="0,0,0,10"

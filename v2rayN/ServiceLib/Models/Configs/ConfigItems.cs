@@ -114,6 +114,16 @@ public class UIItem
 
     // Null means on: new versions download in the background and install at the next start.
     public bool? V2pnAutoUpdate { get; set; }
+
+    // The close-to-tray question was answered once (Windows); until then X hides, as it always did.
+    public bool V2pnCloseAsked { get; set; }
+
+    // The sign-in entry carries Global.AutostartArg. Until it does, a launch without the argument may
+    // still be the sign-in one, so "start in the tray" keeps applying to every launch.
+    public bool V2pnAutostartArg { get; set; }
+
+    // The one-time notice that the proxy is open to the local network without a password was shown.
+    public bool V2pnLanWarned { get; set; }
 }
 
 public class ConstItem
@@ -263,6 +273,11 @@ public class WindowSizeItem
     public string TypeName { get; set; }
     public int Width { get; set; }
     public int Height { get; set; }
+
+    // V2pn: where the main window was (physical pixels, normal bounds) and whether it was maximized.
+    public int? X { get; set; }
+    public int? Y { get; set; }
+    public bool IsMaximized { get; set; }
 }
 
 public class SimpleDNSItem

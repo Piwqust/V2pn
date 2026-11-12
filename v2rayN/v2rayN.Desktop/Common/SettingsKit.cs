@@ -24,6 +24,42 @@ internal static class SettingsKit
                           && !(row.Classes.Contains("mac") && !Utils.IsMacOS());
             row.Classes.Set("hidden", !visible);
         }
+        QueueMarkFirst(root);
+    }
+
+    /// <summary>
+    /// Tags the first row each card shows with "first", which drops its top hairline. A style can't
+    /// do it: nth-child counts the rows that are hidden.
+    /// </summary>
+    public static void MarkFirst(Control root)
+    {
+        foreach (var rows in Rows(root).GroupBy(r => r.Parent))
+        {
+            var first = true;
+            foreach (var row in rows)
+            {
+                var shown = row.IsVisible && !row.Classes.Contains("hidden") && !row.Classes.Contains("advhidden")
+                            && !row.Classes.Contains("nomatch") && !row.Classes.Contains("collapsed");
+                row.Classes.Set("first", first && shown);
+                first &= !shown;
+            }
+        }
+    }
+
+    // A batch of class changes (advanced on, a search keystroke) re-marks once, after it settles.
+    private static readonly HashSet<Control> MarkPending = [];
+
+    private static void QueueMarkFirst(Control root)
+    {
+        if (!MarkPending.Add(root))
+        {
+            return;
+        }
+        Dispatcher.UIThread.Post(() =>
+        {
+            MarkPending.Remove(root);
+            MarkFirst(root);
+        });
     }
 
     /// <summary>
@@ -39,7 +75,32 @@ internal static class SettingsKit
             {
                 continue;
             }
-            title.GetObservable(Visual.IsVisibleProperty).Subscribe(visible => row.Classes.Set("collapsed", !visible));
+            title.GetObservable(Visual.IsVisibleProperty).Subscribe(visible =>
+            {
+                row.Classes.Set("collapsed", !visible);
+                QueueMarkFirst(root);
+            });
+            LabelControl(row, title);
+        }
+        QueueMarkFirst(root);
+    }
+
+    // A screen reader on the row's switch or field reads the row title (and its hint) instead of a bare
+    // "toggle switch". Rows with an explicitly named control (two pickers in one row) keep their names.
+    private static void LabelControl(Border row, TextBlock title)
+    {
+        var control = row.GetLogicalDescendants().OfType<Control>()
+            .FirstOrDefault(c => c is ToggleSwitch or TextBox or ComboBox or NumericUpDown or CheckBox);
+        if (control == null || !string.IsNullOrEmpty(Avalonia.Automation.AutomationProperties.GetName(control))
+            || Avalonia.Automation.AutomationProperties.GetLabeledBy(control) != null)
+        {
+            return;
+        }
+        Avalonia.Automation.AutomationProperties.SetLabeledBy(control, title);
+        var hint = row.GetLogicalDescendants().OfType<TextBlock>().FirstOrDefault(t => t.Classes.Contains("srowhint"));
+        if (hint?.Text is { Length: > 0 } help && string.IsNullOrEmpty(Avalonia.Automation.AutomationProperties.GetHelpText(control)))
+        {
+            Avalonia.Automation.AutomationProperties.SetHelpText(control, help);
         }
     }
 
@@ -66,6 +127,7 @@ internal static class SettingsKit
                 item.IsVisible = show;
             }
         }
+        QueueMarkFirst(root);
     }
 
     /// <summary>
@@ -140,6 +202,7 @@ internal static class SettingsKit
             }
             page.Classes.Set("nomatch", q.Length > 0 && !pageHit);
             any |= pageHit;
+            QueueMarkFirst(page);
         }
         return q.Length == 0 || any;
     }

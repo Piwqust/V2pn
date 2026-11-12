@@ -14,6 +14,8 @@ public static partial class L
     public static string ApAccent => T("Accent colour", "Цвет акцента");
     public static string ApAccentHint => T("Buttons, the Connect button and highlights.", "Кнопки, «Подключиться» и выделение.");
     public static string ApAccentCustom => T("Your own, #RRGGBB", "Свой, #RRGGBB");
+    public static string ApAccentNearStatus => T("Close to the status colours: the Connect button may read as connected",
+        "Этот цвет похож на цвета статуса: кнопку «Подключиться» легко принять за «Подключено»");
 
     public static string ApGrpShape => T("Shape and text", "Форма и текст");
     public static string ApCorners => T("Corners", "Скругления");
@@ -47,20 +49,16 @@ public static partial class L
 
     public static string ApGrpMotion => T("Motion and language", "Движение и язык");
     public static string ApMotion => T("Animations", "Анимации");
-    public static string ApMotionHint => T("Takes effect after V2pn restarts.", "Применится после перезапуска V2pn.");
+    public static string ApMotionHint => T("Applies right away.", "Применяется сразу.");
     public static string ApMotionSystem => T("As in Windows", "Как в Windows");
     public static string ApMotionOn => T("On", "Включены");
     public static string ApMotionOff => T("Off", "Выключены");
     public static string ApLanguage => T("Language", "Язык");
 
     public static string BarMode => T("Mode", "Режим");
-    public static string BarRoute => T("What goes through VPN", "Что идёт через VPN");
+    public static string BarRoute => T("What goes through the VPN", "Что идёт через VPN");
 
     public static string ApReset => T("Reset to default", "Вернуть как было");
-
-    public static string KeepModeNoDisconnect => T(
-        "In \"Keep system settings\" mode V2pn does not touch the Windows proxy, so there is nothing to switch off. Port {0} works while V2pn is open.",
-        "В режиме «Не менять настройки системы» V2pn не трогает прокси Windows, отключать нечего. Порт {0} работает, пока V2pn открыт.");
 
     public static string ApPaletteName(string id) => id switch
     {
@@ -71,5 +69,18 @@ public static partial class L
         "mocha" => T("Mocha", "Мокко"),
         "oled" => T("Black", "Чёрная"),
         _ => T("Graphite", "Графит"),
+    };
+
+    public static string ApAccentName(string id) => id switch
+    {
+        "red" => T("Red", "Красный"),
+        "orange" => T("Orange", "Оранжевый"),
+        "amber" => T("Amber", "Янтарный"),
+        "green" => T("Green", "Зелёный"),
+        "teal" => T("Teal", "Бирюзовый"),
+        "blue" => T("Blue", "Синий"),
+        "violet" => T("Violet", "Фиолетовый"),
+        "pink" => T("Pink", "Розовый"),
+        _ => id,
     };
 }

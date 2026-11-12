@@ -16,8 +16,9 @@ public sealed class MapView : UserControl
 {
     private readonly Canvas _canvas;
     private readonly Canvas _dots = new() { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
-    private readonly List<(MapLocation Location, MapCountry Country, Ellipse Dot)> _dotItems = [];
+    private readonly List<(MapLocation Location, MapCountry Country, Panel Hit)> _dotItems = [];
     private readonly Panel _root;
+    private readonly Panel _countries;
     private readonly Panel _pin;
     private readonly Ellipse _pinCore;
     private readonly Ellipse _pinRing;
@@ -26,6 +27,9 @@ public sealed class MapView : UserControl
     private string? _focusCode;
     private ProtectionState _state;
     private bool _built;
+    // Set by the first Focus with a country: the state at launch is shown in place, with no flight and no pulse.
+    private bool _focusedOnce;
+    private Cursor? _handCursor;
 
     /// <summary>Where the pin sits, as a fraction of the view (the header covers the top).</summary>
     public double FocusY { get; set; } = 0.47;
@@ -67,13 +71,15 @@ public sealed class MapView : UserControl
         // the paths cost two thirds of a core while a connection check spun. Cached as a bitmap, they are
         // drawn again only when the map itself moves or changes colour. The layer is screen-aligned
         // (the zoom sits on the canvas inside it), so the bitmap stays sharp at any zoom.
-        var countries = new Panel
+        // Transparent until Build has added the paths, so the land arrives at once instead of in pieces.
+        _countries = new Panel
         {
             ClipToBounds = true,
             Children = { _canvas },
             CacheMode = new BitmapCache(),
+            Opacity = 0,
         };
-        _root = new Panel { Children = { countries, _dots, _pin } };
+        _root = new Panel { Children = { _countries, _dots, _pin } };
         Content = _root;
 
         SizeChanged += (_, _) => Apply(animate: false);
@@ -96,18 +102,28 @@ public sealed class MapView : UserControl
             {
                 continue;
             }
-            var dot = new Ellipse { Classes = { "mapdot" } };
+            // A 9 px dot is hard to hit: the transparent 24 px panel around it takes the pointer.
+            var hit = new Panel
+            {
+                Width = HitSize,
+                Height = HitSize,
+                Background = Brushes.Transparent,
+                Cursor = _handCursor ??= new Cursor(StandardCursorType.Hand),
+                Classes = { "mapdothit" },
+                Children = { new Ellipse { Classes = { "mapdot" } } },
+            };
             var ping = location.BestDelay > 0 ? $" · {L.Ms(location.BestDelay)}" : string.Empty;
-            ToolTip.SetTip(dot, $"{location.Name}\n{L.ServerCount(location.Count)}{ping}");
-            ToolTip.SetShowDelay(dot, 150);
+            ToolTip.SetTip(hit, $"{location.Name}\n{L.ServerCount(location.Count)}{ping}");
+            ToolTip.SetShowDelay(hit, 150);
             var code = location.Code;
-            dot.PointerPressed += (_, e) =>
+            // On release, like a button, and only for the primary button.
+            hit.Tapped += (_, e) =>
             {
                 e.Handled = true;
                 LocationClicked?.Invoke(code);
             };
-            _dots.Children.Add(dot);
-            _dotItems.Add((location, country, dot));
+            _dots.Children.Add(hit);
+            _dotItems.Add((location, country, hit));
         }
         PlaceDots();
     }
@@ -117,7 +133,11 @@ public sealed class MapView : UserControl
         _focusCode = countryCode;
         _state = state;
         Paint();
-        Apply(animate: changed);
+        Apply(animate: changed && _focusedOnce);
+        if (_focusCode != null)
+        {
+            _focusedOnce = true;
+        }
     }
 
     private void Build()
@@ -152,6 +172,12 @@ public sealed class MapView : UserControl
         }
         Paint();
         Apply(animate: false);
+        // Opacity on the cached layer is composited, so the fade does not draw the paths again.
+        _countries.Opacity = 1;
+        if (Common.Motion.Enabled)
+        {
+            _ = Common.Motion.Enter(_countries, dy: 0, ms: 200);
+        }
     }
 
     /// <summary>Takes the current colours again, after the Appearance page changed them.</summary>
@@ -181,7 +207,14 @@ public sealed class MapView : UserControl
             _ => "V2Unsafe",
         });
         _pinRing.Stroke = accent;
-        var replay = !Equals(_pinHalo.Fill, accent) || _pulsedCode != _focusCode;
+        // Never for the initial state: until the first Focus with a country, the pin only takes its place.
+        // Compared by colour: the Appearance page hands out new brushes of the same colour on every change.
+        var recoloured = (_pinHalo.Fill as ISolidColorBrush)?.Color != (accent as ISolidColorBrush)?.Color;
+        var replay = _focusedOnce && (recoloured || _pulsedCode != _focusCode);
+        if (!_focusedOnce)
+        {
+            _pulsedCode = _focusCode;
+        }
         _pinHalo.Fill = accent;
         // A white core vanishes on the light map, so there the pin is a solid dot.
         _pinCore.Fill = IsDark() ? Brush("V2PinCore") : accent;
@@ -202,6 +235,10 @@ public sealed class MapView : UserControl
     {
         _pulsedCode = _focusCode;
         _pinHalo.Classes.Remove("pulse");
+        if (!Common.Motion.Enabled)
+        {
+            return;
+        }
         // Re-adding the class in a later dispatcher pass starts the animation over.
         Dispatcher.UIThread.Post(() => _pinHalo.Classes.Add("pulse"), DispatcherPriority.Background);
     }
@@ -253,7 +290,7 @@ public sealed class MapView : UserControl
     private (double S, double X, double Y) _now = (1, 0, 0);
     private TimeSpan? _animStart;
     private bool _animating;
-    private static readonly TimeSpan AnimDuration = TimeSpan.FromMilliseconds(700);
+    private static readonly TimeSpan AnimDuration = TimeSpan.FromMilliseconds(450);
 
     // Matrix animation keeps the math explicit: screen = scale * map + translation.
     // Driven by the compositor's frame clock (RequestAnimationFrame), so it moves once per frame.
@@ -284,8 +321,8 @@ public sealed class MapView : UserControl
         }
         _animStart ??= time;
         var t = Math.Clamp((time - _animStart.Value) / AnimDuration, 0, 1);
-        // The map is already on screen and moves, so ease in and out.
-        var k = t < 0.5 ? 4 * t * t * t : 1 - (Math.Pow((-2 * t) + 2, 3) / 2);
+        // The map is already on screen and moves, so ease in and out (the same curve as the segment thumbs).
+        var k = Common.Motion.InOut.Ease(t);
         SetMatrix((Lerp(_from.S, _to.S, k), Lerp(_from.X, _to.X, k), Lerp(_from.Y, _to.Y, k)));
         if (t >= 1)
         {
@@ -305,17 +342,18 @@ public sealed class MapView : UserControl
     }
 
     // Dots keep their screen size, so they follow the map transform by position only.
-    private const double DotSize = 9;
+    // Each dot is centred in its hit area, which is what gets placed.
+    private const double HitSize = 24;
 
     private void PlaceDots()
     {
-        foreach (var (location, country, dot) in _dotItems)
+        foreach (var (location, country, hit) in _dotItems)
         {
             var focused = string.Equals(location.Code, _focusCode, StringComparison.OrdinalIgnoreCase)
                           || (string.Equals(_focusCode, "EU", StringComparison.OrdinalIgnoreCase) && location.Code == "DE");
-            dot.IsVisible = !focused;
-            Canvas.SetLeft(dot, (country.X * _now.S) + _now.X - (DotSize / 2));
-            Canvas.SetTop(dot, (country.Y * _now.S) + _now.Y - (DotSize / 2));
+            hit.IsVisible = !focused;
+            Canvas.SetLeft(hit, (country.X * _now.S) + _now.X - (HitSize / 2));
+            Canvas.SetTop(hit, (country.Y * _now.S) + _now.Y - (HitSize / 2));
         }
     }
 

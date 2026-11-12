@@ -498,7 +498,7 @@
                                             Classes="small"
                                             Foreground="{DynamicResource V2InkSoft}"
                                             Text="{Binding ConfigType, Converter={x:Static conv:V2pnConverters.ProtocolName}}" />
-                                        <TextBlock Classes="faint small" TextTrimming="CharacterEllipsis">
+                                        <TextBlock Classes="muted small" TextTrimming="CharacterEllipsis">
                                             <Run Text="{Binding Network}" /><Run Text=" " /><Run Text="{Binding StreamSecurity}" />
                                         </TextBlock>
                                     </StackPanel>

@@ -33,7 +33,7 @@
         </StackPanel>
         </Border>
 
-        <StackPanel Margin="24,20,24,0" DockPanel.Dock="Top" Spacing="6">
+        <StackPanel Classes="spagehead" DockPanel.Dock="Top">
             <TextBlock x:Name="tbPageTitle" Classes="spagetitle" Text="{x:Static loc:L.TlGroupTitle}" />
             <TextBlock x:Name="tbPageHint" Classes="spagehint" Text="{x:Static loc:L.TlGroupHint}" />
             <StackPanel Classes="sgroup">
@@ -83,7 +83,7 @@
 
         <TabControl Classes="plain"
             x:Name="tabControl"
-            Margin="24,4,24,12"
+            Margin="28,4,28,12"
             HorizontalContentAlignment="Stretch"
             DockPanel.Dock="Top">
             <TabItem HorizontalAlignment="Left" Header="{x:Static loc:L.TlTabFromSub}">

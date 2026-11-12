@@ -260,6 +260,12 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
 
     private async Task PasteFromClipboardAsync()
     {
+        // V2pn: one paste path for the window, this list and the tray.
+        if (TopLevel.GetTopLevel(this) is MainWindow mainWindow)
+        {
+            await mainWindow.AddServerViaClipboardAsync();
+            return;
+        }
         if (TopLevel.GetTopLevel(this) is not Window window)
         {
             return;

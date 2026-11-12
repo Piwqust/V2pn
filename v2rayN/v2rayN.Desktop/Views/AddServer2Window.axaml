@@ -32,7 +32,7 @@
         </StackPanel>
         </Border>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28,20,28,28" Spacing="6">
+            <StackPanel Classes="spagebody">
                 <TextBlock x:Name="tbPageTitle" Classes="spagetitle" Text="{x:Static loc:L.SvCustomTitle}" />
                 <TextBlock x:Name="tbPageHint" Classes="spagehint" Text="{x:Static loc:L.SvCustomHint}" />
                 <StackPanel Classes="sgroup">

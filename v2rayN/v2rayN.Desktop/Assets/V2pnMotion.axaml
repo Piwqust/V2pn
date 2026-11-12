@@ -3,7 +3,7 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:views="using:v2rayN.Desktop.Views">
     <!--
-        Style-driven motion, loaded only when Windows animations are on (Common/Motion.cs).
+        Style-driven motion, loaded only while motion is on (Common/Motion.cs adds and removes it live).
         Hover and press: 120-150 ms. Things that appear: 160-220 ms ease-out from 96-97 % scale.
         Only opacity, transforms and colours animate, never layout.
     -->
@@ -100,8 +100,8 @@
         </Style.Animations>
     </Style>
 
-    <!--  Sidebar hover actions (ping, star, more) fade in rather than blink.  -->
-    <Style Selector="StackPanel.rowactions, Panel.rowinfo">
+    <!--  Sidebar hover actions (ping, star, more) fade in rather than blink; the subscription chevron fades out under them.  -->
+    <Style Selector="StackPanel.rowactions, Panel.rowinfo, PathIcon.subchevron">
         <Setter Property="Transitions">
             <Transitions>
                 <DoubleTransition Property="Opacity" Duration="0:0:0.12" />
@@ -116,6 +116,41 @@
         </Setter>
     </Style>
 
+    <!--  The stage tint crossfades between verdicts instead of blinking out and fading back in.  -->
+    <Style Selector="Border.tint">
+        <Setter Property="Transitions">
+            <Transitions>
+                <DoubleTransition
+                    Easing="0.32,0.72,0,1"
+                    Property="Opacity"
+                    Duration="0:0:0.24" />
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!--  The state pill changes colour softly when the check result arrives (solid brushes only).  -->
+    <Style Selector="Border.state">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.state TextBlock">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Foreground" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.state Ellipse.statedot">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Fill" Duration="0:0:0.15" />
+            </Transitions>
+        </Setter>
+    </Style>
+
     <!--  A subscription's traffic meter glides to the new value after an update.  -->
     <Style Selector="views|UsageBar">
         <Setter Property="Transitions">
@@ -124,6 +159,56 @@
                     Easing="0.32,0.72,0,1"
                     Property="Value"
                     Duration="0:0:0.45" />
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!--
+        Map pin pulse: a few waves when the pin lands or the protection changes, then a still halo.
+        Every frame of it redraws the map under the pin; pulsing for as long as V2pn stays
+        connected cost a third of a CPU core, minimized too. MapView adds .pulse to replay it.
+    -->
+    <Style Selector="Ellipse.halo.pulse[IsVisible=True]">
+        <Style.Animations>
+            <Animation IterationCount="3" Duration="0:0:2.4">
+                <KeyFrame Cue="0%">
+                    <Setter Property="ScaleTransform.ScaleX" Value="0.35" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="0.35" />
+                    <Setter Property="Opacity" Value="0.55" />
+                </KeyFrame>
+                <KeyFrame Cue="100%">
+                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
+                    <Setter Property="Opacity" Value="0" />
+                </KeyFrame>
+            </Animation>
+        </Style.Animations>
+    </Style>
+
+    <!--  Map dots grow a little under the pointer.  -->
+    <Style Selector="Ellipse.mapdot">
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+
+    <!--  Switches: the knob slides and the track fades (the control theme in V2pnControls has neither).  -->
+    <Style Selector="ToggleSwitch">
+        <Setter Property="KnobTransitions">
+            <Transitions>
+                <DoubleTransition
+                    Easing="0.32,0.72,0,1"
+                    Property="Canvas.Left"
+                    Duration="0:0:0.22" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="ToggleSwitch /template/ Border#PART_Track">
+        <Setter Property="Transitions">
+            <Transitions>
+                <BrushTransition Property="Background" Duration="0:0:0.18" />
             </Transitions>
         </Setter>
     </Style>

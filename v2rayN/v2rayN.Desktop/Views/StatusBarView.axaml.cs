@@ -26,6 +26,13 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     private DateTime? _since;
     private bool _hasServer;
     private double _sessionBytes;
+    private bool _checkFailed;
+    private string? _findProgress;
+    private bool _iconWarn;
+    private int _iconIndex;
+
+    /// <summary>"Find a working server" was clicked; the window pings the neighbours and switches.</summary>
+    public event Action? FindWorkingRequested;
 
     public StatusBarView()
     {
@@ -33,6 +40,14 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
         _config = AppManager.Instance.Config;
         btnCheck.Click += (_, _) => _ = CheckConnectionAsync();
+        Avalonia.Automation.AutomationProperties.SetName(btnCheck, L.CheckConnection);
+        btnFindWorking.Click += (_, _) =>
+        {
+            if (_findProgress == null)
+            {
+                FindWorkingRequested?.Invoke();
+            }
+        };
         chartHost.SizeChanged += (_, _) => DrawChart();
 
         _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => UpdateClock());
@@ -105,8 +120,13 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         }
     }
 
-    public void SetState(ProtectionState state)
+    /// <summary>
+    /// The text follows the proxy mode; <paramref name="warn"/> paints it amber when the last connection
+    /// check failed, so the card agrees with the pill, the tint and the map pin.
+    /// </summary>
+    public void SetState(ProtectionState state, bool warn = false, bool iconWarn = false)
     {
+        _iconWarn = iconWarn;
         if (state != _state || _since == null)
         {
             _since = state == ProtectionState.Unprotected ? null : DateTime.Now;
@@ -119,7 +139,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
         var (text, brush) = state switch
         {
-            ProtectionState.Protected => (L.Protected, "V2Safe"),
+            ProtectionState.Protected => (L.Protected, warn ? "V2PingMid" : "V2Safe"),
             ProtectionState.LocalOnly => (L.LocalOnly, "V2PingMid"),
             _ => (L.Unprotected, "V2Unsafe"),
         };
@@ -130,6 +150,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         SetBrush(txtState, TextBlock.ForegroundProperty, brush);
         SetBrush(iconState, PathIcon.ForegroundProperty, brush);
         UpdateClock();
+        RefreshIcon();
     }
 
     public void SetServer(ProfileItem? item, int delay)
@@ -138,6 +159,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         _hasServer = item != null;
         btnCheck.IsVisible = _hasServer;
         chipCheck.IsVisible = _hasServer && ViewModel?.AvailabilityDelay is -1 or > 0;
+        RefreshFindWorking();
         if (item == null)
         {
             txtStatServer.Text = "—";
@@ -149,6 +171,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
             var transport = string.Join(" · ", new[] { item.GetNetwork(), item.StreamSecurity }.Where(t => t.IsNotEmpty()));
             txtStatProtocol.Text = transport.IsNotEmpty() ? $"{item.ConfigType} · {transport}" : item.ConfigType.ToString();
         }
+        // A long host name is trimmed in the middle; hovering shows it whole.
+        ToolTip.SetTip(txtStatServer, item == null ? null : txtStatServer.Text);
 
         txtStatPing.Text = delay switch
         {
@@ -166,6 +190,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         SetBrush(barPing, Border.BackgroundProperty, tier);
         // Lower is better: a full bar means a fast server, like a quality meter.
         barPing.Width = delay > 0 ? Math.Clamp(48 * (1 - (delay / 1000.0)), 6, 48) : 0;
+        // An empty track next to "—" reads as a loader that never finishes.
+        trackPing.IsVisible = delay > 0;
     }
 
     private void UpdateClock()
@@ -206,8 +232,12 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         var running = delay == -2;
         spinCheck.IsVisible = running;
         iconCheckIdle.IsVisible = !running;
-        txtCheckAction.Text = running ? L.Checking : L.CheckConnection;
+        // The label stays: a shorter "Checking…" made the right-aligned button jump. The spinner and the
+        // pill already say a check is running, and the -2 guard in CheckConnectionAsync stops a second run.
+        txtCheckAction.Text = L.CheckConnection;
 
+        var was = chipCheck.IsVisible;
+        var wasOk = chipCheck.Classes.Contains("ok");
         chipCheck.IsVisible = _hasServer && delay is -1 or > 0;
         chipCheck.Classes.Set("ok", delay > 0);
         chipCheck.Classes.Set("fail", delay == -1);
@@ -215,6 +245,39 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         txtCheck.Text = delay > 0 ? string.Format(L.CheckWorks, delay) : L.CheckFailed;
         var ip = ViewModel?.AvailabilityIp;
         ToolTip.SetTip(chipCheck, ip.IsNotEmpty() ? $"IP {ip}" : null);
+        // The answer to a click: it settles out of the button once, not on every refresh.
+        if (chipCheck.IsVisible && (!was || wasOk != (delay > 0)))
+        {
+            _ = Motion.Enter(chipCheck, dx: 6, dy: 0, ms: 180, scale: 0.97);
+        }
+        RefreshFindWorking();
+    }
+
+    /// <summary>
+    /// Connected and the server didn't answer the check: offer another one. Not when the core itself
+    /// didn't run (another server won't help; the pill points at the log), and not while disconnected.
+    /// </summary>
+    public void SetCheckFailure(bool serverFailed)
+    {
+        _checkFailed = serverFailed;
+        RefreshFindWorking();
+    }
+
+    /// <summary>Progress of the search ("Checking 3 of 12…"), or null when it is over.</summary>
+    public void SetFindProgress(string? progress)
+    {
+        _findProgress = progress;
+        RefreshFindWorking();
+    }
+
+    private void RefreshFindWorking()
+    {
+        var finding = _findProgress != null;
+        btnFindWorking.IsVisible = finding || (_hasServer && _checkFailed);
+        // Both labels don't fit the header at the minimum width in Russian; Check keeps its icon, tooltip and name.
+        txtCheckAction.IsVisible = !btnFindWorking.IsVisible;
+        spinFind.IsVisible = finding;
+        txtFindWorking.Text = _findProgress ?? L.FindWorkingServer;
     }
 
     private void DrawChart()
@@ -269,11 +332,19 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         return geometry;
     }
 
+    // The tray and taskbar follow the window's verdict (SetState), not the system-proxy type: in VPN mode
+    // the system proxy is off while the connection is on. Re-set only when the icon actually changes.
     private void RefreshIcon()
     {
+        var index = AvaUtils.AppIconIndex(_state, _iconWarn);
+        if (index == _iconIndex)
+        {
+            return;
+        }
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop && desktop.MainWindow != null)
         {
-            desktop.MainWindow.Icon = AvaUtils.GetAppIcon(_config.SystemProxyItem.SysProxyType);
+            _iconIndex = index;
+            desktop.MainWindow.Icon = AvaUtils.GetAppIcon(index);
             var icons = TrayIcon.GetIcons(Application.Current);
             if (icons?.Count > 0)
             {

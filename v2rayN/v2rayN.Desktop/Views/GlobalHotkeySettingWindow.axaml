@@ -36,7 +36,7 @@
         </StackPanel>
         </Border>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28,20,28,28" Spacing="6">
+            <StackPanel Classes="spagebody">
                 <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlKeysTitle}" />
                 <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlKeysHint}" />
                 <StackPanel Classes="sgroup" x:Name="gridText">

@@ -13,8 +13,8 @@
     mc:Ignorable="d">
     <UserControl.Styles>
         <Style Selector="TextBlock.k">
-            <Setter Property="FontSize" Value="11.5" />
-            <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+            <Setter Property="FontSize" Value="12" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         </Style>
         <Style Selector="TextBlock.v">
             <Setter Property="FontSize" Value="13.5" />
@@ -33,26 +33,31 @@
             <Grid
                 Grid.ColumnSpan="3"
                 Margin="0,0,0,10"
-                ColumnDefinitions="Auto,*,Auto">
-                <StackPanel Orientation="Horizontal" Spacing="8">
+                ColumnDefinitions="*,Auto">
+                <!--  The left side gives way at narrow widths (the clock trims) so the check group stays on the card.  -->
+                <DockPanel Margin="0,0,8,0">
                     <PathIcon
                         x:Name="iconState"
-                        Width="15"
-                        Height="15"
-                        Data="{StaticResource SemiIconShield}" />
+                        Margin="0,0,8,0"
+                        Classes="i16"
+                        Data="{StaticResource SemiIconShield}"
+                        DockPanel.Dock="Left" />
                     <TextBlock
                         x:Name="txtState"
+                        Margin="0,0,8,0"
                         VerticalAlignment="Center"
+                        DockPanel.Dock="Left"
                         FontWeight="SemiBold" />
                     <TextBlock
                         x:Name="txtStateTime"
                         VerticalAlignment="Center"
-                        Classes="muted num" />
-                </StackPanel>
+                        Classes="muted num"
+                        TextTrimming="CharacterEllipsis" />
+                </DockPanel>
 
                 <!--  Connection check: result chip plus the action that runs it.  -->
                 <StackPanel
-                    Grid.Column="2"
+                    Grid.Column="1"
                     Orientation="Horizontal"
                     Spacing="6">
                     <Border
@@ -64,6 +69,20 @@
                             <TextBlock x:Name="txtCheck" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
+                    <!--  The next step after "No response": another server of the same country or subscription.  -->
+                    <Button
+                        x:Name="btnFindWorking"
+                        Classes="accent tiny"
+                        IsVisible="False"
+                        Theme="{StaticResource V2Button}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <Path
+                                x:Name="spinFind"
+                                Classes="spinner"
+                                IsVisible="False" />
+                            <TextBlock x:Name="txtFindWorking" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button
                         x:Name="btnCheck"
                         Classes="ghost tiny"
@@ -90,7 +109,11 @@
                 RowDefinitions="Auto,Auto">
                 <StackPanel Margin="0,0,16,12" Spacing="3">
                     <TextBlock Classes="k" Text="{x:Static loc:L.ServerIp}" />
-                    <TextBlock x:Name="txtStatServer" Classes="v" />
+                    <!--  Prefix trimming keeps the end of the address, so the port stays visible.  -->
+                    <TextBlock
+                        x:Name="txtStatServer"
+                        Classes="v"
+                        TextTrimming="PrefixCharacterEllipsis" />
                 </StackPanel>
                 <StackPanel
                     Grid.Column="1"
@@ -100,6 +123,7 @@
                     <StackPanel Orientation="Horizontal" Spacing="10">
                         <TextBlock x:Name="txtStatPing" Classes="v" />
                         <Border
+                            x:Name="trackPing"
                             Width="48"
                             Height="4"
                             VerticalAlignment="Center"
@@ -142,24 +166,26 @@
                         Spacing="12">
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <PathIcon
-                                Width="11"
-                                Height="11"
+                                Classes="i12"
                                 Foreground="{DynamicResource V2Safe}"
                                 Data="{StaticResource SemiIconArrowDown}" />
                             <TextBlock
                                 x:Name="txtSpeedDown"
+                                MinWidth="64"
                                 Classes="small num"
+                                TextAlignment="Right"
                                 Foreground="{DynamicResource V2Ink}" />
                         </StackPanel>
                         <StackPanel Orientation="Horizontal" Spacing="4">
                             <PathIcon
-                                Width="11"
-                                Height="11"
+                                Classes="i12"
                                 Foreground="{DynamicResource V2Folder}"
                                 Data="{StaticResource SemiIconArrowUp}" />
                             <TextBlock
                                 x:Name="txtSpeedUp"
+                                MinWidth="64"
                                 Classes="small num"
+                                TextAlignment="Right"
                                 Foreground="{DynamicResource V2Ink}" />
                         </StackPanel>
                     </StackPanel>
@@ -198,13 +224,13 @@
                         x:Name="txtChartMax"
                         HorizontalAlignment="Right"
                         VerticalAlignment="Top"
-                        Classes="faint num"
-                        FontSize="10" />
+                        Classes="muted num"
+                        FontSize="11" />
                     <TextBlock
                         x:Name="txtChartIdle"
                         HorizontalAlignment="Center"
                         VerticalAlignment="Center"
-                        Classes="faint small"
+                        Classes="muted small"
                         Text="{x:Static loc:L.NoTraffic}" />
                 </Panel>
             </Grid>

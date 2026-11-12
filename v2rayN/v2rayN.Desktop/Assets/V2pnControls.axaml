@@ -63,6 +63,16 @@
         <Style Selector="^.accent:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource V2AccentFillHover}" />
         </Style>
+        <!--  Disabled solid buttons go grey and flat; a faded accent with its glow read as "loading".
+              After the .accent and .primary blocks, so these win.  -->
+        <Style Selector="^.accent:disabled, ^.primary:disabled">
+            <Setter Property="Opacity" Value="1" />
+            <Setter Property="Background" Value="{DynamicResource V2Neutral}" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        </Style>
+        <Style Selector="^.accent:disabled /template/ ContentPresenter#PART_ContentPresenter, ^.primary:disabled /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BoxShadow" Value="none" />
+        </Style>
 
         <Style Selector="^.disconnect">
             <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
@@ -123,6 +133,13 @@
         <Style Selector="^.tiny.testing">
             <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
             <Setter Property="Background" Value="{DynamicResource V2Hover}" />
+        </Style>
+        <!--  A tiny call to action keeps the accent's text colour; muted text would sink into the fill.  -->
+        <Style Selector="^.accent.tiny">
+            <Setter Property="Foreground" Value="{DynamicResource V2OnAccent}" />
+        </Style>
+        <Style Selector="^.accent.tiny:disabled">
+            <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
         </Style>
         <Style Selector="^.small.icon">
             <Setter Property="Width" Value="28" />
@@ -228,6 +245,9 @@
             <Setter Property="Background" Value="{DynamicResource V2RowSelected}" />
             <Setter Property="BorderBrush" Value="{DynamicResource V2RowSelectedBorder}" />
         </Style>
+        <Style Selector="^:focus-visible /template/ Border#PART_Row">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
+        </Style>
     </ControlTheme>
 
     <!--  Segmented control (system proxy mode).  -->
@@ -264,11 +284,14 @@
             <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
         </Style>
         <!--  The selected chip is drawn by the segmented control's sliding thumb (see SegmentThumb).  -->
+        <Style Selector="^:focus-visible /template/ Border#PART_Chip">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
+        </Style>
     </ControlTheme>
 
     <ControlTheme x:Key="V2Segmented" TargetType="ListBox">
         <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusSegment}" />
         <Setter Property="Padding" Value="3" />
         <Setter Property="ItemContainerTheme" Value="{StaticResource V2SegmentItem}" />
         <Setter Property="ItemsPanel">
@@ -312,17 +335,23 @@
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Template">
             <ControlTemplate>
+                <!--  The theme keeps BorderThickness 0, so only rows that ask for an outline (route options) get one.  -->
                 <ContentPresenter
                     Name="PART_ContentPresenter"
                     Padding="{TemplateBinding Padding}"
                     HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
                     VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
                     Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
                     Content="{TemplateBinding Content}"
                     CornerRadius="{TemplateBinding CornerRadius}"
                     Foreground="{TemplateBinding Foreground}" />
             </ControlTemplate>
         </Setter>
+        <Style Selector="^:disabled">
+            <Setter Property="Opacity" Value="0.45" />
+        </Style>
         <Style Selector="^:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="{DynamicResource V2Hover}" />
         </Style>
@@ -368,7 +397,7 @@
         <Setter Property="Width" Value="88" />
         <Setter Property="MinHeight" Value="64" />
         <Setter Property="Padding" Value="4,8" />
-        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusTile}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusFloatingInner}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -401,7 +430,7 @@
         <Setter Property="Width" Value="88" />
         <Setter Property="MinHeight" Value="64" />
         <Setter Property="Padding" Value="4,8" />
-        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusTile}" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusFloatingInner}" />
         <Setter Property="Background" Value="Transparent" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
         <Setter Property="HorizontalContentAlignment" Value="Center" />
@@ -454,6 +483,14 @@
         </Style>
         <Style Selector="^.close:pointerover /template/ ContentPresenter#PART_ContentPresenter">
             <Setter Property="Background" Value="#C42B1C" />
+            <Setter Property="Foreground" Value="White" />
+        </Style>
+        <!--  Pressed feedback like the native caption buttons.  -->
+        <Style Selector="^:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="{DynamicResource V2Pressed}" />
+        </Style>
+        <Style Selector="^.close:pressed /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="Background" Value="#A32A1E" />
             <Setter Property="Foreground" Value="White" />
         </Style>
         <Style Selector="^:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
@@ -655,20 +692,14 @@
 
     <!--  Switch: a 44x26 track with an even 3 px inset around a 20 px knob. Replaces Semi's (an 18 px
           knob in a 24 px track looked squashed). ToggleSwitch moves PART_MovingKnobs by the width of
-          PART_SwitchKnob, so that canvas is exactly the knob's travel (38 inner - 20 knob = 18).  -->
+          PART_SwitchKnob, so that canvas is exactly the knob's travel (38 inner - 20 knob = 18).
+          The knob slide and the track fade live in V2pnMotion.axaml, so they stop when motion is off;
+          set here, in the template, they would outrank that file and always run.  -->
     <ControlTheme x:Key="{x:Type ToggleSwitch}" TargetType="ToggleSwitch">
         <Setter Property="HorizontalAlignment" Value="Left" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
-        <Setter Property="KnobTransitions">
-            <Transitions>
-                <DoubleTransition
-                    Easing="0.32,0.72,0,1"
-                    Property="Canvas.Left"
-                    Duration="0:0:0.22" />
-            </Transitions>
-        </Setter>
         <Setter Property="Template">
             <ControlTemplate TargetType="ToggleSwitch">
                 <StackPanel Orientation="Horizontal" Spacing="10">
@@ -681,11 +712,6 @@
                         BoxShadow="{DynamicResource V2SwitchTrackShadow}"
                         CornerRadius="13"
                         TemplatedControl.IsTemplateFocusTarget="True">
-                        <Border.Transitions>
-                            <Transitions>
-                                <BrushTransition Property="Background" Duration="0:0:0.18" />
-                            </Transitions>
-                        </Border.Transitions>
                         <Canvas
                             Name="PART_SwitchKnob"
                             Width="18"

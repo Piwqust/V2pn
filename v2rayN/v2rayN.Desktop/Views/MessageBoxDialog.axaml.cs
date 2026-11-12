@@ -9,7 +9,7 @@ public partial class MessageBoxDialog : Window
     {
     }
 
-    public MessageBoxDialog(string caption, string message, string? yes = null, bool danger = false)
+    public MessageBoxDialog(string caption, string message, string? yes = null, bool danger = false, string? no = null)
     {
         InitializeComponent();
         Classes.Add("dialog");
@@ -29,6 +29,26 @@ public partial class MessageBoxDialog : Window
             btnYes.Content = yes;
         }
         btnYes.Classes.Set("danger", danger);
+        // A destructive answer is never the default: Enter or Space out of habit must not delete.
+        if (danger)
+        {
+            btnYes.IsDefault = false;
+        }
+
+        // A named second answer is a choice, not a cancel: Esc and the close button answer neither (None).
+        if (no.IsNotEmpty())
+        {
+            btnNo.Content = no;
+            btnNo.IsCancel = false;
+            KeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Escape)
+                {
+                    e.Handled = true;
+                    Close(ButtonResult.None);
+                }
+            };
+        }
 
         btnYes.Click += BtnYes_Click;
         btnNo.Click += BtnNo_Click;
@@ -40,7 +60,15 @@ public partial class MessageBoxDialog : Window
 
     private void MessageBoxDialog_Opened(object? sender, EventArgs e)
     {
-        btnYes.Focus();
+        // Cancel takes focus but not IsDefault, so it is not painted as the primary button.
+        if (btnYes.Classes.Contains("danger"))
+        {
+            btnNo.Focus(NavigationMethod.Tab);
+        }
+        else
+        {
+            btnYes.Focus();
+        }
     }
 
     private void BtnYes_Click(object? sender, RoutedEventArgs e)

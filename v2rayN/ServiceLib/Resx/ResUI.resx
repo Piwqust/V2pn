@@ -286,7 +286,7 @@
     <value>Custom configuration imported successfully</value>
   </data>
   <data name="SuccessfullyImportedServerViaClipboard" xml:space="preserve">
-    <value>{0} Configurations have been imported from clipboard</value>
+    <value>Servers added: {0}</value>
   </data>
   <data name="SuccessfullyImportedServerViaScan" xml:space="preserve">
     <value>Successfully scanned and imported the shared link</value>
@@ -1925,5 +1925,8 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   </data>
   <data name="LvPreResolve" xml:space="preserve">
     <value>Pre-resolve server domains</value>
+  </data>
+  <data name="MsgV2pnLocalPortBusy" xml:space="preserve">
+    <value>Port {0} is already taken by another program, probably another VPN client. Close it or change the local port in Settings, otherwise V2pn cannot connect.</value>
   </data>
 </root>

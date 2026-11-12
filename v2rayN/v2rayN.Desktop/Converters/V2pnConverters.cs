@@ -26,6 +26,10 @@ public static class V2pnConverters
             _ => L.Ms(d),
         });
 
+    // A never-tested delay (0) shows no pill at all instead of a column of grey "—" placeholders.
+    public static readonly IValueConverter NotZero =
+        new FuncValueConverter<int, bool>(d => d != 0);
+
     public static readonly IValueConverter PingShort =
         new FuncValueConverter<int, string>(d => d switch
         {

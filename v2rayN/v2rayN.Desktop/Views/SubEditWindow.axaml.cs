@@ -10,9 +10,6 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
 
     private bool _isNew;
 
-    // Twice a day, what panels usually ask for in their profile-update-interval header.
-    private const int NewSubUpdateMinutes = 720;
-
     public SubEditWindow()
     {
         InitializeComponent();
@@ -20,7 +17,12 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
         // Click runs before the bound save command, so an empty name is filled in before v2rayN checks it.
-        btnSave.Click += (s, e) => FillEmptyName();
+        btnSave.Click += (s, e) =>
+        {
+            // A pasted link often carries a trailing space or line break.
+            txtUrl.Text = txtUrl.Text?.Trim();
+            FillEmptyName();
+        };
         btnSupport.Click += (s, e) => ProcUtils.ProcessStart(btnSupport.Tag as string);
         btnWebPage.Click += (s, e) => ProcUtils.ProcessStart(btnWebPage.Tag as string);
         Closed += (s, e) => AnnounceIfAdded();
@@ -70,7 +72,7 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
             {
                 if (ViewModel?.SelectedSource is { AutoUpdateInterval: 0 } && txtAutoUpdateInterval.Text is null or "" or "0")
                 {
-                    txtAutoUpdateInterval.Text = NewSubUpdateMinutes.ToString(CultureInfo.InvariantCulture);
+                    txtAutoUpdateInterval.Text = V2pnSubs.NewSubUpdateMinutes.ToString(CultureInfo.InvariantCulture);
                 }
             }, DispatcherPriority.Background);
             txtUrl.Focus();

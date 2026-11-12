@@ -88,6 +88,11 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
             this.Bind(ViewModel, vm => vm.NewPort4LAN, v => v.txtpass.IsEnabled).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.User, v => v.txtuser.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.Pass, v => v.txtpass.Text).DisposeWith(disposables);
+            // Without the separate port and credentials the main port listens on every interface, unprotected.
+            this.WhenAnyValue(v => v.ViewModel.AllowLANConn, v => v.ViewModel.NewPort4LAN, v => v.ViewModel.User, v => v.ViewModel.Pass,
+                    (lan, ownPort, user, pass) => lan && !(ownPort && user.IsNotEmpty() && pass.IsNotEmpty()))
+                .Subscribe(open => txtLanWarning.IsVisible = open)
+                .DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.LogEnabled, v => v.toglogEnabled.IsChecked).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.Loglevel, v => v.cmbloglevel.SelectedValue).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.DefFingerprint, v => v.cmbdefFingerprint.SelectedValue).DisposeWith(disposables);

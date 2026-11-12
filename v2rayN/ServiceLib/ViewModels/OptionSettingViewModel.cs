@@ -361,6 +361,11 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         _config.GuiItem.KeepOlderDedupl = KeepOlderDedupl;
         _config.UiItem.EnableAutoAdjustMainLvColWidth = EnableAutoAdjustMainLvColWidth;
         _config.UiItem.AutoHideStartup = AutoHideStartup;
+        // V2pn: a choice made here answers the close-to-tray question too.
+        if (_config.UiItem.Hide2TrayWhenClose != Hide2TrayWhenClose)
+        {
+            _config.UiItem.V2pnCloseAsked = true;
+        }
         _config.UiItem.Hide2TrayWhenClose = Hide2TrayWhenClose;
         _config.UiItem.MacOSShowInDock = MacOSShowInDock;
         _config.GuiItem.AutoUpdateInterval = AutoUpdateInterval;

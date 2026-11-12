@@ -21,6 +21,17 @@ internal class UI
         return result == ButtonResult.Yes ? ButtonResult.Yes : ButtonResult.No;
     }
 
+    /// <summary>
+    /// V2pn: a question with two named answers where neither is a cancel. Yes or No; None when the dialog
+    /// is closed or Esc is pressed without choosing.
+    /// </summary>
+    public static async Task<ButtonResult> ShowChoice(string caption, string msg, string yes, string no)
+    {
+        var owner = WindowDialog.TryGetOwnerWindow();
+        var box = new MessageBoxDialog(caption, msg, yes, no: no);
+        return await box.ShowDialog<ButtonResult>(owner);
+    }
+
     public static async Task<string?> OpenFileDialog(FilePickerFileType? filter)
     {
         var sp = GetStorageProvider();

@@ -46,7 +46,7 @@ public static partial class L
     public static string TlColAutoUpdate => Tk("Auto-update", "Update with all", "Обновлять со всеми");
 
     public static string TlKeysTitle => T("Hotkeys", "Горячие клавиши");
-    public static string TlKeysHint => T("Click a field and press the keys you want. They work after V2pn restarts.", "Щёлкните по полю и нажмите нужное сочетание клавиш. Заработает после перезапуска V2pn.");
+    public static string TlKeysHint => T("Click a field and press the keys you want. They work after V2pn restarts.", "Щёлкните по полю и нажмите сочетание клавиш. Заработает после перезапуска V2pn.");
     public static string TlGrpActions => T("Actions", "Действия");
     public static string TlKeyShow => T("Show the V2pn window", "Показать окно V2pn");
     public static string TlKeyProxyOff => T("Turn the system proxy off", "Выключить системный прокси");

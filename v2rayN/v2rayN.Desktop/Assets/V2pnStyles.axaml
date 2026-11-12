@@ -40,6 +40,12 @@
     <Style Selector="TextBlock.h3">
         <Setter Property="FontSize" Value="19" />
     </Style>
+    <!--  The connection header (country or server name), with .display.  -->
+    <Style Selector="TextBlock.hdr">
+        <Setter Property="FontSize" Value="28" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="LetterSpacing" Value="-0.4" />
+    </Style>
     <Style Selector="TextBlock.title">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
@@ -48,21 +54,12 @@
     <Style Selector="TextBlock.muted">
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
+    <!--  V2Faint is about 3:1: for icons, chevrons, placeholders and disabled text, never for copy someone reads.  -->
     <Style Selector="TextBlock.faint">
         <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
     </Style>
     <Style Selector="TextBlock.small">
         <Setter Property="FontSize" Value="12" />
-    </Style>
-    <Style Selector="TextBlock.section">
-        <Setter Property="FontSize" Value="12.5" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
-        <Setter Property="Margin" Value="10,0,0,0" />
-    </Style>
-    <Style Selector="TextBlock.count">
-        <Setter Property="FontSize" Value="12.5" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
-        <Setter Property="FontFeatures" Value="+tnum" />
     </Style>
     <Style Selector="TextBlock.num">
         <Setter Property="FontFeatures" Value="+tnum" />
@@ -72,7 +69,7 @@
     <Style Selector="Border.pill">
         <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusPill}" />
         <Setter Property="Padding" Value="8,2" />
-        <Setter Property="MinWidth" Value="52" />
+        <Setter Property="MinWidth" Value="62" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Background" Value="{DynamicResource V2PingNoneSoft}" />
@@ -174,8 +171,8 @@
 
     <!--  Star toggle  -->
     <Style Selector="Button.star PathIcon">
-        <Setter Property="Width" Value="15" />
-        <Setter Property="Height" Value="15" />
+        <Setter Property="Width" Value="14" />
+        <Setter Property="Height" Value="14" />
         <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
     </Style>
     <Style Selector="Button.star:pointerover PathIcon">
@@ -197,8 +194,8 @@
         <Setter Property="Foreground" Value="{Binding $parent[Button].Foreground}" />
     </Style>
     <Style Selector="ListBoxItem PathIcon.nav">
-        <Setter Property="Width" Value="15" />
-        <Setter Property="Height" Value="15" />
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
     <Style Selector="ListBoxItem:selected PathIcon.nav">
@@ -255,8 +252,8 @@
     </Style>
 
     <Style Selector="PathIcon.rail">
-        <Setter Property="Width" Value="20" />
-        <Setter Property="Height" Value="20" />
+        <Setter Property="Width" Value="18" />
+        <Setter Property="Height" Value="18" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
     </Style>
     <Style Selector="ToggleButton:checked PathIcon.rail">
@@ -268,46 +265,6 @@
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="TextAlignment" Value="Center" />
         <Setter Property="TextWrapping" Value="Wrap" />
-    </Style>
-    <Style Selector="TextBlock.railvalue">
-        <Setter Property="FontSize" Value="10.5" />
-        <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
-        <Setter Property="HorizontalAlignment" Value="Center" />
-        <Setter Property="TextAlignment" Value="Center" />
-    </Style>
-    <Style Selector="TextBlock.railvalue.on">
-        <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
-    </Style>
-    <Style Selector="Ellipse.railDot">
-        <Setter Property="Width" Value="7" />
-        <Setter Property="Height" Value="7" />
-        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
-        <Setter Property="HorizontalAlignment" Value="Right" />
-        <Setter Property="VerticalAlignment" Value="Top" />
-        <Setter Property="Margin" Value="0,-2,-6,0" />
-    </Style>
-
-    <!--
-        Map pin pulse: a few waves when the pin lands or the protection changes, then a still halo.
-        Every frame of it redraws the map under the pin; pulsing for as long as V2pn stays
-        connected cost a third of a CPU core, minimized too. MapView adds .pulse to replay it.
-    -->
-    <Style Selector="Ellipse.halo.pulse[IsVisible=True]">
-        <Style.Animations>
-            <Animation IterationCount="3" Duration="0:0:2.4">
-                <KeyFrame Cue="0%">
-                    <Setter Property="ScaleTransform.ScaleX" Value="0.35" />
-                    <Setter Property="ScaleTransform.ScaleY" Value="0.35" />
-                    <Setter Property="Opacity" Value="0.55" />
-                </KeyFrame>
-                <KeyFrame Cue="100%">
-                    <Setter Property="ScaleTransform.ScaleX" Value="1" />
-                    <Setter Property="ScaleTransform.ScaleY" Value="1" />
-                    <Setter Property="Opacity" Value="0" />
-                </KeyFrame>
-            </Animation>
-        </Style.Animations>
     </Style>
 
     <!--
@@ -352,6 +309,7 @@
     <Style Selector=":is(Window).dialog TextBlock[TextWrapping=Wrap]:not(.message), UserControl Border.formcard TextBlock[TextWrapping=Wrap]">
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="17" />
     </Style>
 
     <!--  Menus used as toolbars above tables: each top-level item is a raised key.  -->
@@ -430,13 +388,13 @@
     <Style Selector="Border.dialogfooter Button[IsDefault=True]:pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource V2PrimaryFillHover}" />
     </Style>
-    <!--  A destructive answer ("Delete") reads as one: red, not the glossy primary.  -->
+    <!--  A destructive answer ("Delete") reads as one: red under every accent, not the glossy primary.  -->
     <Style Selector="Border.dialogfooter Button.danger, Border.dialogfooter Button.danger[IsDefault=True]">
-        <Setter Property="Background" Value="{DynamicResource V2AccentFill}" />
-        <Setter Property="Foreground" Value="White" />
+        <Setter Property="Background" Value="{DynamicResource V2DangerFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2OnDanger}" />
     </Style>
     <Style Selector="Border.dialogfooter Button.danger:pointerover /template/ ContentPresenter#PART_ContentPresenter">
-        <Setter Property="Background" Value="{DynamicResource V2AccentFillHover}" />
+        <Setter Property="Background" Value="{DynamicResource V2DangerFillHover}" />
     </Style>
 
     <!--  Sidebar rows: secondary actions appear on hover or keyboard focus; a set favorite stays visible.  -->
@@ -476,7 +434,7 @@
         <Setter Property="Height" Value="12" />
     </Style>
 
-    <!--  Busy indicator: an arc that turns, only while it is shown (see the halo above).  -->
+    <!--  Busy indicator: an arc that turns, only while it is shown (like the map pin halo in V2pnMotion.axaml).  -->
     <Style Selector="Path.spinner">
         <Setter Property="Width" Value="12" />
         <Setter Property="Height" Value="12" />
@@ -548,14 +506,15 @@
     <Style Selector="Border.check.ok PathIcon">
         <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
     </Style>
+    <!--  A failed check is amber, the same as the "server not responding" pill: red means unprotected.  -->
     <Style Selector="Border.check.fail">
-        <Setter Property="Background" Value="{DynamicResource V2UnsafeSoft}" />
+        <Setter Property="Background" Value="{DynamicResource V2PingMidSoft}" />
     </Style>
     <Style Selector="Border.check.fail TextBlock">
-        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
     </Style>
     <Style Selector="Border.check.fail PathIcon">
-        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
     </Style>
 
     <!--  Protection state pill in the connection header.  -->
@@ -618,13 +577,11 @@
         <Setter Property="Stroke" Value="{DynamicResource V2MapOcean}" />
         <Setter Property="StrokeThickness" Value="2" />
         <Setter Property="RenderTransform" Value="scale(1)" />
-        <Setter Property="Transitions">
-            <Transitions>
-                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
-            </Transitions>
-        </Setter>
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <Style Selector="Ellipse.mapdot:pointerover">
+    <!--  Each dot sits in a 24 px hit area (MapView), so it is easy to point at; hovering the area lights the dot.  -->
+    <Style Selector="Panel.mapdothit:pointerover > Ellipse.mapdot">
         <Setter Property="Fill" Value="{DynamicResource V2Ink}" />
         <Setter Property="RenderTransform" Value="scale(1.5)" />
     </Style>
@@ -691,9 +648,21 @@
     </Style>
     <Style Selector="TextBlock.spagehint">
         <Setter Property="FontSize" Value="13" />
+        <Setter Property="LineHeight" Value="19" />
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="0,4,0,2" />
         <Setter Property="TextWrapping" Value="Wrap" />
+    </Style>
+    <!--  One page padding for every dialog: a whole page of groups (spagebody), or the title and hint
+          above a table, tabs or editor (spagehead). Tables and tab controls in dialogs sit at 16 px, and
+          the tab pages pad their content by 12, so everything below the title also starts at 28.  -->
+    <Style Selector="StackPanel.spagebody">
+        <Setter Property="Margin" Value="28,20,28,28" />
+        <Setter Property="Spacing" Value="6" />
+    </Style>
+    <Style Selector="StackPanel.spagehead">
+        <Setter Property="Margin" Value="28,20,28,4" />
+        <Setter Property="Spacing" Value="6" />
     </Style>
     <Style Selector="TextBlock.sgrouplabel">
         <Setter Property="FontSize" Value="12" />
@@ -703,7 +672,8 @@
     </Style>
     <Style Selector="TextBlock.sgroupnote">
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="LineHeight" Value="17" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="4,8,0,0" />
         <Setter Property="TextWrapping" Value="Wrap" />
     </Style>
@@ -725,7 +695,7 @@
                         BorderBrush="{DynamicResource V2PanelBorder}"
                         BorderThickness="1"
                         ClipToBounds="True"
-                        CornerRadius="12">
+                        CornerRadius="{DynamicResource V2RadiusRow}">
                         <ContentPresenter Content="{TemplateBinding Content}" />
                     </Border>
                 </DockPanel>
@@ -746,7 +716,10 @@
         <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
         <Setter Property="BorderThickness" Value="0,1,0,0" />
     </Style>
-    <Style Selector="Border.srow:nth-child(1)">
+    <!--  No hairline above the first row a card shows. nth-child counts hidden rows too, so the settings
+          dialogs tag the first visible row (SettingsKit.MarkFirst); nth-child stays for the pages that
+          never hide a row and don't run the kit.  -->
+    <Style Selector="Border.srow:nth-child(1), Border.srow.first">
         <Setter Property="BorderThickness" Value="0" />
     </Style>
     <Style Selector="Border.srow > Grid">
@@ -760,6 +733,7 @@
     </Style>
     <Style Selector="TextBlock.srowhint">
         <Setter Property="FontSize" Value="12" />
+        <Setter Property="LineHeight" Value="17" />
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="0,3,0,0" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -800,16 +774,16 @@
     <!--  Connection bar under the Connect button: mode segments and the routing chip.  -->
     <Style Selector="Border.modebar">
         <Setter Property="Padding" Value="5" />
-        <Setter Property="CornerRadius" Value="18" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusBar}" />
     </Style>
     <Style Selector="ListBox.mode">
-        <Setter Property="CornerRadius" Value="13" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusBarInner}" />
         <Setter Property="Padding" Value="3" />
     </Style>
     <Style Selector="ListBox.mode > ListBoxItem">
         <Setter Property="MinHeight" Value="32" />
         <Setter Property="Padding" Value="14,0" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusSegment}" />
         <Setter Property="FontSize" Value="13" />
     </Style>
     <Style Selector="ListBox.mode > ListBoxItem:selected PathIcon">
@@ -823,27 +797,31 @@
     <Style Selector="Button.routechip">
         <Setter Property="MinHeight" Value="38" />
         <Setter Property="Padding" Value="12,0,10,0" />
-        <Setter Property="CornerRadius" Value="13" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusBarInner}" />
         <Setter Property="FontSize" Value="13" />
     </Style>
     <!--  Captions over the two halves of the connection bar.  -->
     <Style Selector="TextBlock.barcaption">
         <Setter Property="FontSize" Value="11" />
         <Setter Property="FontWeight" Value="Medium" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="8,2,0,0" />
     </Style>
     <Style Selector="PathIcon.adminlock">
         <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <!--  Connect: a power glyph next to the label; when connected the glyph turns green.  -->
+    <!--  Connect: a power glyph next to the label; when connected the glyph takes the verdict's colour
+          (green when protected, amber when the server doesn't answer or only the local port is on).  -->
     <Style Selector="Button.connectbtn PathIcon">
         <Setter Property="Width" Value="17" />
         <Setter Property="Height" Value="17" />
     </Style>
-    <Style Selector="Button.connectbtn.disconnect PathIcon">
+    <Style Selector="Button.connectbtn.disconnect.safe PathIcon">
         <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Button.connectbtn.disconnect.warn PathIcon">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
     </Style>
     <Style Selector="Border.adminbadge">
         <Setter Property="Background" Value="{DynamicResource V2PingMidSoft}" />
@@ -867,9 +845,23 @@
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
     </Style>
+    <!--  Route choices read as options: an outline and an empty radio ring until one is picked.  -->
     <Style Selector="Button.routeoption">
         <Setter Property="Padding" Value="12,10" />
         <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+    </Style>
+    <Style Selector="Ellipse.routeempty">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="Stroke" Value="{DynamicResource V2Faint}" />
+        <Setter Property="StrokeThickness" Value="1.5" />
+    </Style>
+    <Style Selector="Button.routeoption.active Ellipse.routeempty">
+        <Setter Property="IsVisible" Value="False" />
     </Style>
     <Style Selector="TextBlock.routetitle">
         <Setter Property="FontSize" Value="13" />
@@ -878,7 +870,7 @@
     </Style>
     <Style Selector="TextBlock.routehint">
         <Setter Property="FontSize" Value="12" />
-        <Setter Property="LineHeight" Value="16" />
+        <Setter Property="LineHeight" Value="17" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="0,0,12,0" />
@@ -902,11 +894,15 @@
         <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
     </Style>
+    <Style Selector="Border.routebusy PathIcon.routefail">
+        <Setter Property="VerticalAlignment" Value="Top" />
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <!--  A heading one step below the 13/Medium option titles it introduces.  -->
     <Style Selector="TextBlock.sectionlabel">
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="LetterSpacing" Value="0.4" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
 
     <!--  Menus: icon column, quiet icons that light up with the row, section headers, destructive rows.  -->
@@ -934,13 +930,13 @@
         <Setter Property="Padding" Value="10,8,10,3" />
         <Setter Property="FontSize" Value="11" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
     <Style Selector="MenuItem.menuheader /template/ PathIcon#PART_ExpandIcon">
         <Setter Property="IsVisible" Value="False" />
     </Style>
     <Style Selector="MenuItem.menuheader:disabled /template/ ContentPresenter#PART_HeaderPresenter">
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
     <!--  Two-line items: a title and a muted description (settings menu).  -->
     <Style Selector="MenuItem TextBlock.mititle">
@@ -948,7 +944,7 @@
     </Style>
     <Style Selector="MenuItem TextBlock.midesc">
         <Setter Property="FontSize" Value="11.5" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="0,1,0,0" />
     </Style>
 
@@ -1010,14 +1006,16 @@
 
     <!--  Sidebar view switch.  -->
     <Style Selector="ListBox.sidetabs">
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusBarInner}" />
         <Setter Property="Padding" Value="3" />
     </Style>
     <Style Selector="ListBox.sidetabs > ListBoxItem">
-        <Setter Property="MinHeight" Value="32" />
-        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="MinHeight" Value="46" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusSegment}" />
         <Setter Property="Padding" Value="6,0" />
-        <Setter Property="FontSize" Value="12.5" />
+    </Style>
+    <Style Selector="ListBox.sidetabs > ListBoxItem TextBlock">
+        <Setter Property="FontSize" Value="12" />
     </Style>
     <Style Selector="ListBox.sidetabs > ListBoxItem:selected PathIcon">
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
@@ -1036,17 +1034,13 @@
     </Style>
 
     <!--  Subscriptions list: monogram tile, freshness dot, chevron that gives way to actions on hover.  -->
-    <Style Selector="ListBox.sidetabs > ListBoxItem">
-        <Setter Property="MinHeight" Value="46" />
-        <Setter Property="FontSize" Value="11.5" />
-    </Style>
     <Style Selector="Button.subrow">
         <Setter Property="MinHeight" Value="56" />
     </Style>
     <Style Selector="Border.subtile">
         <Setter Property="Width" Value="34" />
         <Setter Property="Height" Value="34" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusIconTile}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="BoxShadow" Value="inset 0 1 0 0 #40FFFFFF, 0 1 2 0 #33000000" />
     </Style>
@@ -1074,6 +1068,13 @@
     <Style Selector="Ellipse.fresh.old">
         <Setter Property="Fill" Value="{DynamicResource V2PingMid}" />
     </Style>
+    <!--  The last update brought nothing: the provider's site was unreachable or the link is wrong.  -->
+    <Style Selector="Ellipse.fresh.failed">
+        <Setter Property="Fill" Value="{DynamicResource V2PingBad}" />
+    </Style>
+    <Style Selector="TextBlock.subinfo.warn">
+        <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+    </Style>
     <Style Selector="PathIcon.subchevron">
         <Setter Property="Width" Value="12" />
         <Setter Property="Height" Value="12" />
@@ -1082,13 +1083,13 @@
         <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
     </Style>
     <Style Selector="Button.subrow:pointerover PathIcon.subchevron">
-        <Setter Property="IsVisible" Value="False" />
+        <Setter Property="Opacity" Value="0" />
     </Style>
     <Style Selector="Button.subrow Button.reveal">
-        <Setter Property="IsVisible" Value="False" />
+        <Setter Property="IsHitTestVisible" Value="False" />
     </Style>
-    <Style Selector="Button.subrow:pointerover Button.reveal, Button.subrow Button.reveal:focus-visible">
-        <Setter Property="IsVisible" Value="True" />
+    <Style Selector="Button.subrow:pointerover Button.reveal">
+        <Setter Property="IsHitTestVisible" Value="True" />
     </Style>
 
     <!--  What the provider reports about a subscription: used traffic as a thin meter, and the expiry.
@@ -1145,7 +1146,7 @@
         <Setter Property="Width" Value="34" />
         <Setter Property="Height" Value="34" />
         <Setter Property="Margin" Value="0,0,14,0" />
-        <Setter Property="CornerRadius" Value="10" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusIconTile}" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="Background" Value="{DynamicResource V2Hover}" />
     </Style>
@@ -1154,10 +1155,14 @@
         <Setter Property="Height" Value="16" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
     </Style>
+    <!--  Keeps an icon-less row's title on the same line as its neighbours in a card that mixes both.  -->
+    <Style Selector="Border.srowicon.blank">
+        <Setter Property="Background" Value="Transparent" />
+    </Style>
     <Style Selector="Border.advswitch">
         <Setter Property="Margin" Value="0,12,0,0" />
         <Setter Property="Padding" Value="12,10,8,10" />
-        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusRow}" />
         <Setter Property="Background" Value="{DynamicResource V2Hover}" />
     </Style>
     <Style Selector="Border.advswitch ToggleSwitch">
@@ -1211,5 +1216,17 @@
     <!--  A tab control with a single page doesn't need its strip.  -->
     <Style Selector="TabControl.single /template/ Border#PART_TabStrip">
         <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!--  Caption buttons dim while the window is in the background, like a native title bar.  -->
+    <Style Selector=":is(Window).inactive Button.caption">
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+    </Style>
+
+    <!--  Keep this block last. Dialog, footer, form and toolbar buttons set their own BoxShadow on the
+          presenter above, which outranks the V2Button theme's focus ring; restating the ring here, after
+          them, keeps it visible when tabbing. New styles go above this block.  -->
+    <Style Selector=":is(Window).dialog Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter, Border.dialogfooter Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter, WrapPanel.toolbar Button:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
     </Style>
 </Styles>

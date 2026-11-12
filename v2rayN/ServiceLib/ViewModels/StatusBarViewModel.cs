@@ -111,6 +111,31 @@ public partial class StatusBarViewModel : MyReactiveObject
 
     #endregion UI
 
+    #region V2pn tray
+
+    // Set by the window from the same verdict as its pill, so the tray never contradicts it
+    // (the system-proxy type alone says nothing about VPN mode or a server that doesn't answer).
+
+    [Reactive]
+    public partial string TrayToolTipText { get; set; }
+
+    [Reactive]
+    public partial string? TrayStatusText { get; set; }
+
+    [Reactive]
+    public partial string? TrayConnectText { get; set; }
+
+    [Reactive]
+    public partial bool BlTrayRouteRussia { get; set; }
+
+    [Reactive]
+    public partial bool BlTrayRouteBlocked { get; set; }
+
+    [Reactive]
+    public partial bool BlTrayRouteAll { get; set; }
+
+    #endregion V2pn tray
+
     public StatusBarViewModel()
     {
         _config = AppManager.Instance.Config;
@@ -118,6 +143,7 @@ public partial class StatusBarViewModel : MyReactiveObject
         SelectedServer = new();
         AvailabilityIp = string.Empty;
         RunningServerToolTipText = GetRunningServerToolTipText("-");
+        TrayToolTipText = Global.AppName;
         BlSystemProxyPacVisible = Utils.IsWindows();
         BlIsNonWindows = Utils.IsNonWindows();
 
@@ -229,7 +255,9 @@ public partial class StatusBarViewModel : MyReactiveObject
         await RefreshRoutingsMenu();
         await InboundDisplayStatus();
         // The view refreshes its icon on initialization; interaction handlers are not registered yet.
-        await ChangeSystemProxyAsync(_config.SystemProxyItem.SysProxyType, false);
+        // V2pn: when connected, the first reload sets the proxy once the core listens. When off, apply now:
+        // that clears a proxy a crashed V2pn left pointing at its dead port.
+        await ChangeSystemProxyAsync(_config.SystemProxyItem.SysProxyType, false, V2pnConnection.IsOff(_config));
 
         BlRouting = true;
     }
@@ -265,6 +293,8 @@ public partial class StatusBarViewModel : MyReactiveObject
 
     private async Task UpdateSubscriptionProcess(bool blProxy)
     {
+        // V2pn: started from the tray; the window shows the progress and the result.
+        ShowHideWindowRequested.Publish(true);
         SubscriptionsUpdateRequested.Publish(blProxy);
         await Task.Delay(1000);
     }
@@ -324,8 +354,13 @@ public partial class StatusBarViewModel : MyReactiveObject
         SetDefaultServerRequested.Publish(SelectedServer.ID);
     }
 
+    private int _availabilityRun;
+
     public async Task<AvailabilityCheckResult?> TestServerAvailability()
     {
+        // V2pn: checks overlap (connect button, mode switch, the reload after a core start). A check that
+        // started before the core was up reports "no response"; only the newest one may report a result.
+        var run = Interlocked.Increment(ref _availabilityRun);
         var item = await ConfigHandler.GetDefaultServer(_config);
         if (item == null)
         {
@@ -336,6 +371,14 @@ public partial class StatusBarViewModel : MyReactiveObject
         RxSchedulers.MainThreadScheduler.Schedule(() => AvailabilityDelay = -2);
 
         var result = await Task.Run(ConnectionHandler.RunAvailabilityCheck);
+        if (run != Volatile.Read(ref _availabilityRun))
+        {
+            if (result.Time > 0)
+            {
+                ProfileExManager.Instance.SetTestDelay(item.IndexId, result.Time);
+            }
+            return null;
+        }
         RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
             AvailabilityDelay = result.Time > 0 ? result.Time : -1;
@@ -381,17 +424,29 @@ public partial class StatusBarViewModel : MyReactiveObject
         {
             return;
         }
+        var wasOff = V2pnConnection.IsOff(_config); // V2pn
         _config.SystemProxyItem.SysProxyType = type;
-        await ChangeSystemProxyAsync(type, true);
+        // V2pn: when turning on, the reload below starts the core and sets the proxy once the core listens.
+        // Setting it here would point Windows at a port nobody answers until the core is up.
+        var turningOn = wasOff && !V2pnConnection.IsOff(_config);
+        await ChangeSystemProxyAsync(type, true, !turningOn);
         NoticeManager.Instance.SendMessageEx($"{ResUI.TipChangeSystemProxy} - {_config.SystemProxyItem.SysProxyType}");
 
         SystemProxySelected = (int)_config.SystemProxyItem.SysProxyType;
         await ConfigHandler.SaveConfig(_config);
+        // V2pn: the core runs only while connected, so turning on or off starts or stops it.
+        if (wasOff != V2pnConnection.IsOff(_config))
+        {
+            ReloadRequested.Publish();
+        }
     }
 
-    public async Task ChangeSystemProxyAsync(ESysProxyType type, bool blChange)
+    public async Task ChangeSystemProxyAsync(ESysProxyType type, bool blChange, bool applyNow = true)
     {
-        await SysProxyHandler.UpdateSysProxy(_config, false);
+        if (applyNow)
+        {
+            await SysProxyHandler.UpdateSysProxy(_config, false);
+        }
 
         BlSystemProxyClear = type == ESysProxyType.ForcedClear;
         BlSystemProxySet = type == ESysProxyType.ForcedChange;
@@ -458,7 +513,11 @@ public partial class StatusBarViewModel : MyReactiveObject
             if (Utils.IsWindows())
             {
                 _config.TunModeItem.EnableTun = false;
-                await AppManager.Instance.RebootAsAdmin();
+                if (!await AppManager.Instance.RebootAsAdmin())
+                {
+                    // V2pn: UAC declined, the app stays open; the toggle goes back to off.
+                    EnableTun = false;
+                }
                 return;
             }
             else

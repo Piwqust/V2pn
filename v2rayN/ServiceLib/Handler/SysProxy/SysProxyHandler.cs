@@ -38,8 +38,13 @@ public static class SysProxyHandler
                     await ProxySettingOSX.SetProxy(Global.Loopback, port, exceptions2);
                     break;
 
-                case ESysProxyType.ForcedClear when Utils.IsWindows():
+                // V2pn: only clear a proxy V2pn set; another VPN client's stays.
+                case ESysProxyType.ForcedClear when Utils.IsWindows()
+                    && V2pnConnection.WindowsProxyIsOurs(port, AppManager.Instance.GetLocalPort(EInboundProtocol.pac)):
                     ProxySettingWindows.UnsetProxy();
+                    break;
+
+                case ESysProxyType.ForcedClear when Utils.IsWindows():
                     break;
 
                 case ESysProxyType.ForcedClear when Utils.IsLinux():

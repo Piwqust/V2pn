@@ -32,15 +32,29 @@ public partial class MainWindow
         Avalonia.Automation.AutomationProperties.SetName(btnConnect, text);
     }
 
-    private void ApplyLayout()
+    // The sidebar width now applied; a resize re-runs ApplyLayout only when it would change.
+    private int _sidebarPixels;
+
+    // Below 1100 px the "wide" sidebar leaves the stage too narrow for the welcome card next to the
+    // rail, so it uses the default width for as long as the window stays small. The setting is kept.
+    private int SidebarPixels()
     {
         var a = Appearance.Current;
-        var width = a.SidebarWidth switch
+        var windowWidth = Bounds.Width > 0 ? Bounds.Width : ClientSize.Width;
+        return a.SidebarWidth switch
         {
             "narrow" => 272,
+            "wide" when windowWidth is > 0 and < 1100 => 312,
             "wide" => 360,
             _ => 312,
         };
+    }
+
+    private void ApplyLayout()
+    {
+        var a = Appearance.Current;
+        var width = SidebarPixels();
+        _sidebarPixels = width;
         var right = a.SidebarSide == "right";
         gridBody.ColumnDefinitions = right
             ? new ColumnDefinitions($"*,{width}")
@@ -53,7 +67,8 @@ public partial class MainWindow
         mapView.IsVisible = a.ShowMap;
         // The map reads its colours once per paint, not through resource bindings.
         mapView.Repaint();
-        contentStatusBarView.IsVisible = a.ShowStatusCard;
+        // The welcome card replaces the statistics while there are no servers.
+        contentStatusBarView.IsVisible = a.ShowStatusCard && !cardWelcome.IsVisible;
         _statusView?.ShowSpeedChart(a.ShowSpeedChart);
 
         Classes.Set("dense", a.Density == "compact");

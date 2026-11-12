@@ -269,6 +269,13 @@ public partial class MainWindowViewModel : MyReactiveObject
             .ObserveOn(RxSchedulers.MainThreadScheduler)
             .Subscribe(bl => BlNewUpdate = bl);
 
+        // V2pn: the core died on its own. Not SubscribeAsync: the handler waits out the restart pause,
+        // and a later exit must not queue behind it.
+        V2pnCoreWatch.CoreExited
+            .AsObservable()
+            .ObserveOn(RxSchedulers.MainThreadScheduler)
+            .Subscribe(code => _ = OnCoreExitedAsync(code));
+
         #endregion AppEvents
 
         ProfilesViewModel.RefreshServersRequested
@@ -369,8 +376,20 @@ public partial class MainWindowViewModel : MyReactiveObject
             var indexIdOld = _config.IndexId;
             await RefreshServersDispatcherAsync();
 
+            // V2pn: after a subscription update, restart the core only when the server in use changed.
+            if (msg == ResUI.MsgUpdateSubscriptionEnd && await RunningConnectionUnchangedAsync())
+            {
+                Logging.SaveLog("V2pn: subscription updated, the server in use is unchanged; core left running");
+            }
+            // V2pn: the server in use got new settings (a rotated key, another SNI). The core must take them
+            // whichever subscription the list shows; v2rayN reloads only for the subscription that is open.
+            else if (msg == ResUI.MsgUpdateSubscriptionEnd && _runningConnectionKey != null && CoreManager.Instance.IsCoreAlive)
+            {
+                Logging.SaveLog("V2pn: subscription updated, the server in use changed; core reloaded");
+                await Reload();
+            }
             // If indexId changed or subIndexId is empty, directly reload.
-            if (indexIdOld != _config.IndexId || _config.SubIndexId.IsNullOrEmpty())
+            else if (indexIdOld != _config.IndexId || _config.SubIndexId.IsNullOrEmpty())
             {
                 await Reload();
             }
@@ -486,7 +505,8 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
     }
 
-    public async Task AddServerViaClipboardAsync(string? clipboardData)
+    /// <returns>How many servers were added; V2pn passes notifyFailure false and words the failure itself.</returns>
+    public async Task<int> AddServerViaClipboardAsync(string? clipboardData, bool notifyFailure = true)
     {
         var stringData = clipboardData;
         if (clipboardData == null)
@@ -494,8 +514,11 @@ public partial class MainWindowViewModel : MyReactiveObject
             var result = await ReadTextFromClipboardInteraction.HandleSafe(RxVoid.Default);
             if (result.IsNullOrEmpty())
             {
-                NoticeManager.Instance.Enqueue(ResUI.OperationFailed);
-                return;
+                if (notifyFailure)
+                {
+                    NoticeManager.Instance.Enqueue(ResUI.OperationFailed);
+                }
+                return 0;
             }
             stringData = result;
         }
@@ -506,10 +529,11 @@ public partial class MainWindowViewModel : MyReactiveObject
             await RefreshServersDispatcherAsync();
             NoticeManager.Instance.Enqueue(string.Format(ResUI.SuccessfullyImportedServerViaClipboard, ret));
         }
-        else
+        else if (notifyFailure)
         {
             NoticeManager.Instance.Enqueue(ResUI.OperationFailed);
         }
+        return ret;
     }
 
     public async Task AddServerViaScanAsync()
@@ -666,6 +690,78 @@ public partial class MainWindowViewModel : MyReactiveObject
     private bool _hasNextReloadJob = false;
     private readonly SemaphoreSlim _reloadSemaphore = new(1, 1);
 
+    // V2pn: V2pnSubUpdate.ConnectionKey of the server the running core was started with.
+    private string? _runningConnectionKey;
+
+    private async Task<bool> RunningConnectionUnchangedAsync()
+    {
+        if (_runningConnectionKey == null || !CoreManager.Instance.IsCoreAlive)
+        {
+            return false;
+        }
+        var current = await AppManager.Instance.GetProfileItem(_config.IndexId);
+        return await V2pnSubUpdate.ConnectionKey(current) == _runningConnectionKey;
+    }
+
+    /// <summary>
+    /// V2pn: the Windows proxy is set only while a core serves it. When the core cannot start, or keeps
+    /// dying, V2pn switches itself off the way the Disconnect button does (which clears the proxy if it is
+    /// V2pn's own) and keeps the reason on screen. Leaving the proxy on a dead port cuts the internet;
+    /// showing "connected" over it is the complaint every client of this kind gets.
+    /// </summary>
+    private async Task StopAfterFailureAsync(EV2pnFailure failure, string? detail = null)
+    {
+        V2pnCoreWatch.MarkFailed(failure, detail);
+        Logging.SaveLog($"V2pn: switched off after a failure ({failure}): {V2pnCoreWatch.FailureDetail}");
+        await Task.Run(async () => await CoreManager.Instance.CoreStop());
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
+        {
+            StatusBarViewModel.AvailabilityDelay = 0;
+            if (StatusBarViewModel.EnableTun)
+            {
+                StatusBarViewModel.EnableTun = false;
+            }
+            StatusBarViewModel.SystemProxySelected = (int)ESysProxyType.ForcedClear;
+        });
+    }
+
+    private async Task OnCoreExitedAsync(int exitCode)
+    {
+        try
+        {
+            // A reload in flight restarts or checks the core itself; look again once it is done.
+            await _reloadSemaphore.WaitAsync();
+            _reloadSemaphore.Release();
+            if (V2pnConnection.IsOff(_config)
+                || CoreManager.Instance.IsCoreAlive
+                || V2pnCoreWatch.State == EV2pnCoreState.Failed)
+            {
+                return;
+            }
+
+            var delay = V2pnCoreWatch.Restarts.NextDelay(DateTime.UtcNow);
+            if (delay == null)
+            {
+                await StopAfterFailureAsync(EV2pnFailure.KeepsStopping, $"exit code {exitCode}");
+                return;
+            }
+
+            V2pnCoreWatch.MarkRestarting();
+            StatusBarViewModel.AvailabilityDelay = -2;
+            NoticeManager.Instance.SendMessageEx($"V2pn: the core stopped (exit code {exitCode}); restarting in {delay.Value.TotalSeconds:0} s");
+            await Task.Delay(delay.Value);
+            if (V2pnConnection.IsOff(_config) || CoreManager.Instance.IsCoreAlive)
+            {
+                return;
+            }
+            await Reload();
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(OnCoreExitedAsync), ex);
+        }
+    }
+
     public async Task Reload()
     {
         //If there are unfinished reload job, marked with next job.
@@ -684,6 +780,7 @@ public partial class MainWindowViewModel : MyReactiveObject
         try
         {
             SetReloadEnabled(false);
+            _runningConnectionKey = null;
 
             RxSchedulers.MainThreadScheduler.Schedule(() =>
             {
@@ -692,24 +789,58 @@ public partial class MainWindowViewModel : MyReactiveObject
                     TabMainSelectedIndex = 0;
                 }
             });
+            // V2pn: disconnected means off, not "still proxying on the local port". Checked before the
+            // server lookup so Disconnect stops the core even when no server is selected.
+            if (V2pnConnection.IsOff(_config))
+            {
+                await Task.Run(async () =>
+                {
+                    await CoreManager.Instance.CoreStop();
+                    await SysProxyHandler.UpdateSysProxy(_config, false);
+                });
+                V2pnCoreWatch.MarkStopped();
+                return;
+            }
             var profileItem = await ConfigHandler.GetDefaultServer(_config);
             if (profileItem == null)
             {
-                NoticeManager.Instance.Enqueue(ResUI.CheckServerSettings);
+                // V2pn: no servers means off. Pointing Windows at a port no core listens on would cut the
+                // internet while the UI says Unprotected. forceDisable leaves "keep system settings" alone.
+                await Task.Run(async () =>
+                {
+                    await CoreManager.Instance.CoreStop();
+                    await SysProxyHandler.UpdateSysProxy(_config, true);
+                });
+                V2pnCoreWatch.MarkStopped();
                 return;
             }
+            V2pnCoreWatch.MarkStarting();
             var allResult = await CoreConfigContextBuilder.BuildAll(_config, profileItem);
             if (NoticeManager.Instance.NotifyValidatorResult(allResult.CombinedValidatorResult) && !allResult.Success)
             {
+                await StopAfterFailureAsync(EV2pnFailure.StartFailed,
+                    allResult.CombinedValidatorResult?.Errors?.FirstOrDefault());
                 return;
             }
 
             await Task.Run(async () =>
             {
                 await LoadCore(allResult.MainResult.Context, allResult.PreSocksResult?.Context);
-                await SysProxyHandler.UpdateSysProxy(_config, false);
-                await Task.Delay(1000);
+                // V2pn: a core that is not running gets no system proxy; a second look after the pause
+                // catches a core that started and exited at once (a config it rejects).
+                if (CoreManager.Instance.IsCoreAlive)
+                {
+                    await SysProxyHandler.UpdateSysProxy(_config, false);
+                    await Task.Delay(1000);
+                }
             });
+            if (!CoreManager.Instance.IsCoreAlive)
+            {
+                await StopAfterFailureAsync(EV2pnFailure.StartFailed);
+                return;
+            }
+            V2pnCoreWatch.MarkRunning();
+            _runningConnectionKey = await V2pnSubUpdate.ConnectionKey(profileItem);
             RxSchedulers.MainThreadScheduler.Schedule(async () =>
             {
                 var result = await StatusBarViewModel.TestServerAvailability();
@@ -799,13 +930,23 @@ public partial class MainWindowViewModel : MyReactiveObject
     /// <summary>
     /// Switches geo files, rule templates and DNS to the Russian sources and downloads the files,
     /// without reloading the core (the caller selects a routing next, which reloads it).
+    /// False when the geo files did not arrive: the previous sources are back, so a retry downloads again.
     /// </summary>
-    public async Task UseRussianSourcesAsync()
+    public async Task<bool> UseRussianSourcesAsync()
     {
+        var before = await V2pnRussianSources.TakeAsync(_config);
         await ConfigHandler.ApplyRegionalPreset(_config, EPresetType.Russia);
         await ConfigHandler.InitRouting(_config);
         await ConfigHandler.SaveConfig(_config);
-        await new UpdateService(_config, UpdateTaskHandler).UpdateGeoFileAll();
+        // Messages only: a "success" here would restart the core right before the routing switch restarts it again.
+        await new UpdateService(_config, (_, msg) => UpdateTaskHandler(false, msg)).UpdateGeoFileAll();
+        if (V2pnRussianSources.FilesRefreshed(before.Files))
+        {
+            return true;
+        }
+        await V2pnRussianSources.RestoreAsync(_config, before);
+        await ConfigHandler.SaveConfig(_config);
+        return false;
     }
 
     #endregion Presets

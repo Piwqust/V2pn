@@ -22,7 +22,7 @@ public sealed class AppearanceSettings
     public bool ShowSpeedChart { get; set; } = true;
     public bool ShowStatusCard { get; set; } = true;
 
-    /// <summary>"system" follows Windows' animation setting; "on" and "off" override it. Read at start.</summary>
+    /// <summary>"system" follows Windows' animation setting; "on" and "off" override it. Applied live (Motion.Refresh).</summary>
     public string Motion { get; set; } = "system";
 
     public AppearanceSettings Clone() => (AppearanceSettings)MemberwiseClone();
@@ -74,9 +74,19 @@ public static class Appearance
     private static readonly HashSet<string> AccentKeys =
         ["V2Accent", "V2AccentHover", "V2AccentSoft", "V2AccentFill", "V2AccentFillHover", "V2AccentShadow"];
 
+    // State and identity colours that are muted on purpose (dark map fills, the selected row, folder
+    // tiles) fall under ToPalette's saturation test and would take the palette's hue: under Mocha the
+    // protected country turned brown. They keep the theme's own value. Row fill and border go together.
+    private static readonly HashSet<string> FixedKeys =
+    [
+        "V2MapActiveSafe", "V2MapActiveLocal", "V2MapActiveUnsafe", "V2RowSelected", "V2RowSelectedBorder",
+        "V2Folder", "V2FolderSoft", "V2DangerFill", "V2DangerFillHover", "V2OnDanger",
+    ];
+
     private static readonly string[] RadiusKeys =
     [
-        "V2RadiusPanel", "V2RadiusPanelInner", "V2RadiusFloating", "V2RadiusCard", "V2RadiusTile", "V2RadiusRow", "V2RadiusControl",
+        "V2RadiusPanel", "V2RadiusPanelInner", "V2RadiusFloating", "V2RadiusFloatingInner", "V2RadiusCard", "V2RadiusTile", "V2RadiusRow", "V2RadiusControl",
+        "V2RadiusBar", "V2RadiusBarInner", "V2RadiusSegment", "V2RadiusIconTile",
         "TextBoxDefaultCornerRadius", "ComboBoxSelectorCornerRadius", "ComboBoxPopupBoxCornerRadius",
         "MenuFlyoutCornerRadius", "MenuItemCornerRadius", "NotificationCardCornerRadius",
     ];
@@ -135,6 +145,10 @@ public static class Appearance
                 var baseAccent = tokens.TryGetValue("V2Accent", out var a) && a is ISolidColorBrush ab ? ab.Color : Accents[0].Color;
                 foreach (var (key, value) in tokens)
                 {
+                    if (FixedKeys.Contains(key))
+                    {
+                        continue;
+                    }
                     // Graphite is the stock look: only the accent family changes there.
                     Func<Color, Color> recolor = AccentKeys.Contains(key)
                         ? c => ToAccent(c, baseAccent, accent)
@@ -300,6 +314,43 @@ public static class Appearance
         }
         var (l1, l2) = (Lum(a), Lum(b));
         return (Math.Max(l1, l2) + 0.05) / (Math.Min(l1, l2) + 0.05);
+    }
+
+    /// <summary>OKLCH chroma and hue (degrees) of an sRGB colour.</summary>
+    internal static (double Chroma, double Hue) Oklch(Color c)
+    {
+        static double Linear(byte v)
+        {
+            var x = v / 255.0;
+            return x <= 0.04045 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4);
+        }
+        var (r, g, b) = (Linear(c.R), Linear(c.G), Linear(c.B));
+        var l = Math.Cbrt((0.4122214708 * r) + (0.5363325363 * g) + (0.0514459929 * b));
+        var m = Math.Cbrt((0.2119034982 * r) + (0.6806995451 * g) + (0.1073969566 * b));
+        var s = Math.Cbrt((0.0883024619 * r) + (0.2817188376 * g) + (0.6299787005 * b));
+        var a = (1.9779984951 * l) - (2.4285922050 * m) + (0.4505937099 * s);
+        var bb = (0.0259040371 * l) + (0.7827717662 * m) - (0.8086757660 * s);
+        var hue = Math.Atan2(bb, a) * 180 / Math.PI;
+        return (Math.Sqrt((a * a) + (bb * bb)), hue < 0 ? hue + 360 : hue);
+    }
+
+    /// <summary>True when a coloured accent sits within <paramref name="degrees"/> of one of the given hues.</summary>
+    internal static bool NearHue(Color accent, IEnumerable<Color> others, double degrees = 20)
+    {
+        var (chroma, hue) = Oklch(accent);
+        if (chroma < 0.04)
+        {
+            return false;
+        }
+        foreach (var other in others)
+        {
+            var diff = Math.Abs(hue - Oklch(other).Hue) % 360;
+            if (Math.Min(diff, 360 - diff) <= degrees)
+            {
+                return true;
+            }
+        }
+        return false;
     }
 
     internal static Color ToAccent(Color c, Color from, Color to)

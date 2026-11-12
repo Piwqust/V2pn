@@ -27,6 +27,11 @@ public static class Fmt
         ? string.Format(L.SubUpdatedAgo, Ago(DateTimeOffset.FromUnixTimeSeconds(sub.UpdateTime).LocalDateTime))
         : L.NeverUpdated;
 
+    // The sidebar row is narrow: the freshness at the end of "40 servers · updated 5 min ago" was the part cut off.
+    public static string SubUpdatedShort(SubItem sub) => sub.UpdateTime > 0
+        ? string.Format(L.SubAgoShort, Ago(DateTimeOffset.FromUnixTimeSeconds(sub.UpdateTime).LocalDateTime))
+        : L.NeverUpdated;
+
     public static string Duration(TimeSpan t)
     {
         if (t.TotalSeconds < 60)
@@ -52,5 +57,19 @@ public static class Fmt
         return i == 0 ? $"{bytes:0} {units[i]}" : $"{bytes:0.#} {units[i]}";
     }
 
-    public static string Speed(double bytesPerSecond) => Bytes(bytesPerSecond) + (Ru ? "/с" : "/s");
+    // Live speed keeps one decimal below 100 instead of Bytes' optional one, so the readout does not
+    // change length on every sample ("1 MB/s" → "1.3 MB/s").
+    public static string Speed(double bytesPerSecond)
+    {
+        string[] units = Ru ? ["Б", "КБ", "МБ", "ГБ", "ТБ"] : ["B", "KB", "MB", "GB", "TB"];
+        var v = bytesPerSecond;
+        var i = 0;
+        while (v >= 1024 && i < units.Length - 1)
+        {
+            v /= 1024;
+            i++;
+        }
+        var n = i == 0 || v >= 100 ? $"{v:0}" : $"{v:0.0}";
+        return $"{n} {units[i]}" + (Ru ? "/с" : "/s");
+    }
 }

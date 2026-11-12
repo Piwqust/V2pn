@@ -40,7 +40,7 @@ public static partial class L
     public static string MenuDelete => T("Delete", "Удалить");
 
     // Tray menu.
-    public static string TrayDisconnected => T("Disconnected", "Отключено");
+    public static string TrayDisconnected => T("Proxy: off", "Прокси: выключен");
     public static string TraySubUpdateViaVpn => T("Update subscriptions through the VPN", "Обновить подписки через VPN");
 
     public static string NoServersYet => T("No servers yet. Add a subscription from your provider or paste a server link.",

@@ -121,6 +121,29 @@ public class ProfileExManager
         }
     }
 
+    /// <summary>
+    /// V2pn: forgets servers that no longer exist. v2rayN does this only at startup, so every subscription
+    /// update left its entries behind until the next launch, and every lookup scanned them.
+    /// </summary>
+    public async Task Prune()
+    {
+        try
+        {
+            var ids = (await SQLiteHelper.Instance.TableAsync<ProfileItem>().ToListAsync())
+                .Select(t => t.IndexId)
+                .ToHashSet();
+            lock (_profileExLock)
+            {
+                _lstProfileEx = new ConcurrentBag<ProfileExItem>(_lstProfileEx.Where(t => ids.Contains(t.IndexId)));
+            }
+            await SQLiteHelper.Instance.ExecuteAsync("delete from ProfileExItem where indexId not in ( select indexId from ProfileItem )");
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+        }
+    }
+
     public async Task SaveTo()
     {
         try

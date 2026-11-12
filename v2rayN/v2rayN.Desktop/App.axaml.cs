@@ -15,6 +15,13 @@ public partial class App : Application
 
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;
+        // V2pn: an exception in a click, timer or "async void" handler used to close the whole app and
+        // leave Windows pointing at a proxy nobody serves. Log it and keep running.
+        Avalonia.Threading.Dispatcher.UIThread.UnhandledException += (_, e) =>
+        {
+            Logging.SaveLog("Dispatcher_UnhandledException", e.Exception);
+            e.Handled = true;
+        };
     }
 
     public override void OnFrameworkInitializationCompleted()
@@ -122,6 +129,31 @@ public partial class App : Application
         {
             Logging.SaveLog("CurrentDomain_UnhandledException", (Exception)e.ExceptionObject);
         }
+        if (e.IsTerminating)
+        {
+            ClearOwnProxyBeforeDying();
+        }
+    }
+
+    /// <summary>
+    /// V2pn: the process is going down and its cores go with it. Take V2pn's own system proxy off first,
+    /// or Windows keeps sending every program to a dead port until someone notices.
+    /// </summary>
+    private static void ClearOwnProxyBeforeDying()
+    {
+        try
+        {
+            var config = AppManager.Instance.Config;
+            if (config == null || V2pnConnection.IsOff(config))
+            {
+                return;
+            }
+            Task.Run(async () => await ServiceLib.Handler.SysProxy.SysProxyHandler.UpdateSysProxy(config, true)).Wait(2000);
+            Logging.SaveLog("V2pn: system proxy cleared before an abnormal exit");
+        }
+        catch
+        {
+        }
     }
 
     private void TaskScheduler_UnobservedTaskException(object? sender, UnobservedTaskExceptionEventArgs e)
@@ -129,19 +161,50 @@ public partial class App : Application
         Logging.SaveLog("TaskScheduler_UnobservedTaskException", e.Exception);
     }
 
+    private static MainWindow? TrayWindow =>
+        (Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow as MainWindow;
+
     private async void MenuAddServerViaClipboardClick(object? sender, EventArgs e)
     {
         try
         {
-            if (Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime { MainWindow: not null })
+            // The same path as the window's paste: subscription links are added and downloaded, failures are explained.
+            // The window comes up first, so its toasts and the new subscription's spinner are seen.
+            if (TrayWindow is { } mainWindow)
             {
-                AppEvents.AddServerViaClipboardRequested.Publish();
-                await Task.Delay(1000);
+                mainWindow.ShowHideWindow(true);
+                await mainWindow.AddServerViaClipboardAsync();
             }
         }
         catch (Exception ex)
         {
             Logging.SaveLog("MenuAddServerViaClipboardClick", ex);
+        }
+    }
+
+    private void MenuToggleConnectionClick(object? sender, EventArgs e)
+    {
+        TrayWindow?.ToggleConnectionFromTray();
+    }
+
+    private async void MenuRouteRussiaClick(object? sender, EventArgs e) => await SelectRouteAsync(RoutingPresetKind.RussiaDirect);
+
+    private async void MenuRouteBlockedClick(object? sender, EventArgs e) => await SelectRouteAsync(RoutingPresetKind.BlockedOnly);
+
+    private async void MenuRouteAllClick(object? sender, EventArgs e) => await SelectRouteAsync(RoutingPresetKind.All);
+
+    private static async Task SelectRouteAsync(RoutingPresetKind kind)
+    {
+        try
+        {
+            if (TrayWindow is { } mainWindow)
+            {
+                await mainWindow.SelectPresetFromTrayAsync(kind);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("Tray routing preset", ex);
         }
     }
 

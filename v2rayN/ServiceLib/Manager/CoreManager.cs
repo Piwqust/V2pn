@@ -18,6 +18,24 @@ public class CoreManager
     private Func<bool, string, Task>? _updateFunc;
     private const string _tag = "CoreHandler";
 
+    /// <summary>V2pn: the main core process is running.</summary>
+    public bool IsCoreAlive
+    {
+        get
+        {
+            // Snapshot: CoreStop disposes the process and clears the field from another thread.
+            var proc = _processService;
+            try
+            {
+                return proc is { HasExited: false };
+            }
+            catch (InvalidOperationException)
+            {
+                return false;
+            }
+        }
+    }
+
     public async Task Init(Config config, Func<bool, string, Task> updateFunc)
     {
         _config = config;
@@ -75,6 +93,7 @@ public class CoreManager
         var result = await CoreConfigHandler.GenerateClientConfig(mainContext, fileName);
         if (result.Success != true)
         {
+            V2pnCoreWatch.NoteProblem(result.Msg); // V2pn
             await UpdateFunc(true, result.Msg);
             return;
         }
@@ -84,6 +103,27 @@ public class CoreManager
         await UpdateFunc(false, string.Format(ResUI.StartService, DateTime.Now.ToString("yyyy/MM/dd HH:mm:ss")));
         await CoreStop();
         await Task.Delay(100);
+
+        // V2pn: with our core stopped, whatever answers on the local port is another program (often the original
+        // v2rayN, which uses the same 10808). Our core then fails to listen, or listens beside it while local
+        // traffic reaches the other client: V2pn looks connected through a server it does not control. Say so.
+        var localPort = AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
+        var busy = V2pnConnection.LocalPortBusy(localPort);
+        // The old core is killed without waiting for it to exit; give a slow exit (TUN teardown) time first.
+        for (var i = 0; busy && i < 12; i++)
+        {
+            await Task.Delay(250);
+            busy = V2pnConnection.LocalPortBusy(localPort);
+        }
+        if (busy)
+        {
+            // Starting anyway would point Windows at the other program's port and report its traffic as ours.
+            var portBusy = string.Format(ResUI.MsgV2pnLocalPortBusy, localPort);
+            Logging.SaveLog($"V2pn: local port {localPort} is held by another program; the core is not started");
+            V2pnCoreWatch.NoteProblem(portBusy);
+            await UpdateFunc(true, portBusy);
+            return;
+        }
 
         if (Utils.IsWindows() && (mainContext?.IsTunEnabled == true || preContext?.IsTunEnabled == true))
         {
@@ -189,6 +229,18 @@ public class CoreManager
             return;
         }
         _processService = proc;
+        proc.ExitedUnexpectedly += code => OnCoreExited(proc, code); // V2pn
+    }
+
+    // V2pn: reported once, and only for a process that is still the current one.
+    private void OnCoreExited(ProcessService proc, int exitCode)
+    {
+        if (!ReferenceEquals(proc, _processService) && !ReferenceEquals(proc, _processPreService))
+        {
+            return;
+        }
+        Logging.SaveLog($"V2pn: the core exited on its own, exit code {exitCode}");
+        V2pnCoreWatch.CoreExited.Publish(exitCode);
     }
 
     private async Task CoreStartPreService(CoreConfigContext? preContext)
@@ -207,6 +259,7 @@ public class CoreManager
                     return;
                 }
                 _processPreService = proc;
+                proc.ExitedUnexpectedly += code => OnCoreExited(proc, code); // V2pn
             }
         }
     }
@@ -307,7 +360,12 @@ public class CoreManager
         var fileName = CoreInfoManager.Instance.GetCoreExecFile(coreInfo, out var msg);
         if (fileName.IsNullOrEmpty())
         {
-            await UpdateFunc(false, msg);
+            // V2pn: mayNeedSudo marks the connection's own cores; speed-test cores are not the connection.
+            if (mayNeedSudo)
+            {
+                V2pnCoreWatch.NoteProblem(msg);
+            }
+            await UpdateFunc(true, msg);
             return null;
         }
 
@@ -326,6 +384,10 @@ public class CoreManager
         catch (Exception ex)
         {
             Logging.SaveLog(_tag, ex);
+            if (mayNeedSudo)
+            {
+                V2pnCoreWatch.NoteProblem(ex.Message); // V2pn
+            }
             await UpdateFunc(mayNeedSudo, ex.Message);
             return null;
         }

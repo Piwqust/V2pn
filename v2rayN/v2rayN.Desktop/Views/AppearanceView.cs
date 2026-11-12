@@ -20,6 +20,7 @@ public sealed class AppearanceView : UserControl
     private readonly WrapPanel _palettes = new() { Orientation = Orientation.Horizontal };
     private readonly WrapPanel _accents = new() { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
     private readonly TextBox _customAccent = new() { Width = 120, Watermark = "#RRGGBB", MaxLength = 7 };
+    private readonly TextBlock _accentNote = new() { Classes = { "srowhint" }, MaxWidth = 420, IsVisible = false, Text = L.ApAccentNearStatus };
     private readonly List<(ListBox Box, Func<AppearanceSettings, int> Read)> _segments = [];
     private readonly List<(ToggleSwitch Switch, Func<AppearanceSettings, bool> Read)> _switches = [];
     private bool _refreshing;
@@ -27,6 +28,10 @@ public sealed class AppearanceView : UserControl
     private static readonly string[] CornerIds = ["sharp", "normal", "round"];
     private static readonly string[] WidthIds = ["narrow", "normal", "wide"];
     private static readonly string[] MotionIds = ["system", "on", "off"];
+
+    // The hues of V2Safe and V2PingMid (dark theme values; the light ones are darker shades of the same
+    // colours). An accent close to them makes the Connect button, shown only while unprotected, read as a state.
+    private static readonly Color[] StatusHues = [Color.Parse("#3DD68C"), Color.Parse("#F2B84B")];
 
     /// <summary>The palette button in the window header.</summary>
     public static Control HeaderButton(Action open)
@@ -68,24 +73,28 @@ public sealed class AppearanceView : UserControl
         Grid.SetColumn(close, 1);
         header.Children.Add(close);
 
-        var reset = new Button { Content = L.ApReset, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 4, 0, 0) };
+        var reset = new Button { Content = L.ApReset, HorizontalAlignment = HorizontalAlignment.Left, Margin = new Thickness(0, 16, 0, 0) };
         reset.Bind(ThemeProperty, reset.GetResourceObservable("V2Button"));
         reset.Click += (_, _) =>
         {
             Appearance.Reset();
+            Motion.Refresh(Application.Current!);
             Refresh();
         };
 
         var body = new StackPanel
         {
             Margin = new Thickness(28, 6, 28, 24),
-            Spacing = 6,
             Children =
             {
                 Group(L.ApGrpTheme,
                     Row(L.ApMode, null, ModeSegment()),
                     Stacked(L.ApPalette, _palettes),
-                    Row(L.ApAccent, L.ApAccentHint, new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { _accents, _customAccent } })),
+                    Row(L.ApAccent, L.ApAccentHint, new StackPanel
+                    {
+                        Spacing = 4,
+                        Children = { new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { _accents, _customAccent } }, _accentNote },
+                    })),
                 Group(L.ApGrpShape,
                     Row(L.ApCorners, null, Segment([L.ApCornersSharp, L.ApCornersNormal, L.ApCornersRound],
                         s => Index(CornerIds, s.Corners, 1), (s, i) => s.Corners = CornerIds[i])),
@@ -106,7 +115,8 @@ public sealed class AppearanceView : UserControl
                     Row(L.ApSpeedChart, null, Switch(s => s.ShowSpeedChart, (s, v) => s.ShowSpeedChart = v))),
                 Group(L.ApGrpMotion,
                     Row(L.ApMotion, L.ApMotionHint, Segment([L.ApMotionSystem, L.ApMotionOn, L.ApMotionOff],
-                        s => Index(MotionIds, s.Motion, 0), (s, i) => s.Motion = MotionIds[i])),
+                        s => Index(MotionIds, s.Motion, 0), (s, i) => s.Motion = MotionIds[i],
+                        applied: () => Motion.Refresh(Application.Current!))),
                     Row(L.ApLanguage, null, LanguageBox())),
                 reset,
             },
@@ -163,6 +173,7 @@ public sealed class AppearanceView : UserControl
         BuildPalettes();
         BuildAccents();
         _customAccent.Text = s.Accent.StartsWith('#') ? s.Accent : string.Empty;
+        _accentNote.IsVisible = Appearance.NearHue(Appearance.AccentColor, StatusHues);
         _refreshing = false;
     }
 
@@ -181,7 +192,7 @@ public sealed class AppearanceView : UserControl
         return box;
     }
 
-    private Control Segment(string[] labels, Func<AppearanceSettings, int> read, Action<AppearanceSettings, int> write)
+    private Control Segment(string[] labels, Func<AppearanceSettings, int> read, Action<AppearanceSettings, int> write, Action? applied = null)
     {
         var box = SegmentBox(labels);
         _segments.Add((box, read));
@@ -190,6 +201,7 @@ public sealed class AppearanceView : UserControl
             if (!_refreshing && box.SelectedIndex >= 0 && box.SelectedIndex != read(Appearance.Current))
             {
                 Change(s => write(s, box.SelectedIndex));
+                applied?.Invoke();
             }
         };
         return box;
@@ -340,17 +352,21 @@ public sealed class AppearanceView : UserControl
                 StrokeThickness = selected ? 2 : 0,
                 Stroke = new SolidColorBrush(color),
             };
+            // The V2 ghost button gives the round swatch a hover fill and the focus ring; the local
+            // radius overrides .icon's 10, so the plate stays a circle around the dot.
             var button = new Button
             {
+                Classes = { "ghost", "icon" },
                 Width = 32,
                 Height = 32,
-                Padding = new Thickness(0),
                 Margin = new Thickness(0, 0, 4, 0),
-                Background = Brushes.Transparent,
-                BorderThickness = new Thickness(0),
+                CornerRadius = new CornerRadius(16),
                 Content = new Panel { Children = { ring, dot } },
             };
-            AutomationProperties.SetName(button, id);
+            button.Bind(ThemeProperty, button.GetResourceObservable("V2Button"));
+            var name = L.ApAccentName(id);
+            ToolTip.SetTip(button, name);
+            AutomationProperties.SetName(button, selected ? name + L.OptionSelected : name);
             button.Click += (_, _) =>
             {
                 Change(s => s.Accent = id);
@@ -387,10 +403,10 @@ public sealed class AppearanceView : UserControl
         {
             list.Children.Add(row);
         }
+        // A bare group, as in the settings pages: sgrouplabel's own margins space the groups and the label.
         return new StackPanel
         {
-            Spacing = 8,
-            Margin = new Thickness(0, 10, 0, 0),
+            Classes = { "sgroup" },
             Children =
             {
                 new TextBlock { Classes = { "sgrouplabel" }, Text = title },

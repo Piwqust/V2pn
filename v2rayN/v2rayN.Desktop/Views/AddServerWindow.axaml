@@ -39,7 +39,7 @@
         </StackPanel>
         </Border>
         <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-            <StackPanel Margin="28,20,28,28" Spacing="6">
+            <StackPanel Classes="spagebody">
                 <TextBlock x:Name="tbPageTitle" Classes="spagetitle" Text="{x:Static loc:L.SvTitlePlain}" />
                 <TextBlock Classes="spagehint" Text="{x:Static loc:L.SvHint}" />
 
@@ -713,7 +713,7 @@
                                             <Button.Flyout>
                                                 <Flyout>
                                                     <StackPanel>
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" FontWeight="Bold" Text="{x:Static resx:ResUI.TbXrayOnly}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" FontWeight="SemiBold" Text="{x:Static resx:ResUI.TbXrayOnly}" />
                                                         <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbPrivateKey}" />
                                                         <TextBox x:Name="txtWarpPrivateKey" Width="400" Margin="{StaticResource Margin4}" />
                                                         <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbPublicKey}" />
@@ -1099,7 +1099,7 @@
                                                                 </StackPanel>
                                                                 <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" TextWrapping="Wrap">
                                                                     <Run Text="{x:Static resx:ResUI.TbCertSha256Tips}" />
-                                                                    <Run FontWeight="Bold" Text="{x:Static resx:ResUI.TbXrayOnly}" />
+                                                                    <Run FontWeight="SemiBold" Text="{x:Static resx:ResUI.TbXrayOnly}" />
                                                                 </TextBlock>
                                                                 <TextBox x:Name="txtCertSha256Pinning" Width="400" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" />
                                                                 <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbFullCertTips}" TextWrapping="Wrap" />

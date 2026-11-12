@@ -205,30 +205,48 @@ public static class ConfigHandler
     /// <returns>0 if successful, -1 if failed</returns>
     public static async Task<int> SaveConfig(Config config)
     {
+        // V2pn: saves come from timers, the UI and background tasks at once. One shared temp file
+        // made concurrent saves fail (guiNConfig.json_temp vanished under File.Move) and lose writes.
+        await _saveConfigLock.WaitAsync();
+        var resPath = Utils.GetConfigPath(_configRes);
+        var tempPath = $"{resPath}_{Guid.NewGuid():N}.tmp";
         try
         {
-            //save temp file
-            var resPath = Utils.GetConfigPath(_configRes);
-            var tempPath = $"{resPath}_temp";
-
             var content = JsonUtils.Serialize(config, true, true);
             if (content.IsNullOrEmpty())
             {
                 return -1;
             }
-            await File.WriteAllTextAsync(tempPath, content);
+            // Flushed to disk before the rename, so a power cut cannot leave an empty config behind.
+            await using (var stream = new FileStream(tempPath, FileMode.Create, FileAccess.Write, FileShare.None, 4096, FileOptions.WriteThrough))
+            await using (var writer = new StreamWriter(stream))
+            {
+                await writer.WriteAsync(content);
+            }
 
-            //rename
             File.Move(tempPath, resPath, true);
         }
         catch (Exception ex)
         {
             Logging.SaveLog(_tag, ex);
+            try
+            {
+                File.Delete(tempPath);
+            }
+            catch
+            {
+            }
             return -1;
+        }
+        finally
+        {
+            _saveConfigLock.Release();
         }
 
         return 0;
     }
+
+    private static readonly SemaphoreSlim _saveConfigLock = new(1, 1);
 
     #endregion ConfigHandler
 
@@ -1396,6 +1414,27 @@ public static class ConfigHandler
     /// <param name="target">The profile item to match against items in the source collection. This parameter can be null.</param>
     /// <returns>A profile item from the source collection that matches the target item according to defined criteria; otherwise,
     /// null if no match is found or if either parameter is null.</returns>
+    /// <summary>
+    /// V2pn: the same server in a refreshed subscription: the same connection (preferring the same
+    /// name), or the same name at the same address and port with new settings such as a rotated key.
+    /// Never a match by name alone, see <see cref="AddBatchServers"/>.
+    /// </summary>
+    private static ProfileItem? FindSameServer(List<ProfileItem>? source, ProfileItem target)
+    {
+        if (source == null)
+        {
+            return null;
+        }
+        return source.FirstOrDefault(t => CompareProfileItem(t, target, true))
+               ?? source.FirstOrDefault(t => CompareProfileItem(t, target, false))
+               ?? source.FirstOrDefault(t =>
+                   t.Remarks == target.Remarks
+                   && t.ConfigType == target.ConfigType
+                   && target.Address.IsNotEmpty()
+                   && string.Equals(t.Address?.Trim(), target.Address.Trim(), StringComparison.OrdinalIgnoreCase)
+                   && t.Port == target.Port);
+    }
+
     private static ProfileItem? FindMatchedProfileItem(IEnumerable<ProfileItem>? source, ProfileItem? target)
     {
         if (source == null || target == null)
@@ -2210,41 +2249,108 @@ public static class ConfigHandler
             counter = await AddBatchServers4Custom(config, strData, subid, isSub);
         }
 
+        // V2pn: an update never moves the user to another server. Panels that number their servers
+        // ("AUTO · 9/31") reshuffle them on every update, so v2rayN's match by name lands on a different
+        // server and the core restarts on it. Follow the active server only to the same server; when the
+        // update has none, the active one stays in the list as it was.
+        // V2pn: servers that are still in the subscription keep their ids, and with them their ping
+        // history, statistics, star and place in "Recent". This replaces v2rayN's copying of statistics
+        // and the star to a new id, which matched by name alone and could star a different server.
+        var keptIds = new HashSet<string>();
         if (counter > 0 && lstOriSub is { Count: > 0 })
         {
-            await RemoveServers(config, lstOriSub.Where(item => item.IsSub).ToList());
+            keptIds = await KeepServerIds(lstOriSub, subid);
+        }
+
+        ProfileItem? followActive = null;
+        var keepActive = false;
+        if (counter > 0 && activeProfile is { IsSub: true } && lstOriSub != null && !keptIds.Contains(activeProfile.IndexId))
+        {
+            var oriIds = lstOriSub.Select(t => t.IndexId).ToHashSet();
+            var fresh = (await AppManager.Instance.ProfileItems(subid))?.Where(t => !oriIds.Contains(t.IndexId)).ToList();
+            followActive = FindSameServer(fresh, activeProfile);
+            keepActive = followActive == null;
+        }
+
+        if (counter > 0 && lstOriSub is { Count: > 0 })
+        {
+            await RemoveServers(config, lstOriSub.Where(item => item.IsSub
+                && !keptIds.Contains(item.IndexId)
+                && !(keepActive && item.IndexId == activeProfile?.IndexId)).ToList());
+            await ProfileExManager.Instance.Prune();
         }
 
         //Select active node
-        if (activeProfile != null)
+        if (followActive != null)
         {
-            var lstSub = await AppManager.Instance.ProfileItems(subid);
-            var existItem = FindMatchedProfileItem(lstSub, activeProfile);
-            if (existItem != null)
-            {
-                await ConfigHandler.SetDefaultServerIndex(config, existItem.IndexId);
-            }
-        }
-
-        //Keep the last traffic statistics
-        if (lstOriSub != null)
-        {
-            var lstSub = await AppManager.Instance.ProfileItems(subid);
-            foreach (var item in lstSub)
-            {
-                var existItem = FindMatchedProfileItem(lstOriSub, item);
-                if (existItem != null)
-                {
-                    await StatisticsManager.Instance.CloneServerStatItem(existItem.IndexId, item.IndexId);
-                    if (ProfileExManager.Instance.IsFavorite(existItem.IndexId))
-                    {
-                        ProfileExManager.Instance.SetFavorite(item.IndexId, true);
-                    }
-                }
-            }
+            await ConfigHandler.SetDefaultServerIndex(config, followActive.IndexId);
         }
 
         return counter;
+    }
+
+    /// <summary>
+    /// V2pn: a refreshed subscription arrives as new rows with new ids. A new row that is the same server
+    /// as an old one takes over the old row's id; the caller then removes only the servers that left.
+    /// Exact matches are claimed first, so a server whose settings changed cannot take the id of one
+    /// that did not change.
+    /// </summary>
+    /// <returns>The ids of the old rows that were kept.</returns>
+    private static async Task<HashSet<string>> KeepServerIds(List<ProfileItem> oldItems, string subid)
+    {
+        var kept = new HashSet<string>();
+        var oldIds = oldItems.Select(t => t.IndexId).ToHashSet();
+        var fresh = (await AppManager.Instance.ProfileItems(subid))?.Where(t => !oldIds.Contains(t.IndexId)).ToList();
+        if (fresh is not { Count: > 0 })
+        {
+            return kept;
+        }
+
+        // The new rows as the subscription lists them; the kept ids must end up in this order too.
+        var order = fresh.Select(t => t.IndexId).ToList();
+        var finalIds = new Dictionary<string, string>();
+        var free = oldItems.Where(t => t.IsSub).ToList();
+        var pairs = new List<(ProfileItem Fresh, ProfileItem Old)>();
+        Func<ProfileItem, ProfileItem, bool>[] rules =
+        [
+            (o, n) => CompareProfileItem(o, n, true),
+            (o, n) => CompareProfileItem(o, n, false),
+            (o, n) => o.Remarks == n.Remarks
+                && o.ConfigType == n.ConfigType
+                && n.Address.IsNotEmpty()
+                && string.Equals(o.Address?.Trim(), n.Address.Trim(), StringComparison.OrdinalIgnoreCase)
+                && o.Port == n.Port,
+        ];
+        foreach (var rule in rules)
+        {
+            foreach (var item in fresh.ToList())
+            {
+                var same = free.FirstOrDefault(o => rule(o, item));
+                if (same == null)
+                {
+                    continue;
+                }
+                free.Remove(same);
+                fresh.Remove(item);
+                pairs.Add((item, same));
+            }
+        }
+
+        foreach (var (item, old) in pairs)
+        {
+            finalIds[item.IndexId] = old.IndexId;
+            await SQLiteHelper.Instance.DeleteAsync(item);
+            item.IndexId = old.IndexId;
+            await SQLiteHelper.Instance.ReplaceAsync(item);
+            kept.Add(old.IndexId);
+        }
+
+        var sort = ProfileExManager.Instance.GetMaxSort();
+        foreach (var tempId in order)
+        {
+            ProfileExManager.Instance.SetSort(finalIds.GetValueOrDefault(tempId, tempId), ++sort);
+        }
+        return kept;
     }
 
     #endregion Batch add servers
@@ -2286,7 +2392,8 @@ public static class ConfigHandler
         }
 
         var queryVars = Utils.ParseQueryString(uri.Query);
-        subItem.Remarks = queryVars["remarks"] ?? "import_sub";
+        // V2pn: the host reads better than v2rayN's placeholder, and the panel can still rename it.
+        subItem.Remarks = queryVars["remarks"] ?? SubInfoManager.FallbackName(url) ?? "import_sub";
 
         return await AddSubItem(config, subItem);
     }
@@ -3097,6 +3204,20 @@ public static class ConfigHandler
         sizeItem.Width = (int)width;
         sizeItem.Height = (int)height;
 
+        return 0;
+    }
+
+    /// <summary>
+    /// V2pn: the main window's normal bounds and its maximized flag, so it reopens where it was left.
+    /// A maximized window saves the size it restores to, never the screen-sized one.
+    /// </summary>
+    public static int SaveWindowPlacement(Config config, string typeName, double width, double height, int? x, int? y, bool maximized)
+    {
+        SaveWindowSizeItem(config, typeName, width, height);
+        var sizeItem = config.UiItem.WindowSizeItem.First(t => t.TypeName == typeName);
+        sizeItem.X = x;
+        sizeItem.Y = y;
+        sizeItem.IsMaximized = maximized;
         return 0;
     }
 

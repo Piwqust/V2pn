@@ -19,7 +19,7 @@
     Width="1280"
     Height="800"
     MinWidth="1000"
-    MinHeight="640"
+    MinHeight="560"
     x:DataType="vms:MainWindowViewModel"
     Background="{DynamicResource V2WindowBackground}"
     Design.DataContext="{x:Static dd:DesignData.MainWindow}"
@@ -59,6 +59,7 @@
                             <MenuItem Classes="menuheader" Header="{x:Static loc:L.Subscriptions}" IsEnabled="False" />
                             <MenuItem x:Name="menuSubUpdate" Header="{x:Static loc:L.UpdateAll}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconRefresh}" /></MenuItem.Icon></MenuItem>
                             <MenuItem x:Name="menuSubUpdateViaProxy" Header="{x:Static loc:L.MenuSubUpdateViaVpn}" ToolTip.Tip="{x:Static loc:L.MenuSubUpdateViaVpnDesc}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconRefresh2}" /></MenuItem.Icon></MenuItem>
+                            <MenuItem x:Name="menuPingAll" Header="{x:Static loc:L.TestPingAll}" InputGesture="Ctrl+Shift+R"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconPulse}" /></MenuItem.Icon></MenuItem>
                             <MenuItem Header="{x:Static loc:L.MenuMore}" IsVisible="False"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconMoreStroked}" /></MenuItem.Icon><MenuItem x:Name="menuSubGroupUpdate" Header="{x:Static resx:ResUI.menuSubGroupUpdate}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconRefresh}" /></MenuItem.Icon></MenuItem><MenuItem x:Name="menuSubGroupUpdateViaProxy" Header="{x:Static resx:ResUI.menuSubGroupUpdateViaProxy}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconRefresh2}" /></MenuItem.Icon></MenuItem></MenuItem>
                             <MenuItem x:Name="menuSubSetting" Header="{x:Static loc:L.MenuSubManage}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconFolderStroked}" /></MenuItem.Icon></MenuItem>
                             <Separator />
@@ -110,12 +111,11 @@
                     chrome:WindowDecorationProperties.ElementRole="User"
                     Grid.Column="4"
                     Margin="0,0,6,0"
-                    VerticalAlignment="Center"
-                    ToolTip.Tip="{x:Static loc:L.Appearance}" />
+                    VerticalAlignment="Center" />
                 <StackPanel Grid.Column="5" Orientation="Horizontal">
                     <Button
                         x:Name="btnMinimize"
-                    chrome:WindowDecorationProperties.ElementRole="User"
+                    chrome:WindowDecorationProperties.ElementRole="MinimizeButton"
                     AutomationProperties.Name="{x:Static loc:L.Minimize}"
                         Classes="caption"
                         Theme="{StaticResource V2Caption}">
@@ -123,15 +123,15 @@
                     </Button>
                     <Button
                         x:Name="btnMaximize"
-                    chrome:WindowDecorationProperties.ElementRole="User"
+                    chrome:WindowDecorationProperties.ElementRole="MaximizeButton"
                     AutomationProperties.Name="{x:Static loc:L.Maximize}"
                         Classes="caption"
                         Theme="{StaticResource V2Caption}">
-                        <PathIcon Classes="i14" Data="{StaticResource SemiIconMaximize}" />
+                        <PathIcon x:Name="iconMaximize" Classes="i14" Data="{StaticResource SemiIconMaximize}" />
                     </Button>
                     <Button
                         x:Name="btnCloseWindow"
-                    chrome:WindowDecorationProperties.ElementRole="User"
+                    chrome:WindowDecorationProperties.ElementRole="CloseButton"
                     AutomationProperties.Name="{x:Static loc:L.Close}"
                         Classes="caption close"
                         Theme="{StaticResource V2Caption}">
@@ -165,6 +165,8 @@
                             DockPanel.Dock="Top">
                             <TextBox
                                 x:Name="txtSearch"
+                                AutomationProperties.AcceleratorKey="Ctrl+F"
+                                AutomationProperties.Name="{x:Static loc:L.SearchServers}"
                                 Classes="search"
                                 ToolTip.Tip="Ctrl+F"
                                 PlaceholderText="{x:Static loc:L.SearchServers}">
@@ -227,19 +229,19 @@
                             DockPanel.Dock="Top"
                             SelectedIndex="0"
                             Theme="{StaticResource V2Segmented}">
-                            <ListBoxItem ToolTip.Tip="Ctrl+1">
+                            <ListBoxItem AutomationProperties.AcceleratorKey="Ctrl+1" AutomationProperties.Name="{x:Static loc:L.TabFavorites}" ToolTip.Tip="Ctrl+1">
                                 <StackPanel Spacing="3">
                                     <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconStarStroked}" />
                                     <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabFavorites}" />
                                 </StackPanel>
                             </ListBoxItem>
-                            <ListBoxItem ToolTip.Tip="Ctrl+2">
+                            <ListBoxItem AutomationProperties.AcceleratorKey="Ctrl+2" AutomationProperties.Name="{x:Static loc:L.TabCountries}" ToolTip.Tip="Ctrl+2">
                                 <StackPanel Spacing="3">
                                     <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconGlobeStroke}" />
                                     <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabCountries}" />
                                 </StackPanel>
                             </ListBoxItem>
-                            <ListBoxItem ToolTip.Tip="Ctrl+3">
+                            <ListBoxItem AutomationProperties.AcceleratorKey="Ctrl+3" AutomationProperties.Name="{x:Static loc:L.TabSubscriptions}" ToolTip.Tip="Ctrl+3">
                                 <StackPanel Spacing="3">
                                     <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconFolderStroked}" />
                                     <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabSubscriptions}" />
@@ -293,6 +295,7 @@
                                         </StackPanel>
                                         <Button
                                             Grid.Column="1"
+                                            MinWidth="104"
                                             AutomationProperties.Name="{Binding Ping.Label, FallbackValue=''}"
                                             Classes="ghost tiny"
                                             Classes.testing="{Binding Ping.IsTesting, FallbackValue=False}"
@@ -307,7 +310,10 @@
                                                 <Path
                                                     Classes="spinner"
                                                     IsVisible="{Binding Ping.IsTesting, FallbackValue=False}" />
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Ping.Label, FallbackValue=''}" />
+                                                <TextBlock
+                                                    VerticalAlignment="Center"
+                                                    Classes="num"
+                                                    Text="{Binding Ping.Label, FallbackValue=''}" />
                                             </StackPanel>
                                         </Button>
                                     </Grid>
@@ -316,7 +322,8 @@
                                 <DataTemplate x:DataType="side:SideHintRow">
                                     <TextBlock
                                         Margin="8,4,8,8"
-                                        Classes="faint small"
+                                        Classes="muted small"
+                                        LineHeight="17"
                                         Text="{Binding Text}"
                                         TextWrapping="Wrap" />
                                 </DataTemplate>
@@ -369,15 +376,14 @@
                                                     ToolTip.Tip="{Binding Model.Remarks}" />
                                                 <DockPanel>
                                                     <PathIcon
-                                                        Width="10"
-                                                        Height="10"
                                                         Margin="0,0,4,0"
+                                                        Classes="i12"
                                                         DockPanel.Dock="Left"
                                                         Foreground="{DynamicResource V2Star}"
                                                         Data="{StaticResource SemiIconStar}"
                                                         IsVisible="{Binding Model.IsFavorite}" />
                                                     <TextBlock
-                                                        Classes="faint small"
+                                                        Classes="muted small"
                                                         Text="{Binding Subtitle}"
                                                         TextTrimming="CharacterEllipsis" />
                                                 </DockPanel>
@@ -389,7 +395,13 @@
                                                         Classes.bad="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingBad}}"
                                                         Classes.good="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingGood}}"
                                                         Classes.mid="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingMid}}"
-                                                        IsVisible="{Binding Model.DelayVal, Converter={x:Static conv:V2pnConverters.IsNotTesting}}">
+                                                        ToolTip.Tip="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.PingText}}">
+                                                        <Border.IsVisible>
+                                                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                                <Binding Converter="{x:Static conv:V2pnConverters.IsNotTesting}" Path="Model.DelayVal" />
+                                                                <Binding Converter="{x:Static conv:V2pnConverters.NotZero}" Path="Model.Delay" />
+                                                            </MultiBinding>
+                                                        </Border.IsVisible>
                                                         <TextBlock Text="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.PingText}}" />
                                                     </Border>
                                                     <Border Classes="pill" IsVisible="{Binding Model.DelayVal, Converter={x:Static conv:V2pnConverters.IsTesting}}">
@@ -442,7 +454,7 @@
                                         Click="SideCountry_Click"
                                         ContextRequested="SideCountry_ContextRequested"
                                         Theme="{StaticResource V2SideRow}">
-                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto,Auto">
+                                        <Grid ColumnDefinitions="Auto,*,Auto,Auto">
                                             <Panel
                                                 Width="26"
                                                 Height="20"
@@ -474,31 +486,39 @@
                                                     Text="{Binding Name}"
                                                     TextTrimming="CharacterEllipsis" />
                                                 <TextBlock
-                                                    Classes="faint small"
+                                                    Classes="muted small"
                                                     Text="{Binding Info}"
                                                     TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
-                                            <Border
-                                                Grid.Column="2"
-                                                Classes="pill"
-                                                Classes.bad="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.IsPingBad}}"
-                                                Classes.good="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.IsPingGood}}"
-                                                Classes.mid="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.IsPingMid}}">
-                                                <TextBlock Text="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.PingText}}" />
-                                            </Border>
-                                            <Button
-                                                Grid.Column="3"
-                                                Margin="4,0,0,0"
-                                                AutomationProperties.Name="{x:Static loc:L.ConnectFastestIn}"
-                                                Classes="ghost small icon reveal"
-                                                Click="SideCountryConnect_Click"
-                                                IsEnabled="{Binding BestId, Converter={x:Static ObjectConverters.IsNotNull}}"
-                                                Theme="{StaticResource V2Button}"
-                                                ToolTip.Tip="{x:Static loc:L.ConnectFastestIn}">
-                                                <PathIcon Classes="i14" Data="{StaticResource SemiIconBolt}" />
-                                            </Button>
+                                            <!--  The pill gives way to the bolt on hover, in the same place, like the server rows.  -->
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <Panel Classes="rowinfo">
+                                                    <Border
+                                                        Classes="pill"
+                                                        Classes.bad="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.IsPingBad}}"
+                                                        Classes.good="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.IsPingGood}}"
+                                                        Classes.mid="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.IsPingMid}}"
+                                                        IsVisible="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.NotZero}}"
+                                                        ToolTip.Tip="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.PingText}}">
+                                                        <TextBlock Text="{Binding BestDelay, Converter={x:Static conv:V2pnConverters.PingText}}" />
+                                                    </Border>
+                                                </Panel>
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Classes="rowactions"
+                                                    Orientation="Horizontal">
+                                                    <Button
+                                                        AutomationProperties.Name="{x:Static loc:L.ConnectFastestIn}"
+                                                        Classes="ghost small icon"
+                                                        Click="SideCountryConnect_Click"
+                                                        Theme="{StaticResource V2Button}"
+                                                        ToolTip.Tip="{x:Static loc:L.ConnectFastestIn}">
+                                                        <PathIcon Classes="i14" Data="{StaticResource SemiIconBolt}" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Panel>
                                             <PathIcon
-                                                Grid.Column="4"
+                                                Grid.Column="3"
                                                 Width="12"
                                                 Height="12"
                                                 Margin="6,0,4,0"
@@ -511,7 +531,7 @@
 
                                 <DataTemplate x:DataType="side:SideSubRow">
                                     <Button
-                                        AutomationProperties.Name="{Binding Sub.Remarks}"
+                                        AutomationProperties.Name="{Binding DisplayName}"
                                         Classes="siderow subrow"
                                         Classes.usage="{Binding HasUsage}"
                                         Click="SideSub_Click"
@@ -531,21 +551,24 @@
                                                 Spacing="2">
                                                 <TextBlock
                                                     Classes="title"
-                                                    Text="{Binding Sub.Remarks}"
+                                                    Text="{Binding DisplayName}"
                                                     TextTrimming="CharacterEllipsis"
-                                                    ToolTip.Tip="{Binding Sub.Remarks}" />
+                                                    ToolTip.Tip="{Binding DisplayName}" />
                                                 <Grid ColumnDefinitions="Auto,*">
                                                     <Ellipse
                                                         Margin="0,0,6,0"
                                                         Classes="fresh"
                                                         Classes.ok="{Binding IsFresh}"
                                                         Classes.old="{Binding IsStale}"
+                                                        Classes.failed="{Binding UpdateFailed}"
                                                         ToolTip.Tip="{Binding Freshness}" />
                                                     <TextBlock
                                                         Grid.Column="1"
-                                                        Classes="faint small"
+                                                        Classes="muted small subinfo"
+                                                        Classes.warn="{Binding UpdateFailed}"
                                                         Text="{Binding Info}"
-                                                        TextTrimming="CharacterEllipsis" />
+                                                        TextTrimming="CharacterEllipsis"
+                                                        ToolTip.Tip="{Binding Info}" />
                                                 </Grid>
                                                 <!--  What the provider reports: traffic of the plan and how long it lasts.  -->
                                                 <StackPanel
@@ -574,37 +597,43 @@
                                                         Value="{Binding Usage.Fraction, FallbackValue=0}" />
                                                 </StackPanel>
                                             </StackPanel>
-                                            <StackPanel
+                                            <!--  Actions and chevron overlap: the column keeps the buttons' width, so hovering
+                                                  swaps them without moving the text.  -->
+                                            <Panel
                                                 Grid.Column="2"
                                                 Margin="0,0,-4,0"
-                                                VerticalAlignment="Center"
-                                                Orientation="Horizontal"
-                                                Spacing="2">
-                                                <Button
-                                                    AutomationProperties.Name="{x:Static loc:L.UpdateSubscription}"
-                                                    Classes="ghost small icon reveal"
-                                                    Click="SideSubUpdate_Click"
-                                                    IsEnabled="{Binding !Busy.IsBusy}"
-                                                    Theme="{StaticResource V2Button}"
-                                                    ToolTip.Tip="{x:Static loc:L.UpdateSubscription}">
-                                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconRefresh}" />
-                                                </Button>
-                                                <Button
-                                                    AutomationProperties.Name="{x:Static loc:L.More}"
-                                                    Classes="ghost small icon kebab reveal"
-                                                    Click="SideSubMenu_Click"
-                                                    Theme="{StaticResource V2Button}"
-                                                    ToolTip.Tip="{x:Static loc:L.More}">
-                                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}">
-                                                        <PathIcon.RenderTransform>
-                                                            <RotateTransform Angle="90" />
-                                                        </PathIcon.RenderTransform>
-                                                    </PathIcon>
-                                                </Button>
+                                                VerticalAlignment="Center">
+                                                <StackPanel
+                                                    HorizontalAlignment="Right"
+                                                    Orientation="Horizontal"
+                                                    Spacing="2">
+                                                    <Button
+                                                        AutomationProperties.Name="{x:Static loc:L.UpdateSubscription}"
+                                                        Classes="ghost small icon reveal"
+                                                        Click="SideSubUpdate_Click"
+                                                        IsEnabled="{Binding !Busy.IsBusy}"
+                                                        Theme="{StaticResource V2Button}"
+                                                        ToolTip.Tip="{x:Static loc:L.UpdateSubscription}">
+                                                        <PathIcon Classes="i14" Data="{StaticResource SemiIconRefresh}" />
+                                                    </Button>
+                                                    <Button
+                                                        AutomationProperties.Name="{x:Static loc:L.More}"
+                                                        Classes="ghost small icon kebab reveal"
+                                                        Click="SideSubMenu_Click"
+                                                        Theme="{StaticResource V2Button}"
+                                                        ToolTip.Tip="{x:Static loc:L.More}">
+                                                        <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}">
+                                                            <PathIcon.RenderTransform>
+                                                                <RotateTransform Angle="90" />
+                                                            </PathIcon.RenderTransform>
+                                                        </PathIcon>
+                                                    </Button>
+                                                </StackPanel>
                                                 <PathIcon
+                                                    HorizontalAlignment="Right"
                                                     Classes="subchevron"
                                                     Data="{StaticResource SemiIconChevronRight}" />
-                                            </StackPanel>
+                                            </Panel>
                                         </Grid>
                                     </Button>
                                 </DataTemplate>
@@ -624,11 +653,18 @@
                                                     Background="{DynamicResource V2SafeSoft}"
                                                     CornerRadius="7"
                                                     IsVisible="{Binding IsFastest}">
-                                                    <PathIcon
-                                                        Width="13"
-                                                        Height="13"
-                                                        Foreground="{DynamicResource V2Safe}"
-                                                        Data="{StaticResource SemiIconBolt}" />
+                                                    <Panel>
+                                                        <PathIcon
+                                                            Classes="i14"
+                                                            Foreground="{DynamicResource V2Safe}"
+                                                            Data="{StaticResource SemiIconBolt}"
+                                                            IsVisible="{Binding !Ping.IsTesting, FallbackValue=True}" />
+                                                        <Path
+                                                            HorizontalAlignment="Center"
+                                                            Classes="spinner"
+                                                            IsVisible="{Binding Ping.IsTesting, FallbackValue=False}"
+                                                            Stroke="{DynamicResource V2Safe}" />
+                                                    </Panel>
                                                 </Border>
                                                 <PathIcon
                                                     Width="14"
@@ -648,6 +684,18 @@
                                                     Foreground="{DynamicResource V2Muted}"
                                                     Data="{StaticResource SemiIconRefresh}"
                                                     IsVisible="{Binding IsRefresh}" />
+                                                <PathIcon
+                                                    Width="14"
+                                                    Height="14"
+                                                    Foreground="{DynamicResource V2Muted}"
+                                                    Data="{StaticResource SemiIconClose}"
+                                                    IsVisible="{Binding IsClearSearch}" />
+                                                <PathIcon
+                                                    Width="14"
+                                                    Height="14"
+                                                    Foreground="{DynamicResource V2Muted}"
+                                                    Data="{StaticResource SemiIconGlobe}"
+                                                    IsVisible="{Binding IsBrowse}" />
                                             </Panel>
                                             <StackPanel
                                                 Grid.Column="1"
@@ -658,10 +706,18 @@
                                                     Classes="title"
                                                     Text="{Binding Title}"
                                                     TextTrimming="CharacterEllipsis" />
+                                                <!--  The fastest-server row shows its own ping run in place of the subtitle.  -->
+                                                <Panel IsVisible="{Binding !Ping.IsTesting, FallbackValue=True}">
+                                                    <TextBlock
+                                                        Classes="muted small"
+                                                        IsVisible="{Binding Subtitle, Converter={x:Static conv:V2pnConverters.NotEmpty}}"
+                                                        Text="{Binding Subtitle}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </Panel>
                                                 <TextBlock
-                                                    Classes="faint small"
-                                                    IsVisible="{Binding Subtitle, Converter={x:Static conv:V2pnConverters.NotEmpty}}"
-                                                    Text="{Binding Subtitle}"
+                                                    Classes="muted small"
+                                                    IsVisible="{Binding Ping.IsTesting, FallbackValue=False}"
+                                                    Text="{Binding Ping.Progress, FallbackValue=''}"
                                                     TextTrimming="CharacterEllipsis" />
                                             </StackPanel>
                                             <Button
@@ -696,23 +752,54 @@
                     <Panel Background="{DynamicResource V2MapOcean}">
                         <views:MapView x:Name="mapView" />
 
+                        <!--  One tint per verdict, crossfaded by opacity: gradients can't be interpolated.  -->
                         <Border
-                            x:Name="stateTint"
+                            x:Name="tintSafe"
                             Height="300"
                             VerticalAlignment="Top"
-                            IsHitTestVisible="False" />
+                            Background="{DynamicResource V2StateTintSafe}"
+                            Classes="tint"
+                            IsHitTestVisible="False"
+                            Opacity="0" />
+                        <Border
+                            x:Name="tintWarn"
+                            Height="300"
+                            VerticalAlignment="Top"
+                            Background="{DynamicResource V2StateTintWarn}"
+                            Classes="tint"
+                            IsHitTestVisible="False"
+                            Opacity="0" />
+                        <Border
+                            x:Name="tintUnsafe"
+                            Height="300"
+                            VerticalAlignment="Top"
+                            Background="{DynamicResource V2StateTintUnsafe}"
+                            Classes="tint"
+                            IsHitTestVisible="False"
+                            Opacity="0" />
                         <Border
                             Height="260"
                             VerticalAlignment="Bottom"
                             Background="{DynamicResource V2StageFade}"
                             IsHitTestVisible="False" />
 
-                        <!--  Connection header  -->
+                        <!--  Everything a secondary page covers. Hidden while a page is open, so Tab and screen readers
+                              cannot reach the controls under it (the header, welcome card, rail and status card).  -->
+                        <Panel x:Name="panelStage">
+                        <!--  Connection header. Hidden until the first refresh has filled it, so launch never
+                              shows an empty pill or a blank Connect button.  -->
                         <StackPanel
-                            Margin="124,26,124,0"
+                            x:Name="panelHeader"
+                            Margin="16,26,16,0"
                             HorizontalAlignment="Center"
                             VerticalAlignment="Top"
+                            Opacity="0"
                             Spacing="6">
+                            <!--  Only this part sits beside the rail, so only it keeps clear of it (88 px tiles + padding).  -->
+                            <StackPanel
+                                Margin="108,0,108,0"
+                                HorizontalAlignment="Center"
+                                Spacing="6">
                             <!--  Protection state, the first thing to read on this screen.  -->
                             <Border
                                 x:Name="pillState"
@@ -725,7 +812,7 @@
                                         x:Name="spinState"
                                         Classes="spinner"
                                         IsVisible="False" />
-                                    <TextBlock x:Name="txtStatePill" />
+                                    <TextBlock x:Name="txtStatePill" AutomationProperties.LiveSetting="Polite" />
                                 </StackPanel>
                             </Border>
                             <DockPanel HorizontalAlignment="Center">
@@ -744,10 +831,7 @@
                                 <TextBlock
                                     x:Name="txtHeaderTitle"
                                     VerticalAlignment="Center"
-                                    FontFamily="{DynamicResource V2DisplayFont}"
-                                    FontSize="28"
-                                    FontWeight="SemiBold"
-                                    Foreground="{DynamicResource V2Ink}"
+                                    Classes="display hdr"
                                     TextTrimming="CharacterEllipsis" />
                             </DockPanel>
                             <TextBlock
@@ -756,26 +840,35 @@
                                 Classes="muted"
                                 TextAlignment="Center"
                                 TextTrimming="CharacterEllipsis" />
-                            <!--  Content (power icon + label) is set by RefreshConnectionAsync.  -->
+                            </StackPanel>
+                            <!--  Connect and the mode bar share one width: the button stretches to the bar.  -->
+                            <StackPanel
+                                x:Name="panelConnect"
+                                Margin="0,12,0,0"
+                                HorizontalAlignment="Center"
+                                Spacing="12">
+                            <!--  Content (power icon + label) is set by SetConnectLabel; enabled by the first refresh.  -->
                             <Button
                                 x:Name="btnConnect"
-                                Width="248"
+                                MinWidth="248"
+                                MaxWidth="480"
                                 Height="50"
                                 CornerRadius="25"
-                                Margin="0,12,0,0"
                                 FontSize="15"
                                 FontWeight="SemiBold"
-                                HorizontalAlignment="Center"
+                                HorizontalAlignment="Stretch"
                                 Classes="connectbtn"
+                                IsEnabled="False"
                                 Theme="{StaticResource V2Button}" />
 
                             <!--  The two decisions behind Connect: how the computer is protected and what goes
                                   through the server. Both work while disconnected too, then they apply on Connect.  -->
+                            <!--  Shown once the route name is in, so its width change is never seen.  -->
                             <Border
                                 x:Name="barConnection"
-                                Margin="0,12,0,0"
                                 HorizontalAlignment="Center"
-                                Classes="floating modebar">
+                                Classes="floating modebar"
+                                Opacity="0">
                                 <!--  Each half says what it decides, so the bar reads without hovering.  -->
                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                     <StackPanel Spacing="3">
@@ -784,13 +877,13 @@
                                         x:Name="lstMode"
                                         Classes="mode"
                                         Theme="{StaticResource V2Segmented}">
-                                        <ListBoxItem x:Name="itemModeProxy">
+                                        <ListBoxItem x:Name="itemModeProxy" AutomationProperties.Name="{x:Static loc:L.ModeProxy}">
                                             <StackPanel Orientation="Horizontal" Spacing="7">
                                                 <PathIcon Classes="i14" Data="{StaticResource SemiIconGlobeStroke}" />
                                                 <TextBlock Text="{x:Static loc:L.ModeProxy}" />
                                             </StackPanel>
                                         </ListBoxItem>
-                                        <ListBoxItem x:Name="itemModeVpn">
+                                        <ListBoxItem x:Name="itemModeVpn" AutomationProperties.Name="{x:Static loc:L.ModeVpn}">
                                             <StackPanel Orientation="Horizontal" Spacing="7">
                                                 <PathIcon Classes="i14" Data="{StaticResource SemiIconShieldStroked}" />
                                                 <TextBlock Text="{x:Static loc:L.ModeVpn}" />
@@ -808,6 +901,7 @@
                                     <TextBlock Classes="barcaption" Text="{x:Static loc:L.BarRoute}" />
                                     <Button
                                         x:Name="btnRoute"
+                                        AutomationProperties.Name="{x:Static loc:L.RouteTitle}"
                                         Classes="ghost routechip"
                                         Theme="{StaticResource V2Button}"
                                         ToolTip.Tip="{x:Static loc:L.RouteTitle}">
@@ -815,7 +909,7 @@
                                             <PathIcon Classes="i14" Data="{StaticResource SemiIconRoute}" />
                                             <TextBlock
                                                 x:Name="txtRoute"
-                                                MaxWidth="230"
+                                                MaxWidth="190"
                                                 TextTrimming="CharacterEllipsis" />
                                             <PathIcon Classes="i12" Data="{StaticResource SemiIconChevronDown}" />
                                         </StackPanel>
@@ -825,13 +919,14 @@
                                                     <StackPanel Spacing="3">
                                                         <TextBlock Classes="title" Text="{x:Static loc:L.RouteTitle}" />
                                                         <TextBlock
-                                                            Classes="faint small"
+                                                            Classes="muted small"
                                                             Text="{x:Static loc:L.RouteSubtitle}"
                                                             TextWrapping="Wrap" />
                                                     </StackPanel>
                                                     <StackPanel Spacing="4">
                                                         <Button
                                                             x:Name="btnRouteRussia"
+                                                            AutomationProperties.Name="{x:Static loc:L.RouteRussiaDirect}"
                                                             Classes="routeoption"
                                                             Theme="{StaticResource V2SideRow}">
                                                             <Grid ColumnDefinitions="*,Auto">
@@ -844,15 +939,18 @@
                                                                     </StackPanel>
                                                                     <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteRussiaDirectHint}" />
                                                                 </StackPanel>
-                                                                <PathIcon
-                                                                    x:Name="tickRouteRussia"
-                                                                    Grid.Column="1"
-                                                                    Classes="routetick"
-                                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                                <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                                    <Ellipse Classes="routeempty" />
+                                                                    <PathIcon
+                                                                        x:Name="tickRouteRussia"
+                                                                        Classes="routetick"
+                                                                        Data="{StaticResource SemiIconTickCircle}" />
+                                                                </Panel>
                                                             </Grid>
                                                         </Button>
                                                         <Button
                                                             x:Name="btnRouteBlocked"
+                                                            AutomationProperties.Name="{x:Static loc:L.RouteBlockedOnly}"
                                                             Classes="routeoption"
                                                             Theme="{StaticResource V2SideRow}">
                                                             <Grid ColumnDefinitions="*,Auto">
@@ -860,15 +958,18 @@
                                                                     <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteBlockedOnly}" />
                                                                     <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteBlockedOnlyHint}" />
                                                                 </StackPanel>
-                                                                <PathIcon
-                                                                    x:Name="tickRouteBlocked"
-                                                                    Grid.Column="1"
-                                                                    Classes="routetick"
-                                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                                <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                                    <Ellipse Classes="routeempty" />
+                                                                    <PathIcon
+                                                                        x:Name="tickRouteBlocked"
+                                                                        Classes="routetick"
+                                                                        Data="{StaticResource SemiIconTickCircle}" />
+                                                                </Panel>
                                                             </Grid>
                                                         </Button>
                                                         <Button
                                                             x:Name="btnRouteAll"
+                                                            AutomationProperties.Name="{x:Static loc:L.RouteAll}"
                                                             Classes="routeoption"
                                                             Theme="{StaticResource V2SideRow}">
                                                             <Grid ColumnDefinitions="*,Auto">
@@ -876,11 +977,13 @@
                                                                     <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteAll}" />
                                                                     <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteAllHint}" />
                                                                 </StackPanel>
-                                                                <PathIcon
-                                                                    x:Name="tickRouteAll"
-                                                                    Grid.Column="1"
-                                                                    Classes="routetick"
-                                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                                <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                                    <Ellipse Classes="routeempty" />
+                                                                    <PathIcon
+                                                                        x:Name="tickRouteAll"
+                                                                        Classes="routetick"
+                                                                        Data="{StaticResource SemiIconTickCircle}" />
+                                                                </Panel>
                                                             </Grid>
                                                         </Button>
                                                     </StackPanel>
@@ -889,13 +992,26 @@
                                                         x:Name="borderRouteBusy"
                                                         Classes="routebusy"
                                                         IsVisible="False">
-                                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                                            <Path Classes="spinner" IsVisible="{Binding #borderRouteBusy.IsVisible}" />
+                                                        <!--  A dock, not a horizontal stack: the failure text is long and has to wrap.  -->
+                                                        <DockPanel>
+                                                            <Path
+                                                                x:Name="spinRouteBusy"
+                                                                Margin="0,0,8,0"
+                                                                Classes="spinner"
+                                                                DockPanel.Dock="Left"
+                                                                IsVisible="False" />
+                                                            <PathIcon
+                                                                x:Name="iconRouteFailed"
+                                                                Margin="0,1,8,0"
+                                                                Classes="i14 routefail"
+                                                                Data="{StaticResource SemiIconAlertCircle}"
+                                                                DockPanel.Dock="Left"
+                                                                IsVisible="False" />
                                                             <TextBlock
                                                                 x:Name="txtRouteBusy"
                                                                 VerticalAlignment="Center"
                                                                 TextWrapping="Wrap" />
-                                                        </StackPanel>
+                                                        </DockPanel>
                                                     </Border>
 
                                                     <Border Classes="hairline" />
@@ -946,6 +1062,7 @@
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
+                            </StackPanel>
                         </StackPanel>
 
                         <!--  First run: nothing to connect to yet, so the stage asks for a server instead.  -->
@@ -957,7 +1074,8 @@
                             HorizontalAlignment="Center"
                             VerticalAlignment="Center"
                             Classes="floating"
-                            IsVisible="False">
+                            IsVisible="False"
+                            Opacity="0">
                             <StackPanel Spacing="16">
                                 <StackPanel Spacing="6">
                                     <TextBlock
@@ -996,10 +1114,11 @@
                                       mode needs the runetfreedom lists, downloaded only when the person picks it.  -->
                                 <Border Classes="hairline" />
                                 <StackPanel Spacing="8">
-                                    <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteTitle}" />
+                                    <TextBlock Classes="sectionlabel" Text="{x:Static loc:L.RouteTitle}" />
                                     <StackPanel Spacing="4">
                                         <Button
                                             x:Name="btnWelcomeRouteRu"
+                                            AutomationProperties.Name="{x:Static loc:L.RouteRussiaDirect}"
                                             Classes="routeoption"
                                             Theme="{StaticResource V2SideRow}">
                                             <Grid ColumnDefinitions="*,Auto">
@@ -1012,14 +1131,17 @@
                                                     </StackPanel>
                                                     <TextBlock Classes="routehint" Text="{x:Static loc:L.WelcomeRouteRuHint}" />
                                                 </StackPanel>
-                                                <PathIcon
-                                                    Grid.Column="1"
-                                                    Classes="routetick"
-                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                    <Ellipse Classes="routeempty" />
+                                                    <PathIcon
+                                                        Classes="routetick"
+                                                        Data="{StaticResource SemiIconTickCircle}" />
+                                                </Panel>
                                             </Grid>
                                         </Button>
                                         <Button
                                             x:Name="btnWelcomeRouteAll"
+                                            AutomationProperties.Name="{x:Static loc:L.RouteAll}"
                                             Classes="routeoption"
                                             Theme="{StaticResource V2SideRow}">
                                             <Grid ColumnDefinitions="*,Auto">
@@ -1027,10 +1149,12 @@
                                                     <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteAll}" />
                                                     <TextBlock Classes="routehint" Text="{x:Static loc:L.WelcomeRouteAllHint}" />
                                                 </StackPanel>
-                                                <PathIcon
-                                                    Grid.Column="1"
-                                                    Classes="routetick"
-                                                    Data="{StaticResource SemiIconTickCircle}" />
+                                                <Panel Grid.Column="1" VerticalAlignment="Center">
+                                                    <Ellipse Classes="routeempty" />
+                                                    <PathIcon
+                                                        Classes="routetick"
+                                                        Data="{StaticResource SemiIconTickCircle}" />
+                                                </Panel>
                                             </Grid>
                                         </Button>
                                     </StackPanel>
@@ -1038,16 +1162,29 @@
                                         x:Name="borderWelcomeBusy"
                                         Classes="routebusy"
                                         IsVisible="False">
-                                        <StackPanel Orientation="Horizontal" Spacing="8">
-                                            <Path Classes="spinner" IsVisible="{Binding #borderWelcomeBusy.IsVisible}" />
+                                        <!--  A dock, not a horizontal stack: the failure text is long and has to wrap.  -->
+                                        <DockPanel>
+                                            <Path
+                                                x:Name="spinWelcomeBusy"
+                                                Margin="0,0,8,0"
+                                                Classes="spinner"
+                                                DockPanel.Dock="Left"
+                                                IsVisible="False" />
+                                            <PathIcon
+                                                x:Name="iconWelcomeFailed"
+                                                Margin="0,1,8,0"
+                                                Classes="i14 routefail"
+                                                Data="{StaticResource SemiIconAlertCircle}"
+                                                DockPanel.Dock="Left"
+                                                IsVisible="False" />
                                             <TextBlock
                                                 x:Name="txtWelcomeBusy"
                                                 VerticalAlignment="Center"
                                                 TextWrapping="Wrap" />
-                                        </StackPanel>
+                                        </DockPanel>
                                     </Border>
                                     <TextBlock
-                                        Classes="faint small"
+                                        Classes="muted small"
                                         Text="{x:Static loc:L.WelcomeRouteLater}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
@@ -1057,7 +1194,7 @@
                         <!--  Feature rail: DNS and settings. Mode and routing live under the Connect button.  -->
                         <Panel
                             x:Name="railHost"
-                            Margin="0,16,16,0"
+                            Margin="0,26,16,0"
                             HorizontalAlignment="Right"
                             VerticalAlignment="Top"
                             DataContext="{Binding StatusBarViewModel}">
@@ -1068,6 +1205,7 @@
                                 <StackPanel Spacing="4">
                                     <Button
                                         x:Name="btnRailDns"
+                                        AutomationProperties.Name="{x:Static loc:L.RailDns}"
                                         Classes="rail"
                                         Theme="{StaticResource V2RailTile}"
                                         ToolTip.Tip="{x:Static resx:ResUI.menuDNSSetting}">
@@ -1081,6 +1219,7 @@
                                     </Button>
 
                                     <Button
+                                        AutomationProperties.Name="{x:Static loc:L.RailSettings}"
                                         Classes="rail"
                                         Theme="{StaticResource V2RailTile}"
                                         ToolTip.Tip="{x:Static resx:ResUI.menuSetting}">
@@ -1096,7 +1235,6 @@
                                                 <MenuItem Classes="menuheader" Header="{x:Static loc:L.Settings}" IsEnabled="False" />
                                                 <MenuItem x:Name="menuOptionSetting" AutomationProperties.Name="{x:Static loc:L.MenuOptions}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconSetting}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuOptions}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuOptionsDesc}" /></StackPanel></MenuItem.Header></MenuItem>
                                                 <MenuItem x:Name="menuRoutingSetting" AutomationProperties.Name="{x:Static loc:L.MenuRouting}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconRoute}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuRouting}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuRoutingDesc}" /></StackPanel></MenuItem.Header></MenuItem>
-                                                <MenuItem x:Name="menuDNSSetting" AutomationProperties.Name="DNS" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconServer}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="DNS" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuDnsDesc}" /></StackPanel></MenuItem.Header></MenuItem>
                                                 <MenuItem x:Name="menuGlobalHotkeySetting" AutomationProperties.Name="{x:Static loc:L.MenuHotkeys}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconCommand}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuHotkeys}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuHotkeysDesc}" /></StackPanel></MenuItem.Header></MenuItem>
                                                 <MenuItem x:Name="menuFullConfigTemplate" AutomationProperties.Name="{x:Static loc:L.MenuTemplate}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconCode}" /></MenuItem.Icon><MenuItem.Header><StackPanel><TextBlock Classes="mititle" Text="{x:Static loc:L.MenuTemplate}" /><TextBlock Classes="midesc" Text="{x:Static loc:L.MenuTemplateDesc}" /></StackPanel></MenuItem.Header></MenuItem>
                                                 <Separator />
@@ -1120,7 +1258,9 @@
                         <ContentControl
                             x:Name="contentStatusBarView"
                             Margin="16"
-                            VerticalAlignment="Bottom" />
+                            VerticalAlignment="Bottom"
+                            Opacity="0" />
+                        </Panel>
 
                         <!--  Secondary pages (log, server table, Clash) slide over the map  -->
                         <DockPanel
@@ -1134,6 +1274,7 @@
                                 DockPanel.Dock="Top">
                                 <Button
                                     x:Name="btnPageBack"
+                                    AutomationProperties.Name="{x:Static loc:L.Back}"
                                     Classes="ghost"
                                     Theme="{StaticResource V2Button}">
                                     <StackPanel Orientation="Horizontal" Spacing="6">

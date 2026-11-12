@@ -10,6 +10,12 @@ public class ProcessService : IDisposable
     public IntPtr Handle => _process.Handle;
     public bool HasExited => _process.HasExited;
 
+    /// <summary>V2pn: a stop was asked for, so the exit that follows is not a crash.</summary>
+    public bool StopRequested { get; private set; }
+
+    /// <summary>V2pn: the process exited on its own, not after StopAsync or Dispose. Carries the exit code.</summary>
+    public event Action<int>? ExitedUnexpectedly;
+
     public ProcessService(
         string fileName,
         string arguments,
@@ -51,6 +57,24 @@ public class ProcessService : IDisposable
         {
             RegisterEventHandlers();
         }
+
+        // V2pn
+        _process.Exited += (s, e) =>
+        {
+            if (StopRequested)
+            {
+                return;
+            }
+            var code = -1;
+            try
+            {
+                code = _process.ExitCode;
+            }
+            catch
+            {
+            }
+            ExitedUnexpectedly?.Invoke(code);
+        };
     }
 
     public async Task StartAsync(string pwd = null)
@@ -72,6 +96,7 @@ public class ProcessService : IDisposable
 
     public async Task StopAsync()
     {
+        StopRequested = true; // V2pn
         if (_process.HasExited)
         {
             return;
@@ -148,6 +173,7 @@ public class ProcessService : IDisposable
         {
             return;
         }
+        StopRequested = true; // V2pn
 
         try
         {

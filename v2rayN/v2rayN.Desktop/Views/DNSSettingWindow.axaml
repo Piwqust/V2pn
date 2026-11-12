@@ -33,12 +33,17 @@
         </StackPanel>
         </Border>
 
+        <!--  The page title sits above its tabs, so it stays on every tab. The tab pages pad by 12
+              inside the 16 px tab control, which puts their cards at 28, under the title.  -->
+        <StackPanel Classes="spagehead" DockPanel.Dock="Top">
+            <TextBlock Classes="spagetitle" Text="{x:Static loc:L.DnTitle}" />
+            <TextBlock Classes="spagehint" Text="{x:Static loc:L.DnHint}" />
+        </StackPanel>
+
         <TabControl Classes="plain" HorizontalContentAlignment="Stretch">
             <TabItem Header="{x:Static loc:L.DnTabMain}">
                 <ScrollViewer HorizontalScrollBarVisibility="Disabled">
                     <StackPanel Margin="12,12,12,20" Spacing="6">
-                        <TextBlock Classes="spagetitle" Text="{x:Static loc:L.DnTitle}" />
-                        <TextBlock Classes="spagehint" Text="{x:Static loc:L.DnHint}" />
                         <TextBlock
                             x:Name="txtBasicDNSSettingsInvalid"
                             Classes="spagehint"

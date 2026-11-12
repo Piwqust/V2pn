@@ -33,7 +33,7 @@ public static partial class L
 
     public static string Servers => T("servers", "серв.");
     public static string Updated => T("updated", "обновлено");
-    public static string NeverUpdated => T("never updated", "ещё не обновлялась");
+    public static string NeverUpdated => T("never updated", "не обновлялась");
     public static string AutoUpdateEvery => T("auto-update every {0} min", "автообновление каждые {0} мин");
     public static string LocalServers => T("Servers you added by hand and from every subscription.", "Серверы, добавленные вручную, и серверы из всех подписок.");
     public static string FavoritesHint => T("Star a server to keep it here. Favorites survive subscription updates.", "Отметьте сервер звёздочкой, чтобы он появился здесь. Избранное сохраняется после обновления подписок.");
@@ -98,13 +98,17 @@ public static partial class L
     public static string SearchServers => T("Search", "Поиск");
     public static string SearchResults => T("Results", "Найдено");
     public static string Fastest => T("Fastest server", "Самый быстрый сервер");
-    public static string FastestNone => T("Run a ping test to find it", "Проверьте пинг, чтобы найти");
+    public static string FastestNone => Tk("Run a ping test to find it", "Click to test ping and find it", "Нажмите, чтобы проверить пинг и найти его");
     public static string NoCountry => T("Unknown location", "Страна не определена");
     public static string Back => T("Back", "Назад");
     public static string UpdateAll => T("Update all subscriptions", "Обновить все подписки");
     public static string ServersCount => T("servers", "серверов");
-    public static string FavoritesEmpty => T("Hover a server and click ☆ to keep it here. Favorites survive subscription updates.", "Наведите на сервер и нажмите ☆, чтобы закрепить его здесь. Избранное сохраняется после обновления подписок.");
+    public static string FavoritesEmpty => Tk("Hover a server and click ☆ to keep it here. Favorites survive subscription updates.",
+        "Click ☆ next to a server, or select a server and press Ctrl+B, to keep it here. Favorites survive subscription updates.",
+        "Чтобы закрепить сервер здесь, нажмите ☆ рядом с ним или выделите его в списке и нажмите Ctrl+B. Избранное сохраняется после обновления подписок.");
     public static string NothingFound => T("Nothing found", "Ничего не найдено");
+    // The settings search shares NothingFound; this one says what the server search looks at.
+    public static string NothingFoundServers => Tk("Nothing found", "Nothing found. Search looks at names, addresses and countries.", "Ничего не найдено. Поиск идёт по названию, адресу и стране.");
     public static string SubEmpty => T("No servers yet. Update the subscription to load them.", "Серверов пока нет. Обновите подписку, чтобы загрузить их.");
     public static string Protected => T("Protected", "Защищено");
     public static string Unprotected => T("Unprotected", "Не защищено");
@@ -128,13 +132,15 @@ public static partial class L
     public static string RoutingSettings => T("Routing settings…", "Настроить маршруты…");
 
     public static string WelcomeTitle => T("Add your first server", "Добавьте первый сервер");
-    public static string WelcomeText => T("Copy a subscription link or a vless://, vmess://, trojan://… link from your provider and paste it here.",
-        "Скопируйте ссылку на подписку или ссылку вида vless://, vmess://, trojan://… от вашего провайдера и вставьте её сюда.");
+    public static string WelcomeText => Tk("Copy a subscription link or a vless://, vmess://, trojan://… link from your provider and paste it here.",
+        "Copy the link from your provider and press Paste from clipboard. A subscription link or a vless://, vmess://, trojan:// link works.",
+        "Скопируйте ссылку от провайдера и нажмите «Вставить из буфера». Подойдёт ссылка на подписку или на сервер (vless://, vmess://, trojan://).");
     public static string WelcomePaste => T("Paste from clipboard", "Вставить из буфера");
     public static string WelcomeQr => T("Scan QR code", "Сканировать QR-код");
     public static string WelcomeHint => T("Subscriptions update on their own; favorites survive the updates.",
         "Подписки обновляются сами, избранное сохраняется после обновлений.");
-    public static string ToastServerStarted => T("Server running", "Сервер запущен");
+    // The core has started; whether the server answers is the check's job, so this promises nothing more.
+    public static string ToastServerStarted => T("Connecting", "Подключение");
     public static string SubsEmpty => T("A subscription is a link from your provider; V2pn downloads its servers and keeps them up to date.",
         "Подписка — это ссылка от провайдера. V2pn скачивает по ней серверы и сам их обновляет.");
     public static string SubsEmptyAction => T("Paste the link from your provider", "Вставьте ссылку от провайдера");
@@ -157,18 +163,18 @@ public static partial class L
     public static string MenuGrpManual => T("Create manually", "Создать вручную");
     public static string MenuServerByProtocol => T("Server", "Сервер");
     public static string MenuOptions => T("Settings", "Параметры");
-    public static string MenuOptionsDesc => T("Modes, ports, cores, updates", "Режимы, порты, ядра, обновления");
+    public static string MenuOptionsDesc => Tk("Modes, ports, cores, updates", "Startup, modes, ports, updates", "Запуск, режимы, порты, обновления");
     public static string MenuRouting => T("Routing rules", "Правила маршрутизации");
     public static string MenuRoutingDesc => T("Rule sets: domains, IPs, apps", "Наборы правил: домены, IP, программы");
     public static string MenuDnsDesc => T("DNS servers and their rules", "DNS-серверы и их правила");
     public static string MenuHotkeys => T("Hotkeys", "Горячие клавиши");
     public static string MenuHotkeysDesc => T("Show the window, switch the proxy", "Показ окна, переключение прокси");
     public static string MenuTemplate => T("Config template", "Шаблон конфигурации");
-    public static string MenuTemplateDesc => T("Raw core config, for experts", "Конфиг ядра целиком, для опытных");
+    public static string MenuTemplateDesc => Tk("Raw core config, for experts", "The whole core config, for experts", "Вся конфигурация ядра, для опытных");
     public static string MenuPolicyGroup => T("Server group", "Группа серверов");
     public static string MenuProxyChain => T("Proxy chain", "Цепочка прокси");
     public static string MenuCustomConfig => T("Custom config", "Своя конфигурация");
-    public static string MenuCustomOutbound => T("Custom outbound", "Свой outbound");
+    public static string MenuCustomOutbound => Tk("Custom outbound", "Custom outbound (JSON)", "Своё исходящее подключение (JSON)");
     public static string MenuPasteDesc => T("A subscription or vless://, vmess://… links", "Подписка или ссылки vless://, vmess://…");
     public static string MenuSubDesc => T("A link that updates the server list", "Ссылка, по которой обновляется список");
     public static string MenuServerDesc => T("Enter the parameters by hand", "Ввести параметры вручную");
@@ -177,7 +183,7 @@ public static partial class L
     public static string MenuGrpSystem => T("System tools", "Система");
     public static string MenuRestartAdmin => T("Restart as administrator", "Перезапустить от администратора");
     public static string MenuUwp => T("Allow Microsoft Store apps", "Пустить приложения Microsoft Store");
-    public static string MenuUwpDesc => T("Loopback exemption for UWP apps", "Исключение loopback для UWP");
+    public static string MenuUwpDesc => Tk("Loopback exemption for UWP apps", "If Store apps don't go through the proxy", "Если приложения из Store не идут через прокси");
     public static string MenuRegion => T("Region", "Регион");
     public static string MenuRegionDesc => T("Geo files, rules and DNS for a country", "Геофайлы, правила и DNS для страны");
     public static string MenuGrpData => T("Data", "Данные");
@@ -196,7 +202,9 @@ public static partial class L
     public static string ModeVpnNeedsAdmin => T("Needs administrator rights.", "Нужны права администратора.");
     public static string VpnRestartAsAdmin => T("VPN mode needs administrator rights. Restart V2pn as administrator? VPN mode turns on after the restart.",
         "Для режима VPN нужны права администратора. Перезапустить V2pn от имени администратора? Режим VPN включится после перезапуска.");
-    public static string VpnNeedsSudo => T("VPN mode needs the administrator password.", "Для режима VPN нужен пароль администратора.");
+    public static string VpnAdminDeclined => T("VPN mode stays off: administrator rights weren't granted.",
+        "Режим VPN не включён: права администратора не выданы.");
+    public static string VpnNeedsSudo =>T("VPN mode needs the administrator password.", "Для режима VPN нужен пароль администратора.");
     public static string ModeLocalPort => T("Local port only", "Только локальный порт");
 
     public static string RouteTitle => T("What goes through the VPN", "Что идёт через VPN");
@@ -205,11 +213,11 @@ public static partial class L
     public static string RouteRussiaDirect => T("Russian sites direct", "Российские сайты напрямую");
     public static string RouteRussiaDirectHint => Tk("Sites in .ru and .рф, banks, Gosuslugi and Russian IPs open directly. Everything else goes through the VPN, including blocked .ru sites.",
         "Banks, Gosuslugi and .ru sites open directly; everything else, blocked .ru sites too, goes through the VPN.",
-        "Банки, Госуслуги и сайты в .ru — напрямую, остальное и заблокированные .ru — через VPN.");
+        "Банки, Госуслуги и сайты в\u00A0.ru\u00A0— напрямую, остальное и заблокированные .ru\u00A0— через VPN.");
     public static string RouteBlockedOnly => T("Only blocked sites", "Только заблокированное");
     public static string RouteBlockedOnlyHint => Tk("Only sites blocked in Russia, YouTube, Discord, Telegram and AI services go through the VPN. The rest opens directly and faster.",
         "Only blocked sites, YouTube, Discord, Telegram and AI services go through the VPN; the rest opens directly.",
-        "Через VPN — только заблокированное, YouTube, Discord, Telegram и ИИ. Остальное — напрямую.");
+        "Через VPN\u00A0— только заблокированное, YouTube, Discord, Telegram и ИИ. Остальное\u00A0— напрямую.");
     public static string RouteAll => T("Everything through VPN", "Всё через VPN");
     public static string RouteBuiltinWhitelist => T("Everything except China (v2rayN)", "Всё, кроме Китая (v2rayN)");
     public static string RouteBuiltinBlacklist => T("Sites blocked in China (v2rayN)", "Заблокированное в Китае (v2rayN)");
@@ -223,8 +231,8 @@ public static partial class L
     public static string RouteCustom => T("Your rules", "Свои правила");
     public static string RouteCustomHint => T("Sets from the routing settings.", "Наборы из настройки маршрутов.");
     public static string RouteCustomPick => T("Choose…", "Выбрать…");
-    public static string RouteDownloading => T("Downloading the rule lists for Russia…", "Скачиваю списки правил для России…");
-    public static string RouteApplying => T("Applying…", "Применяю…");
+    public static string RouteDownloading => T("Downloading the rule lists for Russia…", "Загрузка списков правил для России…");
+    public static string RouteApplying => T("Applying…", "Применение…");
     public static string RouteFailed => T("Couldn't switch the routing. Details are in the log.", "Не удалось переключить маршруты. Подробности в журнале.");
     public static string MenuLog => T("Log", "Журнал");
     public static string MenuTable => T("Server table", "Таблица серверов");
@@ -245,7 +253,7 @@ public static partial class L
 
     public static string SubEditHint => T("Where V2pn gets the servers from.", "Откуда V2pn берёт серверы.");
     public static string ServerEditHint => T("Connection details of the server. The fields depend on the protocol.", "Параметры подключения к серверу. Набор полей зависит от протокола.");
-    public static string HotkeysHint => T("Click a field and press the key combination; it applies after a restart.", "Нажмите на поле и сочетание клавиш; заработает после перезапуска.");
+    public static string HotkeysHint => T("Click a field and press the key combination; it applies after a restart.", "Щёлкните по полю и нажмите сочетание клавиш. Заработает после перезапуска.");
 
     public static string GrpSource => T("Source", "Источник");
     public static string GrpUpdates => T("Updates", "Обновление");
@@ -266,15 +274,24 @@ public static partial class L
     public static string SearchSettings => T("Search settings", "Поиск по настройкам");
     // Simple settings: the everyday rows, in plain words.
     public static string SetAutoRun => T("Start with the system", "Запускать вместе с системой");
-    public static string SetAutoRunHint => T("V2pn starts in the tray when you sign in.", "V2pn запустится в трее при входе в систему.");
-    public static string SetStartHidden => T("Start minimized", "Запускать свёрнутым");
-    public static string SetStartHiddenHint => T("Only the tray icon appears; the window stays closed.", "Появится только значок в трее, окно не откроется.");
+    // Whether the sign-in start shows the window is the next row's choice, so this hint promises no tray.
+    public static string SetAutoRunHint => T("V2pn starts when you sign in.", "V2pn запустится при входе в систему.");
+    public static string SetStartHidden => Tk("Start minimized", "Start in the tray at sign-in", "При входе в систему — только значок в трее");
+    public static string SetStartHiddenHint => Tk("Only the tray icon appears; the window stays closed.",
+        "Only the tray icon appears at sign-in. Opening V2pn yourself shows the window.",
+        "При входе в систему появится только значок в трее. Если открыть V2pn вручную, окно откроется.");
     public static string SetShowSpeed => T("Show connection speed", "Показывать скорость соединения");
     public static string SetShowSpeedHint => T("The speed chart under the map. Takes effect after a restart.", "График скорости под картой. Включится после перезапуска.");
     public static string SetPort => T("Local port", "Локальный порт");
     public static string SetPortHint => T("Apps that ignore the system proxy can be pointed at 127.0.0.1 and this port.", "Программы, которые не видят системный прокси, можно направить на 127.0.0.1 и этот порт.");
     public static string SetLan => T("Allow devices on your network", "Пускать устройства из локальной сети");
     public static string SetLanHint => T("A phone or another computer on the same Wi-Fi can go online through V2pn.", "Телефон или другой компьютер в той же Wi-Fi-сети смогут выходить в интернет через V2pn.");
+    public static string LanOpenWarning => T(
+        "Right now any device on your network can use this proxy without a password. Turn on the separate port for the network and set a user name and password.",
+        "Сейчас любое устройство в вашей сети может пользоваться этим прокси без пароля. Включите отдельный порт для сети и задайте логин и пароль.");
+    public static string LanOpenToast => T(
+        "The proxy is open to every device on your network, without a password. See Settings → Local proxy.",
+        "Прокси открыт для всех устройств в вашей сети без пароля. Это настраивается в «Настройки → Локальный прокси».");
     public static string SetGeoInterval => T("Update rule lists every, hours", "Обновлять списки правил, часов");
     public static string SetGeoIntervalHint => T("Lists of sites and addresses the routing modes use. 0 turns updates off.", "Списки сайтов и адресов для режимов маршрутизации. 0 — не обновлять.");
     public static string SubEditTitle => T("Subscription", "Подписка");
@@ -370,16 +387,16 @@ public static partial class L
         _ => name ?? string.Empty,
     };
     public static string CheckConnection => T("Check connection", "Проверить соединение");
-    public static string Checking => T("Checking…", "Проверяю…");
+    public static string Checking => T("Checking…", "Проверка…");
     public static string CheckWorks => T("Works · {0} ms", "Работает · {0} мс");
 
     /// <summary>"85 ms", with the unit Russian readers expect.</summary>
     public static string Ms(int value) => Ru ? $"{value} мс" : $"{value} ms";
     public static string CheckFailed => T("No response", "Нет ответа");
     public static string NoTraffic => T("No traffic yet", "Трафика пока нет");
-    public static string StateChecking => T("Checking connection…", "Проверяю соединение…");
+    public static string StateChecking => T("Checking connection…", "Проверка соединения…");
     public static string StateNoResponse => T("Server not responding", "Сервер не отвечает");
-    public static string ClickToConnect => T("Click to connect · right-click for more", "Нажмите, чтобы подключиться · правая кнопка — ещё");
+    public static string ClickToConnect => Tk("Click to connect · right-click for more", "Right-click for more actions", "Правой кнопкой\u00A0— другие действия");
 
     /// <summary>"6 servers" with the plural form the language needs.</summary>
     public static string ServerCount(int n)
@@ -404,6 +421,70 @@ public static partial class L
     public static string MinutesAgo => T("{0} min ago", "{0} мин назад");
     public static string HoursAgo => T("{0} h ago", "{0} ч назад");
     public static string SubUpdatedAgo => T("updated {0}", "обновлена {0}");
+    public static string SubAgoShort => T("updated {0}", "обн. {0}");
     public static string DurationSec => T("{0} sec", "{0} сек");
     public static string DurationMinSec => T("{0} min {1} sec", "{0} мин {1} сек");
+
+    // Paste from clipboard: what happened and what to do next.
+    public static string ClipboardEmpty => T("The clipboard is empty. Copy the link from your provider first.", "Буфер обмена пуст. Сначала скопируйте ссылку у провайдера.");
+    public static string PasteNotRecognized => T("No server link found. Paste a subscription link (https://…) or a vless://, vmess://, trojan://… link.",
+        "Ссылка на сервер не найдена. Вставьте ссылку на подписку (https://…) или ссылку вида vless://, vmess://, trojan://…");
+    public static string SubAddedUpdating => T("Subscription added, downloading its servers…", "Подписка добавлена. Загрузка серверов…");
+    public static string SubAlreadyAdded => T("This subscription is already added. Updating it.", "Эта подписка уже добавлена, сейчас она обновится.");
+
+    // A subscription update that brought no servers.
+    public static string SubUpdateFailed => T("Couldn't update \"{0}\". The provider's site may be blocked, or the link is wrong.",
+        "Не удалось обновить «{0}». Сайт провайдера может быть заблокирован или ссылка неверна.");
+    public static string SubsUpdateFailed => T("Couldn't update: {0}. The providers' sites may be blocked, or the links are wrong.",
+        "Не удалось обновить: {0}. Сайты провайдеров могут быть заблокированы или ссылки неверны.");
+    public static string SubUpdateTryVpn => T("Try \"{0}\" in the subscription's menu.", "Попробуйте «{0}» в меню подписки.");
+    public static string SubUpdateFailedShort => T("update failed", "не обновилась");
+    public static string SubUpdateFailedTip => T("The last update failed", "Последнее обновление не удалось");
+
+    // When something fails, the next step.
+    public static string NoneResponding => T("None of these servers answer. Update the subscription or ask your provider.",
+        "Ни один из этих серверов не отвечает. Обновите подписку или напишите провайдеру.");
+    // Nothing to test: the current server is the only one of its country and subscription.
+    public static string NoOtherServers => T("There are no other servers in this country or subscription. Update the subscription or ask your provider.",
+        "Других серверов в этой стране или подписке нет. Обновите подписку или напишите провайдеру.");
+    public static string FindWorkingServer => T("Find a working server", "Найти рабочий сервер");
+    public static string FindProgress => T("Checking {0} of {1}…", "Проверка {0} из {1}…");
+    public static string StateNoResponseTip => T("The server didn't answer the check. Try another server.", "Сервер не ответил на проверку. Попробуйте другой сервер.");
+    public static string StateCoreFailed => T("Couldn't start the connection", "Не удалось запустить подключение");
+    public static string StateCoreStopped => T("The connection dropped", "Подключение прервалось");
+    public static string StateReconnecting => T("Reconnecting…", "Переподключение…");
+    public static string StateConnecting => T("Connecting…", "Подключение…");
+    public static string CoreKeepsStoppingToast => T("The connection kept dropping. V2pn switched off so you are not left without internet.",
+        "Подключение обрывалось раз за разом. V2pn выключился, чтобы не оставить вас без интернета.");
+    public static string StateCoreFailedTip => T("The problem is on this computer, not the server. Click to open the log.",
+        "Проблема на этом компьютере, а не на сервере. Нажмите, чтобы открыть журнал.");
+    public static string BrowseCountries => T("Browse countries", "Открыть список стран");
+    public static string RouteDownloadFailed => T("Couldn't download the Russian site lists, so the routing hasn't changed. Try again after connecting.",
+        "Не удалось скачать списки российских сайтов, маршруты не изменились. Попробуйте ещё раз после подключения.");
+    // v2rayN's own wording says "invalid" and breaks the Russian plural.
+    public static string RemoveDeadDone => T("Unresponsive servers removed: {0}", "Удалено серверов без ответа: {0}");
+    // v2rayN's "invalid configuration, check or reselect" while there are servers: the config for the picked one failed.
+    public static string ServerConfigBroken => T("Couldn't prepare a connection to this server. Pick another server or check its settings.",
+        "Не удалось подготовить подключение к этому серверу. Выберите другой сервер или проверьте его настройки.");
+
+    // Keyboard and screen readers. Appended to the name of the chosen option, whose tick is visual only.
+    public static string OptionSelected => T(", selected", ", выбрано");
+    public static string TestPingAll => T("Test ping of all servers", "Проверить пинг всех серверов");
+
+    // Tray: the same verdict and actions as the window.
+    public static string TrayOpen => T("Open V2pn", "Открыть V2pn");
+    public static string TrayProxySystem => T("Proxy: system", "Прокси: системный");
+    public static string TrayProxyKeep => T("Proxy: local port only", "Прокси: только локальный порт");
+    public static string TrayProxyPac => T("Proxy: PAC script", "Прокси: PAC-скрипт");
+    public static string TrayCopyProxyCmd => T("Copy proxy command for the terminal", "Скопировать команду для терминала");
+
+    // Close (X) on Windows: asked once.
+    public static string CloseToTrayTitle => T("Minimize V2pn to the tray or quit?", "Свернуть V2pn в трей или выйти?");
+    public static string CloseToTrayBody => T("In the tray V2pn keeps running and doesn't drop the connection. Open the window from the icon next to the clock. You can change this in Settings.",
+        "В трее V2pn продолжает работать и не разрывает подключение. Окно открывается значком рядом с часами. Выбор можно изменить в настройках.");
+    public static string CloseToTrayHide => T("Minimize to tray", "Свернуть в трей");
+
+    // Window lifecycle.
+    public static string Restore => T("Restore", "Восстановить");
+    public static string ShutdownCleaning => T("Restoring network settings…", "Восстановление сетевых настроек…");
 }

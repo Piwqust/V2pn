@@ -165,7 +165,7 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow linux">
+                                    <Border Classes="srow">
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconMinimize}" /></Border>
                                             <StackPanel Grid.Column="1" Classes="srowtext">
@@ -196,12 +196,13 @@
                             <Border Classes="sgroupcard">
                                 <StackPanel>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsCurrentFontFamily}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsCurrentFontFamilyLinuxTip}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbcurrentFontFamily" Width="240" IsEditable="True" />
                                             </Panel>
                                         </Grid>
@@ -219,22 +220,24 @@
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsStatistics}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togEnableStatistics" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMainGirdOrientation}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintGridOrientation}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbMainGirdOrientation" Width="240" />
                                             </Panel>
                                         </Grid>
@@ -311,23 +314,25 @@
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSecondLocalPortEnabled}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSecondPort}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togSecondLocalPortEnabled" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUdpEnabled}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintUdp}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togudpEnabled" />
                                             </Panel>
                                         </Grid>
@@ -345,6 +350,13 @@
                                             <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetLan}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetLanHint}" />
+                                                <TextBlock
+                                                    x:Name="txtLanWarning"
+                                                    Classes="srowhint"
+                                                    Foreground="{DynamicResource V2PingMid}"
+                                                    IsVisible="False"
+                                                    Text="{x:Static loc:L.LanOpenWarning}"
+                                                    TextWrapping="Wrap" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togAllowLANConn" />
@@ -352,32 +364,35 @@
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsNewPort4LAN}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintNewPortLan}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togNewPort4LAN" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUser}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtuser" Width="240" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsPass}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtpass" Width="240" />
                                             </Panel>
                                         </Grid>
@@ -976,34 +991,37 @@
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsGeoFilesSource}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsChinaUserTip}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbGetFilesSourceUrl" Width="320" IsEditable="True" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSrsFilesSource}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsChinaUserTip}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbSrsFilesSourceUrl" Width="320" IsEditable="True" />
                                             </Panel>
                                         </Grid>
                                     </Border>
                                     <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon blank" />
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsRoutingRulesSource}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsChinaUserTip}" />
                                             </StackPanel>
-                                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbRoutingRulesSourceUrl" Width="320" IsEditable="True" />
                                             </Panel>
                                         </Grid>

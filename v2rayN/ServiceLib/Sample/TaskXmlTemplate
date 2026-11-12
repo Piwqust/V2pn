@@ -14,6 +14,13 @@
       <RunLevel>HighestAvailable</RunLevel>
     </Principal>
   </Principals>
+  <Settings>
+    <MultipleInstancesPolicy>IgnoreNew</MultipleInstancesPolicy>
+    <DisallowStartIfOnBatteries>false</DisallowStartIfOnBatteries>
+    <StopIfGoingOnBatteries>false</StopIfGoingOnBatteries>
+    <Enabled>true</Enabled>
+    <ExecutionTimeLimit>PT0S</ExecutionTimeLimit>
+  </Settings>
   <Actions Context="Author">
     <Exec>
       <Command>{{EXEC_PATH}}</Command>

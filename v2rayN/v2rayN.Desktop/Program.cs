@@ -7,6 +7,9 @@ internal class Program
 {
     public static EventWaitHandle ProgramStarted;
 
+    // V2pn: started by the sign-in entry (Global.AutostartArg), not by the user.
+    public static bool StartedAtSignIn { get; private set; }
+
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
@@ -32,6 +35,7 @@ internal class Program
             ProgramStarted = new EventWaitHandle(false, EventResetMode.AutoReset, exePathKey, out var bCreatedNew);
             if (!rebootas && !bCreatedNew)
             {
+                WindowsShell.AllowAnyForeground();
                 ProgramStarted.Set();
                 return false;
             }
@@ -44,6 +48,8 @@ internal class Program
                 return false;
             }
         }
+
+        StartedAtSignIn = (Args ?? []).Any(t => t == Global.AutostartArg);
 
         if (!AppManager.Instance.InitApp())
         {

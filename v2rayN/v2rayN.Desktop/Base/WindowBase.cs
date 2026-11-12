@@ -34,19 +34,39 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
         try
         {
             var sizeItem = ConfigHandler.GetWindowSizeItem(AppManager.Instance.Config, GetType().Name);
-            if (sizeItem is null)
+            // V2pn: the main window also fits the screen on its first launch, before anything is saved.
+            var isMain = this is Views.MainWindow;
+            if (sizeItem is null && !isMain)
             {
                 return;
             }
 
-            var screen = Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            // The main window reopens on the monitor it was left on, while that monitor is still there.
+            var saved = isMain ? SavedScreen(sizeItem) : null;
+            var screen = saved ?? Screens.ScreenFromWindow(this) ?? Screens.Primary;
+            if (screen is null)
+            {
+                return;
+            }
             var scaling = screen.Scaling > 0 ? screen.Scaling : 1.0;
             var workingArea = screen.WorkingArea;
 
-            // Dialogs grew to fit the V2pn card frame; a width saved by v2rayN must not squeeze them back.
-            var designWidth = double.IsNaN(Width) ? 0 : Width;
-            var width = Math.Min(Math.Max(sizeItem.Width, designWidth), workingArea.Width / scaling);
-            var height = Math.Min(sizeItem.Height, workingArea.Height / scaling);
+            double width;
+            double height;
+            if (sizeItem is null)
+            {
+                // The design size, kept clear of the screen edges and the taskbar (1280x800 does not fit
+                // a 1920x1080 laptop at 150%).
+                width = Math.Min(Width, (workingArea.Width / scaling) - 32);
+                height = Math.Min(Height, (workingArea.Height / scaling) - 32);
+            }
+            else
+            {
+                // Dialogs grew to fit the V2pn card frame; a width saved by v2rayN must not squeeze them back.
+                var designWidth = double.IsNaN(Width) ? 0 : Width;
+                width = Math.Min(Math.Max(sizeItem.Width, designWidth), workingArea.Width / scaling);
+                height = Math.Min(sizeItem.Height, workingArea.Height / scaling);
+            }
 
             Width = width;
             Height = height;
@@ -57,14 +77,43 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
 
             var x = workingArea.X + ((workingArea.Width - totalWidth) / 2);
             var y = workingArea.Y + ((workingArea.Height - totalHeight) / 2);
+            if (saved is not null && sizeItem is { X: { } sx, Y: { } sy })
+            {
+                x = Math.Clamp(sx, workingArea.X, Math.Max(workingArea.X, workingArea.X + workingArea.Width - totalWidth));
+                y = Math.Clamp(sy, workingArea.Y, Math.Max(workingArea.Y, workingArea.Y + workingArea.Height - totalHeight));
+            }
             Position = new PixelPoint((int)x, (int)y);
         }
         catch { }
     }
 
+    // The screen that shows the saved window's title strip, or null (never saved, or that monitor is gone).
+    private Screen? SavedScreen(WindowSizeItem? sizeItem)
+    {
+        if (sizeItem is not { X: { } x, Y: { } y })
+        {
+            return null;
+        }
+        foreach (var screen in Screens.All)
+        {
+            var strip = new PixelRect(x, y, Math.Max(1, (int)(sizeItem.Width * screen.Scaling)), (int)(40 * screen.Scaling));
+            var visible = screen.WorkingArea.Intersect(strip);
+            if (visible.Width >= 100 && visible.Height >= 10)
+            {
+                return screen;
+            }
+        }
+        return null;
+    }
+
     protected override void OnClosed(EventArgs e)
     {
         base.OnClosed(e);
+        // The main window saves its normal bounds itself (MainWindow.StorageUI); Width here may be the maximized size.
+        if (this is Views.MainWindow)
+        {
+            return;
+        }
         try
         {
             ConfigHandler.SaveWindowSizeItem(AppManager.Instance.Config, GetType().Name, Width, Height);

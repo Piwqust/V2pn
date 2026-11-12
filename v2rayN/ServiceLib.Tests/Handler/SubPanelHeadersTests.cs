@@ -335,6 +335,11 @@ public class SubPanelHeadersTests
         SubInfoManager.ApplyToSubscription(item, info, new SubPanelInfo { UpdateIntervalHours = 24 });
         await item.AutoUpdateInterval.Should().BeEqualTo(45);
 
+        // "Never" stays never, even though the field is empty again.
+        item.AutoUpdateInterval = 0;
+        await SubInfoManager.ApplyToSubscription(item, info, new SubPanelInfo { UpdateIntervalHours = 24 }).Should().BeFalse();
+        await item.AutoUpdateInterval.Should().BeEqualTo(0);
+
         // No interval from the panel: nothing changes.
         var other = new SubItem { Id = "2", Url = "https://p.example/s", Remarks = "Mine", AutoUpdateInterval = 0 };
         await SubInfoManager.ApplyToSubscription(other, new SubInfoItem { Id = "2" }, new SubPanelInfo()).Should().BeFalse();

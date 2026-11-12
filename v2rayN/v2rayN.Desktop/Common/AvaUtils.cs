@@ -1,4 +1,5 @@
 using Avalonia.Input.Platform;
+using v2rayN.Desktop.Views;
 
 namespace v2rayN.Desktop.Common;
 
@@ -39,17 +40,30 @@ internal class AvaUtils
         }
     }
 
-    public static WindowIcon GetAppIcon(ESysProxyType sysProxyType)
+    /// <summary>
+    /// The tray and taskbar icon for a connection verdict, as the brand book defines them: graphite when
+    /// off, Signal when connected (proxy or VPN), amber when it needs attention (a failed check, or only
+    /// the local port is set). A NotifyIcon{n}.ico next to the program still overrides the built-in art.
+    /// </summary>
+    public static int AppIconIndex(ProtectionState state, bool warn) => state switch
     {
-        var index = (int)sysProxyType + 1;
+        ProtectionState.Unprotected => 1,
+        ProtectionState.LocalOnly => 3,
+        _ => warn ? 3 : 2,
+    };
+
+    public static WindowIcon GetAppIcon(int index)
+    {
         var fileName = Utils.GetPath($"NotifyIcon{index}.ico");
         if (File.Exists(fileName))
         {
             return new(fileName);
         }
 
+        // Straight from the stream: a Bitmap would keep one frame of the ICO and Windows would scale it
+        // for the 20 and 24 px slots at 125/150%, instead of using the hand-sized frames.
         var uri = new Uri(Path.Combine(Global.AvaAssets, $"NotifyIcon{index}.ico"));
-        using var bitmap = new Bitmap(AssetLoader.Open(uri));
-        return new(bitmap);
+        using var stream = AssetLoader.Open(uri);
+        return new(stream);
     }
 }

@@ -33,7 +33,7 @@
         </StackPanel>
         </Border>
 
-        <StackPanel Margin="20,16,20,4" DockPanel.Dock="Top" Spacing="6">
+        <StackPanel Classes="spagehead" DockPanel.Dock="Top">
             <TextBlock Classes="spagetitle" Text="{x:Static loc:L.DnFcTitle}" />
             <TextBlock Classes="spagehint" Text="{x:Static loc:L.DnFcHint}" />
         </StackPanel>

@@ -2734,7 +2734,7 @@ namespace ServiceLib.Resx {
         }
         
         /// <summary>
-        ///   查找类似 {0} Configurations have been imported from clipboard 的本地化字符串。
+        ///   查找类似 Servers added: {0} 的本地化字符串。
         /// </summary>
         public static string SuccessfullyImportedServerViaClipboard {
             get {
@@ -5478,6 +5478,15 @@ namespace ServiceLib.Resx {
         public static string UpgradeAppNotExistTip {
             get {
                 return ResourceManager.GetString("UpgradeAppNotExistTip", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   V2pn: Port {0} is already taken by another program.
+        /// </summary>
+        public static string MsgV2pnLocalPortBusy {
+            get {
+                return ResourceManager.GetString("MsgV2pnLocalPortBusy", resourceCulture);
             }
         }
     }

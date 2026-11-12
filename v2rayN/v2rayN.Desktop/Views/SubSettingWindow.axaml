@@ -22,11 +22,12 @@
         DisableOpeningAnimation="True"
         Identifier="dialogHostSub">
         <DockPanel>
-            <StackPanel Margin="18,20,16,0" DockPanel.Dock="Top">
+            <StackPanel Classes="spagehead" DockPanel.Dock="Top">
                 <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlSubsTitle}" />
                 <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlSubsHint}" />
             </StackPanel>
-            <Menu DockPanel.Dock="Top">
+            <!--  Toolbar and table line up with the title.  -->
+            <Menu Margin="28,14,28,2" DockPanel.Dock="Top">
                 <MenuItem x:Name="menuSubAdd" Header="{x:Static loc:L.TlSubAdd}" />
                 <MenuItem x:Name="menuSubEdit" Header="{x:Static loc:L.TlSubEdit}" />
                 <MenuItem x:Name="menuSubShare" Header="{x:Static loc:L.TlSubShare}" />
@@ -35,7 +36,7 @@
                 <MenuItem x:Name="menuClose" Header="{x:Static loc:L.TlSubClose}" IsVisible="False" />
             </Menu>
 
-            <Border Classes="formcard table">
+            <Border Margin="28,14,28,14" Classes="formcard table">
                 <DataGrid
                 x:Name="lstSubscription"
                 AutoGenerateColumns="False"

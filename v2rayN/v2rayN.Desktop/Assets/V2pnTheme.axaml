@@ -58,10 +58,25 @@
             <BoxShadows x:Key="V2CardShadow">inset 0 1 0 0 #0FFFFFFF, 0 1 2 0 #4D000000, 0 6 16 -4 #59000000, 0 20 40 -14 #73000000</BoxShadows>
             <BoxShadows x:Key="V2RaisedShadow">inset 0 1 0 0 #14FFFFFF, 0 2 4 0 #4D000000, 0 12 28 -8 #73000000, 0 32 64 -20 #8C000000</BoxShadows>
             <BoxShadows x:Key="V2NavShadow">inset 0 1 0 0 #14FFFFFF, 0 1 2 0 #66000000, 0 4 10 -3 #4D000000</BoxShadows>
-            <BoxShadows x:Key="V2FocusShadow">0 0 0 2 #A05C9DF0</BoxShadows>
+            <BoxShadows x:Key="V2FocusShadow">0 0 0 4 #7AB2FF, 0 0 0 2 #16171B</BoxShadows>
             <LinearGradientBrush x:Key="V2StageFade" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#000E0E11" />
                 <GradientStop Offset="1" Color="#E60E0E11" />
+            </LinearGradientBrush>
+            <!--  Top-of-stage wash in the colour of the connection verdict (V2Safe / V2PingMid / V2Unsafe).
+                  The tints end at alpha 02, not 00: over the cached map layer the fully transparent end
+                  left holes with zero alpha under the mode bar.  -->
+            <LinearGradientBrush x:Key="V2StateTintSafe" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#383DD68C" />
+                <GradientStop Offset="1" Color="#023DD68C" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2StateTintWarn" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#38F2B84B" />
+                <GradientStop Offset="1" Color="#02F2B84B" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2StateTintUnsafe" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#38FF5A3D" />
+                <GradientStop Offset="1" Color="#02FF5A3D" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2SidebarFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#1F1F27" />
@@ -83,6 +98,16 @@
                 <GradientStop Offset="0" Color="#FF6447" />
                 <GradientStop Offset="1" Color="#F7401F" />
             </LinearGradientBrush>
+            <!--  Destructive buttons: red whatever the accent (not in Appearance.AccentKeys), dark label.  -->
+            <LinearGradientBrush x:Key="V2DangerFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#E5484D" />
+                <GradientStop Offset="1" Color="#DE4449" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2DangerFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#EE5A5F" />
+                <GradientStop Offset="1" Color="#E64D52" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="V2OnDanger" Color="#0B0B0D" />
             <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#3B3C48" />
                 <GradientStop Offset="1" Color="#2E2F3A" />
@@ -188,19 +213,21 @@
             <SolidColorBrush x:Key="V2Neutral" Color="#E4E6EC" />
             <SolidColorBrush x:Key="V2NeutralHover" Color="#D8DBE3" />
             <SolidColorBrush x:Key="V2PinCore" Color="#FFFFFF" />
-            <SolidColorBrush x:Key="V2Safe" Color="#17A463" />
-            <SolidColorBrush x:Key="V2SafeSoft" Color="#2217A463" />
-            <SolidColorBrush x:Key="V2Unsafe" Color="#E8391B" />
-            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#22E8391B" />
+            <!--  Status colours are read as 11-12 px text (pill, check chip, ping), so they are dark enough
+                  for 4.5:1 on their Soft fill over the map; the tints and map fills below keep lighter tones.  -->
+            <SolidColorBrush x:Key="V2Safe" Color="#046B39" />
+            <SolidColorBrush x:Key="V2SafeSoft" Color="#22046B39" />
+            <SolidColorBrush x:Key="V2Unsafe" Color="#AE250D" />
+            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#22AE250D" />
             <SolidColorBrush x:Key="V2Folder" Color="#3A7BD5" />
             <SolidColorBrush x:Key="V2FolderSoft" Color="#E3ECFA" />
-            <SolidColorBrush x:Key="V2Star" Color="#E39A1C" />
-            <SolidColorBrush x:Key="V2PingGood" Color="#17A463" />
-            <SolidColorBrush x:Key="V2PingGoodSoft" Color="#1F17A463" />
-            <SolidColorBrush x:Key="V2PingMid" Color="#C98510" />
-            <SolidColorBrush x:Key="V2PingMidSoft" Color="#1FC98510" />
-            <SolidColorBrush x:Key="V2PingBad" Color="#E8391B" />
-            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FE8391B" />
+            <SolidColorBrush x:Key="V2Star" Color="#A86400" />
+            <SolidColorBrush x:Key="V2PingGood" Color="#046B39" />
+            <SolidColorBrush x:Key="V2PingGoodSoft" Color="#1F046B39" />
+            <SolidColorBrush x:Key="V2PingMid" Color="#834F00" />
+            <SolidColorBrush x:Key="V2PingMidSoft" Color="#1F834F00" />
+            <SolidColorBrush x:Key="V2PingBad" Color="#AE250D" />
+            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FAE250D" />
             <SolidColorBrush x:Key="V2PingNone" Color="#8E8E9A" />
             <SolidColorBrush x:Key="V2PingNoneSoft" Color="#0F16161B" />
             <SolidColorBrush x:Key="V2MapOcean" Color="#E6E9F0" />
@@ -213,10 +240,23 @@
             <BoxShadows x:Key="V2CardShadow">inset 0 1 0 0 #FFFFFFFF, 0 1 2 0 #0F16161B, 0 6 16 -4 #1716161B, 0 20 40 -14 #2416161B</BoxShadows>
             <BoxShadows x:Key="V2RaisedShadow">inset 0 1 0 0 #FFFFFFFF, 0 2 4 0 #1216161B, 0 12 28 -8 #2416161B, 0 32 64 -20 #3316161B</BoxShadows>
             <BoxShadows x:Key="V2NavShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1416161B, 0 1 2 0 #1416161B, 0 4 10 -3 #1A16161B</BoxShadows>
-            <BoxShadows x:Key="V2FocusShadow">0 0 0 2 #A03A7BD5</BoxShadows>
+            <BoxShadows x:Key="V2FocusShadow">0 0 0 4 #2F6FD0, 0 0 0 2 #FFFFFF</BoxShadows>
             <LinearGradientBrush x:Key="V2StageFade" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#00ECEEF3" />
                 <GradientStop Offset="1" Color="#E6ECEEF3" />
+            </LinearGradientBrush>
+            <!--  Same hues as the light V2Safe / V2PingMid / V2Unsafe, in the brighter fill tones: a wash, not text.  -->
+            <LinearGradientBrush x:Key="V2StateTintSafe" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#2617A463" />
+                <GradientStop Offset="1" Color="#0217A463" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2StateTintWarn" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#26C98510" />
+                <GradientStop Offset="1" Color="#02C98510" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2StateTintUnsafe" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#26E8391B" />
+                <GradientStop Offset="1" Color="#02E8391B" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2SidebarFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#F9F9FB" />
@@ -238,6 +278,16 @@
                 <GradientStop Offset="0" Color="#FF6447" />
                 <GradientStop Offset="1" Color="#F7401F" />
             </LinearGradientBrush>
+            <!--  Destructive buttons: red whatever the accent (not in Appearance.AccentKeys), white label.  -->
+            <LinearGradientBrush x:Key="V2DangerFill" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#C62A2F" />
+                <GradientStop Offset="1" Color="#B82328" />
+            </LinearGradientBrush>
+            <LinearGradientBrush x:Key="V2DangerFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
+                <GradientStop Offset="0" Color="#CC3237" />
+                <GradientStop Offset="1" Color="#C62A2F" />
+            </LinearGradientBrush>
+            <SolidColorBrush x:Key="V2OnDanger" Color="#FFFFFF" />
             <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#FFFFFF" />
                 <GradientStop Offset="1" Color="#F0F1F4" />
@@ -319,7 +369,7 @@
 
     <FontFamily x:Key="V2UiFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
     <FontFamily x:Key="V2DisplayFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
-    <!--  Radii nest: inner = outer - padding (panel 18 with 6 padding -> rows 12; floating 20 with 6 -> tiles 14).  -->
+    <!--  Radii nest: inner = outer - padding (panel 18 with 6 padding -> rows 12; floating 16 with 6 -> rail tiles 10).  -->
     <!--  Icon tiles of the settings menu: one hue per kind of setting, white glyph, same in both themes.  -->
     <LinearGradientBrush x:Key="V2TileGray" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#9A9AA6" /><GradientStop Offset="1" Color="#73737F" /></LinearGradientBrush>
     <LinearGradientBrush x:Key="V2TileGreen" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#4CD99A" /><GradientStop Offset="1" Color="#22B36F" /></LinearGradientBrush>
@@ -354,12 +404,21 @@
     <x:Double x:Key="NotificationCardIconWidth">0</x:Double>
     <x:Double x:Key="NotificationCardIconHeight">0</x:Double>
     <Thickness x:Key="NotificationCardIconMargin">0</Thickness>
-    <CornerRadius x:Key="V2RadiusFloating">20</CornerRadius>
+    <!--  Floating cards sit 16 px inside the stage (17 px clip), so they are no rounder than its corner.  -->
+    <CornerRadius x:Key="V2RadiusFloating">16</CornerRadius>
+    <!--  The feature rail's tiles inside a floating card with 6 px padding (16 - 6).  -->
+    <CornerRadius x:Key="V2RadiusFloatingInner">10</CornerRadius>
     <CornerRadius x:Key="V2RadiusCard">18</CornerRadius>
     <CornerRadius x:Key="V2RadiusTile">14</CornerRadius>
     <CornerRadius x:Key="V2RadiusRow">12</CornerRadius>
     <CornerRadius x:Key="V2RadiusControl">12</CornerRadius>
     <CornerRadius x:Key="V2RadiusPill">999</CornerRadius>
+    <!--  The connection bar (outer 18, segments and route chip 13 inside its 5 px padding), segmented
+          items and the icon tiles of subscription and settings rows. All follow the Corners setting.  -->
+    <CornerRadius x:Key="V2RadiusBar">18</CornerRadius>
+    <CornerRadius x:Key="V2RadiusBarInner">13</CornerRadius>
+    <CornerRadius x:Key="V2RadiusSegment">10</CornerRadius>
+    <CornerRadius x:Key="V2RadiusIconTile">10</CornerRadius>
     <StreamGeometry x:Key="V2SpinnerArc">M6,1 A5,5 0 1 1 1,6</StreamGeometry>
     <!--  The fork: one stroke wide (32), 3.25 x 3.5 strokes, every diagonal 45 degrees. Same drawing as the app icon.  -->
     <StreamGeometry x:Key="V2BrandFork">M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z</StreamGeometry>

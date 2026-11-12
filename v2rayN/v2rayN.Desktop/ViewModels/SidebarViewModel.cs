@@ -16,6 +16,9 @@ public enum SideActionKind
     Back,
     AddSubscription,
     UpdateAll,
+    UpdateSub,
+    ClearSearch,
+    BrowseCountries,
 }
 
 public abstract class SideRow : ReactiveObject;
@@ -28,6 +31,10 @@ public sealed partial class PingState : ReactiveObject
 
     [Reactive]
     public partial string Label { get; set; } = L.TestPing;
+
+    /// <summary>"Checking 3 of 40…", for rows that start a ping themselves (the fastest server).</summary>
+    [Reactive]
+    public partial string Progress { get; set; } = string.Empty;
 }
 
 /// <summary>Something running in the background that a row shows a spinner for (a subscription update).</summary>
@@ -123,11 +130,13 @@ public sealed class SideSubRow : SideRow
     // Tile hues shared with the settings menu; a subscription keeps its colour across restarts.
     private static readonly string[] Tints = ["V2TileBlue", "V2TileGreen", "V2TilePurple", "V2TileAmber", "V2TileTeal", "V2TileRed"];
 
-    public SideSubRow(SubItemModel sub, BusyState busy)
+    public SideSubRow(SubItemModel sub, BusyState busy, bool updateFailed = false)
     {
         Sub = sub;
         Busy = busy;
-        var name = sub.Remarks?.Trim() ?? string.Empty;
+        UpdateFailed = updateFailed;
+        DisplayName = NameOf(sub.Item);
+        var name = DisplayName;
         var letter = name.FirstOrDefault(char.IsLetterOrDigit);
         Monogram = letter == default ? "?" : char.ToUpper(letter, CultureInfo.CurrentCulture).ToString();
         var hash = 0;
@@ -139,14 +148,24 @@ public sealed class SideSubRow : SideRow
 
         var updated = sub.Item.UpdateTime > 0 ? DateTimeOffset.FromUnixTimeSeconds(sub.Item.UpdateTime).LocalDateTime : (DateTime?)null;
         var age = updated.HasValue ? DateTime.Now - updated.Value : (TimeSpan?)null;
-        IsFresh = age < TimeSpan.FromDays(1);
-        IsStale = age >= TimeSpan.FromDays(1);
-        Info = $"{L.ServerCount(sub.Count)} · {Fmt.SubUpdated(sub.Item)}";
-        Freshness = age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
+        IsFresh = !updateFailed && age < TimeSpan.FromDays(1);
+        IsStale = !updateFailed && age >= TimeSpan.FromDays(1);
+        Info = $"{L.ServerCount(sub.Count)} · {(updateFailed ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(sub.Item))}";
+        Freshness = updateFailed ? L.SubUpdateFailedTip : age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
         Usage = SubUsage.From(SubInfoManager.Instance.Get(sub.Id));
     }
 
+    /// <summary>
+    /// The name to show: v2rayN's "import_sub" placeholder and an empty name read as the link's host, so an
+    /// existing row from v2rayN stays (it may be a real subscription) but gets a readable title.
+    /// </summary>
+    public static string NameOf(SubItem? item) => (item == null ? null : SubInfoManager.ReadableName(item)) ?? L.NewSubscription;
+
     public SubItemModel Sub { get; }
+    public string DisplayName { get; }
+
+    /// <summary>The last update brought no servers: the provider's site was unreachable or the link is wrong.</summary>
+    public bool UpdateFailed { get; }
 
     /// <summary>Traffic and expiry the provider reported; null keeps the plain two-line row.</summary>
     public SubUsage? Usage { get; }
@@ -158,20 +177,25 @@ public sealed class SideSubRow : SideRow
     public bool IsFresh { get; }
     public bool IsStale { get; }
     public string Freshness { get; }
-    public override string ToString() => Sub.Remarks;
+    public override string ToString() => DisplayName;
 }
 
-public sealed class SideActionRow(SideActionKind kind, string title, string subtitle, string? targetId = null) : SideRow
+public sealed class SideActionRow(SideActionKind kind, string title, string subtitle, string? targetId = null, PingState? ping = null) : SideRow
 {
     public SideActionKind Kind { get; } = kind;
     public string Title { get; } = title;
     public string Subtitle { get; } = subtitle;
     public string? TargetId { get; } = targetId;
+
+    /// <summary>Set on the fastest-server row: with nothing tested yet, clicking it runs the ping.</summary>
+    public PingState? Ping { get; } = ping;
     public bool IsFastest => Kind == SideActionKind.Fastest;
     public override string ToString() => Title;
     public bool IsBack => Kind == SideActionKind.Back;
     public bool IsAdd => Kind == SideActionKind.AddSubscription;
-    public bool IsRefresh => Kind == SideActionKind.UpdateAll;
+    public bool IsRefresh => Kind is SideActionKind.UpdateAll or SideActionKind.UpdateSub;
+    public bool IsClearSearch => Kind == SideActionKind.ClearSearch;
+    public bool IsBrowse => Kind == SideActionKind.BrowseCountries;
 }
 
 /// <summary>
@@ -194,6 +218,21 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private readonly Dictionary<string, BusyState> _subBusy = [];
 
     public BusyState SubBusy(string? id) => _subBusy.TryGetValue(id ?? string.Empty, out var b) ? b : _subBusy[id ?? string.Empty] = new BusyState();
+
+    // Subscriptions whose last update in this session brought nothing; cleared by the next one that works.
+    private readonly HashSet<string> _failedSubs = [];
+
+    /// <summary>Records an update of <paramref name="tried"/>: the ones in <paramref name="failed"/> get the failed state.</summary>
+    public void SetUpdateResults(IEnumerable<string> tried, IEnumerable<string> failed)
+    {
+        var before = _failedSubs.ToHashSet();
+        _failedSubs.ExceptWith(tried);
+        _failedSubs.UnionWith(failed);
+        if (!_failedSubs.SetEquals(before))
+        {
+            QueueRebuild();
+        }
+    }
 
     public BulkObservableCollection<SideRow> Rows { get; } = [];
 
@@ -223,7 +262,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
             .Subscribe(t =>
             {
                 Ping.IsTesting = t.testing;
-                Ping.Label = t.testing ? string.Format(L.PingProgress, t.done, t.total) : L.TestPing;
+                // Figure spaces keep "9/40" as wide as "10/40", so the button does not twitch on every result.
+                Ping.Label = t.testing ? string.Format(L.PingProgress, t.done.ToString().PadLeft(t.total.ToString().Length, '\u2007'), t.total) : L.TestPing;
+                Ping.Progress = t.testing ? string.Format(L.FindProgress, t.done, t.total) : string.Empty;
             });
 
         this.WhenAnyValue(x => x.Tab, x => x.Search, x => x.OpenedSub)
@@ -263,6 +304,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
         await _profiles.PingProfilesAsync(_pingScope);
     }
+
+    /// <summary>Starts a ping of every server in the list; does nothing while a run is already going.</summary>
+    public Task PingAllAsync() => Ping.IsTesting ? Task.CompletedTask : _profiles.PingProfilesAsync(_profiles.ProfileItems.ToList());
 
     /// <summary>Opens the Countries tab with only this country expanded; returns its row.</summary>
     public SideCountryRow? RevealCountry(string code)
@@ -332,11 +376,12 @@ public sealed partial class SidebarViewModel : ReactiveObject
                     || (WorldMap.Instance.Get(CountryResolver.Resolve(m.Remarks))?.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
                 .ToList();
             _pingScope = found;
-            rows.Add(new SideHeaderRow($"{L.SearchResults} ({found.Count})", found.Count > 0 ? Ping : null));
+            rows.Add(new SideHeaderRow(Counted(L.SearchResults, found.Count), found.Count > 0 ? Ping : null));
             rows.AddRange(ByPing(found).Take(400).Select(m => new SideServerRow(m, true, false)));
             if (found.Count == 0)
             {
-                rows.Add(new SideHintRow(L.NothingFound));
+                rows.Add(new SideHintRow(L.NothingFoundServers));
+                rows.Add(new SideActionRow(SideActionKind.ClearSearch, L.ClearSearch, string.Empty));
             }
         }
         else
@@ -358,7 +403,11 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
 
         Rows.ReplaceRange(rows);
+        Rebuilt?.Invoke();
     }
+
+    /// <summary>Raised after the rows were replaced; the list puts keyboard focus back on the same row.</summary>
+    public event Action? Rebuilt;
 
     private void BuildFavorites(List<SideRow> rows, List<ProfileItemModel> all)
     {
@@ -373,8 +422,8 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
         var fastest = all.Concat(_profiles.FavoriteItems).Where(m => m.Delay > 0).MinBy(m => m.Delay);
         rows.Add(fastest != null
-            ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.ServerName(fastest)} · {L.Ms(fastest.Delay)}", fastest.IndexId)
-            : new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone));
+            ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.ServerName(fastest)} · {L.Ms(fastest.Delay)}", fastest.IndexId, Ping)
+            : new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone, ping: Ping));
 
         // Recent connections, Proton-style: the last few servers, newest first, unless they are favorites already.
         var byId = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).ToDictionary(g => g.Key, g => g.First());
@@ -392,11 +441,13 @@ public sealed partial class SidebarViewModel : ReactiveObject
 
         var favorites = _profiles.FavoriteItems.ToList();
         _pingScope = favorites;
-        rows.Add(new SideHeaderRow($"{L.TabFavorites} ({favorites.Count})", favorites.Count > 0 ? Ping : null));
+        rows.Add(new SideHeaderRow(Counted(L.TabFavorites, favorites.Count), favorites.Count > 0 ? Ping : null));
         rows.AddRange(favorites.Select(m => new SideServerRow(m, true, false)));
         if (favorites.Count == 0)
         {
             rows.Add(new SideHintRow(L.FavoritesEmpty));
+            // The Favorites tab has no servers to star; Countries does.
+            rows.Add(new SideActionRow(SideActionKind.BrowseCountries, L.BrowseCountries, string.Empty));
         }
     }
 
@@ -410,7 +461,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
             .ToList();
 
         _pingScope = all;
-        rows.Add(new SideHeaderRow($"{L.TabCountries} ({groups.Count(g => g.Code.IsNotEmpty())})", all.Count > 0 ? Ping : null));
+        rows.Add(new SideHeaderRow(Counted(L.TabCountries, groups.Count(g => g.Code.IsNotEmpty())), all.Count > 0 ? Ping : null));
         foreach (var (code, name, items) in groups)
         {
             var expanded = _expanded.Contains(code);
@@ -425,6 +476,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
             rows.Add(new SideHintRow(_profiles.AllServersCount == 0 ? L.NoServersYet : L.SubEmpty));
         }
     }
+
+    // One count format for every list header; no "(0)" above an empty-state hint.
+    private static string Counted(string title, int n) => n > 0 ? $"{title} · {n}" : title;
 
     // Picking a server is mostly picking the fastest one: tested servers first, quickest on top,
     // the rest keep their own order.
@@ -443,7 +497,8 @@ public sealed partial class SidebarViewModel : ReactiveObject
         if (OpenedSub != null)
         {
             _pingScope = all;
-            rows.Add(new SideActionRow(SideActionKind.Back, OpenedSub.Remarks, $"{L.ServerCount(all.Count)} · {Fmt.SubUpdated(OpenedSub.Item)}", OpenedSub.Id));
+            var updated = _failedSubs.Contains(OpenedSub.Id) ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(OpenedSub.Item);
+            rows.Add(new SideActionRow(SideActionKind.Back, SideSubRow.NameOf(OpenedSub.Item), $"{L.ServerCount(all.Count)} · {updated}", OpenedSub.Id));
             if (all.Count > 0)
             {
                 rows.Add(new SideHeaderRow(L.TabServers, Ping));
@@ -452,6 +507,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
             if (all.Count == 0)
             {
                 rows.Add(new SideHintRow(L.SubEmpty));
+                rows.Add(new SideActionRow(SideActionKind.UpdateSub, L.UpdateSubscription, string.Empty, OpenedSub.Id));
             }
             return;
         }
@@ -465,7 +521,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
             rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, L.SubsEmptyAction));
             return;
         }
-        rows.Add(new SideHeaderRow($"{L.TabSubscriptions} · {subs.Count}", subsUpdate: SubsUpdate));
-        rows.AddRange(subs.Select(sub => new SideSubRow(sub, SubBusy(sub.Id))));
+        rows.Add(new SideHeaderRow(Counted(L.TabSubscriptions, subs.Count), subsUpdate: SubsUpdate));
+        rows.AddRange(subs.Select(sub => new SideSubRow(sub, SubBusy(sub.Id), _failedSubs.Contains(sub.Id))));
     }
 }

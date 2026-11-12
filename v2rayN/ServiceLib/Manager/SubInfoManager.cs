@@ -116,7 +116,10 @@ public sealed class SubInfoManager
         }
 
         var minutes = panel.UpdateIntervalHours * 60;
-        if (minutes > 0 && (item.AutoUpdateInterval <= 0 || item.AutoUpdateInterval == info.PanelInterval))
+        // The panel's interval fills an empty field once, and is followed while the field still holds it.
+        // A 0 the user set after that means "never": scheduled updates are what drops connections, so it must stick.
+        var untouched = item.AutoUpdateInterval <= 0 && info.PanelInterval <= 0;
+        if (minutes > 0 && (untouched || item.AutoUpdateInterval == info.PanelInterval))
         {
             if (item.AutoUpdateInterval != minutes)
             {
@@ -146,6 +149,16 @@ public sealed class SubInfoManager
     {
         var host = Utils.TryUri(url?.Trim() ?? string.Empty)?.Host;
         return host.IsNullOrEmpty() ? null : host;
+    }
+
+    /// <summary>
+    /// The name to show: the subscription's own, or the host of its link while the name is empty or v2rayN's
+    /// placeholder. Null when there is neither.
+    /// </summary>
+    public static string? ReadableName(SubItem item)
+    {
+        var remarks = item.Remarks?.Trim();
+        return remarks.IsNullOrEmpty() || remarks == ImportedName ? FallbackName(item.Url) : remarks;
     }
 
     /// <summary>

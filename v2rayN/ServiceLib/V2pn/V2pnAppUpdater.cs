@@ -402,13 +402,11 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             {
                 DeleteFile(file);
             }
-            foreach (var folder in (string[])["stage", "backup"])
+            // On Windows AmazTool cannot delete its own previous file while it runs.
+            var leftover = Path.Combine(Utils.GetBaseDirectory(), ".v2pn-update");
+            if (Directory.Exists(leftover))
             {
-                var path = Path.Combine(PendingDir, folder);
-                if (Directory.Exists(path))
-                {
-                    Directory.Delete(path, true);
-                }
+                Directory.Delete(leftover, true);
             }
             if (FailedVersion() is { } failed && new SemanticVersion(failed) <= current)
             {

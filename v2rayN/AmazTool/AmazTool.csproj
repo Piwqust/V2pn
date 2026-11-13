@@ -25,6 +25,11 @@
 		</EmbeddedResource>
 	</ItemGroup>
 
+	<!-- V2pn: the installer's stage/swap/rollback is covered by ServiceLib.Tests. -->
+	<ItemGroup>
+		<InternalsVisibleTo Include="ServiceLib.Tests" />
+	</ItemGroup>
+
 	<Target Name="RemoveAotSatelliteOutputs" AfterTargets="ComputeFilesToPublish" Condition="'$(PublishAot)' == 'true'">
 		<ItemGroup>
 			<ResolvedFileToPublish Remove="@(ResolvedFileToPublish)" 

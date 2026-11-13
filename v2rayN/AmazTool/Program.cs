@@ -28,6 +28,11 @@ internal static class Program
                     HandleRebootAsync();
                     break;
 
+                // V2pn: "install <package> <pid of the V2pn that asked>".
+                case "install" when args.Length >= 2:
+                    InstallFlow.Run(args[1], args.Length > 2 && int.TryParse(args[2], out var pid) ? pid : null);
+                    break;
+
                 case "help":
                 case "--help":
                 case "-h":
@@ -40,16 +45,16 @@ internal static class Program
                     // Default behavior: handle as upgrade data
                     // Maintain backward compatibility with existing usage pattern
                     var argData = Uri.UnescapeDataString(string.Join(" ", args));
-                    HandleUpgrade(argData);
+                    // V2pn: the staged install with rollback replaces v2rayN's unpack-in-place.
+                    InstallFlow.Run(argData, null);
                     break;
             }
         }
         catch (Exception ex)
         {
             // Global exception handling
+            // V2pn: started without a console, so there is no key to wait for.
             Console.WriteLine($"An error occurred: {ex.Message}");
-            Console.WriteLine("Press any key to exit...");
-            Console.ReadKey();
         }
     }
 

@@ -1,0 +1,26 @@
+{
+    "source":  "https://github.com/2dust/v2rayN-core-bin",
+    "commit":  "bc603e1ee3c6eb90f16fe9123f7df80bc02f8435",
+    "targets":  {
+                    "win-x64":  {
+                                    "url":  "https://github.com/2dust/v2rayN-core-bin/raw/bc603e1ee3c6eb90f16fe9123f7df80bc02f8435/v2rayN-windows-64.zip",
+                                    "size":  82841355,
+                                    "sha256":  "94c2b1b7bf8045593fc82b4235fd995db5009034809649a22083dbdc5263d4c1"
+                                },
+                    "win-arm64":  {
+                                      "url":  "https://github.com/2dust/v2rayN-core-bin/raw/bc603e1ee3c6eb90f16fe9123f7df80bc02f8435/v2rayN-windows-arm64.zip",
+                                      "size":  75455109,
+                                      "sha256":  "850b9ec53c1e752cd02acdb3a1dce27f796f2d0f829d583d3ba07297fbb2e5db"
+                                  },
+                    "osx-x64":  {
+                                    "url":  "https://github.com/2dust/v2rayN-core-bin/raw/bc603e1ee3c6eb90f16fe9123f7df80bc02f8435/v2rayN-macos-64.zip",
+                                    "size":  81814614,
+                                    "sha256":  "6bddda03fa96fe354cf28d4130b28e204099a4039c54dd034f02bb1483363cc3"
+                                },
+                    "osx-arm64":  {
+                                      "url":  "https://github.com/2dust/v2rayN-core-bin/raw/bc603e1ee3c6eb90f16fe9123f7df80bc02f8435/v2rayN-macos-arm64.zip",
+                                      "size":  76805193,
+                                      "sha256":  "acac6da2ffc1b9b47d52c628b7c8fe16d124474e543e8a54919877dd3bc104d7"
+                                  }
+                }
+}

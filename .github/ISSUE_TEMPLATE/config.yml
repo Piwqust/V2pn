@@ -1,9 +1,6 @@
 blank_issues_enabled: false
 
 contact_links:
-  - name: Discussions / 讨论区
-    url: https://github.com/2dust/v2rayN/discussions
-    about: 使用问题或需要帮助请前往 Discussions。
-  - name: Wiki / 使用说明
+  - name: Вопрос о протоколах и ядрах / Protocols and cores
     url: https://github.com/2dust/v2rayN/wiki
-    about: 查看常见问题和使用文档。
+    about: V2pn построен на v2rayN. Как устроены Xray, sing-box и форматы серверов, описано в вики v2rayN.

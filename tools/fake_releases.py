@@ -1,16 +1,16 @@
-"""A stand-in for github.com/<repo>/releases, for testing V2pn updates without publishing.
+"""A stand-in for a V2pn update source (github.com/<repo>/releases or a mirror), for testing
+updates without publishing anything.
 
-Serves packages from a folder laid out as <root>/<version>/V2pn-windows-x64.zip(.sha256).
-Point a V2pn at it with the environment variable V2PN_RELEASES_URL=http://127.0.0.1:<port>/releases.
+Serves a folder laid out as <root>/<version>/<files of that release>, the way tools/release.ps1
+writes dist/release/<version>/. A V2pn built with -p:V2pnUpdateSources=http://127.0.0.1:<port>/releases
+(tools/update-e2e.ps1 does that) looks here instead of GitHub.
 
-  /releases/latest                      302 to /releases/tag/v<newest>, as GitHub does
-  /releases/download/v<ver>/<file>      the package or its checksum
-  /releases/api                         the JSON list the beta channel reads
+  /releases/latest/download/<file>      <file> of the newest version (release.json, release.json.sig)
+  /releases/download/v<ver>/<file>      a package of that version
 
 Usage: python tools/fake_releases.py <root> [port]   (port 0 picks a free one; the chosen port is printed)
 """
 
-import json
 import os
 import sys
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
@@ -24,29 +24,20 @@ def versions(root):
 class Handler(BaseHTTPRequestHandler):
     root = "."
 
-    def log_message(self, fmt, *args):
-        sys.stdout.write("%s %s\n" % (self.command, self.path))
+    def log_message(self, format, *args):
+        print("%s %s" % (self.command, self.path))
         sys.stdout.flush()
 
     def do_GET(self):
         path = self.path.replace("\\", "/").split("?")[0]
         all_versions = versions(self.root)
-        if path == "/releases/latest" and all_versions:
-            self.send_response(302)
-            self.send_header("Location", "http://%s/releases/tag/v%s" % (self.headers["Host"], all_versions[-1]))
-            self.end_headers()
-            return
-        if path == "/releases/api":
-            body = json.dumps([
-                {"tag_name": "v" + v, "prerelease": False, "body": "V2pn " + v}
-                for v in reversed(all_versions)
-            ]).encode()
-            self.reply(200, body, "application/json")
-            return
-        prefix = "/releases/download/v"
-        if path.startswith(prefix):
-            version, _, name = path[len(prefix):].partition("/")
-            file = os.path.join(self.root, version, os.path.basename(name))
+        version = name = None
+        if path.startswith("/releases/latest/download/") and all_versions:
+            version, name = all_versions[-1], path[len("/releases/latest/download/"):]
+        elif path.startswith("/releases/download/v"):
+            version, _, name = path[len("/releases/download/v"):].partition("/")
+        if version and name:
+            file = os.path.join(self.root, os.path.basename(version), os.path.basename(name))
             if os.path.isfile(file):
                 with open(file, "rb") as f:
                     self.reply(200, f.read(), "application/octet-stream")

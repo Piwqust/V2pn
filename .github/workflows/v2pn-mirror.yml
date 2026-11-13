@@ -1,0 +1,59 @@
+name: V2pn mirror
+
+# When a release is published, copies its files to your own server, laid out the way V2pn asks
+# for them (see tools/publish-mirror.ps1). Does nothing until it is configured:
+#
+#   variable MIRROR_TARGET    user@host:/absolute/path/of/the/mirror/root
+#   secret   MIRROR_SSH_KEY   a private key that may write there
+#   variable MIRROR_KNOWN_HOSTS (recommended)   the server's line from `ssh-keyscan host`
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Published release to copy, e.g. v1.2.3
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  mirror:
+    if: vars.MIRROR_TARGET != ''
+    runs-on: ubuntu-latest
+    env:
+      TAG: ${{ inputs.tag || github.event.release.tag_name }}
+      MIRROR_TARGET: ${{ vars.MIRROR_TARGET }}
+    steps:
+      - name: Download the release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release download "$TAG" --repo "$GITHUB_REPOSITORY" --dir release
+          test -s release/release.json && test -s release/release.json.sig
+          (cd release && for f in *.sha256; do sha256sum -c "$f"; done)
+
+      - name: Upload
+        env:
+          MIRROR_SSH_KEY: ${{ secrets.MIRROR_SSH_KEY }}
+          MIRROR_KNOWN_HOSTS: ${{ vars.MIRROR_KNOWN_HOSTS }}
+        run: |
+          login="${MIRROR_TARGET%%:*}"
+          root="${MIRROR_TARGET#*:}"
+          root="${root%/}"
+          mkdir -p ~/.ssh
+          printf '%s\n' "$MIRROR_SSH_KEY" > ~/.ssh/mirror && chmod 600 ~/.ssh/mirror
+          if [ -n "$MIRROR_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$MIRROR_KNOWN_HOSTS" > ~/.ssh/known_hosts
+            opts="-i $HOME/.ssh/mirror"
+          else
+            echo "::warning::MIRROR_KNOWN_HOSTS is not set; the server's identity is not checked."
+            opts="-i $HOME/.ssh/mirror -o StrictHostKeyChecking=accept-new"
+          fi
+          ssh $opts "$login" "mkdir -p '$root/download/$TAG' '$root/latest/download'"
+          scp -q $opts release/* "$login:$root/download/$TAG/"
+          # "latest" switches last, signature first; see tools/publish-mirror.ps1.
+          ssh $opts "$login" "cp '$root/download/$TAG/release.json.sig' '$root/latest/download/release.json.sig.new' && cp '$root/download/$TAG/release.json' '$root/latest/download/release.json.new' && mv '$root/latest/download/release.json.sig.new' '$root/latest/download/release.json.sig' && mv '$root/latest/download/release.json.new' '$root/latest/download/release.json'"
+          echo "The mirror now serves $TAG." >> "$GITHUB_STEP_SUMMARY"

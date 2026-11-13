@@ -1,34 +1,27 @@
-name: Feature 请求
-description: "为这个项目提出一个建议"
-title: "[Feature request]: "
-labels: ['enhancement']
-body: 
-- type: input
-  id: problem
-  attributes:
-    label: 相关问题
-    description: "清楚而简洁地描述问题是什么。"
-    placeholder: "当我想要……时，软件不能……"
-  validations:
-    required: true
-- type: input
-  id: way-to-solve
-  attributes:
-    label: 描述你希望的解决方案
-    description: "你希望发生什么"
-  validations:
-    required: true
-- type: input
-  id: instead
-  attributes:
-    label: 描述你所考虑的替代方案
-  validations:
-    required: false
-- type: checkboxes
-  id: "issues"
-  attributes:
-    label: "我确认已查询历史issues"
-    description: "否则请查询后提出"
-    options:
-      - label: 是
-        required: true
+name: Предложение / Feature request
+description: Чего не хватает в V2pn. What V2pn is missing.
+title: "[Idea]: "
+labels: ["enhancement"]
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Какую задачу это решает / What problem does it solve
+      description: Что вы пытались сделать и что помешало.
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Как это могло бы работать / How it could work
+    validations:
+      required: true
+
+  - type: textarea
+    id: other
+    attributes:
+      label: Где это уже сделано хорошо / Where it is done well
+      description: Другое приложение, снимок экрана, ссылка. Необязательно.
+    validations:
+      required: false

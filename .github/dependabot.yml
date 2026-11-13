@@ -1,11 +1,9 @@
 version: 2
 updates:
+  # V2pn's own workflows. NuGet packages are not listed on purpose: their versions live in
+  # v2rayN's Directory.Packages.props and arrive with merges from v2rayN
+  # (tools/sync-upstream.ps1); bumping them here would conflict with every merge.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "daily"
-
-  - package-ecosystem: "nuget"
-    directory: "/v2rayN"
-    schedule:
-      interval: "daily"
+      interval: "monthly"

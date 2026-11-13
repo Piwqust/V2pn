@@ -1,80 +1,106 @@
-# v2rayN
+# V2pn
 
-### A GUI client for Windows, Linux and macOS. Support [Xray](https://github.com/XTLS/Xray-core) and [sing-box](https://github.com/SagerNet/sing-box) and [others](https://github.com/2dust/v2rayN/wiki/List-of-supported-cores)
+VPN-клиент для Windows и macOS с простым интерфейсом. Внутри работает [v2rayN](https://github.com/2dust/v2rayN) с ядрами Xray, sing-box и mihomo, поэтому подходят те же серверы и подписки: VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard.
 
-[![CodeFactor](https://www.codefactor.io/repository/github/2dust/v2rayn/badge)](https://www.codefactor.io/repository/github/2dust/v2rayn)
-[![Release](https://img.shields.io/github/v/release/2dust/v2rayN?logo=github&label=Release)](https://github.com/2dust/v2rayN/releases)
-[![Downloads](https://img.shields.io/github/downloads/2dust/v2rayN/latest/total?logo=github&label=Downloads)](https://github.com/2dust/v2rayN/releases)
-[![Telegram](https://img.shields.io/badge/Telegram-Chat-26A5E4?logo=telegram)](https://t.me/v2rayn)
- 
-[![Windows](https://img.shields.io/badge/Windows-supported-0078D6?logo=windows)](https://github.com/2dust/v2rayN) 
-[![Linux](https://img.shields.io/badge/Linux-supported-FCC624?logo=linux&logoColor=000)](https://github.com/2dust/v2rayN) 
-[![macOS](https://img.shields.io/badge/macOS-supported-000000?logo=apple)](https://github.com/2dust/v2rayN) 
-[![GPG Signed](https://img.shields.io/badge/GPG-signed-4B32C3?logo=gnuprivacyguard)](https://github.com/2dust/v2rayN)
+[English](README.en.md)
 
+![Главное окно V2pn](docs/images/main.png)
 
----
+## Скачать
 
-## Download / 下载
+| Система | Файл |
+| --- | --- |
+| Windows 10 и 11, x64 | [V2pn-windows-x64.zip](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip) |
+| Windows 11, ARM64 | [V2pn-windows-arm64.zip](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip) |
+| macOS 13.6 и новее, Apple silicon (M1 и новее) | [V2pn-macos-arm64.dmg](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-arm64.dmg) |
+| macOS 13.6 и новее, Intel | [V2pn-macos-x64.dmg](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-x64.dmg) |
 
-Download the latest release here:
+Все версии и список изменений: [Releases](https://github.com/Piwqust/V2pn/releases), [CHANGELOG.md](CHANGELOG.md).
 
-在这里下载最新版本：
+### Windows
 
-[https://github.com/2dust/v2rayN/releases](https://github.com/2dust/v2rayN/releases)
+1. Распакуйте архив в любую папку, куда у вас есть право записи, например `C:\Users\<вы>\V2pn`. В `Program Files` не кладите: настройки и серверы хранятся рядом с программой.
+2. Запустите `V2pn.exe`.
+3. Windows может показать синее окно «Система Windows защитила ваш компьютер»: у приложения нет платной подписи разработчика. Нажмите «Подробнее», затем «Выполнить в любом случае».
 
+Устанавливать .NET не нужно, он внутри.
 
-> [!TIP]
-> v2rayN is the desktop version. For the mobile version, please visit the v2rayNG \
-> v2rayN 是电脑版，手机版请访问 v2rayNG
->
-> https://github.com/2dust/v2rayNG
+### macOS
 
----
+1. Откройте `.dmg` и перетащите V2pn в «Программы».
+2. Запустите V2pn. macOS скажет, что не может проверить разработчика: приложение не подписано платным сертификатом Apple.
+3. Откройте «Системные настройки» → «Конфиденциальность и безопасность», прокрутите вниз и нажмите «Всё равно открыть» рядом с V2pn. Это нужно один раз.
 
-## Documentation / 使用文档
+Если пункта «Всё равно открыть» нет, выполните в Терминале:
 
-Read the Wiki for usage guides and configuration details.
-
-请阅读 Wiki 获取使用说明和配置教程。
-
-[https://github.com/2dust/v2rayN/wiki](https://github.com/2dust/v2rayN/wiki)
-
----
-
-## Supported Platforms / 支持平台
-
-| Platform / 平台 | x64 | x86 | arm64 | riscv64 | loong64 |
-| --- | --- | --- | --- | --- | --- |
-| Windows | ✅ | ✅ | ✅ | - | - |
-| Linux | ✅ | - | ✅ | ✅ | ✅ |
-| macOS | ✅ | - | ✅ | - | - |
-
-Minimum OS requirements: [Release files introduction](https://github.com/2dust/v2rayN/wiki/Release-files-introduction) / 最低系统要求：[发布文件介绍](https://github.com/2dust/v2rayN/wiki/Release-files-introduction)
-
----
-
-## GPG Verification / GPG 签名校验
-
-Release files are signed with GPG to verify authenticity and integrity, helping prevent mirror, ISP, or CDN hijacking.
-
-发布文件已使用 GPG 签名，可用于校验文件真实性与完整性，预防镜像站、运营商或 CDN 劫持。
-
-### Fingerprint / 公钥指纹
-
-```text
-7694 5E9F 3E9A 168F 8070 F195 805D 661C
-134D FAF6 8903 C199 463C 31E5 AE90 3AE0
+```bash
+xattr -cr /Applications/V2pn.app
 ```
 
----
+Настройки и серверы на Mac лежат в `~/Library/Application Support/V2pn`.
 
-## Community / 社区
+Сборка для macOS новая. Если что-то работает не так, [напишите](https://github.com/Piwqust/V2pn/issues/new/choose).
 
-Telegram Group / Telegram 群组：
+## Как начать
 
-[https://t.me/v2rayN](https://t.me/v2rayN)
+1. Скопируйте ссылку подписки у своего провайдера VPN (или ссылку сервера вида `vless://…`).
+2. В V2pn нажмите «Вставить из буфера».
+3. Выберите сервер в списке слева или на карте и нажмите «Подключиться».
 
-Telegram Channel / Telegram 频道：
+Под кнопкой два выбора:
 
-[https://t.me/github_2dust](https://t.me/github_2dust)
+- **Прокси или VPN.** «Прокси» включает системный прокси: через сервер идут браузеры и программы, которые его используют. «VPN» заворачивает весь трафик компьютера, включая игры; на Windows для этого нужны права администратора, на macOS пароль.
+- **Что идёт через сервер.** «Российские сайты напрямую», «Только заблокированное» или «Всё через VPN».
+
+## Чем V2pn отличается от v2rayN
+
+- **Статус не обманывает.** «Подключено» появляется после успешной проверки соединения, а не после нажатия кнопки. Если ядро упало, V2pn перезапускает его; если не вышло пять раз подряд, отключается и пишет причину.
+- **Интернет не пропадает после выхода.** Системный прокси включается только при работающем ядре и снимается при выходе, выключении компьютера и аварийном завершении. Прокси, который поставила другая программа, V2pn не трогает.
+- **Занятый порт.** Если порт держит другая программа, V2pn не запускается поверх неё и говорит об этом.
+- **Подписки.** Обновление подписки не сбрасывает избранное, недавние серверы и результаты проверки пинга. Трафик и срок подписки видны в списке.
+- **Список серверов.** Серверы сгруппированы по странам, серии вида «AUTO 1/34» свёрнуты в одну строку, есть избранное, недавние и «Самый быстрый».
+- **Маршруты для России** одной кнопкой, без редактора правил.
+- **Обновления.** V2pn обновляет себя сам, см. ниже.
+- **Оформление:** темы, цвет акцента, скругления.
+
+Всё, что умеет v2rayN (редактор маршрутов, DNS, свои конфигурации ядер, резервные копии), осталось и открывается переключателем «Расширенные настройки».
+
+## Обновления
+
+V2pn раз в шесть часов проверяет, вышла ли новая версия, скачивает её в фоне и ставит при следующем запуске или по кнопке «Перезапустить и обновить». Работающее соединение обновление не обрывает. Автоматическую установку можно выключить в окне «Обновления».
+
+- Каждый релиз подписан ключом, открытая часть которого встроена в приложение. Пакет без этой подписи, изменённый или недокачанный, V2pn не установит, откуда бы он ни был скачан.
+- Если новая версия не запустилась, установщик возвращает предыдущую.
+- Настройки, серверы и ядра обновление не трогает.
+- Ядра (Xray, sing-box, mihomo) и списки сайтов обновляются отдельно в том же окне.
+
+Как выпускаются версии и как устроена проверка: [docs/V2PN-RELEASES.md](docs/V2PN-RELEASES.md).
+
+## Сборка из исходников
+
+Нужен [.NET SDK 10](https://dot.net).
+
+```bash
+git clone --recursive https://github.com/Piwqust/V2pn.git
+```
+
+```bash
+dotnet build V2pn/v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj -c Release
+```
+
+```bash
+dotnet test --project V2pn/v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
+```
+
+Сборка из исходников показывает версию с пометкой `-dev` и сама не обновляется. Пакеты, как в релизе, собирают `tools/release.ps1` (Windows) и `tools/package-macos.sh` (macOS).
+
+Документация для разработчиков:
+
+- [docs/V2PN-UX.md](docs/V2PN-UX.md): как устроен интерфейс и почему;
+- [docs/V2PN-RELEASES.md](docs/V2PN-RELEASES.md): релизы, обновления, зеркало, слияние с v2rayN.
+
+## Лицензия и благодарности
+
+[GPL-3.0](LICENSE), как и v2rayN. V2pn — форк [2dust/v2rayN](https://github.com/2dust/v2rayN): подключение, протоколы, подписки и работа с ядрами написаны его авторами. Ядра: [Xray-core](https://github.com/XTLS/Xray-core), [sing-box](https://github.com/SagerNet/sing-box), [mihomo](https://github.com/MetaCubeX/mihomo). Значки: [Lucide](https://lucide.dev).
+
+V2pn не продаёт и не предоставляет серверы. Нужна своя подписка или свой сервер.

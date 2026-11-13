@@ -74,11 +74,25 @@ $testSummary = ''
 
 # merge.ours.driver is set for this merge only: the views marked merge=ours keep V2pn's version
 # against v2rayN, while merges of V2pn's own branches must still bring their view changes in.
-git -c merge.ours.driver=true merge --no-ff --no-edit -m "Merge v2rayN $toVersion ($short) into V2pn" $target 2>&1 | Out-Host
-if ($LASTEXITCODE -ne 0) {
-    $conflicts = @(git diff --name-only --diff-filter=U)
+$mergeMessage = "Merge v2rayN $toVersion ($short) into V2pn"
+$previousPreference = $ErrorActionPreference
+$ErrorActionPreference = 'Continue'
+git -c merge.ours.driver=true merge --no-ff --no-commit $target 2>&1 | Out-Host
+$ErrorActionPreference = $previousPreference
+
+# V2pn has its own GitHub workflows (v2pn-*.yml) and removed v2rayN's: they would publish v2rayN's
+# packages from this repository, one of them to winget. Whatever v2rayN changed or added there is
+# dropped again, which also settles the "deleted by us, modified by them" conflicts.
+$foreign = @(git ls-files -- .github/workflows | Sort-Object -Unique | Where-Object { (Split-Path -Leaf $_) -notlike 'v2pn-*' })
+foreach ($file in $foreign) { git rm -q -f -- $file 2>$null | Out-Null }
+
+$conflicts = @(git diff --name-only --diff-filter=U)
+if ($conflicts) {
     $status = 'conflicts'
     $exitCode = 2
+}
+else {
+    Invoke-Git commit --quiet --no-edit -m $mergeMessage
 }
 
 if ($exitCode -eq 0) {

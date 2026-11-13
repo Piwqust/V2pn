@@ -61,3 +61,15 @@
 #*.PDF   diff=astextplain
 #*.rtf   diff=astextplain
 #*.RTF   diff=astextplain
+
+###############################################################################
+# V2pn: files of the repository's front page and GitHub setup that V2pn rewrote.
+# In a merge from v2rayN they keep V2pn's version. The "ours" driver is defined
+# only for that merge (tools/sync-upstream.ps1), never in the repository config.
+###############################################################################
+README.md                     merge=ours
+.github/dependabot.yml        merge=ours
+.github/ISSUE_TEMPLATE/**     merge=ours
+
+# Shell scripts must keep LF: they run on macOS.
+*.sh                          text eol=lf

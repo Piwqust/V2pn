@@ -406,3 +406,23 @@ FodyWeavers.xsd
 # V2pn asset generator
 tools/mapgen/node_modules/
 dist/
+
+# V2pn: what a running copy writes next to itself (settings, servers and subscription links,
+# logs, downloaded updates). Never commit these: they hold your subscriptions.
+guiConfigs/
+guiLogs/
+guiTemps/
+guiBackups/
+binConfigs/
+.v2pn-update/
+*.db
+*.db-shm
+*.db-wal
+
+# V2pn: local agent worktrees and test output
+.claude/
+v2rayN/TestResults/
+
+# V2pn: a signing key never belongs in the repository
+*.pem
+*-signing-key*

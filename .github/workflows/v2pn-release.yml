@@ -1,7 +1,12 @@
 name: V2pn release
 
-# Pushing a tag made by tools/release.ps1 -Tag (v1.2.3) builds the Windows packages and
-# publishes the GitHub release that every installed V2pn checks for updates.
+# Pushing a tag made by tools/release.ps1 -Tag (v1.2.3) builds the Windows and macOS packages,
+# signs the release manifest and opens a DRAFT release. Look it over and press Publish: only a
+# published release is what installed copies of V2pn see as the newest version.
+#
+# Needs one secret, V2PN_SIGNING_KEY: the PEM text of the release signing key (the private half
+# of a key listed in V2pnUpdateKeys, v2rayN/Directory.Build.targets). Put it in an environment
+# called "release" and require a reviewer there, so nothing is signed without a person.
 on:
   push:
     tags:
@@ -9,25 +14,31 @@ on:
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to (re)build, e.g. v1.2.3
+        description: Existing tag to build again, e.g. v1.2.3 (only while its release is still a draft)
         required: true
         type: string
 
+concurrency:
+  group: v2pn-release-${{ inputs.tag || github.ref_name }}
+  cancel-in-progress: false
+
 permissions:
-  contents: write
+  contents: read
+
+env:
+  TAG: ${{ inputs.tag || github.ref_name }}
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
 
 jobs:
-  release:
+  windows:
     runs-on: windows-latest
-    env:
-      TAG: ${{ inputs.tag || github.ref_name }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
-          ref: ${{ inputs.tag || github.ref }}
+          ref: ${{ env.TAG }}
           submodules: recursive
-          fetch-depth: 0
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -35,27 +46,102 @@ jobs:
           dotnet-version: 10.0.x
 
       - name: Test
-        shell: pwsh
         run: dotnet test --project v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
 
       - name: Build packages
         shell: pwsh
-        run: ./tools/release.ps1 -Version $env:TAG.TrimStart('v') -Arch x64,arm64
+        run: ./tools/release.ps1 -Version $env:TAG.TrimStart('v') -Arch x64,arm64 -NoManifest -OutDir packages
 
-      - name: Publish release
-        shell: pwsh
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: packages-windows
+          path: packages/V2pn-*
+          if-no-files-found: error
+
+  macos:
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Build packages
+        run: |
+          chmod +x tools/package-macos.sh
+          tools/package-macos.sh "${TAG#v}" arm64 packages
+          tools/package-macos.sh "${TAG#v}" x64 packages
+
+      - name: Upload packages
+        uses: actions/upload-artifact@v7
+        with:
+          name: packages-macos
+          path: packages/V2pn-*
+          if-no-files-found: error
+
+  draft:
+    name: Sign and open the draft release
+    needs: [windows, macos]
+    runs-on: ubuntu-latest
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          ref: ${{ env.TAG }}
+          fetch-depth: 0
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Download packages
+        uses: actions/download-artifact@v8
+        with:
+          pattern: packages-*
+          path: packages
+          merge-multiple: true
+
+      - name: Refuse to touch a published release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          $version = $env:TAG.TrimStart('v')
-          $notes = git tag -l --format='%(contents)' $env:TAG
-          if (-not $notes) { $notes = "V2pn $version" }
-          $notesFile = Join-Path $env:RUNNER_TEMP 'notes.md'
-          Set-Content -Path $notesFile -Value $notes -Encoding utf8
-          $files = Get-ChildItem "dist/release/$version" -File | ForEach-Object { $_.FullName }
-          gh release view $env:TAG *> $null
-          if ($LASTEXITCODE -eq 0) {
-            gh release upload $env:TAG @files --clobber
-          } else {
-            gh release create $env:TAG @files --title "V2pn $version" --notes-file $notesFile --verify-tag
-          }
+          if gh release view "$TAG" --json isDraft --jq .isDraft 2>/dev/null | grep -q false; then
+            echo "::error::Release $TAG is already published. Installed copies may have its packages; replacing them would break their checks. Release a new version instead."
+            exit 1
+          fi
+
+      - name: Write and sign the manifest
+        env:
+          V2PN_SIGNING_KEY: ${{ secrets.V2PN_SIGNING_KEY }}
+        run: |
+          if [ -z "$V2PN_SIGNING_KEY" ]; then
+            echo "::error::The secret V2PN_SIGNING_KEY is not set (environment 'release'). See docs/V2PN-RELEASES.md."
+            exit 1
+          fi
+          dotnet run tools/manifest.cs -- packages "${TAG#v}" --repo .
+          ls -la packages
+
+      - name: Open the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version="${TAG#v}"
+          git tag -l --format='%(contents)' "$TAG" > notes.md
+          [ -s notes.md ] || echo "V2pn $version" > notes.md
+          if gh release view "$TAG" > /dev/null 2>&1; then
+            gh release upload "$TAG" packages/* --clobber
+          else
+            gh release create "$TAG" packages/* --draft --verify-tag --title "V2pn $version" --notes-file notes.md
+          fi
+          echo "Draft release $TAG is ready: check it, then press Publish." >> "$GITHUB_STEP_SUMMARY"

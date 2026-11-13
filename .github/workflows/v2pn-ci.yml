@@ -1,0 +1,109 @@
+name: V2pn CI
+
+# Every push and pull request: the tests and a Release build on Windows and macOS, then the
+# macOS app is packaged, started on a real Mac and photographed, because nobody on the project
+# has one. The screenshot and the app's logs are attached to the run.
+on:
+  push:
+    branches: [v2pn]
+  pull_request:
+    branches: [v2pn]
+  workflow_dispatch:
+
+concurrency:
+  group: v2pn-ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+env:
+  DOTNET_NOLOGO: 1
+  DOTNET_CLI_TELEMETRY_OPTOUT: 1
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Test
+        run: dotnet test --project v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
+
+      - name: Build
+        run: dotnet build v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj -c Release -v q -nologo
+
+  macos-app:
+    name: macOS app starts
+    runs-on: macos-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          submodules: recursive
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: 10.0.x
+
+      - name: Package
+        env:
+          V2PN_NO_CORES: 1
+        run: |
+          chmod +x tools/package-macos.sh
+          tools/package-macos.sh 0.0.1 arm64 out
+
+      - name: Start the app from the zip, as an update would unpack it
+        run: |
+          mkdir run
+          ditto -x -k out/V2pn-macos-arm64.zip run
+          test -x run/V2pn.app/Contents/MacOS/V2pn
+          open run/V2pn.app
+          sleep 30
+          mkdir -p evidence
+          screencapture -x evidence/macos-main-window.png || true
+          if ! pgrep -x V2pn > /dev/null; then
+            echo "::error::V2pn is not running 30 seconds after it was opened"
+            exit 1
+          fi
+          echo "V2pn is running: $(pgrep -x V2pn)"
+
+      - name: Quit the app and check it leaves nothing behind
+        run: |
+          osascript -e 'tell application "V2pn" to quit' || true
+          for i in $(seq 1 20); do pgrep -x V2pn > /dev/null || break; sleep 1; done
+          if pgrep -x V2pn > /dev/null; then
+            echo "::warning::V2pn did not quit within 20 seconds"
+            pkill -x V2pn || true
+          fi
+          networksetup -getwebproxy Ethernet 2>/dev/null || true
+
+      - name: Collect logs
+        if: always()
+        run: |
+          mkdir -p evidence
+          cp -R "$HOME/Library/Application Support/V2pn/guiLogs" evidence/ 2>/dev/null || true
+          ls -la "$HOME/Library/Application Support/V2pn" 2>/dev/null || true
+
+      - name: Upload screenshot and logs
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: macos-app
+          path: |
+            evidence
+            out/*.zip
+          if-no-files-found: warn

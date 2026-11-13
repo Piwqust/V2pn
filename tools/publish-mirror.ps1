@@ -87,8 +87,10 @@ if ($Target) {
     Invoke-Checked 'ssh' @($login, "mkdir -p '$root/download/v$Version' '$root/latest/download'")
     Write-Host "Uploading to ${login}:$root/download/v$Version ..."
     Invoke-Checked 'scp' (@('-q') + $files.FullName + @("${login}:$root/download/v$Version/"))
-    # "latest" changes only now, with the packages already in place. The signature goes first: a
-    # new manifest with the old signature would fail the check, the other way round only delays.
+    # "latest" changes only now, with the packages already in place. Both files are copied next to
+    # their final names first and then renamed, so the moment in which a V2pn can read a manifest
+    # and a signature that do not belong together is two renames long; it would refuse that pair
+    # and ask again later.
     Invoke-Checked 'ssh' @($login, "cp '$root/download/v$Version/release.json.sig' '$root/latest/download/release.json.sig.new' && cp '$root/download/v$Version/release.json' '$root/latest/download/release.json.new' && mv '$root/latest/download/release.json.sig.new' '$root/latest/download/release.json.sig' && mv '$root/latest/download/release.json.new' '$root/latest/download/release.json'")
     Write-Host "Done. The mirror now serves V2pn $Version."
 }

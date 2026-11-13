@@ -116,6 +116,11 @@ public static partial class L
     public static string Disconnect => T("Disconnect", "Отключиться");
     public static string ServerIp => T("Server", "Сервер");
     public static string Protocol => T("Protocol", "Протокол");
+    public static string ExitAddress => T("Your address online", "Ваш адрес в сети");
+    public static string ServerSource => T("Subscription", "Подписка");
+    public static string OwnServer => T("Added by hand", "Добавлен вручную");
+    public static string RailUpdate => T("Update", "Обновить");
+    public static string CoreUpdatesBadge => T("Core updates", "Обновления ядер");
     public static string SessionTraffic => T("Session traffic", "Трафик за сессию");
     public static string CurrentSpeed => T("Current speed", "Текущая скорость");
     public static string NoServer => T("No server selected", "Сервер не выбран");
@@ -246,6 +251,9 @@ public static partial class L
 
     public static string PingProgress => T("Stop · {0}/{1}", "Стоп · {0}/{1}");
     public static string TabServers => T("Servers", "Серверы");
+    public static string SeriesHeader => T("Auto-select", "Автовыбор");
+    public static string SeriesOnline => T("{0} of {1} online", "{0} из {1} на связи");
+    public static string SeriesMember => T("Server {0}", "Сервер {0}");
     public static string ConnectFastestIn => T("Connect to the fastest server here", "Подключиться к самому быстрому здесь");
     public static string UpdateSubscription => T("Update subscription", "Обновить подписку");
     public static string ClearSearch => T("Clear search", "Очистить поиск");

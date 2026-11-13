@@ -160,10 +160,25 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         btnCheck.IsVisible = _hasServer;
         chipCheck.IsVisible = _hasServer && ViewModel?.AvailabilityDelay is -1 or > 0;
         RefreshFindWorking();
+        // By default the card answers what a person asks: which address sites see now, and whose server
+        // this is. The server's own address, port and transport are for the advanced view.
+        var advanced = _config.UiItem.V2pnSettingsAdvanced;
+        // The address sites see is known only when an IP lookup service is set in Settings (off by default,
+        // so nothing extra is asked of a third party); without it the cell names the server itself.
+        var ip = ViewModel?.AvailabilityIp;
+        var exitKnown = !advanced && item != null && _state != ProtectionState.Unprotected
+            && ViewModel?.AvailabilityDelay > 0 && ip.IsNotEmpty();
+        lblStatServer.Text = exitKnown ? L.ExitAddress : L.ServerIp;
+        lblStatProtocol.Text = advanced ? L.Protocol : L.ServerSource;
         if (item == null)
         {
             txtStatServer.Text = "—";
             txtStatProtocol.Text = "—";
+        }
+        else if (!advanced)
+        {
+            txtStatServer.Text = exitKnown ? ip : ServerNames.TrimLeadingSymbols(CountryResolver.ServerName(item));
+            txtStatProtocol.Text = SourceName(item);
         }
         else
         {
@@ -192,6 +207,38 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         barPing.Width = delay > 0 ? Math.Clamp(48 * (1 - (delay / 1000.0)), 6, 48) : 0;
         // An empty track next to "—" reads as a loader that never finishes.
         trackPing.IsVisible = delay > 0;
+    }
+
+    // Subscription names by id. Looked up once each: the card is refreshed every second and a half.
+    private readonly Dictionary<string, string> _sourceNames = [];
+
+    private string SourceName(ProfileItem item)
+    {
+        if (item.Subid.IsNullOrEmpty())
+        {
+            return L.OwnServer;
+        }
+        if (_sourceNames.TryGetValue(item.Subid, out var name))
+        {
+            return name;
+        }
+        _sourceNames[item.Subid] = "…";
+        _ = LoadSourceNameAsync(item.Subid);
+        return "…";
+    }
+
+    private async Task LoadSourceNameAsync(string subId)
+    {
+        try
+        {
+            var sub = await AppManager.Instance.GetSubItem(subId);
+            _sourceNames[subId] = sub == null ? L.OwnServer : ViewModels.SideSubRow.NameOf(sub);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(StatusBarView), ex);
+            _sourceNames.Remove(subId);
+        }
     }
 
     private void UpdateClock()

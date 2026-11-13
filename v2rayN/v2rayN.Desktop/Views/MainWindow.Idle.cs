@@ -12,7 +12,10 @@ public partial class MainWindow
     private const int MaxPendingNotices = 3;
 
     private bool _seen = true;
-    private readonly Queue<(object Content, NotificationType Type, TimeSpan Ttl)> _pendingNotices = new();
+    private readonly Queue<(object Content, NotificationType Type, TimeSpan Ttl, DateTime At)> _pendingNotices = new();
+
+    // News like "Connecting · Germany" is stale a moment later; a warning or an error is worth reading late.
+    private static readonly TimeSpan _noticeFreshFor = TimeSpan.FromSeconds(15);
 
     // The state a minimized or hidden window comes back in, and the bounds it restores to when maximized.
     private WindowState _restoreState = WindowState.Normal;
@@ -77,7 +80,7 @@ public partial class MainWindow
             {
                 _pendingNotices.Dequeue();
             }
-            _pendingNotices.Enqueue((content, type, ttl));
+            _pendingNotices.Enqueue((content, type, ttl, DateTime.Now));
             return;
         }
         _manager.Show(content, type, ttl);
@@ -87,7 +90,12 @@ public partial class MainWindow
     {
         while (_seen && _manager != null && _pendingNotices.Count > 0)
         {
-            var (content, type, ttl) = _pendingNotices.Dequeue();
+            var (content, type, ttl, at) = _pendingNotices.Dequeue();
+            var news = type is NotificationType.Information or NotificationType.Success;
+            if (news && DateTime.Now - at > _noticeFreshFor)
+            {
+                continue;
+            }
             _manager.Show(content, type, ttl);
         }
     }

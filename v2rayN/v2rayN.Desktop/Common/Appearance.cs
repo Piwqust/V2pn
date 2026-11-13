@@ -71,8 +71,15 @@ public static class Appearance
     ];
 
     // Brushes that carry the brand colour; they take the chosen accent's hue.
+    // Switches that are on and selected text or list items belong to the same family: with a green accent
+    // a blue switch looked like a second, unrelated accent. The focus ring stays blue on purpose.
     private static readonly HashSet<string> AccentKeys =
-        ["V2Accent", "V2AccentHover", "V2AccentSoft", "V2AccentFill", "V2AccentFillHover", "V2AccentShadow"];
+    [
+        "V2Accent", "V2AccentHover", "V2AccentSoft", "V2AccentFill", "V2AccentFillHover", "V2AccentShadow",
+        "ToggleSwitchContainerCheckedDefaultBackground", "ToggleSwitchContainerCheckedPointeroverBackground",
+        "ToggleSwitchContainerCheckedPressedBackground", "ToggleSwitchContainerCheckedDisabledBackground",
+        "ComboBoxItemSelectedBackground", "TextBoxSelectionBackground",
+    ];
 
     // State and identity colours that are muted on purpose (dark map fills, the selected row, folder
     // tiles) fall under ToPalette's saturation test and would take the palette's hue: under Mocha the

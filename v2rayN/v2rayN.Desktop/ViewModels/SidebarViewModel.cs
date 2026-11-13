@@ -64,17 +64,41 @@ public sealed class SideHintRow(string text) : SideRow
 
 public sealed class SideServerRow : SideRow
 {
-    public SideServerRow(ProfileItemModel model, bool showSubscription, bool indent)
+    /// <param name="memberOf">Set for a row inside an opened pool: it is titled by its number.</param>
+    public SideServerRow(ProfileItemModel model, bool showSubscription, bool indent, ServerSeries? memberOf = null)
     {
         Model = model;
         Code = CountryResolver.Resolve(model.Remarks);
         Flag = V2pnConverters.Flag(Code);
-        Title = CountryResolver.ServerName(model);
         var country = WorldMap.Instance.Get(Code)?.Name;
         var protocol = V2pnConverters.ProtocolName.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string;
-        Subtitle = showSubscription && model.SubRemarks.IsNotEmpty()
-            ? model.SubRemarks
-            : string.Join(" · ", new[] { country, protocol }.Where(t => t.IsNotEmpty()));
+        var sub = showSubscription && model.SubRemarks.IsNotEmpty() ? model.SubRemarks : null;
+        var (place, detail) = ServerNames.SplitPlace(ServerNames.TrimLeadingSymbols(CountryResolver.ServerName(model)), Code);
+        if (memberOf != null && ServerNames.TryParseCounter(model.Remarks, out _, out var number, out _))
+        {
+            // "AUTO — Обход БС · 15/31" under the pool's own row: the number is all that tells them apart.
+            Title = string.Format(L.SeriesMember, number);
+            Subtitle = string.Join(" · ", new[] { protocol, model.Network }.Where(t => t.IsNotEmpty()));
+        }
+        else if (detail != null)
+        {
+            // "Germany (2) - Vless TCP 1/GBIT" does not fit a row. Under its country's row the variant is
+            // what matters; in a flat list the place leads and the variant goes below.
+            Title = indent ? detail : place;
+            // Under "Germany" a plain "Germany" says nothing, so the subscription goes there instead;
+            // "Germany (2)" does say which one, and stays.
+            Subtitle = !indent ? string.Join(" · ", new[] { detail, sub }.Where(t => t.IsNotEmpty()))
+                : place.Any(char.IsDigit) ? place
+                : sub ?? protocol ?? string.Empty;
+        }
+        else
+        {
+            Title = place;
+            // A name that is the country itself ("Швеция") needs no "Швеция" under it.
+            var namesCountry = Code.IsNotEmpty()
+                && string.Equals(CountryResolver.Resolve(CountryResolver.StripFlag(model.Remarks)), Code, StringComparison.OrdinalIgnoreCase);
+            Subtitle = sub ?? string.Join(" · ", new[] { namesCountry ? null : country, protocol }.Where(t => t.IsNotEmpty()));
+        }
         Indent = indent;
         Monogram = V2pnConverters.ProtocolMonogram.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string ?? string.Empty;
     }
@@ -111,17 +135,35 @@ public sealed class SideCountryRow : SideRow
         Info = L.ServerCount(servers.Count);
     }
 
+    /// <summary>
+    /// A provider's pool shown the way a country is: one row that opens into its servers and connects to
+    /// the quickest. <see cref="Code"/> holds the pool's key, which only has to be unique.
+    /// </summary>
+    public SideCountryRow(ServerSeries series, IReadOnlyList<ProfileItemModel> servers, bool expanded)
+        : this(series.Key, series.Name, servers, expanded)
+    {
+        Flag = V2pnConverters.Flag(series.Code);
+        IsSeries = true;
+        // Once anything was tested, how many answer says more than how many there are.
+        var tested = servers.Count(s => s.Delay != 0);
+        Info = tested > 0
+            ? string.Format(L.SeriesOnline, servers.Count(s => s.Delay > 0), servers.Count)
+            : L.ServerCount(servers.Count);
+    }
+
+    public bool IsSeries { get; }
+
     public int BestDelay { get; }
     public string? BestId { get; }
 
     public string Code { get; }
     public string Name { get; }
-    public Bitmap? Flag { get; }
+    public Bitmap? Flag { get; private init; }
     public bool HasFlag => Flag != null;
     public IReadOnlyList<ProfileItemModel> Servers { get; }
     public bool IsExpanded { get; }
     public bool HasActive { get; }
-    public string Info { get; }
+    public string Info { get; private init; }
     public override string ToString() => Name;
 }
 
@@ -451,9 +493,29 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
     }
 
+    /// <summary>
+    /// The provider's pools ("AUTO · 1/34" … "34/34"), each as one row that opens into its servers.
+    /// Without this a subscription of two pools and sixteen countries is eighty rows, sixty-five of them
+    /// with the same name cut off before the number.
+    /// </summary>
+    private void AddSeries(List<SideRow> rows, List<ServerSeries> series)
+    {
+        foreach (var pool in series)
+        {
+            var items = ByPing(pool.Members).ToList();
+            var expanded = _expanded.Contains(pool.Key);
+            rows.Add(new SideCountryRow(pool, items, expanded));
+            if (expanded)
+            {
+                rows.AddRange(items.Select(m => new SideServerRow(m, false, true, pool)));
+            }
+        }
+    }
+
     private void BuildCountries(List<SideRow> rows, List<ProfileItemModel> all)
     {
-        var groups = all
+        var (series, rest) = ServerNames.SplitSeries(all);
+        var groups = ServerNames.DistinctConnections(rest)
             .GroupBy(m => CountryResolver.Resolve(m.Remarks) ?? string.Empty)
             .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: ByPing(g).ToList()))
             .OrderBy(g => g.Code.IsNullOrEmpty() ? 1 : 0)
@@ -461,7 +523,13 @@ public sealed partial class SidebarViewModel : ReactiveObject
             .ToList();
 
         _pingScope = all;
-        rows.Add(new SideHeaderRow(Counted(L.TabCountries, groups.Count(g => g.Code.IsNotEmpty())), all.Count > 0 ? Ping : null));
+        if (series.Count > 0)
+        {
+            // Pools cross borders, so they are not listed under a country; the ping button moves up with them.
+            rows.Add(new SideHeaderRow(Counted(L.SeriesHeader, series.Count), Ping));
+            AddSeries(rows, series);
+        }
+        rows.Add(new SideHeaderRow(Counted(L.TabCountries, groups.Count(g => g.Code.IsNotEmpty())), all.Count > 0 && series.Count == 0 ? Ping : null));
         foreach (var (code, name, items) in groups)
         {
             var expanded = _expanded.Contains(code);
@@ -503,7 +571,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
             {
                 rows.Add(new SideHeaderRow(L.TabServers, Ping));
             }
-            rows.AddRange(ByPing(all).Select(m => new SideServerRow(m, false, false)));
+            var (series, rest) = ServerNames.SplitSeries(all);
+            AddSeries(rows, series);
+            rows.AddRange(ByPing(rest).Select(m => new SideServerRow(m, false, false)));
             if (all.Count == 0)
             {
                 rows.Add(new SideHintRow(L.SubEmpty));

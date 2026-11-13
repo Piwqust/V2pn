@@ -98,14 +98,21 @@ public static class V2pnAutostart
             bool carriesArg;
             if (admin)
             {
+                if (ownTask != Global.AutoRunName || !TaskXml(ownTask).Contains(Global.AutostartArg))
+                {
+                    AutoStartupHandler.AutoStartTaskService(Global.AutoRunName, exe, "", Global.AutostartArg);
+                }
+                // The old entries go only once the new task is really there: a failed create must not
+                // leave V2pn with no sign-in entry at all.
+                if (!TaskNames().Contains(Global.AutoRunName))
+                {
+                    Logging.SaveLog("V2pn: the sign-in task could not be created; older entries are kept");
+                    return;
+                }
                 RemoveRunEntries((_, _) => true);
                 foreach (var task in tasks.Where(t => t != Global.AutoRunName))
                 {
                     AutoStartupHandler.AutoStartTaskService(task, "", "");
-                }
-                if (ownTask != Global.AutoRunName || !TaskXml(ownTask).Contains(Global.AutostartArg))
-                {
-                    AutoStartupHandler.AutoStartTaskService(Global.AutoRunName, exe, "", Global.AutostartArg);
                 }
                 carriesArg = true;
             }

@@ -1,4 +1,4 @@
-<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+﻿<ResourceDictionary xmlns="https://github.com/avaloniaui" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <!--
         V2pn tokens. Colours live in theme dictionaries so the whole app, the main window and
         the v2rayN dialogs alike, follows the theme picked in Appearance. Reference them with
@@ -22,7 +22,7 @@
             <SolidColorBrush x:Key="V2Ink" Color="#ECECF1" />
             <SolidColorBrush x:Key="V2InkSoft" Color="#C9C9D3" />
             <SolidColorBrush x:Key="V2Muted" Color="#9B9BA8" />
-            <SolidColorBrush x:Key="V2Faint" Color="#6C6C78" />
+            <SolidColorBrush x:Key="V2Faint" Color="#8A8A96" />
             <SolidColorBrush x:Key="V2Accent" Color="#FF3D1F" />
             <SolidColorBrush x:Key="V2AccentHover" Color="#FF5A3F" />
             <SolidColorBrush x:Key="V2AccentSoft" Color="#33FF3D1F" />
@@ -144,21 +144,21 @@
             <SolidColorBrush x:Key="MenuItemSeparatorBackground" Color="#2C2C36" />
             <SolidColorBrush x:Key="MenuItemForeground" Color="#E4E4EA" />
             <SolidColorBrush x:Key="MenuItemExpandIconForeground" Color="#6C6C78" />
-            <SolidColorBrush x:Key="MenuItemInputGestureTextForeground" Color="#6C6C78" />
+            <SolidColorBrush x:Key="MenuItemInputGestureTextForeground" Color="#8A8A96" />
             <SolidColorBrush x:Key="NotificationCardBackground" Color="#1F1F27" />
             <SolidColorBrush x:Key="NotificationCardBorderBrush" Color="#34343F" />
             <BoxShadows x:Key="NotificationCardBoxShadows">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 16 36 -10 #99000000</BoxShadows>
             <SolidColorBrush x:Key="V2ToastInfo" Color="#5C9DF0" />
             <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#245C9DF0" />
-            <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches blue when on.  -->
+            <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches take the accent when on.  -->
             <SolidColorBrush x:Key="TextBoxDefaultBackground" Color="#17171D" />
             <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#30303A" />
             <SolidColorBrush x:Key="TextBoxPointeroverBackground" Color="#1A1A21" />
             <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#41414D" />
             <SolidColorBrush x:Key="TextBoxPressedBackground" Color="#17171D" />
             <SolidColorBrush x:Key="TextBoxFocusBorderBrush" Color="#5C9DF0" />
-            <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#6C6C78" />
-            <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#665C9DF0" />
+            <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#858591" />
+            <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#66FF3D1F" />
             <SolidColorBrush x:Key="ComboBoxSelectorBackground" Color="#17171D" />
             <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#30303A" />
             <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBackground" Color="#1A1A21" />
@@ -172,15 +172,15 @@
             <BoxShadows x:Key="ComboBoxPopupBoxShadow">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 14 30 -8 #8C000000</BoxShadows>
             <SolidColorBrush x:Key="ComboBoxItemPointeroverBackground" Color="#14FFFFFF" />
             <SolidColorBrush x:Key="ComboBoxItemFocusBackground" Color="#14FFFFFF" />
-            <SolidColorBrush x:Key="ComboBoxItemSelectedBackground" Color="#265C9DF0" />
+            <SolidColorBrush x:Key="ComboBoxItemSelectedBackground" Color="#26FF3D1F" />
             <SolidColorBrush x:Key="ComboBoxItemSelectedForeground" Color="#ECECF1" />
             <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedDefaultBackground" Color="#42424E" />
             <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPointeroverBackground" Color="#4C4C59" />
             <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPressedBackground" Color="#474754" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDefaultBackground" Color="#3D84EB" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPointeroverBackground" Color="#5293F0" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPressedBackground" Color="#336FC9" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDisabledBackground" Color="#663D84EB" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDefaultBackground" Color="#FF3D1F" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPointeroverBackground" Color="#FF5A3F" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPressedBackground" Color="#E0331A" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDisabledBackground" Color="#66FF3D1F" />
             <BoxShadows x:Key="ToggleSwitchIndicatorBoxShadow">0 1 1 0 #40000000, 0 2 6 0 #4D000000</BoxShadows>
             <BoxShadows x:Key="V2SwitchTrackShadow">inset 0 1 2 0 #4D000000</BoxShadows>
             <BoxShadows x:Key="V2InputFocusShadow">0 0 0 3 #335C9DF0</BoxShadows>
@@ -202,7 +202,7 @@
             <SolidColorBrush x:Key="V2Ink" Color="#16161B" />
             <SolidColorBrush x:Key="V2InkSoft" Color="#34343F" />
             <SolidColorBrush x:Key="V2Muted" Color="#666673" />
-            <SolidColorBrush x:Key="V2Faint" Color="#8E8E9A" />
+            <SolidColorBrush x:Key="V2Faint" Color="#777783" />
             <SolidColorBrush x:Key="V2Accent" Color="#E8391B" />
             <SolidColorBrush x:Key="V2AccentHover" Color="#D4300F" />
             <SolidColorBrush x:Key="V2AccentSoft" Color="#1FE8391B" />
@@ -330,15 +330,15 @@
             <BoxShadows x:Key="NotificationCardBoxShadows">0 2 4 0 #1416161B, 0 16 36 -10 #3316161B</BoxShadows>
             <SolidColorBrush x:Key="V2ToastInfo" Color="#3A7BD5" />
             <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#1A3A7BD5" />
-            <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches blue when on.  -->
+            <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches take the accent when on.  -->
             <SolidColorBrush x:Key="TextBoxDefaultBackground" Color="#F5F6F8" />
             <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#2116161B" />
             <SolidColorBrush x:Key="TextBoxPointeroverBackground" Color="#F1F2F5" />
             <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#3316161B" />
             <SolidColorBrush x:Key="TextBoxPressedBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="TextBoxFocusBorderBrush" Color="#3A7BD5" />
-            <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#8E8E9A" />
-            <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#553A7BD5" />
+            <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#73737F" />
+            <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#55E8391B" />
             <SolidColorBrush x:Key="ComboBoxSelectorBackground" Color="#F5F6F8" />
             <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#2116161B" />
             <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBackground" Color="#F1F2F5" />
@@ -352,15 +352,15 @@
             <BoxShadows x:Key="ComboBoxPopupBoxShadow">0 2 4 0 #1416161B, 0 14 30 -8 #2E16161B</BoxShadows>
             <SolidColorBrush x:Key="ComboBoxItemPointeroverBackground" Color="#0D16161B" />
             <SolidColorBrush x:Key="ComboBoxItemFocusBackground" Color="#0D16161B" />
-            <SolidColorBrush x:Key="ComboBoxItemSelectedBackground" Color="#1A3A7BD5" />
+            <SolidColorBrush x:Key="ComboBoxItemSelectedBackground" Color="#1AE8391B" />
             <SolidColorBrush x:Key="ComboBoxItemSelectedForeground" Color="#16161B" />
             <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedDefaultBackground" Color="#D9DBE1" />
             <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPointeroverBackground" Color="#CFD2D9" />
             <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPressedBackground" Color="#C3C6CE" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDefaultBackground" Color="#2F74DC" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPointeroverBackground" Color="#3F82E4" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPressedBackground" Color="#2662BD" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDisabledBackground" Color="#662F74DC" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDefaultBackground" Color="#E8391B" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPointeroverBackground" Color="#F04A2D" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPressedBackground" Color="#C82F15" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDisabledBackground" Color="#66E8391B" />
             <BoxShadows x:Key="ToggleSwitchIndicatorBoxShadow">0 1 2 0 #3316161B, 0 2 6 0 #1F16161B</BoxShadows>
             <BoxShadows x:Key="V2SwitchTrackShadow">inset 0 1 2 0 #1A16161B</BoxShadows>
             <BoxShadows x:Key="V2InputFocusShadow">0 0 0 3 #2B3A7BD5</BoxShadows>

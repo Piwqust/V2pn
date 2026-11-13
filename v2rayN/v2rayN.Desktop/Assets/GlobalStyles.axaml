@@ -20,13 +20,8 @@
         <Setter Property="Foreground" Value="{DynamicResource ButtonDefaultTertiaryForeground}" />
     </Style>
 
-    <Style Selector="TextBox">
-        <Setter Property="ScrollViewer.AllowAutoHide" Value="False" />
-    </Style>
-
-    <Style Selector="ScrollViewer">
-        <Setter Property="AllowAutoHide" Value="False" />
-    </Style>
+    <!--  V2pn: scrollbars are thin overlays that show while scrolling or under the pointer. v2rayN kept
+          them always on, with arrow buttons, which no other part of the window resembles.  -->
 
     <Style Selector="TabControl">
         <Setter Property="Theme" Value="{StaticResource V2TabControl}" />

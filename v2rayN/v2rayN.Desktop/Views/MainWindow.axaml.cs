@@ -166,6 +166,15 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.RoutingSettingCmd, v => v.menuRoutingSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RoutingSettingCmd, v => v.btnRoutingSettings).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.DNSSettingCmd, v => v.btnRailDns).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.DNSSettingCmd, v => v.menuDnsSetting).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.OptionSettingCmd, v => v.menuSettingsMain).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.SubUpdateCmd, v => v.btnRailUpdate).DisposeWith(disposables);
+            // The switch lives in the settings window; this window is active again once that one closes.
+            Activated += (_, _) => ApplySimpleMode();
+            this.WhenAnyValue(v => v.ViewModel.ShowClashUI)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => ApplySimpleMode())
+                .DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.FullConfigTemplateCmd, v => v.menuFullConfigTemplate).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.GlobalHotkeySettingCmd, v => v.menuGlobalHotkeySetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RebootAsAdminCmd, v => v.menuRebootAsAdmin).DisposeWith(disposables);
@@ -656,7 +665,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 var region = string.Equals(code, "EU", StringComparison.OrdinalIgnoreCase) ? L.Europe : null;
                 txtHeaderTitle.Text = country?.Name ?? region ?? name;
                 var transport = string.Join(" · ", new[] { item.ConfigType.ToString(), item.StreamSecurity }.Where(t => t.IsNotEmpty()));
-                txtHeaderSubtitle.Text = country != null || region != null ? $"{name}  ·  {transport}" : transport;
+                var placed = country != null || region != null;
+                // "VLESS · tls" under the country is for those who asked for the advanced view.
+                txtHeaderSubtitle.Text = _config.UiItem.V2pnSettingsAdvanced
+                    ? placed ? $"{name}  ·  {transport}" : transport
+                    : placed ? name : item.ConfigType.ToString();
             }
 
             // No servers at all: the welcome card replaces the header, Connect, the mode bar and the
@@ -863,6 +876,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _ = Motion.Enter(pillState, dy: 0, ms: 180, scale: 0.96);
         }
         _pillKind = kind;
+        // The button says what a click does now: while the core is coming up it is still "connecting".
+        if (state != ProtectionState.Unprotected)
+        {
+            SetConnectLabel(starting || restarting ? L.StateConnecting : L.Disconnect);
+        }
         PaintVerdict(kind, state);
         // The title and the tray say "connected" only once the check has passed.
         RefreshTray(state, failed || faulted || kind == "checking" ? label : null);
@@ -887,6 +905,45 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _ = ConfigHandler.SaveConfig(_config);
         ShowToast(ToastKind.Warning, L.LanOpenToast);
     }
+
+    /// <summary>
+    /// With "Advanced settings" off, the window shows what a person needs to connect and nothing that
+    /// takes knowing v2ray: no server table, no Clash pages, no DNS tile, no config template. One switch
+    /// in Settings brings them all back.
+    /// </summary>
+    private void ApplySimpleMode()
+    {
+        var advanced = _config.UiItem.V2pnSettingsAdvanced;
+        btnRailDns.IsVisible = advanced;
+        menuPageTable.IsVisible = advanced;
+        menuFullConfigTemplate.IsVisible = advanced;
+        menuRegion.IsVisible = advanced;
+        // The Clash pages also need a core that has them; XAML binds that, this only takes them away.
+        if (!advanced)
+        {
+            menuPageProxies.IsVisible = false;
+            menuPageConnections.IsVisible = false;
+        }
+        else
+        {
+            var clash = ViewModel?.ShowClashUI == true;
+            menuPageProxies.IsVisible = clash;
+            menuPageConnections.IsVisible = clash;
+        }
+        if (_shownAdvanced == null)
+        {
+            _shownAdvanced = advanced;
+        }
+        else if (advanced != _shownAdvanced)
+        {
+            _shownAdvanced = advanced;
+            // The header's second line and the status card show less in the simple view.
+            _ = RefreshConnectionAsync();
+            RefreshActivePing();
+        }
+    }
+
+    private bool? _shownAdvanced;
 
     private static string Shorten(string text, int max) => text.Length <= max ? text : text[..(max - 1)] + "…";
 
@@ -1726,7 +1783,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     /// <summary>The country's bolt: the fastest tested server, or a ping of the country first when none is.</summary>
     private async Task ConnectFastestInAsync(SideCountryRow row)
     {
-        if (row.BestId.IsNotEmpty())
+        // A provider's pool is "pick the best one for me", and its members come and go by the hour: of
+        // thirty-four, a third may answer. An old result is not trusted there; the pool is tested first.
+        if (row.BestId.IsNotEmpty() && !row.IsSeries)
         {
             await ConnectToAsync(row.BestId);
             return;
@@ -2672,7 +2731,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var state = V2pnAppUpdater.Instance.State;
         var app = state is EV2pnUpdateState.Available or EV2pnUpdateState.Downloading or EV2pnUpdateState.Ready;
         btnNewUpdate.IsVisible = app || ViewModel?.BlNewUpdate == true;
-        txtNewUpdate.Text = state == EV2pnUpdateState.Ready ? L.UpdBadgeReady : app ? L.UpdBadgeAvailable : L.NewVersion;
+        // Without an app update the badge is about the cores (Xray, sing-box); "new version" read as V2pn's.
+        txtNewUpdate.Text = state == EV2pnUpdateState.Ready ? L.UpdBadgeReady : app ? L.UpdBadgeAvailable : L.CoreUpdatesBadge;
     }
 
     private void ShowToast(ToastKind kind, string message)

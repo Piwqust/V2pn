@@ -75,6 +75,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         SubEditWindow.SubscriptionAdded += subId => _ = UpdateAddedSubscriptionAsync(subId);
         menuRegionalPresetsRussia.Icon = new Image { Source = V2pnConverters.Flag("RU"), Width = 16, Height = 12 };
         menuRegionalPresetsIran.Icon = new Image { Source = V2pnConverters.Flag("IR"), Width = 16, Height = 12 };
+        if (OperatingSystem.IsMacOS())
+        {
+            // The Mac's own window buttons, top left, instead of V2pn's on the right; the menu button
+            // moves clear of them.
+            WindowDecorations = WindowDecorations.Full;
+            btnMinimize.IsVisible = btnMaximize.IsVisible = btnCloseWindow.IsVisible = false;
+            btnAppMenu.Margin = new Thickness(78, 0, 2, 0);
+        }
         btnMinimize.Click += (_, _) => WindowState = WindowState.Minimized;
         btnMaximize.Click += (_, _) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
         btnCloseWindow.Click += (_, _) => Close();
@@ -997,9 +1005,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return;
         }
-        // "Pick a server" and the administrator question for VPN mode need the window to be seen.
+        // "Pick a server" and the administrator question for VPN mode (the password prompt on macOS and
+        // Linux) need the window to be seen.
         var connect = CurrentState() == ProtectionState.Unprotected;
-        if (connect && (_config.IndexId.IsNullOrEmpty() || (Utils.IsWindows() && _config.UiItem.V2pnPreferTun && !status.AllowEnableTun())))
+        if (connect && (_config.IndexId.IsNullOrEmpty() || (_config.UiItem.V2pnPreferTun && !status.AllowEnableTun())))
         {
             ShowHideWindow(true);
         }
@@ -2282,9 +2291,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 }
                 break;
 
-            // Windows is signing out or shutting down. The cleanup is awaited before the window goes, or the
-            // process ends first and the system proxy keeps pointing at a port nobody serves.
-            case WindowCloseReason.ApplicationShutdown or WindowCloseReason.OSShutdown when Utils.IsWindows() && !e.IsProgrammatic:
+            // The system is signing out or shutting down, or the app is asked to quit (Cmd+Q, Dock > Quit on
+            // macOS). The cleanup is awaited before the window goes, or the process ends first: the system
+            // proxy keeps pointing at a port nobody serves and, without a job object, the core keeps running.
+            case WindowCloseReason.ApplicationShutdown or WindowCloseReason.OSShutdown when !e.IsProgrammatic:
                 e.Cancel = true;
                 _ = CleanUpForShutdownAsync();
                 break;
@@ -2351,7 +2361,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return;
         }
         _shutdownCleaning = true;
-        var hwnd = TryGetPlatformHandle()?.Handle ?? IntPtr.Zero;
+        var hwnd = Utils.IsWindows() ? TryGetPlatformHandle()?.Handle ?? IntPtr.Zero : IntPtr.Zero;
         if (hwnd != IntPtr.Zero)
         {
             WindowsShell.BlockShutdown(hwnd, L.ShutdownCleaning);
@@ -2403,7 +2413,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                     await AddServerViaClipboardAsync();
                     break;
 
-                case Key.S:
+                // The screen scan exists on Windows only.
+                case Key.S when Utils.IsWindows():
                     e.Handled = true;
                     await ScanScreenTaskAsync();
                     break;

@@ -34,6 +34,13 @@ public static class AutoStartupHandler
         }
         else if (Utils.IsMacOS())
         {
+            // V2pn: started from the disk image or a quarantine copy, the path will not exist at the next sign-in.
+            var exePath = Utils.GetExePath();
+            if (exePath.Contains("/AppTranslocation/") || exePath.StartsWith("/Volumes/"))
+            {
+                Logging.SaveLog("V2pn: this copy runs from a disk image; move it to Applications to start at sign-in");
+                return true;
+            }
             await ClearTaskOSX();
 
             if (config.GuiItem.AutoRun)
@@ -56,7 +63,9 @@ public static class AutoStartupHandler
         {
             return false;
         }
-        return autostartArg || !Utils.IsWindows() || !config.UiItem.V2pnAutostartArg;
+        // The Linux entry carries no argument. The macOS one always has (there was no V2pn for macOS
+        // before the argument existed); on Windows an entry from an older build may not.
+        return autostartArg || Utils.IsLinux() || (Utils.IsWindows() && !config.UiItem.V2pnAutostartArg);
     }
 
     /// <summary>The registry Run value: the quoted program and the sign-in argument.</summary>
@@ -365,7 +374,7 @@ public static class AutoStartupHandler
     <array>
         <string>/bin/sh</string>
         <string>-c</string>
-        <string>if ! pgrep -x ""{appName}"" > /dev/null; then ""{exePath}""; fi</string>
+        <string>if ! pgrep -x ""{appName}"" > /dev/null; then ""{exePath}"" {Global.AutostartArg}; fi</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

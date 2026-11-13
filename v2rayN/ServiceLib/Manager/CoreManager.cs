@@ -54,6 +54,8 @@ public class CoreManager
 
         if (Utils.IsNonWindows())
         {
+            // V2pn: no job object here, so a core outlives a V2pn that was force-quit or crashed.
+            V2pnConnection.StopLeftoverCores();
             var coreInfo = CoreInfoManager.Instance.GetCoreInfo();
             foreach (var it in coreInfo)
             {

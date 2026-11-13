@@ -16,6 +16,58 @@ public static class V2pnConnection
         !config.TunModeItem.EnableTun && config.SystemProxyItem.SysProxyType == ESysProxyType.ForcedClear;
 
     /// <summary>
+    /// Stops cores left running by a V2pn that was force-quit or crashed. Windows ends them with the
+    /// app (a job object); elsewhere they keep the local port, and the next connect would find it
+    /// busy. Only programs from V2pn's own bin folder are touched. A core started with sudo for VPN
+    /// mode cannot be stopped without the password; it is logged and left.
+    /// </summary>
+    public static void StopLeftoverCores()
+    {
+        var bin = Utils.GetBinPath(string.Empty);
+        if (bin.IsNullOrEmpty())
+        {
+            return;
+        }
+        foreach (var info in CoreInfoManager.Instance.GetCoreInfo())
+        {
+            foreach (var name in info.CoreExes ?? [])
+            {
+                Process[] running;
+                try
+                {
+                    running = Process.GetProcessesByName(name);
+                }
+                catch (Exception ex)
+                {
+                    Logging.SaveLog(nameof(V2pnConnection), ex);
+                    continue;
+                }
+                foreach (var process in running)
+                {
+                    try
+                    {
+                        var path = process.MainModule?.FileName;
+                        if (path?.StartsWith(bin, StringComparison.Ordinal) == true)
+                        {
+                            Logging.SaveLog($"V2pn: stopping a leftover core, {path} (pid {process.Id})");
+                            process.Kill();
+                            process.WaitForExit(3000);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        Logging.SaveLog($"V2pn: a leftover {name} (pid {process.Id}) could not be stopped: {ex.Message}");
+                    }
+                    finally
+                    {
+                        process.Dispose();
+                    }
+                }
+            }
+        }
+    }
+
+    /// <summary>
     /// At least one server is stored. Read from the database, because the UI's server count stays 0 until
     /// the list has loaded, and an empty list switches V2pn off.
     /// </summary>

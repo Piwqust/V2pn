@@ -9,6 +9,12 @@
 #
 # V2PN_NO_CORES=1 leaves the cores out (CI's smoke test: the app must start, not connect).
 #
+# For a Mac without the .NET SDK (testing a build made elsewhere):
+#   V2PN_PUBLISH_DIR=<folder>  the output of "dotnet publish -r osx-<arch>" for AmazTool and V2pn,
+#                              published into one folder; nothing is built here
+#   V2PN_CORES_ZIP=<file>      the core bundle, already downloaded; it is still checked against
+#                              tools/cores.lock.json
+#
 # Signing: every program in the bundle carries an ad-hoc signature, which Apple silicon requires
 # to run anything at all. The app is not signed with an Apple Developer ID and not notarized, so
 # the first launch of a downloaded copy needs "Open Anyway" in System Settings > Privacy &
@@ -39,10 +45,15 @@ mkdir -p "$MACOS" "$APP/Contents/Resources"
 
 PROPS=(-p:SelfContained=true "-p:V2pnVersion=$VERSION" -p:V2pnChannel=release)
 
-echo "== $RID: AmazTool"
-dotnet publish "$REPO/v2rayN/AmazTool/AmazTool.csproj" -c Release -r "$RID" -p:PublishTrimmed=true "${PROPS[@]}" -v q -nologo -o "$MACOS"
-echo "== $RID: V2pn $VERSION"
-dotnet publish "$REPO/v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj" -c Release -r "$RID" "${PROPS[@]}" -v q -nologo -o "$MACOS"
+if [[ -n "${V2PN_PUBLISH_DIR:-}" ]]; then
+    echo "== $RID: using the build in $V2PN_PUBLISH_DIR"
+    cp -R "$V2PN_PUBLISH_DIR"/. "$MACOS/"
+else
+    echo "== $RID: AmazTool"
+    dotnet publish "$REPO/v2rayN/AmazTool/AmazTool.csproj" -c Release -r "$RID" -p:PublishTrimmed=true "${PROPS[@]}" -v q -nologo -o "$MACOS"
+    echo "== $RID: V2pn $VERSION"
+    dotnet publish "$REPO/v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj" -c Release -r "$RID" "${PROPS[@]}" -v q -nologo -o "$MACOS"
+fi
 find "$MACOS" \( -name '*.pdb' -o -name '*.dbg' \) -delete
 
 if [[ "${V2PN_NO_CORES:-}" != "1" ]]; then
@@ -51,7 +62,11 @@ if [[ "${V2PN_NO_CORES:-}" != "1" ]]; then
 import json, sys
 target = json.load(open(sys.argv[1], encoding="utf-8-sig"))["targets"][sys.argv[2]]
 print(target["url"], target["sha256"])' "$REPO/tools/cores.lock.json" "$RID")
-    curl -fsSL --retry 3 -o "$WORK/cores.zip" "$CORE_URL"
+    if [[ -n "${V2PN_CORES_ZIP:-}" ]]; then
+        cp "$V2PN_CORES_ZIP" "$WORK/cores.zip"
+    else
+        curl -fsSL --retry 3 -o "$WORK/cores.zip" "$CORE_URL"
+    fi
     echo "$CORE_SHA  $WORK/cores.zip" | shasum -a 256 -c - >/dev/null \
         || { echo "The core bundle for $RID does not match tools/cores.lock.json. Nothing was packaged." >&2; exit 1; }
     unzip -q "$WORK/cores.zip" -d "$WORK/cores"

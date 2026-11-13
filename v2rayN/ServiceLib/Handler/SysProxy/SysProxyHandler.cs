@@ -51,8 +51,12 @@ public static class SysProxyHandler
                     await ProxySettingLinux.UnsetProxy();
                     break;
 
+                // V2pn: the same rule on a Mac. Another client's proxy (v2rayN on its own port) stays.
                 case ESysProxyType.ForcedClear when Utils.IsMacOS():
-                    await ProxySettingOSX.UnsetProxy();
+                    if (await V2pnConnection.MacProxyIsOursAsync(port))
+                    {
+                        await ProxySettingOSX.UnsetProxy();
+                    }
                     break;
 
                 case ESysProxyType.Pac when Utils.IsWindows():

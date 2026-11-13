@@ -68,6 +68,54 @@ public static class V2pnConnection
     }
 
     /// <summary>
+    /// macOS: true when the system proxy is off or points at this V2pn's local port, so clearing it
+    /// can only remove what V2pn put there. A Mac that already runs v2rayN (or any other client) has
+    /// its proxy set to that client's port; V2pn starting next to it must not switch it off.
+    /// </summary>
+    [SupportedOSPlatform("macos")]
+    public static async Task<bool> MacProxyIsOursAsync(int port)
+    {
+        try
+        {
+            return MacProxyIsOurs(await Utils.GetCliWrapOutput("/usr/sbin/scutil", "--proxy"), port);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(V2pnConnection), ex);
+            return true;
+        }
+    }
+
+    /// <summary>Reads the output of "scutil --proxy". When it cannot be read, clearing stays allowed, as in v2rayN.</summary>
+    public static bool MacProxyIsOurs(string? scutilProxy, int port)
+    {
+        var values = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var line in (scutilProxy ?? string.Empty).Split((char)10))
+        {
+            var separator = line.IndexOf(" : ", StringComparison.Ordinal);
+            if (separator > 0)
+            {
+                values[line[..separator].Trim()] = line[(separator + 3)..].Trim();
+            }
+        }
+        foreach (var kind in (string[])["HTTP", "HTTPS", "SOCKS"])
+        {
+            if (!values.TryGetValue(kind + "Enable", out var enabled) || enabled != "1")
+            {
+                continue;
+            }
+            values.TryGetValue(kind + "Proxy", out var host);
+            values.TryGetValue(kind + "Port", out var itsPort);
+            var local = host is "127.0.0.1" or "localhost" or "::1";
+            if (!local || itsPort != port.ToString())
+            {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    /// <summary>
     /// At least one server is stored. Read from the database, because the UI's server count stays 0 until
     /// the list has loaded, and an empty list switches V2pn off.
     /// </summary>

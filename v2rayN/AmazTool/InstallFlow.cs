@@ -57,10 +57,18 @@ internal static class InstallFlow
             Log($"The new version did not start: {ex.Message}");
             app = null;
         }
-        var died = app == null || (app.WaitForExit((int)Probation.TotalMilliseconds) && app.ExitCode != 0);
+        // Any exit this early counts, also a clean one: V2pn leaves with code 0 when it cannot
+        // read its settings, and a version that does that to everyone must not stay installed.
+        var died = app == null || app.WaitForExit((int)Probation.TotalMilliseconds);
+        if (died && app != null)
+        {
+            // Unless it handed over to another copy of itself (a restart as administrator).
+            Thread.Sleep(1500);
+            died = !AppIsRunning(installer);
+        }
         if (died)
         {
-            Log(app == null ? "Rolling back." : $"The new version exited with code {app.ExitCode}. Rolling back.");
+            Log(app == null ? "Rolling back." : $"The new version exited after starting (code {app.ExitCode}). Rolling back.");
             try
             {
                 installer.Rollback();
@@ -110,6 +118,70 @@ internal static class InstallFlow
         });
     }
 
+    private static bool AppIsRunning(Installer installer)
+    {
+        try
+        {
+            var exe = installer.AppExecutable();
+            foreach (var process in Process.GetProcessesByName(Utils.V2rayN))
+            {
+                if (string.Equals(ProcessPath(process), exe, Utils.GetPathComparison()))
+                {
+                    return true;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Log($"Could not list processes: {ex.Message}");
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Where a process runs from. On Windows this also answers for a copy running as
+    /// administrator, which Process.MainModule refuses to describe to a normal process.
+    /// </summary>
+    private static string? ProcessPath(Process process)
+    {
+        try
+        {
+            if (!OperatingSystem.IsWindows())
+            {
+                return process.MainModule?.FileName;
+            }
+            const uint QueryLimitedInformation = 0x1000;
+            var handle = OpenProcess(QueryLimitedInformation, false, (uint)process.Id);
+            if (handle == IntPtr.Zero)
+            {
+                return null;
+            }
+            try
+            {
+                var buffer = new char[1024];
+                var size = (uint)buffer.Length;
+                return QueryFullProcessImageNameW(handle, 0, buffer, ref size) ? new string(buffer, 0, (int)size) : null;
+            }
+            finally
+            {
+                CloseHandle(handle);
+            }
+        }
+        catch
+        {
+            return null;
+        }
+    }
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true)]
+    private static extern IntPtr OpenProcess(uint access, bool inherit, uint processId);
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll", SetLastError = true, CharSet = System.Runtime.InteropServices.CharSet.Unicode)]
+    private static extern bool QueryFullProcessImageNameW(IntPtr process, uint flags, [System.Runtime.InteropServices.Out] char[] name, ref uint size);
+
+    [System.Runtime.InteropServices.DllImport("kernel32.dll")]
+    private static extern bool CloseHandle(IntPtr handle);
+
     /// <summary>V2pn closes itself after starting this program; anything left of it is stopped.</summary>
     private static void WaitForApp(int? pid)
     {
@@ -140,7 +212,7 @@ internal static class InstallFlow
             var appDir = Utils.StartupPath();
             foreach (var process in Process.GetProcessesByName(Utils.V2rayN))
             {
-                var path = process.MainModule?.FileName ?? string.Empty;
+                var path = ProcessPath(process) ?? string.Empty;
                 if (path.StartsWith(appDir, Utils.GetPathComparison()))
                 {
                     process.Kill();

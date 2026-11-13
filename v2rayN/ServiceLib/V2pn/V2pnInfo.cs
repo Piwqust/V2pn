@@ -58,6 +58,17 @@ public static class V2pnInfo
         return system == null || cpu == null ? null : $"V2pn-{system}-{cpu}.zip";
     }
 
+    /// <summary>
+    /// The same app without the cores, published for Windows next to the full package. An update
+    /// never replaces cores that are already installed, so downloading them again is wasted traffic.
+    /// </summary>
+    public static string? UpdatePackageName(Architecture? arch = null, OSPlatform? os = null) =>
+        PackageName(arch, os)?.Replace(".zip", "-update.zip");
+
+    /// <summary>What an update downloads: the package without cores when the release has one.</summary>
+    public static V2pnManifestFile? UpdatePackage(V2pnManifest manifest) =>
+        manifest.File(UpdatePackageName()) ?? manifest.File(PackageName());
+
     public static string ManifestUrl(string source) => $"{source}/latest/download/{ManifestName}";
 
     public static string PackageUrl(string source, string version, string packageName) => $"{source}/download/v{version}/{packageName}";

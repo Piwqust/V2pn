@@ -105,7 +105,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
 
             var version = release.Manifest.Version;
             LatestVersion = version;
-            var package = release.Manifest.File(V2pnInfo.PackageName());
+            var package = V2pnInfo.UpdatePackage(release.Manifest);
             if (package == null || new SemanticVersion(version) <= new SemanticVersion(CurrentVersion))
             {
                 DeleteStalePackages();
@@ -354,7 +354,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                 return null;
             }
             var manifest = V2pnManifest.ReadVerified(File.ReadAllBytes(path), File.ReadAllText(path + V2pnInfo.SignatureSuffix), Settings.Keys, out _);
-            return manifest?.Version == version ? manifest.File(V2pnInfo.PackageName()) : null;
+            return manifest?.Version == version ? V2pnInfo.UpdatePackage(manifest) : null;
         }
         catch (Exception ex)
         {

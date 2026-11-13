@@ -64,6 +64,22 @@ public class V2pnAppUpdaterTests
     }
 
     [Test]
+    public async Task ReleaseWithAPackageWithoutCores_UpdatesFromThatOne()
+    {
+        var light = "the app without cores"u8.ToArray();
+        var lightName = V2pnInfo.UpdatePackageName()!;
+        var manifest = TestRelease.Manifest("99.0.0", (Name, Package), (lightName, light));
+        await using var server = FakeReleases.Start("99.0.0", manifest, _release.Sign(manifest), light, lightName);
+        Trust(server.Source);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.Ready);
+        await (await File.ReadAllBytesAsync(Updater.FindPending()!.Value.File)).SequenceEqual(light).Should().BeTrue();
+        await server.Requests.Any(r => r.EndsWith("/" + Name)).Should().BeFalse();
+    }
+
+    [Test]
     public async Task PackageThatDoesNotMatchTheManifest_IsThrownAway()
     {
         await using var server = Serve("99.0.0", served: "something else"u8.ToArray());
@@ -221,8 +237,9 @@ public class V2pnAppUpdaterTests
 
         public static FakeReleases StartEmpty() => Start(null, [], string.Empty, []);
 
-        public static FakeReleases Start(string? version, byte[] manifest, string signature, byte[] package)
+        public static FakeReleases Start(string? version, byte[] manifest, string signature, byte[] package, string? packageName = null)
         {
+            packageName ??= Name;
             var port = FreePort();
             var listener = new HttpListener();
             var prefix = $"http://127.0.0.1:{port}/";
@@ -252,7 +269,7 @@ public class V2pnAppUpdaterTests
                         {
                             "/releases/latest/download/release.json" => manifest,
                             "/releases/latest/download/release.json.sig" => Encoding.ASCII.GetBytes(signature),
-                            _ when path == $"/releases/download/v{version}/{Name}" => package,
+                            _ when path == $"/releases/download/v{version}/{packageName}" => package,
                             _ => null,
                         };
                     }

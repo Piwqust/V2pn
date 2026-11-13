@@ -1,96 +1,79 @@
 namespace ServiceLib;
 
 /// <summary>
-/// What sets V2pn's own releases apart from v2rayN's: its version, where its packages live and how
-/// a downloaded package is checked before AmazTool installs it.
+/// What sets V2pn's own releases apart from v2rayN's: its version, where its packages live and
+/// which keys sign them.
 /// </summary>
 public static class V2pnInfo
 {
     /// <summary>GitHub repository whose releases carry V2pn packages.</summary>
     public const string Repo = "Piwqust/V2pn";
 
-    /// <summary>Published next to every package; holds its SHA-256.</summary>
-    public const string HashSuffix = ".sha256";
+    /// <summary>The signed list of a release's packages; see <see cref="V2pnManifest"/>.</summary>
+    public const string ManifestName = "release.json";
 
-    // Points update checks at another copy of the releases page. tools/update-e2e.ps1 uses it to
-    // install older builds and update them from a local server without publishing anything.
-    private const string ReleasesUrlEnv = "V2PN_RELEASES_URL";
+    public const string SignatureSuffix = ".sig";
 
-    public static string Version { get; } = typeof(V2pnInfo).Assembly
-        .GetCustomAttributes<AssemblyMetadataAttribute>()
-        .FirstOrDefault(a => a.Key == "V2pnVersion")?.Value ?? "0.0.0";
+    public static string Version { get; } = Metadata("V2pnVersion") ?? "0.0.0";
+
+    /// <summary>
+    /// True for packages made by tools/release.ps1. A local build is not: it must never unpack a
+    /// release over its own build folder.
+    /// </summary>
+    public static bool IsRelease { get; } = Metadata("V2pnChannel") == "release";
+
+    /// <summary>The version as a person sees it: "1.0.0", or "1.0.0-dev" for a local build.</summary>
+    public static string DisplayVersion => IsRelease ? Version : $"{Version}-dev";
 
     /// <summary>The v2rayN release V2pn is built on; panels also see it in the User-Agent.</summary>
     public static string UpstreamVersion => Utils.GetVersionInfo();
 
-    public static string ReleasesUrl
+    /// <summary>The releases page for people ("What's new").</summary>
+    public static string ReleasesUrl => $"{Global.GithubUrl}/{Repo}/releases";
+
+    /// <summary>Places that serve releases, in the order they are tried. Set at build time.</summary>
+    public static IReadOnlyList<string> UpdateSources { get; } = Split(Metadata("V2pnUpdateSources")).Select(s => s.TrimEnd('/')).ToList();
+
+    /// <summary>Public keys a release manifest may be signed with. Set at build time.</summary>
+    public static IReadOnlyList<string> UpdateKeys { get; } = Split(Metadata("V2pnUpdateKeys"));
+
+    /// <summary>
+    /// V2pn replaces itself only where it ships a portable package (Windows, macOS) and only in a
+    /// release build. Where a package manager owns the install it does not offer to.
+    /// </summary>
+    public static bool SelfUpdateSupported => IsRelease && UpdateKeys.Count > 0 && UpdateSources.Count > 0
+        && !Utils.IsPackagedInstall() && PackageName() != null;
+
+    /// <summary>The package for this machine, or null for a system V2pn does not ship for.</summary>
+    public static string? PackageName(Architecture? arch = null, OSPlatform? os = null)
     {
-        get
+        var platform = os ?? (Utils.IsWindows() ? OSPlatform.Windows : Utils.IsMacOS() ? OSPlatform.OSX : OSPlatform.Linux);
+        var system = platform == OSPlatform.Windows ? "windows" : platform == OSPlatform.OSX ? "macos" : null;
+        var cpu = (arch ?? RuntimeInformation.ProcessArchitecture) switch
         {
-            var custom = Environment.GetEnvironmentVariable(ReleasesUrlEnv);
-            return custom.IsNullOrEmpty() ? $"{Global.GithubUrl}/{Repo}/releases" : custom.TrimEnd('/');
-        }
+            Architecture.X64 => "x64",
+            Architecture.Arm64 => "arm64",
+            _ => null,
+        };
+        return system == null || cpu == null ? null : $"V2pn-{system}-{cpu}.zip";
     }
 
-    /// <summary>
-    /// V2pn publishes portable Windows packages only. Elsewhere, and where a package manager owns
-    /// the install, the app does not offer to replace itself.
-    /// </summary>
-    public static bool SelfUpdateSupported => Utils.IsWindows() && !Utils.IsPackagedInstall() && PackageName() != null;
+    public static string ManifestUrl(string source) => $"{source}/latest/download/{ManifestName}";
 
-    /// <summary>The package for this machine, or null for an architecture V2pn does not ship.</summary>
-    public static string? PackageName(Architecture? arch = null) => (arch ?? RuntimeInformation.ProcessArchitecture) switch
-    {
-        Architecture.X64 => "V2pn-windows-x64.zip",
-        Architecture.Arm64 => "V2pn-windows-arm64.zip",
-        _ => null,
-    };
+    public static string PackageUrl(string source, string version, string packageName) => $"{source}/download/v{version}/{packageName}";
 
-    public static string PackageUrl(string tag, string packageName) => $"{ReleasesUrl}/download/{tag}/{packageName}";
-
-    /// <summary>Reads the SHA-256 published for a package, or null when there is none.</summary>
-    public static async Task<string?> GetPublishedHashAsync(DownloadService download, string packageUrl, bool blProxy, CancellationToken cancellationToken = default)
-    {
-        var text = await download.TryDownloadString(packageUrl + HashSuffix, blProxy, Global.AppName, cancellationToken);
-        return ParseHash(text);
-    }
-
-    /// <summary>
-    /// Takes the hash from a checksum file in the usual formats: the bare hash, or
-    /// "hash  file name" as written by sha256sum.
-    /// </summary>
-    public static string? ParseHash(string? text)
-    {
-        if (text.IsNullOrEmpty())
-        {
-            return null;
-        }
-        var token = text.Trim().Split((char[])[' ', '\t', '\r', '\n', '*'], StringSplitOptions.RemoveEmptyEntries).FirstOrDefault();
-        return token is { Length: 64 } && token.All(Uri.IsHexDigit) ? token.ToLowerInvariant() : null;
-    }
-
-    /// <summary>
-    /// True when the file matches the published hash. A package without one is refused: AmazTool
-    /// overwrites the app with whatever it is given, so a cut-off or substituted download must
-    /// never reach it.
-    /// </summary>
-    public static bool VerifyPackage(string fileName, string? expectedHash, out string error)
+    /// <summary>True when the file has the size and SHA-256 the signed manifest lists for it.</summary>
+    public static bool VerifyPackage(string fileName, V2pnManifestFile expected, out string error)
     {
         error = string.Empty;
-        if (expectedHash.IsNullOrEmpty())
-        {
-            error = "The release has no checksum.";
-            return false;
-        }
         try
         {
             using var stream = File.OpenRead(fileName);
-            var actual = Convert.ToHexStringLower(SHA256.HashData(stream));
-            if (actual == expectedHash)
+            if (stream.Length == expected.Size && Convert.ToHexStringLower(SHA256.HashData(stream)) == expected.Sha256)
             {
                 return true;
             }
-            error = "The downloaded package is damaged (checksum mismatch).";
+            error = "The downloaded package is damaged (it does not match the release manifest).";
             return false;
         }
         catch (Exception ex)
@@ -100,4 +83,11 @@ public static class V2pnInfo
             return false;
         }
     }
+
+    private static string? Metadata(string key) => typeof(V2pnInfo).Assembly
+        .GetCustomAttributes<AssemblyMetadataAttribute>()
+        .FirstOrDefault(a => a.Key == key)?.Value;
+
+    private static List<string> Split(string? value) =>
+        (value ?? string.Empty).Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
 }

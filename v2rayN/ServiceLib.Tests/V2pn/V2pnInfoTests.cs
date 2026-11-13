@@ -2,46 +2,23 @@ namespace ServiceLib.Tests.V2pn;
 
 public class V2pnInfoTests
 {
-    private const string Hash = "9f86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08";
-
-    [Test]
-    [Arguments(Hash)]
-    [Arguments(Hash + "\n")]
-    [Arguments(Hash + "  V2pn-windows-x64.zip\n")]
-    [Arguments(Hash + " *V2pn-windows-x64.zip")]
-    [Arguments("9F86D081884C7D659A2FEAA0C55AD015A3BF4F1B2B0B822CD15D6C15B0F00A08")]
-    public async Task ParseHash_ReadsBareAndSha256sumFormats(string text)
-    {
-        await V2pnInfo.ParseHash(text).Should().BeEqualTo(Hash);
-    }
-
-    [Test]
-    [Arguments(null)]
-    [Arguments("")]
-    [Arguments("<html>Not Found</html>")]
-    [Arguments("9f86d081")]
-    [Arguments("zz86d081884c7d659a2feaa0c55ad015a3bf4f1b2b0b822cd15d6c15b0f00a08")]
-    public async Task ParseHash_RejectsAnythingElse(string? text)
-    {
-        await V2pnInfo.ParseHash(text).Should().BeNull();
-    }
-
     [Test]
     public async Task VerifyPackage_AcceptsOnlyTheExactFile()
     {
         var file = Path.GetTempFileName();
         try
         {
-            await File.WriteAllTextAsync(file, "test");
+            var content = "test"u8.ToArray();
+            await File.WriteAllBytesAsync(file, content);
+            var hash = Convert.ToHexStringLower(SHA256.HashData(content));
 
-            await V2pnInfo.VerifyPackage(file, Hash, out _).Should().BeTrue();
+            await V2pnInfo.VerifyPackage(file, new V2pnManifestFile("a.zip", content.Length, hash), out _).Should().BeTrue();
 
-            await V2pnInfo.VerifyPackage(file, Hash.Replace('9', '8'), out var mismatch).Should().BeFalse();
-            await mismatch.Contains("checksum").Should().BeTrue();
+            await V2pnInfo.VerifyPackage(file, new V2pnManifestFile("a.zip", content.Length, new string('0', 64)), out var mismatch).Should().BeFalse();
+            await mismatch.Contains("damaged").Should().BeTrue();
 
-            // A release without a checksum must not be installed.
-            await V2pnInfo.VerifyPackage(file, null, out var missing).Should().BeFalse();
-            await missing.Length.Should().BeGreaterThan(0);
+            // The right bytes followed by more bytes are not the package either.
+            await V2pnInfo.VerifyPackage(file, new V2pnManifestFile("a.zip", content.Length + 1, hash), out _).Should().BeFalse();
         }
         finally
         {
@@ -50,14 +27,32 @@ public class V2pnInfoTests
     }
 
     [Test]
-    public async Task Packages_ComeFromV2pnReleases_OnePerArchitecture()
+    public async Task Packages_OnePerSystemAndArchitecture()
     {
         await V2pnInfo.ReleasesUrl.Should().BeEqualTo($"https://github.com/{V2pnInfo.Repo}/releases");
-        await V2pnInfo.PackageName(Architecture.X64).Should().BeEqualTo("V2pn-windows-x64.zip");
-        await V2pnInfo.PackageName(Architecture.Arm64).Should().BeEqualTo("V2pn-windows-arm64.zip");
-        await V2pnInfo.PackageName(Architecture.X86).Should().BeNull();
-        await V2pnInfo.PackageUrl("v1.2.3", "V2pn-windows-x64.zip")
-            .Should().BeEqualTo($"https://github.com/{V2pnInfo.Repo}/releases/download/v1.2.3/V2pn-windows-x64.zip");
+        await V2pnInfo.PackageName(Architecture.X64, OSPlatform.Windows).Should().BeEqualTo("V2pn-windows-x64.zip");
+        await V2pnInfo.PackageName(Architecture.Arm64, OSPlatform.Windows).Should().BeEqualTo("V2pn-windows-arm64.zip");
+        await V2pnInfo.PackageName(Architecture.X64, OSPlatform.OSX).Should().BeEqualTo("V2pn-macos-x64.zip");
+        await V2pnInfo.PackageName(Architecture.Arm64, OSPlatform.OSX).Should().BeEqualTo("V2pn-macos-arm64.zip");
+        await V2pnInfo.PackageName(Architecture.X86, OSPlatform.Windows).Should().BeNull();
+        await V2pnInfo.PackageName(Architecture.X64, OSPlatform.Linux).Should().BeNull();
+    }
+
+    [Test]
+    public async Task Sources_AreLaidOutLikeAGitHubReleasesPage()
+    {
+        await V2pnInfo.UpdateSources[0].Should().BeEqualTo(V2pnInfo.ReleasesUrl);
+        await V2pnInfo.ManifestUrl("https://example.com/v2pn").Should().BeEqualTo("https://example.com/v2pn/latest/download/release.json");
+        await V2pnInfo.PackageUrl("https://example.com/v2pn", "1.2.3", "V2pn-windows-x64.zip")
+            .Should().BeEqualTo("https://example.com/v2pn/download/v1.2.3/V2pn-windows-x64.zip");
+    }
+
+    [Test]
+    public async Task LocalBuild_IsNotARelease_AndNeverReplacesItself()
+    {
+        await V2pnInfo.IsRelease.Should().BeFalse();
+        await V2pnInfo.SelfUpdateSupported.Should().BeFalse();
+        await V2pnInfo.DisplayVersion.Should().BeEqualTo(V2pnInfo.Version + "-dev");
     }
 
     [Test]

@@ -7,6 +7,31 @@
   -->
   <PropertyGroup>
     <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.0.0</V2pnVersion>
+
+    <!--
+      "release" only in packages made by tools/release.ps1. Everything else (dotnet build, the IDE)
+      is a dev build: it shows "1.0.0-dev" and never replaces itself with a downloaded package,
+      which would unpack a self-contained release over a framework-dependent build folder.
+    -->
+    <V2pnChannel Condition="'$(V2pnChannel)' == ''">dev</V2pnChannel>
+
+    <!--
+      Where the app looks for new versions, in order, separated by "|". Every source has the
+      layout of a GitHub releases page:
+        <source>/latest/download/release.json(.sig)   the newest release's signed manifest
+        <source>/download/v<version>/<file>           its packages
+      A mirror on your own server is a folder of static files laid out like that
+      (tools/publish-mirror.ps1 uploads one); add it after the GitHub address.
+    -->
+    <V2pnUpdateSources Condition="'$(V2pnUpdateSources)' == ''">https://github.com/Piwqust/V2pn/releases</V2pnUpdateSources>
+
+    <!--
+      Public keys (ECDSA P-256, SubjectPublicKeyInfo in base64, "|" between several) that sign
+      release.json. The private half never enters the repository: tools/release.ps1 reads it
+      from V2PN_SIGNING_KEY or ~/.v2pn/release-signing-key.pem. A second key here lets the old
+      one be retired without stranding installed copies.
+    -->
+    <V2pnUpdateKeys Condition="'$(V2pnUpdateKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig==</V2pnUpdateKeys>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop'">
@@ -14,9 +39,26 @@
     <AssemblyVersion>$(V2pnVersion)</AssemblyVersion>
     <FileVersion>$(V2pnVersion)</FileVersion>
     <InformationalVersion>$(V2pnVersion)</InformationalVersion>
+    <InformationalVersion Condition="'$(V2pnChannel)' != 'release'">$(V2pnVersion)-dev</InformationalVersion>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+  </PropertyGroup>
+
+  <!-- What Windows shows in the file properties of V2pn.exe and AmazTool.exe. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop' Or '$(MSBuildProjectName)' == 'AmazTool'">
+    <Company>V2pn</Company>
+    <Authors>V2pn contributors</Authors>
+    <Copyright>Copyright © 2026 V2pn contributors. Based on v2rayN, © 2017-2026 2dust. GPL-3.0.</Copyright>
+  </PropertyGroup>
+
+  <!-- Release builds embed their symbols; without this the paths of the build machine go with them. -->
+  <PropertyGroup Condition="'$(Configuration)' == 'Release'">
+    <PathMap>$(MSBuildThisFileDirectory)=/_/</PathMap>
   </PropertyGroup>
 
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'ServiceLib'">
     <AssemblyMetadata Include="V2pnVersion" Value="$(V2pnVersion)" />
+    <AssemblyMetadata Include="V2pnChannel" Value="$(V2pnChannel)" />
+    <AssemblyMetadata Include="V2pnUpdateSources" Value="$(V2pnUpdateSources)" />
+    <AssemblyMetadata Include="V2pnUpdateKeys" Value="$(V2pnUpdateKeys)" />
   </ItemGroup>
 </Project>

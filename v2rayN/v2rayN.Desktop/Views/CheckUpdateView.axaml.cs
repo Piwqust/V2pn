@@ -68,7 +68,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
     {
         var state = _updater.State;
         var latest = _updater.LatestVersion;
-        txtAppVersion.Text = string.Format(L.UpdAppTitle, _updater.CurrentVersion);
+        txtAppVersion.Text = string.Format(L.UpdAppTitle, V2pnInfo.DisplayVersion);
         spinApp.IsVisible = state is EV2pnUpdateState.Checking or EV2pnUpdateState.Downloading;
         txtAppState.Text = state switch
         {
@@ -78,7 +78,8 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
             EV2pnUpdateState.Downloading => string.Format(L.UpdDownloading, latest)
                 + (_updater.Progress.IsNullOrEmpty() ? string.Empty : $"  {_updater.Progress}"),
             EV2pnUpdateState.Ready => string.Format(L.UpdReady, latest),
-            EV2pnUpdateState.Failed => _updater.DownloadFailed ? string.Format(L.UpdDownloadFailed, latest) : L.UpdFailed,
+            EV2pnUpdateState.Failed => _updater.InstallFailed ? string.Format(L.UpdInstallFailed, latest)
+                : _updater.DownloadFailed ? string.Format(L.UpdDownloadFailed, latest) : L.UpdFailed,
             _ => L.UpdIdle,
         };
         ToolTip.SetTip(txtAppState, state == EV2pnUpdateState.Failed ? _updater.Error : null);
@@ -116,7 +117,8 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
                 break;
 
             default:
-                await _updater.CheckAsync(download: AppUpdates.Auto(_config));
+                // Asking again is also how a person retries a version whose install was rolled back.
+                await _updater.CheckAsync(download: AppUpdates.Auto(_config), retryFailed: true);
                 break;
         }
     }

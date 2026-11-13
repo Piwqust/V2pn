@@ -2766,7 +2766,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void AddHelpMenuItem()
     {
         var repo = $"{Global.GithubUrl}/{V2pnInfo.Repo}";
-        menuHelp.Items.Add(new MenuItem { Classes = { "menuheader" }, Header = string.Format(L.HelpVersion, V2pnInfo.Version), IsEnabled = false });
+        menuHelp.Items.Add(new MenuItem { Classes = { "menuheader" }, Header = string.Format(L.HelpVersion, V2pnInfo.DisplayVersion), IsEnabled = false });
         menuHelp.Items.Add(HelpLink(L.HelpSite, repo, "SemiIconGlobeStroke"));
         menuHelp.Items.Add(HelpLink(L.HelpReport, $"{repo}/issues", "SemiIconComment"));
         menuHelp.Items.Add(new Separator());

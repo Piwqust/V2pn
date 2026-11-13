@@ -12,6 +12,7 @@ public static partial class L
     public static string UpdReady => T("Version {0} is downloaded and ready to install", "Версия {0} скачана и готова к установке");
     public static string UpdFailed => T("Could not check for updates. Try again later.", "Не удалось проверить обновления. Попробуйте позже.");
     public static string UpdDownloadFailed => T("Could not download version {0}. Nothing was installed; try again later.", "Не удалось скачать версию {0}. Ничего не установлено, попробуйте позже.");
+    public static string UpdInstallFailed => T("Version {0} did not start after installing, so V2pn went back to the previous one.", "Версия {0} не запустилась после установки, V2pn вернулся к предыдущей.");
     public static string UpdBasedOn => T("Based on v2rayN {0}", "На основе v2rayN {0}");
 
     public static string UpdCheckNow => T("Check for updates", "Проверить обновления");

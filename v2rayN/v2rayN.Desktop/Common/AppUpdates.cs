@@ -10,6 +10,8 @@ internal static class AppUpdates
     // Long enough for the window, the core and the connection to settle first.
     private static readonly TimeSpan FirstCheck = TimeSpan.FromSeconds(20);
     private static readonly TimeSpan Every = TimeSpan.FromHours(6);
+    // A check that got no answer is repeated sooner, a little later each time.
+    private static readonly TimeSpan FirstRetry = TimeSpan.FromMinutes(15);
 
     private static DispatcherTimer? _timer;
 
@@ -38,10 +40,21 @@ internal static class AppUpdates
         {
             return;
         }
+        var retry = FirstRetry;
         _timer = new DispatcherTimer(FirstCheck, DispatcherPriority.Background, async (_, _) =>
         {
             _timer!.Interval = Every;
             await CheckAsync(config);
+            var updater = V2pnAppUpdater.Instance;
+            if (updater.State == EV2pnUpdateState.Failed && !updater.InstallFailed)
+            {
+                _timer.Interval = retry;
+                retry = TimeSpan.FromTicks(Math.Min(retry.Ticks * 2, Every.Ticks));
+            }
+            else
+            {
+                retry = FirstRetry;
+            }
         });
         _timer.Start();
     }

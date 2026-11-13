@@ -11,46 +11,66 @@ public enum EV2pnUpdateState
     Failed,
 }
 
+/// <summary>What the updater trusts and where it looks. Comes from the build; tests swap it.</summary>
+public sealed record V2pnUpdateSettings(IReadOnlyList<string> Sources, IReadOnlyList<string> Keys, bool Supported, string CurrentVersion)
+{
+    public static V2pnUpdateSettings FromBuild() =>
+        new(V2pnInfo.UpdateSources, V2pnInfo.UpdateKeys, V2pnInfo.SelfUpdateSupported, V2pnInfo.Version);
+}
+
 /// <summary>
-/// Keeps V2pn itself current. It reads the newest tag from V2pn's releases, downloads the package
-/// for this machine in the background, refuses it unless it matches the published SHA-256, and
-/// keeps it in guiTemps/V2pnUpdate until it is installed: by the person (restart now) or at the
-/// next start. AmazTool does the install, so the app is never replaced while it runs.
+/// Keeps V2pn itself current. It reads the newest release's signed manifest from the first source
+/// that answers (GitHub, then any mirror), downloads the package for this machine in the
+/// background, refuses it unless it matches the manifest, and keeps it in guiTemps/V2pnUpdate
+/// until it is installed: by the person (restart now) or at the next start. AmazTool does the
+/// install, so the app is never replaced while it runs.
 /// </summary>
 public sealed partial class V2pnAppUpdater : ReactiveObject
 {
     private const string Tag = nameof(V2pnAppUpdater);
     private const string PendingPrefix = "V2pn-";
 
+    /// <summary>AmazTool writes the version here when it had to put the previous one back.</summary>
+    public const string FailedMarker = "failed.txt";
+
     public static V2pnAppUpdater Instance { get; } = new();
 
     private readonly SemaphoreSlim _gate = new(1, 1);
+    private string? _lastLoggedError;
+
+    public V2pnUpdateSettings Settings { get; set; } = V2pnUpdateSettings.FromBuild();
 
     [Reactive] public partial EV2pnUpdateState State { get; set; }
 
-    /// <summary>The newest version found, without the "v".</summary>
+    /// <summary>The newest version found, without the "v"; null when nothing is published yet.</summary>
     [Reactive] public partial string? LatestVersion { get; set; }
 
     /// <summary>Download progress as text, e.g. "12.4 MB / 61.6 MB".</summary>
     [Reactive] public partial string? Progress { get; set; }
 
-    /// <summary>Why the last check or download failed, for the log and a tooltip.</summary>
+    /// <summary>Why the last check, download or install failed, for the log and a tooltip.</summary>
     [Reactive] public partial string? Error { get; set; }
 
-    /// <summary>The newest version was found but could not be downloaded or installed.</summary>
+    /// <summary>The newest version was found but could not be downloaded.</summary>
     [Reactive] public partial bool DownloadFailed { get; set; }
 
-    public string CurrentVersion => V2pnInfo.Version;
+    /// <summary>The newest version was installed, did not start, and the previous one was put back.</summary>
+    [Reactive] public partial bool InstallFailed { get; set; }
 
-    public bool Supported => V2pnInfo.SelfUpdateSupported;
+    public string CurrentVersion => Settings.CurrentVersion;
+
+    public bool Supported => Settings.Supported;
 
     private static string PendingDir => Utils.GetTempPath("V2pnUpdate");
 
+    private sealed record Release(string Source, bool ViaProxy, V2pnManifest Manifest, byte[] Json, string Signature);
+
     /// <summary>
     /// Looks for a newer V2pn. With <paramref name="download"/> a newer package is fetched and
-    /// verified right away, so installing it later takes seconds. Concurrent calls are dropped.
+    /// verified right away, so installing it later takes seconds. <paramref name="retryFailed"/>
+    /// is for a person asking again after an install that was rolled back. Concurrent calls are dropped.
     /// </summary>
-    public async Task CheckAsync(bool download, CancellationToken cancellationToken = default)
+    public async Task CheckAsync(bool download, bool retryFailed = false, CancellationToken cancellationToken = default)
     {
         if (!Supported || !await _gate.WaitAsync(0, cancellationToken))
         {
@@ -60,25 +80,45 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         {
             Error = null;
             DownloadFailed = false;
+            InstallFailed = false;
             State = EV2pnUpdateState.Checking;
-            var blProxy = AppManager.Instance.Config.CheckUpdateItem.UpdateViaProxy;
-            var service = new DownloadService();
-
-            var tag = await GetLatestTagAsync(service, blProxy, cancellationToken);
-            if (tag.IsNullOrEmpty())
+            if (retryFailed)
             {
-                Fail("V2pn releases did not answer.");
+                DeleteFile(Path.Combine(PendingDir, FailedMarker));
+            }
+
+            var preferProxy = AppManager.Instance.Config.CheckUpdateItem.UpdateViaProxy;
+            var (release, nothingPublished, error) = await FindReleaseAsync(preferProxy, cancellationToken);
+            if (release == null)
+            {
+                if (nothingPublished)
+                {
+                    LatestVersion = null;
+                    State = EV2pnUpdateState.UpToDate;
+                }
+                else
+                {
+                    Fail(error ?? "V2pn releases did not answer.");
+                }
                 return;
             }
-            var latest = new SemanticVersion(tag);
-            LatestVersion = latest.ToStandardVersionString();
-            if (latest <= new SemanticVersion(CurrentVersion))
+
+            var version = release.Manifest.Version;
+            LatestVersion = version;
+            var package = release.Manifest.File(V2pnInfo.PackageName());
+            if (package == null || new SemanticVersion(version) <= new SemanticVersion(CurrentVersion))
             {
                 DeleteStalePackages();
                 State = EV2pnUpdateState.UpToDate;
                 return;
             }
-            if (FindPending()?.Version == LatestVersion)
+            if (FailedVersion() == version)
+            {
+                InstallFailed = true;
+                Fail($"V2pn {version} did not start after it was installed; the previous version was put back.");
+                return;
+            }
+            if (FindPending()?.Version == version)
             {
                 State = EV2pnUpdateState.Ready;
                 return;
@@ -86,7 +126,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             State = EV2pnUpdateState.Available;
             if (download)
             {
-                await DownloadAsync(service, tag, blProxy, cancellationToken);
+                await DownloadAsync(release, package, cancellationToken);
             }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
@@ -105,7 +145,9 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
     }
 
     /// <summary>
-    /// The verified package waiting to be installed, if it is newer than this V2pn.
+    /// The package waiting to be installed, if it is newer than this V2pn. It counts only with a
+    /// manifest signed by the release key next to it: a zip that some other program dropped into
+    /// the folder is not an update.
     /// </summary>
     public (string Version, string File)? FindPending()
     {
@@ -116,9 +158,10 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                 return null;
             }
             var current = new SemanticVersion(CurrentVersion);
+            var failed = FailedVersion();
             return Directory.GetFiles(PendingDir, PendingPrefix + "*.zip")
                 .Select(f => (Version: Path.GetFileNameWithoutExtension(f)[PendingPrefix.Length..], File: f))
-                .Where(p => File.Exists(p.File + V2pnInfo.HashSuffix) && new SemanticVersion(p.Version) > current)
+                .Where(p => p.Version != failed && new SemanticVersion(p.Version) > current && PendingPackage(p.File, p.Version) != null)
                 .OrderByDescending(p => new SemanticVersion(p.Version))
                 .Select(p => ((string, string)?)p)
                 .FirstOrDefault();
@@ -142,11 +185,11 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             return false;
         }
         var (version, file) = pending.Value;
-        var expected = V2pnInfo.ParseHash(await File.ReadAllTextAsync(file + V2pnInfo.HashSuffix));
-        if (!V2pnInfo.VerifyPackage(file, expected, out var error))
+        var expected = PendingPackage(file, version);
+        if (expected == null || !V2pnInfo.VerifyPackage(file, expected, out var error))
         {
             DeletePackage(file);
-            Fail(error, download: true);
+            Fail("The downloaded package is damaged.", download: true);
             return false;
         }
         if (!Utils.UpgradeAppExists(out var upgrader))
@@ -156,10 +199,30 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         }
 
         Logging.SaveLog($"{Tag}: installing V2pn {version}");
-        // AmazTool takes the package path URL-encoded, as v2rayN passes it, so spaces survive.
-        var id = ProcUtils.ProcessStart(upgrader, Utils.UrlEncode(file), Utils.StartupPath());
-        if (id is not > 0)
+        try
         {
+            // No console window: AmazTool logs to update.log next to the package and always
+            // brings V2pn back, as the new version or, if that one does not start, the old one.
+            var start = new ProcessStartInfo
+            {
+                FileName = upgrader,
+                WorkingDirectory = Utils.GetBaseDirectory(),
+                UseShellExecute = false,
+                CreateNoWindow = true,
+            };
+            start.ArgumentList.Add("install");
+            start.ArgumentList.Add(file);
+            start.ArgumentList.Add(Environment.ProcessId.ToString());
+            using var process = Process.Start(start);
+            if (process == null)
+            {
+                Fail("AmazTool did not start.", download: true);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(Tag, ex);
             Fail("AmazTool did not start.", download: true);
             return false;
         }
@@ -167,64 +230,157 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         return true;
     }
 
-    private async Task<string?> GetLatestTagAsync(DownloadService service, bool blProxy, CancellationToken cancellationToken)
+    /// <summary>
+    /// Asks each source for the newest release until one gives a manifest with a valid signature.
+    /// A source that answers "not found" has published nothing yet, which is not an error.
+    /// </summary>
+    private async Task<(Release? Release, bool NothingPublished, string? Error)> FindReleaseAsync(bool preferProxy, CancellationToken cancellationToken)
     {
-        // GitHub answers /releases/latest with a redirect to /releases/tag/<tag>; no API rate limit.
-        var location = await service.UrlRedirectAsync($"{V2pnInfo.ReleasesUrl}/latest", blProxy, cancellationToken);
-        var tag = location?.Split("/tag/").LastOrDefault()?.Trim('/');
-        return tag.IsNullOrEmpty() || tag == location ? null : Uri.UnescapeDataString(tag);
+        var proxy = await V2pnHttp.LocalProxyAsync(cancellationToken);
+        var nothingPublished = false;
+        string? error = null;
+        foreach (var source in Settings.Sources)
+        {
+            var host = Uri.TryCreate(source, UriKind.Absolute, out var uri) ? uri.Host : source;
+            foreach (var viaProxy in Routes(preferProxy, proxy != null))
+            {
+                var route = viaProxy ? proxy : null;
+                var url = V2pnInfo.ManifestUrl(source);
+                var json = await V2pnHttp.GetAsync(url, route, V2pnManifest.MaxBytes, cancellationToken);
+                if (json.NotFound)
+                {
+                    nothingPublished = true;
+                    break;
+                }
+                if (!json.Ok)
+                {
+                    error = $"{host}: {json.Error}";
+                    continue;
+                }
+                var signature = await V2pnHttp.GetAsync(url + V2pnInfo.SignatureSuffix, route, 4096, cancellationToken);
+                var signatureText = signature.Ok ? Encoding.ASCII.GetString(signature.Body!) : null;
+                var manifest = V2pnManifest.ReadVerified(json.Body, signatureText, Settings.Keys, out var why);
+                if (manifest == null)
+                {
+                    // Not worth asking the same source another way: what it serves is not a V2pn release.
+                    error = $"{host}: {why}";
+                    break;
+                }
+                return (new Release(source, viaProxy, manifest, json.Body!, signatureText!), false, null);
+            }
+        }
+        return (null, nothingPublished, error);
     }
 
-    private async Task DownloadAsync(DownloadService service, string tag, bool blProxy, CancellationToken cancellationToken)
+    /// <summary>Direct and through the local proxy, the configured preference first.</summary>
+    private static IEnumerable<bool> Routes(bool preferProxy, bool proxyRuns)
     {
-        var packageName = V2pnInfo.PackageName()!;
-        var url = V2pnInfo.PackageUrl(tag, packageName);
-        var expected = await V2pnInfo.GetPublishedHashAsync(service, url, blProxy, cancellationToken);
-        if (expected == null)
+        if (!proxyRuns)
         {
-            Fail("The release has no checksum.", download: true);
-            return;
+            return [false];
         }
+        return preferProxy ? [true, false] : [false, true];
+    }
 
+    private async Task DownloadAsync(Release release, V2pnManifestFile package, CancellationToken cancellationToken)
+    {
         State = EV2pnUpdateState.Downloading;
         Progress = null;
-        var version = new SemanticVersion(tag).ToStandardVersionString();
+        var version = release.Manifest.Version;
+        Directory.CreateDirectory(PendingDir);
         var target = Path.Combine(PendingDir, $"{PendingPrefix}{version}.zip");
         var part = target + ".part";
-        string? downloadError = null;
-        service.UpdateCompleted += (_, args) =>
+        var proxyRuns = await V2pnHttp.LocalProxyAsync(cancellationToken) != null;
+
+        // The source and route that just served the manifest go first.
+        var attempts = Settings.Sources.OrderBy(s => s == release.Source ? 0 : 1)
+            .SelectMany(s => Routes(release.ViaProxy, proxyRuns).Select(viaProxy => (Source: s, ViaProxy: viaProxy)));
+        var error = "The download did not finish.";
+        var done = false;
+        foreach (var (source, viaProxy) in attempts)
         {
-            // The first message names the URL; the rest are "speed | done/total".
-            if (!args.Success && args.Msg?.Contains('|') == true)
+            DeleteFile(part);
+            string? downloadError = null;
+            var service = new DownloadService();
+            service.UpdateCompleted += (_, args) =>
             {
-                Progress = args.Msg.Split('|').Last().Trim().Replace("/", " / ");
+                // The first message names the URL; the rest are "speed | done/total".
+                if (!args.Success && args.Msg?.Contains('|') == true)
+                {
+                    Progress = args.Msg.Split('|').Last().Trim().Replace("/", " / ");
+                }
+            };
+            service.Error += (_, args) => downloadError ??= args.GetException().Message;
+            await service.DownloadFileAsync(new() { FileUrl = V2pnInfo.PackageUrl(source, version, package.Name), FilePath = part }, viaProxy, cancellationToken);
+
+            if (!File.Exists(part))
+            {
+                error = downloadError ?? error;
+                continue;
             }
-        };
-        service.Error += (_, args) => downloadError ??= args.GetException().Message;
-
-        DeletePackage(part);
-        await service.DownloadFileAsync(new() { FileUrl = url, FilePath = part }, blProxy, cancellationToken);
-
-        if (!File.Exists(part))
-        {
-            Fail(downloadError ?? "The download did not finish.", download: true);
-            return;
+            if (V2pnInfo.VerifyPackage(part, package, out var mismatch))
+            {
+                done = true;
+                break;
+            }
+            error = mismatch;
         }
-        if (!V2pnInfo.VerifyPackage(part, expected, out var error))
+        if (!done)
         {
-            DeletePackage(part);
+            DeleteFile(part);
             Fail(error, download: true);
             return;
         }
-        DeleteStalePackages();
+
         File.Move(part, target, true);
-        await File.WriteAllTextAsync(target + V2pnInfo.HashSuffix, $"{expected}  {packageName}\n", cancellationToken);
+        DeleteStalePackages();
+        await File.WriteAllBytesAsync(ManifestPath(target), release.Json, cancellationToken);
+        await File.WriteAllTextAsync(ManifestPath(target) + V2pnInfo.SignatureSuffix, release.Signature, cancellationToken);
         Progress = null;
         State = EV2pnUpdateState.Ready;
         Logging.SaveLog($"{Tag}: V2pn {version} downloaded and verified");
     }
 
-    /// <summary>Removes packages that are not newer than this V2pn, e.g. the one just installed.</summary>
+    private static string ManifestPath(string package) => Path.ChangeExtension(package, ".json");
+
+    /// <summary>What the signed manifest stored next to a waiting package says about it, or null.</summary>
+    private V2pnManifestFile? PendingPackage(string package, string version)
+    {
+        try
+        {
+            var path = ManifestPath(package);
+            if (!File.Exists(path) || !File.Exists(path + V2pnInfo.SignatureSuffix) || new FileInfo(path).Length > V2pnManifest.MaxBytes)
+            {
+                return null;
+            }
+            var manifest = V2pnManifest.ReadVerified(File.ReadAllBytes(path), File.ReadAllText(path + V2pnInfo.SignatureSuffix), Settings.Keys, out _);
+            return manifest?.Version == version ? manifest.File(V2pnInfo.PackageName()) : null;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(Tag, ex);
+            return null;
+        }
+    }
+
+    private static string? FailedVersion()
+    {
+        try
+        {
+            var marker = Path.Combine(PendingDir, FailedMarker);
+            return File.Exists(marker) ? File.ReadAllText(marker).Trim() : null;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(Tag, ex);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Removes packages that are not newer than this V2pn (the one just installed), interrupted
+    /// downloads and what AmazTool leaves behind.
+    /// </summary>
     private void DeleteStalePackages()
     {
         try
@@ -242,6 +398,22 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                     DeletePackage(file);
                 }
             }
+            foreach (var file in Directory.GetFiles(PendingDir, "*.part"))
+            {
+                DeleteFile(file);
+            }
+            foreach (var folder in (string[])["stage", "backup"])
+            {
+                var path = Path.Combine(PendingDir, folder);
+                if (Directory.Exists(path))
+                {
+                    Directory.Delete(path, true);
+                }
+            }
+            if (FailedVersion() is { } failed && new SemanticVersion(failed) <= current)
+            {
+                DeleteFile(Path.Combine(PendingDir, FailedMarker));
+            }
         }
         catch (Exception ex)
         {
@@ -251,10 +423,16 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
 
     private static void DeletePackage(string file)
     {
+        DeleteFile(file);
+        DeleteFile(ManifestPath(file));
+        DeleteFile(ManifestPath(file) + V2pnInfo.SignatureSuffix);
+    }
+
+    private static void DeleteFile(string file)
+    {
         try
         {
             File.Delete(file);
-            File.Delete(file + V2pnInfo.HashSuffix);
         }
         catch (Exception ex)
         {
@@ -268,6 +446,11 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         DownloadFailed = download;
         Progress = null;
         State = EV2pnUpdateState.Failed;
-        Logging.SaveLog($"{Tag}: {error}");
+        // The check repeats for as long as the app runs; the same reason is logged once.
+        if (error != _lastLoggedError)
+        {
+            _lastLoggedError = error;
+            Logging.SaveLog($"{Tag}: {error}");
+        }
     }
 }

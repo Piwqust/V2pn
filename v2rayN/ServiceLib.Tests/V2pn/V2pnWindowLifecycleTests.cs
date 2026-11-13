@@ -22,15 +22,16 @@ public class V2pnWindowLifecycleTests
         config.UiItem.AutoHideStartup = true;
 
         // An entry written before the argument existed: a launch without it may still be the sign-in one.
+        // (There was no V2pn for macOS back then, so a Mac never has such an entry.)
         config.UiItem.V2pnAutostartArg = false;
-        await AutoStartupHandler.StartsHidden(config, autostartArg: false).Should().BeTrue();
+        await AutoStartupHandler.StartsHidden(config, autostartArg: false).Should().BeEqualTo(!Utils.IsMacOS());
         await AutoStartupHandler.StartsHidden(config, autostartArg: true).Should().BeTrue();
 
         // The entry carries the argument: a launch without it is the user's, and shows the window
-        // (other platforms write no argument, so there every launch keeps starting hidden).
+        // (Linux writes no argument, so there every launch keeps starting hidden).
         config.UiItem.V2pnAutostartArg = true;
         await AutoStartupHandler.StartsHidden(config, autostartArg: true).Should().BeTrue();
-        await AutoStartupHandler.StartsHidden(config, autostartArg: false).Should().BeEqualTo(!Utils.IsWindows());
+        await AutoStartupHandler.StartsHidden(config, autostartArg: false).Should().BeEqualTo(Utils.IsLinux());
     }
 
     [Test]

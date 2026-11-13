@@ -32,7 +32,9 @@ OUT="$(cd "$OUT" && pwd)"
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 APP="$WORK/V2pn.app"
-MACOS="$APP/Contents/MacOS"
+# Everything is put together in a plain folder and becomes Contents/MacOS at the end: inside a
+# bundle codesign takes the main program for the whole app and tries to seal the folder.
+MACOS="$WORK/stage"
 mkdir -p "$MACOS" "$APP/Contents/Resources"
 
 PROPS=(-p:SelfContained=true "-p:V2pnVersion=$VERSION" -p:V2pnChannel=release)
@@ -116,6 +118,8 @@ while IFS= read -r -d '' file; do
         codesign --verify "$file" 2>/dev/null || codesign --force --sign "$IDENTITY" "$file"
     fi
 done < <(find "$MACOS" -type f -print0)
+
+mv "$MACOS" "$APP/Contents/MacOS"
 
 ZIP="$OUT/V2pn-macos-$ARCH.zip"
 rm -f "$ZIP"

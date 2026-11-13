@@ -39,7 +39,9 @@ xattr -cr /Applications/V2pn.app
 
 On a Mac, settings and servers live in `~/Library/Application Support/V2pn`.
 
-The macOS build is new. If something does not work, [open an issue](https://github.com/Piwqust/V2pn/issues/new/choose).
+![V2pn on macOS](docs/images/macos.png)
+
+The macOS build is new: an automated check builds it and starts it on a Mac, but few people have used it on real machines yet. If something does not work, [open an issue](https://github.com/Piwqust/V2pn/issues/new/choose).
 
 ## Getting started
 

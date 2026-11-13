@@ -70,6 +70,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();
+        if (!Utils.IsWindows())
+        {
+            // Without the screen scan the remaining button takes the whole row instead of half of it.
+            Grid.SetColumnSpan(btnWelcomeSub, 3);
+        }
         btnWelcomeRouteRu.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.RussiaDirect);
         btnWelcomeRouteAll.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.All);
         SubEditWindow.SubscriptionAdded += subId => _ = UpdateAddedSubscriptionAsync(subId);

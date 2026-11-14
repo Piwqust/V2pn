@@ -218,7 +218,17 @@ if ($Tag) {
         $Notes = ($own | Select-Object -First 40) -join "`n"
     }
     $upstreamVersion = ([xml](Get-Content (Join-Path $src 'Directory.Build.props'))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
-    $message = "V2pn $Version`n`n$Notes`n`nBased on v2rayN $upstreamVersion."
+    # The first line is the tag's subject; the release page shows only what follows it, under its
+    # own title, so the notes must not repeat the name. The v2rayN version is added only when the
+    # notes do not already say what the release is built on.
+    $message = "V2pn $Version`n`n$Notes"
+    if ($Notes -notmatch 'v2rayN') { $message += "`n`nBased on v2rayN $upstreamVersion." }
+    # Every release page ends the same way: which file is for whom. Without it a visitor faces
+    # eighteen files and may take the smaller update package, which has no cores.
+    $footer = Join-Path $PSScriptRoot 'release-notes-footer.md'
+    if (Test-Path $footer) {
+        $message += "`n`n" + ([IO.File]::ReadAllText($footer, [Text.Encoding]::UTF8)).Replace('{version}', $Version).Trim()
+    }
 
     $targets = Join-Path $src 'Directory.Build.targets'
     $original = [IO.File]::ReadAllText($targets)

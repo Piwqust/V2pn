@@ -34,7 +34,7 @@ function Get-Output([string]$exe, [string[]]$arguments) {
     finally { $ErrorActionPreference = $previous }
 }
 
-$notes = (Get-Output 'git.exe' @('-C', $repo, 'tag', '-l', '--format=%(contents)', $tag)) -join "`n"
+$notes = (Get-Output 'git.exe' @('-C', $repo, 'tag', '-l', '--format=%(contents:body)', $tag)) -join "`n"
 if (-not $notes.Trim()) { throw "There is no tag $tag here. Make it with tools/release.ps1 -Version $Version -Tag and push it." }
 
 $state = Get-Output 'gh' @('release', 'view', $tag, '--repo', $Repository, '--json', 'isDraft', '--jq', '.isDraft')

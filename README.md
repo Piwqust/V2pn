@@ -1,10 +1,14 @@
 # V2pn
 
+[![версия](https://img.shields.io/github/v/release/Piwqust/V2pn?label=%D0%B2%D0%B5%D1%80%D1%81%D0%B8%D1%8F)](https://github.com/Piwqust/V2pn/releases/latest)
+[![лицензия](https://img.shields.io/github/license/Piwqust/V2pn?label=%D0%BB%D0%B8%D1%86%D0%B5%D0%BD%D0%B7%D0%B8%D1%8F)](LICENSE)
+[![сборка](https://img.shields.io/github/actions/workflow/status/Piwqust/V2pn/v2pn-ci.yml?branch=v2pn&label=%D1%81%D0%B1%D0%BE%D1%80%D0%BA%D0%B0)](https://github.com/Piwqust/V2pn/actions/workflows/v2pn-ci.yml)
+
 VPN-клиент для Windows и macOS с простым интерфейсом. Внутри работает [v2rayN](https://github.com/2dust/v2rayN) с ядрами Xray, sing-box и mihomo, поэтому подходят те же серверы и подписки: VLESS, VMess, Trojan, Shadowsocks, Hysteria2, TUIC, WireGuard.
 
 [English](README.en.md)
 
-![Главное окно V2pn](docs/images/main.png)
+<p align="center"><img src="docs/images/main-ru.png" alt="Главное окно V2pn: список стран, карта и состояние подключения" width="860"></p>
 
 ## Скачать
 
@@ -14,6 +18,8 @@ VPN-клиент для Windows и macOS с простым интерфейсо�
 | Windows 11, ARM64 | [V2pn-windows-arm64.zip](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip) |
 | macOS 13.6 и новее, Apple silicon (M1 и новее) | [V2pn-macos-arm64.dmg](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-arm64.dmg) |
 | macOS 13.6 и новее, Intel | [V2pn-macos-x64.dmg](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-x64.dmg) |
+
+Сборки для Linux нет.
 
 Все версии и список изменений: [Releases](https://github.com/Piwqust/V2pn/releases), [CHANGELOG.md](CHANGELOG.md).
 
@@ -39,7 +45,7 @@ xattr -cr /Applications/V2pn.app
 
 Настройки и серверы на Mac лежат в `~/Library/Application Support/V2pn`.
 
-![V2pn на macOS](docs/images/macos.png)
+<p align="center"><img src="docs/images/macos.png" alt="V2pn на macOS: первый запуск" width="640"></p>
 
 Сборка для macOS новая: её собирает и запускает на Mac автоматическая проверка, вживую на разных Mac её ещё мало кто пробовал. Если что-то работает не так, [напишите](https://github.com/Piwqust/V2pn/issues/new/choose).
 
@@ -76,7 +82,7 @@ V2pn раз в шесть часов проверяет, вышла ли нов�
 - Настройки, серверы и ядра обновление не трогает.
 - Ядра (Xray, sing-box, mihomo) и списки сайтов обновляются отдельно в том же окне.
 
-Как выпускаются версии и как устроена проверка: [docs/V2PN-RELEASES.md](docs/V2PN-RELEASES.md).
+Что именно проверяется перед установкой: [docs/V2PN-RELEASES.md](docs/V2PN-RELEASES.md#что-именно-проверяется).
 
 ## Сборка из исходников
 
@@ -93,6 +99,8 @@ dotnet build V2pn/v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj -c Release
 ```bash
 dotnet test --project V2pn/v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
 ```
+
+Исходники лежат в папке `v2rayN/`: название осталось от оригинала, чтобы его обновления вливались без конфликтов. По той же причине в корне лежат скрипты `package-*.sh` от v2rayN; V2pn их не использует.
 
 Сборка из исходников показывает версию с пометкой `-dev` и сама не обновляется. Пакеты, как в релизе, собирают `tools/release.ps1` (Windows) и `tools/package-macos.sh` (macOS).
 

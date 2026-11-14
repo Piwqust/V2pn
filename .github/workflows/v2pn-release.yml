@@ -149,7 +149,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           version="${TAG#v}"
-          git tag -l --format='%(contents)' "$TAG" > notes.md
+          git tag -l --format='%(contents:body)' "$TAG" > notes.md
           [ -s notes.md ] || echo "V2pn $version" > notes.md
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" packages/* --clobber

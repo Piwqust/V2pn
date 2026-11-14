@@ -2,7 +2,7 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
+## 1.0.1
 
 ### Programs on their own server
 
@@ -47,6 +47,7 @@ The speed and the session traffic under the map were about a thousand times too 
 - A new server's **Port** field is empty with 443 as a hint, instead of a "0" that had to be deleted first.
 - Labels in the sidebar and in Settings are no longer cut off, and the hints are shorter.
 - The log starts with V2pn's version, not the number of the v2rayN it is built on.
+- If V2pn closed without a word, the log at the next start says when that happened and what Windows recorded around it: a crash, a shutdown, an update of the program it was started from. It helps when you report a problem.
 - Screen readers name the DNS fields, the log buttons, the Settings search and the Advanced settings switch.
 - Developer mode in the Updates window: V2pn builds itself from source on this computer and installs the build over itself, with a rollback if it does not start. **Back to the release** puts the published version back.
 - Long messages in the Updates window wrap instead of going under the buttons.

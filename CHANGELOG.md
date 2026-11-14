@@ -2,6 +2,12 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### Also in this version
+
+- The install commands show what they do: which version comes from where and goes into which folder, a download bar with the speed and the time left, the SHA-256 check against the release, and what was installed. If something goes wrong, they say what and that nothing was installed.
+
 ## 1.0.1
 
 ### Programs on their own server

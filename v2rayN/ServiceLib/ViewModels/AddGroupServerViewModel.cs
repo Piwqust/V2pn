@@ -113,13 +113,21 @@ public partial class AddGroupServerViewModel : MyReactiveObject, ICloseable
         var profileSelectViewModel = new ProfilesSelectViewModel();
         profileSelectViewModel.SetConfigTypeFilter([EConfigType.Custom], exclude: true);
         profileSelectViewModel.MultiSelect = true;
+        // V2pn: the picker offers only servers the group does not have yet, and never the group itself.
+        foreach (var id in ChildItemsObs.Select(c => c.IndexId).Append(SelectedSource?.IndexId))
+        {
+            if (id.IsNotEmpty())
+            {
+                profileSelectViewModel.ExcludeIds.Add(id);
+            }
+        }
         var result = await AppManager.Instance.WindowDialog.ShowDialogAsync(profileSelectViewModel);
         if (result != true)
         {
             return;
         }
         var profiles = await profileSelectViewModel.GetProfileItems() ?? [];
-        ChildItemsObs.AddRange(profiles);
+        ChildItemsObs.AddRange(profiles.Where(p => ChildItemsObs.All(c => c.IndexId != p.IndexId)));
     }
 
     public async Task ChildRemoveAsync()

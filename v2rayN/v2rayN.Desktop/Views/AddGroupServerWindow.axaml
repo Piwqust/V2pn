@@ -2,269 +2,253 @@
     x:Class="v2rayN.Desktop.Views.AddGroupServerWindow"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:loc="using:v2rayN.Desktop"
+    xmlns:conv="using:v2rayN.Desktop.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:views="using:v2rayN.Desktop.Views"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static loc:L.TlGroupTitle}"
-    Width="820"
-    Height="720"
+    Width="720"
+    Height="760"
+    MinWidth="560"
+    MinHeight="520"
     x:DataType="vms:AddGroupServerViewModel"
     Design.DataContext="{x:Static dd:DesignData.AddGroupServer}"
     ShowInTaskbar="False"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
 
+    <!--  One page instead of three tabs and two tables: the servers picked by hand as rows with their
+          own up, down and remove buttons, then the subscription whose servers join as well.  -->
     <DockPanel>
         <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
             <StackPanel Classes="footer">
-            <Button
-                x:Name="btnSave"
-                MinWidth="100"
-                Content="{x:Static loc:L.Save}"
-                IsDefault="True" />
-            <Button
-                x:Name="btnCancel"
-                MinWidth="100"
-                Content="{x:Static resx:ResUI.TbCancel}"
-                IsCancel="True" />
-        </StackPanel>
+                <Button
+                    x:Name="btnSave"
+                    MinWidth="100"
+                    Content="{x:Static loc:L.Save}"
+                    IsDefault="True" />
+                <Button
+                    x:Name="btnCancel"
+                    MinWidth="100"
+                    Content="{x:Static resx:ResUI.TbCancel}"
+                    IsCancel="True" />
+            </StackPanel>
         </Border>
 
-        <StackPanel Classes="spagehead" DockPanel.Dock="Top">
-            <TextBlock x:Name="tbPageTitle" Classes="spagetitle" Text="{x:Static loc:L.TlGroupTitle}" />
-            <TextBlock x:Name="tbPageHint" Classes="spagehint" Text="{x:Static loc:L.TlGroupHint}" />
-            <StackPanel Classes="sgroup">
-                <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.TlGrpMain}" />
-                <Border Classes="sgroupcard">
-                    <StackPanel>
-                        <Border Classes="srow">
-                            <Grid ColumnDefinitions="Auto,*,Auto">
-                                <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconEditStroked}" /></Border>
-                                <StackPanel Grid.Column="1" Classes="srowtext">
-                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlGroupName}" />
-                                </StackPanel>
-                                <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                    <TextBox x:Name="txtRemarks" PlaceholderText="{x:Static loc:L.TlGroupNamePlaceholder}" />
-                                </Panel>
-                            </Grid>
-                        </Border>
-                        <Border Classes="srow" x:Name="gridPolicyGroup">
-                            <Grid ColumnDefinitions="Auto,*,Auto">
-                                <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconBolt}" /></Border>
-                                <StackPanel Grid.Column="1" Classes="srowtext">
-                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlPolicy}" />
-                                    <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlPolicyHint}" />
-                                </StackPanel>
-                                <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                    <ComboBox x:Name="cmbPolicyGroupType" />
-                                </Panel>
-                            </Grid>
-                        </Border>
-                        <Border Classes="srow adv">
-                            <Grid ColumnDefinitions="*,Auto">
-                                <StackPanel Classes="srowtext">
-                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlCore}" />
-                                    <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlCoreHint}" />
-                                </StackPanel>
-                                <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                    <ComboBox x:Name="cmbCoreType" />
-                                </Panel>
-                            </Grid>
-                        </Border>
-                    </StackPanel>
-                </Border>
-            </StackPanel>
-            <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
-            <TextBlock Classes="sgrouplabel" Margin="4,14,0,0" Text="{x:Static loc:L.TlGrpServers}" />
-        </StackPanel>
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Classes="spagebody">
+                <TextBlock x:Name="tbPageTitle" Classes="spagetitle" Text="{x:Static loc:L.TlGroupTitle}" />
+                <TextBlock x:Name="tbPageHint" Classes="spagehint" Text="{x:Static loc:L.TlGroupHint}" />
 
-        <TabControl Classes="plain"
-            x:Name="tabControl"
-            Margin="28,4,28,12"
-            HorizontalContentAlignment="Stretch"
-            DockPanel.Dock="Top">
-            <TabItem HorizontalAlignment="Left" Header="{x:Static loc:L.TlTabFromSub}">
-                <ScrollViewer HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel Margin="0,4,0,8" Spacing="6">
-                        <StackPanel Classes="sgroup">
-                            <Border Classes="sgroupcard">
-                                <StackPanel>
-                                    <Border Classes="srow">
-                                        <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconLink}" /></Border>
-                                            <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlFromSub}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlFromSubHint}" />
-                                            </StackPanel>
-                                            <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                                <ComboBox x:Name="cmbSubChildItems" DisplayMemberBinding="{Binding Remarks}" ItemsSource="{Binding SubItems}" PlaceholderText="{x:Static loc:L.GrpPickSub}" />
-                                            </Panel>
-                                        </Grid>
-                                    </Border>
-                                    <Border Classes="srow adv">
-                                        <Grid ColumnDefinitions="*,Auto">
-                                            <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlFilter}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlFilterHint}" />
-                                            </StackPanel>
-                                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                                <ComboBox x:Name="cmbFilter" IsEditable="True" />
-                                            </Panel>
-                                        </Grid>
-                                    </Border>
-                                </StackPanel>
+                <StackPanel Classes="sgroup">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.TlGrpMain}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconEditStroked}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlGroupName}" />
+                                    </StackPanel>
+                                    <Panel Grid.Column="2" Classes="srowctl" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtRemarks" PlaceholderText="{x:Static loc:L.TlGroupNamePlaceholder}" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border x:Name="gridPolicyGroup" Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconBolt}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlPolicy}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlPolicyHint}" />
+                                    </StackPanel>
+                                    <Panel Grid.Column="2" Classes="srowctl" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbPolicyGroupType" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlCore}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlCoreHint}" />
+                                    </StackPanel>
+                                    <Panel Grid.Column="1" Classes="srowctl" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbCoreType" />
+                                    </Panel>
+                                </Grid>
                             </Border>
                         </StackPanel>
-                    </StackPanel>
-                </ScrollViewer>
-            </TabItem>
-
-            <TabItem HorizontalAlignment="Left" Header="{x:Static loc:L.TlTabByHand}">
-                <DockPanel Margin="0,4,0,0">
-                    <DockPanel Margin="0,0,0,10" DockPanel.Dock="Top">
-                        <StackPanel DockPanel.Dock="Left" Orientation="Horizontal" Spacing="8">
-                            <Button x:Name="btnAddChild" Theme="{StaticResource V2Button}">
-                                <StackPanel Orientation="Horizontal" Spacing="6">
-                                    <PathIcon Width="12" Height="12" Data="{StaticResource SemiIconPlus}" />
-                                    <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TlAddServers}" />
-                                </StackPanel>
-                            </Button>
-                            <Button x:Name="btnRemoveChild" Theme="{StaticResource V2Button}" Content="{x:Static loc:L.TlRemoveServers}" />
-                        </StackPanel>
-                        <TextBlock
-                            Margin="16,0,0,0"
-                            VerticalAlignment="Center"
-                            Classes="muted small"
-                            Text="{x:Static loc:L.TlByHandHint}"
-                            TextTrimming="CharacterEllipsis" />
-                    </DockPanel>
-                    <Border Classes="formcard table">
-                        <DataGrid
-                            x:Name="lstChild"
-                            AutoGenerateColumns="False"
-                            Background="Transparent"
-                            CanUserReorderColumns="False"
-                            CanUserResizeColumns="True"
-                            CanUserSortColumns="False"
-                            GridLinesVisibility="All"
-                            HeadersVisibility="All"
-                            IsReadOnly="True"
-                            ItemsSource="{Binding ChildItemsObs}"
-                            SelectionMode="Extended"
-                            ShowRowNumbers="True">
-                            <DataGrid.ContextMenu>
-                                <ContextMenu>
-                                    <MenuItem x:Name="menuAddChildServer" Header="{x:Static loc:L.TlAddServers}" />
-                                    <MenuItem
-                                        x:Name="menuRemoveChildServer"
-                                        Header="{x:Static loc:L.TlRemoveServers}"
-                                        InputGesture="Back" />
-                                    <MenuItem
-                                        x:Name="menuSelectAllChild"
-                                        Header="{x:Static resx:ResUI.menuSelectAll}"
-                                        InputGesture="Ctrl+A" />
-                                    <Separator />
-                                    <MenuItem
-                                        x:Name="menuMoveTop"
-                                        Header="{x:Static resx:ResUI.menuMoveTop}"
-                                        InputGesture="T" />
-                                    <MenuItem
-                                        x:Name="menuMoveUp"
-                                        Header="{x:Static resx:ResUI.menuMoveUp}"
-                                        InputGesture="U" />
-                                    <MenuItem
-                                        x:Name="menuMoveDown"
-                                        Header="{x:Static resx:ResUI.menuMoveDown}"
-                                        InputGesture="D" />
-                                    <MenuItem
-                                        x:Name="menuMoveBottom"
-                                        Header="{x:Static resx:ResUI.menuMoveBottom}"
-                                        InputGesture="B" />
-                                </ContextMenu>
-                            </DataGrid.ContextMenu>
-                            <DataGrid.Columns>
-                                <DataGridTextColumn
-                                    Width="*"
-                                    Binding="{Binding Remarks}"
-                                    Header="{x:Static loc:L.TlColName}" />
-                                <DataGridTextColumn
-                                    Width="130"
-                                    Binding="{Binding ConfigType}"
-                                    Header="{x:Static loc:L.TlColType}" />
-                                <DataGridTextColumn
-                                    Width="200"
-                                    Binding="{Binding Address}"
-                                    Header="{x:Static loc:L.TlColAddress}" />
-                                <DataGridTextColumn
-                                    Width="100"
-                                    Binding="{Binding Port}"
-                                    Header="{x:Static resx:ResUI.LvPort}"
-                                    IsVisible="False" />
-                                <DataGridTextColumn
-                                    Width="100"
-                                    Binding="{Binding Network}"
-                                    Header="{x:Static resx:ResUI.LvTransportProtocol}"
-                                    IsVisible="False" />
-                                <DataGridTextColumn
-                                    Width="100"
-                                    Binding="{Binding StreamSecurity}"
-                                    Header="{x:Static resx:ResUI.LvTLS}"
-                                    IsVisible="False" />
-                            </DataGrid.Columns>
-                        </DataGrid>
                     </Border>
-                </DockPanel>
-            </TabItem>
-            <TabItem HorizontalAlignment="Left" Header="{x:Static loc:L.TlTabResult}">
-                <Border Margin="0,4,0,0" Classes="formcard table">
-                    <DataGrid
-                        x:Name="lstPreviewChild"
-                        AutoGenerateColumns="False"
-                        Background="Transparent"
-                        CanUserReorderColumns="False"
-                        CanUserResizeColumns="True"
-                        CanUserSortColumns="False"
-                        GridLinesVisibility="All"
-                        HeadersVisibility="All"
-                        IsReadOnly="True"
-                        ItemsSource="{Binding AllProfilePreviewItemsObs}"
-                        SelectionMode="Extended"
-                        ShowRowNumbers="True">
-                        <DataGrid.Columns>
-                            <DataGridTextColumn
-                                Width="*"
-                                Binding="{Binding Remarks}"
-                                Header="{x:Static loc:L.TlColName}" />
-                            <DataGridTextColumn
-                                Width="130"
-                                Binding="{Binding ConfigType}"
-                                Header="{x:Static loc:L.TlColType}" />
-                            <DataGridTextColumn
-                                Width="200"
-                                Binding="{Binding Address}"
-                                Header="{x:Static loc:L.TlColAddress}" />
-                            <DataGridTextColumn
-                                Width="100"
-                                Binding="{Binding Port}"
-                                Header="{x:Static resx:ResUI.LvPort}"
-                                IsVisible="False" />
-                            <DataGridTextColumn
-                                Width="100"
-                                Binding="{Binding Network}"
-                                Header="{x:Static resx:ResUI.LvTransportProtocol}"
-                                IsVisible="False" />
-                            <DataGridTextColumn
-                                Width="100"
-                                Binding="{Binding StreamSecurity}"
-                                Header="{x:Static resx:ResUI.LvTLS}"
-                                IsVisible="False" />
-                        </DataGrid.Columns>
-                    </DataGrid>
-                </Border>
-            </TabItem>
-        </TabControl>
+                </StackPanel>
+                <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
+
+                <!--  The servers picked by hand, in their order. Not an "sgroup": it has no settings rows, and
+                      SettingsKit hides a group whose rows are all hidden.  -->
+                <StackPanel>
+                    <Grid ColumnDefinitions="*,Auto">
+                        <TextBlock
+                            x:Name="txtMembersLabel"
+                            VerticalAlignment="Bottom"
+                            Classes="sgrouplabel"
+                            Text="{x:Static loc:L.TlGrpServers}" />
+                        <Button
+                            x:Name="btnAddChild"
+                            Grid.Column="1"
+                            Margin="0,14,0,8"
+                            VerticalAlignment="Bottom">
+                            <StackPanel Orientation="Horizontal" Spacing="6">
+                                <PathIcon Classes="i12" Data="{StaticResource SemiIconPlus}" />
+                                <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TlAddServers}" />
+                            </StackPanel>
+                        </Button>
+                    </Grid>
+                    <Border Classes="sgroupcard">
+                        <Panel>
+                            <ItemsControl x:Name="lstMembers">
+                                <ItemsControl.ItemTemplate>
+                                    <DataTemplate x:DataType="views:GroupMemberRow">
+                                        <Border Classes="memberrow" Classes.first="{Binding IsFirst}">
+                                            <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                                                <Border Classes="membernum" IsVisible="{Binding Numbered}">
+                                                    <TextBlock Text="{Binding Number}" />
+                                                </Border>
+                                                <Panel
+                                                    Grid.Column="1"
+                                                    Width="26"
+                                                    Height="20"
+                                                    VerticalAlignment="Center">
+                                                    <Border
+                                                        Width="24"
+                                                        Height="18"
+                                                        BoxShadow="{DynamicResource V2FlagRing}"
+                                                        ClipToBounds="True"
+                                                        CornerRadius="4"
+                                                        IsVisible="{Binding Look.ShowFlag}">
+                                                        <Image Source="{Binding Look.Flag}" Stretch="UniformToFill" />
+                                                    </Border>
+                                                    <PathIcon
+                                                        Width="16"
+                                                        Height="16"
+                                                        Foreground="{DynamicResource V2Faint}"
+                                                        Data="{StaticResource SemiIconGlobeStroke}"
+                                                        IsVisible="{Binding Look.ShowGlobe}" />
+                                                </Panel>
+                                                <StackPanel
+                                                    Grid.Column="2"
+                                                    Margin="12,0,8,0"
+                                                    VerticalAlignment="Center"
+                                                    Spacing="1">
+                                                    <TextBlock
+                                                        Classes="title"
+                                                        Text="{Binding Look.Title}"
+                                                        TextTrimming="CharacterEllipsis"
+                                                        ToolTip.Tip="{Binding Item.Remarks}" />
+                                                    <TextBlock
+                                                        Classes="muted small"
+                                                        Text="{Binding Look.Subtitle}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
+                                                <Border
+                                                    Grid.Column="3"
+                                                    Margin="0,0,8,0"
+                                                    VerticalAlignment="Center"
+                                                    Classes="pill"
+                                                    Classes.bad="{Binding Look.Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingBad}}"
+                                                    Classes.good="{Binding Look.Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingGood}}"
+                                                    Classes.mid="{Binding Look.Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingMid}}"
+                                                    IsVisible="{Binding Look.Model.Delay, Converter={x:Static conv:V2pnConverters.NotZero}}">
+                                                    <TextBlock Text="{Binding Look.Model.Delay, Converter={x:Static conv:V2pnConverters.PingText}}" />
+                                                </Border>
+                                                <StackPanel
+                                                    Grid.Column="4"
+                                                    VerticalAlignment="Center"
+                                                    Orientation="Horizontal"
+                                                    Spacing="2">
+                                                    <Button
+                                                        AutomationProperties.Name="{x:Static loc:L.TlMoveUp}"
+                                                        Classes="plain ghost small icon"
+                                                        Click="MemberUp_Click"
+                                                        IsEnabled="{Binding CanUp}"
+                                                        Theme="{StaticResource V2Button}"
+                                                        ToolTip.Tip="{x:Static loc:L.TlMoveUp}">
+                                                        <PathIcon Classes="i14" Data="{StaticResource SemiIconChevronUp}" />
+                                                    </Button>
+                                                    <Button
+                                                        AutomationProperties.Name="{x:Static loc:L.TlMoveDown}"
+                                                        Classes="plain ghost small icon"
+                                                        Click="MemberDown_Click"
+                                                        IsEnabled="{Binding CanDown}"
+                                                        Theme="{StaticResource V2Button}"
+                                                        ToolTip.Tip="{x:Static loc:L.TlMoveDown}">
+                                                        <PathIcon Classes="i14" Data="{StaticResource SemiIconChevronDown}" />
+                                                    </Button>
+                                                    <Button
+                                                        AutomationProperties.Name="{x:Static loc:L.TlRemoveServers}"
+                                                        Classes="plain ghost small icon"
+                                                        Click="MemberRemove_Click"
+                                                        Theme="{StaticResource V2Button}"
+                                                        ToolTip.Tip="{x:Static loc:L.TlRemoveServers}">
+                                                        <PathIcon Classes="i14" Data="{StaticResource SemiIconClose}" />
+                                                    </Button>
+                                                </StackPanel>
+                                            </Grid>
+                                        </Border>
+                                    </DataTemplate>
+                                </ItemsControl.ItemTemplate>
+                            </ItemsControl>
+                            <TextBlock
+                                x:Name="txtMembersEmpty"
+                                Margin="24,26"
+                                HorizontalAlignment="Center"
+                                Classes="muted"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap" />
+                        </Panel>
+                    </Border>
+                    <TextBlock x:Name="txtOrderNote" Classes="sgroupnote" />
+                </StackPanel>
+
+                <!--  Every server of a subscription, new ones too (groups only).  -->
+                <StackPanel x:Name="groupFromSub" Classes="sgroup">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.TlTabFromSub}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconLink}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlFromSub}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlFromSubHint}" />
+                                    </StackPanel>
+                                    <Panel Grid.Column="2" Classes="srowctl" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbSubChildItems" ItemsSource="{Binding SubItems}" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow adv">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.TlFilter}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlFilterHint}" />
+                                    </StackPanel>
+                                    <Panel Grid.Column="1" Classes="srowctl" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbFilter" IsEditable="True" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock
+                        x:Name="txtSubCount"
+                        Classes="sgroupnote"
+                        IsVisible="False" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
     </DockPanel>
 </Window>

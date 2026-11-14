@@ -5,151 +5,165 @@
     xmlns:conv="using:v2rayN.Desktop.Converters"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:side="using:v2rayN.Desktop.ViewModels"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.TbSelectProfile}"
-    Width="840"
-    Height="450"
+    Title="{x:Static loc:L.PickTitleOne}"
+    Width="640"
+    Height="700"
+    MinWidth="480"
+    MinHeight="420"
     x:DataType="vms:ProfilesSelectViewModel"
     Design.DataContext="{x:Static dd:DesignData.ProfilesSelect}"
-    WindowStartupLocation="CenterScreen"
+    ShowInTaskbar="False"
+    WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
 
-    <Window.Resources>
-        <conv:DelayColorConverter x:Key="DelayColorConverter" />
-    </Window.Resources>
-
+    <!--  The servers as the main window's list shows them: flag, a readable name, what it is, its ping.
+          Several are ticked (a group, a chain) or one is chosen (a rule, a pinned program).  -->
     <DockPanel>
         <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
-            <StackPanel Classes="footer">
-            <Button
-                x:Name="btnSave"
-                MinWidth="100"
-                Content="{x:Static resx:ResUI.TbConfirm}"
-                IsDefault="True" />
-            <Button
-                x:Name="btnCancel"
-                MinWidth="100"
-                Content="{x:Static resx:ResUI.TbCancel}"
-                IsCancel="True" />
-        </StackPanel>
+            <DockPanel>
+                <StackPanel
+                    VerticalAlignment="Center"
+                    DockPanel.Dock="Left"
+                    Orientation="Horizontal"
+                    Spacing="12">
+                    <Button
+                        x:Name="btnSelectAll"
+                        MinWidth="0"
+                        Classes="plain ghost"
+                        Content="{x:Static loc:L.PickSelectAll}"
+                        Theme="{StaticResource V2Button}" />
+                    <TextBlock
+                        x:Name="txtCount"
+                        VerticalAlignment="Center"
+                        Classes="muted" />
+                </StackPanel>
+                <StackPanel Classes="footer">
+                    <Button
+                        x:Name="btnSave"
+                        MinWidth="100"
+                        Content="{x:Static loc:L.PickChoose}"
+                        IsDefault="True" />
+                    <Button
+                        x:Name="btnCancel"
+                        MinWidth="100"
+                        Content="{x:Static resx:ResUI.TbCancel}"
+                        IsCancel="True" />
+                </StackPanel>
+            </DockPanel>
         </Border>
 
-        <Border Classes="formcard table">
-            <Grid>
-            <DockPanel>
-                <!--  Top tools  -->
-                <WrapPanel Margin="{StaticResource Margin4}" DockPanel.Dock="Top">
-                    <ListBox
-                        x:Name="lstGroup"
-                        Margin="{StaticResource MarginLr4}"
-                        DisplayMemberBinding="{Binding Remarks}"
-                        ItemsSource="{Binding SubItems}"
-                        Theme="{DynamicResource ButtonRadioGroupListBox}">
-                        <ListBox.ItemsPanel>
-                            <ItemsPanelTemplate>
-                                <WrapPanel />
-                            </ItemsPanelTemplate>
-                        </ListBox.ItemsPanel>
-                    </ListBox>
+        <StackPanel Classes="spagehead" DockPanel.Dock="Top">
+            <TextBlock x:Name="tbTitle" Classes="spagetitle" Text="{x:Static loc:L.PickTitleOne}" />
+            <TextBlock x:Name="tbHint" Classes="spagehint" Text="{x:Static loc:L.PickHintOne}" />
+            <TextBox
+                x:Name="txtServerFilter"
+                Margin="0,12,0,4"
+                AutomationProperties.Name="{x:Static loc:L.PickSearch}"
+                Classes="search"
+                PlaceholderText="{x:Static loc:L.PickSearch}">
+                <TextBox.InnerLeftContent>
+                    <PathIcon
+                        Width="14"
+                        Height="14"
+                        Margin="10,0,2,0"
+                        Foreground="{DynamicResource V2Muted}"
+                        Data="{StaticResource SemiIconSearch}" />
+                </TextBox.InnerLeftContent>
+            </TextBox>
+            <!--  Subscriptions as pills; "All" first. Hidden when there is nothing to choose between.  -->
+            <ListBox
+                x:Name="lstGroup"
+                Margin="0,6,0,0"
+                Classes="chips"
+                DisplayMemberBinding="{Binding Remarks}"
+                ItemsSource="{Binding SubItems}" />
+        </StackPanel>
 
-                    <Button
-                        x:Name="btnAutofitColumnWidth"
-                        Margin="{StaticResource MarginLr4}"
-                        Classes="IconButton Success"
-                        ToolTip.Tip="{x:Static resx:ResUI.menuProfileAutofitColumnWidth}">
-                        <Button.Content>
-                            <PathIcon Data="{StaticResource SemiIconExpand}" />
-                        </Button.Content>
-                    </Button>
-
-                    <TextBox
-                        x:Name="txtServerFilter"
-                        Width="200"
-                        Margin="{StaticResource MarginLr4}"
-                        VerticalContentAlignment="Center"
-                        PlaceholderText="{x:Static resx:ResUI.MsgServerTitle}"
-                        Text="{Binding ServerFilter, Mode=TwoWay}"
-                        ToolTip.Tip="{x:Static resx:ResUI.MsgServerTitle}" />
-                </WrapPanel>
-
-                <!--  Profiles grid  -->
-                <DataGrid
+        <Border
+            Margin="28,4,28,16"
+            Classes="sgroupcard"
+            ClipToBounds="True">
+            <Panel>
+                <ListBox
                     x:Name="lstProfiles"
-                    AutoGenerateColumns="False"
-                    BorderThickness="1"
-                    CanUserReorderColumns="True"
-                    CanUserResizeColumns="True"
-                    GridLinesVisibility="All"
-                    HeadersVisibility="All"
-                    IsReadOnly="True"
-                    ItemsSource="{Binding ProfileItems}"
-                    SelectionMode="Single"
-                    ShowRowNumbers="True">
-                    <DataGrid.KeyBindings>
-                        <KeyBinding Command="{Binding SelectFinish}" Gesture="Enter" />
-                    </DataGrid.KeyBindings>
-                    <DataGrid.Columns>
-                        <DataGridTextColumn
-                            Width="80"
-                            Binding="{Binding ConfigType}"
-                            Header="{x:Static resx:ResUI.LvServiceType}"
-                            Tag="ConfigType" />
-                        <DataGridTextColumn
-                            Width="200"
-                            Binding="{Binding Remarks}"
-                            Header="{x:Static resx:ResUI.LvRemarks}"
-                            Tag="Remarks" />
-                        <DataGridTextColumn
-                            Width="200"
-                            Binding="{Binding Address}"
-                            Header="{x:Static resx:ResUI.LvAddress}"
-                            Tag="Address" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding Port}"
-                            Header="{x:Static resx:ResUI.LvPort}"
-                            Tag="Port" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding Network}"
-                            Header="{x:Static resx:ResUI.LvTransportProtocol}"
-                            Tag="Network" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding StreamSecurity}"
-                            Header="{x:Static resx:ResUI.LvTLS}"
-                            Tag="StreamSecurity" />
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding SubRemarks}"
-                            Header="{x:Static resx:ResUI.LvSubscription}"
-                            Tag="SubRemarks" />
-                        <DataGridTemplateColumn SortMemberPath="Delay" Tag="Delay">
-                            <DataGridTemplateColumn.Header>
-                                <TextBlock Text="{x:Static resx:ResUI.LvTestDelay}" />
-                            </DataGridTemplateColumn.Header>
-                            <DataGridTemplateColumn.CellTemplate>
-                                <DataTemplate>
+                    Padding="6"
+                    Background="Transparent"
+                    BorderThickness="0"
+                    Classes="single"
+                    ItemContainerTheme="{StaticResource V2PickItem}"
+                    ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                    <ListBox.ItemTemplate>
+                        <DataTemplate x:DataType="side:SideServerRow">
+                            <Grid ColumnDefinitions="Auto,Auto,*,Auto">
+                                <Border Classes="pickcheck">
+                                    <Path Data="M 20 6 L 9 17 L 4 12" />
+                                </Border>
+                                <Panel
+                                    Grid.Column="1"
+                                    Width="26"
+                                    Height="20"
+                                    VerticalAlignment="Center">
+                                    <Border
+                                        Width="24"
+                                        Height="18"
+                                        BoxShadow="{DynamicResource V2FlagRing}"
+                                        ClipToBounds="True"
+                                        CornerRadius="4"
+                                        IsVisible="{Binding ShowFlag}">
+                                        <Image Source="{Binding Flag}" Stretch="UniformToFill" />
+                                    </Border>
+                                    <PathIcon
+                                        Width="16"
+                                        Height="16"
+                                        Foreground="{DynamicResource V2Faint}"
+                                        Data="{StaticResource SemiIconGlobeStroke}"
+                                        IsVisible="{Binding ShowGlobe}" />
+                                    <Ellipse Classes="badge" IsVisible="{Binding IsActive}" />
+                                </Panel>
+                                <StackPanel
+                                    Grid.Column="2"
+                                    Margin="12,0,8,0"
+                                    VerticalAlignment="Center"
+                                    Spacing="1">
                                     <TextBlock
-                                        Margin="{StaticResource MarginLr8}"
-                                        HorizontalAlignment="Right"
-                                        VerticalAlignment="Center"
-                                        Foreground="{Binding Delay, Converter={StaticResource DelayColorConverter}}"
-                                        Text="{Binding Path=DelayVal, Mode=OneWay}" />
-                                </DataTemplate>
-                            </DataGridTemplateColumn.CellTemplate>
-                        </DataGridTemplateColumn>
-                        <DataGridTextColumn
-                            Width="100"
-                            Binding="{Binding SpeedVal}"
-                            Header="{x:Static resx:ResUI.LvTestSpeed}"
-                            Tag="Speed" />
-                    </DataGrid.Columns>
-                </DataGrid>
-            </DockPanel>
-        </Grid>
+                                        Classes="title"
+                                        Text="{Binding Title}"
+                                        TextTrimming="CharacterEllipsis"
+                                        ToolTip.Tip="{Binding Model.Remarks}" />
+                                    <TextBlock
+                                        Classes="muted small"
+                                        Text="{Binding Subtitle}"
+                                        TextTrimming="CharacterEllipsis" />
+                                </StackPanel>
+                                <Border
+                                    Grid.Column="3"
+                                    VerticalAlignment="Center"
+                                    Classes="pill"
+                                    Classes.bad="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingBad}}"
+                                    Classes.good="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingGood}}"
+                                    Classes.mid="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.IsPingMid}}"
+                                    IsVisible="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.NotZero}}">
+                                    <TextBlock Text="{Binding Model.Delay, Converter={x:Static conv:V2pnConverters.PingText}}" />
+                                </Border>
+                            </Grid>
+                        </DataTemplate>
+                    </ListBox.ItemTemplate>
+                </ListBox>
+                <TextBlock
+                    x:Name="txtEmpty"
+                    Margin="24"
+                    HorizontalAlignment="Center"
+                    VerticalAlignment="Center"
+                    Classes="muted"
+                    IsVisible="False"
+                    TextAlignment="Center"
+                    TextWrapping="Wrap" />
+            </Panel>
         </Border>
     </DockPanel>
 </Window>

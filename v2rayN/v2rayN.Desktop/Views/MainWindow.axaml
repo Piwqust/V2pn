@@ -18,7 +18,7 @@
     Title="V2pn"
     Width="1280"
     Height="800"
-    MinWidth="1000"
+    MinWidth="360"
     MinHeight="560"
     x:DataType="vms:MainWindowViewModel"
     Background="{DynamicResource V2WindowBackground}"
@@ -38,7 +38,7 @@
                 Grid.Row="0"
                 chrome:WindowDecorationProperties.ElementRole="TitleBar"
                 Background="Transparent"
-                ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto">
+                ColumnDefinitions="Auto,Auto,Auto,*,Auto,Auto,Auto">
                 <Button
                     x:Name="btnAppMenu"
                     chrome:WindowDecorationProperties.ElementRole="User"
@@ -51,6 +51,7 @@
                     <Button.Flyout>
                         <MenuFlyout Placement="BottomEdgeAlignedLeft">
                             <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpView}" IsEnabled="False" />
+                            <MenuItem x:Name="menuMiniWindow" Header="{x:Static loc:L.MiniWindow}"><MenuItem.Icon><PathIcon x:Name="iconMenuMini" Classes="mi" Data="{StaticResource SemiIconShrink}" /></MenuItem.Icon></MenuItem>
                             <MenuItem x:Name="menuPageLog" Header="{x:Static loc:L.MenuLog}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconTerminal}" /></MenuItem.Icon></MenuItem>
                             <MenuItem x:Name="menuPageTable" Header="{x:Static loc:L.MenuTable}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconListView}" /></MenuItem.Icon></MenuItem>
                             <MenuItem x:Name="menuPageProxies" Header="{x:Static loc:L.MenuClashProxies}" IsVisible="{Binding ShowClashUI}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconServerStroked}" /></MenuItem.Icon></MenuItem>
@@ -128,7 +129,20 @@
                     Grid.Column="4"
                     Margin="0,0,6,0"
                     VerticalAlignment="Center" />
-                <StackPanel Grid.Column="5" Orientation="Horizontal">
+                <!--  Mini window and back; the icon and the name follow the size it leads to (MainWindow.Mini.cs).  -->
+                <Button
+                    x:Name="btnMini"
+                    chrome:WindowDecorationProperties.ElementRole="User"
+                    Grid.Column="5"
+                    Margin="0,0,6,0"
+                    VerticalAlignment="Center"
+                    AutomationProperties.Name="{x:Static loc:L.MiniWindow}"
+                    Classes="ghost icon"
+                    Theme="{StaticResource V2Button}"
+                    ToolTip.Tip="{x:Static loc:L.MiniWindow}">
+                    <PathIcon x:Name="iconMini" Classes="i16" Data="{StaticResource SemiIconShrink}" />
+                </Button>
+                <StackPanel Grid.Column="6" Orientation="Horizontal">
                     <Button
                         x:Name="btnMinimize"
                     chrome:WindowDecorationProperties.ElementRole="MinimizeButton"
@@ -815,8 +829,10 @@
                             VerticalAlignment="Top"
                             Opacity="0"
                             Spacing="6">
-                            <!--  Only this part sits beside the rail, so only it keeps clear of it (88 px tiles + padding).  -->
+                            <!--  Only this part sits beside the rail, so only it keeps clear of it (88 px tiles + padding).
+                                  The mini window has no rail and gives the margin back.  -->
                             <StackPanel
+                                x:Name="panelHeadline"
                                 Margin="108,0,108,0"
                                 HorizontalAlignment="Center"
                                 Spacing="6">
@@ -889,9 +905,14 @@
                                 HorizontalAlignment="Center"
                                 Classes="floating modebar"
                                 Opacity="0">
-                                <!--  Each half says what it decides, so the bar reads without hovering.  -->
-                                <StackPanel Orientation="Horizontal" Spacing="8">
-                                    <StackPanel Spacing="3">
+                                <!--  Each half says what it decides, so the bar reads without hovering. Side by side; in a
+                                      one-column window the route takes a row of its own (MainWindow.Adaptive.cs).  -->
+                                <Grid
+                                    x:Name="gridBar"
+                                    ColumnDefinitions="Auto,Auto,*"
+                                    ColumnSpacing="8"
+                                    RowSpacing="10">
+                                    <StackPanel x:Name="panelMode" Spacing="3">
                                     <TextBlock Classes="barcaption" Text="{x:Static loc:L.BarMode}" />
                                     <ListBox
                                         x:Name="lstMode"
@@ -916,23 +937,28 @@
                                         </ListBoxItem>
                                     </ListBox>
                                     </StackPanel>
-                                    <Border Classes="vsep" />
-                                    <StackPanel Spacing="3">
-                                    <TextBlock Classes="barcaption" Text="{x:Static loc:L.BarRoute}" />
+                                    <Border x:Name="sepBar" Grid.Column="1" Classes="vsep" />
+                                    <StackPanel x:Name="panelRoute" Grid.Column="2" Spacing="3">
+                                    <TextBlock
+                                        Classes="barcaption"
+                                        Text="{x:Static loc:L.BarRoute}"
+                                        TextTrimming="CharacterEllipsis" />
                                     <Button
                                         x:Name="btnRoute"
                                         AutomationProperties.Name="{x:Static loc:L.RouteTitle}"
                                         Classes="ghost routechip"
                                         Theme="{StaticResource V2Button}"
                                         ToolTip.Tip="{x:Static loc:L.RouteTitle}">
-                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                        <!--  A grid, not a stack, so a narrow window trims the route's name instead of clipping it.  -->
+                                        <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="7">
                                             <PathIcon Classes="i14" Data="{StaticResource SemiIconRoute}" />
                                             <TextBlock
                                                 x:Name="txtRoute"
+                                                Grid.Column="1"
                                                 MaxWidth="190"
                                                 TextTrimming="CharacterEllipsis" />
-                                            <PathIcon Classes="i12" Data="{StaticResource SemiIconChevronDown}" />
-                                        </StackPanel>
+                                            <PathIcon Grid.Column="2" Classes="i12" Data="{StaticResource SemiIconChevronDown}" />
+                                        </Grid>
                                         <Button.Flyout>
                                             <Flyout Placement="Bottom">
                                                 <StackPanel Width="380" Spacing="12">
@@ -1080,19 +1106,25 @@
                                         </Button.Flyout>
                                     </Button>
                                     </StackPanel>
-                                </StackPanel>
+                                </Grid>
                             </Border>
                             </StackPanel>
                         </StackPanel>
 
-                        <!--  First run: nothing to connect to yet, so the stage asks for a server instead.  -->
+                        <!--  First run: nothing to connect to yet, so the stage asks for a server instead. The card
+                              scrolls when the window is shorter than it; the scroller shows and hides with it.  -->
+                        <ScrollViewer
+                            x:Name="scrollWelcome"
+                            Margin="0,40,0,0"
+                            HorizontalAlignment="Center"
+                            VerticalAlignment="Center"
+                            HorizontalScrollBarVisibility="Disabled"
+                            IsVisible="False"
+                            VerticalScrollBarVisibility="Auto">
                         <Border
                             x:Name="cardWelcome"
                             Width="440"
-                            Margin="0,40,0,0"
                             Padding="28,26,28,24"
-                            HorizontalAlignment="Center"
-                            VerticalAlignment="Center"
                             Classes="floating"
                             IsVisible="False"
                             Opacity="0">
@@ -1229,6 +1261,7 @@
                                 </StackPanel>
                             </StackPanel>
                         </Border>
+                        </ScrollViewer>
 
                         <!--  Feature rail: DNS and settings. Mode and routing live under the Connect button.  -->
                         <Panel

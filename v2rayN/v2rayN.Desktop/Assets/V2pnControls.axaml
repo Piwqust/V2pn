@@ -754,4 +754,82 @@
             <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
         </Style>
     </ControlTheme>
+
+    <!--  A server in a list you pick from: quiet until hovered, a soft fill and a ticked box once picked.  -->
+    <ControlTheme x:Key="V2PickItem" TargetType="ListBoxItem">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        <Setter Property="BorderBrush" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="1" />
+        <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusRow}" />
+        <Setter Property="Padding" Value="10,0,8,0" />
+        <Setter Property="MinHeight" Value="52" />
+        <Setter Property="Margin" Value="0,1" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ContentPresenter
+                    Name="PART_ContentPresenter"
+                    Padding="{TemplateBinding Padding}"
+                    HorizontalContentAlignment="{TemplateBinding HorizontalContentAlignment}"
+                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                    Background="{TemplateBinding Background}"
+                    BorderBrush="{TemplateBinding BorderBrush}"
+                    BorderThickness="{TemplateBinding BorderThickness}"
+                    Content="{TemplateBinding Content}"
+                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                    CornerRadius="{TemplateBinding CornerRadius}" />
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Background" Value="{DynamicResource V2Hover}" />
+        </Style>
+        <Style Selector="^:selected">
+            <Setter Property="Background" Value="{DynamicResource V2RowSelected}" />
+            <Setter Property="BorderBrush" Value="{DynamicResource V2RowSelectedBorder}" />
+        </Style>
+        <Style Selector="^:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
+        </Style>
+    </ControlTheme>
+
+    <!--  One of a few choices in a wrapping row of pills (the subscriptions above a server list).  -->
+    <ControlTheme x:Key="V2ChipItem" TargetType="ListBoxItem">
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+        <Setter Property="Padding" Value="12,0" />
+        <Setter Property="MinHeight" Value="30" />
+        <Setter Property="Margin" Value="0,0,6,6" />
+        <Setter Property="CornerRadius" Value="15" />
+        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Cursor" Value="Hand" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <ContentPresenter
+                    Name="PART_ContentPresenter"
+                    Padding="{TemplateBinding Padding}"
+                    VerticalContentAlignment="{TemplateBinding VerticalContentAlignment}"
+                    Background="{TemplateBinding Background}"
+                    Content="{TemplateBinding Content}"
+                    ContentTemplate="{TemplateBinding ContentTemplate}"
+                    CornerRadius="{TemplateBinding CornerRadius}"
+                    Foreground="{TemplateBinding Foreground}" />
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        </Style>
+        <Style Selector="^:selected">
+            <Setter Property="Background" Value="{DynamicResource V2AccentFill}" />
+            <Setter Property="Foreground" Value="{DynamicResource V2OnAccent}" />
+        </Style>
+        <Style Selector="^:focus-visible /template/ ContentPresenter#PART_ContentPresenter">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
+        </Style>
+    </ControlTheme>
 </ResourceDictionary>

@@ -369,18 +369,19 @@
 
 
     <!--  Buttons inside dialog forms: raised neutral keys, like the main window's secondary actions.  -->
-    <!--  Not the Settings navigation links: they are nav entries, flat like the list above them.  -->
-    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink), UserControl Border.formcard Button:not(.IconButton)">
+    <!--  Not the Settings navigation links: they are nav entries, flat like the list above them. Not
+          "plain" ones either: row actions (up, down, remove) keep their own V2Button look.  -->
+    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink):not(.plain), UserControl Border.formcard Button:not(.IconButton)">
         <Setter Property="Theme" Value="{StaticResource V2Button}" />
         <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="MinHeight" Value="32" />
     </Style>
-    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink) /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton) /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink):not(.plain) /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton) /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="BoxShadow" Value="{DynamicResource V2NeutralShadow}" />
     </Style>
-    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink):pointerover /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink):not(.plain):pointerover /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton):pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
     </Style>
 
@@ -444,6 +445,82 @@
     </Style>
     <Style Selector="Button.siderow:pointerover Button.reveal:disabled">
         <Setter Property="Opacity" Value="0.35" />
+    </Style>
+
+    <!--  Server picker and group members (ProfilesSelectWindow, AddGroupServerWindow).  -->
+    <Style Selector="ListBox.chips">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Padding" Value="0" />
+        <Setter Property="ItemContainerTheme" Value="{StaticResource V2ChipItem}" />
+        <Setter Property="ItemsPanel">
+            <ItemsPanelTemplate>
+                <WrapPanel />
+            </ItemsPanelTemplate>
+        </Setter>
+    </Style>
+    <Style Selector="Border.pickcheck">
+        <Setter Property="Width" Value="20" />
+        <Setter Property="Height" Value="20" />
+        <Setter Property="Margin" Value="0,0,12,0" />
+        <Setter Property="CornerRadius" Value="6" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2BorderStrong}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.pickcheck > Path">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="Stretch" Value="Uniform" />
+        <Setter Property="Stroke" Value="{DynamicResource V2OnAccent}" />
+        <Setter Property="StrokeThickness" Value="2.4" />
+        <Setter Property="StrokeLineCap" Value="Round" />
+        <Setter Property="StrokeJoin" Value="Round" />
+        <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="ListBoxItem:selected Border.pickcheck">
+        <Setter Property="Background" Value="{DynamicResource V2AccentFill}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2AccentFill}" />
+    </Style>
+    <Style Selector="ListBoxItem:selected Border.pickcheck > Path">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+    <!--  Choosing one server needs no boxes: the row's fill says which.  -->
+    <Style Selector="ListBox.single Border.pickcheck">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector="Border.memberrow">
+        <Setter Property="Padding" Value="14,8,8,8" />
+        <Setter Property="MinHeight" Value="56" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
+        <Setter Property="BorderThickness" Value="0,1,0,0" />
+    </Style>
+    <Style Selector="Border.memberrow.first">
+        <Setter Property="BorderThickness" Value="0" />
+    </Style>
+    <Style Selector="Border.memberrow Button.plain">
+        <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="Border.memberrow:pointerover Button.plain, Border.memberrow Button.plain:focus-visible">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+    <Style Selector="Border.memberrow Button.plain:disabled">
+        <Setter Property="Opacity" Value="0.2" />
+    </Style>
+    <Style Selector="Border.membernum">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="Margin" Value="0,0,12,0" />
+        <Setter Property="CornerRadius" Value="11" />
+        <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.membernum > TextBlock">
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
 
     <Style Selector="Ellipse.badge">

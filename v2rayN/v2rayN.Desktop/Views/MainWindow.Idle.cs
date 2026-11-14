@@ -37,6 +37,7 @@ public partial class MainWindow
         else if (change.Property == ClientSizeProperty)
         {
             QueueNormalBounds();
+            FollowWidth();
         }
 
         // Properties are set during InitializeComponent, before the timers exist.

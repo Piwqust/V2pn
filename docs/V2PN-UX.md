@@ -38,6 +38,22 @@ The presets use the `IPOnDemand` strategy. sing-box used to ignore a rule set's 
 
 Your own rule sets are chosen in the same menu, under "Your rules". The full editor opens with "Routing settings…".
 
+## Window size
+
+The main window follows its width (`MainWindow.Adaptive.cs`), from 360 px up:
+
+| Layout | When | What changes |
+| --- | --- | --- |
+| Full | the map is at least 650 px wide (a 1000 px window with the usual sidebar) | nothing: list, map, tiles, status card |
+| No tiles | the map is 470–650 px wide | the tiles hide (their actions are in the ☰ menu); the status card below 600 px drops the speed graph and the Check label |
+| One column | the map would be under 470 px (about 800 px of window) | the state, the server, Connect, the mode and the route on top, the route under the mode; the server list below. No map, status card or Appearance button |
+
+- The thresholds count the map's width, so a narrow sidebar keeps the full layout a little longer.
+- A one-column window can be as short as its top part; with under about 150 px left for the list, the list hides. The first-run card scrolls instead of being cut off.
+- Two-column layouts keep the old minimum height, 560 px, so the status card never runs into the header.
+- The arrows button next to the window controls jumps to a 400×640 mini window and back to the last full size; each size is saved (`MainWindow.Mini`, `MainWindow.Full`), and V2pn reopens at whatever size it was closed at.
+- Updates, backup and the QR code are in-window dialogs wider than the mini window: the full size opens for them and the mini one comes back after.
+
 ## The server list
 
 - **Favorites:**

@@ -1,5 +1,4 @@
 using Avalonia.LogicalTree;
-using DialogHostAvalonia;
 using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
@@ -134,7 +133,7 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
             {
                 if (interaction.Input.IsNotEmpty())
                 {
-                    await DialogHost.Show(new QrcodeView(interaction.Input));
+                    await MainWindow.ShowRoomyDialog(new QrcodeView(interaction.Input));
                 }
                 interaction.SetOutput(RxVoid.Default);
             }).DisposeWith(disposables);

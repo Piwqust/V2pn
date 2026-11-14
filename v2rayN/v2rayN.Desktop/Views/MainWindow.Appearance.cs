@@ -37,10 +37,11 @@ public partial class MainWindow
 
     // Below 1100 px the "wide" sidebar leaves the stage too narrow for the welcome card next to the
     // rail, so it uses the default width for as long as the window stays small. The setting is kept.
-    private int SidebarPixels()
+    private int SidebarPixels() => SidebarPixels(CurrentWidth());
+
+    private static int SidebarPixels(double windowWidth)
     {
         var a = Appearance.Current;
-        var windowWidth = Bounds.Width > 0 ? Bounds.Width : ClientSize.Width;
         return a.SidebarWidth switch
         {
             "narrow" => 272,
@@ -53,22 +54,28 @@ public partial class MainWindow
     private void ApplyLayout()
     {
         var a = Appearance.Current;
-        var width = SidebarPixels();
-        _sidebarPixels = width;
-        var right = a.SidebarSide == "right";
-        gridBody.ColumnDefinitions = right
-            ? new ColumnDefinitions($"*,{width}")
-            : new ColumnDefinitions($"{width},*");
-        Grid.SetColumn(borderSidebar, right ? 1 : 0);
-        Grid.SetColumn(borderStage, right ? 0 : 1);
-        borderSidebar.Margin = right ? new Thickness(10, 0, 0, 0) : new Thickness(0, 0, 10, 0);
+        ArrangeForWidth();
+        if (_tier != BodyTier.Stacked)
+        {
+            var width = SidebarPixels();
+            _sidebarPixels = width;
+            var right = a.SidebarSide == "right";
+            gridBody.ColumnDefinitions = right
+                ? new ColumnDefinitions($"*,{width}")
+                : new ColumnDefinitions($"{width},*");
+            Grid.SetColumn(borderSidebar, right ? 1 : 0);
+            Grid.SetColumn(borderStage, right ? 0 : 1);
+            borderSidebar.Margin = right ? new Thickness(10, 0, 0, 0) : new Thickness(0, 0, 10, 0);
+        }
 
-        // A hidden map is also a cheaper one: nothing under the header has to be redrawn.
-        mapView.IsVisible = a.ShowMap;
+        // A hidden map is also a cheaper one: nothing under the header has to be redrawn. The one-column
+        // layout shows only a strip of it, with the pin under the mode bar, so it goes there too.
+        mapView.IsVisible = a.ShowMap && _tier != BodyTier.Stacked;
         // The map reads its colours once per paint, not through resource bindings.
         mapView.Repaint();
         // The welcome card replaces the statistics while there are no servers.
-        contentStatusBarView.IsVisible = a.ShowStatusCard && !cardWelcome.IsVisible;
+        // The one-column layout has no room for it.
+        contentStatusBarView.IsVisible = a.ShowStatusCard && !cardWelcome.IsVisible && _tier != BodyTier.Stacked;
         _statusView?.ShowSpeedChart(a.ShowSpeedChart);
 
         Classes.Set("dense", a.Density == "compact");

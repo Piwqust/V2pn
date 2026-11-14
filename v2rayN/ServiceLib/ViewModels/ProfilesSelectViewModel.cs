@@ -45,6 +45,9 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
     [Reactive]
     public partial bool MultiSelect { get; set; }
 
+    // V2pn: servers left out of the list, such as the ones a group already has and the group itself.
+    public HashSet<string> ExcludeIds { get; } = [];
+
     #endregion ObservableCollection
 
     #region Init
@@ -206,6 +209,11 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
                         SpeedVal = t33?.Speed > 0 ? $"{t33?.Speed}" : t33?.Message ?? string.Empty,
                         IpInfo = t33?.IpInfo ?? string.Empty,
                     }).OrderBy(t => t.Sort).ToList();
+
+        if (ExcludeIds.Count > 0)
+        {
+            lstModel = lstModel.Where(t => !ExcludeIds.Contains(t.IndexId)).ToList();
+        }
 
         // Apply ConfigType filter (include or exclude)
         if (FilterConfigTypes is { Count: > 0 })

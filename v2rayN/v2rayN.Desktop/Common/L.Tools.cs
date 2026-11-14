@@ -4,8 +4,6 @@ namespace v2rayN.Desktop;
 public static partial class L
 {
     public static string TlColName => T("Name", "Название");
-    public static string TlColType => T("Type", "Тип");
-    public static string TlColAddress => T("Address", "Адрес");
 
     public static string TlGroupTitle => T("Server group", "Группа серверов");
     public static string TlGroupHint => T("V2pn picks a server from the group by itself, for example the fastest one.", "V2pn сам выбирает сервер из группы, например самый быстрый.");
@@ -25,15 +23,36 @@ public static partial class L
     public static string TlCoreHint => T("What runs the group. Xray suits most cases.", "Чем запускать группу. Обычно подходит Xray.");
     public static string TlGrpServers => T("Servers", "Серверы");
     public static string TlTabFromSub => T("From a subscription", "Из подписки");
-    public static string TlTabByHand => T("Picked by hand", "Выбранные вручную");
-    public static string TlTabResult => T("Final list", "Итоговый список");
     public static string TlFromSub => T("Subscription", "Подписка");
     public static string TlFromSubHint => T("All its servers join the group, new ones too.", "Все её серверы войдут в группу, и новые тоже.");
     public static string TlFilter => T("Only servers named", "Только серверы с именем");
     public static string TlFilterHint => T("A regular expression on the server name.", "Регулярное выражение по имени сервера.");
     public static string TlAddServers => T("Add servers", "Добавить серверы");
     public static string TlRemoveServers => T("Remove", "Убрать");
-    public static string TlByHandHint => T("Right-click a server to move it up or down.", "Чтобы передвинуть сервер, щёлкните по нему правой кнопкой.");
+    public static string TlChainNamePlaceholder => T("My chain", "Моя цепочка");
+    public static string TlMembersCount => T("Servers · {0}", "Серверы · {0}");
+    public static string TlMembersEmptyGroup => T("No servers picked yet. Add them, or take a whole subscription below.", "Серверы ещё не выбраны. Добавьте их или возьмите целую подписку ниже.");
+    public static string TlMembersEmptyChain => T("No servers yet. Add at least two: traffic goes through them in turn.", "Серверов пока нет. Добавьте хотя бы два: трафик пройдёт через них по очереди.");
+    public static string TlChainOrder => T("Your computer connects to the top server first; sites see the bottom one.", "Компьютер подключается сначала к верхнему серверу, а сайты видят нижний.");
+    public static string TlGroupOrder => T("The order matters only for \"First that works\": V2pn takes the top server that answers.", "Порядок важен только для способа «Первый рабочий»: V2pn берёт верхний сервер, который отвечает.");
+    public static string TlMoveUp => T("Move up", "Выше");
+    public static string TlMoveDown => T("Move down", "Ниже");
+    public static string TlSubNone => T("Don't take", "Не брать");
+    public static string TlSubCount => T("Servers from the subscription in the group: {0}", "Серверов из подписки в группе: {0}");
+
+    // The server picker (groups, chains, routing rules, pinned programs).
+    public static string PickTitleMany => T("Choose servers", "Выберите серверы");
+    public static string PickTitleOne => T("Choose a server", "Выберите сервер");
+    public static string PickHintMany => T("Tick the servers to add. They are added in the order you tick them.", "Отметьте серверы, которые нужно добавить. Они встанут в том порядке, в каком вы их отметили.");
+    public static string PickHintOne => T("Click a server and press Choose, or double-click it.", "Щёлкните по серверу и нажмите «Выбрать» или щёлкните по нему дважды.");
+    public static string PickSearch => T("Search by name or address", "Поиск по названию или адресу");
+    public static string PickNoMatch => T("No servers match the search.", "Под поиск не подходит ни один сервер.");
+    public static string PickEmpty => T("No servers here.", "Здесь нет серверов.");
+    public static string PickSelectAll => T("Select all", "Выбрать все");
+    public static string PickClear => T("Clear", "Снять выбор");
+    public static string PickCount => T("Selected: {0}", "Выбрано: {0}");
+    public static string PickAdd => T("Add", "Добавить");
+    public static string PickChoose => T("Choose", "Выбрать");
 
     public static string TlSubsTitle => T("Subscriptions", "Подписки");
     public static string TlSubsHint => T("A subscription is a link from your provider: V2pn downloads servers from it and keeps them up to date.", "Подписка — ссылка от провайдера: V2pn скачивает по ней серверы и обновляет их.");

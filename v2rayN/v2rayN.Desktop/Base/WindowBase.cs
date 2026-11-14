@@ -63,7 +63,9 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
             else
             {
                 // Dialogs grew to fit the V2pn card frame; a width saved by v2rayN must not squeeze them back.
-                var designWidth = double.IsNaN(Width) ? 0 : Width;
+                // The main window is held by MinWidth instead: it reopens as narrow as it was left, and its
+                // layout follows that width (MainWindow.Adaptive.cs).
+                var designWidth = isMain || double.IsNaN(Width) ? 0 : Width;
                 width = Math.Min(Math.Max(sizeItem.Width, designWidth), workingArea.Width / scaling);
                 height = Math.Min(sizeItem.Height, workingArea.Height / scaling);
             }

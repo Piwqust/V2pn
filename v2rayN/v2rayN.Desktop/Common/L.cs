@@ -262,6 +262,8 @@ public static partial class L
     public static string UpdateSubscription => T("Update subscription", "Обновить подписку");
     public static string ClearSearch => T("Clear search", "Очистить поиск");
     public static string AppMenu => T("Menu", "Меню");
+    public static string MiniWindow => T("Mini window", "Мини-окно");
+    public static string FullWindow => T("Full window", "Полное окно");
 
     public static string SubEditHint => T("Where V2pn gets the servers from.", "Откуда V2pn берёт серверы.");
     public static string ServerEditHint => T("Connection details of the server. The fields depend on the protocol.", "Параметры подключения к серверу. Набор полей зависит от протокола.");

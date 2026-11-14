@@ -41,6 +41,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         txtRoute.Text = L.RouteTitle;
 
         _config = AppManager.Instance.Config;
+        InitAdaptive();
         // Above the status card and clear of the feature rail, over the empty part of the map.
         _manager = new WindowNotificationManager(TopLevel.GetTopLevel(this))
         {
@@ -151,14 +152,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _themeSettings = new ThemeSettingViewModel();
         conTheme.Content ??= AppearanceView.HeaderButton(() => DialogHost.Show(new AppearanceView(_themeSettings)));
         Appearance.Changed += () => Dispatcher.UIThread.Post(ApplyLayout);
-        // The "wide" sidebar steps down in a small window; re-laid out only when that width changes.
-        SizeChanged += (_, _) =>
-        {
-            if (_sidebarPixels != 0 && SidebarPixels() != _sidebarPixels)
-            {
-                ApplyLayout();
-            }
-        };
+        // The layout follows the width (MainWindow.Adaptive.cs), and the "wide" sidebar steps down in a
+        // small window; re-laid out only when one of them changes.
+        SizeChanged += (_, _) => FollowWidth();
         // Windows' "Animation effects" may have changed while V2pn was in the background.
         Activated += (_, _) =>
         {
@@ -554,7 +550,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             if (interaction.Input.IsNotEmpty())
             {
-                await DialogHost.Show(new QrcodeView(interaction.Input));
+                await ShowRoomyDialogAsync(new QrcodeView(interaction.Input));
             }
             interaction.SetOutput(RxVoid.Default);
         })
@@ -708,7 +704,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             panelConnect.IsVisible = !empty;
             txtHeaderTitle.IsVisible = !empty;
             txtHeaderSubtitle.IsVisible = !empty;
-            contentStatusBarView.IsVisible = !empty && Appearance.Current.ShowStatusCard;
+            contentStatusBarView.IsVisible = !empty && Appearance.Current.ShowStatusCard && _tier != BodyTier.Stacked;
             if (leavingWelcome)
             {
                 // The hero arrives as one unit and the statistics a beat later, instead of piece by piece.
@@ -2603,7 +2599,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     {
         _checkUpdateView ??= new CheckUpdateView();
         _checkUpdateView.ViewModel = ViewModel?.CheckUpdateViewModel;
-        DialogHost.Show(_checkUpdateView);
+        _ = ShowRoomyDialogAsync(_checkUpdateView);
 
         // Only v2rayN's core notice is dismissed by looking; V2pn's own stays until it is installed.
         AppEvents.HasUpdateNotified.Publish(false);
@@ -2613,7 +2609,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     {
         _backupAndRestoreView ??= new BackupAndRestoreView();
         _backupAndRestoreView.ViewModel = ViewModel?.BackupAndRestoreViewModel;
-        DialogHost.Show(_backupAndRestoreView);
+        _ = ShowRoomyDialogAsync(_backupAndRestoreView);
     }
 
     private async void MenuClose_Click(object? sender, RoutedEventArgs e)
@@ -2839,6 +2835,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnNewUpdate.IsVisible = app || ViewModel?.BlNewUpdate == true;
         // Without an app update the badge is about the cores (Xray, sing-box); "new version" read as V2pn's.
         txtNewUpdate.Text = state == EV2pnUpdateState.Ready ? L.UpdBadgeReady : app ? L.UpdBadgeAvailable : L.CoreUpdatesBadge;
+        // A narrow title bar has room for the dot only; its words move to the tooltip.
+        var stacked = _tier == BodyTier.Stacked;
+        txtNewUpdate.IsVisible = !stacked;
+        ToolTip.SetTip(btnNewUpdate, stacked ? txtNewUpdate.Text : null);
+        Avalonia.Automation.AutomationProperties.SetName(btnNewUpdate, txtNewUpdate.Text);
     }
 
     private void ShowToast(ToastKind kind, string message)
@@ -2848,13 +2849,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     // The normal bounds and the maximized flag: a maximized window reopens maximized, and restores to its
     // own size instead of a screen-sized normal one.
-    private void StorageUI()
+    private void StorageUI(string? key = null)
     {
         var normal = WindowState == WindowState.Normal;
         var size = _normalSize ?? new Size(Width, Height);
         var position = _normalPosition ?? (normal && IsVisible ? (PixelPoint?)Position : null);
         var maximized = WindowState == WindowState.Maximized || (WindowState == WindowState.Minimized && _restoreState == WindowState.Maximized);
-        ConfigHandler.SaveWindowPlacement(_config, GetType().Name, size.Width, size.Height, position?.X, position?.Y, maximized);
+        ConfigHandler.SaveWindowPlacement(_config, key ?? GetType().Name, size.Width, size.Height, position?.X, position?.Y, maximized);
     }
 
     private void UpdateNoticeMargin()

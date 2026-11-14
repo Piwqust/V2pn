@@ -32,6 +32,11 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     private string? _findProgress;
     private bool _iconWarn;
     private int _iconIndex;
+    // Below this width the card drops the speed graph and the Check label, so the state and the numbers
+    // keep their whole text (a narrow window clipped "Proxy on port 20828" to "port 2").
+    private const double CompactWidth = 600;
+    private bool _compact;
+    private bool _chartWanted = true;
 
     /// <summary>"Find a working server" was clicked; the window pings the neighbours and switches.</summary>
     public event Action? FindWorkingRequested;
@@ -51,6 +56,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
             }
         };
         chartHost.SizeChanged += (_, _) => DrawChart();
+        // The card's width follows the window, never its own content, so this cannot flip back and forth.
+        SizeChanged += (_, e) => SetCompact(e.NewSize.Width < CompactWidth);
 
         _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => UpdateClock());
 
@@ -100,6 +107,24 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     /// <summary>The live speed graph can be turned off on the Appearance page; the stats then use the full width.</summary>
     public void ShowSpeedChart(bool show)
     {
+        _chartWanted = show;
+        ApplyChart();
+    }
+
+    private void SetCompact(bool compact)
+    {
+        if (compact == _compact)
+        {
+            return;
+        }
+        _compact = compact;
+        ApplyChart();
+        RefreshFindWorking();
+    }
+
+    private void ApplyChart()
+    {
+        var show = _chartWanted && !_compact;
         panelSpeed.IsVisible = show;
         if (panelSpeed.Parent is Grid grid && grid.ColumnDefinitions.Count == 3)
         {
@@ -328,7 +353,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         var finding = _findProgress != null;
         btnFindWorking.IsVisible = finding || (_hasServer && _checkFailed);
         // Both labels don't fit the header at the minimum width in Russian; Check keeps its icon, tooltip and name.
-        txtCheckAction.IsVisible = !btnFindWorking.IsVisible;
+        // A compact card keeps only the icon too.
+        txtCheckAction.IsVisible = !btnFindWorking.IsVisible && !_compact;
         spinFind.IsVisible = finding;
         txtFindWorking.Text = _findProgress ?? L.FindWorkingServer;
         // While the offer is up, the pill above already says the server is not answering; a "No response"

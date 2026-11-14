@@ -124,6 +124,7 @@ public sealed class AppManager
         try
         {
             Logging.SaveLog("AppExitAsync Begin");
+            V2pnRunTrail.MarkExiting();
 
             await SysProxyHandler.UpdateSysProxy(_config, true);
             AppEvents.AppExitRequested.Publish();
@@ -136,6 +137,7 @@ public sealed class AppManager
             StatisticsManager.Instance.Close();
 
             Logging.SaveLog("AppExitAsync End");
+            V2pnRunTrail.MarkClosed();
         }
         catch { }
         finally

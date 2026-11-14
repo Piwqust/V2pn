@@ -34,6 +34,7 @@ public partial class App : Application
             if (!Design.IsDesignMode)
             {
                 AppManager.Instance.InitComponents();
+                V2pnRunTrail.Begin();
                 DataContext = StatusBarViewModel.Instance;
             }
 
@@ -125,9 +126,16 @@ public partial class App : Application
 
     private void CurrentDomain_UnhandledException(object sender, UnhandledExceptionEventArgs e)
     {
-        if (e.ExceptionObject != null)
+        if (e.ExceptionObject is Exception ex)
         {
-            Logging.SaveLog("CurrentDomain_UnhandledException", (Exception)e.ExceptionObject);
+            if (e.IsTerminating)
+            {
+                V2pnRunTrail.NoteCrash("CurrentDomain_UnhandledException", ex);
+            }
+            else
+            {
+                Logging.SaveLog("CurrentDomain_UnhandledException", ex);
+            }
         }
         if (e.IsTerminating)
         {

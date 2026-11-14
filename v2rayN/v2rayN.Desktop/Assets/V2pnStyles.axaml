@@ -1190,7 +1190,18 @@
     <Style Selector="TextBlock.subinfo.warn">
         <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
     </Style>
+    <!--  Sidebar section headers. With the subscription actions the 32 px buttons set the height themselves:
+          negative margins used to squeeze them in, and the row below then covered their lower edge.  -->
+    <Style Selector="Grid.sidehead">
+        <Setter Property="Margin" Value="8,10,0,4" />
+    </Style>
+    <Style Selector="Grid.sidehead.subactions">
+        <Setter Property="Margin" Value="8,6,0,0" />
+    </Style>
+
+    <!--  The chevron sits over the ⋮ button's centre; hit-testable, it took the click and opened the subscription.  -->
     <Style Selector="PathIcon.subchevron">
+        <Setter Property="IsHitTestVisible" Value="False" />
         <Setter Property="Width" Value="12" />
         <Setter Property="Height" Value="12" />
         <Setter Property="Margin" Value="4,0,8,0" />

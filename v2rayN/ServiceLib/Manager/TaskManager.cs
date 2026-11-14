@@ -111,7 +111,8 @@ public class TaskManager
             });
             // V2pn: UpdateProcess may have renamed the subscription from its panel; save over that, not this older copy.
             var fresh = await AppManager.Instance.GetSubItem(item.Id) ?? item;
-            fresh.UpdateTime = updateTime;
+            // Never back in time: the update itself wrote a later time, and the UI reads an unchanged time as a failure.
+            fresh.UpdateTime = Math.Max(fresh.UpdateTime, updateTime);
             await ConfigHandler.AddSubItem(_config, fresh);
             await Task.Delay(1000);
         }

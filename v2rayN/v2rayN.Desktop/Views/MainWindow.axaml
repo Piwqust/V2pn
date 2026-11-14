@@ -288,14 +288,18 @@
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
                             <ListBox.DataTemplates>
                                 <DataTemplate x:DataType="side:SideHeaderRow">
-                                    <Grid Margin="8,10,0,4" ColumnDefinitions="*,Auto">
+                                    <Grid
+                                        Classes="sidehead"
+                                        Classes.subactions="{Binding ShowSubActions}"
+                                        ColumnDefinitions="*,Auto">
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             Classes="muted small"
                                             Text="{Binding Title}" />
                                         <StackPanel
                                             Grid.Column="1"
-                                            Margin="0,-4,-2,-4"
+                                            Margin="0,0,-2,0"
+                                            VerticalAlignment="Center"
                                             IsVisible="{Binding ShowSubActions}"
                                             Orientation="Horizontal"
                                             Spacing="2">

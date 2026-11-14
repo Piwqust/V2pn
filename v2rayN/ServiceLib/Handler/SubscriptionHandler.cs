@@ -2,6 +2,8 @@ namespace ServiceLib.Handler;
 
 public static class SubscriptionHandler
 {
+    private static readonly ConcurrentDictionary<string, SemaphoreSlim> _updateGates = new();
+
     public static async Task UpdateProcess(Config config, string subId, bool blProxy, Func<bool, string, Task> updateFunc)
     {
         await updateFunc?.Invoke(false, ResUI.MsgUpdateSubscriptionStart);
@@ -14,15 +16,21 @@ public static class SubscriptionHandler
         }
 
         var successCount = 0;
-        foreach (var item in subItem)
+        foreach (var listed in subItem)
         {
+            if (!IsValidSubscription(listed, subId))
+            {
+                continue;
+            }
+            // V2pn: one update of a subscription at a time. A new one is fetched on adding and, within the minute,
+            // by the scheduler too (it has never been updated); two imports of one subscription at once could
+            // interleave their server lists.
+            var gate = _updateGates.GetOrAdd(listed.Id, _ => new SemaphoreSlim(1, 1));
+            await gate.WaitAsync();
             try
             {
-                if (!IsValidSubscription(item, subId))
-                {
-                    continue;
-                }
-
+                // The list was read before waiting; the other update may have changed this subscription since.
+                var item = await AppManager.Instance.GetSubItem(listed.Id) ?? listed;
                 var hashCode = $"{item.Remarks}->";
                 if (item.Enabled == false)
                 {
@@ -45,7 +53,9 @@ public static class SubscriptionHandler
                 {
                     successCount++;
                     // Upstream records the time only for scheduled updates; the UI shows it for every update.
-                    item.UpdateTime = ((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds();
+                    // Always forward: the UI tells a failed update by an unchanged time, and two updates can land
+                    // in the same second.
+                    item.UpdateTime = Math.Max(((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds(), item.UpdateTime + 1);
                     await ConfigHandler.AddSubItem(config, item);
                 }
 
@@ -53,10 +63,14 @@ public static class SubscriptionHandler
             }
             catch (Exception ex)
             {
-                var hashCode = $"{item.Remarks}->";
+                var hashCode = $"{listed.Remarks}->";
                 Logging.SaveLog("UpdateSubscription", ex);
                 await updateFunc?.Invoke(false, $"{hashCode}{ResUI.MsgFailedImportSubscription}: {ex.Message}");
                 await updateFunc?.Invoke(false, "-------------------------------------------------------");
+            }
+            finally
+            {
+                gate.Release();
             }
         }
 
@@ -113,6 +127,13 @@ public static class SubscriptionHandler
         if (blProxy && result.IsNullOrEmpty())
         {
             result = await downloadHandle.TryDownloadString(url, false, userAgent);
+        }
+        // V2pn: and the other way round. A provider's site blocked or throttled on the direct route failed a manual
+        // update (and every new subscription) now and then, while the running VPN could reach it.
+        else if (!blProxy && result.IsNullOrEmpty() && CoreManager.Instance.IsCoreAlive)
+        {
+            Logging.SaveLog("V2pn: subscription unreachable directly, trying through the VPN");
+            result = await downloadHandle.TryDownloadString(url, true, userAgent);
         }
 
         return result ?? string.Empty;

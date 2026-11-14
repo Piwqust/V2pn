@@ -1,4 +1,5 @@
 using Avalonia.LogicalTree;
+using Avalonia.VisualTree;
 
 namespace v2rayN.Desktop.Common;
 
@@ -97,6 +98,23 @@ internal static class SettingsKit
             return;
         }
         Avalonia.Automation.AutomationProperties.SetLabeledBy(control, title);
+        // An editable picker is a box with a text field inside; the field is what a screen reader lands on
+        // when typing, so it takes the title too.
+        if (control is ComboBox { IsEditable: true } combo)
+        {
+            // Rows are labelled on Loaded, usually after the template is in place; a later re-template
+            // (theme change) brings a new field.
+            void LabelField()
+            {
+                var field = combo.GetVisualDescendants().OfType<TextBox>().FirstOrDefault(t => t.Name == "PART_EditableTextBox");
+                if (field != null)
+                {
+                    Avalonia.Automation.AutomationProperties.SetLabeledBy(field, title);
+                }
+            }
+            LabelField();
+            combo.TemplateApplied += (_, _) => Dispatcher.UIThread.Post(LabelField);
+        }
         var hint = row.GetLogicalDescendants().OfType<TextBlock>().FirstOrDefault(t => t.Classes.Contains("srowhint"));
         if (hint?.Text is { Length: > 0 } help && string.IsNullOrEmpty(Avalonia.Automation.AutomationProperties.GetHelpText(control)))
         {

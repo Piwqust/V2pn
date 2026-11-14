@@ -98,14 +98,15 @@ public static partial class L
     public static string SearchServers => T("Search", "Поиск");
     public static string SearchResults => T("Results", "Найдено");
     public static string Fastest => T("Fastest server", "Самый быстрый сервер");
-    public static string FastestNone => Tk("Run a ping test to find it", "Click to test ping and find it", "Нажмите, чтобы проверить пинг и найти его");
+    // The row is one line in a 300 px sidebar: the longer wording ended in "…".
+    public static string FastestNone => Tk("Run a ping test to find it", "Test ping to find it", "Проверить пинг и найти его");
     public static string NoCountry => T("Unknown location", "Страна не определена");
     public static string Back => T("Back", "Назад");
     public static string UpdateAll => T("Update all subscriptions", "Обновить все подписки");
     public static string ServersCount => T("servers", "серверов");
     public static string FavoritesEmpty => Tk("Hover a server and click ☆ to keep it here. Favorites survive subscription updates.",
-        "Click ☆ next to a server, or select a server and press Ctrl+B, to keep it here. Favorites survive subscription updates.",
-        "Чтобы закрепить сервер здесь, нажмите ☆ рядом с ним или выделите его в списке и нажмите Ctrl+B. Избранное сохраняется после обновления подписок.");
+        "Click ☆ next to a server (or press Ctrl+B) to keep it here. Favorites survive subscription updates.",
+        "Нажмите ☆ у сервера (или Ctrl+B), чтобы закрепить его здесь. Избранное не пропадает при обновлении подписок.");
     public static string NothingFound => T("Nothing found", "Ничего не найдено");
     // The settings search shares NothingFound; this one says what the server search looks at.
     public static string NothingFoundServers => Tk("Nothing found", "Nothing found. Search looks at names, addresses and countries.", "Ничего не найдено. Поиск идёт по названию, адресу и стране.");
@@ -119,7 +120,8 @@ public static partial class L
     public static string ExitAddress => T("Your address online", "Ваш адрес в сети");
     public static string ServerSource => T("Subscription", "Подписка");
     public static string OwnServer => T("Added by hand", "Добавлен вручную");
-    public static string RailUpdate => T("Update", "Обновить");
+    // A bare "Update" read as updating the app itself; the tile refreshes subscriptions (two lines on the tile).
+    public static string RailUpdate => Tk("Update", "Update subscriptions", "Обновить подписки");
     public static string CoreUpdatesBadge => T("Core updates", "Обновления ядер");
     public static string SessionTraffic => T("Session traffic", "Трафик за сессию");
     public static string CurrentSpeed => T("Current speed", "Текущая скорость");
@@ -191,6 +193,8 @@ public static partial class L
     public static string MenuUwpDesc => Tk("Loopback exemption for UWP apps", "If Store apps don't go through the proxy", "Если приложения из Store не идут через прокси");
     public static string MenuRegion => T("Region", "Регион");
     public static string MenuRegionDesc => T("Geo files, rules and DNS for a country", "Геофайлы, правила и DNS для страны");
+    // The app menu's submenu for the system and data tools that used to sit behind the Settings tile.
+    public static string MenuTools => T("Tools", "Сервис");
     public static string MenuGrpData => T("Data", "Данные");
     public static string MenuBackup => T("Backup and restore", "Резервная копия");
     public static string MenuOpenFolder => T("Open data folder", "Открыть папку с данными");
@@ -264,6 +268,8 @@ public static partial class L
     public static string HotkeysHint => T("Click a field and press the key combination; it applies after a restart.", "Щёлкните по полю и нажмите сочетание клавиш. Заработает после перезапуска.");
 
     public static string GrpSource => T("Source", "Источник");
+    // An empty picker read as a broken field.
+    public static string GrpPickSub => T("Choose a subscription", "Выберите подписку");
     public static string GrpUpdates => T("Updates", "Обновление");
     public static string GrpProcessing => T("Processing", "Обработка");
     public static string GrpChain => T("Proxy chain", "Цепочка прокси");
@@ -286,8 +292,15 @@ public static partial class L
     public static string SetAutoRunHint => T("V2pn starts when you sign in.", "V2pn запустится при входе в систему.");
     public static string SetStartHidden => Tk("Start minimized", "Start in the tray at sign-in", "При входе в систему — только значок в трее");
     public static string SetStartHiddenHint => Tk("Only the tray icon appears; the window stays closed.",
-        "Only the tray icon appears at sign-in. Opening V2pn yourself shows the window.",
-        "При входе в систему появится только значок в трее. Если открыть V2pn вручную, окно откроется.");
+        "The window stays closed at sign-in. Opening V2pn yourself shows it as usual.",
+        "Окно не откроется само. Если запустить V2pn вручную, оно появится как обычно.");
+    // v2rayN's tip only warned about desktops without a tray; Windows and macOS always have one, so this says
+    // what closing does. Other languages keep v2rayN's translated tip.
+    public static string SetHideToTrayHint => Ru
+        ? "Крестик прячет окно, а V2pn продолжает работать. Выйти можно из меню в трее."
+        : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en"
+            ? "Closing the window keeps V2pn running. Quit from the tray menu."
+            : ResUI.TbSettingsHide2TrayWhenCloseTip;
     public static string SetShowSpeed => T("Show connection speed", "Показывать скорость соединения");
     public static string SetShowSpeedHint => T("The speed chart under the map. Takes effect after a restart.", "График скорости под картой. Включится после перезапуска.");
     public static string SetPort => T("Local port", "Локальный порт");
@@ -314,6 +327,9 @@ public static partial class L
     public static string SetAdvanced => T("Advanced settings", "Расширенные настройки");
     public static string SetAdvancedHint => T("Ports, cores, TUN, traffic tricks", "Порты, ядра, TUN, обработка трафика");
 
+    // Settings with windows of their own, linked from the bottom of the Settings navigation.
+    public static string SetMore => T("More settings", "Другие настройки");
+    public static string SetMoreTip => T("Opens in its own window", "Откроется в отдельном окне");
     public static string SetGeneral => T("General", "Общие");
     public static string SetGeneralHint => T("How V2pn starts and what the window shows.", "Как запускается V2pn и что показывает окно.");
     public static string SetInbound => T("Local proxy", "Локальный прокси");
@@ -326,8 +342,11 @@ public static partial class L
     public static string SetTrafficHint => T("Sniffing, fragmentation, multiplexing and outbound connections.", "Сниффинг, фрагментация, мультиплексирование и исходящие соединения.");
     public static string SetTests => T("Testing", "Проверки");
     public static string SetTestsHint => T("How ping, speed and connection checks run.", "Как работают пинг, тест скорости и проверка соединения.");
-    public static string SetUpdates => T("Updates", "Обновления");
-    public static string SetUpdatesHint => T("How often V2pn refreshes the lists behind the routing modes.", "Как часто V2pn обновляет списки, на которых работают режимы маршрутизации.");
+    // Not "Updates": people looked here for app updates, which live in their own window.
+    public static string SetUpdates => Tk("Updates", "Rule lists", "Списки правил");
+    public static string SetUpdatesHint => Tk("How often V2pn refreshes the lists behind the routing modes.",
+        "How often V2pn downloads fresh lists for the routing modes. V2pn itself updates from Menu → Check for updates.",
+        "Как часто V2pn скачивает свежие списки для режимов маршрутизации. Сам V2pn обновляется из меню: «Проверить обновления».");
     public static string SetCores => T("Cores", "Ядра");
     public static string SetCoresHint => T("Which core runs each protocol.", "Какое ядро обслуживает каждый протокол.");
     public static string SetLogs => T("Logs", "Журнал");
@@ -429,7 +448,8 @@ public static partial class L
     public static string MinutesAgo => T("{0} min ago", "{0} мин назад");
     public static string HoursAgo => T("{0} h ago", "{0} ч назад");
     public static string SubUpdatedAgo => T("updated {0}", "обновлена {0}");
-    public static string SubAgoShort => T("updated {0}", "обн. {0}");
+    // The sidebar row has room for "19 servers · 11 min ago"; with "updated" in front the time itself was cut.
+    public static string SubAgoShort => Tk("updated {0}", "{0}", "{0}");
     public static string DurationSec => T("{0} sec", "{0} сек");
     public static string DurationMinSec => T("{0} min {1} sec", "{0} мин {1} сек");
 

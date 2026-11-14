@@ -54,7 +54,10 @@ public partial class AddServerWindow : WindowBase<AddServerViewModel>
             this.Bind(ViewModel, vm => vm.CoreType, v => v.cmbCoreType.SelectedValue).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedSource.Remarks, v => v.txtRemarks.Text).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.SelectedSource.Address, v => v.txtAddress.Text).DisposeWith(disposables);
-            this.Bind(ViewModel, vm => vm.SelectedSource.Port, v => v.txtPort.Text).DisposeWith(disposables);
+            // A new server shows an empty port with "443" as the hint, not a "0" to clear first.
+            this.Bind(ViewModel, vm => vm.SelectedSource.Port, v => v.txtPort.Text,
+                port => port == 0 ? string.Empty : port.ToString(CultureInfo.InvariantCulture),
+                text => int.TryParse(text, NumberStyles.Integer, CultureInfo.InvariantCulture, out var port) ? port : 0).DisposeWith(disposables);
 
             this.WhenAnyValue(v => v.ViewModel.SelectedSource.ConfigType)
                 .Subscribe(configType =>

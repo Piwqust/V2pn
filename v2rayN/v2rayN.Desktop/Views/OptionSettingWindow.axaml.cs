@@ -21,6 +21,7 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
 
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
+        InitMoreLinks();
         _config = AppManager.Instance.Config;
 
         clbdestOverride.SelectionChanged += ClbdestOverride_SelectionChanged;
@@ -269,9 +270,31 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
 
     private bool _advanced;
 
+    // The main window's commands open these, so a saved change reloads the core as it did from the old
+    // menu. The dialog service gives the new window the active one, this window, as its owner.
+    private void InitMoreLinks()
+    {
+        btnMoreHotkeys.IsVisible = Utils.IsWindows();
+        btnMoreTemplate.IsVisible = _advanced;
+        btnMoreRouting.Click += (_, _) => RunMain(vm => vm.RoutingSettingCmd.Execute().Subscribe());
+        btnMoreDns.Click += (_, _) => RunMain(vm => vm.DNSSettingCmd.Execute().Subscribe());
+        btnMoreHotkeys.Click += (_, _) => RunMain(vm => vm.GlobalHotkeySettingCmd.Execute().Subscribe());
+        btnMoreTemplate.Click += (_, _) => RunMain(vm => vm.FullConfigTemplateCmd.Execute().Subscribe());
+    }
+
+    private static void RunMain(Action<MainWindowViewModel> action)
+    {
+        if ((Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow is MainWindow { ViewModel: { } vm })
+        {
+            action(vm);
+        }
+    }
+
     private void SetAdvanced(bool show)
     {
         _advanced = show;
+        // The config template is an expert tool, like the advanced pages.
+        btnMoreTemplate.IsVisible = show;
         _config.UiItem.V2pnSettingsAdvanced = show;
         SettingsKit.ApplyAdvanced(this, show || txtSearch.Text.IsNotEmpty());
         // Leaving an expert-only page when going back to simple settings.

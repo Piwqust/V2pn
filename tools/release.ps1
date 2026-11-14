@@ -23,13 +23,17 @@
   tools/release.ps1 -Version 1.0.1 -Tag             # the same, then bump, commit and tag
   tools/release.ps1 -Version 1.0.1 -Arch x64 -NoCores -OutDir $env:TEMP/rel   # quick test build
   tools/release.ps1 -Version 1.0.1 -ManifestOnly    # re-list and re-sign what is in the folder
+  tools/release.ps1 -Version 1.0.1-local.202611141320 -Arch x64 -UpdateOnly -NoManifest -OutDir <dir>
+                                                    # what the app's developer mode runs
 #>
 param(
-    [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
+    [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$')][string]$Version,
     [ValidateSet('x64', 'arm64')][string[]]$Arch = @('x64', 'arm64'),
     [string]$OutDir,
     # Leaves the cores out; for local test packages (updates never overwrite bin/ anyway).
     [switch]$NoCores,
+    # Only the package an installed V2pn updates itself from, no full zip; the developer mode uses it.
+    [switch]$UpdateOnly,
     # Packages only. CI uses it: the manifest is made once, after the macOS packages have joined.
     [switch]$NoManifest,
     [switch]$ManifestOnly,
@@ -131,6 +135,7 @@ if ($ManifestOnly) {
 }
 
 if ($Tag) {
+    if ($Version.Contains('-')) { throw "Releases have plain versions like 1.0.1; $Version is for local builds." }
     if (Get-GitOutput status --porcelain) { throw 'The working tree has uncommitted changes; commit them before tagging a release.' }
     $branch = Get-GitOutput rev-parse --abbrev-ref HEAD
     if ($branch -ne 'v2pn') { throw "Releases are tagged on the v2pn branch; this is $branch." }
@@ -147,6 +152,15 @@ New-Item -ItemType Directory -Force $OutDir | Out-Null
 $work = Join-Path $OutDir 'work'
 
 $properties = @('-p:SelfContained=true', '-p:EnableWindowsTargeting=true', "-p:V2pnVersion=$Version", '-p:V2pnChannel=release')
+# Which code a package holds: the commit, "+" when the tree had changes on top of it.
+$commit = Get-GitOutput rev-parse --short HEAD
+if ($commit) {
+    if (Get-GitOutput status --porcelain) { $commit += '+' }
+    $properties += "-p:V2pnCommit=$commit"
+}
+# A developer-mode build remembers its source folder, so the next build needs no folder chosen.
+# Published versions never carry it: it is a path on the building computer.
+if ($Version.Contains('-local.')) { $properties += "-p:V2pnSourceDir=$repo" }
 if ($ReadyToRun) { $properties += '-p:PublishReadyToRun=true' }
 if ($UpdateSources) { $properties += "-p:V2pnUpdateSources=$UpdateSources" }
 if ($UpdateKeys) { $properties += "-p:V2pnUpdateKeys=$UpdateKeys" }
@@ -177,6 +191,8 @@ foreach ($a in $Arch) {
     New-V2pnZip -Folder $stage -Zip $updateZip
     Test-V2pnZip -Zip $updateZip
     Write-Host "== $updateName  $([math]::Round((Get-Item $updateZip).Length / 1MB, 1)) MB"
+
+    if ($UpdateOnly) { continue }
 
     if (-not $NoCores) {
         Write-Host "== ${rid}: cores"
@@ -217,6 +233,9 @@ if ($Tag) {
         $own = Get-GitOutput log --no-merges --format='- %s' $range --grep '^V2pn' | ForEach-Object { $_ -replace '^- V2pn: ', '- ' }
         $Notes = ($own | Select-Object -First 40) -join "`n"
     }
+    # CHANGELOG.md shows its pictures by relative path; a release page needs full addresses. They point
+    # at the tag, so the page keeps the pictures of its own version.
+    $Notes = [regex]::Replace($Notes, '(\]\(|src=")(docs/images/)', "`${1}https://raw.githubusercontent.com/Piwqust/V2pn/v$Version/`${2}")
     $upstreamVersion = ([xml](Get-Content (Join-Path $src 'Directory.Build.props'))).Project.PropertyGroup.Version | Where-Object { $_ } | Select-Object -First 1
     # The first line is the tag's subject; the release page shows only what follows it, under its
     # own title, so the notes must not repeat the name. The v2rayN version is added only when the

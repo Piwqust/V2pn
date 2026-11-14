@@ -115,6 +115,11 @@ public class UIItem
     // Null means on: new versions download in the background and install at the next start.
     public bool? V2pnAutoUpdate { get; set; }
 
+    // Developer mode (Windows): the Updates window builds V2pn from this source folder and installs it.
+    public bool V2pnDevMode { get; set; }
+
+    public string? V2pnDevSource { get; set; }
+
     // The close-to-tray question was answered once (Windows); until then X hides, as it always did.
     public bool V2pnCloseAsked { get; set; }
 
@@ -187,6 +192,9 @@ public class RoutingBasicItem
     public string DomainStrategy { get; set; }
     public string DomainStrategy4Singbox { get; set; }
     public string RoutingIndexId { get; set; }
+
+    // V2pn: programs and sites that always go through one server or group, ahead of any rule set.
+    public List<V2pnPin>? V2pnPins { get; set; }
 }
 
 public class ColumnItem

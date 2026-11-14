@@ -12,10 +12,11 @@ public enum EV2pnUpdateState
 }
 
 /// <summary>What the updater trusts and where it looks. Comes from the build; tests swap it.</summary>
-public sealed record V2pnUpdateSettings(IReadOnlyList<string> Sources, IReadOnlyList<string> Keys, bool Supported, string CurrentVersion)
+/// <param name="ByWinGet">winget installed this copy and replaces it; V2pn only reports new versions.</param>
+public sealed record V2pnUpdateSettings(IReadOnlyList<string> Sources, IReadOnlyList<string> Keys, bool Supported, string CurrentVersion, bool ByWinGet = false)
 {
     public static V2pnUpdateSettings FromBuild() =>
-        new(V2pnInfo.UpdateSources, V2pnInfo.UpdateKeys, V2pnInfo.SelfUpdateSupported, V2pnInfo.Version);
+        new(V2pnInfo.UpdateSources, V2pnInfo.UpdateKeys, V2pnInfo.SelfUpdateSupported, V2pnInfo.Version, V2pnWinGet.IsInstall());
 }
 
 /// <summary>
@@ -37,6 +38,9 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
 
     private readonly SemaphoreSlim _gate = new(1, 1);
     private string? _lastLoggedError;
+
+    // Set while a person asks to leave a developer-mode build for the published release.
+    private bool _returningToRelease;
 
     public V2pnUpdateSettings Settings { get; set; } = V2pnUpdateSettings.FromBuild();
 
@@ -61,6 +65,9 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
 
     public bool Supported => Settings.Supported;
 
+    /// <summary>winget replaces this copy: nothing is downloaded or installed here, the window offers winget instead.</summary>
+    public bool ByWinGet => Settings.ByWinGet;
+
     private static string PendingDir => Utils.GetTempPath("V2pnUpdate");
 
     private sealed record Release(string Source, bool ViaProxy, V2pnManifest Manifest, byte[] Json, string Signature);
@@ -68,14 +75,16 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
     /// <summary>
     /// Looks for a newer V2pn. With <paramref name="download"/> a newer package is fetched and
     /// verified right away, so installing it later takes seconds. <paramref name="retryFailed"/>
-    /// is for a person asking again after an install that was rolled back. Concurrent calls are dropped.
+    /// is for a person asking again after an install that was rolled back. Concurrent calls are dropped,
+    /// unless <paramref name="wait"/> asks to queue behind the one under way.
     /// </summary>
-    public async Task CheckAsync(bool download, bool retryFailed = false, CancellationToken cancellationToken = default)
+    public async Task CheckAsync(bool download, bool retryFailed = false, CancellationToken cancellationToken = default, bool wait = false)
     {
-        if (!Supported || !await _gate.WaitAsync(0, cancellationToken))
+        if (!Supported || !await _gate.WaitAsync(wait ? Timeout.Infinite : 0, cancellationToken))
         {
             return;
         }
+        download &= !ByWinGet;
         try
         {
             Error = null;
@@ -106,7 +115,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             var version = release.Manifest.Version;
             LatestVersion = version;
             var package = V2pnInfo.UpdatePackage(release.Manifest);
-            if (package == null || new SemanticVersion(version) <= new SemanticVersion(CurrentVersion))
+            if (package == null || !IsWanted(version))
             {
                 DeleteStalePackages();
                 State = EV2pnUpdateState.UpToDate;
@@ -157,11 +166,10 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             {
                 return null;
             }
-            var current = new SemanticVersion(CurrentVersion);
             var failed = FailedVersion();
             return Directory.GetFiles(PendingDir, PendingPrefix + "*.zip")
                 .Select(f => (Version: Path.GetFileNameWithoutExtension(f)[PendingPrefix.Length..], File: f))
-                .Where(p => p.Version != failed && new SemanticVersion(p.Version) > current && PendingPackage(p.File, p.Version) != null)
+                .Where(p => p.Version != failed && IsWanted(p.Version) && PendingPackage(p.File, p.Version) != null)
                 .OrderByDescending(p => new SemanticVersion(p.Version))
                 .Select(p => ((string, string)?)p)
                 .FirstOrDefault();
@@ -179,7 +187,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
     /// </summary>
     public async Task<bool> InstallAsync()
     {
-        var pending = FindPending();
+        var pending = ByWinGet ? null : FindPending();
         if (pending == null)
         {
             return false;
@@ -192,9 +200,63 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             Fail("The downloaded package is damaged.", download: true);
             return false;
         }
+        return await StartInstallerAsync(file, version, Fail);
+    }
+
+    /// <summary>
+    /// Leaves a build made by the developer mode for the newest published release, even though that
+    /// release has a lower version number: downloads it, checks it against the signed manifest and
+    /// installs it. Returns false, with the reason in <see cref="Error"/>, when that did not happen.
+    /// </summary>
+    public async Task<bool> ReturnToReleaseAsync()
+    {
+        if (!await DownloadReleaseAsync())
+        {
+            return false;
+        }
+        _returningToRelease = true;
+        try
+        {
+            return await InstallAsync();
+        }
+        finally
+        {
+            _returningToRelease = false;
+        }
+    }
+
+    /// <summary>
+    /// The first half of <see cref="ReturnToReleaseAsync"/>: the published release, downloaded and
+    /// verified. It waits only for that request; on its own it never replaces a developer-mode build.
+    /// </summary>
+    public async Task<bool> DownloadReleaseAsync()
+    {
+        if (!V2pnInfo.IsLocalVersion(CurrentVersion))
+        {
+            return false;
+        }
+        _returningToRelease = true;
+        try
+        {
+            await CheckAsync(download: true, retryFailed: true, wait: true);
+            return State == EV2pnUpdateState.Ready;
+        }
+        finally
+        {
+            _returningToRelease = false;
+        }
+    }
+
+    /// <summary>
+    /// Hands a package to AmazTool and closes V2pn; AmazTool restarts it as the new version, or puts
+    /// the previous one back when the new one does not start (and writes failed.txt next to the
+    /// package). The package must already be trusted: this checks nothing.
+    /// </summary>
+    public static async Task<bool> StartInstallerAsync(string file, string version, Action<string, bool> fail)
+    {
         if (!Utils.UpgradeAppExists(out var upgrader))
         {
-            Fail(ResUI.UpgradeAppNotExistTip, download: true);
+            fail(ResUI.UpgradeAppNotExistTip, true);
             return false;
         }
 
@@ -216,14 +278,14 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             using var process = Process.Start(start);
             if (process == null)
             {
-                Fail("AmazTool did not start.", download: true);
+                fail("AmazTool did not start.", true);
                 return false;
             }
         }
         catch (Exception ex)
         {
             Logging.SaveLog(Tag, ex);
-            Fail("AmazTool did not start.", download: true);
+            fail("AmazTool did not start.", true);
             return false;
         }
         await AppManager.Instance.AppExitAsync(true);
@@ -343,6 +405,21 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
 
     private static string ManifestPath(string package) => Path.ChangeExtension(package, ".json");
 
+    /// <summary>
+    /// Whether a version should replace this one: a newer one always; an older published release
+    /// only when the person asked to leave a developer-mode build for it.
+    /// </summary>
+    private bool IsWanted(string version)
+    {
+        if (!SemanticVersion.TryParse(version, out var candidate) || candidate == null)
+        {
+            return false;
+        }
+        var current = new SemanticVersion(CurrentVersion);
+        return candidate > current
+            || (_returningToRelease && V2pnInfo.IsLocalVersion(CurrentVersion) && !V2pnInfo.IsLocalVersion(version) && candidate.CompareTo(current) != 0);
+    }
+
     /// <summary>What the signed manifest stored next to a waiting package says about it, or null.</summary>
     private V2pnManifestFile? PendingPackage(string package, string version)
     {
@@ -393,7 +470,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             foreach (var file in Directory.GetFiles(PendingDir, PendingPrefix + "*.zip"))
             {
                 var version = Path.GetFileNameWithoutExtension(file)[PendingPrefix.Length..];
-                if (new SemanticVersion(version) <= current)
+                if (!IsWanted(version))
                 {
                     DeletePackage(file);
                 }

@@ -1,0 +1,50 @@
+# Updates the Homebrew cask (brew install --cask piwqust/tap/v2pn) when a V2pn release is published:
+# writes Casks/v2pn.rb with tools/homebrew-cask.ps1 and pushes it to the tap repository.
+# Does nothing until the repository secret HOMEBREW_TAP_TOKEN holds a token that may push to
+# Piwqust/homebrew-tap (a fine-grained token with Contents: write on that repository).
+name: V2pn Homebrew
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published version to put in the cask, e.g. 1.0.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  cask:
+    name: Update the cask
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Write the cask and push it to the tap
+        shell: pwsh
+        env:
+          TAP_TOKEN: ${{ secrets.HOMEBREW_TAP_TOKEN }}
+          VERSION: ${{ github.event.release.tag_name || inputs.version }}
+        run: |
+          if (-not $env:TAP_TOKEN) {
+            "::notice::HOMEBREW_TAP_TOKEN is not set, so the Homebrew cask is not updated. See tools/homebrew-cask.ps1."
+            exit 0
+          }
+          $version = $env:VERSION.TrimStart('v')
+          if ($version -notmatch '^\d+\.\d+\.\d+$') { exit 0 }
+          ./tools/homebrew-cask.ps1 -Version $version -OutDir cask
+          git clone --depth 1 "https://x-access-token:$($env:TAP_TOKEN)@github.com/Piwqust/homebrew-tap.git" tap
+          New-Item -ItemType Directory -Force tap/Casks | Out-Null
+          Copy-Item cask/v2pn.rb tap/Casks/v2pn.rb
+          git -C tap config user.name "github-actions[bot]"
+          git -C tap config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git -C tap add Casks/v2pn.rb
+          git -C tap diff --cached --quiet
+          if ($LASTEXITCODE -eq 0) { "The cask already has $version."; exit 0 }
+          git -C tap commit -m "v2pn $version"
+          git -C tap push

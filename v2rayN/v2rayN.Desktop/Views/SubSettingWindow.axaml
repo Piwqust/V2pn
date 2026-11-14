@@ -9,6 +9,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    xmlns:ent="clr-namespace:ServiceLib.Models.Entities;assembly=ServiceLib"
     Title="{x:Static loc:L.TlSubsTitle}"
     Width="820"
     Height="600"
@@ -66,10 +67,21 @@
                         Width="2*"
                         Binding="{Binding Url}"
                         Header="{x:Static loc:L.TlColLink}" />
-                    <DataGridCheckBoxColumn
-                        Width="140"
-                        Binding="{Binding Enabled}"
-                        Header="{x:Static loc:L.TlColAutoUpdate}" />
+                    <!--  Words, not a check box: the grid is read-only, and a box that ignores clicks reads as
+                          broken. Changing it is in the subscription's own window (Edit).  -->
+                    <DataGridTemplateColumn Width="180" Header="{x:Static loc:L.TlColAutoUpdate}">
+                        <DataGridTemplateColumn.CellTemplate>
+                            <DataTemplate x:DataType="ent:SubItem">
+                                <Panel Margin="12,0" VerticalAlignment="Center">
+                                    <TextBlock IsVisible="{Binding Enabled}" Text="{x:Static loc:L.TlYes}" />
+                                    <TextBlock
+                                        Classes="muted"
+                                        IsVisible="{Binding !Enabled}"
+                                        Text="{x:Static loc:L.TlNo}" />
+                                </Panel>
+                            </DataTemplate>
+                        </DataGridTemplateColumn.CellTemplate>
+                    </DataGridTemplateColumn>
                     <DataGridTextColumn
                         Width="150"
                         Binding="{Binding AutoUpdateInterval}"

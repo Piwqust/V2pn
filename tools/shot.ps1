@@ -22,6 +22,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 public static class V2pnShot {
     public delegate bool EnumProc(IntPtr h, IntPtr l);
+    [DllImport("user32.dll")] public static extern IntPtr SetThreadDpiAwarenessContext(IntPtr c);
     [DllImport("user32.dll")] public static extern bool EnumWindows(EnumProc cb, IntPtr l);
     [DllImport("user32.dll")] public static extern uint GetWindowThreadProcessId(IntPtr h, out uint pid);
     [DllImport("user32.dll")] public static extern bool IsWindowVisible(IntPtr h);
@@ -58,6 +59,9 @@ function Save-Window([IntPtr]$h, [string]$path) {
     return $true
 }
 
+# Per-monitor DPI awareness: otherwise, at 125 % scaling, the window rect comes back scaled down
+# and PrintWindow fills only its top-left part.
+[void][V2pnShot]::SetThreadDpiAwarenessContext([IntPtr]::new(-4))
 $wins = [V2pnShot]::Windows([uint32]$ProcessId)
 if ($wins.Count -eq 0) { throw "No visible windows for process $ProcessId" }
 

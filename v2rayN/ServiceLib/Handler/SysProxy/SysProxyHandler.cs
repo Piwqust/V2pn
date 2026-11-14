@@ -7,6 +7,14 @@ public static class SysProxyHandler
 
     public static async Task<bool> UpdateSysProxy(Config config, bool forceDisable)
     {
+#if DEBUG
+        // V2pn: screenshots and UI checks run a sandbox in the everyday mode (system proxy) next to the
+        // V2pn in use. With this set the sandbox shows that mode but never touches the real proxy.
+        if (Environment.GetEnvironmentVariable("V2PN_KEEP_SYSTEM_PROXY") == "1")
+        {
+            return true;
+        }
+#endif
         var type = config.SystemProxyItem.SysProxyType;
 
         if (forceDisable && type != ESysProxyType.Unchanged)

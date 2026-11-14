@@ -53,6 +53,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         contentStatusBarView.SizeChanged += (_, _) => UpdateNoticeMargin();
         contentStatusBarView.GetObservable(IsVisibleProperty).Subscribe(_ => UpdateNoticeMargin());
         panelStage.GetObservable(IsVisibleProperty).Subscribe(_ => UpdateNoticeMargin());
+        mapView.SizeChanged += (_, _) => UpdateMapFocus();
+        panelHeader.SizeChanged += (_, _) => UpdateMapFocus();
+        contentStatusBarView.SizeChanged += (_, _) => UpdateMapFocus();
+        contentStatusBarView.GetObservable(IsVisibleProperty).Subscribe(_ => UpdateMapFocus());
         // A tray click deactivates the window before the click arrives; see ShowHideWindow.
         Deactivated += (_, _) => _deactivatedAt = DateTime.UtcNow;
         PositionChanged += (_, _) => QueueNormalBounds();
@@ -67,6 +71,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuAddServerViaClipboard.Click += async (_, _) => await AddServerViaClipboardAsync();
         btnConnect.Click += BtnConnect_Click;
         btnWelcomePaste.Click += async (_, _) => await AddServerViaClipboardAsync();
+        btnWelcomeImport.Click += async (_, _) => await ImportFromV2rayNAsync(fromWelcome: true);
+        menuImportV2rayN.Click += async (_, _) => await ImportFromV2rayNAsync(fromWelcome: false);
+        _ = LookForV2rayNAsync();
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();
@@ -175,12 +182,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.SubGroupUpdateViaProxyCmd, v => v.menuSubGroupUpdateViaProxy).DisposeWith(disposables);
 
             //setting
-            this.BindCommand(ViewModel, vm => vm.OptionSettingCmd, v => v.menuOptionSetting).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.RoutingSettingCmd, v => v.menuRoutingSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RoutingSettingCmd, v => v.btnRoutingSettings).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.DNSSettingCmd, v => v.btnRailDns).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.DNSSettingCmd, v => v.menuDnsSetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.OptionSettingCmd, v => v.menuSettingsMain).DisposeWith(disposables);
+            this.BindCommand(ViewModel, vm => vm.OptionSettingCmd, v => v.btnRailSettings).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.SubUpdateCmd, v => v.btnRailUpdate).DisposeWith(disposables);
             // The switch lives in the settings window; this window is active again once that one closes.
             Activated += (_, _) => ApplySimpleMode();
@@ -188,8 +193,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
                 .Subscribe(_ => ApplySimpleMode())
                 .DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.FullConfigTemplateCmd, v => v.menuFullConfigTemplate).DisposeWith(disposables);
-            this.BindCommand(ViewModel, vm => vm.GlobalHotkeySettingCmd, v => v.menuGlobalHotkeySetting).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.RebootAsAdminCmd, v => v.menuRebootAsAdmin).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.ClearServerStatisticsCmd, v => v.menuClearServerStatistics).DisposeWith(disposables);
             this.BindCommand(ViewModel, vm => vm.OpenTheFileLocationCmd, v => v.menuOpenTheFileLocation).DisposeWith(disposables);
@@ -360,12 +363,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         else
         {
             menuAddServerViaScan.IsVisible = false;
-            menuGlobalHotkeySetting.IsVisible = false;
             menuRebootAsAdmin.IsVisible = false;
             menuSettingsSetUWP.IsVisible = false;
         }
 
-        _startHidden = AutoStartupHandler.StartsHidden(_config, Program.StartedAtSignIn);
+        // V2pn: right after a move from v2rayN the window shows, whatever "start hidden" came over with it.
+        _startHidden = AutoStartupHandler.StartsHidden(_config, Program.StartedAtSignIn) && V2pnImport.Imported == null;
         if (_startHidden && Utils.IsWindows())
         {
             WindowState = WindowState.Minimized;
@@ -929,7 +932,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var advanced = _config.UiItem.V2pnSettingsAdvanced;
         btnRailDns.IsVisible = advanced;
         menuPageTable.IsVisible = advanced;
-        menuFullConfigTemplate.IsVisible = advanced;
         menuRegion.IsVisible = advanced;
         // The Clash pages also need a core that has them; XAML binds that, this only takes them away.
         if (!advanced)
@@ -2430,6 +2432,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                     e.Handled = true;
                     break;
 
+                // The usual desktop shortcut for settings (Cmd+, on a Mac).
+                case Key.OemComma:
+                    e.Handled = true;
+                    ViewModel?.OptionSettingCmd.Execute().Subscribe();
+                    break;
+
                 case Key.D1:
                 case Key.D2:
                 case Key.D3:
@@ -2716,8 +2724,21 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         // Sign-in entries are tidied at every start: one fixed name, the sign-in argument, nothing left
         // from removed or test copies (registry or task; schtasks is slow, hence the background).
-        _ = Task.Run(() => AutoStartupHandler.MigrateAutostartArg(_config));
+        var moved = V2pnImport.Imported != null;
+        _ = Task.Run(async () =>
+        {
+            // The move removed v2rayN's sign-in entry; when the moved settings ask for one, V2pn writes its own.
+            if (moved)
+            {
+                await AutoStartupHandler.UpdateTask(_config);
+            }
+            await AutoStartupHandler.MigrateAutostartArg(_config);
+        });
         WarnAboutOpenLanProxyOnce();
+        if (V2pnImport.Imported is { } imported)
+        {
+            ShowToast(ToastKind.Success, string.Format(L.ImportDone, imported.Servers, imported.Subscriptions));
+        }
         if (await AppUpdates.InstallPendingAtStartAsync(_config, message => ShowToast(ToastKind.Info, message)))
         {
             return;
@@ -2727,13 +2748,82 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private string? _announcedVersion;
 
+    #region V2pn: moving from v2rayN
+
+    private V2rayNInstall? _v2rayN;
+
+    /// <summary>Offers the move on the first-run card when a v2rayN with servers is on this computer.</summary>
+    private async Task LookForV2rayNAsync()
+    {
+        try
+        {
+            _v2rayN = await Task.Run(() => V2pnImport.Find().FirstOrDefault(i => i.Servers > 0 || i.Subscriptions > 0));
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn import", ex);
+        }
+        var found = _v2rayN != null;
+        panelWelcomeImport.IsVisible = found;
+        // One solid button on the card: the move when it is offered, else pasting a link.
+        btnWelcomePaste.Classes.Set("accent", !found);
+        if (_v2rayN is { } install)
+        {
+            txtWelcomeImport.Text = string.Format(L.ImportFoundCounts, install.Servers, install.Subscriptions);
+        }
+    }
+
+    /// <summary>
+    /// Closes v2rayN, notes where from and restarts: the copy is made at the next start, before V2pn
+    /// reads its settings. From the menu, over servers V2pn already has, it asks first.
+    /// </summary>
+    private async Task ImportFromV2rayNAsync(bool fromWelcome)
+    {
+        try
+        {
+            var install = _v2rayN ?? await Task.Run(() => V2pnImport.Find().FirstOrDefault());
+            if (install == null)
+            {
+                ShowToast(ToastKind.Info, L.ImportNone);
+                return;
+            }
+            var hasOwn = (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) > 0;
+            if ((!fromWelcome || hasOwn)
+                && await UI.ShowYesNo(string.Format(L.ImportConfirm, install.DataDir), L.ImportConfirmYes) != ButtonResult.Yes)
+            {
+                return;
+            }
+            if (!await Task.Run(() => V2pnImport.Stop(install)))
+            {
+                ShowToast(ToastKind.Warning, L.ImportCloseFirst);
+                return;
+            }
+            V2pnImport.Schedule(install.DataDir);
+            ShowToast(ToastKind.Info, L.ImportRestarting);
+            // Lets the message paint before the window goes.
+            await Task.Delay(800);
+            if (!ProcUtils.RebootAsAdmin(false))
+            {
+                ShowToast(ToastKind.Error, L.ImportRestartFailed);
+                return;
+            }
+            await AppManager.Instance.AppExitAsync(true);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn import", ex);
+        }
+    }
+
+    #endregion V2pn: moving from v2rayN
+
     private void OnAppUpdateState(EV2pnUpdateState state)
     {
         RefreshUpdateBadge();
         var updater = V2pnAppUpdater.Instance;
         // One toast per version: when it is ready, or found while automatic updates are off.
         var worthTelling = state == EV2pnUpdateState.Ready
-            || (state == EV2pnUpdateState.Available && !AppUpdates.Auto(_config));
+            || (state == EV2pnUpdateState.Available && (!AppUpdates.Auto(_config) || V2pnAppUpdater.Instance.ByWinGet));
         if (!worthTelling || updater.LatestVersion == _announcedVersion)
         {
             return;
@@ -2775,6 +2865,25 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var card = contentStatusBarView.IsVisible && panelStage.IsVisible && contentStatusBarView.Bounds.Height > 0;
         _manager.Margin = new Thickness(0, 0, 20, card ? contentStatusBarView.Bounds.Height + 32 : 20);
+    }
+
+    // In a short window the pin's usual height falls under the mode switch. Keep it in the band of map
+    // left open between the header and the status card; a tall window keeps the usual height.
+    private void UpdateMapFocus()
+    {
+        var h = mapView.Bounds.Height;
+        if (h <= 0)
+        {
+            return;
+        }
+        const double clearance = 40;
+        var top = panelHeader.IsVisible ? panelHeader.Bounds.Bottom : 0;
+        var bottom = contentStatusBarView.IsVisible && contentStatusBarView.Bounds.Height > 0 ? contentStatusBarView.Bounds.Top : h;
+        var y = h * MapView.DefaultFocusY;
+        y = top + clearance <= bottom - clearance
+            ? Math.Clamp(y, top + clearance, bottom - clearance)
+            : (top + bottom) / 2;
+        mapView.FocusY = y / h;
     }
 
     // The website, a place to report a problem and the project V2pn is built on. The cores' own

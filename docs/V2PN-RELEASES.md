@@ -1,29 +1,29 @@
-# V2pn: релизы, обновления, зеркало и слияние с v2rayN
+# V2pn: releases, updates, the mirror and merging v2rayN
 
-## Как V2pn обновляется у пользователей
+## How V2pn updates for its users
 
-- У V2pn своя версия (`1.0.0`, `1.0.1`…), она хранится в `v2rayN/Directory.Build.targets`. Версия v2rayN остаётся как есть: панели подписок узнают по ней формат конфига (`User-Agent: v2rayN/7.25.6`).
-- Через 20 секунд после запуска и потом раз в 6 часов V2pn спрашивает у источников обновлений манифест последнего релиза. Если никто не ответил, попытка повторяется через 15 минут, затем пауза удваивается до 6 часов. Одна и та же причина пишется в журнал один раз.
-- Если включено «Обновлять V2pn автоматически» (по умолчанию включено), пакет скачивается в фоне в `guiTemps/V2pnUpdate`. В шапке появляется «Перезапустить и обновить». Установка происходит по этой кнопке или при следующем запуске, поэтому работающее соединение обновление не обрывает.
-- На Windows скачивается пакет без ядер (`V2pn-windows-x64-update.zip`, около 60 МБ вместо 140): уже установленные ядра обновление не заменяет.
-- Ядра Xray, sing-box, mihomo и списки сайтов обновляются как в v2rayN: окно «Обновления», блок «Ядра и списки».
-- Сборка из исходников (`dotnet build`) показывает версию `1.0.0-dev` и себя не обновляет. Обновляются только пакеты, собранные `tools/release.ps1` и `tools/package-macos.sh`.
+- V2pn has its own version (`1.0.0`, `1.0.1`…), kept in `v2rayN/Directory.Build.targets`. The v2rayN version stays as it is: subscription panels use it to pick the config format (`User-Agent: v2rayN/7.25.6`).
+- 20 seconds after start and then every 6 hours, V2pn asks the update sources for the manifest of the latest release. If none answers, it tries again in 15 minutes, and the pause doubles up to 6 hours. The same reason goes to the log once.
+- With "Update V2pn automatically" on (the default), the package downloads in the background to `guiTemps/V2pnUpdate`, and "Restart and update" appears in the header. It installs on that button or at the next start, so an update never cuts a working connection.
+- On Windows the download is the package without cores (`V2pn-windows-x64-update.zip`, about 60 MB instead of 140): an update does not replace the cores already installed.
+- The Xray, sing-box and mihomo cores and the site lists update as in v2rayN: the Updates window, "Cores and lists".
+- A build from source (`dotnet build`) shows version `1.0.0-dev` and does not update itself. Only packages built by `tools/release.ps1` and `tools/package-macos.sh` update.
 
-### Источники
+### Sources
 
-Источник — это адрес, под которым лежат файлы в раскладке страницы релизов GitHub:
+A source is an address that holds files in the layout of a GitHub releases page:
 
 ```text
-<источник>/latest/download/release.json        манифест последнего релиза
-<источник>/latest/download/release.json.sig    его подпись
-<источник>/download/v1.0.1/<файл>              пакеты версии 1.0.1
+<source>/latest/download/release.json        manifest of the latest release
+<source>/latest/download/release.json.sig    its signature
+<source>/download/v1.0.1/<file>              packages of version 1.0.1
 ```
 
-Список источников задаётся при сборке свойством `V2pnUpdateSources` в `v2rayN/Directory.Build.targets`, через `|`. По умолчанию он один: `https://github.com/Piwqust/V2pn/releases`. V2pn идёт по списку по порядку и берёт первый источник, который отдал манифест с верной подписью. К каждому источнику он обращается напрямую и через собственный прокси, если тот запущен; что пробовать первым, решает переключатель «Обновлять через прокси». Ответ 404 значит «релизов ещё нет» и ошибкой не считается.
+The list of sources is set at build time by the `V2pnUpdateSources` property in `v2rayN/Directory.Build.targets`, separated by `|`. By default there is one: `https://github.com/Piwqust/V2pn/releases`. V2pn goes down the list in order and takes the first source that returns a manifest with a valid signature. It tries each source directly and through its own proxy, if that is running; the "Download through the VPN" switch in the Updates window decides which goes first. A 404 means "no releases yet" and is not an error.
 
-### Что именно проверяется
+### What exactly is checked
 
-`release.json` перечисляет пакеты релиза: имя, размер, SHA-256.
+`release.json` lists the packages of a release: name, size, SHA-256.
 
 ```json
 {
@@ -35,125 +35,212 @@
 }
 ```
 
-`release.json.sig` — подпись этого файла (ECDSA P-256, SHA-256, DER в base64). Открытые ключи встроены в приложение (`V2pnUpdateKeys` в том же файле). Закрытого ключа в репозитории нет.
+`release.json.sig` is the signature of that file (ECDSA P-256, SHA-256, DER in base64). The public keys are built into the app (`V2pnUpdateKeys` in the same file). The private key is not in the repository.
 
-1. Манифест принимается, только если подпись сходится с одним из встроенных ключей.
-2. Версия в манифесте должна быть больше установленной. Понизить версию нельзя.
-3. Скачанный пакет должен совпасть с манифестом по размеру и SHA-256, иначе он удаляется и пробуется следующий источник.
-4. Рядом с пакетом, который ждёт установки, сохраняются манифест и подпись. Перед установкой всё проверяется заново. Архив, который положила в эту папку другая программа, обновлением не считается.
+1. A manifest is accepted only if its signature matches one of the built-in keys.
+2. The version in the manifest must be higher than the installed one. A downgrade is not possible.
+3. The downloaded package must match the manifest in size and SHA-256; otherwise it is deleted and the next source is tried.
+4. The manifest and the signature are kept next to a package waiting to be installed, and everything is checked again before installing. An archive that another program put in that folder does not count as an update.
 
-Поэтому источнику не нужно доверять. Зеркало, прокси по дороге или подменённый DNS могут только не отдать обновление; подсунуть своё не могут.
+So a source does not need to be trusted. A mirror, a proxy on the way or a spoofed DNS can only withhold an update; they cannot slip in their own.
 
-Файлы `<пакет>.sha256` лежат в релизе для людей (`sha256sum -c`). Приложение их не читает.
+The `<package>.sha256` files in a release are for people (`sha256sum -c`). The app does not read them.
 
-### Установка и откат
+### Installing and rolling back
 
-Ставит пакет AmazTool (`v2rayN/AmazTool/Installer.cs`, `InstallFlow.cs`):
+AmazTool installs the package (`v2rayN/AmazTool/Installer.cs`, `InstallFlow.cs`):
 
-1. Ждёт, пока V2pn закроется.
-2. Распаковывает пакет во временную папку рядом с приложением (`.v2pn-update/stage`) и проверяет его. Установленное приложение пока не тронуто.
-3. Перекладывает файлы на место, каждый старый файл уходит в `.v2pn-update/backup`. Если файл не удалось заменить, всё уже переложенное возвращается назад.
-4. Запускает V2pn и 12 секунд следит за ним. Если новая версия за это время завершилась с ошибкой, возвращает прежние файлы и запускает прежнюю версию.
-5. При откате пишет `guiTemps/V2pnUpdate/failed.txt` с номером версии. Эту версию V2pn сам больше не ставит и показывает в окне «Обновления» причину; кнопка «Повторить» снимает запрет.
+1. Waits for V2pn to close.
+2. Unpacks the package into a temporary folder next to the app (`.v2pn-update/stage`) and checks it. The installed app is not touched yet.
+3. Moves the files into place; every old file goes to `.v2pn-update/backup`. If a file cannot be replaced, everything moved so far goes back.
+4. Starts V2pn and watches it for 12 seconds. If the new version exits with an error in that time, it puts the old files back and starts the old version.
+5. On a rollback it writes `guiTemps/V2pnUpdate/failed.txt` with the version number. V2pn does not install that version on its own again and shows the reason in the Updates window; "Try again" lifts the block.
 
-`guiConfigs/` (настройки, серверы, подписки) не трогается. Файлы в `bin/` (ядра), которые уже есть, не перезаписываются. На macOS заменяется весь `V2pn.app`, а данные лежат в `~/Library/Application Support/V2pn`. Ход установки пишется в `guiTemps/V2pnUpdate/update.log`.
+`guiConfigs/` (settings, servers, subscriptions) is not touched. Files in `bin/` (the cores) that already exist are not overwritten. On macOS the whole `V2pn.app` is replaced, and the data lives in `~/Library/Application Support/V2pn`. The install writes its progress to `guiTemps/V2pnUpdate/update.log`.
 
-## Ключ подписи
+## One-command install, winget and Homebrew
 
-Создан 13 ноября 2026 и лежит вне репозитория: `~/.v2pn/release-signing-key.pem` (на Windows `C:\Users\<вы>\.v2pn\`). Его открытая часть записана в `V2pnUpdateKeys`.
+### The `install.ps1` script
 
-- **Сделайте копию ключа** в менеджере паролей или на отдельном носителе. Без него нельзя выпустить обновление, которое примут уже установленные копии.
-- Никому его не отправляйте и не кладите в репозиторий. `.gitignore` не пускает туда `*.pem`.
-- По умолчанию ключ остаётся только на вашем компьютере: пакеты собирает GitHub, а подписывает их `tools/sign-release.ps1` у вас. Если хотите, чтобы GitHub подписывал сам, положите ключ в секрет `V2PN_SIGNING_KEY` окружения `release`.
+```powershell
+irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex
+```
 
-Заменить ключ:
+`tools/install.ps1` is attached to every release: `tools/sign-release.ps1` or the signing step in `v2pn-release.yml` copies it. The `latest/download` link always opens the script of the latest published release. What it does:
+
+1. Takes `release.json` of the latest release, finds the package for its architecture (x64 or arm64), downloads it and checks the size and SHA-256 against the list. If they do not match, it installs nothing.
+2. Unpacks to `%LOCALAPPDATA%\Programs\V2pn` and adds shortcuts to Start and the desktop.
+3. Writes the word `auto` to `guiTemps\V2pnImport.txt`: at the first start V2pn moves over the data of the newest v2rayN that has servers (`V2pnImport.ApplyAtStart`).
+4. Starts V2pn through Explorer rather than as a child of the console: Windows may close a program started from a terminal together with the terminal.
+
+If V2pn is already in that folder, the script just starts it: from there V2pn updates itself. The script is ASCII only: Windows PowerShell reads downloaded text without an encoding as Latin-1.
+
+Options are environment variables set before the command: `V2PN_DIR` (another folder), `V2PN_NO_IMPORT`, `V2PN_NO_SHORTCUTS`, `V2PN_NO_START`, `V2PN_SOURCE` (another releases page or a mirror). To test without publishing: put the package, `release.json` and the script in `<folder>/<version>/`, serve it with `tools/fake_releases.py`, and run the command with `V2PN_SOURCE=http://127.0.0.1:<port>/releases`.
+
+### The `install.sh` script (macOS)
+
+```bash
+curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh | bash
+```
+
+It is attached to the release together with `install.ps1` and does the same on a Mac:
+
+1. Picks the build by `sysctl hw.optional.arm64`, not by `uname -m`: Terminal under Rosetta on Apple silicon answers `x86_64`. It takes the size and SHA-256 from `release.json`; a Mac has no jq, so JavaScript for Automation (`osascript -l JavaScript`) reads the JSON.
+2. Unpacks with `ditto` (it keeps execute permissions and file signatures) into `/Applications`, or into `~/Applications` if `/Applications` is not writable, and removes the quarantine flag. curl does not set that flag anyway, so Gatekeeper asks nothing.
+3. Writes `auto` to `~/Library/Application Support/V2pn/guiTemps/V2pnImport.txt` and opens V2pn. On a Mac the move closes `v2rayN.app` and removes its login item `~/Library/LaunchAgents/v2rayN-LaunchAgent.plist`.
+
+The whole script is inside a `main` function: if the download breaks off halfway, bash runs nothing. Options: `V2PN_DIR`, `V2PN_NO_IMPORT`, `V2PN_NO_START`, `V2PN_SOURCE`. Tested on a Mac with release 1.0.0 (with a separate `HOME` and `V2PN_DIR`, without starting the app). The move from v2rayN on a Mac has not been tested live: the test Mac runs a v2rayN that is used every day.
+
+### winget
+
+`winget install Piwqust.V2pn` installs the same zip as the release (`InstallerType: zip`, a portable program inside). winget unpacks it into `%LOCALAPPDATA%\Microsoft\WinGet\Packages\Piwqust.V2pn_…` and remembers the hashes of its files. So that copy of V2pn behaves differently (`V2pnWinGet.cs`):
+
+- it keeps its data in `%LOCALAPPDATA%\V2pn` (v2rayN's rule for the WinGet folder) and copies the cores from the package there at start;
+- it does not download or install updates itself: the Updates window has "Update with winget", which closes V2pn, runs `winget upgrade --id Piwqust.V2pn --exact` and opens V2pn again;
+- at the first start it creates a Start shortcut, because winget does not make one for a portable program. After `winget uninstall` the shortcut stays and has to be deleted by hand;
+- developer mode is not available.
+
+`ArchiveBinariesDependOnPath: true` in the manifest keeps winget from starting V2pn through a link in another folder: the exe needs its DLLs next to it.
+
+The first submission is made by hand, once a release with all of this is published:
+
+```powershell
+tools/winget-manifest.ps1 -Version 1.0.1          # dist/winget/1.0.1/, hashes taken from the release's release.json
+winget validate --manifest dist/winget/1.0.1
+wingetcreate submit --token <GitHub token> dist/winget/1.0.1
+```
+
+`wingetcreate` (`winget install wingetcreate`) opens a pull request in `microsoft/winget-pkgs`. A bot (an install in a sandbox, an antivirus scan) and a moderator review it, usually in a few days to a week. Without an Authenticode signature Defender may flag the exe, and then the review takes longer. Later versions are submitted by `.github/workflows/v2pn-winget.yml` when a release is published, if the `WINGET_TOKEN` secret holds a GitHub token (classic, `public_repo`).
+
+Installing from a local manifest (`winget install --manifest dist/winget/<version>`) needs `winget settings --enable LocalManifestFiles` run as administrator.
+
+### Homebrew
+
+```bash
+brew install --cask piwqust/tap/v2pn
+```
+
+The cask lives in a separate repository, `Piwqust/homebrew-tap`, file `Casks/v2pn.rb`. `tools/homebrew-cask.ps1 -Version <version>` writes it (into `dist/homebrew/Casks/`) and takes the hashes from `release.json`. In the cask:
+
+- `auto_updates true`: V2pn updates itself, and `brew upgrade` leaves it alone;
+- the quarantine flag is removed after install: V2pn has no Apple Developer ID signature, and macOS would not open a flagged copy;
+- `zap` deletes `~/Library/Application Support/V2pn` on `brew uninstall --zap`.
+
+To set up the tap: create the public repository `Piwqust/homebrew-tap` and put `Casks/v2pn.rb` in it. From then on `.github/workflows/v2pn-homebrew.yml` updates the cask, if the `HOMEBREW_TAP_TOKEN` secret holds a token with write access to that repository.
+
+## Developer mode: your own changes in the installed V2pn
+
+Installing changes that are not in a release yet needs neither a release nor a sandbox. The installed V2pn does it itself (Windows only).
+
+1. Updates → "Developer mode" → "Choose…" → the repository folder that holds `tools/release.ps1`.
+2. "Build and install". V2pn runs `tools/release.ps1 -UpdateOnly -NoCores -NoManifest` for its own architecture. It builds the working tree as it is, uncommitted changes included. The connection keeps working during the build, and the window can be closed. It needs the .NET 10 SDK, like any build.
+3. When the build is ready, V2pn installs it through AmazTool: a restart of a few seconds, and a rollback if the new version does not start. The build and install logs are in `guiTemps/V2pnDevBuild/` (`build.log`, `update.log`); the "Log" button opens the right one.
+
+The version of such a build is the next patch with a timestamp: `1.0.1-local.202611141320`. So:
+
+- the usual update check leaves it alone: the published 1.0.0 is older;
+- every new build from source is newer than the previous one;
+- when the real 1.0.1 comes out, it replaces the local build by itself, as a normal update;
+- "Back to the release" downloads the latest published release, checks its signature and installs it, even though its number is lower. Only on that button: V2pn never moves to an older version on its own.
+
+For a local build the Updates window shows the commit it was built from, and a note if the tree had uncommitted changes. It has no manifest and no signature: the package was built on this computer and installed right away, it never travels over the network.
+
+## The signing key
+
+Created on 13 November 2026 and kept outside the repository: `~/.v2pn/release-signing-key.pem` (on Windows, `C:\Users\<you>\.v2pn\`). Its public part is in `V2pnUpdateKeys`.
+
+- **Make a copy of the key** in a password manager or on a separate drive. Without it no update can be released that the installed copies will accept.
+- Never send it to anyone or put it in the repository. `.gitignore` keeps `*.pem` out.
+- By default the key stays on your computer only: GitHub builds the packages, and `tools/sign-release.ps1` signs them on your machine. If you want GitHub to sign by itself, put the key in the `V2PN_SIGNING_KEY` secret of the `release` environment.
+
+To replace the key:
 
 ```powershell
 dotnet run tools/manifest.cs -- --new-key $HOME/.v2pn/release-signing-key-2.pem
 ```
 
-Команда печатает открытый ключ. Добавьте его в `V2pnUpdateKeys` через `|`, **не удаляя старый**, и выпустите версию, подписанную старым ключом. Когда все обновятся до неё, следующие версии можно подписывать новым, а старый убрать ещё через релиз.
+The command prints the public key. Add it to `V2pnUpdateKeys` after a `|`, **without removing the old one**, and release a version signed with the old key. Once everyone has updated to it, later versions can be signed with the new key, and the old one can go one release after that.
 
-## Как выпустить версию
+## How to release a version
 
-Нужно: репозиторий `Piwqust/V2pn` на GitHub с основной веткой `v2pn` и ключ подписи на этом компьютере.
+You need: the `Piwqust/V2pn` repository on GitHub with the main branch `v2pn`, and the signing key on this computer.
 
-1. Допишите раздел `## 1.0.1` в `CHANGELOG.md`: он станет описанием релиза.
-2. Запустите:
+1. Fill in the `## Unreleased` section of `CHANGELOG.md` and rename its heading to the version number (`## 1.0.1`): it becomes the text of the release.
+2. Run:
 
    ```powershell
    tools/release.ps1 -Version 1.0.1 -Tag
    ```
 
-   Скрипт проверяет, что дерево чистое, ветка `v2pn`, версия больше предыдущей; гоняет тесты; собирает пакеты Windows; записывает версию, делает коммит и тег. Если что-то упало, в репозитории ничего не меняется и скрипт можно запустить снова.
+   The script checks that the tree is clean, the branch is `v2pn` and the version is higher than the last one; runs the tests; builds the Windows packages; writes the version, commits and tags. If anything fails, nothing changes in the repository and the script can be run again.
 
-3. Отправьте коммит и тег вместе:
+3. Push the commit and the tag together:
 
    ```powershell
    git push --atomic origin HEAD v1.0.1
    ```
 
-4. GitHub Actions (`.github/workflows/v2pn-release.yml`) собирает пакеты Windows (x64, arm64) и macOS (arm64, x64), это около 15 минут. Когда запуск закончился, подпишите пакеты и создайте **черновик** релиза:
+4. GitHub Actions (`.github/workflows/v2pn-release.yml`) builds the Windows (x64, arm64) and macOS (arm64, x64) packages, which takes about 15 minutes. When the run is done, sign the packages and create a **draft** release:
 
    ```powershell
    tools/sign-release.ps1 -Version 1.0.1
    ```
 
-   Скрипт скачивает пакеты из запуска, подписывает манифест ключом с этого компьютера и создаёт черновик со всеми файлами.
+   The script downloads the packages from the run, signs the manifest with the key on this computer and creates a draft with all the files.
 
-5. Откройте черновик на GitHub, проверьте файлы и опубликуйте (кнопка Publish или команда, которую напечатал скрипт). Пока релиз не опубликован, установленные копии его не видят. Опубликованный релиз менять нельзя: нужна новая версия.
+5. Open the draft on GitHub, check the files and publish it (the Publish button or the command the script printed). Until the release is published, installed copies do not see it. A published release cannot be changed: it takes a new version.
 
-Если ключ лежит в секрете `V2PN_SIGNING_KEY` окружения `release`, шаг 4 делается сам: процесс подписывает манифест и создаёт черновик. Тогда ключ хранится на GitHub; поставьте в окружении обязательное подтверждение.
+If the key is in the `V2PN_SIGNING_KEY` secret of the `release` environment, step 4 happens by itself: the workflow signs the manifest and creates the draft. The key is then kept on GitHub; turn on required approval for that environment.
 
-Пушьте только свою ветку и свои теги. `git push --tags` выложил бы и три сотни тегов v2rayN.
+Push only your own branch and your own tags. `git push --tags` would also publish three hundred v2rayN tags.
 
-Собрать пакеты локально, ничего не коммитя:
+To build the packages locally without committing anything:
 
 ```powershell
 tools/release.ps1 -Version 1.0.1
 ```
 
-В `dist/release/1.0.1/` появятся `V2pn-windows-x64.zip`, `V2pn-windows-arm64.zip`, их варианты `-update.zip`, файлы `.sha256`, `release.json` и `release.json.sig`. Пакеты macOS собираются только на Mac: `tools/package-macos.sh 1.0.1 arm64`.
+`dist/release/1.0.1/` then holds `V2pn-windows-x64.zip`, `V2pn-windows-arm64.zip`, their `-update.zip` variants, the `.sha256` files, `release.json` and `release.json.sig`. macOS packages are built only on a Mac: `tools/package-macos.sh 1.0.1 arm64`.
 
-### Ядра
+### Cores
 
-Пакеты включают набор ядер v2rayN (`2dust/v2rayN-core-bin`). Чтобы две сборки одного тега не различались, набор закреплён в `tools/cores.lock.json`: коммит и SHA-256 архива для каждой системы. Сборка скачивает ровно этот архив и останавливается, если хеш не сошёлся. Перейти на свежие ядра:
+The packages include v2rayN's set of cores (`2dust/v2rayN-core-bin`). So that two builds of the same tag do not differ, the set is pinned in `tools/cores.lock.json`: the commit and the SHA-256 of the archive for each system. The build downloads exactly that archive and stops if the hash does not match. To move to fresh cores:
 
 ```powershell
 tools/update-cores.ps1
 ```
 
-и закоммитить изменившийся `cores.lock.json`.
+and commit the changed `cores.lock.json`.
 
-### Проверка на Mac без .NET
+### Testing on a Mac without .NET
 
-Пакет можно собрать на Mac, где нет .NET SDK, из сборки, сделанной на другом компьютере:
+A package can be built on a Mac that has no .NET SDK, from a build made on another computer:
 
 ```bash
 V2PN_PUBLISH_DIR=~/pub V2PN_CORES_ZIP=~/v2rayN-macos-arm64.zip tools/package-macos.sh 1.0.1 arm64 out
 ```
 
-`V2PN_PUBLISH_DIR` — папка, куда на любом компьютере сделан `dotnet publish -r osx-arm64` для AmazTool и V2pn. Подпись программ, zip и dmg делаются на Mac. Так 13 ноября 2026 проверялась работа на настоящем Mac (macOS 27.2, Apple silicon): запуск, подключение через тестовый сервер, перезапуск упавшего ядра, выход, обновление 1.0.0 → 1.0.1 из папки пользователя и из `/Applications`, откат версии, которая не запускается. Не проверялись: режим «Прокси» с системным прокси, режим VPN, автозапуск и предупреждение Gatekeeper (на том Mac он был выключен).
+`V2PN_PUBLISH_DIR` is the folder where `dotnet publish -r osx-arm64` was run for AmazTool and V2pn on any computer. Signing the programs, the zip and the dmg happen on the Mac. This is how a real Mac (macOS 27.2, Apple silicon) was tested on 13 November 2026: start, connecting through a test server, restarting a crashed core, quitting, the 1.0.0 → 1.0.1 update from the user's folder and from `/Applications`, and rolling back a version that does not start. Not tested: Proxy mode with the system proxy, VPN mode, start at login, and the Gatekeeper warning (it was turned off on that Mac).
 
-### macOS: подпись Apple
+### macOS: Apple signing
 
-Пакеты macOS подписаны только локальной (ad-hoc) подписью, без сертификата Apple Developer ID и без нотаризации. Поэтому при первом запуске скачанной копии macOS требует «Всё равно открыть» (в README написано, как). Чтобы предупреждения не было, нужна платная программа Apple Developer (99 долларов в год); тогда в `tools/package-macos.sh` подставляется сертификат (`CODESIGN_IDENTITY`) и добавляется нотаризация. Сейчас этого нет.
+The macOS packages carry only a local (ad-hoc) signature, without an Apple Developer ID certificate and without notarization. So on the first start of a downloaded copy macOS asks for "Open Anyway" (the README says how). Getting rid of the warning needs the paid Apple Developer Program (99 dollars a year); then `tools/package-macos.sh` gets the certificate (`CODESIGN_IDENTITY`) and a notarization step. That is not in place yet.
 
-На Windows то же самое со SmartScreen: у exe нет подписи Authenticode.
+Windows has the same story with SmartScreen: the exe has no Authenticode signature.
 
-## Зеркало на своём сервере
+## A mirror on your own server
 
-Зеркало нужно, чтобы обновления доходили, когда GitHub недоступен или отдаёт файлы медленно. Это папка со статическими файлами за любым веб-сервером.
+A mirror lets updates arrive when GitHub is unreachable or slow. It is a folder of static files behind any web server.
 
-Выложить версию:
+To put a version on it:
 
 ```powershell
 tools/publish-mirror.ps1 -Version 1.0.1 -Target deploy@example.com:/var/www/v2pn
 ```
 
-Скрипт проверяет пакеты по манифесту, загружает их по SSH и только после этого переключает `latest`. С ключом `-FromGitHub` он берёт файлы из опубликованного релиза, а не из локальной сборки. То же самое автоматически делает `.github/workflows/v2pn-mirror.yml` при публикации релиза, если в настройках репозитория заданы переменная `MIRROR_TARGET` и секрет `MIRROR_SSH_KEY`.
+The script checks the packages against the manifest, uploads them over SSH and only then switches `latest`. With `-FromGitHub` it takes the files from the published release instead of a local build. `.github/workflows/v2pn-mirror.yml` does the same automatically when a release is published, if the repository settings have the `MIRROR_TARGET` variable and the `MIRROR_SSH_KEY` secret.
 
-Пример для nginx:
+An example for nginx:
 
 ```nginx
 server {
@@ -164,53 +251,55 @@ server {
     location /v2pn/ {
         alias /var/www/v2pn/;
         autoindex off;
-        # release.json меняется с каждым релизом, пакеты версии не меняются никогда.
+        # release.json changes with every release; a version's packages never change.
         location ~ /latest/ { add_header Cache-Control "no-cache"; }
     }
 }
 ```
 
-Чтобы приложение узнало о зеркале, допишите его в `v2rayN/Directory.Build.targets`:
+For the app to know about the mirror, add it in `v2rayN/Directory.Build.targets`:
 
 ```xml
 <V2pnUpdateSources Condition="'$(V2pnUpdateSources)' == ''">https://github.com/Piwqust/V2pn/releases|https://updates.example.com/v2pn</V2pnUpdateSources>
 ```
 
-и выпустите версию. Копии начиная с неё будут ходить на зеркало, когда GitHub не ответил. Более старые копии о зеркале не знают.
+and release a version. Copies from that version on go to the mirror when GitHub does not answer. Older copies do not know about the mirror.
 
-Выгрузка на сервер и процесс `v2pn-mirror.yml` написаны, но на настоящем сервере ещё не запускались.
+The upload and the `v2pn-mirror.yml` workflow are written but have not run against a real server yet.
 
-## Проверки в GitHub Actions
+## GitHub Actions
 
-| Процесс | Когда | Что делает |
+| Workflow | When | What it does |
 | --- | --- | --- |
-| `v2pn-ci.yml` | каждый пуш и pull request в `v2pn` | тесты и сборка на Windows и macOS; собирает `V2pn.app`, запускает его на Mac, снимает экран и прикладывает снимок с журналами к запуску |
-| `v2pn-release.yml` | тег `v1.2.3` | пакеты, подпись, черновик релиза |
-| `v2pn-mirror.yml` | публикация релиза | копия на свой сервер, если настроено |
-| `v2pn-upstream.yml` | по понедельникам | слияние со свежим v2rayN в отдельной ветке и pull request с отчётом |
+| `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run |
+| `v2pn-release.yml` | a `v1.2.3` tag | packages, signature, draft release |
+| `v2pn-mirror.yml` | a release is published | a copy on your own server, if set up |
+| `v2pn-winget.yml` | a release is published | a pull request to `microsoft/winget-pkgs`, if `WINGET_TOKEN` is set |
+| `v2pn-homebrew.yml` | a release is published | updates the cask in `Piwqust/homebrew-tap`, if `HOMEBREW_TAP_TOKEN` is set |
+| `v2pn-upstream.yml` | Mondays | a merge of the latest v2rayN on a separate branch and a pull request with a report |
 
-Процессы v2rayN из репозитория удалены: они собирали и публиковали пакеты v2rayN, один отправлял их в winget.
+v2rayN's workflows were removed from the repository: they built and published v2rayN packages, and one submitted them to winget.
 
-## Как проверить обновления без публикации
+## Testing updates without publishing
 
 ```powershell
 tools/update-e2e.ps1
 ```
 
-Скрипт собирает две версии, которые ищут обновления на локальном сервере (`tools/fake_releases.py`) и доверяют ключу, созданному для этого прогона, и управляет настоящими окнами V2pn через UI Automation:
+The script builds two versions that look for updates on a local server (`tools/fake_releases.py`) and trust a key made for this run, and drives real V2pn windows through UI Automation:
 
-| Сценарий | Что проверяет |
+| Scenario | What it checks |
 | --- | --- |
-| `manual` | Автообновление выключено. Окно «Обновления» → «Скачать и установить». V2pn перезапускается новой версией, настройки и ядра на месте. |
-| `auto` | Автообновление включено. Пакет скачивается сам, в шапке «Перезапустить и обновить». При следующем запуске ставится новая версия, пакет удаляется. |
-| `damaged` | Пакет изменён после подписи. Он удалён, V2pn работает дальше на старой версии. |
-| `unsigned` | Релиз подписан чужим ключом. Ничего не скачивается. |
-| `crash` | Новая версия не запускается. Установщик возвращает старые файлы, запускает старую версию, V2pn сообщает об этом и не пробует снова сам. |
-| `rollback` | Старая версия распакована поверх новой руками. Запускается, настройки на месте. |
+| `manual` | Auto-update off. Updates window → "Download and install". V2pn restarts as the new version; settings and cores are in place. |
+| `auto` | Auto-update on. The package downloads by itself, "Restart and update" shows in the header. The new version installs at the next start, and the package is deleted. |
+| `damaged` | The package was changed after signing. It is deleted, and V2pn keeps running the old version. |
+| `unsigned` | The release is signed with someone else's key. Nothing downloads. |
+| `crash` | The new version does not start. The installer puts the old files back and starts the old version; V2pn reports it and does not try again on its own. |
+| `rollback` | The old version was unpacked over the new one by hand. It starts, and the settings are in place. |
 
-Скрипт ничего не публикует, настоящий ключ не использует и не трогает V2pn, которым вы пользуетесь: каждая копия работает в песочнице (`tools/sandbox.ps1`), системный прокси не меняется, порт свой.
+The script publishes nothing, does not use the real key and does not touch the V2pn you use: each copy runs in a sandbox (`tools/sandbox.ps1`), the system proxy does not change, and the port is its own.
 
-Запустить любую сборку рядом с рабочим V2pn:
+To run any build next to your working V2pn:
 
 ```powershell
 tools/sandbox.ps1 -From v2rayN/v2rayN.Desktop/bin/Release/net10.0 -Dest $env:TEMP/v2pn-try -Launch
@@ -220,24 +309,24 @@ tools/sandbox.ps1 -From v2rayN/v2rayN.Desktop/bin/Release/net10.0 -Dest $env:TEM
 tools/sandbox.ps1 -Dest $env:TEMP/v2pn-try -Stop
 ```
 
-## Как подтянуть новый v2rayN
+## Pulling in a new v2rayN
 
 ```powershell
-tools/sync-upstream.ps1          # попробовать и посмотреть отчёт
-tools/sync-upstream.ps1 -Apply   # и принять, если всё зелёное
+tools/sync-upstream.ps1          # try it and read the report
+tools/sync-upstream.ps1 -Apply   # and accept it if everything is green
 ```
 
-Скрипт вливает свежий v2rayN в отдельную ветку `sync/v2rayN-…`, собирает V2pn и AmazTool, гоняет тесты. Ветка `v2pn` меняется, только когда всё прошло и указан `-Apply`. Отчёт пишется в `docs/upstream-sync/`. В нём список коммитов v2rayN и раздел «To port by hand»: что v2rayN поменял в окнах, которые V2pn переписал по-своему.
+The script merges the latest v2rayN into a separate branch `sync/v2rayN-…`, builds V2pn and AmazTool, and runs the tests. The `v2pn` branch changes only when all of that passed and `-Apply` is given. The report goes to `docs/upstream-sync/`. It lists v2rayN's commits and has a "To port by hand" section: what v2rayN changed in the windows that V2pn rewrote its own way.
 
-Почему так: окна, которые V2pn нарисовал заново, помечены в `v2rayN/v2rayN.Desktop/Views/.gitattributes` как `merge=ours`, а README, шаблоны обращений и `dependabot.yml` — в корневом `.gitattributes`. При слиянии git оставляет версию V2pn. Новые настройки v2rayN в этих окнах нужно переносить руками, отчёт показывает их diff. Если v2rayN привязал в коде новый элемент, сборка падает с понятной ошибкой («нет `cmbDnsMode`»). Это и есть подсказка, что переносить. Процессы GitHub, которые v2rayN изменил или добавил, скрипт после слияния снова удаляет.
+Why it works like this: the windows V2pn redrew are marked `merge=ours` in `v2rayN/v2rayN.Desktop/Views/.gitattributes`, and the READMEs, issue templates and `dependabot.yml` in the root `.gitattributes`. In a merge git keeps V2pn's version of them. New v2rayN settings in those windows have to be ported by hand; the report shows their diff. If v2rayN binds a new element in code, the build fails with a clear error ("no `cmbDnsMode`"), and that is the hint of what to port. GitHub workflows that v2rayN changed or added are removed again after the merge.
 
-Коды выхода: `0` — влито или нечего вливать, `2` — конфликты, `3` — не собирается, `4` — упали тесты. При любой ошибке `v2pn` остаётся как была.
+Exit codes: `0`: merged or nothing to merge; `2`: conflicts; `3`: does not build; `4`: tests failed. On any error `v2pn` stays as it was.
 
-Раз в неделю то же самое делает `.github/workflows/v2pn-upstream.yml` и открывает pull request с отчётом. Если что-то сломалось, PR будет черновиком.
+Once a week `.github/workflows/v2pn-upstream.yml` does the same and opens a pull request with the report. If something broke, the pull request is a draft.
 
-### Правила, чтобы слияния не ломались
+### Rules that keep merges from breaking
 
-- Новая логика V2pn живёт в своих файлах: `ServiceLib/V2pn/`, `v2rayN.Desktop/Common/`, `L.*.cs`, `AmazTool/Installer.cs`.
-- Если без правки файла v2rayN не обойтись, правка должна быть в пару строк, с комментарием `// V2pn:`.
-- Переписали окно v2rayN целиком — добавьте его в `Views/.gitattributes`.
-- Драйвер `merge.ours` задаётся только на время слияния с v2rayN (это делает скрипт). В настройки репозитория его не записывайте: слияния собственных веток V2pn начнут молча терять правки в этих файлах.
+- V2pn's new logic lives in its own files: `ServiceLib/V2pn/`, `v2rayN.Desktop/Common/`, `L.*.cs`, `AmazTool/Installer.cs`.
+- If a v2rayN file has to change, keep the change to a couple of lines with a `// V2pn:` comment.
+- If you rewrote a v2rayN window entirely, add it to `Views/.gitattributes`.
+- The `merge.ours` driver is set only for the duration of a v2rayN merge (the script does that). Do not put it in the repository config: merges of V2pn's own branches would start silently losing changes in those files.

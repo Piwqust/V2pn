@@ -33,6 +33,9 @@
             <SolidColorBrush x:Key="V2Neutral" Color="#33343F" />
             <SolidColorBrush x:Key="V2NeutralHover" Color="#3D3E4A" />
             <SolidColorBrush x:Key="V2PinCore" Color="#FFFFFF" />
+            <!--  Behind in-window dialogs. DialogHost fades its overlay to about half, so this reads as a
+                  ~50 % dim over the dark map; Semi's grey wash barely changed it.  -->
+            <SolidColorBrush x:Key="V2Scrim" Color="#E6000000" />
             <SolidColorBrush x:Key="V2Safe" Color="#3DD68C" />
             <SolidColorBrush x:Key="V2SafeSoft" Color="#263DD68C" />
             <SolidColorBrush x:Key="V2Unsafe" Color="#FF5A3D" />
@@ -213,6 +216,7 @@
             <SolidColorBrush x:Key="V2Neutral" Color="#E4E6EC" />
             <SolidColorBrush x:Key="V2NeutralHover" Color="#D8DBE3" />
             <SolidColorBrush x:Key="V2PinCore" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="V2Scrim" Color="#9916161B" />
             <!--  Status colours are read as 11-12 px text (pill, check chip, ping), so they are dark enough
                   for 4.5:1 on their Soft fill over the map; the tints and map fills below keep lighter tones.  -->
             <SolidColorBrush x:Key="V2Safe" Color="#046B39" />

@@ -63,6 +63,8 @@ if ($missing) { throw "The run did not produce: $($missing -join ', ')" }
 
 $dotnet = Find-Dotnet
 Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $dir, $Version, '--repo', $repo)
+# The one-command installers go with every release: .../releases/latest/download/install.ps1 (Windows), install.sh (macOS)
+Copy-Item (Join-Path $PSScriptRoot 'install.ps1'), (Join-Path $PSScriptRoot 'install.sh') $dir
 
 $notesFile = Join-Path $dir 'notes.md'
 [IO.File]::WriteAllText($notesFile, $notes)

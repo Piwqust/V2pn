@@ -238,8 +238,10 @@ public static class FileUtils
     {
         var shFilePath = Utils.GetBinConfigPath(fileName);
 
-        // Check if the file already exists and if we should overwrite it
-        if (!overwrite && File.Exists(shFilePath))
+        // V2pn: a script with CRLF line ends fails to start ("No such file or directory" for "bash\r").
+        // An existing copy is kept only while it matches, so a broken one or an older V2pn's is replaced.
+        contents = contents.Replace("\r\n", "\n");
+        if (!overwrite && File.Exists(shFilePath) && await File.ReadAllTextAsync(shFilePath) == contents)
         {
             return shFilePath;
         }

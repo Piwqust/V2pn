@@ -31,8 +31,23 @@ public sealed class MapView : UserControl
     private bool _focusedOnce;
     private Cursor? _handCursor;
 
+    public const double DefaultFocusY = 0.47;
+    private double _focusY = DefaultFocusY;
+
     /// <summary>Where the pin sits, as a fraction of the view (the header covers the top).</summary>
-    public double FocusY { get; set; } = 0.47;
+    public double FocusY
+    {
+        get => _focusY;
+        set
+        {
+            if (Math.Abs(value - _focusY) < 0.002)
+            {
+                return;
+            }
+            _focusY = value;
+            Apply(animate: false);
+        }
+    }
 
     public MapView()
     {

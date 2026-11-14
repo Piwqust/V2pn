@@ -68,6 +68,9 @@ public sealed class AppManager
         }
 
         Logging.Setup();
+        // V2pn: moving from v2rayN copies its files, so it happens before V2pn reads its own.
+        V2pnImport.ApplyAtStart(Environment.GetCommandLineArgs());
+        V2pnWinGet.PrepareAtStart();
         var config = ConfigHandler.LoadConfig();
         if (config == null)
         {

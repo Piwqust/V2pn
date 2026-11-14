@@ -202,6 +202,43 @@
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
     </Style>
 
+    <!--  Settings navigation: links to the windows of their own, shaped like the nav entries above them.  -->
+    <Style Selector="TextBlock.navgroup">
+        <Setter Property="Margin" Value="10,0,0,6" />
+        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
+    <Style Selector="Button.navlink">
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+        <Setter Property="HorizontalContentAlignment" Value="Stretch" />
+        <Setter Property="MinHeight" Value="36" />
+        <Setter Property="Margin" Value="0,1" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="CornerRadius" Value="12" />
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="BorderThickness" Value="0" />
+        <Setter Property="FontWeight" Value="Normal" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+    </Style>
+    <Style Selector="Button.navlink:pointerover /template/ ContentPresenter#PART_ContentPresenter">
+        <Setter Property="Background" Value="{DynamicResource V2Hover}" />
+    </Style>
+    <Style Selector="Button.navlink PathIcon.nav">
+        <Setter Property="Width" Value="16" />
+        <Setter Property="Height" Value="16" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+    </Style>
+    <Style Selector="Button.navlink PathIcon.navopen">
+        <Setter Property="Width" Value="12" />
+        <Setter Property="Height" Value="12" />
+        <Setter Property="Opacity" Value="0" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+    </Style>
+    <Style Selector="Button.navlink:pointerover PathIcon.navopen, Button.navlink:focus-visible PathIcon.navopen">
+        <Setter Property="Opacity" Value="1" />
+    </Style>
+
     <!--  Search field  -->
     <Style Selector="TextBox.search">
         <Setter Property="CornerRadius" Value="{DynamicResource V2RadiusControl}" />
@@ -332,17 +369,18 @@
 
 
     <!--  Buttons inside dialog forms: raised neutral keys, like the main window's secondary actions.  -->
-    <Style Selector=":is(Window).dialog Button:not(.IconButton), UserControl Border.formcard Button:not(.IconButton)">
+    <!--  Not the Settings navigation links: they are nav entries, flat like the list above them.  -->
+    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink), UserControl Border.formcard Button:not(.IconButton)">
         <Setter Property="Theme" Value="{StaticResource V2Button}" />
         <Setter Property="Background" Value="{DynamicResource V2NeutralFill}" />
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
         <Setter Property="BorderThickness" Value="0" />
         <Setter Property="MinHeight" Value="32" />
     </Style>
-    <Style Selector=":is(Window).dialog Button:not(.IconButton) /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton) /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink) /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton) /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="BoxShadow" Value="{DynamicResource V2NeutralShadow}" />
     </Style>
-    <Style Selector=":is(Window).dialog Button:not(.IconButton):pointerover /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton):pointerover /template/ ContentPresenter#PART_ContentPresenter">
+    <Style Selector=":is(Window).dialog Button:not(.IconButton):not(.navlink):pointerover /template/ ContentPresenter#PART_ContentPresenter, UserControl Border.formcard Button:not(.IconButton):pointerover /template/ ContentPresenter#PART_ContentPresenter">
         <Setter Property="Background" Value="{DynamicResource V2NeutralFillHover}" />
     </Style>
 

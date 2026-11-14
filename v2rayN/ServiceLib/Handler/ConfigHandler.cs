@@ -106,9 +106,9 @@ public static class ConfigHandler
 
         if (config.UiItem.CurrentLanguage.IsNullOrEmpty())
         {
-            config.UiItem.CurrentLanguage = Thread.CurrentThread.CurrentCulture.TwoLetterISOLanguageName.Equals("zh", StringComparison.CurrentCultureIgnoreCase)
-                ? Global.Languages.First()
-                : Global.Languages[2];
+            // V2pn: English is the language of a new install everywhere (v2rayN picked Chinese on a Chinese
+            // system); the others stay one click away in Appearance.
+            config.UiItem.CurrentLanguage = "en";
         }
 
         config.ConstItem ??= new ConstItem();

@@ -66,6 +66,17 @@ internal class UI
         return files?.TryGetLocalPath();
     }
 
+    public static async Task<string?> OpenFolderDialog(string title)
+    {
+        var sp = GetStorageProvider();
+        if (sp is null)
+        {
+            return null;
+        }
+        var folders = await sp.OpenFolderPickerAsync(new FolderPickerOpenOptions { Title = title, AllowMultiple = false });
+        return folders.FirstOrDefault()?.TryGetLocalPath();
+    }
+
     private static IStorageProvider? GetStorageProvider()
     {
         var owner = WindowDialog.TryGetOwnerWindow();

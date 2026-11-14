@@ -1,0 +1,123 @@
+<Window
+    x:Class="v2rayN.Desktop.Views.PinEditWindow"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
+    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    Title="{x:Static loc:L.PinTitle}"
+    Width="720"
+    Height="680"
+    ShowInTaskbar="False"
+    WindowStartupLocation="CenterScreen">
+    <DockPanel>
+        <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+            <StackPanel Classes="footer">
+                <Button
+                    x:Name="btnSave"
+                    MinWidth="100"
+                    Content="{x:Static loc:L.Save}"
+                    IsDefault="True" />
+                <Button
+                    x:Name="btnCancel"
+                    MinWidth="100"
+                    Content="{x:Static resx:ResUI.TbCancel}"
+                    IsCancel="True" />
+            </StackPanel>
+        </Border>
+        <TextBlock
+            x:Name="txtError"
+            Margin="28,0,28,10"
+            Classes="srowhint warn"
+            DockPanel.Dock="Bottom"
+            IsVisible="False" />
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Classes="spagebody">
+                <TextBlock Classes="spagetitle" Text="{x:Static loc:L.PinTitle}" />
+                <TextBlock Classes="spagehint" Text="{x:Static loc:L.PinHint}" />
+
+                <StackPanel Classes="sgroup">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.PinGrpWhere}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconServerStroked}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.PinServer}" />
+                                        <TextBlock x:Name="txtServer" Classes="srowhint" />
+                                    </StackPanel>
+                                    <StackPanel
+                                        Grid.Column="2"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        Spacing="8">
+                                        <Button x:Name="btnNewGroup" Content="{x:Static loc:L.PinNewGroup}" />
+                                        <Button x:Name="btnChoose" Content="{x:Static loc:L.PinChoose}" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="sgroupnote" Text="{x:Static loc:L.PinServerHint}" />
+                </StackPanel>
+
+                <StackPanel Classes="sgroup">
+                    <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.RtGrpMatch}" />
+                    <Border Classes="sgroupcard">
+                        <StackPanel>
+                            <Border Classes="srow">
+                                <Grid ColumnDefinitions="Auto,*,Auto">
+                                    <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconEditStroked}" /></Border>
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtName}" />
+                                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtNameHint}" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
+                                        <TextBox x:Name="txtName" PlaceholderText="{x:Static loc:L.PinNamePlaceholder}" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border Classes="srow stack">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconDesktop}" /></Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtPrograms}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.PinProgramsHint}" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBox
+                                        x:Name="txtPrograms"
+                                        MinHeight="64"
+                                        AcceptsReturn="True"
+                                        Classes="TextArea"
+                                        PlaceholderText="claude.exe"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                            <Border Classes="srow stack">
+                                <StackPanel Spacing="10">
+                                    <Grid ColumnDefinitions="Auto,*">
+                                        <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconGlobeStroke}" /></Border>
+                                        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtSites}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.PinSitesHint}" />
+                                        </StackPanel>
+                                    </Grid>
+                                    <TextBox
+                                        x:Name="txtSites"
+                                        MinHeight="88"
+                                        AcceptsReturn="True"
+                                        Classes="TextArea"
+                                        PlaceholderText="claude.ai"
+                                        TextWrapping="Wrap" />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </Border>
+                    <TextBlock Classes="sgroupnote" Text="{x:Static loc:L.RtMatchNote}" />
+                </StackPanel>
+            </StackPanel>
+        </ScrollViewer>
+    </DockPanel>
+</Window>

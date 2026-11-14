@@ -73,3 +73,5 @@ README.md                     merge=ours
 
 # Shell scripts must keep LF: they run on macOS.
 *.sh                          text eol=lf
+# The same for scripts kept as resources without the extension: V2pn writes them out and runs them.
+v2rayN/ServiceLib/Sample/*_sh text eol=lf

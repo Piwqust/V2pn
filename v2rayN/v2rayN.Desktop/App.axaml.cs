@@ -12,6 +12,10 @@ public partial class App : Application
         Common.Motion.Install(this);
         Common.Appearance.Install(this); // V2pn
         Common.Icons.Install(this); // V2pn: before any window resolves its icons
+        if (OperatingSystem.IsWindows())
+        {
+            Common.TrayMenuPlacement.Install(); // V2pn
+        }
 
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
         TaskScheduler.UnobservedTaskException += TaskScheduler_UnobservedTaskException;

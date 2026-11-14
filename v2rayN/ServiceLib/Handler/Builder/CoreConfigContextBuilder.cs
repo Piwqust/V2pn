@@ -98,6 +98,9 @@ public class CoreConfigContextBuilder
             }
         }
 
+        // V2pn: pinned programs go first, whatever rule set is active.
+        context = await V2pnPins.ApplyAsync(context, validatorResult);
+
         if (context.IsTunEnabled && context.AppConfig.TunModeItem.RouteExcludeAddress is { Count: > 0 })
         {
             var appConfig = JsonUtils.DeepCopy(config);

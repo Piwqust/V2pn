@@ -25,6 +25,21 @@ public static class V2pnInfo
     /// <summary>The version as a person sees it: "1.0.0", or "1.0.0-dev" for a local build.</summary>
     public static string DisplayVersion => IsRelease ? Version : $"{Version}-dev";
 
+    /// <summary>The commit the package was built from, "+" when it had uncommitted changes; null when unknown.</summary>
+    public static string? Commit { get; } = Metadata("V2pnCommit");
+
+    /// <summary>The source folder of a developer-mode build; null in every published version.</summary>
+    public static string? SourceDir { get; } = Metadata("V2pnSourceDir");
+
+    /// <summary>
+    /// A version the developer mode built from the sources on this computer ("1.0.1-local.202611141320").
+    /// It installs like a release, but only the person who built it has it.
+    /// </summary>
+    public static bool IsLocalVersion(string? version) =>
+        version?.IndexOf('-') is int dash and > 0 && version[(dash + 1)..].StartsWith(LocalTag + ".", StringComparison.Ordinal);
+
+    public const string LocalTag = "local";
+
     /// <summary>The v2rayN release V2pn is built on; panels also see it in the User-Agent.</summary>
     public static string UpstreamVersion => Utils.GetVersionInfo();
 

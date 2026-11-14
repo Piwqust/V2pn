@@ -16,6 +16,8 @@ public static partial class L
     // v2rayN reports deletes, copies, saves and core updates with one "Operation successful".
     public static string Done => T("Done", "Готово");
     public static string Close => T("Close", "Закрыть");
+    // The window's own close button is also "Close"; a screen reader has to tell the two apart.
+    public static string CloseAppearance => T("Close Appearance", "Закрыть «Оформление»");
     public static string Minimize => T("Minimize", "Свернуть");
     public static string Maximize => T("Maximize", "Развернуть");
     public static string Quit => T("Quit", "Выйти");

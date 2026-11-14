@@ -34,10 +34,18 @@
     <V2pnUpdateKeys Condition="'$(V2pnUpdateKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig==</V2pnUpdateKeys>
   </PropertyGroup>
 
+  <!--
+    A build from the developer mode carries a suffix ("1.0.1-local.202611141320"); Windows file
+    versions take only the numbers.
+  -->
+  <PropertyGroup>
+    <V2pnNumericVersion>$([System.Text.RegularExpressions.Regex]::Match('$(V2pnVersion)', '^\d+\.\d+\.\d+').Value)</V2pnNumericVersion>
+  </PropertyGroup>
+
   <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop'">
     <Version>$(V2pnVersion)</Version>
-    <AssemblyVersion>$(V2pnVersion)</AssemblyVersion>
-    <FileVersion>$(V2pnVersion)</FileVersion>
+    <AssemblyVersion>$(V2pnNumericVersion)</AssemblyVersion>
+    <FileVersion>$(V2pnNumericVersion)</FileVersion>
     <InformationalVersion>$(V2pnVersion)</InformationalVersion>
     <InformationalVersion Condition="'$(V2pnChannel)' != 'release'">$(V2pnVersion)-dev</InformationalVersion>
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
@@ -58,6 +66,10 @@
   <ItemGroup Condition="'$(MSBuildProjectName)' == 'ServiceLib'">
     <AssemblyMetadata Include="V2pnVersion" Value="$(V2pnVersion)" />
     <AssemblyMetadata Include="V2pnChannel" Value="$(V2pnChannel)" />
+    <!-- The commit a package was built from, "+" when the tree had uncommitted changes. -->
+    <AssemblyMetadata Include="V2pnCommit" Value="$(V2pnCommit)" Condition="'$(V2pnCommit)' != ''" />
+    <!-- Only in builds made by the developer mode: the source folder they came from. -->
+    <AssemblyMetadata Include="V2pnSourceDir" Value="$(V2pnSourceDir)" Condition="'$(V2pnSourceDir)' != ''" />
     <AssemblyMetadata Include="V2pnUpdateSources" Value="$(V2pnUpdateSources)" />
     <AssemblyMetadata Include="V2pnUpdateKeys" Value="$(V2pnUpdateKeys)" />
   </ItemGroup>

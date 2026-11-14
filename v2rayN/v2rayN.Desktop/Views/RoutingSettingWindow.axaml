@@ -9,9 +9,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    xmlns:dto="clr-namespace:ServiceLib.Models.Dto;assembly=ServiceLib"
     Title="{x:Static loc:L.RtListTitle}"
     Width="860"
-    Height="620"
+    Height="720"
     x:DataType="vms:RoutingSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.RoutingSetting}"
     ShowInTaskbar="False"
@@ -22,6 +23,28 @@
         <StackPanel Classes="spagehead" DockPanel.Dock="Top">
             <TextBlock Classes="spagetitle" Text="{x:Static loc:L.RtListTitle}" />
             <TextBlock Classes="spagehint" Text="{x:Static loc:L.RtListHint}" />
+        </StackPanel>
+
+        <!--  Programs pinned to one server or group, checked before any set below. The rows are built in
+              code (RenderPinsAsync) as direct children of the card, so the hairlines between them work.  -->
+        <StackPanel Margin="28,0,28,0" DockPanel.Dock="Top">
+            <StackPanel Classes="sgroup">
+                <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.PinGroup}" />
+                <Border Classes="sgroupcard">
+                    <StackPanel x:Name="panelPins">
+                        <Border x:Name="rowPinActions" Classes="srow">
+                            <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                                <Button
+                                    x:Name="btnPinClaude"
+                                    Content="{x:Static loc:L.PinAddClaude}"
+                                    ToolTip.Tip="{x:Static loc:L.PinAddClaudeTip}" />
+                                <Button x:Name="btnPinAdd" Content="{x:Static loc:L.PinAdd}" />
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </Border>
+                <TextBlock Classes="sgroupnote" Text="{x:Static loc:L.PinNote}" />
+            </StackPanel>
         </StackPanel>
 
         <!--  Expert settings for every set, behind "Show more fields" under the list.  -->
@@ -85,6 +108,8 @@
                 HorizontalAlignment="Left"
                 DockPanel.Dock="Top">
                 <MenuItem x:Name="menuRoutingAdvancedAdd2" Header="{x:Static loc:L.RtNewSet}" />
+                <MenuItem x:Name="menuRoutingEdit2" Header="{x:Static loc:L.RtEdit}" />
+                <MenuItem x:Name="menuRoutingUse2" Header="{x:Static loc:L.RtUseSet}" />
                 <MenuItem x:Name="menuRoutingAdvancedImportRules2" Header="{x:Static loc:L.RtAddBuiltin}" />
             </Menu>
             <TabControl x:Name="tabAdvanced" Classes="single">
@@ -104,6 +129,7 @@
                         </DataGrid.KeyBindings>
                         <DataGrid.ContextMenu>
                             <ContextMenu>
+                                <MenuItem x:Name="menuRoutingEdit" Header="{x:Static loc:L.RtEdit}" />
                                 <MenuItem x:Name="menuRoutingAdvancedAdd" Header="{x:Static loc:L.RtNewSet}" />
                                 <MenuItem
                                     x:Name="menuRoutingAdvancedRemove"
@@ -122,19 +148,35 @@
                             </ContextMenu>
                         </DataGrid.ContextMenu>
 
-                        <!--  Columns 3 and 4 (order, link) are expert details: shown together with the extra fields.  -->
+                        <!--  Columns 2 and 3 (order, link) are expert details: shown together with the extra fields.  -->
                         <DataGrid.Columns>
-                            <DataGridCheckBoxColumn Width="40" Binding="{Binding IsActive}" />
-                            <DataGridTextColumn
-                                Width="*"
-                                Binding="{Binding Remarks, Converter={x:Static common:RoutingPresets.NameConverter}}"
-                                Header="{x:Static loc:L.RtColName}" />
+                            <!--  The set in use is named in its row; a bare check box in a read-only grid
+                                  looked like a switch that did nothing.  -->
+                            <DataGridTemplateColumn Width="*" Header="{x:Static loc:L.RtColName}">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate x:DataType="dto:RoutingItemModel">
+                                        <StackPanel
+                                            Margin="12,0"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal"
+                                            Spacing="10">
+                                            <TextBlock VerticalAlignment="Center" Text="{Binding Remarks, Converter={x:Static common:RoutingPresets.NameConverter}}" />
+                                            <Border
+                                                Classes="pill good"
+                                                MinWidth="0"
+                                                IsVisible="{Binding IsActive}">
+                                                <TextBlock Text="{x:Static loc:L.RtInUse}" />
+                                            </Border>
+                                        </StackPanel>
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
                             <DataGridTextColumn
                                 Width="80"
                                 Binding="{Binding RuleNum}"
                                 Header="{x:Static loc:L.RtColRules}" />
                             <DataGridTextColumn
-                                Width="80"
+                                Width="100"
                                 Binding="{Binding Sort}"
                                 Header="{x:Static loc:L.RtColOrder}" />
                             <DataGridTextColumn

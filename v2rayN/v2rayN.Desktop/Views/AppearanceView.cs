@@ -57,7 +57,7 @@ public sealed class AppearanceView : UserControl
         closeIcon.Bind(PathIcon.DataProperty, closeIcon.GetResourceObservable("SemiIconClose"));
         close.Content = closeIcon;
         ToolTip.SetTip(close, L.Close);
-        AutomationProperties.SetName(close, L.Close);
+        AutomationProperties.SetName(close, L.CloseAppearance);
         close.Click += (_, _) => DialogHost.Close(null);
 
         var header = new Grid { ColumnDefinitions = new("*,Auto"), Margin = new Thickness(28, 22, 18, 4) };

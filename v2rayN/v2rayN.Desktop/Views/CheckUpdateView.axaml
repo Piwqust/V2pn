@@ -79,16 +79,19 @@
                         VerticalAlignment="Center"
                         Spacing="2">
                         <TextBlock x:Name="txtAppVersion" Classes="srowtitle" />
-                        <StackPanel Orientation="Horizontal" Spacing="7">
+                        <!--  A grid, not a horizontal panel: long states (errors, winget) wrap instead of running under the buttons.  -->
+                        <Grid ColumnDefinitions="Auto,*">
                             <Path
                                 x:Name="spinApp"
+                                Margin="0,0,7,0"
                                 Classes="spinner"
                                 IsVisible="False" />
                             <TextBlock
                                 x:Name="txtAppState"
+                                Grid.Column="1"
                                 Classes="srowhint"
                                 TextWrapping="Wrap" />
-                        </StackPanel>
+                        </Grid>
                         <TextBlock
                             x:Name="txtAppBase"
                             Classes="muted small" />
@@ -112,7 +115,7 @@
                     </StackPanel>
                 </Grid>
                 <Border Height="1" Background="{DynamicResource V2PanelBorder}" />
-                <Grid ColumnDefinitions="*,Auto">
+                <Grid x:Name="rowAutoUpdate" ColumnDefinitions="*,Auto">
                     <StackPanel Classes="srowtext">
                         <TextBlock Classes="srowtitle" Text="{x:Static loc:L.UpdAuto}" />
                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.UpdAutoHint}" TextWrapping="Wrap" />
@@ -125,6 +128,94 @@
                         OffContent=""
                         OnContent="" />
                 </Grid>
+
+                <!--
+                    V2pn: developer mode. Builds V2pn from the sources on this computer and installs it over
+                    this copy, with the same rollback as an update; "Back to the release" undoes it.
+                -->
+                <StackPanel x:Name="panelDev" Spacing="12">
+                    <Border Height="1" Background="{DynamicResource V2PanelBorder}" />
+                    <Grid ColumnDefinitions="*,Auto">
+                        <StackPanel Classes="srowtext">
+                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DevMode}" />
+                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.DevModeHint}" TextWrapping="Wrap" />
+                        </StackPanel>
+                        <ToggleSwitch
+                            x:Name="togDevMode"
+                            Grid.Column="1"
+                            MinWidth="0"
+                            VerticalAlignment="Center"
+                            OffContent=""
+                            OnContent="" />
+                    </Grid>
+                    <StackPanel x:Name="panelDevBody" Spacing="10">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.DevSource}" />
+                                <TextBlock
+                                    x:Name="txtDevSource"
+                                    Classes="srowhint"
+                                    TextTrimming="PathSegmentEllipsis" />
+                            </StackPanel>
+                            <Button
+                                x:Name="btnDevSource"
+                                Grid.Column="1"
+                                Margin="14,0,0,0"
+                                VerticalAlignment="Center"
+                                Classes="subtle"
+                                Content="{x:Static loc:L.DevChoose}"
+                                Theme="{StaticResource V2Button}" />
+                        </Grid>
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="7">
+                                <Path
+                                    x:Name="spinDev"
+                                    Classes="spinner"
+                                    IsVisible="False" />
+                                <TextBlock
+                                    x:Name="txtDevState"
+                                    MaxWidth="380"
+                                    Classes="srowhint"
+                                    TextWrapping="Wrap" />
+                            </StackPanel>
+                            <StackPanel
+                                Grid.Column="1"
+                                Margin="14,0,0,0"
+                                VerticalAlignment="Center"
+                                Orientation="Horizontal"
+                                Spacing="8">
+                                <Button
+                                    x:Name="btnDevLog"
+                                    Classes="subtle"
+                                    Content="{x:Static loc:L.DevLog}"
+                                    IsVisible="False"
+                                    Theme="{StaticResource V2Button}" />
+                                <Button
+                                    x:Name="btnDevBuild"
+                                    MinWidth="150"
+                                    Theme="{StaticResource V2Button}" />
+                            </StackPanel>
+                        </Grid>
+                        <Grid x:Name="rowDevRelease" ColumnDefinitions="*,Auto">
+                            <TextBlock
+                                x:Name="txtDevRelease"
+                                VerticalAlignment="Center"
+                                Classes="srowhint"
+                                TextWrapping="Wrap" />
+                            <Button
+                                x:Name="btnDevRelease"
+                                Grid.Column="1"
+                                Margin="14,0,0,0"
+                                VerticalAlignment="Center"
+                                Classes="subtle"
+                                Content="{x:Static loc:L.DevBackToRelease}"
+                                Theme="{StaticResource V2Button}" />
+                        </Grid>
+                    </StackPanel>
+                </StackPanel>
             </StackPanel>
         </Border>
 

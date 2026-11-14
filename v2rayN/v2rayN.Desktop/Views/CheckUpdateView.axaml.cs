@@ -26,6 +26,8 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
 
     private readonly Config _config = AppManager.Instance.Config;
     private readonly V2pnAppUpdater _updater = V2pnAppUpdater.Instance;
+    private readonly V2pnDevBuild _dev = V2pnDevBuild.Instance;
+    private string? _backError;
 
     public CheckUpdateView()
     {
@@ -35,6 +37,8 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
         txtAppBase.Text = string.Format(L.UpdBasedOn, V2pnInfo.UpstreamVersion);
         cardApp.IsVisible = _updater.Supported;
         togAutoUpdate.IsChecked = AppUpdates.Auto(_config);
+        // winget replaces a copy it installed; there is nothing to download here.
+        rowAutoUpdate.IsVisible = !_updater.ByWinGet;
         togAutoUpdate.IsCheckedChanged += async (_, _) =>
         {
             _config.UiItem.V2pnAutoUpdate = togAutoUpdate.IsChecked == true;
@@ -42,6 +46,19 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
         };
         btnAppAction.Click += async (_, _) => await OnAppActionAsync();
         btnWhatsNew.Click += (_, _) => ProcUtils.ProcessStart($"{V2pnInfo.ReleasesUrl}/tag/v{_updater.LatestVersion}");
+
+        panelDev.IsVisible = V2pnDevBuild.Supported;
+        togDevMode.IsChecked = _config.UiItem.V2pnDevMode;
+        togDevMode.IsCheckedChanged += async (_, _) =>
+        {
+            _config.UiItem.V2pnDevMode = togDevMode.IsChecked == true;
+            await ConfigHandler.SaveConfig(_config);
+            RefreshDev();
+        };
+        btnDevSource.Click += async (_, _) => await ChooseSourceAsync();
+        btnDevBuild.Click += async (_, _) => await OnDevBuildAsync();
+        btnDevLog.Click += (_, _) => OpenDevLog();
+        btnDevRelease.Click += async (_, _) => await OnBackToReleaseAsync();
 
         this.WhenActivated(disposables =>
         {
@@ -53,7 +70,16 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
 
             _updater.WhenAnyValue(u => u.State, u => u.LatestVersion, u => u.Progress)
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(_ => RefreshApp())
+                .Subscribe(_ =>
+                {
+                    RefreshApp();
+                    RefreshDev();
+                })
+                .DisposeWith(disposables);
+
+            _dev.WhenAnyValue(d => d.State, d => d.Step, d => d.Error)
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => RefreshDev())
                 .DisposeWith(disposables);
 
             // Opening the window is a good moment to look, unless a look is already under way or done.
@@ -73,7 +99,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
         txtAppState.Text = state switch
         {
             EV2pnUpdateState.Checking => L.UpdChecking,
-            EV2pnUpdateState.UpToDate => L.UpdUpToDate,
+            EV2pnUpdateState.UpToDate => V2pnInfo.IsLocalVersion(V2pnInfo.Version) ? L.UpdLocalUpToDate : L.UpdUpToDate,
             EV2pnUpdateState.Available => string.Format(L.UpdAvailable, latest),
             EV2pnUpdateState.Downloading => string.Format(L.UpdDownloading, latest)
                 + (_updater.Progress.IsNullOrEmpty() ? string.Empty : $"  {_updater.Progress}"),
@@ -87,6 +113,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
 
         btnAppAction.Content = state switch
         {
+            EV2pnUpdateState.Available when _updater.ByWinGet => L.UpdThroughWinGet,
             EV2pnUpdateState.Available or EV2pnUpdateState.Downloading => L.UpdInstall,
             EV2pnUpdateState.Ready => L.UpdRestart,
             EV2pnUpdateState.Failed => L.UpdRetry,
@@ -107,6 +134,13 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
                 await _updater.InstallAsync();
                 break;
 
+            case EV2pnUpdateState.Available when _updater.ByWinGet:
+                if (V2pnWinGet.StartUpgrade())
+                {
+                    await AppManager.Instance.AppExitAsync(true);
+                }
+                break;
+
             case EV2pnUpdateState.Available:
                 // The person asked for it, so it installs as soon as it is downloaded and checked.
                 await _updater.CheckAsync(download: true);
@@ -121,5 +155,122 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
                 await _updater.CheckAsync(download: AppUpdates.Auto(_config), retryFailed: true);
                 break;
         }
+    }
+
+    /// <summary>"commit abc1234", or with uncommitted changes when the build had them.</summary>
+    private static string? BuiltFrom() => V2pnInfo.Commit is not { Length: > 0 } commit ? null
+        : commit.EndsWith('+') ? string.Format(L.UpdBuiltFromChanged, commit.TrimEnd('+')) : string.Format(L.UpdBuiltFrom, commit);
+
+    private void RefreshDev()
+    {
+        var on = togDevMode.IsChecked == true;
+        panelDevBody.IsVisible = on;
+        if (!on)
+        {
+            return;
+        }
+
+        // A build from the developer mode knows where it came from; that folder is the natural default.
+        if (_config.UiItem.V2pnDevSource.IsNullOrEmpty() && V2pnDevBuild.IsSourceFolder(V2pnInfo.SourceDir))
+        {
+            _config.UiItem.V2pnDevSource = V2pnInfo.SourceDir;
+            _ = ConfigHandler.SaveConfig(_config);
+        }
+        var source = _config.UiItem.V2pnDevSource;
+        var sourceOk = V2pnDevBuild.IsSourceFolder(source);
+        txtDevSource.Text = source.IsNullOrEmpty() ? L.DevSourceNone : sourceOk ? source : $"{source}: {L.DevSourceBad}";
+        txtDevSource.Classes.Set("warn", !source.IsNullOrEmpty() && !sourceOk);
+
+        var state = _dev.State;
+        var busy = state is EV2pnDevBuildState.Building or EV2pnDevBuildState.Installing;
+        // A build that was installed and rolled back leaves its version behind until the next build.
+        var rolledBack = state == EV2pnDevBuildState.Idle && V2pnDevBuild.FailedVersion() is { } failed && failed != V2pnInfo.Version ? failed : null;
+        spinDev.IsVisible = busy;
+        txtDevState.Text = state switch
+        {
+            EV2pnDevBuildState.Building => _dev.Step.IsNullOrEmpty() ? L.DevBuilding : string.Format(L.DevBuildingStep, _dev.Step),
+            EV2pnDevBuildState.Installing => L.DevInstalling,
+            EV2pnDevBuildState.Failed => string.Format(L.DevFailed, _dev.Error),
+            _ when _backError != null => _backError,
+            _ when rolledBack != null => string.Format(L.DevInstallFailed, rolledBack),
+            _ => L.DevIdle,
+        };
+        txtDevState.Classes.Set("warn", state == EV2pnDevBuildState.Failed || (state == EV2pnDevBuildState.Idle && (_backError != null || rolledBack != null)));
+
+        btnDevBuild.Content = state == EV2pnDevBuildState.Building ? L.DevCancel : L.DevBuild;
+        btnDevBuild.IsEnabled = state == EV2pnDevBuildState.Building || (state != EV2pnDevBuildState.Installing && sourceOk);
+        btnDevBuild.Classes.Set("primary", state != EV2pnDevBuildState.Building);
+        btnDevLog.IsVisible = rolledBack != null ? File.Exists(V2pnDevBuild.InstallLogPath)
+            : state is EV2pnDevBuildState.Building or EV2pnDevBuildState.Failed && File.Exists(V2pnDevBuild.LogPath);
+
+        rowDevRelease.IsVisible = V2pnInfo.IsLocalVersion(V2pnInfo.Version);
+        txtDevRelease.Text = string.Format(L.DevOnLocal, BuiltFrom() ?? V2pnInfo.Version);
+        btnDevRelease.IsEnabled = !busy && _updater.State is not (EV2pnUpdateState.Checking or EV2pnUpdateState.Downloading);
+    }
+
+    private async Task ChooseSourceAsync()
+    {
+        // The picker belongs to the window this panel is in, so it opens over it.
+        var storage = TopLevel.GetTopLevel(this)?.StorageProvider;
+        string? folder = null;
+        try
+        {
+            if (storage != null)
+            {
+                var picked = await storage.OpenFolderPickerAsync(new Avalonia.Platform.Storage.FolderPickerOpenOptions
+                {
+                    Title = L.DevSource,
+                    AllowMultiple = false,
+                    SuggestedStartLocation = await storage.TryGetFolderFromPathAsync(new Uri(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile))),
+                });
+                if (picked.Count > 0)
+                {
+                    folder = Avalonia.Platform.Storage.StorageProviderExtensions.TryGetLocalPath(picked[0]);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn developer mode: folder picker", ex);
+        }
+        if (folder.IsNullOrEmpty())
+        {
+            return;
+        }
+        _config.UiItem.V2pnDevSource = folder;
+        await ConfigHandler.SaveConfig(_config);
+        RefreshDev();
+    }
+
+    private async Task OnDevBuildAsync()
+    {
+        if (_dev.State == EV2pnDevBuildState.Building)
+        {
+            _dev.Cancel();
+            return;
+        }
+        _backError = null;
+        // The build goes on, and installs, after this window is closed.
+        await _dev.BuildAndInstallAsync(_config.UiItem.V2pnDevSource ?? string.Empty);
+    }
+
+    private void OpenDevLog()
+    {
+        var log = V2pnDevBuild.FailedVersion() != null && _dev.State == EV2pnDevBuildState.Idle ? V2pnDevBuild.InstallLogPath : V2pnDevBuild.LogPath;
+        if (File.Exists(log))
+        {
+            ProcUtils.ProcessStart(log);
+        }
+    }
+
+    private async Task OnBackToReleaseAsync()
+    {
+        _backError = null;
+        btnDevRelease.IsEnabled = false;
+        if (!await _updater.ReturnToReleaseAsync())
+        {
+            _backError = string.Format(L.DevBackFailed, _updater.Error ?? L.UpdFailed);
+        }
+        RefreshDev();
     }
 }

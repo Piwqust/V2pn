@@ -140,6 +140,8 @@ jobs:
             exit 0
           fi
           dotnet run tools/manifest.cs -- packages "${TAG#v}" --repo .
+          # The one-command installers go with every release: .../releases/latest/download/install.ps1 (Windows), install.sh (macOS)
+          cp tools/install.ps1 tools/install.sh packages/
           ls -la packages
           echo "signed=true" >> "$GITHUB_OUTPUT"
 

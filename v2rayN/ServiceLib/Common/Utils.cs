@@ -928,7 +928,9 @@ public class Utils
             // The short form is the HTTP User-Agent for subscriptions. Panels pick the config format
             // by the "v2rayN/x.y.z" agent, so V2pn keeps presenting itself as v2rayN there.
             return blFull
-                ? $"{Global.AppName} - V{GetVersionInfo()} - {RuntimeInformation.ProcessArchitecture}"
+                // The full form heads the log: V2pn's own version first, the v2rayN it is built on after it
+                // ("V2pn - V7.25.6" read as V2pn 7.25.6).
+                ? $"{Global.AppName} {V2pnInfo.DisplayVersion} (v2rayN {GetVersionInfo()}) - {RuntimeInformation.ProcessArchitecture}"
                 : $"{Global.UpstreamName}/{GetVersionInfo()}";
         }
         catch (Exception ex)

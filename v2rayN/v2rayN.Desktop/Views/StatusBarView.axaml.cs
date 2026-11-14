@@ -27,6 +27,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     private bool _hasServer;
     private double _sessionBytes;
     private bool _checkFailed;
+    // AvailabilityDelay as last shown: the chip's visibility depends on it and on the find offer.
+    private int _checkDelay;
     private string? _findProgress;
     private bool _iconWarn;
     private int _iconIndex;
@@ -158,7 +160,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         // Nothing to check without a server; the check result of a previous server would mislead.
         _hasServer = item != null;
         btnCheck.IsVisible = _hasServer;
-        chipCheck.IsVisible = _hasServer && ViewModel?.AvailabilityDelay is -1 or > 0;
+        _checkDelay = ViewModel?.AvailabilityDelay ?? 0;
         RefreshFindWorking();
         // By default the card answers what a person asks: which address sites see now, and whose server
         // this is. The server's own address, port and transport are for the advanced view.
@@ -248,8 +250,12 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
     private void AddSample(ServerSpeedItem update)
     {
-        double down = update.ProxyDown + update.DirectDown;
-        double up = update.ProxyUp + update.DirectUp;
+        // The cores' statistics arrive in kilobytes per one-second sample (v2rayN divides by 1024 and its
+        // HumanFy starts at KB). Read as bytes, a 3 MB/s download showed as 3 KB/s and a session of
+        // 200 MB as 200 KB.
+        const double bytesPerUnit = 1024;
+        var down = (update.ProxyDown + update.DirectDown) * bytesPerUnit;
+        var up = (update.ProxyUp + update.DirectUp) * bytesPerUnit;
         _down.Dequeue();
         _down.Enqueue(down);
         _up.Dequeue();
@@ -285,7 +291,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
         var was = chipCheck.IsVisible;
         var wasOk = chipCheck.Classes.Contains("ok");
-        chipCheck.IsVisible = _hasServer && delay is -1 or > 0;
+        _checkDelay = delay;
+        RefreshFindWorking();
         chipCheck.Classes.Set("ok", delay > 0);
         chipCheck.Classes.Set("fail", delay == -1);
         iconCheck.Data = this.FindResource(delay > 0 ? "SemiIconTickCircle" : "SemiIconAlertCircle") as Geometry;
@@ -297,7 +304,6 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         {
             _ = Motion.Enter(chipCheck, dx: 6, dy: 0, ms: 180, scale: 0.97);
         }
-        RefreshFindWorking();
     }
 
     /// <summary>
@@ -325,6 +331,9 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         txtCheckAction.IsVisible = !btnFindWorking.IsVisible;
         spinFind.IsVisible = finding;
         txtFindWorking.Text = _findProgress ?? L.FindWorkingServer;
+        // While the offer is up, the pill above already says the server is not answering; a "No response"
+        // chip beside the button said it a third time. Without the offer (the core itself failed) it stays.
+        chipCheck.IsVisible = _hasServer && _checkDelay is -1 or > 0 && !btnFindWorking.IsVisible;
     }
 
     private void DrawChart()

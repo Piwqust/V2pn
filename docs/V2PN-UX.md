@@ -1,80 +1,84 @@
-# V2pn: как устроен интерфейс
+# V2pn: how the interface works
 
-Ядро и вся логика v2rayN остаются прежними: обновления, подписки, ядра, правила. V2pn меняет то, как пользователь видит эти возможности и управляет ими.
+The core and all of v2rayN's logic stay as they were: updates, subscriptions, cores, rules. V2pn changes how a person sees these features and controls them.
 
-## Главный экран: три решения
+## The main screen: three decisions
 
-1. **Сервер.** Его выбирают в списке слева или на карте.
-2. **Режим подключения.** Это переключатель «Прокси | VPN» под кнопкой «Подключиться».
-3. **Что идёт через VPN.** Это кнопка рядом с переключателем, она открывает пресеты маршрутизации.
+1. **The server.** Picked in the list on the left or on the map.
+2. **The connection mode.** The "Proxy | VPN" switch under the Connect button.
+3. **What goes through the VPN.** The button next to the switch; it opens the routing presets.
 
-Режим и маршрут можно выбрать заранее, без подключения. Кнопка «Подключиться» применит их.
+The mode and the route can be chosen in advance, without connecting. Connect applies them.
 
-### Прокси или VPN
+### Proxy or VPN
 
-| | Прокси | VPN (TUN) |
+| | Proxy | VPN (TUN) |
 | --- | --- | --- |
-| Что идёт через сервер | Браузеры и программы, которые используют системный прокси | Весь трафик компьютера, включая игры и программы без поддержки прокси |
-| Права администратора | Не нужны | Нужны (на Windows) |
-| Что делает v2rayN внутри | `SysProxyType`: системный прокси или PAC | `EnableTun`; системный прокси при этом выключен |
+| What goes through the server | Browsers and programs that use the system proxy | All traffic of the computer, including games and programs without proxy support |
+| Administrator rights | Not needed | Needed (on Windows) |
+| What v2rayN does inside | `SysProxyType`: system proxy or PAC | `EnableTun`; the system proxy is off |
 
-Что именно включает режим «Прокси», выбирается в «Настройки → Режим «Прокси» → Что включать»: системный прокси, PAC-скрипт или «Не менять настройки системы». При первом запуске выбор берётся из того режима, который был в v2rayN.
+What Proxy mode turns on is chosen in Settings → Proxy mode → "On connect": the system proxy, a PAC script, or "Don't change system settings". On the first start the choice is taken from the mode v2rayN had.
 
-Если без прав администратора выбрать VPN, V2pn сначала спрашивает разрешения и только потом перезапускается от имени администратора. Режим VPN включается сразу после перезапуска. v2rayN в этом случае перезапускался молча и терял выбор.
+If VPN is chosen without administrator rights, V2pn asks first and only then restarts as administrator. VPN mode turns on right after the restart. v2rayN restarted silently in this case and lost the choice.
 
-### Что идёт через VPN
+### What goes through the VPN
 
-Три пресета для России. Это обычные наборы правил v2rayN с постоянными id (`v2pn-ru-direct`, `v2pn-blocked-only`, `v2pn-all`), поэтому их видит и редактор маршрутов, и меню в трее.
+Three presets for Russia. They are ordinary v2rayN rule sets with fixed ids (`v2pn-ru-direct`, `v2pn-blocked-only`, `v2pn-all`), so the routing editor and the tray menu see them too.
 
-- **Российские сайты напрямую** (рекомендуемый). Напрямую идут `.ru`, `.su`, `.рф`, `category-ru`, банки, госсервисы, `ru-available-only-inside` и `geoip:ru`. Остальное идёт через сервер, в том числе заблокированные сайты в `.ru` (`geosite:ru-blocked` проверяется первым).
-- **Только заблокированное.** Через сервер идут `ru-blocked`, YouTube, Discord, Telegram, ИИ-сервисы и голос Discord (UDP 50000–65535). Остальное идёт напрямую.
-- **Всё через VPN.** Напрямую идёт только локальная сеть.
+- **Russian sites direct** (recommended). `.ru`, `.su`, `.рф`, `category-ru`, banks, government services, `ru-available-only-inside` and `geoip:ru` go direct. Everything else goes through the server, including blocked sites in `.ru` (`geosite:ru-blocked` is checked first).
+- **Only blocked sites.** `ru-blocked`, YouTube, Discord, Telegram, AI services and Discord voice (UDP 50000–65535) go through the server. Everything else goes direct.
+- **Everything through VPN.** Only the local network goes direct.
 
-Переключатель «Блокировать рекламу и трекеры» добавляет `geosite:category-ads-all → block` во все три пресета.
+The "Block ads and trackers" switch adds `geosite:category-ads-all → block` to all three presets.
 
-Российские пресеты используют теги из геофайлов runetfreedom. Если источники другие, при выборе пресета V2pn сам включает региональный пресет v2rayN «Россия», то есть геофайлы, шаблоны правил и DNS, скачивает файлы и только потом переключает маршрут. Неизвестный тег остановил бы ядро.
+The Russian presets use tags from the runetfreedom geo files. If the sources are different, picking a preset makes V2pn turn on v2rayN's regional preset "Russia" (geo files, rule templates and DNS), download the files, and only then switch the route. An unknown tag would stop the core.
 
-Пресеты используют стратегию `IPOnDemand`. В sing-box стратегия набора правил раньше игнорировалась, и правила `geoip:ru` не срабатывали для доменов. Это исправлено в `SingboxRoutingService` и покрыто тестом.
+The presets use the `IPOnDemand` strategy. sing-box used to ignore a rule set's strategy, so `geoip:ru` rules did not match domains. This is fixed in `SingboxRoutingService` and covered by a test.
 
-Свои наборы правил выбираются в том же меню, в строке «Свои правила». Полный редактор открывается кнопкой «Настроить маршруты…».
+Your own rule sets are chosen in the same menu, under "Your rules". The full editor opens with "Routing settings…".
 
-## Список серверов
+## The server list
 
-- **Избранное**:
-  - «Самый быстрый сервер» по последней проверке;
-  - **Недавние**: три последних сервера, через которые было подключение, кроме тех, что уже в избранном;
-  - избранное.
-- **Страны**: группы с лучшим пингом, раскрываются до серверов.
-- **Подписки**. Меню подписки (⋮ или правая кнопка мыши): обновить, проверить пинг, удалить серверы без ответа (с подтверждением), изменить, удалить.
+- **Favorites:**
+  - "Fastest server" by the last test;
+  - **Recent:** the last three servers you connected through, except those already in favorites;
+  - your favorites.
+- **Countries:** groups with the best ping, expanding to their servers.
+- **Subscriptions.** The subscription menu (⋮ or a right click): update, test ping, delete servers that do not answer (after a confirmation), edit, delete. The row shows the plan's traffic and end date when the provider sends `subscription-userinfo`.
 
-## Первый запуск
+## First start
 
-Если серверов нет, вместо заголовка, кнопки подключения и карточки статистики на карте появляется карточка «Добавьте первый сервер». В ней три действия: «Вставить из буфера» (подходит и подписка, и ссылки `vless://`), «Добавить подписку» и «Сканировать QR-код». Список слева в этом состоянии говорит «Серверов пока нет» и предлагает добавить подписку.
+With no servers, the map shows an "Add your first server" card instead of the header, the Connect button and the statistics card. It has three actions: "Paste from clipboard" (a subscription and `vless://` links both work), "Add subscription" and "Scan QR code". The list on the left says "No servers yet" and offers to add a subscription. If v2rayN with servers is on the computer, the card offers "Move from v2rayN" first.
 
-Ниже в той же карточке выбирается, что идёт через VPN: «Российские сайты напрямую» или «Всё через VPN». На чистой установке v2rayN включает свой набор «Всё, кроме Китая», поэтому V2pn один раз переключает его на «Всё через VPN»: на практике то же самое, файлов не нужно. Российский режим скачивает списки сайтов runetfreedom только после нажатия, прогресс виден прямо в карточке.
+Lower in the same card you choose what goes through the VPN: "Russian sites direct" or "Everything through VPN". On a clean install v2rayN turns on its own set "All except China", so V2pn switches it once to "Everything through VPN": the same in practice, and no files are needed. The Russian mode downloads the runetfreedom site lists only when picked; the progress shows right in the card.
 
-Новая подписка обновляется сама каждые 12 часов (720 минут). У v2rayN по умолчанию 0, то есть никогда.
+A new subscription updates itself every 12 hours (720 minutes). v2rayN's default is 0, that is, never.
 
-## Состояние подключения
+A new install starts in English on every system; the other languages are in Appearance.
 
-- Пока сервер не выбран, V2pn пишет «Не защищено», какой бы режим прокси ни был сохранён: ядро не запущено, и «Прокси на порту N» было бы неправдой.
-- «Прокси на порту N» означает режим «Не менять настройки системы»: через сервер идут только программы, настроенные на `127.0.0.1:N`. Это объясняет подсказка на плашке состояния.
-- Кнопка «Проверить соединение» видна только когда сервер выбран.
+## Connection state
 
-## Расход процессора
+- Until a server is picked, V2pn says "Unprotected", whatever proxy mode is saved: the core is not running, and "Proxy on port N" would not be true.
+- "Proxy on port N" means the "Don't change system settings" mode: only programs pointed at `127.0.0.1:N` go through the server. The hint on the state pill explains it.
+- "Check connection" is shown only when a server is picked.
+- When the check fails, the status card offers "Find a working server" (another server of the same country or subscription); the "No response" chip is hidden then, because the pill at the top already says it.
+- The speed and session traffic come from the cores in kilobytes per one-second sample; the card turns them into bytes.
 
-Карта мира — несколько тысяч векторных контуров. Всё, что анимируется поверх неё, заставляло перерисовывать и её: во время проверки соединения два маленьких спиннера занимали две трети ядра (монитор 143 Гц). Теперь слой стран кэшируется как картинка (`BitmapCache` в `MapView`), а спиннеры шагают 24 раза за оборот (`StepEasing` в `Motion.cs`) вместо каждого кадра: во время проверки соединения 7,6 % ядра вместо 67 %.
+## Processor use
 
-## Меню и слова
+The world map is several thousand vector outlines. Everything animated on top of it used to repaint it too: during a connection check two small spinners took two thirds of a core (143 Hz monitor). Now the country layer is cached as a bitmap (`BitmapCache` in `MapView`), and the spinners step 24 times per turn (`StepEasing` in `Motion.cs`) instead of every frame: 7.6 % of a core during a connection check instead of 67 %.
 
-- «Помощь» содержит версию, «Сайт V2pn», «Сообщить о проблеме» и «Сделано на основе v2rayN». Сайты дюжины ядер, которые показывал v2rayN, обычному человеку не нужны.
-- Подписки в меню: «Обновить все подписки», «Обновить через VPN» (если сайт провайдера заблокирован), «Все подписки…». Подменю «Текущая подписка» скрыто: у каждой подписки в списке слева свои кнопки.
-- Вопросы называют действие: «Удалить», «Выйти», «Перезапустить» вместо «Подтвердить»; кнопка удаления красная. Окна настроек сохраняются кнопкой «Сохранить», новая подписка — «Добавить».
-- Общее «Операция успешна» v2rayN показывается как «Готово».
+## Menus and words
 
-## Что можно сделать дальше
+- Three ways lead into settings, all to one window: Settings in the ☰ menu, the Settings tile on the map, and <kbd>Ctrl</kbd>+<kbd>,</kbd> (<kbd>⌘</kbd>+<kbd>,</kbd> on a Mac). Routing rules, DNS, hotkeys and the config template live in windows of their own; they open from "More settings" at the bottom of the navigation, over the Settings window, which stays open. Backup, moving from v2rayN, the data folder, restarting as administrator, the Microsoft Store exemptions, the regional presets and clearing statistics are in the ☰ menu → "Tools".
+- "Help" holds the version, "V2pn website", "Report a problem" and "Built on v2rayN". The websites of a dozen cores that v2rayN listed mean nothing to most people.
+- Subscriptions in the menu: "Update all subscriptions", "Update through the VPN" (if the provider's site is blocked), "All subscriptions…". The "Current subscription" submenu is hidden: every subscription in the list on the left has its own buttons.
+- Questions name the action: "Delete", "Quit", "Restart" instead of "Confirm"; a delete button is red. Settings windows save with "Save", a new subscription with "Add".
+- v2rayN's generic "Operation successful" shows as "Done".
 
-- Регистрация ссылок `v2rayn://install-sub`, `clash://install-config`, `hiddify://import`, `happ://add` с подтверждением источника.
-- Проверка домена: показать, через что пойдёт сайт при текущем маршруте, как Diversion Rule Detect в Karing.
-- Раздельное туннелирование по программам: правила `process` в режиме VPN, список программ в стиле Mullvad.
-- Трафик и срок подписки из заголовка `subscription-userinfo` в карточке подписки.
+## What could come next
+
+- Registering `v2rayn://install-sub`, `clash://install-config`, `hiddify://import` and `happ://add` links, with a confirmation of the source.
+- A domain check: show which way a site goes under the current route, like Diversion Rule Detect in Karing.
+- Split tunnelling by program in VPN mode (`process` rules), with a program list in the style of Mullvad.

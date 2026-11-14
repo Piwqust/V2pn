@@ -43,6 +43,8 @@ public static partial class L
     public static string TlSubDelete => T("Delete", "Удалить");
     public static string TlSubClose => T("Close", "Закрыть");
     public static string TlColLink => T("Link", "Ссылка");
+    public static string TlYes => T("Yes", "Да");
+    public static string TlNo => T("No", "Нет");
     public static string TlColAutoUpdate => Tk("Auto-update", "Update with all", "Обновлять со всеми");
 
     public static string TlKeysTitle => T("Hotkeys", "Горячие клавиши");

@@ -227,7 +227,7 @@ public static class V2pnAutostart
     /// <summary>schtasks by its full path: a bare name would let a file planted beside V2pn.exe run instead.</summary>
     public static string SchtasksPath => Path.Combine(Environment.SystemDirectory, "schtasks.exe");
 
-    private static (int Code, string Output) Schtasks(params string[] arguments)
+    internal static (int Code, string Output) Schtasks(params string[] arguments)
     {
         try
         {

@@ -100,7 +100,7 @@
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.TlFromSubHint}" />
                                             </StackPanel>
                                             <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
-                                                <ComboBox x:Name="cmbSubChildItems" DisplayMemberBinding="{Binding Remarks}" ItemsSource="{Binding SubItems}" />
+                                                <ComboBox x:Name="cmbSubChildItems" DisplayMemberBinding="{Binding Remarks}" ItemsSource="{Binding SubItems}" PlaceholderText="{x:Static loc:L.GrpPickSub}" />
                                             </Panel>
                                         </Grid>
                                     </Border>

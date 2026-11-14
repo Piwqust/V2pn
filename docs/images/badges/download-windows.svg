@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="300" height="72" viewBox="0 0 300 72" role="img" aria-label="Download V2pn for Windows">
+  <title>Download V2pn for Windows</title>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#2C2D35"/>
+      <stop offset="1" stop-color="#1B1C21"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FF5236"/>
+      <stop offset="1" stop-color="#EF3518"/>
+    </linearGradient>
+  </defs>
+  <rect x="0.5" y="0.5" width="299" height="71" rx="16" fill="url(#bg)" stroke="#FFFFFF" stroke-opacity="0.12"/>
+  <rect x="16" y="1.5" width="268" height="1" rx="0.5" fill="#FFFFFF" fill-opacity="0.10"/>
+  <!-- Windows logo: four squares -->
+  <g transform="translate(22 22)" fill="#1A8CFF">
+    <rect width="13" height="13" rx="1.2"/>
+    <rect x="15" width="13" height="13" rx="1.2"/>
+    <rect y="15" width="13" height="13" rx="1.2"/>
+    <rect x="15" y="15" width="13" height="13" rx="1.2"/>
+  </g>
+  <g font-family="'Segoe UI Variable Display','Segoe UI',-apple-system,BlinkMacSystemFont,'Helvetica Neue',Arial,sans-serif">
+    <text x="66" y="30" font-size="12.5" fill="#A9ABB6" letter-spacing="0.2">Download for</text>
+    <text x="66" y="52" font-size="22" font-weight="600" fill="#FFFFFF">Windows</text>
+  </g>
+  <circle cx="258" cy="36" r="18" fill="url(#accent)"/>
+  <path d="M258 27v15M251.5 36.5l6.5 6.5 6.5-6.5" fill="none" stroke="#FFFFFF" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

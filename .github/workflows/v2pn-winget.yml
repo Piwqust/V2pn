@@ -1,0 +1,46 @@
+# Sends a published V2pn release to winget (winget install Piwqust.V2pn): writes its manifest with
+# tools/winget-manifest.ps1 and opens the pull request to microsoft/winget-pkgs with wingetcreate.
+# Does nothing until the repository secret WINGET_TOKEN holds a GitHub token (classic, public_repo)
+# of the account that opens the pull request. Moderators of winget-pkgs review every version.
+name: V2pn winget
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Published version to send, e.g. 1.0.1
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  winget:
+    name: Pull request to winget-pkgs
+    runs-on: windows-latest
+    timeout-minutes: 15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Write and submit the manifest
+        shell: pwsh
+        env:
+          WINGET_TOKEN: ${{ secrets.WINGET_TOKEN }}
+          VERSION: ${{ github.event.release.tag_name || inputs.version }}
+        run: |
+          if (-not $env:WINGET_TOKEN) {
+            "::notice::WINGET_TOKEN is not set, so nothing goes to winget. See tools/winget-manifest.ps1."
+            exit 0
+          }
+          $version = $env:VERSION.TrimStart('v')
+          if ($version -notmatch '^\d+\.\d+\.\d+$') {
+            "::notice::$version is not a plain release version; winget gets only those."
+            exit 0
+          }
+          ./tools/winget-manifest.ps1 -Version $version
+          winget validate --manifest "dist/winget/$version" 2>$null
+          Invoke-WebRequest -UseBasicParsing https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          ./wingetcreate.exe submit --token $env:WINGET_TOKEN --prtitle "New version: Piwqust.V2pn version $version" "dist/winget/$version"

@@ -11,7 +11,7 @@
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static loc:L.SubEditTitle}"
     Width="740"
-    Height="600"
+    Height="660"
     Design.DataContext="{x:Static dd:DesignData.SubEdit}"
     ShowInTaskbar="False"
     WindowStartupLocation="CenterScreen"

@@ -11,6 +11,8 @@ public static partial class L
     public static string RtNewSet => T("New set", "Новый набор");
     public static string RtAddBuiltin => T("Add the built-in sets", "Добавить стандартные наборы");
     public static string RtUseSet => T("Use this set", "Включить этот набор");
+    public static string RtEdit => T("Edit", "Изменить");
+    public static string RtInUse => T("In use", "Используется");
     public static string RtDelete => T("Delete", "Удалить");
     public static string RtSelectAll => T("Select all", "Выделить все");
     public static string RtColName => T("Name", "Название");
@@ -96,4 +98,41 @@ public static partial class L
     public static string RtRuleType => T("Applies to", "Где действует");
     public static string RtRuleTypeHint => T("Routing, DNS or both (ALL).", "Маршрутизация (Routing), DNS или оба (ALL).");
     public static string RtAutoSort => T("Sort the lists on save", "Сортировать списки при сохранении");
+
+    // Programs pinned to one server or group (V2pnPins), above the rule sets.
+    public static string PinGroup => T("Programs on their own server", "Программы на своём сервере");
+    public static string PinNote => T("Checked before any rule set, whichever server is selected.",
+        "Проверяются раньше любого набора правил, какой бы сервер ни был выбран.");
+    public static string PinEmpty => T("For example, every Claude on this computer through one group of servers, while you switch the main server as you like.",
+        "Например, все Claude на компьютере через одну группу серверов, а основной сервер переключайте как угодно.");
+    public static string PinAdd => T("Add programs", "Добавить программы");
+    public static string PinAddClaude => T("Add Claude", "Добавить Claude");
+    public static string PinAddClaudeTip => T("The Claude app, Claude Code and the Claude sites.", "Приложение Claude, Claude Code и сайты Claude.");
+    public static string PinOn => T("On", "Включено");
+    public static string PinNoServer => T("No server chosen", "Сервер не выбран");
+    public static string PinServerGone => T("“{0}” is gone. These programs follow the ordinary rules for now.",
+        "«{0}» не найден. Пока эти программы идут по обычным правилам.");
+    public static string PinGroupWord => T("group", "группа");
+    public static string PinDeleteAsk => T("Delete “{0}”? Its programs will follow the ordinary rules.",
+        "Удалить «{0}»? Эти программы пойдут по обычным правилам.");
+
+    // One pin.
+    public static string PinTitle => T("Programs on their own server", "Программы на своём сервере");
+    public static string PinHint => T("These programs and sites always go through the server or group chosen here, whichever server is on and whichever rule set is active.",
+        "Эти программы и сайты всегда идут через выбранный здесь сервер или группу, какой бы сервер ни был включён и какой бы набор правил ни работал.");
+    public static string PinGrpWhere => T("Where to", "Куда");
+    public static string PinServer => T("Server or group", "Сервер или группа");
+    public static string PinServerHint => T("A group of several servers keeps working when one of them fails.",
+        "Группа из нескольких серверов продолжает работать, когда один из них отказывает.");
+    public static string PinChoose => T("Choose…", "Выбрать…");
+    public static string PinNewGroup => T("New group…", "Новая группа…");
+    public static string PinChosenServer => T("Server “{0}”", "Сервер «{0}»");
+    public static string PinChosenGroup => T("Group “{0}”", "Группа «{0}»");
+    public static string PinNamePlaceholder => T("Claude", "Claude");
+    public static string PinProgramsHint => T("Program file names, one per line. Capital and small letters are the same.",
+        "Имена файлов программ, по одному на строку. Большие и маленькие буквы не различаются.");
+    public static string PinSitesHint => T("Optional. These sites go through the same server from any program, the browser included.",
+        "Необязательно. Эти сайты идут через тот же сервер из любой программы, в том числе из браузера.");
+    public static string PinNeedServer => T("Choose a server or a group.", "Выберите сервер или группу.");
+    public static string PinNeedRules => T("List at least one program or site.", "Укажите хотя бы одну программу или сайт.");
 }

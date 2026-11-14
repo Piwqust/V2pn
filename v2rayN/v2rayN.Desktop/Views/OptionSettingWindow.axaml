@@ -36,12 +36,13 @@
             </StackPanel>
         </Border>
 
-        <Grid ColumnDefinitions="250,*">
+        <Grid ColumnDefinitions="264,*">
             <Border Classes="settingsnav">
                 <DockPanel Margin="12,14,12,12">
                     <TextBox
                         x:Name="txtSearch"
                         Margin="0,0,0,12"
+                        AutomationProperties.Name="{x:Static loc:L.SearchSettings}"
                         Classes="search"
                         DockPanel.Dock="Top"
                         PlaceholderText="{x:Static loc:L.SearchSettings}">
@@ -55,18 +56,31 @@
                         </TextBox.InnerLeftContent>
                     </TextBox>
                     <Border Classes="advswitch" DockPanel.Dock="Bottom">
-                        <Grid ColumnDefinitions="*,Auto">
-                            <StackPanel VerticalAlignment="Center" Spacing="1">
-                                <TextBlock Classes="advtitle" Text="{x:Static loc:L.SetAdvanced}" />
-                                <TextBlock Classes="advhint" Text="{x:Static loc:L.SetAdvancedHint}" />
-                            </StackPanel>
+                        <!--  The hint runs under the switch too: beside it, the narrow nav column left the
+                              title cut and the hint pressed against the knob.  -->
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+                            <TextBlock
+                                VerticalAlignment="Center"
+                                Classes="advtitle"
+                                Text="{x:Static loc:L.SetAdvanced}"
+                                TextWrapping="Wrap" />
                             <ToggleSwitch
                                 x:Name="togAdvanced"
                                 Grid.Column="1"
+                                Margin="8,0,0,0"
+                                AutomationProperties.Name="{x:Static loc:L.SetAdvanced}"
                                 OffContent=""
                                 OnContent="" />
+                            <TextBlock
+                                Grid.Row="1"
+                                Grid.ColumnSpan="2"
+                                Margin="0,0,4,0"
+                                Classes="advhint"
+                                Text="{x:Static loc:L.SetAdvancedHint}" />
                         </Grid>
                     </Border>
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel>
                     <ListBox
                         x:Name="lstNav"
                         SelectedIndex="0"
@@ -126,6 +140,88 @@
                             </StackPanel>
                         </ListBoxItem>
                     </ListBox>
+                    <!--  Settings that live in windows of their own. They open over this one, which stays open.  -->
+                    <StackPanel x:Name="panelMore" Margin="0,16,0,8">
+                        <TextBlock Classes="navgroup" Text="{x:Static loc:L.SetMore}" />
+                        <Button
+                            x:Name="btnMoreRouting"
+                            Classes="navlink ghost"
+                            Theme="{StaticResource V2Button}"
+                            ToolTip.Tip="{x:Static loc:L.SetMoreTip}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Classes="nav" Data="{StaticResource SemiIconRoute}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Static loc:L.RtListTitle}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <PathIcon
+                                    Grid.Column="2"
+                                    Classes="navopen"
+                                    Data="{StaticResource SemiIconExternalOpenStroked}" />
+                            </Grid>
+                        </Button>
+                        <Button
+                            x:Name="btnMoreDns"
+                            Classes="navlink ghost"
+                            Theme="{StaticResource V2Button}"
+                            ToolTip.Tip="{x:Static loc:L.SetMoreTip}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Classes="nav" Data="{StaticResource SemiIconServerStroked}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Static loc:L.RailDns}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <PathIcon
+                                    Grid.Column="2"
+                                    Classes="navopen"
+                                    Data="{StaticResource SemiIconExternalOpenStroked}" />
+                            </Grid>
+                        </Button>
+                        <Button
+                            x:Name="btnMoreHotkeys"
+                            Classes="navlink ghost"
+                            Theme="{StaticResource V2Button}"
+                            ToolTip.Tip="{x:Static loc:L.SetMoreTip}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Classes="nav" Data="{StaticResource SemiIconCommand}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Static loc:L.MenuHotkeys}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <PathIcon
+                                    Grid.Column="2"
+                                    Classes="navopen"
+                                    Data="{StaticResource SemiIconExternalOpenStroked}" />
+                            </Grid>
+                        </Button>
+                        <Button
+                            x:Name="btnMoreTemplate"
+                            Classes="navlink ghost"
+                            Theme="{StaticResource V2Button}"
+                            ToolTip.Tip="{x:Static loc:L.SetMoreTip}">
+                            <Grid ColumnDefinitions="Auto,*,Auto">
+                                <PathIcon Classes="nav" Data="{StaticResource SemiIconCode}" />
+                                <TextBlock
+                                    Grid.Column="1"
+                                    Margin="10,0,0,0"
+                                    VerticalAlignment="Center"
+                                    Text="{x:Static loc:L.MenuTemplate}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <PathIcon
+                                    Grid.Column="2"
+                                    Classes="navopen"
+                                    Data="{StaticResource SemiIconExternalOpenStroked}" />
+                            </Grid>
+                        </Button>
+                    </StackPanel>
+                    </StackPanel>
+                    </ScrollViewer>
                 </DockPanel>
             </Border>
 
@@ -170,7 +266,7 @@
                                             <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconMinimize}" /></Border>
                                             <StackPanel Grid.Column="1" Classes="srowtext">
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsHide2TrayWhenClose}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsHide2TrayWhenCloseTip}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetHideToTrayHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togHide2TrayWhenClose" />

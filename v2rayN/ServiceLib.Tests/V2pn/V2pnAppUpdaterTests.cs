@@ -41,6 +41,10 @@ public class V2pnAppUpdaterTests
 
     private void Trust(params string[] sources) => Updater.Settings = new V2pnUpdateSettings(sources, [_release.PublicKey], true, "1.0.0");
 
+    private const string LocalBuild = "1.0.1-local.202611141320";
+
+    private void TrustAs(string current, params string[] sources) => Updater.Settings = new V2pnUpdateSettings(sources, [_release.PublicKey], true, current);
+
     private FakeReleases Serve(string version, byte[]? served = null, TestRelease? signedBy = null)
     {
         var manifest = TestRelease.Manifest(version, (Name, Package));
@@ -116,6 +120,68 @@ public class V2pnAppUpdaterTests
         await Updater.CheckAsync(download: true);
 
         await Updater.State.Should().BeEqualTo(EV2pnUpdateState.UpToDate);
+        await server.Requests.Any(r => r.EndsWith(".zip")).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task LocalBuild_IsNotReplacedByAnOlderReleaseOnItsOwn()
+    {
+        await using var server = Serve("1.0.0");
+        TrustAs(LocalBuild, server.Source);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.UpToDate);
+        await server.Requests.Any(r => r.EndsWith(".zip")).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task LocalBuild_GoesBackToTheReleaseOnlyWhenAsked()
+    {
+        await using var server = Serve("1.0.0");
+        TrustAs(LocalBuild, server.Source);
+
+        await (await Updater.DownloadReleaseAsync()).Should().BeTrue();
+
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.Ready);
+        await File.Exists(Path.Combine(PendingDir, "V2pn-1.0.0.zip")).Should().BeTrue();
+        // Downloaded for that request only: the next start does not install it by itself.
+        await Updater.FindPending().HasValue.Should().BeFalse();
+    }
+
+    [Test]
+    public async Task NewerRelease_ReplacesALocalBuild()
+    {
+        await using var server = Serve("1.0.1");
+        TrustAs(LocalBuild, server.Source);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.Ready);
+        await Updater.FindPending()!.Value.Version.Should().BeEqualTo("1.0.1");
+    }
+
+    [Test]
+    public async Task InstalledByWinGet_OnlyReportsTheNewVersion()
+    {
+        await using var server = Serve("99.0.0");
+        Updater.Settings = new V2pnUpdateSettings([server.Source], [_release.PublicKey], true, "1.0.0", ByWinGet: true);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.Available);
+        await server.Requests.Any(r => r.EndsWith(".zip")).Should().BeFalse();
+        await (await Updater.InstallAsync()).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task ReleaseBuild_NeverGoesBackToAnOlderRelease()
+    {
+        await using var server = Serve("0.9.0");
+        Trust(server.Source);
+
+        await (await Updater.DownloadReleaseAsync()).Should().BeFalse();
+
         await server.Requests.Any(r => r.EndsWith(".zip")).Should().BeFalse();
     }
 

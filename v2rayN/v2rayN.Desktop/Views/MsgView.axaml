@@ -18,7 +18,7 @@
             Orientation="Horizontal">
 
             <TextBox
-                x:Name="cmbMsgFilter"
+                x:Name="cmbMsgFilter" AutomationProperties.Name="{x:Static resx:ResUI.MsgFilterTitle}"
                 Width="240"
                 Classes="search"
                 VerticalContentAlignment="Center"
@@ -26,7 +26,7 @@
                 ToolTip.Tip="{x:Static resx:ResUI.MsgFilterTitle}" />
 
             <Button
-                x:Name="btnCopy"
+                x:Name="btnCopy" AutomationProperties.Name="{x:Static resx:ResUI.menuMsgViewCopyAll}"
                 Classes="IconButton Success"
                 Click="menuMsgViewCopyAll_Click"
                 ToolTip.Tip="{x:Static resx:ResUI.menuMsgViewCopyAll}">
@@ -35,7 +35,7 @@
                 </Button.Content>
             </Button>
             <Button
-                x:Name="btnClear"
+                x:Name="btnClear" AutomationProperties.Name="{x:Static resx:ResUI.menuMsgViewClear}"
                 Classes="IconButton Success"
                 Click="menuMsgViewClear_Click"
                 ToolTip.Tip="{x:Static resx:ResUI.menuMsgViewClear}">
@@ -47,7 +47,7 @@
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.TbAutoRefresh}" />
             <ToggleSwitch
-                x:Name="togAutoRefresh"
+                x:Name="togAutoRefresh" AutomationProperties.Name="{x:Static resx:ResUI.TbAutoRefresh}"
                 HorizontalAlignment="Left"
                 IsChecked="True"
                 Theme="{DynamicResource SimpleToggleSwitch}" />
@@ -55,7 +55,7 @@
                 VerticalAlignment="Center"
                 Text="{x:Static resx:ResUI.TbAutoScrollToEnd}" />
             <ToggleSwitch
-                x:Name="togScrollToEnd"
+                x:Name="togScrollToEnd" AutomationProperties.Name="{x:Static resx:ResUI.TbAutoScrollToEnd}"
                 HorizontalAlignment="Left"
                 IsChecked="True"
                 Theme="{DynamicResource SimpleToggleSwitch}" />

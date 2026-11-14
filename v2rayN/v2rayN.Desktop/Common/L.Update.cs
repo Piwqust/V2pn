@@ -32,4 +32,28 @@ public static partial class L
     public static string UpdToastReady => T("V2pn {0} is ready. It installs the next time V2pn starts.", "V2pn {0} скачан. Он установится при следующем запуске.");
     public static string UpdToastAvailable => T("V2pn {0} is available.", "Вышел V2pn {0}.");
     public static string UpdInstalling => T("Installing V2pn {0}…", "Установка V2pn {0}…");
+    public static string UpdThroughWinGet => T("Update with winget", "Обновить через winget");
+    public static string UpdLocalUpToDate => T("Built from the sources; no newer release", "Сборка из исходников, новее релизов нет");
+    public static string UpdBuiltFrom => T("commit {0}", "коммит {0}");
+    public static string UpdBuiltFromChanged => T("commit {0} with uncommitted changes", "коммит {0} с незакоммиченными правками");
+
+    // Developer mode.
+    public static string DevMode => T("Developer mode", "Режим разработчика");
+    public static string DevModeHint => T("Build V2pn from the sources on this computer and install it here. If the new build does not start, the previous version comes back.", "Собирать V2pn из исходников на этом компьютере и ставить сюда же. Если новая сборка не запустится, вернётся прежняя версия.");
+    public static string DevSource => T("Source folder", "Папка с исходниками");
+    public static string DevSourceNone => T(@"Not chosen: the folder with tools\release.ps1", @"Не выбрана: нужна папка, где лежит tools\release.ps1");
+    public static string DevSourceBad => T(@"This folder has no V2pn sources (tools\release.ps1 is missing)", @"В этой папке нет исходников V2pn (не найден tools\release.ps1)");
+    public static string DevChoose => T("Choose…", "Выбрать…");
+    public static string DevBuild => T("Build and install", "Собрать и установить");
+    public static string DevCancel => T("Cancel", "Отменить");
+    public static string DevLog => T("Log", "Журнал");
+    public static string DevIdle => T("The connection stays up while V2pn builds; it restarts for a few seconds to install.", "Пока идёт сборка, соединение работает. Для установки V2pn перезапустится на несколько секунд.");
+    public static string DevBuilding => T("Building…", "Сборка…");
+    public static string DevBuildingStep => T("Building: {0}", "Сборка: {0}");
+    public static string DevInstalling => T("Installing, V2pn restarts…", "Установка, V2pn перезапускается…");
+    public static string DevFailed => T("The build failed: {0}", "Сборка не удалась: {0}");
+    public static string DevInstallFailed => T("Build {0} did not start, so V2pn went back to the previous version.", "Сборка {0} не запустилась, V2pn вернул прежнюю версию.");
+    public static string DevOnLocal => T("This is a build from the sources ({0}). A newer release replaces it on its own.", "Сейчас стоит сборка из исходников ({0}). Следующий релиз заменит её сам.");
+    public static string DevBackToRelease => T("Back to the release", "Вернуться на релиз");
+    public static string DevBackFailed => T("Could not return to the release: {0}", "Не удалось вернуться на релиз: {0}");
 }

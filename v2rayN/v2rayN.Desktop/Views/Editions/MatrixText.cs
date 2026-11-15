@@ -147,7 +147,7 @@ public sealed class MatrixText : Control
         ['/'] = ["00001", "00001", "00010", "00100", "01000", "10000", "10000"],
         ['%'] = ["11001", "11010", "00010", "00100", "01000", "01011", "10011"],
         [' '] = ["00", "00", "00", "00", "00", "00", "00"],
-        ['—'] = ["0000", "0000", "0000", "1111", "0000", "0000", "0000"],
+        // No '—': a missing value in dots read as "••••"; drawn in the type it reads as a dash.
     };
 
     private static readonly Dictionary<char, string[]> Pixels = new()

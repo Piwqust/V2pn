@@ -141,6 +141,28 @@ public sealed class SubInfoManager
         }
     }
 
+    /// <summary>The person's switch for the partner's connection settings of a subscription; true when it changed.</summary>
+    public async Task<bool> SetPartnerConnectionOffAsync(string subId, bool off)
+    {
+        try
+        {
+            await LoadAsync();
+            if (Get(subId) is not { } info || info.PartnerConnectionOff == off)
+            {
+                return false;
+            }
+            info.PartnerConnectionOff = off;
+            await SQLiteHelper.Instance.ReplaceAsync(info);
+            Changed?.Invoke(subId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+            return false;
+        }
+    }
+
     /// <summary>The Happ, INCY and v2RayTun values of a response; the person's own choices on <paramref name="info"/> stay.</summary>
     public static void CopyCompat(SubPanelInfo panel, SubInfoItem info)
     {

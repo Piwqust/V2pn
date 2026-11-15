@@ -40,6 +40,16 @@ public partial class CoreConfigV2rayService
                 _coreConfig.routing.domainStrategy = _config.RoutingBasicItem.DomainStrategy;
 
                 var routing = context.RoutingItem;
+                // V2pn: the connected partner's core.json rules go after pinned programs, before the person's routing.
+                var partnerRules = BuildV2pnPartnerRules();
+                void AddPartnerRules()
+                {
+                    foreach (var rule in partnerRules)
+                    {
+                        GenRoutingUserRule(JsonUtils.Deserialize<RulesItem4Ray>(JsonUtils.Serialize(rule)));
+                    }
+                    partnerRules = [];
+                }
                 if (routing != null)
                 {
                     if (routing.DomainStrategy.IsNotEmpty())
@@ -53,6 +63,10 @@ public partial class CoreConfigV2rayService
                         {
                             continue;
                         }
+                        if (item.Id?.StartsWith("v2pn-pin-", StringComparison.Ordinal) != true)
+                        {
+                            AddPartnerRules();
+                        }
 
                         if (item.RuleType == ERuleType.DNS)
                         {
@@ -63,6 +77,7 @@ public partial class CoreConfigV2rayService
                         GenRoutingUserRule(item2);
                     }
                 }
+                AddPartnerRules();
                 var balancerTagList = _coreConfig.routing.balancers
                     ?.Select(p => p.tag)
                     .ToList() ?? [];
@@ -179,7 +194,7 @@ public partial class CoreConfigV2rayService
 
     private string GenRoutingUserRuleOutbound(string outboundTag)
     {
-        if (Global.OutboundTags.Contains(outboundTag))
+        if (Global.OutboundTags.Contains(outboundTag) || IsV2pnPartnerTag(outboundTag))
         {
             return outboundTag;
         }

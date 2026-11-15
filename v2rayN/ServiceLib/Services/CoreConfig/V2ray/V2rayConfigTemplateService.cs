@@ -12,7 +12,7 @@ public partial class CoreConfigV2rayService
         return ApplyFullConfigTemplate(coreConfigContent);
     }
 
-    private string ApplyCustomOutboundReplace()
+    private string ApplyCustomOutboundReplaceRaw()
     {
         var coreConfigContent = JsonUtils.Serialize(_coreConfig);
         if (context.CustomOutboundMap.Count == 0)

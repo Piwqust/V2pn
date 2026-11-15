@@ -56,10 +56,12 @@ public partial class CoreConfigV2rayService
         {
             outbound.tag = baseTagName;
             context.CustomOutboundMap[outbound] = _node.IndexId;
+            ApplyV2pnPartnerServer(outbound);
             return outbound;
         }
         FillOutbound(outbound);
         outbound.tag = baseTagName;
+        ApplyV2pnPartnerServer(outbound);
         return outbound;
     }
 

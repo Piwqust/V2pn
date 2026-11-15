@@ -72,7 +72,8 @@ public static class CoreConfigHandler
             if (V2pnCoreConfigFilter.FromSubscription(node))
             {
                 var removed = new List<string>();
-                var filtered = V2pnCoreConfigFilter.FilterWhole(node.CoreType, await File.ReadAllTextAsync(addressFileName), removed);
+                var allowTop = (await V2pnPartnerTraffics.SnapshotAsync()).GetValueOrDefault(node.Subid)?.CoreFor(node.CoreType ?? ECoreType.Xray)?.AllowTop;
+                var filtered = V2pnCoreConfigFilter.FilterWhole(node.CoreType, await File.ReadAllTextAsync(addressFileName), removed, allowTop);
                 if (filtered == null)
                 {
                     ret.Msg = string.Format(ResUI.MsgV2pnSubConfigRefused, node.CoreType);

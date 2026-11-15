@@ -19,13 +19,14 @@ public static class V2pnCoreConfigFilter
     /// A whole Xray or sing-box config from a subscription, ready to run, or null when V2pn does not run it:
     /// another core (V2pn cannot check its configs) or text that is not a config.
     /// </summary>
-    public static string? FilterWhole(ECoreType? core, string text, List<string> removed)
+    /// <param name="allowTop">Top-level keys the subscription's partner may keep besides the usual ones (its reviewed core.json).</param>
+    public static string? FilterWhole(ECoreType? core, string text, List<string> removed, IReadOnlyCollection<string>? allowTop = null)
     {
         if (core is not (ECoreType.Xray or ECoreType.sing_box) || JsonUtils.ParseJson(text) is not JsonObject config)
         {
             return null;
         }
-        var found = core == ECoreType.Xray ? FilterXray(config) : FilterSingbox(config);
+        var found = core == ECoreType.Xray ? FilterXray(config) : FilterSingbox(config, allowTop);
         removed.AddRange(found);
         return found.Count == 0 ? text : JsonUtils.Serialize(config);
     }
@@ -161,12 +162,22 @@ public static class V2pnCoreConfigFilter
     private static bool SingboxFileKey(string key) => key.EndsWith("_path", StringComparison.Ordinal) || key is "data_directory" or "state_directory";
 
     /// <summary>Filters a sing-box config in place; returns what was taken out.</summary>
-    public static List<string> FilterSingbox(JsonObject config)
+    /// <param name="allowTop">
+    /// Keys a reviewed core.json of the subscription's partner lets it keep; only ones of
+    /// <see cref="V2pnCoreFragment.AllowableTop"/> count, and the files they name are taken out all the same.
+    /// </param>
+    public static List<string> FilterSingbox(JsonObject config, IReadOnlyCollection<string>? allowTop = null)
     {
         var removed = new List<string>();
+        var extra = allowTop?.Where(V2pnCoreFragment.AllowableTop[V2pnCoreFragment.Singbox].Contains).ToHashSet() ?? [];
 
         foreach (var key in config.Select(p => p.Key).ToList())
         {
+            if (extra.Contains(key))
+            {
+                RemoveKeys(config[key], SingboxFileKey, removed, key);
+                continue;
+            }
             if (!SingboxTop.Contains(key))
             {
                 config.Remove(key);

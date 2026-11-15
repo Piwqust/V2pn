@@ -100,4 +100,7 @@ public class SubInfoItem
 
     /// <summary>The order the person chose for this subscription's servers; null follows the provider.</summary>
     public string? OwnSort { get; set; }
+
+    /// <summary>true: the person turned off the reviewed transport and core config of this subscription's partner.</summary>
+    public bool PartnerConnectionOff { get; set; }
 }

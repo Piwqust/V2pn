@@ -7,11 +7,7 @@
   "required": ["schema", "id", "name", "assets"],
   "properties": {
     "schema": { "const": 1 },
-    "id": {
-      "description": "The partner id; must equal the certificate's.",
-      "type": "string",
-      "pattern": "^[a-z0-9][a-z0-9-]{1,31}$"
-    },
+    "id": { "description": "The partner id; must equal the certificate's.", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,31}$" },
     "name": {
       "description": "The name people see. No control characters, and nothing that reads as V2pn.",
       "type": "string",
@@ -61,6 +57,109 @@
       "format": "uri",
       "pattern": "^https://"
     },
+    "servers": {
+      "description": "Needs the certificate's actions grant. What V2pn shows about the servers of the partner's subscriptions: each entry matches a server by its exact name or its address. The API's GET servers may say the same with load and health; its values win.",
+      "type": "array",
+      "maxItems": 300,
+      "items": {
+        "type": "object",
+        "anyOf": [{ "required": ["name"] }, { "required": ["host"] }],
+        "properties": {
+          "name": { "description": "The server's exact name (remark) in the subscription.", "type": "string", "maxLength": 128 },
+          "host": { "description": "The server's address in the subscription.", "type": "string", "maxLength": 253 },
+          "group": { "description": "A header in the list; the order of first mention is the order of the groups.", "type": "string", "maxLength": 24 },
+          "country": { "description": "ISO 3166 alpha-2; the flag and the map.", "type": "string", "pattern": "^[A-Za-z]{2}$" },
+          "city": { "type": "string", "maxLength": 32 },
+          "purpose": {
+            "description": "What the server is for; V2pn names it in the person's language. Unknown values are left out.",
+            "type": "array",
+            "items": { "enum": ["youtube", "games", "mobile", "whitelist", "streaming", "ai", "torrents"] },
+            "uniqueItems": true
+          },
+          "priority": { "description": "Breaks a tie between equally good servers: higher first.", "type": "integer", "minimum": -1000, "maximum": 1000 },
+          "hidden": { "description": "Not listed or offered; only the API's recommend can still pick it.", "type": "boolean" },
+          "note": { "description": "A short line under the server's name.", "type": "string", "maxLength": 60 }
+        }
+      }
+    },
+    "actions": {
+      "description": "Needs the certificate's actions grant. The partner's buttons: a label, one of V2pn's icons and one of V2pn's actions. V2pn shows the first 4 that it can run; an unknown do is left out.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "do"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 24 },
+          "icon": { "enum": ["bolt", "shield", "play", "game", "card", "chat", "globe", "star", "refresh", "check", "info", "gift"] },
+          "do": {
+            "enum": ["connect.best", "connect.recommend", "connect.server", "connect.group", "open.cabinet", "open.renew", "open.support", "open.link", "subscription.update", "check.services", "info.card"]
+          },
+          "strategy": {
+            "description": "connect.best: ping (lowest delay now), stable (most answers over V2pn's last 10 checks, then the lowest median, then the smallest spread), load (lowest load from GET servers; ping without one).",
+            "enum": ["ping", "stable", "load"]
+          },
+          "scope": {
+            "description": "connect.best: which servers it chooses from.",
+            "type": "object",
+            "properties": {
+              "group": { "type": "string", "maxLength": 24 },
+              "purpose": { "enum": ["youtube", "games", "mobile", "whitelist", "streaming", "ai", "torrents"] },
+              "servers": {
+                "type": "array",
+                "maxItems": 50,
+                "items": { "type": "string", "maxLength": 253 }
+              }
+            }
+          },
+          "purpose": {
+            "description": "connect.recommend: asked as GET <api>recommend?purpose=. Needs the API.",
+            "enum": ["youtube", "games", "mobile", "whitelist", "streaming", "ai", "torrents"]
+          },
+          "server": { "description": "connect.server: a name or address.", "type": "string", "maxLength": 253 },
+          "group": { "description": "connect.group: the fastest server of this group.", "type": "string", "maxLength": 24 },
+          "url": { "description": "open.link: https on the certificate's domains or t.me, or tg:.", "type": "string" }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "connect.recommend" }
+              }
+            },
+            "then": { "required": ["purpose"] }
+          },
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "connect.server" }
+              }
+            },
+            "then": { "required": ["server"] }
+          },
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "connect.group" }
+              }
+            },
+            "then": { "required": ["group"] }
+          },
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "open.link" }
+              }
+            },
+            "then": { "required": ["url"] }
+          }
+        ]
+      }
+    },
+    "lock": {
+      "description": "Needs the certificate's lock grant: closes the settings of the partner's subscriptions, as the hide-settings header does. Without the grant it does nothing.",
+      "type": "boolean"
+    },
     "assets": {
       "description": "Every picture of the pack, pinned by size and SHA-256.",
       "type": "array",
@@ -77,9 +176,6 @@
     }
   },
   "$defs": {
-    "assetName": {
-      "type": "string",
-      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(png|webp|jpg|jpeg)$"
-    }
+    "assetName": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(png|webp|jpg|jpeg)$" }
   }
 }

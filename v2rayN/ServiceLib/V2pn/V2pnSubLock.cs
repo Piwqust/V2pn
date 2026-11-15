@@ -104,9 +104,23 @@ public sealed class V2pnLocks
     /// <summary>True when any of <paramref name="items"/> (or a server inside a group among them) is closed.</summary>
     public async Task<bool> AnyClosedAsync(IEnumerable<ProfileItem> items)
     {
+        // Each subscription is looked up once, however many of its servers are selected.
+        var known = new Dictionary<string, bool>(StringComparer.Ordinal);
+        async Task<bool> Closed(string? subId)
+        {
+            if (subId.IsNullOrEmpty())
+            {
+                return false;
+            }
+            if (!known.TryGetValue(subId!, out var closed))
+            {
+                known[subId!] = closed = (await ForSubAsync(subId)).Settings;
+            }
+            return closed;
+        }
         foreach (var item in items)
         {
-            if ((await ForSubAsync(item.Subid)).Settings)
+            if (await Closed(item.Subid))
             {
                 return true;
             }
@@ -114,7 +128,7 @@ public sealed class V2pnLocks
             {
                 foreach (var child in await GroupMembersAsync(item))
                 {
-                    if ((await ForSubAsync(child.Subid)).Settings)
+                    if (await Closed(child.Subid))
                     {
                         return true;
                     }

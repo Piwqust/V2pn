@@ -615,6 +615,64 @@ public class V2pnPartnerReviewTests
         await singboxResult.Code.Should().BeEqualTo(0);
     }
 
+    /// <summary>The person's mode: chatgpt.com direct, everything else through the VPN (a catch-all at the end).</summary>
+    private static RoutingItem PersonRouting() => new()
+    {
+        Id = "person",
+        Remarks = "mine",
+        DomainStrategy = Global.AsIs,
+        DomainStrategy4Singbox = string.Empty,
+        RuleSet = JsonUtils.Serialize(new List<RulesItem>
+        {
+            new() { Id = "r1", Enabled = true, OutboundTag = Global.DirectTag, Domain = ["domain:chatgpt.com"] },
+            new() { Id = "r2", Enabled = true, OutboundTag = Global.ProxyTag, Port = "0-65535" },
+        }, false),
+    };
+
+    [Test]
+    public async Task Xray_PersonsOwnRulesComeBeforeThePartnersCoreRules_TheCatchAllAfterThem()
+    {
+        var node = VlessNode("kestrel-de", "sub-kestrel", ECoreType.Xray);
+        var context = Context(node, node, ECoreType.Xray, CoreXrayJson) with { RoutingItem = PersonRouting() };
+
+        var config = JsonNode.Parse(new CoreConfigV2rayService(context).GenerateClientConfigContent().Data!.ToString()!)!;
+        var rules = config["routing"]!["rules"]!.AsArray().Select(r => r!.AsObject()).ToList();
+
+        var person = rules.FindIndex(r => r["outboundTag"]?.GetValue<string>() == Global.DirectTag
+                                          && r["domain"]?.AsArray().Any(d => d!.GetValue<string>() == "domain:chatgpt.com") == true);
+        var partner = rules.FindIndex(r => r["balancerTag"]?.GetValue<string>() == "partner-kestrel-fast-balancer");
+        var catchAll = rules.FindIndex(r => r["port"]?.GetValue<string>() == "0-65535");
+        await (person >= 0 && partner > person).Should().BeTrue();
+        await (catchAll > partner).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task Singbox_PersonsOwnRulesComeBeforeThePartnersCoreRules_TheCatchAllAfterThem()
+    {
+        var node = VlessNode("kestrel-de", "sub-kestrel", ECoreType.sing_box);
+        var context = Context(node, node, ECoreType.sing_box, CoreSingboxJson) with { RoutingItem = PersonRouting() };
+
+        var config = JsonNode.Parse(new CoreConfigSingboxService(context).GenerateClientConfigContent().Data!.ToString()!)!;
+        var rules = config["route"]!["rules"]!.AsArray().Select(r => r!.AsObject()).ToList();
+
+        var person = rules.FindIndex(r => r["outbound"]?.GetValue<string>() == Global.DirectTag
+                                          && r["domain_suffix"]?.AsArray().Any(d => d!.GetValue<string>() == "chatgpt.com") == true);
+        var partner = rules.FindIndex(r => r["outbound"]?.GetValue<string>() == "partner-kestrel-fast");
+        var catchAll = rules.FindIndex(r => r["outbound"]?.GetValue<string>() == Global.ProxyTag && r["port_range"] != null);
+        await (person >= 0 && partner > person).Should().BeTrue();
+        await (catchAll > partner).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task RouteCatchAll_IsOnlyTheRuleThatMatchesEverything()
+    {
+        await V2pnPartnerRoutes.IsCatchAll(new RulesItem { Enabled = true, Port = "0-65535", OutboundTag = "proxy" }).Should().BeTrue();
+        await V2pnPartnerRoutes.IsCatchAll(new RulesItem { Enabled = true, Network = "tcp,udp", OutboundTag = "proxy" }).Should().BeTrue();
+        await V2pnPartnerRoutes.IsCatchAll(new RulesItem { Enabled = true, Port = "50000-65535", Network = "udp" }).Should().BeFalse();
+        await V2pnPartnerRoutes.IsCatchAll(new RulesItem { Enabled = true, Port = "0-65535", Domain = ["a.com"] }).Should().BeFalse();
+        await V2pnPartnerRoutes.IsCatchAll(new RulesItem { Enabled = true, Protocol = ["bittorrent"] }).Should().BeFalse();
+    }
+
     #endregion Generated configs
 
     #region Routing items
@@ -654,6 +712,25 @@ public class V2pnPartnerReviewTests
         await (V2pnPartnerTraffics.For(partner, new SubInfoItem { Id = "s" })?.Transport != null).Should().BeTrue();
         await (V2pnPartnerTraffics.For(partner, new SubInfoItem { Id = "s", PartnerConnectionOff = true }) == null).Should().BeTrue();
         await (V2pnPartnerTraffics.For(null, new SubInfoItem { Id = "s" }) == null).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task PartnerMode_KeepsThePersonsOwnRulesFirst()
+    {
+        var partner = Partner([("routing.json", RoutingJson)], AllGrants, Reviewed(("routing.json", RoutingJson)));
+        var created = V2pnPartnerRoutes.Plan([], [partner]).Upserts.Single();
+        var presetRules = JsonUtils.Deserialize<List<RulesItem>>(created.RuleSet)!;
+        // The person adds a rule to the preset in the routing editor (it lands at the end, with a generated id).
+        presetRules.Add(new RulesItem { Id = "my-own", Enabled = true, OutboundTag = Global.DirectTag, Domain = ["domain:chatgpt.com"] });
+        created.RuleSet = JsonUtils.Serialize(presetRules, false);
+
+        var again = V2pnPartnerRoutes.Plan([created], [partner]).Upserts.Single();
+        var rules = JsonUtils.Deserialize<List<RulesItem>>(again.RuleSet)!;
+
+        await rules[0].Id.Should().BeEqualTo("my-own");
+        await rules.Count.Should().BeEqualTo(partner.Features.Routing!.ToRules().Count + 1);
+        // Once ordered, nothing more to write.
+        await V2pnPartnerRoutes.Plan([again], [partner]).Any.Should().BeFalse();
     }
 
     #endregion Routing items

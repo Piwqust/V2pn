@@ -302,7 +302,7 @@ In V2pn it is one more mode of "What goes through the VPN", "<provider> routes",
 
 - Your tags get the prefix `partner-<id>-`, so they never meet V2pn's. `proxy` is the server of your subscription the person connected to.
 - Every outbound passes V2pn's subscription filter unchanged: no files, listening ports, API, `tor`, `reverse` or own `domain_resolver`. Otherwise the file is refused.
-- The rules come after the programs the person pinned to a server and before the person's routing. They lead only to your outbounds and balancers: what goes direct or is blocked is `routing.json`'s business. Local network addresses are not allowed in them.
+- The rules come after all of the person's own rules (pinned programs, the rules of the chosen mode, rules the person added to your routes mode) and only before the mode's catch-all default. So a site the person sends direct or blocks stays that way, whatever your rules say. They lead only to your outbounds and balancers: what goes direct or is blocked is `routing.json`'s business. Local network addresses are not allowed in them.
 - When `outbounds` speak TLS and you sent `transport.json`, V2pn fragments them too.
 - The person can turn off "<provider> connection settings" in the subscription window: then V2pn uses neither `transport.json` nor `core.json`.
 

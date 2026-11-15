@@ -24,7 +24,7 @@ public partial class CoreConfigSingboxService
         }
     }
 
-    /// <summary>The rules of the partner whose server is connected; they go after the pinned programs and before the person's routing.</summary>
+    /// <summary>The rules of the partner whose server is connected; they go after the person's own rules and before the routing's catch-all default.</summary>
     private List<RulesItem> BuildV2pnPartnerRules()
     {
         if (context.V2pnTrafficFor(_node) is not { } traffic || traffic.CoreFor(ECoreType.sing_box) is not { } core || core.Rules.Count == 0)

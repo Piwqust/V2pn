@@ -40,7 +40,8 @@ public partial class CoreConfigV2rayService
                 _coreConfig.routing.domainStrategy = _config.RoutingBasicItem.DomainStrategy;
 
                 var routing = context.RoutingItem;
-                // V2pn: the connected partner's core.json rules go after pinned programs, before the person's routing.
+                // V2pn: the connected partner's core.json rules go after the person's own rules (pinned programs
+                // included), right before the routing's catch-all default, so the person's choices always win.
                 var partnerRules = BuildV2pnPartnerRules();
                 void AddPartnerRules()
                 {
@@ -63,7 +64,7 @@ public partial class CoreConfigV2rayService
                         {
                             continue;
                         }
-                        if (item.Id?.StartsWith("v2pn-pin-", StringComparison.Ordinal) != true)
+                        if (V2pnPartnerRoutes.IsCatchAll(item))
                         {
                             AddPartnerRules();
                         }

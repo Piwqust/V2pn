@@ -10,6 +10,9 @@ public static class V2pnPartnerRoutes
 {
     public const string IdPrefix = "v2pn-partner-";
 
+    /// <summary>The ids of the preset's own rules in its routing item; any other rule there is the person's.</summary>
+    public const string RuleIdPrefix = "v2pn-partner-rule-";
+
     /// <summary>The mode that replaces a removed partner preset when it was active (V2pn's "Everything through VPN").</summary>
     public const string FallbackId = "v2pn-all";
 
@@ -18,6 +21,17 @@ public static class V2pnPartnerRoutes
     public static bool IsPartnerRoute(string? routingId) => routingId?.StartsWith(IdPrefix, StringComparison.Ordinal) == true;
 
     public static string? PartnerOf(string? routingId) => IsPartnerRoute(routingId) ? routingId![IdPrefix.Length..] : null;
+
+    /// <summary>
+    /// A rule that matches everything (all ports, any network, nothing else): the default at the end of a routing mode.
+    /// A partner's core.json rules go right before it, after every rule the person has.
+    /// </summary>
+    public static bool IsCatchAll(RulesItem rule) =>
+        rule.Enabled && rule.RuleType != ERuleType.DNS
+        && rule.Domain is not { Count: > 0 } && rule.Ip is not { Count: > 0 } && rule.Process is not { Count: > 0 }
+        && rule.Protocol is not { Count: > 0 } && rule.InboundTag is not { Count: > 0 }
+        && (rule.Network.IsNullOrEmpty() || rule.Network.Replace(" ", string.Empty) is "tcp,udp" or "udp,tcp")
+        && (rule.Port.IsNullOrEmpty() || rule.Port.Trim() is "0-65535" or "1-65535");
 
     /// <summary>The name of a partner's mode: "Kestrel routes" / «Маршруты Kestrel».</summary>
     public static string Title(string partnerName) => string.Format(ResUI.V2pnPartnerRoutesName, partnerName);
@@ -50,10 +64,19 @@ public static class V2pnPartnerRoutes
             }
             var id = Id(partner.Id);
             wanted.Add(id);
-            var rules = preset.ToRules();
-            var ruleSet = JsonUtils.Serialize(rules, false);
+            var presetRules = preset.ToRules();
+            for (var i = 0; i < presetRules.Count; i++)
+            {
+                presetRules[i].Id = RuleIdPrefix + i;
+            }
             var item = existing.FirstOrDefault(t => t.Id == id);
-            if (item != null && item.Remarks == Title(partner.Name) && item.DomainStrategy == preset.DomainStrategy && SameRules(item.RuleSet, ruleSet))
+            // Rules the person added to the preset in the routing editor stay, and stay first: the person's own rules win.
+            var own = (JsonUtils.Deserialize<List<RulesItem>>(item?.RuleSet ?? string.Empty) ?? [])
+                .Where(r => r.Id?.StartsWith(RuleIdPrefix, StringComparison.Ordinal) != true && !presetRules.Any(p => SameRule(p, r)))
+                .ToList();
+            var rules = own.Concat(presetRules).ToList();
+            var ruleSet = JsonUtils.Serialize(rules, false);
+            if (item != null && item.Remarks == Title(partner.Name) && item.DomainStrategy == preset.DomainStrategy && item.RuleSet == ruleSet)
             {
                 continue;
             }
@@ -88,8 +111,8 @@ public static class V2pnPartnerRoutes
         var changes = Plan(existing, partners);
         foreach (var item in changes.Upserts)
         {
-            // Rule ids are generated here, as for any routing item.
-            await ConfigHandler.AddBatchRoutingRules(item, item.RuleSet);
+            // Saved as planned: the preset's rule ids tell its rules from the person's.
+            await ConfigHandler.SaveRoutingItem(config, item);
         }
         foreach (var item in changes.Deletes)
         {
@@ -103,17 +126,12 @@ public static class V2pnPartnerRoutes
         return changes;
     }
 
-    // Stored rules carry generated ids; compare what they do.
-    private static bool SameRules(string? stored, string fresh)
+    // What a rule does, whatever its id (a preset saved by an earlier build carries generated ids).
+    private static bool SameRule(RulesItem a, RulesItem b)
     {
-        var a = JsonUtils.Deserialize<List<RulesItem>>(stored ?? string.Empty);
-        var b = JsonUtils.Deserialize<List<RulesItem>>(fresh);
-        if (a == null || b == null)
-        {
-            return false;
-        }
-        a.ForEach(r => r.Id = null!);
-        b.ForEach(r => r.Id = null!);
-        return JsonUtils.Serialize(a, false) == JsonUtils.Serialize(b, false);
+        var x = JsonUtils.DeepCopy(a)!;
+        var y = JsonUtils.DeepCopy(b)!;
+        x.Id = y.Id = string.Empty;
+        return JsonUtils.Serialize(x, false) == JsonUtils.Serialize(y, false);
     }
 }

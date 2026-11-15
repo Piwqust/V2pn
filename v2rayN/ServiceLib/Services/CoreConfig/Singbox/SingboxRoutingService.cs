@@ -262,7 +262,8 @@ public partial class CoreConfigSingboxService
             }
 
             var ipRules = new List<RulesItem>();
-            // V2pn: the connected partner's core.json rules go after pinned programs, before the person's routing.
+            // V2pn: the connected partner's core.json rules go after the person's own rules (pinned programs
+            // included), right before the routing's catch-all default, so the person's choices always win.
             var partnerRules = BuildV2pnPartnerRules();
             void AddPartnerRules()
             {
@@ -281,7 +282,7 @@ public partial class CoreConfigSingboxService
                     {
                         continue;
                     }
-                    if (item1.Id?.StartsWith("v2pn-pin-", StringComparison.Ordinal) != true)
+                    if (V2pnPartnerRoutes.IsCatchAll(item1))
                     {
                         AddPartnerRules();
                     }

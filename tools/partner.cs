@@ -430,7 +430,7 @@ static void ReviewCore(V2pnCoreFragment core)
     for (var i = 0; i < core.Rules.Count; i++)
     {
         var rule = core.Rules[i];
-        Console.WriteLine($"  rule {i + 1}: go to {rule.To} (before the person's own routing)");
+        Console.WriteLine($"  rule {i + 1}: go to {rule.To} (after the person's own rules, before the mode's catch-all)");
         Entries(rule.Domains.Concat(rule.Ips), rule.To);
     }
     if (core.AllowTop.Count > 0)
@@ -441,7 +441,7 @@ static void ReviewCore(V2pnCoreFragment core)
     {
         Console.WriteLine($"  the computer connects to: {string.Join(", ", hosts.Distinct())}");
     }
-    Console.WriteLine("  To decide by hand: only what the request describes; rules do not take sites the person sends direct to the provider.");
+    Console.WriteLine("  To decide by hand: only what the request describes (the person's own rules always come before these).");
 }
 
 // The repository this script lives in: partners/ is kept there.

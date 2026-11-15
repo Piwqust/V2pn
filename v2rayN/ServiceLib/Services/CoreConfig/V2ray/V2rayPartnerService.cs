@@ -26,7 +26,7 @@ public partial class CoreConfigV2rayService
 
     /// <summary>
     /// The rules of the partner whose server is connected, with its balancers and their observatories added to the
-    /// config; they go after the pinned programs and before the person's routing.
+    /// config; they go after the person's own rules and before the routing's catch-all default.
     /// </summary>
     private List<RulesItem> BuildV2pnPartnerRules()
     {

@@ -20,6 +20,7 @@ public sealed class ThemeScene : EditionScene
     private readonly bool _grouped;
     private readonly Bitmap? _backdrop;
     private readonly FontFamily _font;
+    private readonly bool _actionsOnGlass;
 
     private readonly TextBlock _pillText = new();
     private readonly Border _pill;
@@ -80,7 +81,10 @@ public sealed class ThemeScene : EditionScene
 
         var heroInk = _onArea ? _c.Area.Ink : _c.Ink;
         var heroSoft = _onArea ? _c.Area.Soft : _c.Soft;
-        var control = _onArea ? _c.Area.Glass : _c.Raised;
+        // In the half template a picture background never shows under the controls: they stand on a glass card there,
+        // and their own fills are opaque on it.
+        _actionsOnGlass = theme.Template == V2pnThemeTemplates.Half && _backdrop != null && _c.Area.Scrim != null;
+        var control = _onArea && !_actionsOnGlass ? _c.Area.Glass : _c.Raised;
 
         _pill = Scene.Pill(_pillText, light: !_c.Dark);
         _pillChip = new Border { Background = Scene.B(_c.Surface), CornerRadius = new CornerRadius(999), Child = _pill, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center };
@@ -427,6 +431,16 @@ public sealed class ThemeScene : EditionScene
 
     private Control Area(Control content, CornerRadius radius = default) => ThemeKit.Area(_c.Area, _backdrop, content, radius);
 
+    /// <summary>The controls as they are, or on a glass card where the area behind them is a picture.</summary>
+    private Control ActionCard(Control actions) => !_actionsOnGlass ? actions : new Border
+    {
+        Background = Scene.B(_c.Area.Glass),
+        CornerRadius = Look.R(20),
+        Padding = Pad(16, 16),
+        Child = actions,
+        VerticalAlignment = actions.VerticalAlignment,
+    };
+
     // ------------------------------------------------------------------ layouts
 
     protected override void Reflow(Fit fit)
@@ -525,9 +539,8 @@ public sealed class ThemeScene : EditionScene
             var top = new StackPanel { Spacing = 14 * _d, Margin = new Thickness(18, 16, 18, 20) };
             top.Children.Add(TopRow(brand: true, change: false));
             top.Children.Add(Take(_place));
-            top.Children.Add(Take(_connect));
-            top.Children.Add(Controls(stacked: true));
             top.Children.Add(Take(_stats));
+            top.Children.Add(ActionCard(new StackPanel { Spacing = 12, Children = { Take(_connect), Controls(stacked: true) } }));
             var parts = new List<Control?> { Area(top), Take(_foreignCard) };
             parts.AddRange(BlockCards());
             parts.Add(Links(onArea: false));
@@ -553,7 +566,7 @@ public sealed class ThemeScene : EditionScene
             art.VerticalAlignment = VerticalAlignment.Center;
             ServerBrowser.Put(band, art, 0, 1);
         }
-        ServerBrowser.Put(band, act, 0, 2);
+        ServerBrowser.Put(band, ActionCard(act), 0, 2);
 
         var others = AnyVisible(_ => true) || _foreign.IsVisible;
         var low = new Grid { Margin = new Thickness(16), ColumnSpacing = 14 };

@@ -107,6 +107,7 @@ public sealed class DebugWindow : Window
                 Action("подписки нет", () => Gone(V2pnPartnerGone.Unlinked)),
                 Action("срок истёк", () => Gone(V2pnPartnerGone.Expired)),
                 Action("отозван", () => Gone(V2pnPartnerGone.Revoked))),
+            Row("Тема провайдера с нуля, без сертификата", Action(L.BuilderMenu, () => _main.OpenThemeBuilder(Directory.Exists(_themeFolder.Text?.Trim()) ? _themeFolder.Text!.Trim() : null))),
             Row("Проверки",
                 Action("Перепроверить партнёров", () => _ = V2pnPartners.Instance.PruneAsync()),
                 Action("Обновить подписки (и пакеты)", _main.DebugUpdateSubscriptions),

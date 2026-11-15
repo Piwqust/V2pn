@@ -1,3 +1,4 @@
+using Avalonia.Automation;
 using DialogHostAvalonia;
 using v2rayN.Desktop.Common;
 
@@ -9,6 +10,8 @@ public partial class MainWindow
 {
     private DebugWindow? _debugWindow;
     private MenuItem? _menuDebug;
+    private ThemeBuilderWindow? _builderWindow;
+    private MenuItem? _menuBuilder;
 
     private void InitDebug()
     {
@@ -18,10 +21,21 @@ public partial class MainWindow
         {
             _menuDebug = new MenuItem { Header = "Отладка…", InputGesture = new KeyGesture(Key.D, modifiers), IsVisible = false };
             _menuDebug.Click += (_, _) => OpenDebugWindow();
+            _menuBuilder = new MenuItem { Header = L.BuilderMenu, IsVisible = false };
+            _menuBuilder.Click += (_, _) => OpenThemeBuilder();
             var at = menu.Items.IndexOf(menuClose);
             menu.Items.Insert(Math.Max(0, at - 1), _menuDebug);
+            menu.Items.Insert(Math.Max(0, at - 1), _menuBuilder);
             // Developer mode can be switched on while V2pn runs (About → updates).
-            menu.Opening += (_, _) => _menuDebug.IsVisible = V2pnPartnerTrust.DebugAllowed;
+            menu.Opening += (_, _) => _menuDebug.IsVisible = _menuBuilder.IsVisible = V2pnPartnerTrust.DebugAllowed;
+        }
+        btnPreview.Click += (_, _) => Editions.ClosePreview();
+        ToolTip.SetTip(btnPreview, L.BuilderPreviewHint + " " + L.BuilderRemovePreview + ".");
+        AutomationProperties.SetName(btnPreview, L.BuilderRemovePreview);
+        // V2PN_BUILDER opens the theme builder with the window, with that pack folder when it names one (scripted checks).
+        if (Environment.GetEnvironmentVariable("V2PN_BUILDER") is { Length: > 0 } builder)
+        {
+            Opened += (_, _) => Dispatcher.UIThread.Post(() => OpenThemeBuilder(Directory.Exists(builder) ? builder : null), DispatcherPriority.Background);
         }
         // V2PN_DEBUG=1 opens it with the window, for scripted checks (tools/sandbox.ps1 passes the environment on).
         if (Environment.GetEnvironmentVariable("V2PN_DEBUG") == "1")
@@ -53,6 +67,24 @@ public partial class MainWindow
         _debugWindow = new DebugWindow(this);
         _debugWindow.Closed += (_, _) => _debugWindow = null;
         _debugWindow.Show(this);
+    }
+
+    /// <summary>The theme builder (developer mode only): a provider's theme from nothing to a signed pack and a certificate request.</summary>
+    internal void OpenThemeBuilder(string? folder = null)
+    {
+        if (!V2pnPartnerTrust.DebugAllowed)
+        {
+            return;
+        }
+        if (_builderWindow is { IsVisible: true })
+        {
+            // Asked for by the person: bringing it forward is the point.
+            _builderWindow.Activate();
+            return;
+        }
+        _builderWindow = new ThemeBuilderWindow(this, folder);
+        _builderWindow.Closed += (_, _) => _builderWindow = null;
+        _builderWindow.Show();
     }
 
     internal void DebugToast(ToastKind kind, string text) => ShowToast(kind, text);

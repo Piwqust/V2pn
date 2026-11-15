@@ -329,18 +329,28 @@ public partial class MainWindow : IEditionActions
     /// </summary>
     private void MaybeShowPartnerIntro()
     {
-        if (!IsVisible || WindowState == WindowState.Minimized || OnboardingShown || DialogHost.IsDialogOpen(null))
+        if (Editions.DueIntro() is not { } partner)
         {
             return;
         }
-        if (Editions.DueIntro() is not { } partner)
+        if (!IsVisible || WindowState == WindowState.Minimized || OnboardingShown || DialogHost.IsDialogOpen(null))
         {
+            // Something is in the way (the walkthrough, a dialog, the tray): look again in a few seconds.
+            _introRetry ??= new DispatcherTimer(TimeSpan.FromSeconds(3), DispatcherPriority.Background, (_, _) =>
+            {
+                _introRetry?.Stop();
+                _introRetry = null;
+                MaybeShowPartnerIntro();
+            });
+            _introRetry.Start();
             return;
         }
         // Once, however the dialog is closed (a button, Esc or a click outside).
         Editions.MarkIntroduced(partner.Id);
         _ = DialogHost.Show(new PartnerIntroView(partner));
     }
+
+    private DispatcherTimer? _introRetry;
 
     private static TextBlock Chevron() => new() { Text = "▾", FontSize = 11, Opacity = 0.55, VerticalAlignment = VerticalAlignment.Center };
 

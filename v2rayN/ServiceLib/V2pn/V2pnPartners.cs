@@ -262,11 +262,15 @@ public sealed class V2pnPartners
             await File.WriteAllTextAsync(Path.Combine(staging, SourceFile), partnerUrl, cancellationToken);
 
             var target = Path.Combine(root, cert.Partner);
-            if (Directory.Exists(target))
+            // A virus scanner opens files just written; Windows then refuses the delete or the move for a moment.
+            await RetryAsync(() =>
             {
-                Directory.Delete(target, true);
-            }
-            Directory.Move(staging, target);
+                if (Directory.Exists(target))
+                {
+                    Directory.Delete(target, true);
+                }
+                Directory.Move(staging, target);
+            }, cancellationToken);
             return new V2pnPartner(cert, pack, target, partnerUrl, features);
         }
         finally
@@ -422,6 +426,126 @@ public sealed class V2pnPartners
 
     public bool IsDebug(string? id) => id != null && _debugIds.ContainsKey(id);
 
+    /// <summary>
+    /// The id of the theme builder's preview. A certificate's id never has a dot, so no real partner can be it.
+    /// </summary>
+    public const string PreviewId = "builder.preview";
+
+    private string? _previewFolder;
+
+    public static bool IsPreview(string? id) => id == PreviewId;
+
+    /// <summary>
+    /// Developer mode only (V2pnPartnerTrust.DebugAllowed): the unsigned pack in <paramref name="folder"/> (partner.json and its
+    /// pictures, as the theme builder saves them) worn by this running V2pn as a preview. It is read with a real pack's checks
+    /// from a copy in the temp folder, never written to the partners' folder, never pruned, and gone when V2pn closes or
+    /// <see cref="RemovePreview"/> is called. Null with the reason when the pack cannot be read.
+    /// </summary>
+    public V2pnPartner? SetPreview(string folder, out string error)
+    {
+        if (!V2pnPartnerTrust.DebugAllowed)
+        {
+            error = "The preview is there in developer mode only.";
+            return null;
+        }
+        var copy = Path.Combine(Path.GetTempPath(), "v2pn-preview-" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(copy);
+            foreach (var name in V2pnPackWriter.Files(folder).Append(V2pnPackWriter.PackFile))
+            {
+                File.Copy(Path.Combine(folder, name), Path.Combine(copy, name), true);
+            }
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            DeleteQuietly(copy);
+            error = ex.Message;
+            return null;
+        }
+        var partner = ReadUnsigned(copy, PreviewId, Today(), out _, out error);
+        if (partner == null)
+        {
+            DeleteQuietly(copy);
+            return null;
+        }
+        var old = _previewFolder;
+        _previewFolder = copy;
+        _debugIds[PreviewId] = 0;
+        _partners[PreviewId] = partner;
+        if (old != null)
+        {
+            DeleteQuietly(old);
+        }
+        Changed?.Invoke();
+        return partner;
+    }
+
+    /// <summary>Takes the theme builder's preview away; nothing of it stays.</summary>
+    public void RemovePreview()
+    {
+        var had = _partners.TryRemove(PreviewId, out _);
+        _debugIds.TryRemove(PreviewId, out _);
+        foreach (var sub in _debugSubs.Where(s => s.Value == PreviewId).Select(s => s.Key).ToList())
+        {
+            _debugSubs.TryRemove(sub, out _);
+        }
+        if (_previewFolder != null)
+        {
+            DeleteQuietly(_previewFolder);
+            _previewFolder = null;
+        }
+        if (had)
+        {
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>
+    /// The unsigned pack in <paramref name="folder"/> as partner <paramref name="partnerId"/> under a made-up certificate with the
+    /// edition, account and actions grants for the domains its links name: what the theme builder draws and previews. Its
+    /// "assets" are taken from the folder as tools/partner.cs pack would write them; pictures are fitted to their slots.
+    /// </summary>
+    public static V2pnPartner? ReadUnsigned(string folder, string partnerId, DateOnly today, out IReadOnlyList<string> slotNotes, out string error)
+    {
+        slotNotes = [];
+        if (V2pnPackWriter.Read(folder, out error) is not { } root)
+        {
+            return null;
+        }
+        try
+        {
+            root["id"] = partnerId;
+            // A name still being typed draws as "Provider" rather than taking the preview away.
+            var name = V2pnPartnerTrust.ValidName(root["name"] is JsonValue v && v.TryGetValue<string>(out var text) ? text : null) ?? "Provider";
+            root["name"] = name;
+            var json = V2pnPackWriter.Bytes(root, folder);
+            var domains = new List<string> { "localhost" };
+            foreach (var url in new[] { root["links"]?["cabinet"], root["links"]?["support"], root["api"] }
+                         .Concat((root["actions"] as JsonArray)?.Select(a => a?["url"]) ?? []))
+            {
+                if (url is JsonValue value && value.TryGetValue<string>(out var link) && Utils.TryUri(link) is { } uri && uri.IdnHost.Length > 0)
+                {
+                    domains.Add(uri.IdnHost.TrimEnd('.').ToLowerInvariant());
+                }
+            }
+            var cert = new V2pnPartnerCert(partnerId, name, domains.Distinct().ToList(), string.Empty,
+                [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account, V2pnPartnerGrants.Actions], today, today.AddYears(1));
+            var pack = V2pnPartnerTrust.ReadUnsignedPack(json, cert, out error);
+            if (pack == null)
+            {
+                return null;
+            }
+            pack = V2pnPartnerSlots.Fit(pack, file => ReadOrNull(folder, file), out slotNotes);
+            return new V2pnPartner(cert, pack, folder, "preview://" + partnerId + "/");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
+        {
+            error = ex.Message;
+            return null;
+        }
+    }
+
     /// <summary>Debug only: drops a made-up partner, as if <paramref name="why"/> happened (the look closes with its note).</summary>
     public void RemoveDebugPartner(string id, V2pnPartnerGone why)
     {
@@ -546,6 +670,22 @@ public sealed class V2pnPartners
             result = await V2pnHttp.GetAsync(url, proxy, V2pnPartnerTrust.MaxAssetBytes, cancellationToken);
         }
         return result;
+    }
+
+    private static async Task RetryAsync(Action act, CancellationToken cancellationToken)
+    {
+        for (var attempt = 1; ; attempt++)
+        {
+            try
+            {
+                act();
+                return;
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException && attempt < 10)
+            {
+                await Task.Delay(50 * attempt, cancellationToken);
+            }
+        }
     }
 
     private static void DeleteQuietly(string dir)

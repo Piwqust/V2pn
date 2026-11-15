@@ -41,6 +41,42 @@ public static class V2pnPartnerSlots
         _ => null,
     };
 
+    /// <summary>Every slot a pack has, by the name the theme builder and partner-check use.</summary>
+    public static readonly IReadOnlyList<Slot> All = [Logo, Mark, Art, Hero, Banner, Backdrop];
+
+    public static Slot? ByName(string name) => All.FirstOrDefault(s => s.Name == name);
+
+    /// <summary>Why a picture cannot go into a slot (the theme builder says it at once, before anything is saved).</summary>
+    public enum Problem
+    {
+        None,
+
+        /// <summary>Larger than V2pn takes for one picture (1 MB).</summary>
+        TooLarge,
+
+        /// <summary>Not a PNG, JPEG or WebP whose size V2pn can read.</summary>
+        NotPicture,
+
+        /// <summary>Its width and height do not fit the slot.</summary>
+        WrongSize,
+    }
+
+    /// <summary>Whether <paramref name="content"/> may go into <paramref name="slot"/>, with its size when V2pn could read it.</summary>
+    public static (Problem Problem, int Width, int Height) Check(Slot slot, byte[] content)
+    {
+        var size = ImageSize(content);
+        var (width, height) = size ?? (0, 0);
+        if (content.LongLength > V2pnPartnerTrust.MaxAssetBytes)
+        {
+            return (Problem.TooLarge, width, height);
+        }
+        if (size == null || width <= 0 || height <= 0)
+        {
+            return (Problem.NotPicture, 0, 0);
+        }
+        return (slot.Fits(width, height) ? Problem.None : Problem.WrongSize, width, height);
+    }
+
     /// <summary>
     /// The pack with every picture that does not fit its slot taken out of that slot, and why, one line each.
     /// A picture whose size cannot be read counts as not fitting.

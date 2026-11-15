@@ -11,6 +11,8 @@ This page is for the provider's developers. It describes what to serve, how it i
 | | Any panel | Partner (certificate from V2pn) |
 | --- | --- | --- |
 | Subscription name, traffic, term, announcement, support and cabinet buttons (standard headers) | yes | yes |
+| Banners, the renewal reminder, connecting at start, server order, updating and testing at start (Happ, INCY and v2RayTun headers) | yes | yes |
+| Moving the subscription to another of your domains (`new-url`, `new-domain`) | no | yes |
 | `v2pn://add` links from the provider's site or bot | yes | yes, and V2pn says the provider is a confirmed partner |
 | The provider's mark on its subscription in V2pn's list | no | yes |
 | The provider's look of V2pn (five looks, the provider's colour) | no | yes, with the `edition` grant |
@@ -143,6 +145,70 @@ When a subscription answers with a whole Xray, sing-box or Clash config instead 
 - Xray reverse, and sing-box tor and tailscale.
 
 V2pn does not run a config for other cores from a subscription. Server links are the simplest thing to send.
+
+### Headers of Happ, INCY and v2RayTun
+
+V2pn also reads the headers that providers already send to Happ, INCY and v2RayTun, so a panel set up for them works in V2pn with no changes. These work for any subscription, without a certificate, except moving a subscription. Header names are case-insensitive. Text may be plain or `base64:<UTF-8 in base64>` (use base64 for Cyrillic). Links must be `https:` or `tg:`; any other link is dropped.
+
+| Header | What V2pn does |
+| --- | --- |
+| `announce-url` | a "More" button under the announcement (`announce`) |
+| `sub-info-text`, `sub-info-color`, `sub-info-button-text`, `sub-info-button-link` (Happ) | a banner under the subscription in the list, above its servers, in the subscription window and in your look: up to 200 characters, a button up to 25. `red`, `blue` or `green` pick V2pn's own red, blue or green; anything else is blue. `sub-info-text: 0` removes the banner. |
+| `banner-text`, `banner-button-text`, `banner-button-url` or `banner-url`, `premium-url` (INCY) | the same banner when Happ's is not sent. The button leads to `banner-button-url`, else `banner-url`, else `premium-url`. INCY's colours (`banner-bg-color` and the rest) are ignored. |
+| `sub-expire`, `sub-expire-button-link` (Happ); `expiry-banner-text`, `expiry-banner-button-text`, `expiry-banner-button-url` or `expiry-banner-url` (INCY) | the renewal reminder, shown in place of the banner from 3 days before the end in `subscription-userinfo` and after it. Your text when you send `expiry-banner-text`, else V2pn's: "Your subscription ends in 2 days", "Your subscription has ended". The "Renew" button leads to your renewal link, else `profile-web-page-url`, else there is no button. V2pn shows the reminder without `sub-expire` too; `sub-expire: 0` turns it off. |
+| `subscription-autoconnect: 1`, `subscription-autoconnect-type: lastused`, `lowestdelay` or `random` | connects when V2pn starts switched off: to the last server used from this subscription, to the fastest one (V2pn tests them first and takes the quickest that answers), or to a random one. It applies when the chosen server is from this subscription, or when none is chosen and this is the first subscription. A V2pn left connected connects as before, and a server the person added by hand stays their choice. The person can turn it off for the subscription. |
+| `subscriptions-sort-type: ping`, `alphabet` or `without` (Happ); `sort-order: ping`, `name` or `none` (INCY) | the order of this subscription's servers: fastest first, by name, or as you send them. The person can pick another order. |
+| `subscription-ping-onopen-enabled: 1` | tests this subscription's servers when V2pn starts |
+| `update-always: true` (v2RayTun), `subscription-auto-update-open-enable: 1` (Happ) | updates this subscription when V2pn starts. Only this one: Happ updates every subscription. |
+| `new-url`, `new-domain` | moves the subscription to a new address, only for a V2pn partner whose certificate names the new host, and only in HTTP headers of a response with servers. https only; `new-url` wins over `new-domain`, and a bad `new-url` does not fall back to it; `new-domain` keeps the port, path and query; a move to the same host or to an address another subscription has is ignored. Without a certificate the headers are ignored: otherwise anyone answering on the old address could take the subscription away. The person's log says where it moved. |
+| `ping-type`, `check-url-via-proxy` | read and kept, not used yet: V2pn tests every server through the server itself, to the test address the person set |
+| `hide-settings`, `hide-url` | read and kept; they will apply only to partners with the `lock` grant |
+
+**In the body.** As Happ and INCY do, V2pn reads `#key: value` lines at the top of a subscription that is a list of links, plain or base64:
+
+```
+#profile-title: base64:S2VzdHJlbCBWUE4=
+#sub-info-text: base64:0KHQutC40LTQutCwIDMwJSDQvdCwINCz0L7QtCDQtNC+INC/0Y/RgtC90LjRhtGL
+#subscription-autoconnect: 1
+vless://…
+```
+
+A header wins over the same key in the body. Only from headers: `new-url`, `new-domain`, the INCY banners and the V2pn headers. A whole Xray, sing-box or Clash config has no body metadata.
+
+**Not taken.** `routing`, fragmentation, noise, fronting and other settings that change traffic: they need V2pn's manual review (they will come as separate grants). Colour profiles, `change-user-agent` and the rest of the app settings of other clients are ignored.
+
+**V2pn's User-Agent.** V2pn downloads a subscription as `v2rayN/7.25.6 V2pn/1.0.3`: v2rayN's agent first, because panels pick the format by it and V2pn reads the same formats, then V2pn's own name and version. A subscription that the person gave its own User-Agent sends that one instead.
+
+**A Remnawave response rule.** Rules are checked from the top and the first match wins, so put this one above the rules that match `v2rayN`. Leave out `v2pn-partner` if you are not a V2pn partner; `v2pn-account-token` is per person and comes from your panel, not from a rule.
+
+```json
+{
+  "name": "V2pn",
+  "description": "Banners and defaults for V2pn",
+  "enabled": true,
+  "operator": "AND",
+  "conditions": [
+    { "headerName": "user-agent", "operator": "CONTAINS", "value": "v2pn", "caseSensitive": false }
+  ],
+  "responseType": "XRAY_BASE64",
+  "responseModifications": {
+    "applyHeadersToEnd": true,
+    "headers": [
+      { "key": "v2pn-partner", "value": "https://example.com/v2pn/" },
+      { "key": "announce-url", "value": "https://example.com/news" },
+      { "key": "sub-info-text", "value": "base64:RGlzY291bnQ6IDMwJSBvZmYgYSB5ZWFyIHVudGlsIEZyaWRheQ==" },
+      { "key": "sub-info-color", "value": "green" },
+      { "key": "sub-info-button-text", "value": "base64:QnV5" },
+      { "key": "sub-info-button-link", "value": "https://t.me/example_bot" },
+      { "key": "sub-expire", "value": "1" },
+      { "key": "sub-expire-button-link", "value": "https://example.com/renew" },
+      { "key": "subscription-autoconnect", "value": "1" },
+      { "key": "subscription-autoconnect-type", "value": "lowestdelay" },
+      { "key": "subscriptions-sort-type", "value": "ping" }
+    ]
+  }
+}
+```
 
 ## 4. Links
 

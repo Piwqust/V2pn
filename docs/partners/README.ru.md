@@ -11,6 +11,8 @@ VPN-провайдер может оформить V2pn для людей со �
 | | Любая панель | Партнёр (сертификат от V2pn) |
 | --- | --- | --- |
 | Название подписки, трафик, срок, объявление, кнопки поддержки и кабинета (стандартные заголовки) | да | да |
+| Баннеры, напоминание о продлении, подключение при запуске, порядок серверов, обновление и проверка при запуске (заголовки Happ, INCY и v2RayTun) | да | да |
+| Переезд подписки на другой ваш домен (`new-url`, `new-domain`) | нет | да |
 | Ссылки `v2pn://add` с сайта или из бота провайдера | да | да, и V2pn пишет, что провайдер — подтверждённый партнёр |
 | Знак провайдера на его подписке в списке V2pn | нет | да |
 | Оформление V2pn провайдера (пять видов, цвет провайдера) | нет | да, с правом `edition` |
@@ -143,6 +145,70 @@ dotnet run tools/partner.cs -- pack <папка пакета> --key provider-key
 - reverse в Xray, а в sing-box — tor и tailscale.
 
 Конфиг для других ядер V2pn из подписки не запускает. Проще всего отдавать V2pn ссылки на серверы.
+
+### Заголовки Happ, INCY и v2RayTun
+
+V2pn читает и те заголовки, которые провайдеры уже отдают для Happ, INCY и v2RayTun, так что панель, настроенная под них, работает в V2pn без изменений. Всё это работает для любой подписки без сертификата, кроме переезда подписки. Регистр в именах заголовков не важен. Текст можно отдавать как есть или как `base64:<UTF-8 в base64>` (кириллицу — только так). Ссылки — только `https:` и `tg:`, остальные V2pn отбрасывает.
+
+| Заголовок | Что делает V2pn |
+| --- | --- |
+| `announce-url` | кнопка «Подробнее» под объявлением (`announce`) |
+| `sub-info-text`, `sub-info-color`, `sub-info-button-text`, `sub-info-button-link` (Happ) | баннер под подпиской в списке, над её серверами, в окне подписки и в вашем оформлении: до 200 символов, кнопка до 25. `red`, `blue` и `green` выбирают красный, синий или зелёный из цветов V2pn, всё остальное — синий. `sub-info-text: 0` убирает баннер. |
+| `banner-text`, `banner-button-text`, `banner-button-url` или `banner-url`, `premium-url` (INCY) | тот же баннер, если баннера Happ нет. Кнопка ведёт на `banner-button-url`, иначе на `banner-url`, иначе на `premium-url`. Цвета INCY (`banner-bg-color` и другие) V2pn не берёт. |
+| `sub-expire`, `sub-expire-button-link` (Happ); `expiry-banner-text`, `expiry-banner-button-text`, `expiry-banner-button-url` или `expiry-banner-url` (INCY) | напоминание о продлении вместо баннера: за 3 дня до конца срока из `subscription-userinfo` и после него. Ваш текст, если вы отдаёте `expiry-banner-text`, иначе текст V2pn: «Подписка закончится через 2 дн.», «Подписка закончилась». Кнопка «Продлить» ведёт на вашу ссылку продления, иначе на `profile-web-page-url`, иначе кнопки нет. V2pn показывает напоминание и без `sub-expire`; `sub-expire: 0` его выключает. |
+| `subscription-autoconnect: 1`, `subscription-autoconnect-type: lastused`, `lowestdelay` или `random` | подключение, когда V2pn запускается выключенным: к последнему серверу этой подписки, к самому быстрому (V2pn сначала проверяет серверы и берёт самый быстрый из ответивших) или к случайному. Работает, если выбранный сервер из этой подписки или сервер не выбран и подписка первая в списке. V2pn, который оставили подключённым, подключается как раньше, а сервер, добавленный человеком вручную, остаётся его выбором. Человек может выключить это для подписки. |
+| `subscriptions-sort-type: ping`, `alphabet` или `without` (Happ); `sort-order: ping`, `name` или `none` (INCY) | порядок серверов этой подписки: быстрые сверху, по имени или как вы их отдаёте. Человек может выбрать другой. |
+| `subscription-ping-onopen-enabled: 1` | проверка серверов этой подписки при запуске V2pn |
+| `update-always: true` (v2RayTun), `subscription-auto-update-open-enable: 1` (Happ) | обновление этой подписки при запуске V2pn. Только этой: Happ обновляет все. |
+| `new-url`, `new-domain` | переезд подписки на новый адрес. Только для партнёра V2pn, в сертификате которого есть новый домен, и только в HTTP-заголовках ответа с серверами. Только https; `new-url` важнее `new-domain`, и при ошибке в `new-url` V2pn не переходит к `new-domain`; `new-domain` сохраняет порт, путь и параметры; переезд на тот же домен или на адрес другой подписки V2pn пропускает. Без сертификата заголовки не действуют: иначе подписку мог бы увести любой, кто отвечает по старому адресу. В журнале человек видит, куда переехала подписка. |
+| `ping-type`, `check-url-via-proxy` | V2pn их читает и хранит, но пока не применяет: он проверяет каждый сервер через сам сервер по адресу проверки, который выбрал человек |
+| `hide-settings`, `hide-url` | V2pn их читает и хранит; действовать они будут только для партнёров с правом `lock` |
+
+**В теле подписки.** Как Happ и INCY, V2pn читает строки `#ключ: значение` в начале подписки, которая отдаёт список ссылок, обычным текстом или в base64:
+
+```
+#profile-title: base64:S2VzdHJlbCBWUE4=
+#sub-info-text: base64:0KHQutC40LTQutCwIDMwJSDQvdCwINCz0L7QtCDQtNC+INC/0Y/RgtC90LjRhtGL
+#subscription-autoconnect: 1
+vless://…
+```
+
+Заголовок важнее той же строки в теле. Только из заголовков: `new-url`, `new-domain`, баннеры INCY и заголовки V2pn. В полном конфиге Xray, sing-box или Clash таких строк V2pn не ищет.
+
+**Что V2pn не берёт.** `routing`, фрагментацию, шум, fronting и другие настройки, которые меняют трафик: им нужна ручная проверка V2pn, они появятся отдельными правами. Цветовые профили, `change-user-agent` и остальные настройки чужих приложений V2pn пропускает.
+
+**User-Agent V2pn.** V2pn скачивает подписку с User-Agent `v2rayN/7.25.6 V2pn/1.0.3`: сначала агент v2rayN, потому что по нему панели выбирают формат, а V2pn читает те же форматы, потом имя и версия V2pn. Если человек задал подписке свой User-Agent, уходит он.
+
+**Правило ответа в Remnawave.** Правила проверяются сверху вниз до первого совпадения, поэтому ставьте это правило выше правил для `v2rayN`. Если вы не партнёр V2pn, уберите `v2pn-partner`. `v2pn-account-token` у каждого человека свой, его отдаёт панель, а не правило.
+
+```json
+{
+  "name": "V2pn",
+  "description": "Баннеры и настройки для V2pn",
+  "enabled": true,
+  "operator": "AND",
+  "conditions": [
+    { "headerName": "user-agent", "operator": "CONTAINS", "value": "v2pn", "caseSensitive": false }
+  ],
+  "responseType": "XRAY_BASE64",
+  "responseModifications": {
+    "applyHeadersToEnd": true,
+    "headers": [
+      { "key": "v2pn-partner", "value": "https://example.com/v2pn/" },
+      { "key": "announce-url", "value": "https://example.com/news" },
+      { "key": "sub-info-text", "value": "base64:0KHQutC40LTQutCwIDMwJSDQvdCwINCz0L7QtCDQtNC+INC/0Y/RgtC90LjRhtGL" },
+      { "key": "sub-info-color", "value": "green" },
+      { "key": "sub-info-button-text", "value": "base64:0JrRg9C/0LjRgtGM" },
+      { "key": "sub-info-button-link", "value": "https://t.me/example_bot" },
+      { "key": "sub-expire", "value": "1" },
+      { "key": "sub-expire-button-link", "value": "https://example.com/renew" },
+      { "key": "subscription-autoconnect", "value": "1" },
+      { "key": "subscription-autoconnect-type", "value": "lowestdelay" },
+      { "key": "subscriptions-sort-type", "value": "ping" }
+    ]
+  }
+}
+```
 
 ## 4. Ссылки
 

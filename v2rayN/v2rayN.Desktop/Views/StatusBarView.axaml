@@ -83,6 +83,20 @@
                             <TextBlock x:Name="txtFindWorking" VerticalAlignment="Center" />
                         </StackPanel>
                     </Button>
+                    <!--  Everything about the address sites see, 2ip-style; asked only on a click.  -->
+                    <Button
+                        x:Name="btnIpInfo"
+                        Classes="ghost tiny"
+                        Theme="{StaticResource V2Button}"
+                        ToolTip.Tip="{x:Static loc:L.IpButtonTip}">
+                        <StackPanel Orientation="Horizontal" Spacing="5">
+                            <PathIcon Classes="i12" Data="{StaticResource SemiIconGlobeStroke}" />
+                            <TextBlock
+                                x:Name="txtIpInfo"
+                                VerticalAlignment="Center"
+                                Text="{x:Static loc:L.IpButton}" />
+                        </StackPanel>
+                    </Button>
                     <Button
                         x:Name="btnCheck"
                         Classes="ghost tiny"

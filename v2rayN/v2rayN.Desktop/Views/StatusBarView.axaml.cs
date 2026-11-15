@@ -48,6 +48,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         _config = AppManager.Instance.Config;
         btnCheck.Click += (_, _) => _ = CheckConnectionAsync();
         Avalonia.Automation.AutomationProperties.SetName(btnCheck, L.CheckConnection);
+        btnIpInfo.Click += (_, _) => _ = MainWindow.ShowRoomyDialog(new IpInfoView());
+        Avalonia.Automation.AutomationProperties.SetName(btnIpInfo, L.IpButtonTip);
         btnFindWorking.Click += (_, _) =>
         {
             if (_findProgress == null)
@@ -355,6 +357,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         // Both labels don't fit the header at the minimum width in Russian; Check keeps its icon, tooltip and name.
         // A compact card keeps only the icon too.
         txtCheckAction.IsVisible = !btnFindWorking.IsVisible && !_compact;
+        txtIpInfo.IsVisible = txtCheckAction.IsVisible;
         spinFind.IsVisible = finding;
         txtFindWorking.Text = _findProgress ?? L.FindWorkingServer;
         // While the offer is up, the pill above already says the server is not answering; a "No response"

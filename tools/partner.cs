@@ -14,6 +14,17 @@
 //       --review <routing.json|transport.json|core.json> (repeatable): a file read by hand; its SHA-256 goes into
 //       "reviewed" and its grant (routing, transport, core) is added. V2pn uses the file only while it has this hash.
 //
+//   dotnet run tools/partner.cs -- request --id <id> --name <name> --domains <a,b> --key <provider pem>
+//                                          [--grants edition,account,lock] [--review <file>]... [--contact <text>] --out <request.json>
+//       What a provider sends the owner of V2pn to get a certificate: id, name, domains, the public half of its key, the grants
+//       it asks for and the SHA-256 of each file to review (routing.json, transport.json, core.json), signed with the provider's
+//       key so the owner knows the provider holds it. V2pn's theme builder writes the same file.
+//
+//   dotnet run tools/partner.cs -- cert --from <request.json> [--pack <folder>] [--grants <...>] [--days 365] [--out <folder>] [--root <pem>] [--yes]
+//       The owner's side: checks the request's signature and rules, prints who asks for what, runs the review of the files
+//       in --pack (their hashes must be the request's), asks before issuing (unless --yes), then writes cert.json(.sig) as above.
+//       --grants narrows what the request asked for (edition, account, lock); reviewed files keep their grants.
+//
 //   dotnet run tools/partner.cs -- review <pack folder>
 //       What the reviewed files of a pack do, in plain words, for the manual review: every routing rule (sites and
 //       addresses -> proxy, direct or block), every transport setting, every outbound, balancer and rule of core.json,
@@ -74,6 +85,10 @@ switch (args[0])
         Console.WriteLine(Convert.ToBase64String(fresh.ExportSubjectPublicKeyInfo()));
         return 0;
     }
+    case "cert" when Option("--from") is { } requestFile:
+    {
+        return CertFromRequest(requestFile);
+    }
     case "cert":
     {
         var partner = Option("--partner");
@@ -89,25 +104,15 @@ switch (args[0])
             Console.Error.WriteLine("--partner: lowercase letters, digits and dashes, 2 to 32 characters.");
             return 2;
         }
-        using (var check = ECDsa.Create())
-        {
-            check.ImportSubjectPublicKeyInfo(Convert.FromBase64String(key), out _);
-        }
-        string[] knownGrants = ["edition", "account", "actions", "lock", "routing", "transport", "core"];
         // Files read by hand: their hash binds the grant, so a file changed afterwards is not used.
-        var reviewed = new JsonObject();
+        var reviewed = new Dictionary<string, string>(StringComparer.Ordinal);
         var reviewGrants = new List<string>();
-        for (var i = 0; i < args.Length - 1; i++)
+        foreach (var file in ReviewFiles())
         {
-            if (args[i] != "--review")
-            {
-                continue;
-            }
-            var file = Path.GetFullPath(args[i + 1]);
             var fileName = Path.GetFileName(file);
             if (!V2pnReviewedFiles.All.Contains(fileName) || !File.Exists(file))
             {
-                Console.Error.WriteLine($"--review: {args[i + 1]} is not an existing {string.Join(", ", V2pnReviewedFiles.All)}.");
+                Console.Error.WriteLine($"--review: {file} is not an existing {string.Join(", ", V2pnReviewedFiles.All)}.");
                 return 2;
             }
             var content = File.ReadAllBytes(file);
@@ -121,54 +126,61 @@ switch (args[0])
             reviewGrants.Add(V2pnReviewedFiles.GrantOf(fileName));
             Console.WriteLine($"reviewed: {fileName} sha256 {reviewed[fileName]} ({content.Length} bytes) -> grant {V2pnReviewedFiles.GrantOf(fileName)}");
         }
-        // actions is level 1 of the platform: every certified partner has its buttons and server notes.
-        var grants = (Option("--grants") ?? "edition,account").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
-            .Append("actions").Concat(reviewGrants).Distinct().OrderBy(g => Array.IndexOf(knownGrants, g)).ToArray();
-        if (grants.FirstOrDefault(g => !knownGrants.Contains(g)) is { } unknownGrant)
+        var asked = (Option("--grants") ?? "edition,account").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        return Issue(partner, name, domains, key, asked, reviewed, reviewGrants);
+    }
+    case "request":
+    {
+        var id = Option("--id");
+        var name = Option("--name");
+        var domains = Option("--domains")?.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        var keyFile = Option("--key");
+        var outFile = Option("--out");
+        if (id == null || name == null || domains is not { Length: > 0 } || keyFile == null || outFile == null)
         {
-            Console.Error.WriteLine($"--grants: {unknownGrant} is not a grant; known: {string.Join(", ", knownGrants)}.");
+            return Usage();
+        }
+        using var key = V2pnPartnerSigning.ReadPrivateKey(File.ReadAllText(keyFile), out var keyError);
+        if (key == null)
+        {
+            Console.Error.WriteLine($"--key: {keyError}");
             return 2;
         }
-        if (grants.Contains("lock"))
+        var reviewed = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var file in ReviewFiles())
         {
-            Console.WriteLine("note: lock closes the subscription's settings for its holders; give it only after the review in docs/internal/PARTNER-PLATFORM.md.");
+            var fileName = Path.GetFileName(file);
+            if (!V2pnReviewedFiles.All.Contains(fileName) || !File.Exists(file))
+            {
+                Console.Error.WriteLine($"--review: {file} is not an existing {string.Join(", ", V2pnReviewedFiles.All)}.");
+                return 2;
+            }
+            var content = File.ReadAllBytes(file);
+            if (ReviewProblem(fileName, content) is { } problem)
+            {
+                Console.Error.WriteLine($"--review: {fileName} does not pass V2pn's checks: {problem}");
+                return 2;
+            }
+            reviewed[fileName] = V2pnReviewedFiles.Hash(content);
+            Console.WriteLine($"to review: {fileName} sha256 {reviewed[fileName]}");
         }
-        foreach (var grant in new[] { "routing", "transport", "core" }.Where(g => grants.Contains(g) && !reviewGrants.Contains(g)))
+        var grants = (Option("--grants") ?? "edition,account").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        byte[] request;
+        try
         {
-            Console.WriteLine($"note: {grant} without --review of its file does nothing: V2pn uses only a file whose hash the certificate names.");
+            request = V2pnCertRequests.Create(id, name, domains, grants, reviewed, Option("--contact"), key, DateOnly.FromDateTime(DateTime.UtcNow));
         }
-        // V2pn up to 1.0.3 refused a certificate with a grant it did not know; later versions skip such grants.
-        Console.WriteLine("note: V2pn 1.0.3 and older refuse certificates with actions, lock, routing, transport or core; the partner's look works there again after the update.");
-        var days = int.Parse(Option("--days") ?? "365");
-        var today = DateOnly.FromDateTime(DateTime.UtcNow);
-        var cert = new JsonObject
+        catch (ArgumentException ex)
         {
-            ["schema"] = 1,
-            ["partner"] = partner,
-            ["name"] = name,
-            ["domains"] = new JsonArray(domains.Select(d => (JsonNode)d.ToLowerInvariant()).ToArray()),
-            ["key"] = key,
-            ["grants"] = new JsonArray(grants.Select(g => (JsonNode)g).ToArray()),
-            ["issued"] = today.ToString("yyyy-MM-dd"),
-            ["expires"] = today.AddDays(days).ToString("yyyy-MM-dd"),
-        };
-        if (reviewed.Count > 0)
-        {
-            cert["reviewed"] = reviewed;
+            Console.Error.WriteLine(ex.Message);
+            return 2;
         }
-        var outDir = Path.GetFullPath(Option("--out") ?? ".");
-        Directory.CreateDirectory(outDir);
-        var bytes = Encoding.UTF8.GetBytes(cert.ToJsonString(json) + "\n");
-        using var root = RootKey();
-        if (root == null)
-        {
-            return 1;
-        }
-        var signature = Sign(root, bytes);
-        File.WriteAllBytes(Path.Combine(outDir, "cert.json"), bytes);
-        File.WriteAllText(Path.Combine(outDir, "cert.json.sig"), signature + "\n");
-        Console.WriteLine($"wrote {Path.Combine(outDir, "cert.json")} (+ .sig), valid to {cert["expires"]}");
-        return CheckAgainstBuiltInKeys(bytes, signature);
+        var outPath = Path.GetFullPath(outFile);
+        Directory.CreateDirectory(Path.GetDirectoryName(outPath)!);
+        File.WriteAllBytes(outPath, request);
+        Console.WriteLine($"wrote {outPath}, signed with the key in {keyFile}");
+        Console.WriteLine("Send it to V2pn's owner, with the files to review if there are any. The private key stays with you.");
+        return 0;
     }
     case "pack":
     {
@@ -177,34 +189,21 @@ switch (args[0])
             return Usage();
         }
         var folder = Path.GetFullPath(args[1]);
-        var packFile = Path.Combine(folder, "partner.json");
-        if (JsonNode.Parse(File.ReadAllText(packFile)) is not JsonObject pack)
+        var packFile = Path.Combine(folder, V2pnPackWriter.PackFile);
+        if (V2pnPackWriter.Read(folder, out var packError) is not { } pack)
         {
-            Console.Error.WriteLine($"{packFile} is not a JSON object.");
+            Console.Error.WriteLine(packError);
             return 1;
         }
-        var assets = new JsonArray();
-        foreach (var file in Directory.EnumerateFiles(folder).Order(StringComparer.Ordinal))
+        using var key = V2pnPartnerSigning.ReadPrivateKey(File.ReadAllText(keyFile), out var keyError);
+        if (key == null)
         {
-            var ext = Path.GetExtension(file).ToLowerInvariant();
-            if (ext is not (".png" or ".webp" or ".jpg" or ".jpeg") && !V2pnReviewedFiles.All.Contains(Path.GetFileName(file)))
-            {
-                continue;
-            }
-            var content = File.ReadAllBytes(file);
-            assets.Add((JsonNode)new JsonObject
-            {
-                ["name"] = Path.GetFileName(file),
-                ["size"] = content.LongLength,
-                ["sha256"] = Convert.ToHexStringLower(SHA256.HashData(content)),
-            });
+            Console.Error.WriteLine($"--key: {keyError}");
+            return 2;
         }
-        pack["assets"] = assets;
-        var bytes = Encoding.UTF8.GetBytes(pack.ToJsonString(json) + "\n");
-        using var key = ECDsa.Create();
-        key.ImportFromPem(File.ReadAllText(keyFile));
-        File.WriteAllBytes(packFile, bytes);
-        File.WriteAllText(packFile + ".sig", Sign(key, bytes) + "\n");
+        // The same writer as V2pn's theme builder (Конструктор оформления): the same bytes either way.
+        V2pnPackWriter.Write(folder, pack, key);
+        var assets = (JsonArray)pack["assets"]!;
         Console.WriteLine($"signed {packFile} with {assets.Count} file(s)");
         if (pack["theme"] != null)
         {
@@ -280,7 +279,7 @@ static string? ReviewProblem(string name, byte[] content)
 }
 
 // The checklist of docs/internal/PARTNER-PLATFORM.md ("Ручная проверка"), filled in from the files.
-static int Review(string folder)
+static int Review(string folder, bool quiet = false)
 {
     var found = false;
     var bad = false;
@@ -325,6 +324,10 @@ static int Review(string folder)
     {
         Console.WriteLine($"No routing.json, transport.json or core.json in {folder}.");
         return 1;
+    }
+    if (quiet)
+    {
+        return bad ? 1 : 0;
     }
     Console.WriteLine();
     Console.WriteLine("If it is fine, issue the certificate with the hashes above:");
@@ -483,8 +486,163 @@ ECDsa? RootKey()
     return key;
 }
 
-static string Sign(ECDsa key, byte[] data) =>
-    Convert.ToBase64String(key.SignData(data, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence));
+static string Sign(ECDsa key, byte[] data) => V2pnPartnerSigning.Sign(key, data);
+
+// Every --review argument, in order.
+IEnumerable<string> ReviewFiles()
+{
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (args[i] == "--review")
+        {
+            yield return Path.GetFullPath(args[i + 1]);
+        }
+    }
+}
+
+// Writes cert.json(.sig) into --out, signed with the root key, and checks it against the keys built into the app.
+int Issue(string partner, string name, IReadOnlyList<string> domains, string key, IEnumerable<string> asked,
+    IReadOnlyDictionary<string, string> reviewed, IReadOnlyList<string> reviewGrants)
+{
+    if (!V2pnPartnerTrust.ValidId(partner))
+    {
+        Console.Error.WriteLine("--partner: lowercase letters, digits and dashes, 2 to 32 characters.");
+        return 2;
+    }
+    if (!V2pnPartnerTrust.ValidKey(key))
+    {
+        Console.Error.WriteLine("--key: not an ECDSA P-256 public key (base64 SubjectPublicKeyInfo).");
+        return 2;
+    }
+    // actions is level 1 of the platform: every certified partner has its buttons and server notes.
+    if (V2pnPartnerIssuer.Grants(asked, reviewed.Keys, out var unknownGrant) is not { } grants)
+    {
+        Console.Error.WriteLine($"--grants: {unknownGrant} is not a grant; known: {string.Join(", ", V2pnPartnerGrants.All)}.");
+        return 2;
+    }
+    if (grants.Contains("lock"))
+    {
+        Console.WriteLine("note: lock closes the subscription's settings for its holders; give it only after the review in docs/internal/PARTNER-PLATFORM.md.");
+    }
+    foreach (var grant in new[] { "routing", "transport", "core" }.Where(g => grants.Contains(g) && !reviewGrants.Contains(g)))
+    {
+        Console.WriteLine($"note: {grant} without --review of its file does nothing: V2pn uses only a file whose hash the certificate names.");
+    }
+    // V2pn up to 1.0.3 refused a certificate with a grant it did not know; later versions skip such grants.
+    Console.WriteLine("note: V2pn 1.0.3 and older refuse certificates with actions, lock, routing, transport or core; the partner's look works there again after the update.");
+    var days = int.Parse(Option("--days") ?? "365");
+    var today = DateOnly.FromDateTime(DateTime.UtcNow);
+    var bytes = V2pnPartnerIssuer.Cert(partner, name, domains, key, grants, reviewed, today, days);
+    var outDir = Path.GetFullPath(Option("--out") ?? ".");
+    Directory.CreateDirectory(outDir);
+    using var root = RootKey();
+    if (root == null)
+    {
+        return 1;
+    }
+    var signature = Sign(root, bytes);
+    File.WriteAllBytes(Path.Combine(outDir, "cert.json"), bytes);
+    File.WriteAllText(Path.Combine(outDir, "cert.json.sig"), signature + "\n");
+    Console.WriteLine($"wrote {Path.Combine(outDir, "cert.json")} (+ .sig), valid to {today.AddDays(days):yyyy-MM-dd}");
+    return CheckAgainstBuiltInKeys(bytes, signature);
+}
+
+// cert --from: the owner reads a provider's request, sees what it asks for, reviews its files and issues the certificate.
+int CertFromRequest(string requestFile)
+{
+    var request = V2pnCertRequests.Read(File.Exists(requestFile) ? File.ReadAllBytes(requestFile) : null, out var error);
+    if (request == null)
+    {
+        Console.Error.WriteLine($"{requestFile}: {error}");
+        return 1;
+    }
+    Console.WriteLine($"Request of {request.Created:yyyy-MM-dd}, signed by the key it names (the provider holds its private half):");
+    Console.WriteLine($"  id        {request.Partner}");
+    Console.WriteLine($"  name      {request.Name}");
+    Console.WriteLine($"  domains   {string.Join(", ", request.Domains)}");
+    foreach (var domain in request.Domains.Where(d => d is "127.0.0.1" or "localhost"))
+    {
+        Console.WriteLine($"            {domain}: only for previews on the provider's own computer; release builds do not take it");
+    }
+    Console.WriteLine($"  key       {request.Key}");
+    Console.WriteLine($"  grants    {string.Join(", ", request.Grants)}");
+    foreach (var grant in request.Grants)
+    {
+        Console.WriteLine($"            {grant}: {GrantMeaning(grant)}");
+    }
+    if (request.Contact != null)
+    {
+        Console.WriteLine($"  contact   {request.Contact}");
+    }
+    foreach (var (file, hash) in request.Reviewed)
+    {
+        Console.WriteLine($"  review    {file} sha256 {hash}");
+    }
+
+    // The owner may give less than asked; a reviewed file always brings its own grant.
+    var reviewGrants = request.Reviewed.Keys.Select(V2pnReviewedFiles.GrantOf).ToList();
+    var asked = Option("--grants") is { } narrowed
+        ? narrowed.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+        : request.Grants.Where(g => !reviewGrants.Contains(g)).ToArray();
+    if (asked.FirstOrDefault(g => !request.Grants.Contains(g)) is { } extra)
+    {
+        Console.Error.WriteLine($"--grants: the request does not ask for {extra}.");
+        return 2;
+    }
+
+    var bad = false;
+    if (request.Reviewed.Count > 0)
+    {
+        if (Option("--pack") is not { } packFolder || !Directory.Exists(packFolder))
+        {
+            Console.WriteLine();
+            Console.WriteLine("The request names files to review, but no --pack <folder> holds them: you would grant files you have not read.");
+            bad = true;
+        }
+        else
+        {
+            foreach (var (file, hash) in request.Reviewed)
+            {
+                var path = Path.Combine(packFolder, file);
+                var actual = File.Exists(path) ? V2pnReviewedFiles.Hash(File.ReadAllBytes(path)) : null;
+                if (actual != hash)
+                {
+                    Console.WriteLine($"PROBLEM: {file} in {packFolder} {(actual == null ? "is missing" : $"has sha256 {actual}, not the request's")}");
+                    bad = true;
+                }
+            }
+            bad |= Review(Path.GetFullPath(packFolder), quiet: true) != 0;
+        }
+    }
+    Console.WriteLine();
+    if (bad)
+    {
+        Console.WriteLine("Something above is not right; no certificate was issued.");
+        return 1;
+    }
+    if (!args.Contains("--yes"))
+    {
+        Console.Write($"Issue the certificate for {request.Name} ({request.Partner}) for {Option("--days") ?? "365"} days? [y/N] ");
+        if (Console.ReadLine()?.Trim().ToLowerInvariant() is not ("y" or "yes"))
+        {
+            Console.WriteLine("Not issued.");
+            return 1;
+        }
+    }
+    return Issue(request.Partner, request.Name, request.Domains, request.Key, asked, request.Reviewed, reviewGrants);
+}
+
+static string GrantMeaning(string grant) => grant switch
+{
+    "edition" => "the provider's look (its theme, or V2pn with its logo)",
+    "account" => "V2pn asks the provider's API for the plan, devices and server state",
+    "actions" => "buttons and server notes (every partner has it)",
+    "lock" => "closes the subscription's settings and hides server addresses: give it only after the review",
+    "routing" => "its routing.json becomes a mode of \"What goes through the VPN\" (bound to the file's hash)",
+    "transport" => "fragmentation and noise for its servers (bound to the file's hash)",
+    "core" => "extra outbounds, balancers and rules for its servers (bound to the file's hash)",
+    _ => "?",
+};
 
 int CheckAgainstBuiltInKeys(byte[] data, string signature)
 {
@@ -522,6 +680,8 @@ static int Usage()
         usage:
           dotnet run tools/partner.cs -- new-key <pem file>
           dotnet run tools/partner.cs -- cert --partner <id> --name <name> --domains <a,b> --key <public key> [--grants edition,account,lock] [--review <file>]... [--days 365] [--out <folder>] [--root <pem>]
+          dotnet run tools/partner.cs -- request --id <id> --name <name> --domains <a,b> --key <provider pem> [--grants edition,account,lock] [--review <file>]... [--contact <text>] --out <request.json>
+          dotnet run tools/partner.cs -- cert --from <request.json> [--pack <folder>] [--grants <...>] [--days 365] [--out <folder>] [--root <pem>] [--yes]
           dotnet run tools/partner.cs -- pack <folder> --key <partner pem>
           dotnet run tools/partner.cs -- review <pack folder>
           dotnet run tools/partner.cs -- revoke [<partner>@<issued> ...] [--out <folder>] [--root <pem>]

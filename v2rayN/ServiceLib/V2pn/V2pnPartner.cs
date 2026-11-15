@@ -211,6 +211,25 @@ public static class V2pnPartnerTrust
         return pack;
     }
 
+    /// <summary>
+    /// A pack read without its signature, under <paramref name="cert"/>, with every check a signed one gets (fields, grants,
+    /// theme). For the theme builder's preview only: nothing read this way is ever kept or trusted as a partner.
+    /// </summary>
+    public static V2pnPartnerPack? ReadUnsignedPack(byte[]? json, V2pnPartnerCert cert, out string error)
+    {
+        if (json is not { Length: > 0 and <= MaxPackBytes })
+        {
+            error = "partner.json is missing or larger than 64 KB.";
+            return null;
+        }
+        var pack = ParsePack(json, cert, out error);
+        if (pack != null)
+        {
+            error = string.Empty;
+        }
+        return pack;
+    }
+
     /// <summary>True when the host of <paramref name="url"/> is one of the certificate's domains or under a "*." one.</summary>
     public static bool DomainAllowed(V2pnPartnerCert cert, string? url)
     {
@@ -266,6 +285,18 @@ public static class V2pnPartnerTrust
     }
 
     public static string RevocationKey(V2pnPartnerCert cert) => $"{cert.Partner}@{cert.Issued:yyyy-MM-dd}";
+
+    /// <summary>A partner id a certificate may carry: lowercase letters, digits and dashes, 2 to 32 characters.</summary>
+    public static bool ValidId(string? id) => id != null && PartnerId.IsMatch(id);
+
+    /// <summary>The name people see, trimmed, when a certificate or pack may carry it: up to 40 characters, no control characters, no "V2pn".</summary>
+    public static string? ValidName(string? name) => Name(name);
+
+    /// <summary>A domain a certificate may name ("example.com", "*.example.com"; 127.0.0.1 and localhost in a development build).</summary>
+    public static bool ValidDomain(string? domain) => domain != null && IsDomain(domain);
+
+    /// <summary>An ECDSA P-256 public key as base64 SubjectPublicKeyInfo.</summary>
+    public static bool ValidKey(string? key) => key.IsNotEmpty() && IsP256Key(key!);
 
     private static V2pnPartnerCert? ParseCert(byte[] json)
     {

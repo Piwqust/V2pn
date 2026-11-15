@@ -593,7 +593,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
     {
         var (series, rest) = ServerNames.SplitSeries(all);
         var groups = ServerNames.DistinctConnections(rest)
-            .GroupBy(m => CountryResolver.Resolve(m.Remarks) ?? string.Empty)
+            .GroupBy(m => V2pnPartnerLive.Instance.Describe(m.Subid, m.Remarks, m.Address)?.Country ?? CountryResolver.Resolve(m.Remarks) ?? string.Empty)
             .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: ByPing(g).ToList()))
             .OrderBy(g => g.Code.IsNullOrEmpty() ? 1 : 0)
             .ThenBy(g => g.Name, StringComparer.CurrentCulture)

@@ -34,6 +34,25 @@ public partial class MainWindow
         V2pnPartnerLive.Instance.Changed += () => Dispatcher.UIThread.Post(OnPartnerDataChanged);
         V2pnPartners.Instance.Removed += (partner, _) => V2pnPartnerLive.Instance.Forget(partner.Id);
         _ = V2pnLocks.Instance.RefreshAsync();
+        _ = PruneDelayHistoryAsync();
+    }
+
+    // Once a start: the delay history ("stable") forgets servers that are gone, so its file does not grow forever.
+    private static async Task PruneDelayHistoryAsync()
+    {
+        try
+        {
+            await Task.Delay(TimeSpan.FromMinutes(1));
+            var ids = (await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? []).Select(m => m.IndexId).ToList();
+            if (ids.Count > 0)
+            {
+                await Task.Run(() => V2pnDelayHistory.Instance.Retain(ids));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn delay history", ex);
+        }
     }
 
     private void OnPartnerDataChanged()

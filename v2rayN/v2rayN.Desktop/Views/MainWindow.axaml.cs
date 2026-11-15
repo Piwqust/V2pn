@@ -659,7 +659,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             var serverChanged = _shownOnce && item?.IndexId != _activeIndexId;
             _activeIndexId = item?.IndexId;
 
-            var code = CountryResolver.Resolve(item?.Remarks);
+            // V2pn: the partner's country for its server (pack or API) wins over a guess from the name.
+            var code = V2pnPartnerLive.Instance.Describe(item?.Subid, item?.Remarks, item?.Address)?.Country ?? CountryResolver.Resolve(item?.Remarks);
             var country = WorldMap.Instance.Get(code);
             _mapCode = country?.Code ?? code;
             _serverName = item == null ? null : CountryResolver.ServerName(item);

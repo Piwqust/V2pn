@@ -1,0 +1,85 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Piwqust/V2pn/blob/v2pn/docs/partners/partner.schema.json",
+  "title": "V2pn partner pack (partner.json)",
+  "description": "What a provider wants V2pn to look like for its subscriptions. Signed with the key its certificate names (partner.json.sig). V2pn ignores fields it does not know.",
+  "type": "object",
+  "required": ["schema", "id", "name", "assets"],
+  "properties": {
+    "schema": { "const": 1 },
+    "id": {
+      "description": "The partner id; must equal the certificate's.",
+      "type": "string",
+      "pattern": "^[a-z0-9][a-z0-9-]{1,31}$"
+    },
+    "name": {
+      "description": "The name people see. No control characters, and nothing that reads as V2pn.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "not": { "pattern": "(?i)v\\s*2\\s*p\\s*n" }
+    },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "accent": { "description": "The looks' accent.", "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "logo": { "description": "The wide logo for a dark title bar; a file in assets.", "$ref": "#/$defs/assetName" },
+        "logoOnLight": { "description": "The wide logo for a light title bar; a file in assets.", "$ref": "#/$defs/assetName" },
+        "mark": { "description": "A square mark on a transparent ground for the subscription card; a file in assets.", "$ref": "#/$defs/assetName" }
+      }
+    },
+    "edition": {
+      "description": "Needs the certificate's edition grant; without it V2pn keeps its own look.",
+      "type": "object",
+      "properties": {
+        "variants": {
+          "description": "The looks the partner allows, in the order the switcher lists them.",
+          "type": "array",
+          "items": { "enum": ["signature", "warm", "cabinet", "studio", "ascii"] },
+          "uniqueItems": true
+        },
+        "default": { "description": "The look that opens first; one of variants.", "enum": ["signature", "warm", "cabinet", "studio", "ascii"] },
+        "art": {
+          "type": "object",
+          "properties": {
+            "lamp": { "description": "The studio look's picture.", "$ref": "#/$defs/assetName" }
+          },
+          "additionalProperties": { "$ref": "#/$defs/assetName" }
+        }
+      }
+    },
+    "links": {
+      "type": "object",
+      "properties": {
+        "cabinet": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "support": { "type": "string", "format": "uri", "pattern": "^https://" }
+      }
+    },
+    "api": {
+      "description": "The partner API's base address; needs the account grant and a domain the certificate names.",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "assets": {
+      "description": "Every picture of the pack, pinned by size and SHA-256.",
+      "type": "array",
+      "maxItems": 8,
+      "items": {
+        "type": "object",
+        "required": ["name", "size", "sha256"],
+        "properties": {
+          "name": { "$ref": "#/$defs/assetName" },
+          "size": { "type": "integer", "minimum": 1, "maximum": 1048576 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "assetName": {
+      "type": "string",
+      "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(png|webp|jpg|jpeg)$"
+    }
+  }
+}

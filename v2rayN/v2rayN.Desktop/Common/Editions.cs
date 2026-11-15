@@ -15,6 +15,9 @@ public sealed class EditionSettings
 
     /// <summary>"partner:look" → what the person changed in that look on the Appearance page.</summary>
     public Dictionary<string, EditionLookPrefs> Looks { get; set; } = [];
+
+    /// <summary>Partners whose look was already offered (the intro shows once per partner).</summary>
+    public List<string> Introduced { get; set; } = [];
 }
 
 /// <summary>A look's own appearance choices; null keeps what the partner's look has.</summary>
@@ -176,6 +179,37 @@ public static class Editions
         Settings.Variants[partner.Id] = variant;
         Save();
         Apply();
+    }
+
+    /// <summary>
+    /// A partner whose look is available but was never offered: its intro is due. A partner the person already
+    /// opened counts as offered.
+    /// </summary>
+    public static V2pnPartner? DueIntro()
+    {
+        foreach (var partner in Available)
+        {
+            if (Settings.Introduced.Contains(partner.Id))
+            {
+                continue;
+            }
+            if (Settings.Partner == partner.Id || Settings.Variants.ContainsKey(partner.Id))
+            {
+                MarkIntroduced(partner.Id);
+                continue;
+            }
+            return partner;
+        }
+        return null;
+    }
+
+    public static void MarkIntroduced(string partnerId)
+    {
+        if (!Settings.Introduced.Contains(partnerId))
+        {
+            Settings.Introduced.Add(partnerId);
+            Save();
+        }
     }
 
     /// <summary>Changes the open look's tuning (the Appearance page in an edition); applied at once.</summary>

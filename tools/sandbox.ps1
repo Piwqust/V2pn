@@ -28,6 +28,8 @@ param(
     [switch]$Launch,
     # Shows the windows on the screen instead of keeping them off it.
     [switch]$Visible,
+    # Passed to V2pn on -Launch, e.g. a v2pn://add link to test how links are handled.
+    [string[]]$AppArgs,
     [switch]$Stop,
     # Keeps guiConfigs/ when -From refreshes the app files.
     [switch]$KeepData
@@ -91,8 +93,21 @@ if ($Launch) {
     if (-not (Test-Path $exe)) { throw "V2pn.exe not found in $Dest" }
     $old = $env:V2PN_BACKGROUND
     $env:V2PN_BACKGROUND = if ($Visible) { $null } else { '1' }
-    try { $p = Start-Process -FilePath $exe -WorkingDirectory $Dest -PassThru }
-    finally { $env:V2PN_BACKGROUND = $old }
+    # A shell's HTTP_PROXY (often the live V2pn) would carry the sandbox's own requests, local test sites included.
+    $proxyVars = 'HTTP_PROXY', 'HTTPS_PROXY', 'ALL_PROXY', 'WS_PROXY', 'WSS_PROXY', 'http_proxy', 'https_proxy', 'all_proxy'
+    $savedProxy = @{}
+    foreach ($name in $proxyVars) {
+        $value = [Environment]::GetEnvironmentVariable($name, 'Process')
+        if ($value) { $savedProxy[$name] = $value; [Environment]::SetEnvironmentVariable($name, $null, 'Process') }
+    }
+    try {
+        $p = if ($AppArgs) { Start-Process -FilePath $exe -WorkingDirectory $Dest -ArgumentList $AppArgs -PassThru }
+             else { Start-Process -FilePath $exe -WorkingDirectory $Dest -PassThru }
+    }
+    finally {
+        $env:V2PN_BACKGROUND = $old
+        foreach ($name in $savedProxy.Keys) { [Environment]::SetEnvironmentVariable($name, $savedProxy[$name], 'Process') }
+    }
     $mode = if ($Visible) { 'on screen' } else { 'in the background, windows off screen' }
     Write-Host "Started V2pn ($($p.Id)) from $Dest, $mode"
 }

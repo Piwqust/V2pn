@@ -252,7 +252,7 @@ public sealed partial class AppearanceView
     }
 
     /// <summary>A thumbnail of a look in its own colours, so the cards say what each one is before a click.</summary>
-    private static Control LookPreview(string look, V2pnPartner? partner, Color accent)
+    internal static Control LookPreview(string look, V2pnPartner? partner, Color accent)
     {
         static IBrush B(string hex) => new SolidColorBrush(Color.Parse(hex));
         static Border Bar(IBrush fill, double width, double height = 5, double radius = 3) =>

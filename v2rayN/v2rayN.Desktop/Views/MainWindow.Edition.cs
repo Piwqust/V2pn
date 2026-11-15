@@ -1,6 +1,7 @@
 using Avalonia.Controls.Primitives;
 using Avalonia.Automation;
 using Avalonia.Layout;
+using DialogHostAvalonia;
 using v2rayN.Desktop.Common;
 using v2rayN.Desktop.Views.EditionLooks;
 
@@ -31,6 +32,9 @@ public partial class MainWindow : IEditionActions
             }
         };
         Editions.Changed += RefreshEdition;
+        Editions.Changed += () => Dispatcher.UIThread.Post(MaybeShowPartnerIntro, DispatcherPriority.Background);
+        // A look verified while the window was in the tray is offered when it comes back.
+        Activated += (_, _) => Dispatcher.UIThread.Post(MaybeShowPartnerIntro, DispatcherPriority.Background);
         Editions.Closed += (partner, why) => ShowToast(why == V2pnPartnerGone.Unlinked ? ToastKind.Info : ToastKind.Warning, why switch
         {
             V2pnPartnerGone.Expired => string.Format(L.EditionGoneExpired, partner.Name),
@@ -170,6 +174,25 @@ public partial class MainWindow : IEditionActions
             });
         }
         panelBrand.Children.Add(Chevron());
+    }
+
+    /// <summary>
+    /// Offers a partner's look once, the first time it is available: after a subscription from a partner was added and
+    /// its pack checked out. Waits for the window to be on screen with nothing else open (walkthrough, a dialog).
+    /// </summary>
+    private void MaybeShowPartnerIntro()
+    {
+        if (!IsVisible || WindowState == WindowState.Minimized || OnboardingShown || DialogHost.IsDialogOpen(null))
+        {
+            return;
+        }
+        if (Editions.DueIntro() is not { } partner)
+        {
+            return;
+        }
+        // Once, however the dialog is closed (a button, Esc or a click outside).
+        Editions.MarkIntroduced(partner.Id);
+        _ = DialogHost.Show(new PartnerIntroView(partner));
     }
 
     private static TextBlock Chevron() => new() { Text = "▾", FontSize = 11, Opacity = 0.55, VerticalAlignment = VerticalAlignment.Center };

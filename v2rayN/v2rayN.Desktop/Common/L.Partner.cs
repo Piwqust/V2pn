@@ -14,6 +14,18 @@ public static partial class L
         "Переключение между V2pn и оформлением провайдеров (Ctrl+1…9). Подключение не прерывается.");
     public static string EditionOn => T("on", "на");
     public static string EditionLook => T("{0} look", "Вид {0}");
+    // The intro, once per partner, when its look first becomes available.
+    public static string IntroTitle => T("V2pn in {0}'s look", "V2pn в оформлении {0}");
+    public static string IntroBody => T(
+        "{0} is a V2pn partner: its subscription offers its own look of V2pn, and V2pn checked its signature. The servers, the connection and the settings stay the same; only the look changes. Back to plain V2pn: the name in the title bar or Ctrl+1.",
+        "{0} — партнёр V2pn: его подписка предлагает своё оформление V2pn, и V2pn проверил подпись. Серверы, подключение и настройки те же, меняется только вид. Вернуться к обычному V2pn — название в заголовке окна или Ctrl+1.");
+    public static string IntroPrivacy => T(
+        "{0} does not see your traffic and gets nothing about your computer from the look.",
+        "{0} не видит ваш трафик и ничего не узнаёт о вашем компьютере через оформление.");
+    public static string IntroOpen => T("Open {0}'s look", "Открыть оформление {0}");
+    public static string IntroStay => T("Stay in plain V2pn", "Остаться в обычном V2pn");
+    public static string IntroOpenLook => T("Open the {0} look", "Открыть вид «{0}»");
+
     // The subscription window: the provider's own look of V2pn.
     public static string SubPartnerTitle => T("Provider's look", "Оформление провайдера");
     public static string SubPartnerConfirmed => T("{0}, confirmed by V2pn until {1}.", "{0}, подтверждено V2pn до {1}.");

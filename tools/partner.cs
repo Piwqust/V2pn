@@ -5,14 +5,16 @@
 //       its public half goes into V2pnPartnerKeys in v2rayN/Directory.Build.targets) and for a partner's own key.
 //
 //   dotnet run tools/partner.cs -- cert --partner <id> --name <name> --domains <a,b> --key <partner public key>
-//                                       [--grants edition,account] [--days 365] [--out <folder>] [--root <pem>]
+//                                       [--grants edition,account,lock] [--days 365] [--out <folder>] [--root <pem>]
 //       Writes cert.json and cert.json.sig into --out (default: the current folder), signed with the root key
 //       (--root, else V2PN_PARTNER_ROOT_KEY with the PEM text, else ~/.v2pn/partner-root-key.pem), then checks
-//       the signature against the keys built into the app.
+//       the signature against the keys built into the app. Grants: edition (the look), account (the API), actions
+//       (buttons and server notes; every partner gets it), lock (closed settings; only after a review).
 //
 //   dotnet run tools/partner.cs -- pack <folder> --key <partner pem>
 //       Lists every picture in <folder> (png, webp, jpg) in partner.json with its size and SHA-256, and signs
-//       partner.json with the partner's key into partner.json.sig. The folder is what the provider serves at
+//       partner.json with the partner's key into partner.json.sig. Every other field (brand, edition, links, api,
+//       servers, actions, lock) is signed as written; tools/partner-check.cs says what V2pn takes from it. The folder is what the provider serves at
 //       the address of its v2pn-partner header.
 //
 //   dotnet run tools/partner.cs -- revoke [<partner>@<issued> ...] [--out <folder>] [--root <pem>]
@@ -80,7 +82,21 @@ switch (args[0])
         {
             check.ImportSubjectPublicKeyInfo(Convert.FromBase64String(key), out _);
         }
-        var grants = (Option("--grants") ?? "edition,account").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
+        string[] knownGrants = ["edition", "account", "actions", "lock"];
+        // actions is level 1 of the platform: every certified partner has its buttons and server notes.
+        var grants = (Option("--grants") ?? "edition,account").Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries)
+            .Append("actions").Distinct().OrderBy(g => Array.IndexOf(knownGrants, g)).ToArray();
+        if (grants.FirstOrDefault(g => !knownGrants.Contains(g)) is { } unknownGrant)
+        {
+            Console.Error.WriteLine($"--grants: {unknownGrant} is not a grant; known: {string.Join(", ", knownGrants)}.");
+            return 2;
+        }
+        if (grants.Contains("lock"))
+        {
+            Console.WriteLine("note: lock closes the subscription's settings for its holders; give it only after the review in docs/internal/PARTNER-PLATFORM.md.");
+        }
+        // V2pn up to 1.0.3 refused a certificate with a grant it did not know; later versions skip such grants.
+        Console.WriteLine("note: V2pn 1.0.3 and older refuse certificates with actions or lock; the partner's look works there again after the update.");
         var days = int.Parse(Option("--days") ?? "365");
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var cert = new JsonObject
@@ -246,7 +262,7 @@ static int Usage()
     Console.Error.WriteLine("""
         usage:
           dotnet run tools/partner.cs -- new-key <pem file>
-          dotnet run tools/partner.cs -- cert --partner <id> --name <name> --domains <a,b> --key <public key> [--grants edition,account] [--days 365] [--out <folder>] [--root <pem>]
+          dotnet run tools/partner.cs -- cert --partner <id> --name <name> --domains <a,b> --key <public key> [--grants edition,account,lock] [--days 365] [--out <folder>] [--root <pem>]
           dotnet run tools/partner.cs -- pack <folder> --key <partner pem>
           dotnet run tools/partner.cs -- revoke [<partner>@<issued> ...] [--out <folder>] [--root <pem>]
         """);

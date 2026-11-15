@@ -2,7 +2,7 @@
 
     python tools/partner-docs.py                 # build into %TEMP%/v2pn-partner-docs and serve on 127.0.0.1:8765
     python tools/partner-docs.py --no-serve      # only build
-    python tools/partner-docs.py --shots <dir>   # pictures of the looks from tools/edition-matrix.ps1
+    python tools/partner-docs.py --shots <dir>   # pictures of the theme templates from tools/edition-matrix.ps1 -Theme
 
 Standard library only: a converter for the Markdown the guide uses (headings, paragraphs, lists, tables, code blocks,
 inline code, bold, links), V2pn's fonts from the app's assets, light and dark by the system's setting.
@@ -21,14 +21,31 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(REPO, "docs", "partners")
 FONTS = os.path.join(REPO, "v2rayN", "v2rayN.Desktop", "Assets", "Fonts")
 
-# The looks, in the order the guide lists them, with the screenshot names tools/edition-matrix.ps1 writes.
-LOOKS = [
-    ("signature", "Подпись", "Signature"),
-    ("warm", "Тёплый", "Warm"),
-    ("cabinet", "Кабинет", "Cabinet"),
-    ("studio", "Студия", "Studio"),
-    ("ascii", "ASCII", "ASCII"),
+# The theme templates, in the order the guide lists them. Their pictures are what tools/edition-matrix.ps1 -Theme
+# writes ("<theme>-<template>-<mode>-<size>.png"), from any theme, in --shots or a folder under it.
+TEMPLATES = [
+    ("center", "Центр", "Centre"),
+    ("half", "Половина", "Half"),
+    ("split", "Две колонки", "Split"),
+    ("list", "Список", "List"),
+    ("map", "Карта", "Map"),
+    ("compact", "Карточка", "Card"),
 ]
+MODES = (("Тёмный", "dark"), ("Светлый", "light"))
+
+
+def template_shots(shots):
+    """{(template, mode): path} of the wide window's pictures, the first theme found for each."""
+    found = {}
+    if not shots:
+        return found
+    for folder, _, files in sorted(os.walk(shots)):
+        for f in sorted(files):
+            for key, _, _ in TEMPLATES:
+                for mode_ru, mode_en in MODES:
+                    if f.endswith(f"-{key}-{mode_ru}-Широкое.png") and (key, mode_en) not in found:
+                        found[(key, mode_en)] = os.path.join(folder, f)
+    return found
 
 
 def slug(text):
@@ -144,17 +161,12 @@ def convert(md):
     return "\n".join(out), toc
 
 
-def gallery(lang, shots):
-    if not shots:
-        return ""
+def gallery(lang, found):
     cards = []
-    for key, ru, en in LOOKS:
+    for key, ru, en in TEMPLATES:
         name = ru if lang == "ru" else en
-        pics = []
-        for mode_ru, mode_en in (("Тёмный", "dark"), ("Светлый", "light")):
-            f = f"{ru}-{mode_ru}-Широкое.png"
-            if os.path.exists(os.path.join(shots, f)):
-                pics.append((f"looks/{key}-{mode_en}.png", mode_ru.lower() if lang == "ru" else mode_en))
+        pics = [(f"templates/{key}-{mode_en}.png", mode_ru.lower() if lang == "ru" else mode_en)
+                for mode_ru, mode_en in MODES if (key, mode_en) in found]
         if not pics:
             continue
         imgs = "".join(f'<figure><a href="{src}" target="_blank"><img src="{src}" alt="{html.escape(name)}, {label}" loading="lazy"></a><figcaption>{label}</figcaption></figure>' for src, label in pics)
@@ -292,13 +304,11 @@ def build(out, shots):
     for f in ("Geist-Regular.ttf", "Geist-Medium.ttf", "Geist-SemiBold.ttf", "GeistMono-Regular.ttf"):
         shutil.copy(os.path.join(FONTS, f), os.path.join(out, "fonts", f))
     shutil.copy(os.path.join(DOCS, "partner.schema.json"), os.path.join(out, "partner.schema.json"))
-    if shots:
-        os.makedirs(os.path.join(out, "looks"), exist_ok=True)
-        for key, ru, _ in LOOKS:
-            for mode_ru, mode_en in (("Тёмный", "dark"), ("Светлый", "light")):
-                src = os.path.join(shots, f"{ru}-{mode_ru}-Широкое.png")
-                if os.path.exists(src):
-                    shutil.copy(src, os.path.join(out, "looks", f"{key}-{mode_en}.png"))
+    found = template_shots(shots)
+    if found:
+        os.makedirs(os.path.join(out, "templates"), exist_ok=True)
+        for (key, mode_en), src in found.items():
+            shutil.copy(src, os.path.join(out, "templates", f"{key}-{mode_en}.png"))
 
     for lang, source, target in (("ru", "README.ru.md", "index.html"), ("en", "README.md", "en.html")):
         with open(os.path.join(DOCS, source), encoding="utf-8") as fh:
@@ -308,10 +318,10 @@ def build(out, shots):
         body, toc = convert(md)
         # The first paragraph after the title is the lead.
         body = body.replace("<p>", '<p class="lead">', 1)
-        # Pictures of the looks under their table (section 6).
-        pics = gallery(lang, shots)
+        # Pictures of the templates under their table (section 9, "Шаблоны:" / "Templates:").
+        pics = gallery(lang, found)
         if pics:
-            m = re.search(r'<h2 id="6[^"]*">.*?</h2>.*?</div>', body, flags=re.S)
+            m = re.search(r"<p>(Шаблоны|Templates):</p>\s*<div class=\"table\">.*?</div>", body, flags=re.S)
             if m:
                 body = body[: m.end()] + pics + body[m.end():]
         nav = "".join(f'<a class="l{level}" href="#{hid}">{html.escape(text)}</a>' for level, hid, text in toc if level <= 3)
@@ -343,7 +353,7 @@ def main():
     args = ap.parse_args()
     shots = args.shots if os.path.isdir(args.shots) else None
     out = build(args.out, shots)
-    print(f"built {out}" + ("" if shots else " (no pictures of the looks: run tools/edition-matrix.ps1 first)"))
+    print(f"built {out}" + ("" if template_shots(shots) else " (no pictures of the templates: run tools/edition-matrix.ps1 -Theme <folder> first)"))
     if args.no_serve:
         return
     os.chdir(out)

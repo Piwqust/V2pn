@@ -222,4 +222,28 @@ public class V2pnSubDefaultsTests
         await V2pnSubDefaults.MovedUrl("https://a.kestrel.example/sub", "https://c.kestrel.example/s", "b.kestrel.example", cert)
             .Should().BeEqualTo("https://c.kestrel.example/s");
     }
+
+    [Test]
+    public async Task CopyCompat_ShouldKeepThePersonsChoices()
+    {
+        var info = new SubInfoItem { Id = "s1", OwnAutoconnect = true, OwnSort = SubPanelHeaders.SortAlphabet, InfoText = "old" };
+        var panel = SubPanelHeaders.Parse(new Dictionary<string, string>
+        {
+            ["subscription-autoconnect"] = "1",
+            ["subscriptions-sort-type"] = "ping",
+            ["sub-expire"] = "0",
+            ["hide-settings"] = "1",
+        });
+        SubInfoManager.CopyCompat(panel, info);
+        await info.Autoconnect.Should().BeTrue();
+        await info.SortType.Should().BeEqualTo(SubPanelHeaders.SortPing);
+        await info.ExpiryNotice.Should().BeEqualTo(-1);
+        await info.HideSettings.Should().BeTrue();
+        // The banner went away with the update; the person's choices stay.
+        await info.InfoText.Should().BeNull();
+        await info.OwnAutoconnect.Should().BeTrue();
+        await info.OwnSort.Should().BeEqualTo(SubPanelHeaders.SortAlphabet);
+        await V2pnSubDefaults.AutoconnectOn(info).Should().BeFalse();
+        await V2pnSubDefaults.SortOf(info).Should().BeEqualTo(SubPanelHeaders.SortAlphabet);
+    }
 }

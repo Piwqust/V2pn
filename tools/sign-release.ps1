@@ -65,6 +65,10 @@ $dotnet = Find-Dotnet
 Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $dir, $Version, '--repo', $repo)
 # The one-command installers go with every release: .../releases/latest/download/install.ps1 (Windows), install.sh (macOS)
 Copy-Item (Join-Path $PSScriptRoot 'install.ps1'), (Join-Path $PSScriptRoot 'install.sh') $dir
+# The partner certificates withdrawn so far (tools/partner.cs revoke); V2pn reads them from the latest release.
+$revoked = Join-Path $repo 'partners/partners-revoked.json'
+if (-not (Test-Path $revoked) -or -not (Test-Path "$revoked.sig")) { throw 'partners/partners-revoked.json(.sig) is missing. Make it with: dotnet run tools/partner.cs -- revoke' }
+Copy-Item $revoked, "$revoked.sig" $dir
 
 $notesFile = Join-Path $dir 'notes.md'
 [IO.File]::WriteAllText($notesFile, $notes)

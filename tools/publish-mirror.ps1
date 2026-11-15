@@ -77,6 +77,10 @@ if ($LocalRoot) {
     New-Item -ItemType Directory -Force $versionDir, $latestDir | Out-Null
     Copy-Item -Force $files.FullName $versionDir
     Copy-Item -Force (Join-Path $From 'release.json'), (Join-Path $From 'release.json.sig') $latestDir
+    # Withdrawn partner certificates are read from "latest" too.
+    foreach ($name in 'partners-revoked.json', 'partners-revoked.json.sig') {
+        if (Test-Path (Join-Path $From $name)) { Copy-Item -Force (Join-Path $From $name) $latestDir }
+    }
     Write-Host "Laid out in $LocalRoot"
 }
 
@@ -92,5 +96,8 @@ if ($Target) {
     # and a signature that do not belong together is two renames long; it would refuse that pair
     # and ask again later.
     Invoke-Checked 'ssh' @($login, "cp '$root/download/v$Version/release.json.sig' '$root/latest/download/release.json.sig.new' && cp '$root/download/v$Version/release.json' '$root/latest/download/release.json.new' && mv '$root/latest/download/release.json.sig.new' '$root/latest/download/release.json.sig' && mv '$root/latest/download/release.json.new' '$root/latest/download/release.json'")
+    if ($files.Name -contains 'partners-revoked.json') {
+        Invoke-Checked 'ssh' @($login, "cp '$root/download/v$Version/partners-revoked.json' '$root/download/v$Version/partners-revoked.json.sig' '$root/latest/download/'")
+    }
     Write-Host "Done. The mirror now serves V2pn $Version."
 }

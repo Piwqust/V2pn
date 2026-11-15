@@ -15,8 +15,10 @@
 //       partner.json with the partner's key into partner.json.sig. The folder is what the provider serves at
 //       the address of its v2pn-partner header.
 //
-//   dotnet run tools/partner.cs -- revoke <partner>@<issued> [...] --out <folder> [--root <pem>]
-//       Writes partners-revoked.json(.sig): certificates withdrawn before their term. Publish it with a release.
+//   dotnet run tools/partner.cs -- revoke [<partner>@<issued> ...] [--out <folder>] [--root <pem>]
+//       Adds certificates withdrawn before their term to partners-revoked.json(.sig) in partners/ (or --out) and
+//       signs the list again. tools/sign-release.ps1 and tools/publish-mirror.ps1 publish it with every release;
+//       to withdraw one at once, upload it to the latest release as the command says.
 //
 // Signatures are DER ECDSA P-256 / SHA-256 in base64, the same as release.json.sig.
 
@@ -146,9 +148,20 @@ switch (args[0])
     }
     case "revoke":
     {
-        var entries = args.Skip(1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
-        var outDir = Path.GetFullPath(Option("--out") ?? ".");
+        var added = args.Skip(1).TakeWhile(a => !a.StartsWith("--", StringComparison.Ordinal)).ToArray();
+        if (added.FirstOrDefault(e => !System.Text.RegularExpressions.Regex.IsMatch(e, @"^[a-z0-9][a-z0-9-]{0,31}@\d{4}-\d{2}-\d{2}$")) is { } bad)
+        {
+            Console.Error.WriteLine($"Not <partner>@<issued>: {bad} (the partner id and the date its certificate was issued, as in cert.json).");
+            return 1;
+        }
+        var outDir = Path.GetFullPath(Option("--out") ?? Path.Combine(RepoRoot(), "partners"));
         Directory.CreateDirectory(outDir);
+        // The list only grows: a withdrawn certificate never comes back (a new one is issued instead).
+        var listFile = Path.Combine(outDir, "partners-revoked.json");
+        var kept = File.Exists(listFile)
+            ? (JsonNode.Parse(File.ReadAllText(listFile))?["revoked"] as JsonArray)?.Select(n => n?.GetValue<string>()).OfType<string>().ToList() ?? []
+            : [];
+        var entries = kept.Concat(added).Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToArray();
         var list = new JsonObject { ["revoked"] = new JsonArray(entries.Select(e => (JsonNode)e).ToArray()) };
         var bytes = Encoding.UTF8.GetBytes(list.ToJsonString(json) + "\n");
         using var root = RootKey();
@@ -159,11 +172,24 @@ switch (args[0])
         var signature = Sign(root, bytes);
         File.WriteAllBytes(Path.Combine(outDir, "partners-revoked.json"), bytes);
         File.WriteAllText(Path.Combine(outDir, "partners-revoked.json.sig"), signature + "\n");
-        Console.WriteLine($"wrote partners-revoked.json with {entries.Length} entr{(entries.Length == 1 ? "y" : "ies")}");
+        Console.WriteLine($"wrote {listFile} with {entries.Length} entr{(entries.Length == 1 ? "y" : "ies")}");
+        Console.WriteLine("It goes out with the next release. To withdraw now, add it to the latest release and the mirror:");
+        Console.WriteLine($"  gh release upload <latest tag> --repo Piwqust/V2pn --clobber \"{listFile}\" \"{listFile}.sig\"");
         return CheckAgainstBuiltInKeys(bytes, signature);
     }
     default:
         return Usage();
+}
+
+// The repository this script lives in: partners/ is kept there.
+string RepoRoot()
+{
+    var dir = new DirectoryInfo(Environment.CurrentDirectory);
+    while (dir != null && !Directory.Exists(Path.Combine(dir.FullName, ".git")) && !File.Exists(Path.Combine(dir.FullName, ".git")))
+    {
+        dir = dir.Parent;
+    }
+    return dir?.FullName ?? Environment.CurrentDirectory;
 }
 
 ECDsa? RootKey()
@@ -222,7 +248,7 @@ static int Usage()
           dotnet run tools/partner.cs -- new-key <pem file>
           dotnet run tools/partner.cs -- cert --partner <id> --name <name> --domains <a,b> --key <public key> [--grants edition,account] [--days 365] [--out <folder>] [--root <pem>]
           dotnet run tools/partner.cs -- pack <folder> --key <partner pem>
-          dotnet run tools/partner.cs -- revoke <partner>@<issued> [...] --out <folder> [--root <pem>]
+          dotnet run tools/partner.cs -- revoke [<partner>@<issued> ...] [--out <folder>] [--root <pem>]
         """);
     return 2;
 }

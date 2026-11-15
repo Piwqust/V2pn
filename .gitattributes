@@ -75,3 +75,6 @@ README.md                     merge=ours
 *.sh                          text eol=lf
 # The same for scripts kept as resources without the extension: V2pn writes them out and runs them.
 v2rayN/ServiceLib/Sample/*_sh text eol=lf
+
+# Signed partner files: the signature covers the exact bytes, so git must not touch line ends.
+partners/** -text

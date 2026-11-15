@@ -45,10 +45,66 @@ public partial class MainWindow : IEditionActions
         Editions.Start();
     }
 
+    // The last state the tray and the title showed; a change of look renames both without waiting for the next one.
+    private (ProtectionState State, string? Problem)? _trayState;
+    private NativeMenuItem? _trayEditions;
+
+    /// <summary>"V2pn × Configra" for the looks on V2pn's layout, "Configra на V2pn" for the partner's own; else V2pn.</summary>
+    private static string EditionTitle() => Editions.Partner is not { } partner
+        ? L.AppName
+        : Editions.Variant is V2pnPartnerVariants.Signature or V2pnPartnerVariants.Warm
+            ? $"{L.AppName} × {partner.Name}"
+            : string.Format(L.EditionTitleOn, partner.Name, L.AppName);
+
+    /// <summary>The tray menu's "Look" submenu: plain V2pn and each partner, the open one ticked. Absent without partners.</summary>
+    private void RefreshTrayEditions()
+    {
+        if (Application.Current is not { } app || TrayIcon.GetIcons(app) is not { Count: > 0 } icons || icons[0].Menu is not { } menu)
+        {
+            return;
+        }
+        var available = Editions.Available;
+        if (available.Count == 0)
+        {
+            if (_trayEditions != null)
+            {
+                menu.Items.Remove(_trayEditions);
+                _trayEditions = null;
+            }
+            return;
+        }
+        var looks = new NativeMenu();
+        void Add(string? id, string name)
+        {
+            var item = new NativeMenuItem(name) { ToggleType = MenuItemToggleType.Radio, IsChecked = Editions.Partner?.Id == id };
+            item.Click += (_, _) => Editions.Select(id);
+            looks.Items.Add(item);
+        }
+        Add(null, L.AppName);
+        foreach (var partner in available)
+        {
+            Add(partner.Id, partner.Name);
+        }
+        if (_trayEditions == null)
+        {
+            _trayEditions = new NativeMenuItem(L.TrayEditions);
+            // Under Connect, with the everyday actions.
+            var connect = menu.Items.OfType<NativeMenuItem>().FirstOrDefault(i => i.Header == L.Connect || i.Header == L.Disconnect);
+            var at = connect != null ? menu.Items.IndexOf(connect) + 1 : Math.Min(4, menu.Items.Count);
+            menu.Items.Insert(at, _trayEditions);
+        }
+        _trayEditions.Menu = looks;
+    }
+
     private void RefreshEdition()
     {
         var partner = Editions.Partner;
         var variant = Editions.Variant;
+        RefreshTrayEditions();
+        if (_trayState is { } tray)
+        {
+            RefreshTray(tray.State, tray.Problem);
+        }
         // With no verified partner the name is plain text and the title bar drags the window there too.
         btnEdition.IsHitTestVisible = Editions.Available.Count > 0;
         UpdateLockup(partner, variant);

@@ -964,6 +964,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     /// </summary>
     private void RefreshTray(ProtectionState state, string? problem)
     {
+        _trayState = (state, problem);
         var status = ViewModel?.StatusBarViewModel;
         var server = _serverName ?? L.NoServer;
         if (server.Length > 40)
@@ -984,17 +985,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             var mode = status?.EnableTun == true ? L.ModeVpn : state == ProtectionState.LocalOnly ? L.LocalOnly : L.ModeProxy;
             text = $"{L.Connected} · {server} · {mode}";
         }
+        // V2pn: the open partner look names itself too (MainWindow.Edition.cs).
+        var app = EditionTitle();
         Title = state == ProtectionState.Unprotected
-            ? $"{L.AppName} — {problem ?? L.Unprotected}"
+            ? $"{app} — {problem ?? L.Unprotected}"
             : problem != null
-                ? $"{L.AppName} — {problem} · {server}"
-                : $"{L.AppName} — {L.Connected} · {server}";
+                ? $"{app} — {problem} · {server}"
+                : $"{app} — {L.Connected} · {server}";
         if (status == null)
         {
             return;
         }
         status.TrayStatusText = text;
-        var tip = $"{L.AppName} — {text}";
+        var tip = $"{app} — {text}";
         // Windows cuts a tray tooltip at 127 characters; Linux trays keep v2rayN's plain name.
         status.TrayToolTipText = Utils.IsLinux() ? Global.AppName : tip.Length > 127 ? tip[..126] + "…" : tip;
         status.TrayConnectText = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect;

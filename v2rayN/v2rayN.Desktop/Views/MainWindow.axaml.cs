@@ -744,6 +744,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (!_shownOnce)
             {
                 RevealStage();
+                _ = MaybeStartOnboardingAsync();
             }
             _shownOnce = true;
         }
@@ -1309,6 +1310,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnWelcomeRouteAll.Classes.Set("active", kind == RoutingPresetKind.All);
         NameOption(btnWelcomeRouteRu, L.RouteRussiaDirect, kind == RoutingPresetKind.RussiaDirect);
         NameOption(btnWelcomeRouteAll, L.RouteAll, kind == RoutingPresetKind.All);
+        RefreshOnboardingRoute();
     }
 
     // The tick of the chosen option is visual only; a screen reader hears it in the name.
@@ -1371,6 +1373,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var enabled = text == null || failed;
         btnWelcomeRouteRu.IsEnabled = enabled;
         btnWelcomeRouteAll.IsEnabled = enabled;
+        OnboardingRouteBusy(text, failed);
         btnRouteRussia.IsEnabled = enabled;
         btnRouteBlocked.IsEnabled = enabled;
         btnRouteAll.IsEnabled = enabled;
@@ -1966,6 +1969,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var busy = _sidebar?.SubBusy(subId);
         busy?.IsBusy = true;
+        _subUpdatesRunning++;
         try
         {
             var before = await V2pnSubs.SnapshotAsync(subId);
@@ -1979,8 +1983,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         finally
         {
             busy?.IsBusy = false;
+            _subUpdatesRunning--;
         }
     }
+
+    // How many subscriptions are downloading right now; the walkthrough shows a spinner while any is.
+    private int _subUpdatesRunning;
 
     // "Update all" (either way) compares every subscription's update time from the start of the run to its end.
     private IDisposable TrackSubUpdates(ReactiveCommand<RxVoid, RxVoid> command)

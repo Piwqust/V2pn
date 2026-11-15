@@ -129,6 +129,12 @@ public class UIItem
 
     // The one-time notice that the proxy is open to the local network without a password was shown.
     public bool V2pnLanWarned { get; set; }
+
+    // The first-start walkthrough was finished or skipped; people who had servers before it existed count as done.
+    public bool V2pnOnboarded { get; set; }
+
+    // The walkthrough step to come back to after a restart it caused (a language switch, a move from v2rayN).
+    public int V2pnOnboardingStep { get; set; }
 }
 
 public class ConstItem

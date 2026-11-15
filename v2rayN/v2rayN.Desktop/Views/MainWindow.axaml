@@ -1422,6 +1422,12 @@
                     </Border>
                 </Border>
             </Grid>
+
+            <!--  V2pn: the first-start walkthrough, over everything under the title bar (MainWindow.Onboarding.cs).  -->
+            <Panel
+                x:Name="onboardingHost"
+                Grid.Row="1"
+                IsVisible="False" />
         </Grid>
     </dialogHost:DialogHost>
 </Window>

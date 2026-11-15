@@ -352,10 +352,12 @@ public sealed class V2pnPartners
     }
 
     /// <summary>
-    /// Debug only (V2pnPartnerTrust.DebugAllowed): a partner made up in memory with every look and grant, no pictures and
-    /// no API, so every look and every scenario can be tried without a provider's site. Null in a plain release.
+    /// Debug only (V2pnPartnerTrust.DebugAllowed): a partner made up in memory with every look and grant, no API, so every
+    /// look and every scenario can be tried without a provider's site. With <paramref name="themeFolder"/> (a folder with a
+    /// partner.json and its pictures, unsigned) it takes that pack's brand, theme and pictures, checked as a real pack's
+    /// are. Null in a plain release.
     /// </summary>
-    public V2pnPartner? AddDebugPartner(string id, string name, string? accent)
+    public V2pnPartner? AddDebugPartner(string id, string name, string? accent, string? themeFolder = null)
     {
         if (!V2pnPartnerTrust.DebugAllowed)
         {
@@ -363,13 +365,53 @@ public sealed class V2pnPartners
         }
         var today = Today();
         var cert = new V2pnPartnerCert(id, name, ["localhost"], string.Empty, [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account], today, today.AddYears(1));
-        var pack = new V2pnPartnerPack(id, name, accent, null, null, V2pnPartnerVariants.All.ToList(), V2pnPartnerVariants.Cabinet,
-            new Dictionary<string, string>(), null, null, null, []);
-        var partner = new V2pnPartner(cert, pack, Path.Combine(Path.GetTempPath(), "v2pn-debug-partner-" + id), "debug://" + id + "/");
+        var folder = Path.Combine(Path.GetTempPath(), "v2pn-debug-partner-" + id);
+        var assets = new List<V2pnPartnerAsset>();
+        JsonObject? root = null;
+        if (themeFolder != null && File.Exists(Path.Combine(themeFolder, "partner.json")))
+        {
+            try
+            {
+                root = JsonNode.Parse(File.ReadAllBytes(Path.Combine(themeFolder, "partner.json"))) as JsonObject;
+                Directory.CreateDirectory(folder);
+                foreach (var file in Directory.GetFiles(themeFolder).Where(f => V2pnPartnerSlots.ImageSize(File.ReadAllBytes(f)) != null).Take(V2pnPartnerTrust.MaxAssets))
+                {
+                    var bytes = File.ReadAllBytes(file);
+                    File.WriteAllBytes(Path.Combine(folder, Path.GetFileName(file)), bytes);
+                    assets.Add(new V2pnPartnerAsset(Path.GetFileName(file), bytes.LongLength, Convert.ToHexStringLower(SHA256.HashData(bytes))));
+                }
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
+            {
+                Logging.SaveLog($"{Tag}: debug theme {themeFolder}", ex);
+                root = null;
+            }
+        }
+        string? Picture(string? file) => file != null && assets.Any(a => a.Name == file) ? file : null;
+        var brand = root?["brand"] as JsonObject;
+        accent = V2pnColor.TryParse(brand?["accent"]?.GetValue<string>())?.Hex ?? accent;
+        var theme = V2pnThemeReader.Parse(root?["theme"], accent, f => Picture(f) != null);
+        var pack = new V2pnPartnerPack(id, name, accent, Picture(brand?["logo"]?.GetValue<string>()), Picture(brand?["logoOnLight"]?.GetValue<string>()),
+            V2pnPartnerVariants.All.ToList(), root?["theme"] != null ? V2pnPartnerVariants.Theme : V2pnPartnerVariants.Cabinet,
+            new Dictionary<string, string>(), null, null, null, assets, Picture(brand?["mark"]?.GetValue<string>()), Theme: theme);
+        pack = V2pnPartnerSlots.Fit(pack, file => File.Exists(Path.Combine(folder, file)) ? File.ReadAllBytes(Path.Combine(folder, file)) : null, out _);
+        var partner = new V2pnPartner(cert, pack, folder, "debug://" + id + "/");
         _debugIds[id] = 0;
         _partners[id] = partner;
         Changed?.Invoke();
         return partner;
+    }
+
+    /// <summary>Debug only: the made-up partner with its theme changed by <paramref name="edit"/> (another template, say).</summary>
+    public void EditDebugTheme(string id, Func<V2pnTheme, V2pnTheme> edit)
+    {
+        if (!_debugIds.ContainsKey(id) || !_partners.TryGetValue(id, out var partner))
+        {
+            return;
+        }
+        var theme = edit(partner.Pack.Theme ?? V2pnTheme.Default(partner.Pack.Accent));
+        _partners[id] = new V2pnPartner(partner.Cert, partner.Pack with { Theme = theme }, partner.Folder, partner.SourceUrl, partner.Features);
+        Changed?.Invoke();
     }
 
     public bool IsDebug(string? id) => id != null && _debugIds.ContainsKey(id);

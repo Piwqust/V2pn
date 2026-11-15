@@ -355,11 +355,24 @@ public static class V2pnPartnerTrust
     }
 
     /// <summary>
-    /// A development build also takes a partner served over plain http from this computer (127.0.0.1,
-    /// localhost), so the whole chain can be tried against a provider's local demo. A release never does.
+    /// A development build, and a release with developer mode on (About → updates), also takes a partner served
+    /// over plain http from this computer (127.0.0.1, localhost): a provider previews its pack on its own machine
+    /// before publishing. The certificate must still be V2pn's and name that address.
     /// </summary>
     public static bool DevLoopback(Uri uri) =>
-        !V2pnInfo.IsRelease && uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback;
+        uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback && (!V2pnInfo.IsRelease || DeveloperMode());
+
+    private static bool DeveloperMode()
+    {
+        try
+        {
+            return AppManager.Instance.Config?.UiItem?.V2pnDevMode == true;
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or NullReferenceException)
+        {
+            return false;
+        }
+    }
 
     private static bool IsDomain(string domain)
     {

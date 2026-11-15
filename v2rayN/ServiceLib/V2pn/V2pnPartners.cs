@@ -15,7 +15,7 @@ public sealed class V2pnPartner(V2pnPartnerCert cert, V2pnPartnerPack pack, stri
     public bool HasEdition => Pack.Variants.Count > 0;
 
     /// <summary>The local file of a pack asset, or null when the pack has no such asset.</summary>
-    public string? AssetPath(string? name) => Pack.Asset(name) == null ? null : Path.Combine(folder, name!);
+    public string? AssetPath(string? name) => Pack.Asset(name) == null ? null : Path.Combine(Folder, name!);
 
     /// <summary>Where its checked files are kept.</summary>
     public string Folder { get; } = folder;

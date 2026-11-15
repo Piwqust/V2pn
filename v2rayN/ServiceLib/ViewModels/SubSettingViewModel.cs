@@ -40,6 +40,13 @@ public partial class SubSettingViewModel : MyReactiveObject
         }, canEditRemove);
         SubShareCmd = ReactiveCommand.CreateFromTask(async () =>
         {
+            // V2pn: a partner that closed its subscription's settings keeps its link from being passed on.
+            var locked = await V2pnLocks.Instance.ForSubAsync(SelectedSource?.Id);
+            if (locked.Any)
+            {
+                NoticeManager.Instance.Enqueue(string.Format(ResUI.V2pnLockedSub, locked.PartnerName));
+                return;
+            }
             await ShareSubInteraction.HandleSafe(SelectedSource?.Url);
         }, canEditRemove);
 

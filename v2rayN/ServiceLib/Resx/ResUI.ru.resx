@@ -1968,4 +1968,7 @@
   <data name="V2pnLockedServerNoName" xml:space="preserve">
     <value>Настройки этого сервера закрыл провайдер: его нельзя изменить, отправить или выгрузить.</value>
   </data>
+  <data name="V2pnLockedSub" xml:space="preserve">
+    <value>Настройки этой подписки закрыл провайдер {0}: её ссылкой нельзя поделиться.</value>
+  </data>
 </root>

@@ -432,6 +432,8 @@ public partial class ProfilesViewModel : MyReactiveObject
     public async Task RefreshServersBiz()
     {
         var lstModel = await GetProfileItemsEx(_config.SubIndexId, _serverFilter);
+        // V2pn: servers a partner hides are not offered (its own recommendation can still connect to one).
+        lstModel = lstModel?.Where(m => !V2pnPartnerLive.Instance.Hidden(m.Subid, m.Remarks, m.Address)).ToList();
 
         ProfileItems.ReplaceRange(lstModel ?? []);
         if (lstModel?.Count > 0)
@@ -475,7 +477,7 @@ public partial class ProfilesViewModel : MyReactiveObject
         }
 
         var favorites = (from t in all
-                         where favoriteIds.Contains(t.IndexId)
+                         where favoriteIds.Contains(t.IndexId) && !V2pnPartnerLive.Instance.Hidden(t.Subid, t.Remarks, t.Address)
                          join t3 in lstProfileExs on t.IndexId equals t3.IndexId into t3b
                          from t33 in t3b.DefaultIfEmpty()
                          orderby t33?.Sort ?? 0

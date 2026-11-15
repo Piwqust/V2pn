@@ -30,6 +30,13 @@ public sealed class V2pnPartnerLive
     public V2pnServerNote? Describe(V2pnPartner? partner, string? remarks, string? address) =>
         partner == null ? null : V2pnPartnerChoice.Describe(partner.Pack.ServerNotes, Servers(partner.Id), remarks, address);
 
+    /// <summary>The partner's word about a server of the subscription <paramref name="subId"/>; null when it has no verified partner or says nothing.</summary>
+    public V2pnServerNote? Describe(string? subId, string? remarks, string? address) =>
+        V2pnLocks.Instance.PartnerOf(subId) is { } partner ? Describe(partner, remarks, address) : null;
+
+    /// <summary>Whether the partner hides this server from the list (only its API's recommendation can still pick it).</summary>
+    public bool Hidden(string? subId, string? remarks, string? address) => Describe(subId, remarks, address)?.IsHidden == true;
+
     /// <summary>
     /// Asks the API when the last question is older than <see cref="Every"/> (or <paramref name="force"/>). A failed
     /// call keeps the last answer. True when it asked and the notes changed.

@@ -5660,5 +5660,14 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("V2pnLockedServerNoName", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} closed this subscription's settings: its link cannot be shared..
+        /// </summary>
+        public static string V2pnLockedSub {
+            get {
+                return ResourceManager.GetString("V2pnLockedSub", resourceCulture);
+            }
+        }
     }
 }

@@ -39,8 +39,9 @@ public sealed record V2pnLockState(bool Settings, bool HideUrl, string? PartnerN
 }
 
 /// <summary>
-/// The lock of every subscription, kept up to date as partners and the panels' answers change, for the places that
-/// show or export a server (sync reads) and for the commands that would (<see cref="ForSubAsync"/>, read fresh).
+/// The verified partner and the lock of every subscription, kept up to date as partners and the panels' answers
+/// change, for the places that list, show or export a server (sync reads) and for the commands that would export one
+/// (<see cref="ForSubAsync"/>, read fresh).
 /// </summary>
 public sealed class V2pnLocks
 {
@@ -48,10 +49,11 @@ public sealed class V2pnLocks
     public static V2pnLocks Instance => _instance.Value;
 
     private volatile IReadOnlyDictionary<string, V2pnLockState> _bySub = new Dictionary<string, V2pnLockState>();
+    private volatile IReadOnlyDictionary<string, V2pnPartner> _partnerBySub = new Dictionary<string, V2pnPartner>();
     private int _refreshing;
     private bool _again;
 
-    /// <summary>Raised after the set of closed subscriptions changed. May come from any thread.</summary>
+    /// <summary>Raised after the partners of the subscriptions or what they closed changed. May come from any thread.</summary>
     public event Action? Changed;
 
     private V2pnLocks()
@@ -60,6 +62,13 @@ public sealed class V2pnLocks
         SubInfoManager.Instance.Changed += id => _ = RefreshAsync();
         _ = RefreshAsync();
     }
+
+    /// <summary>The verified partner of a subscription as last computed; null for none.</summary>
+    public V2pnPartner? PartnerOf(string? subId) =>
+        subId.IsNotEmpty() && _partnerBySub.TryGetValue(subId!, out var partner) ? partner : null;
+
+    /// <summary>The subscriptions of verified partners, by id.</summary>
+    public IReadOnlyDictionary<string, V2pnPartner> Partners => _partnerBySub;
 
     /// <summary>The lock of a subscription as last computed; <see cref="V2pnLockState.None"/> for none or unknown.</summary>
     public V2pnLockState ForSub(string? subId) =>
@@ -171,16 +180,24 @@ public sealed class V2pnLocks
                 await V2pnPartners.Instance.LoadAsync();
                 var subs = await AppManager.Instance.SubItems() ?? [];
                 var map = new Dictionary<string, V2pnLockState>(StringComparer.Ordinal);
+                var partners = new Dictionary<string, V2pnPartner>(StringComparer.Ordinal);
                 foreach (var sub in subs.Where(s => s.Id.IsNotEmpty()))
                 {
-                    var state = V2pnLockState.For(V2pnPartners.Instance.ForSubscription(sub), SubInfoManager.Instance.Get(sub.Id));
+                    var partner = V2pnPartners.Instance.ForSubscription(sub);
+                    if (partner != null)
+                    {
+                        partners[sub.Id] = partner;
+                    }
+                    var state = V2pnLockState.For(partner, SubInfoManager.Instance.Get(sub.Id));
                     if (state.Any)
                     {
                         map[sub.Id] = state;
                     }
                 }
-                var changed = map.Count != _bySub.Count || map.Any(kv => !_bySub.TryGetValue(kv.Key, out var old) || old != kv.Value);
+                var changed = map.Count != _bySub.Count || map.Any(kv => !_bySub.TryGetValue(kv.Key, out var old) || old != kv.Value)
+                    || partners.Count != _partnerBySub.Count || partners.Any(kv => !_partnerBySub.TryGetValue(kv.Key, out var old) || !ReferenceEquals(old, kv.Value));
                 _bySub = map;
+                _partnerBySub = partners;
                 if (changed)
                 {
                     Changed?.Invoke();

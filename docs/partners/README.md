@@ -101,14 +101,18 @@ https://example.com/v2pn/
 | `id` | must equal the certificate's partner id |
 | `name` | shown in the title bar, the switcher and the intro; 40 characters at most, no "V2pn" |
 | `brand.accent` | `#RRGGBB`; the look's accent until the person picks another |
-| `brand.logo`, `brand.logoOnLight` | the wide logo for dark and light title bars (about 340×96, transparent) |
-| `brand.mark` | a square mark on a transparent ground (128×128) for the subscription card |
+| `brand.logo`, `brand.logoOnLight` | the wide logo for dark and light title bars: 2:1 to 8:1, 32–256 px tall, transparent (340×96 works) |
+| `brand.mark` | a square mark on a transparent ground for the subscription card: 64–512 px (128×128 works) |
 | `edition.variants` | which of the five looks you allow, in the order the switcher lists them |
 | `edition.default` | the look that opens first |
-| `edition.art.lamp` | the picture of the studio look (up to 360 px tall) |
+| `edition.art.lamp` | the picture of the studio look: 200–1600 px a side, at most 2:1; a cut-out on a transparent ground stands on the page, a picture with its own ground is framed like a photo |
 | `links.cabinet`, `links.support` | buttons in the look, when the subscription headers have none |
 | `api` | your API's base address (with the `account` grant, on a certified domain) |
 | `assets` | every picture with its size and SHA-256; `tools/partner.cs pack` fills it |
+
+A picture that does not fit its slot is not shown there (V2pn shows your name, or nothing) and `tools/partner-check.cs` says which and why; the rest of the pack keeps working.
+
+What a pack does not set, on purpose: fonts, corners, spacing and every colour but the accent. Each look has its own type and shape, and V2pn derives the rest of the colours for light and dark, checking that text reads (WCAG AA, 4.5:1). Your accent is used as it is for buttons and marks; where it is text on a light ground, V2pn darkens it just enough to read. An accent close to the "protected" green or the "attention" amber is turned away from them. These limits are what keeps every look working at every window size, in light and dark, for every provider.
 
 Limits: `partner.json` up to 64 KB, `cert.json` up to 16 KB, at most 8 pictures, PNG, WebP or JPEG only, 1 MB each, file names without folders.
 

@@ -143,6 +143,10 @@ try
         }
         Ok($"pack: {partner.Name}, accent {partner.Pack.Accent ?? "(none)"}, looks {string.Join(", ", partner.Pack.Variants)} (opens on {partner.Pack.DefaultVariant})");
         Ok($"pictures: {string.Join(", ", partner.Pack.Assets.Select(a => $"{a.Name} {a.Size / 1024} KB"))}");
+        foreach (var note in partners.SlotNotesFor(partner.Id))
+        {
+            Bad($"picture not shown: {note}");
+        }
         if (partner.Pack.Mark == null)
         {
             Note("no brand.mark: the subscription card in V2pn's list keeps a letter");

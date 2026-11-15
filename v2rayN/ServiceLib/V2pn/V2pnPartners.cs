@@ -53,6 +53,7 @@ public sealed class V2pnPartners
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly ConcurrentDictionary<string, V2pnPartner> _partners = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _errors = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _slotNotes = new(StringComparer.Ordinal);
     private HashSet<string> _revoked = [];
     // The debug window's made-up partners and the subscriptions it counts as theirs; never on disk, never pruned.
     private readonly ConcurrentDictionary<string, byte> _debugIds = new(StringComparer.Ordinal);
@@ -103,6 +104,10 @@ public sealed class V2pnPartners
         // A pack only dresses subscriptions from its certificate's domains, however the link reached the app.
         return partner != null && V2pnPartnerTrust.DomainAllowed(partner.Cert, subscriptionUrl) ? partner : null;
     }
+
+    /// <summary>Pictures of a partner's pack that did not fit their slot and are not shown (V2pnPartnerSlots).</summary>
+    public IReadOnlyList<string> SlotNotesFor(string? partnerId) =>
+        partnerId != null && _slotNotes.TryGetValue(partnerId, out var notes) ? notes : [];
 
     /// <summary>Why the last check of a v2pn-partner folder failed; null after a success or before any check.</summary>
     public string? ErrorFor(string? partnerUrl) => partnerUrl != null && _errors.TryGetValue(partnerUrl, out var error) ? error : null;
@@ -231,6 +236,7 @@ public sealed class V2pnPartners
         Directory.CreateDirectory(staging);
         try
         {
+            var pictures = new Dictionary<string, byte[]>(StringComparer.Ordinal);
             foreach (var asset in pack.Assets)
             {
                 var content = await GetBytesAsync(partnerUrl + Uri.EscapeDataString(asset.Name), V2pnPartnerTrust.MaxAssetBytes, cancellationToken);
@@ -239,8 +245,11 @@ public sealed class V2pnPartners
                     Fail($"The picture {asset.Name} does not match the signed pack.");
                     return null;
                 }
+                pictures[asset.Name] = content;
                 await File.WriteAllBytesAsync(Path.Combine(staging, asset.Name), content, cancellationToken);
             }
+            pack = V2pnPartnerSlots.Fit(pack, name => pictures.GetValueOrDefault(name), out var notes);
+            _slotNotes[cert.Partner] = notes;
             await File.WriteAllBytesAsync(Path.Combine(staging, "cert.json"), certJson!, cancellationToken);
             await File.WriteAllTextAsync(Path.Combine(staging, "cert.json.sig"), certSig!, cancellationToken);
             await File.WriteAllBytesAsync(Path.Combine(staging, "partner.json"), packJson!, cancellationToken);
@@ -292,6 +301,8 @@ public sealed class V2pnPartners
                     return null;
                 }
             }
+            pack = V2pnPartnerSlots.Fit(pack, name => ReadOrNull(dir, name), out var notes);
+            _slotNotes[cert.Partner] = notes;
             error = string.Empty;
             return new V2pnPartner(cert, pack, dir, source);
         }

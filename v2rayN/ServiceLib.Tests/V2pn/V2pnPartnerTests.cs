@@ -11,7 +11,8 @@ internal sealed class TestPartner
     public string RootPublic => Convert.ToBase64String(Root.ExportSubjectPublicKeyInfo());
     public string KeyPublic => Convert.ToBase64String(Key.ExportSubjectPublicKeyInfo());
 
-    public byte[] Cert(string partner = "configra", string[]? domains = null, string[]? grants = null, string issued = "2026-11-01", string expires = "2027-11-01") =>
+    public byte[] Cert(string partner = "configra", string[]? domains = null, string[]? grants = null, string issued = "2026-11-01", string expires = "2027-11-01",
+        JsonObject? reviewed = null) =>
         Encoding.UTF8.GetBytes(new JsonObject
         {
             ["schema"] = 1,
@@ -22,6 +23,7 @@ internal sealed class TestPartner
             ["grants"] = new JsonArray((grants ?? ["edition", "account"]).Select(g => (JsonNode)g).ToArray()),
             ["issued"] = issued,
             ["expires"] = expires,
+            ["reviewed"] = reviewed,
         }.ToJsonString());
 
     public static byte[] Pack(string id = "configra", string? accent = "#ff7a2f", string[]? variants = null, string? first = "cabinet",

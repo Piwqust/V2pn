@@ -325,8 +325,11 @@ public partial class MainWindowViewModel : MyReactiveObject
             .ObserveOn(RxSchedulers.MainThreadScheduler)
             .SubscribeAsync(async blProxy => await UpdateSubscriptionProcess("", blProxy));
 
-        _ = Init();
+        Initialized = Init();
     }
+
+    /// <summary>V2pn: the start is done (lists loaded, the core started or left off as it was); the provider's start defaults wait for it.</summary>
+    public Task Initialized { get; } = Task.CompletedTask;
 
     private async Task Init()
     {

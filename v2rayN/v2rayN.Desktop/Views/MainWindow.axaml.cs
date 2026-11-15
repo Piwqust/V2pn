@@ -2756,6 +2756,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         });
         WarnAboutOpenLanProxyOnce();
         _ = HandleStartupLinkAsync();
+        // V2pn: what providers ask for at start (connect, update, test), once the start itself is done.
+        _ = RunProviderStartAsync();
         if (V2pnImport.Imported is { } imported)
         {
             ShowToast(ToastKind.Success, string.Format(L.ImportDone, imported.Servers, imported.Subscriptions));

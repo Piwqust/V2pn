@@ -157,7 +157,11 @@ public sealed partial class AppearanceView
                 Apply();
             }
         };
-        return new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { swatches, custom } };
+        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { swatches, custom } };
+        // The same warning plain V2pn gives: an accent near green or amber makes Connect read as a state.
+        return Appearance.NearHue(Color.Parse(Editions.AccentHex), Appearance.StatusHues)
+            ? new StackPanel { Spacing = 4, Children = { row, new TextBlock { Classes = { "srowhint" }, MaxWidth = 420, Text = L.ApAccentNearStatus, TextWrapping = TextWrapping.Wrap } } }
+            : row;
     }
 
     private static Button Swatch(Color color, bool selected, string name, Action click)

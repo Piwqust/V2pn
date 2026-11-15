@@ -86,8 +86,22 @@ public static class Editions
     public static EditionLookPrefs Prefs =>
         Partner is { } partner && Settings.Looks.TryGetValue($"{partner.Id}:{Variant}", out var prefs) ? prefs : new();
 
-    /// <summary>The partner's own colour for its looks, before the person's choice.</summary>
-    public static string PartnerAccent => Partner?.Pack.Accent ?? "#FF3D1F";
+    /// <summary>
+    /// The partner's own colour for its looks, before the person's choice; turned away from the state hues when it
+    /// is close to them, so a green partner never paints Connect as "protected".
+    /// </summary>
+    public static string PartnerAccent
+    {
+        get
+        {
+            if (Partner?.Pack.Accent is not { } hex || !Color.TryParse(hex, out var colour))
+            {
+                return "#FF3D1F";
+            }
+            var safe = Appearance.AwayFromStatus(colour);
+            return safe == colour ? hex : $"#{safe.R:X2}{safe.G:X2}{safe.B:X2}";
+        }
+    }
 
     // What each look is drawn with when the person has not changed it.
     public static string DefaultMode(string look) => look == V2pnPartnerVariants.Studio ? "light" : "dark";

@@ -410,6 +410,34 @@ public static class Appearance
     }
 
     /// <summary>True when a coloured accent sits within <paramref name="degrees"/> of one of the given hues.</summary>
+    /// <summary>The hues of "protected" green and "attention" amber: an accent near them reads as a state.</summary>
+    internal static readonly Color[] StatusHues = [Color.Parse("#3DD68C"), Color.Parse("#F2B84B")];
+
+    /// <summary>
+    /// A partner's accent turned just far enough from the state hues that a button in it never reads as
+    /// "protected" or "attention"; an accent already clear of them comes back as it is.
+    /// </summary>
+    internal static Color AwayFromStatus(Color accent)
+    {
+        if (!NearHue(accent, StatusHues))
+        {
+            return accent;
+        }
+        var hsl = accent.ToHsl();
+        for (var step = 5; step <= 90; step += 5)
+        {
+            foreach (var sign in new[] { -1, 1 })
+            {
+                var turned = HslColor.ToRgb((hsl.H + (sign * step) + 360) % 360, hsl.S, hsl.L, 1);
+                if (!NearHue(turned, StatusHues, 25))
+                {
+                    return turned;
+                }
+            }
+        }
+        return accent;
+    }
+
     internal static bool NearHue(Color accent, IEnumerable<Color> others, double degrees = 20)
     {
         var (chroma, hue) = Oklch(accent);

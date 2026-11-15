@@ -585,6 +585,19 @@
         <Setter Property="Margin" Value="0" />
     </Style>
 
+    <!--  A row with a note or chips under the name is taller than the row's minimum: padding keeps it off its neighbours.  -->
+    <Style Selector="Button.siderow.rich">
+        <Setter Property="Padding" Value="10,9,6,9" />
+        <Setter Property="Margin" Value="0,2" />
+    </Style>
+    <Style Selector=":is(Window).dense Button.siderow.rich">
+        <Setter Property="Padding" Value="10,6,6,6" />
+        <Setter Property="Margin" Value="0,1" />
+    </Style>
+    <Style Selector="Button.siderow Border.tag">
+        <Setter Property="Padding" Value="7,2" />
+    </Style>
+
     <Style Selector="Button.siderow StackPanel.rowactions">
         <Setter Property="Opacity" Value="0" />
         <Setter Property="IsHitTestVisible" Value="False" />

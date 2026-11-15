@@ -421,6 +421,7 @@
                                         Classes="siderow"
                                         Classes.active="{Binding IsActive}"
                                         Classes.indent="{Binding Indent}"
+                                        Classes.rich="{Binding IsRich}"
                                         Click="SideServer_Click"
                                         ContextRequested="SideServer_ContextRequested"
                                         Theme="{StaticResource V2SideRow}"
@@ -482,12 +483,12 @@
                                                     TextTrimming="CharacterEllipsis"
                                                     ToolTip.Tip="{Binding Note}" />
                                                 <ItemsControl
-                                                    Margin="0,4,0,4"
+                                                    Margin="0,5,0,0"
                                                     IsVisible="{Binding HasPurposes}"
                                                     ItemsSource="{Binding Purposes}">
                                                     <ItemsControl.ItemsPanel>
                                                         <ItemsPanelTemplate>
-                                                            <WrapPanel ItemSpacing="4" LineSpacing="4" />
+                                                            <WrapPanel ItemSpacing="5" LineSpacing="5" />
                                                         </ItemsPanelTemplate>
                                                     </ItemsControl.ItemsPanel>
                                                     <ItemsControl.ItemTemplate>

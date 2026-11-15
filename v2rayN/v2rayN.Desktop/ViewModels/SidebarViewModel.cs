@@ -139,6 +139,9 @@ public sealed class SideServerRow : SideRow
     public IReadOnlyList<string> Purposes { get; }
     public bool HasPurposes => Purposes.Count > 0;
 
+    /// <summary>Taller than a plain row (a note or chips under the name): it gets padding above and below.</summary>
+    public bool IsRich => HasNote || HasPurposes;
+
     // Inside a country group the flag repeats the group's own, so those rows show the protocol instead.
     public bool ShowFlag => !Indent && HasFlag;
     public bool ShowGlobe => !Indent && !HasFlag;

@@ -109,12 +109,50 @@ internal static class Scene
     /// <summary>The look being built: set by the window before it makes a scene, read by the helpers below.</summary>
     public static SceneLook Current { get; set; } = new(true, "#FF7A2F", "round", "round", "geist");
 
-    /// <summary>Near-black labels on a light accent, white on a dark one.</summary>
-    public static string OnAccent(string accent)
+    /// <summary>Labels on an accent fill: near-black or white, whichever reads better (WCAG contrast, not a guess).</summary>
+    public static string OnAccent(string accent) =>
+        Contrast("#170B03", accent) >= Contrast("#FFFFFF", accent) ? "#170B03" : "#FFFFFF";
+
+    /// <summary>WCAG 2 contrast ratio of two opaque colours, 1 to 21.</summary>
+    public static double Contrast(string a, string b)
     {
-        var c = Color.Parse(accent);
-        var luma = (0.299 * c.R) + (0.587 * c.G) + (0.114 * c.B);
-        return luma > 140 ? "#170B03" : "#FFFFFF";
+        static double Luminance(Color c)
+        {
+            static double Channel(byte v)
+            {
+                var x = v / 255.0;
+                return x <= 0.04045 ? x / 12.92 : Math.Pow((x + 0.055) / 1.055, 2.4);
+            }
+            return (0.2126 * Channel(c.R)) + (0.7152 * Channel(c.G)) + (0.0722 * Channel(c.B));
+        }
+        var (la, lb) = (Luminance(Color.Parse(a)), Luminance(Color.Parse(b)));
+        return (Math.Max(la, lb) + 0.05) / (Math.Min(la, lb) + 0.05);
+    }
+
+    /// <summary>
+    /// A colour used for text on <paramref name="ground"/>, made just dark (or light) enough to read: kept as it is when
+    /// it reaches <paramref name="min"/> already, else its lightness moves away from the ground's step by step. So a
+    /// partner's orange stays orange on dark grounds and turns burnt orange on light ones instead of failing there.
+    /// </summary>
+    public static string Readable(string color, string ground, double min = 4.5)
+    {
+        if (Contrast(color, ground) >= min)
+        {
+            return color;
+        }
+        var hsl = Color.Parse(color).ToHsl();
+        var darker = Contrast("#000000", ground) >= Contrast("#FFFFFF", ground);
+        for (var step = 1; step <= 40; step++)
+        {
+            var l = Math.Clamp(hsl.L + ((darker ? -1 : 1) * step * 0.02), 0, 1);
+            var c = HslColor.ToRgb(hsl.H, hsl.S, l, 1);
+            var hex = $"#{c.R:X2}{c.G:X2}{c.B:X2}";
+            if (Contrast(hex, ground) >= min)
+            {
+                return hex;
+            }
+        }
+        return darker ? "#000000" : "#FFFFFF";
     }
 
     /// <summary>The accent with an alpha in front, "#59FF7A2F" for "59".</summary>
@@ -261,7 +299,7 @@ internal static class Scene
         var color = kind switch
         {
             "safe" => light ? "#16804F" : "#3DD68C",
-            "warn" => light ? "#B07508" : "#F2B84B",
+            "warn" => light ? "#7A5000" : "#F2B84B",
             "checking" => light ? "#6A6862" : "#9B9BA8",
             _ => light ? "#C8381F" : "#FF5A3D",
         };

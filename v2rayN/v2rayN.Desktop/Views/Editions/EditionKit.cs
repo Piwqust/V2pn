@@ -53,7 +53,11 @@ public sealed record ScenePalette(
     bool Ascii = false,
     string Good = "#5BD08F",
     string Warn = "#E9B04F",
-    string Bad = "#E5684F");
+    string Bad = "#E5684F")
+{
+    /// <summary>The accent where it is text on this look's ground: readable at 4.5:1, never the raw brand colour.</summary>
+    public string AccentText => Scene.Readable(Accent, Ground);
+}
 
 /// <summary>
 /// Every server V2pn has, as the plain sidebar lists them: search, a chip per subscription and favourites, ping,
@@ -245,7 +249,7 @@ public sealed class ServerBrowser : UserControl
     private Button Chip(string? id, string label)
     {
         var on = _sub == id;
-        var text = Scene.Text(_p.Ascii ? (on ? $"[{label}]" : $" {label} ") : label, 12, on ? (_p.Ascii ? _p.Accent : _p.Ground) : _p.Muted, _p.Font, FontWeight.Medium);
+        var text = Scene.Text(_p.Ascii ? (on ? $"[{label}]" : $" {label} ") : label, 12, on ? (_p.Ascii ? _p.AccentText : _p.Ground) : _p.Muted, _p.Font, FontWeight.Medium);
         var fill = on && !_p.Ascii ? _p.Ink : _p.Ascii ? null : _p.Raised;
         var chip = Scene.Button(text, fill, _p.Muted, _p.Ascii ? 2 : 999, new Thickness(_p.Ascii ? 2 : 12, 6));
         chip.Click += (_, _) =>
@@ -264,7 +268,7 @@ public sealed class ServerBrowser : UserControl
         var grid = new Grid { ColumnDefinitions = new(_p.Ascii ? "14,*,Auto" : "24,*,Auto"), ColumnSpacing = 10 };
         if (_p.Ascii)
         {
-            grid.Children.Add(Scene.Text(selected ? ">" : "", 12, _p.Accent, _p.Font));
+            grid.Children.Add(Scene.Text(selected ? ">" : "", 12, _p.AccentText, _p.Font));
         }
         else if (v2rayN.Desktop.Converters.V2pnConverters.Flag(server.Code) != null)
         {
@@ -448,8 +452,8 @@ public sealed class ForeignNote : UserControl
         _text = Scene.Text("", 12.5, p.Soft, p.Font);
         _text.TextWrapping = TextWrapping.Wrap;
         _text.TextTrimming = TextTrimming.None;
-        var label = Scene.Text("", 12.5, p.Accent, p.Font, FontWeight.Medium);
-        _switch = Scene.Button(label, null, p.Accent, 6, new Thickness(0, 2));
+        var label = Scene.Text("", 12.5, p.AccentText, p.Font, FontWeight.Medium);
+        _switch = Scene.Button(label, null, p.AccentText, 6, new Thickness(0, 2));
         _switch.HorizontalAlignment = HorizontalAlignment.Left;
         _switch.Click += (_, _) =>
         {

@@ -146,7 +146,7 @@ public sealed class CabinetScene : EditionScene
     private sealed record Ink(string Ground, string Panel, string Raised, string Text, string Soft, string Muted, string Doodle, string SegmentOn, string SegmentOnText);
 
     private static readonly Ink DarkInk = new("#0E0E0D", "#171716", "#232321", "#F3F2EE", "#DAD7D0", "#8E8C86", "#6A6862", "#F3F2EE", "#121211");
-    private static readonly Ink LightInk = new("#E7E5E1", "#F7F6F3", "#ECEAE5", "#121211", "#3E3C38", "#6A6862", "#A19E97", "#121211", "#F3F2EE");
+    private static readonly Ink LightInk = new("#E7E5E1", "#F7F6F3", "#ECEAE5", "#121211", "#3E3C38", "#6A6862", "#8F8C84", "#121211", "#F3F2EE");
 
     private readonly Ink _c;
     private readonly Image _flag = Scene.Flag(null, 34, 24);
@@ -778,10 +778,10 @@ public sealed class AsciiScene : EditionScene
         string Ground, string Map, string MapLine, string Legend, string Key, string Value, string Big, string Note,
         string ButtonFill, string ButtonText, string Here, string Raised, string Soft, string Text, string Muted);
 
-    private static readonly Ink DarkInk = new("#121211", "#4A4843", "#2A2926", "#6E6C66", "#6E6C66", "#E9E6DF", "#F3F2EE", "#8E8C86",
+    private static readonly Ink DarkInk = new("#121211", "#4A4843", "#2A2926", "#8C8982", "#8C8982", "#E9E6DF", "#F3F2EE", "#8E8C86",
         "#F3F2EE", "#121211", "#3DD68C", "#1C1B19", "#E9E6DF", "#F3F2EE", "#8E8C86");
-    private static readonly Ink LightInk = new("#F3F2EE", "#B5B2AA", "#D5D2CA", "#8E8C86", "#8E8C86", "#1A1918", "#121211", "#6A6862",
-        "#121211", "#F3F2EE", "#16804F", "#E7E5DF", "#2A2926", "#121211", "#6A6862");
+    private static readonly Ink LightInk = new("#F3F2EE", "#9A978F", "#D5D2CA", "#66645E", "#66645E", "#1A1918", "#121211", "#6A6862",
+        "#121211", "#F3F2EE", "#147A4A", "#E7E5DF", "#2A2926", "#121211", "#6A6862");
 
     private readonly Ink _c;
     private readonly TextBlock _map = new() { FontFamily = Scene.Mono, FontSize = 12, LineHeight = 13 };
@@ -967,7 +967,7 @@ public sealed class AsciiScene : EditionScene
                 {
                     if (i > 0)
                     {
-                        inlines.Add(new Run("*") { Foreground = Scene.B(Look.Accent) });
+                        inlines.Add(new Run("*") { Foreground = Scene.B(Scene.Readable(Look.Accent, _c.Ground, 3)) });
                     }
                     inlines.Add(new Run(parts[i]));
                 }

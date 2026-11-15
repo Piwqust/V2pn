@@ -8,9 +8,13 @@ What changes for the people who use the app. Each version's section becomes the 
 
 A provider can now dress V2pn in its own look. The first is Configra.
 
-- A provider's site or bot can open V2pn with a `v2pn://add` link. V2pn always asks before adding the subscription. Happ, v2RayTun and Hiddify add links work the same way.
-- When the provider is a V2pn partner, its look becomes available once its signature checks out: the name in the title bar switches between plain V2pn and the provider (also Ctrl+1…9). The connection, settings and servers stay as they are.
-- A provider picks among five looks that V2pn draws itself, and you can switch between them: V2pn with its logo, V2pn in its colours, its cabinet, its website and plain text.
+- A provider's site or bot can open V2pn with a `v2pn://add` link, on Windows and on macOS. V2pn always asks before adding the subscription, and says when the provider is a confirmed V2pn partner. A link to a subscription you already have only says so. Happ, v2RayTun and Hiddify add links work the same way.
+- When the provider is a V2pn partner, V2pn checks its signature and offers its look once: open it or stay in plain V2pn. Switch any time from the name in the title bar, the tray menu, Ctrl+1…9 or the Appearance page; the new look opens as a circle from where you clicked. The connection, settings and servers stay as they are.
+- A provider picks among five looks that V2pn draws itself, and you can switch between them: V2pn with its logo, V2pn in its colours, its cabinet, its website and plain text. Each fits every window size, down to the mini window, and has every control: the full server list with search and filters, Proxy or VPN, what goes through the VPN, ping, update and "+".
+- In a provider's look, the Appearance page tunes that look: light or dark, the provider's colour or your own, corners and font. Dialogs, menus and settings follow it. Your appearance of plain V2pn is kept apart.
+- The look starts with the provider's servers and shows its subscription: traffic, the term, its note, its cabinet and support, and, when the provider shares them, your plan, devices and how many of its servers work by its own checks. When you are connected through another provider's server, the look says so and offers the provider's fastest one.
+- A partner's subscription shows its mark in the list, and the subscription window says whether its look is confirmed and until when.
+- A provider's look goes away with its last subscription, when the provider stops offering it, when its confirmation runs out or when V2pn withdraws it; V2pn says why and opens plain V2pn.
 - The provider does not see your traffic, gets nothing about your device, and cannot change what the connection state says.
 
 ### First start

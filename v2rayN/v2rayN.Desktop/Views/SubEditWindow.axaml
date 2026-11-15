@@ -153,6 +153,24 @@
                                         Theme="{StaticResource V2Button}" />
                                 </Grid>
                             </Border>
+                            <!--  The partner's reviewed files (routing, connection settings, chains) and whether each is used.  -->
+                            <Border x:Name="rowReviewed" Classes="srow" IsVisible="False">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubReviewedTitle}" />
+                                    <StackPanel x:Name="panelReviewed" Spacing="2" />
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="rowPartnerConn" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock x:Name="txtPartnerConn" Classes="srowtitle" />
+                                        <TextBlock x:Name="txtPartnerConnHint" Classes="srowhint" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ToggleSwitch x:Name="togPartnerConn" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </Border>
                     <TextBlock x:Name="txtInfoAsOf" Classes="sgroupnote" />

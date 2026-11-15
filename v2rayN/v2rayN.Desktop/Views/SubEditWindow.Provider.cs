@@ -1,3 +1,4 @@
+using Avalonia.Automation;
 using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
@@ -33,7 +34,7 @@ public partial class SubEditWindow
         rowLinks.IsVisible = btnSupport.IsVisible || btnWebPage.IsVisible;
         ShowPartner(source, info);
         ShowLock(source);
-        var rows = new Border[] { rowLock, rowBanner, rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowStartConnect, rowOrder, rowOnStart, rowPartner };
+        var rows = new Border[] { rowLock, rowBanner, rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowStartConnect, rowOrder, rowOnStart, rowPartner, rowReviewed, rowPartnerConn };
         if (info == null || !rows.Any(r => r.IsVisible))
         {
             grpProvider.IsVisible = false;
@@ -153,6 +154,10 @@ public partial class SubEditWindow
         var ownAutoconnect = rowStartConnect.IsVisible ? cmbStartConnect.SelectedIndex == 1 : info.OwnAutoconnect;
         var ownSort = rowOrder.IsVisible ? OrderChoices.ElementAtOrDefault(cmbOrder.SelectedIndex) : info.OwnSort;
         _ = SubInfoManager.Instance.SetOwnChoicesAsync(source.Id, ownAutoconnect, ownSort);
+        if (rowPartnerConn.IsVisible)
+        {
+            _ = V2pnPartnerTraffics.SetOffAsync(source.Id, togPartnerConn.IsChecked != true);
+        }
     }
 
     /// <summary>
@@ -181,6 +186,61 @@ public partial class SubEditWindow
         {
             txtPartnerMay.Text = PartnerMay(partner);
         }
+        ShowReviewed(partner, info);
+    }
+
+    /// <summary>
+    /// The partner's reviewed files, one line each: in use, available, turned off by the person, or not used and why
+    /// ("Kestrel routes changed after the review and are not used"), and the switch for its connection settings.
+    /// </summary>
+    private void ShowReviewed(V2pnPartner? partner, SubInfoItem? info)
+    {
+        var files = partner?.Features.Files ?? [];
+        rowReviewed.IsVisible = files.Count > 0;
+        var off = info?.PartnerConnectionOff == true;
+        if (partner != null && files.Count > 0)
+        {
+            _ = FillReviewedAsync(partner, files, off);
+        }
+
+        rowPartnerConn.IsVisible = partner?.Features.Transport != null || partner?.Features.Core != null;
+        if (rowPartnerConn.IsVisible)
+        {
+            txtPartnerConn.Text = string.Format(L.ReviewedTransport, partner!.Name);
+            txtPartnerConnHint.Text = string.Format(L.SubPartnerConnHint, partner.Name);
+            togPartnerConn.IsChecked = !off;
+            AutomationProperties.SetName(togPartnerConn, txtPartnerConn.Text);
+        }
+    }
+
+    private async Task FillReviewedAsync(V2pnPartner partner, IReadOnlyList<V2pnReviewedFile> files, bool off)
+    {
+        // Routes are "in use" only while they are the active mode.
+        var activeRoute = (await ConfigHandler.GetDefaultRouting(AppManager.Instance.Config))?.Id;
+        panelReviewed.Children.Clear();
+        foreach (var file in files)
+        {
+            var feature = file.Name switch
+            {
+                V2pnReviewedFiles.Routing => string.Format(L.ReviewedRouting, partner.Name),
+                V2pnReviewedFiles.Transport => string.Format(L.ReviewedTransport, partner.Name),
+                _ => string.Format(L.ReviewedCore, partner.Name),
+            };
+            var (format, bad) = file.State switch
+            {
+                V2pnReviewState.Changed => (L.ReviewedChanged, true),
+                V2pnReviewState.NotReviewed => (L.ReviewedNot, true),
+                V2pnReviewState.Invalid => (L.ReviewedInvalid, true),
+                _ when file.Name == V2pnReviewedFiles.Routing =>
+                    (activeRoute == V2pnPartnerRoutes.Id(partner.Id) ? L.ReviewedUsed : L.ReviewedPickable, false),
+                _ => (off ? L.ReviewedOff : L.ReviewedUsed, false),
+            };
+            var line = new TextBlock { Text = string.Format(format, feature), TextWrapping = TextWrapping.Wrap };
+            line.Classes.Add("srowhint");
+            line.Classes.Set("bad", bad);
+            ToolTip.SetTip(line, file.Problem);
+            panelReviewed.Children.Add(line);
+        }
     }
 
     /// <summary>"Kestrel may: its look, plan details, its own buttons, closed settings." from the certificate's grants.</summary>
@@ -202,6 +262,18 @@ public partial class SubEditWindow
         if (partner.Cert.Allows(V2pnPartnerGrants.Lock))
         {
             may.Add(L.GrantLock);
+        }
+        if (partner.Features.Routing != null)
+        {
+            may.Add(L.GrantRouting);
+        }
+        if (partner.Features.Transport != null)
+        {
+            may.Add(L.GrantTransport);
+        }
+        if (partner.Features.Core != null)
+        {
+            may.Add(L.GrantCore);
         }
         return may.Count == 0 ? string.Format(L.PartnerMayLittle, partner.Name) : string.Format(L.PartnerMay, partner.Name, string.Join(", ", may));
     }

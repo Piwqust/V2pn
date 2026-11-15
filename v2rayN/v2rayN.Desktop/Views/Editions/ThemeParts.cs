@@ -312,7 +312,7 @@ public sealed class ThemeBlock : UserControl
                     {
                         CornerRadius = r(12),
                         ClipToBounds = true,
-                        Child = new Image { Source = picture, Stretch = Stretch.UniformToFill, MaxHeight = 220 },
+                        Child = new Image { Source = picture, Stretch = Stretch.UniformToFill, MaxHeight = 180 },
                     });
                 }
                 break;

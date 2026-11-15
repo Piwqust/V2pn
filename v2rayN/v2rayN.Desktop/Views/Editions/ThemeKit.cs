@@ -74,7 +74,16 @@ internal static class ThemeKit
         var panel = new Panel { Background = AreaFill(area), ClipToBounds = true };
         if (area.Scrim is { } scrim && picture != null)
         {
-            panel.Children.Add(new Image { Source = picture, Stretch = Stretch.UniformToFill, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center });
+            // A brush, not an Image: the picture fills whatever the area is and never makes the area bigger.
+            panel.Children.Add(new Border
+            {
+                Background = new ImageBrush(picture)
+                {
+                    Stretch = Stretch.UniformToFill,
+                    AlignmentX = AlignmentX.Center,
+                    AlignmentY = AlignmentY.Center,
+                },
+            });
             panel.Children.Add(new Border { Background = Brush(scrim) });
         }
         if (content != null)

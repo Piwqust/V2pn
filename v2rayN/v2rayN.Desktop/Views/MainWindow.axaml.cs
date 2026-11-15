@@ -74,6 +74,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnWelcomePaste.Click += async (_, _) => await AddServerViaClipboardAsync();
         InitImport();
         InitEdition();
+        InitPartnerActions();
         InitDebug();
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
@@ -751,6 +752,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _shownOnce = true;
         }
 
+        // V2pn: the partner's buttons under Connect while a server of its subscription is in use.
+        RefreshPartnerActionBar(item?.Subid);
         _statusView?.SetServer(item, FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId));
     }
 

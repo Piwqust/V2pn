@@ -353,7 +353,10 @@ public sealed class AccountPanel : UserControl
     private readonly TextBlock _bannerButtonText;
     private readonly Button _cabinet;
     private readonly Button _support;
+    private readonly WrapPanel _actions = new() { Orientation = Orientation.Horizontal, ItemSpacing = 8, LineSpacing = 8 };
+    private string _actionsKey = string.Empty;
     private SceneAccount? _last;
+    private static readonly SceneAccount Nothing = new(null, 0, false, null, false, false, null, null, null);
 
     public AccountPanel(ScenePalette p, IEditionActions a, string? title)
     {
@@ -401,6 +404,7 @@ public sealed class AccountPanel : UserControl
             stack.Children.Add(Scene.Text(title, 12, p.Muted, p.Font));
         }
         stack.Children.Add(_incident);
+        stack.Children.Add(_actions);
         stack.Children.Add(_banner);
         stack.Children.Add(_plan);
         stack.Children.Add(_devices);
@@ -431,14 +435,45 @@ public sealed class AccountPanel : UserControl
 
     private void SizeBar() => _bar.Width = Math.Max(0, _barTrack.Bounds.Width * Math.Clamp(_last?.Fraction ?? 0, 0, 1));
 
-    public void Update(SceneAccount? account)
+    /// <summary>
+    /// The partner's buttons (V2pnPartnerAction), in the look's own colours and type: a row that wraps, so four fit the
+    /// narrow layout too. Each is a real button: Tab reaches it, Enter and Space press it.
+    /// </summary>
+    private void UpdateActions(IReadOnlyList<V2pnPartnerAction> actions, string? running)
     {
-        _last = account;
-        IsVisible = account is { IsEmpty: false };
-        if (account == null)
+        var key = running + "|" + string.Join("|", actions.Select(a => a.Id + a.Label + a.Icon));
+        _actions.IsVisible = actions.Count > 0;
+        if (key == _actionsKey)
         {
             return;
         }
+        _actionsKey = key;
+        _actions.Children.Clear();
+        foreach (var action in actions)
+        {
+            var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7 };
+            if (!_p.Ascii && PartnerActionIcons.Of(action.Icon) is { } glyph)
+            {
+                content.Children.Add(new PathIcon { Width = 14, Height = 14, Data = glyph, Foreground = Scene.B(_p.AccentText), VerticalAlignment = VerticalAlignment.Center });
+            }
+            var label = action.Id == running ? action.Label + " …" : action.Label;
+            content.Children.Add(Scene.Text(_p.Ascii ? $"[ {label.ToLower(CultureInfo.CurrentUICulture)} ]" : label, 13, _p.Ink, _p.Font, FontWeight.Medium));
+            var button = Scene.Button(content, _p.Ascii ? null : _p.Raised, _p.Ink, Math.Min(_p.Radius, 12), new Thickness(_p.Ascii ? 0 : 12, 0), height: 36);
+            button.IsEnabled = running == null || action.Id == running;
+            button.Opacity = button.IsEnabled ? 1 : 0.55;
+            Avalonia.Automation.AutomationProperties.SetName(button, action.Label);
+            var id = action.Id;
+            button.Click += (_, _) => _a.RunAction(id, button);
+            _actions.Children.Add(button);
+        }
+    }
+
+    public void Update(SceneAccount? account, IReadOnlyList<V2pnPartnerAction>? actions = null, string? running = null)
+    {
+        _last = account;
+        UpdateActions(actions ?? [], running);
+        IsVisible = account is { IsEmpty: false } || _actions.IsVisible;
+        account ??= Nothing;
         var tone = account.Bad ? _p.Bad : account.Warn ? _p.Warn : _p.Soft;
         _incident.Text = account.Incident ?? string.Empty;
         _incident.IsVisible = account.Incident != null;

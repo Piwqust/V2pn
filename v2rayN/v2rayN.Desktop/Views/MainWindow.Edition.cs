@@ -452,11 +452,14 @@ public partial class MainWindow : IEditionActions
                 .GroupBy(t => t.IndexId)
                 .ToDictionary(g => g.Key, g => g.First());
             var subs = await AppManager.Instance.SubItems() ?? [];
+            // V2pn: a partner's hidden servers are not offered; its own country for a server wins over a guess from the name.
             _catalog = all.Select(t =>
             {
                 extra.TryGetValue(t.IndexId, out var ex);
-                return new SceneServer(t.IndexId, CountryResolver.ServerName(t), CountryResolver.Resolve(t.Remarks), ex?.Delay ?? 0, false, t.Subid, t.SubRemarks, ex?.IsFavorite == true);
-            }).ToList();
+                var note = V2pnPartnerLive.Instance.Describe(t.Subid, t.Remarks, t.Address);
+                return note?.IsHidden == true ? null
+                    : new SceneServer(t.IndexId, CountryResolver.ServerName(t), note?.Country ?? CountryResolver.Resolve(t.Remarks), ex?.Delay ?? 0, false, t.Subid, t.SubRemarks, ex?.IsFavorite == true);
+            }).OfType<SceneServer>().ToList();
             var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
             _catalogSubs = subs
                 .Where(t => t.Id.IsNotEmpty() && counts.GetValueOrDefault(t.Id) > 0)
@@ -512,6 +515,11 @@ public partial class MainWindow : IEditionActions
                 {
                     _partnerAccount = account;
                 }
+            }
+            if (wantAccount)
+            {
+                // The partner's live word about its servers, on the account's schedule (V2pnPartnerLive keeps its own clock).
+                await RefreshPartnerLiveAsync(partner, force: false);
             }
             if (wantStatus)
             {
@@ -618,6 +626,8 @@ public partial class MainWindow : IEditionActions
             ForeignServer = partnerServers.Count > 0 && _hasServer && currentSub != null && !partnerSubIds.Contains(currentSub),
             BestPartnerServer = best?.IndexId,
             Account = account is { IsEmpty: false } ? account : null,
+            Actions = partner?.Pack.ActionList ?? [],
+            ActionRunning = RunningAction(partner),
         }));
     }
 

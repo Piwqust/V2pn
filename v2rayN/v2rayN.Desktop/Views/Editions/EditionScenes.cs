@@ -476,7 +476,7 @@ public sealed class CabinetScene : EditionScene
         SetSegment(_vpn, s.Vpn);
         _serversCount.Text = s.Catalog.Count.ToString(CultureInfo.CurrentCulture);
         _change.IsEnabled = s.Servers.Count > 0;
-        _account.Update(s.Account);
+        _account.Update(s.Account, s.Actions, s.ActionRunning);
         _foreign.Update(s);
         ShowListOrEmpty(_serversBody, _browser, _empty, s);
     }
@@ -756,7 +756,7 @@ public sealed class StudioScene : EditionScene
         _modeNote.Text = s.Vpn ? L.SceneAllThrough : L.SceneWithSystemProxy;
         _routeTitle.Text = s.Route;
         _serversCount.Text = s.Catalog.Count.ToString(CultureInfo.CurrentCulture);
-        _account.Update(s.Account);
+        _account.Update(s.Account, s.Actions, s.ActionRunning);
         var hasAccount = _account.IsVisible;
         if (_accountCard.IsVisible != hasAccount)
         {
@@ -927,7 +927,7 @@ public sealed class AsciiScene : EditionScene
         _route.Text = $"{s.Route.ToLower(CultureInfo.CurrentUICulture)}  {L.SceneChangeAscii}";
         _connectLabel.Text = $"[ {s.ConnectLabel.ToLower(CultureInfo.CurrentUICulture)} ]";
         _connect.IsEnabled = s.HasServer;
-        _account.Update(s.Account);
+        _account.Update(s.Account, s.Actions, s.ActionRunning);
         _foreign.Update(s);
         ShowListOrEmpty(_listBody, _browser, _empty, s);
 

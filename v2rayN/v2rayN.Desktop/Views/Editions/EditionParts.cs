@@ -80,6 +80,12 @@ public sealed record EditionSnapshot
 
     /// <summary>The node counts are the partner's own checks of its servers, not V2pn's pings.</summary>
     public bool NodesByPartner { get; init; }
+
+    /// <summary>The partner's buttons (at most four), shown in the look's subscription block.</summary>
+    public IReadOnlyList<V2pnPartnerAction> Actions { get; init; } = [];
+
+    /// <summary>The button running now; the others wait greyed out.</summary>
+    public string? ActionRunning { get; init; }
 }
 
 /// <summary>What a scene's controls do: the plain window's own actions, so behaviour never forks.</summary>
@@ -99,6 +105,8 @@ public interface IEditionActions
     void OpenSettings();
     void OpenIp();
     void OpenUrl(string url);
+    /// <summary>One of the partner's buttons (V2pnPartnerAction.Id).</summary>
+    void RunAction(string id, Control anchor);
 }
 
 /// <summary>Shared drawing for the partner scenes.</summary>

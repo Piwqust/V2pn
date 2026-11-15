@@ -211,7 +211,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         }
         else
         {
-            txtStatServer.Text = item.Port > 0 ? $"{item.Address}:{item.Port}" : item.Address;
+            // V2pn: a partner that closed its settings keeps the address out of sight.
+            txtStatServer.Text = V2pnLocks.Instance.Hides(item.Subid) ? L.AddressHidden : item.Port > 0 ? $"{item.Address}:{item.Port}" : item.Address;
             var transport = string.Join(" · ", new[] { item.GetNetwork(), item.StreamSecurity }.Where(t => t.IsNotEmpty()));
             txtStatProtocol.Text = transport.IsNotEmpty() ? $"{item.ConfigType} · {transport}" : item.ConfigType.ToString();
         }

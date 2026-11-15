@@ -687,6 +687,23 @@
                                                         IsVisible="{Binding Usage.ShowBar, FallbackValue=False}"
                                                         Value="{Binding Usage.Fraction, FallbackValue=0}" />
                                                 </StackPanel>
+                                                <!--  V2pn: the partner closed the subscription's settings (V2pnLocks); said so the person
+                                                      never takes it for V2pn being broken.  -->
+                                                <StackPanel
+                                                    Margin="0,2,0,0"
+                                                    IsVisible="{Binding IsLocked}"
+                                                    Orientation="Horizontal"
+                                                    Spacing="5"
+                                                    ToolTip.Tip="{x:Static loc:L.LockedHint}">
+                                                    <PathIcon
+                                                        Classes="i12"
+                                                        Foreground="{DynamicResource V2Muted}"
+                                                        Data="{StaticResource SemiIconLock}" />
+                                                    <TextBlock
+                                                        Classes="muted small"
+                                                        Text="{Binding LockText}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                </StackPanel>
                                             </StackPanel>
                                             <!--  Actions and chevron overlap: the column keeps the buttons' width, so hovering
                                                   swaps them without moving the text.  -->

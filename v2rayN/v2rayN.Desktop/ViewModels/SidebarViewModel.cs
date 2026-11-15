@@ -219,7 +219,13 @@ public sealed class SideSubRow : SideRow
         Info = $"{L.ServerCount(sub.Count)} · {(updateFailed ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(sub.Item))}";
         Freshness = updateFailed ? L.SubUpdateFailedTip : age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
         Usage = SubUsage.From(SubInfoManager.Instance.Get(sub.Id));
+        var locked = V2pnLocks.Instance.ForSub(sub.Id);
+        LockText = locked.Settings ? string.Format(L.LockedBy, locked.PartnerName) : locked.HideUrl ? string.Format(L.LockedUrl, locked.PartnerName) : null;
     }
+
+    /// <summary>"Settings closed by Kestrel" when the partner closed them (V2pnLocks); null otherwise.</summary>
+    public string? LockText { get; }
+    public bool IsLocked => LockText != null;
 
     /// <summary>
     /// The name to show: v2rayN's "import_sub" placeholder and an empty name read as the link's host, so an
@@ -346,6 +352,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
         profiles.FavoriteItems.CollectionChanged += (_, _) => QueueRebuild();
         // V2pn: a partner verified or dropped changes the mark on its subscription.
         V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
+        // V2pn: what a partner closed, and its live word about its servers (groups, purposes, notes).
+        V2pnLocks.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
+        V2pnPartnerLive.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
         profiles.SubNavItems.CollectionChanged += (_, _) => QueueRebuild();
         // Fastest server and the best ping per country are computed on rebuild.
         profiles.PingTestFinished.AsObservable()
@@ -466,7 +475,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
             var q = Search.Trim();
             var found = all.Where(m =>
                     m.Remarks?.Contains(q, StringComparison.OrdinalIgnoreCase) == true
-                    || m.Address?.Contains(q, StringComparison.OrdinalIgnoreCase) == true
+                    || (m.Address?.Contains(q, StringComparison.OrdinalIgnoreCase) == true && !V2pnLocks.Instance.Hides(m.Subid))
                     || (WorldMap.Instance.Get(CountryResolver.Resolve(m.Remarks))?.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
                 .ToList();
             _pingScope = found;
@@ -636,7 +645,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
             var (series, rest) = ServerNames.SplitSeries(all);
             AddSeries(rows, series);
             // The order the person chose for this subscription, else the provider's, else fastest first.
-            var order = V2pnSubDefaults.Order(rest, V2pnSubDefaults.SortOf(info), m => m.Remarks, m => m.Delay);
+            var order = V2pnSubDefaults.Order(rest, V2pnSubDefaults.SortOf(info, V2pnLocks.Instance.Hides(OpenedSub.Id)), m => m.Remarks, m => m.Delay);
             rows.AddRange(order.Select(m => new SideServerRow(m, false, false)));
             if (all.Count == 0)
             {

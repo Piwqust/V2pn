@@ -32,7 +32,8 @@ public partial class SubEditWindow
         btnWebPage.IsVisible = info?.WebPageUrl.IsNotEmpty() == true;
         rowLinks.IsVisible = btnSupport.IsVisible || btnWebPage.IsVisible;
         ShowPartner(source, info);
-        var rows = new Border[] { rowBanner, rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowStartConnect, rowOrder, rowOnStart, rowPartner };
+        ShowLock(source);
+        var rows = new Border[] { rowLock, rowBanner, rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowStartConnect, rowOrder, rowOnStart, rowPartner };
         if (info == null || !rows.Any(r => r.IsVisible))
         {
             grpProvider.IsVisible = false;
@@ -110,11 +111,42 @@ public partial class SubEditWindow
         txtOnStart.Text = update && ping ? L.SubOnStartBoth : update ? L.SubOnStartUpdate : L.SubOnStartPing;
     }
 
+    /// <summary>
+    /// V2pn: what the partner closed (V2pnLocks): the link is read-only or hidden, the provider's defaults and the
+    /// fields that change how the link is fetched cannot be changed. Everything else stays the person's.
+    /// </summary>
+    private void ShowLock(SubItem? source)
+    {
+        var locked = source == null || _isNew ? V2pnLockState.None : V2pnLocks.Instance.ForSub(source.Id);
+        rowLock.IsVisible = locked.Any;
+        txtLock.Text = locked.Settings ? string.Format(L.LockedBy, locked.PartnerName) : string.Format(L.LockedUrl, locked.PartnerName);
+        txtLockHint.IsVisible = locked.Settings;
+        txtUrl.IsReadOnly = locked.UrlLocked;
+        txtUrl.IsVisible = !locked.HideUrl;
+        txtUrlHidden.IsVisible = locked.HideUrl;
+        txtUrlHidden.Text = string.Format(L.LockedUrl, locked.PartnerName);
+        foreach (var control in new Control[] { txtUserAgent, txtRequestHeaders, cmbConvertTarget, txtMoreUrl })
+        {
+            control.IsEnabled = !locked.Settings;
+        }
+        if (locked.Settings)
+        {
+            // The provider's advice holds while its settings are closed (V2pnSubDefaults with locked: true).
+            cmbStartConnect.SelectedIndex = 0;
+            cmbStartConnect.IsEnabled = false;
+            cmbOrder.SelectedIndex = 0;
+            cmbOrder.IsEnabled = false;
+            ToolTip.SetTip(cmbStartConnect, string.Format(L.LockedChoice, locked.PartnerName));
+            ToolTip.SetTip(cmbOrder, string.Format(L.LockedChoice, locked.PartnerName));
+        }
+    }
+
     /// <summary>Keeps the person's choices next to the provider's defaults; called on Save.</summary>
     private void SaveProviderChoices()
     {
         var source = ViewModel?.SelectedSource;
-        if (_isNew || source?.Id.IsNotEmpty() != true || SubInfoManager.Instance.Get(source.Id) is not { } info)
+        if (_isNew || source?.Id.IsNotEmpty() != true || SubInfoManager.Instance.Get(source.Id) is not { } info
+            || V2pnLocks.Instance.ForSub(source.Id).Settings)
         {
             return;
         }
@@ -144,6 +176,34 @@ public partial class SubEditWindow
             : error != null ? L.SubPartnerRefused : L.SubPartnerChecking;
         txtPartner.Classes.Set("bad", partner == null && error != null);
         btnPartner.Tag = partner?.Id;
+        txtPartnerMay.IsVisible = partner != null;
+        if (partner != null)
+        {
+            txtPartnerMay.Text = PartnerMay(partner);
+        }
+    }
+
+    /// <summary>"Kestrel may: its look, plan details, its own buttons, closed settings." from the certificate's grants.</summary>
+    private static string PartnerMay(V2pnPartner partner)
+    {
+        var may = new List<string>();
+        if (partner.Cert.Allows(V2pnPartnerGrants.Edition))
+        {
+            may.Add(L.GrantEdition);
+        }
+        if (partner.Cert.Allows(V2pnPartnerGrants.Account))
+        {
+            may.Add(L.GrantAccount);
+        }
+        if (partner.Cert.Allows(V2pnPartnerGrants.Actions))
+        {
+            may.Add(L.GrantActions);
+        }
+        if (partner.Cert.Allows(V2pnPartnerGrants.Lock))
+        {
+            may.Add(L.GrantLock);
+        }
+        return may.Count == 0 ? string.Format(L.PartnerMayLittle, partner.Name) : string.Format(L.PartnerMay, partner.Name, string.Join(", ", may));
     }
 
     private void FillEmptyName()

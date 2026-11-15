@@ -484,9 +484,7 @@
                                                 </StackPanel>
                                             </Border>
                                         </StackPanel>
-                                        <TextBlock Classes="muted small" TextTrimming="CharacterEllipsis">
-                                            <Run Text="{Binding Address}" /><Run Text=":" /><Run Text="{Binding Port}" />
-                                        </TextBlock>
+                                        <TextBlock Classes="muted small" Text="{Binding Converter={x:Static conv:V2pnConverters.ServerAddress}}" TextTrimming="CharacterEllipsis" />
                                     </StackPanel>
 
                                     <StackPanel

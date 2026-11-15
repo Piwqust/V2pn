@@ -2122,9 +2122,22 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         flyout.Items.Add(Item(L.MenuTcping, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Tcping); }, "SemiIconPulse"));
         flyout.Items.Add(Item(L.TestSpeed, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Speedtest); }, "SemiIconStopwatchStroked"));
         flyout.Items.Add(new Separator());
-        flyout.Items.Add(Item(L.Edit, async () => { Select(); await profiles.EditServerAsync(); }, "SemiIconEditStroked", gesture: new KeyGesture(Key.D, KeyModifiers.Control)));
-        flyout.Items.Add(Item(L.Share, async () => { Select(); await profiles.ShareServerAsync(); }, "SemiIconQrCode"));
-        flyout.Items.Add(Item(L.CopyLink, async () => { Select(); await profiles.Export2ShareUrlAsync(false); }, "SemiIconCopyStroked", gesture: new KeyGesture(Key.C, KeyModifiers.Control)));
+        if (V2pnLocks.Instance.ForSub(model.Subid) is { Settings: true } locked)
+        {
+            // V2pn: the partner closed this server's settings; the menu says so instead of offering what it would refuse.
+            flyout.Items.Add(new MenuItem
+            {
+                Header = string.Format(L.LockedMenu, locked.PartnerName),
+                IsEnabled = false,
+                Icon = new PathIcon { Classes = { "mi" }, Data = this.FindResource("SemiIconLock") as Geometry },
+            });
+        }
+        else
+        {
+            flyout.Items.Add(Item(L.Edit, async () => { Select(); await profiles.EditServerAsync(); }, "SemiIconEditStroked", gesture: new KeyGesture(Key.D, KeyModifiers.Control)));
+            flyout.Items.Add(Item(L.Share, async () => { Select(); await profiles.ShareServerAsync(); }, "SemiIconQrCode"));
+            flyout.Items.Add(Item(L.CopyLink, async () => { Select(); await profiles.Export2ShareUrlAsync(false); }, "SemiIconCopyStroked", gesture: new KeyGesture(Key.C, KeyModifiers.Control)));
+        }
         flyout.Items.Add(new Separator());
         flyout.Items.Add(Item(L.MenuDelete, async () => { Select(); await profiles.RemoveServerAsync(); }, "SemiIconDeleteStroked", danger: true, gesture: new KeyGesture(Key.Delete)));
         flyout.ShowAt(target, placement == PlacementMode.Pointer);

@@ -80,6 +80,22 @@
                                     </Button>
                                 </StackPanel>
                             </Border>
+                            <!--  V2pn: the provider's own look of V2pn, if its panel offers one (SubEditWindow.Provider.cs).  -->
+                            <Border x:Name="rowPartner" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubPartnerTitle}" />
+                                        <TextBlock x:Name="txtPartner" Classes="srowhint" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Button
+                                        x:Name="btnPartner"
+                                        Grid.Column="1"
+                                        Margin="16,0,0,0"
+                                        VerticalAlignment="Center"
+                                        Content="{x:Static loc:L.SubPartnerOpen}"
+                                        Theme="{StaticResource V2Button}" />
+                                </Grid>
+                            </Border>
                         </StackPanel>
                     </Border>
                     <TextBlock x:Name="txtInfoAsOf" Classes="sgroupnote" />

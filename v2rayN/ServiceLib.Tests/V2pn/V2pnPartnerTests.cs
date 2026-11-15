@@ -312,6 +312,62 @@ public class V2pnPartnerTests
     }
 
     [Test]
+    public async Task Prune_DropsAPartnerNoSubscriptionNames_WithItsFiles()
+    {
+        var (_, _, manager, root) = Setup();
+        try
+        {
+            const string folder = "https://config.example.com/v2pn/";
+            const string sub = "https://config.example.com/s/token";
+            await manager.RefreshAsync(sub, folder);
+            var removed = new List<(string, V2pnPartnerGone)>();
+            manager.Removed += (partner, why) => removed.Add((partner.Id, why));
+
+            // Still named by its subscription: kept.
+            await manager.Prune([(folder, sub), (null, "https://other.example.org/s/1")]).Count.Should().BeEqualTo(0);
+            // The subscription moved to a domain the certificate does not name: as good as gone.
+            await manager.Prune([(folder, "https://other.example.org/s/token")]).Count.Should().BeEqualTo(1);
+
+            await (manager.Get("configra") == null).Should().BeTrue();
+            await Directory.Exists(Path.Combine(root, "configra")).Should().BeFalse();
+            await removed.Count.Should().BeEqualTo(1);
+            await removed[0].Item2.Should().BeEqualTo(V2pnPartnerGone.Unlinked);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
+    [Test]
+    public async Task Prune_DropsAPartnerWhoseCertificateRanOutWhileOpen()
+    {
+        var (_, _, manager, root) = Setup();
+        try
+        {
+            const string folder = "https://config.example.com/v2pn/";
+            const string sub = "https://config.example.com/s/token";
+            var partner = await manager.RefreshAsync(sub, folder);
+            V2pnPartnerGone? why = null;
+            manager.Removed += (_, reason) => why = reason;
+
+            manager.Today = () => partner!.Cert.Expires.AddDays(1);
+            await manager.Prune([(folder, sub)]).Count.Should().BeEqualTo(1);
+            await why.Should().BeEqualTo(V2pnPartnerGone.Expired);
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
+    [Test]
     public async Task KeptPartner_ChangedOnDisk_IsNoLongerTrusted()
     {
         var (p, _, manager, root) = Setup();

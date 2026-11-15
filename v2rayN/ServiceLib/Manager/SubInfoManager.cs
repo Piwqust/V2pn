@@ -103,6 +103,11 @@ public sealed class SubInfoManager
                 var subscriptionUrl = item.Url;
                 _ = Task.Run(() => V2pnPartners.Instance.RefreshAsync(subscriptionUrl, partnerUrl));
             }
+            else
+            {
+                // A panel that answered without v2pn-partner no longer offers its look on this subscription.
+                _ = Task.Run(V2pnPartners.Instance.PruneAsync);
+            }
         }
         catch (Exception ex)
         {

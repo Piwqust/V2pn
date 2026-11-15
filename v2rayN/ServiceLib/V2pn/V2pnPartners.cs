@@ -16,6 +16,22 @@ public sealed class V2pnPartner(V2pnPartnerCert cert, V2pnPartnerPack pack, stri
 
     /// <summary>The local file of a pack asset, or null when the pack has no such asset.</summary>
     public string? AssetPath(string? name) => Pack.Asset(name) == null ? null : Path.Combine(folder, name!);
+
+    /// <summary>Where its checked files are kept.</summary>
+    public string Folder { get; } = folder;
+}
+
+/// <summary>Why a partner was dropped.</summary>
+public enum V2pnPartnerGone
+{
+    /// <summary>No subscription points to it any more: deleted, or its panel stopped naming the pack.</summary>
+    Unlinked,
+
+    /// <summary>Its certificate ran out.</summary>
+    Expired,
+
+    /// <summary>The owner of V2pn withdrew its certificate.</summary>
+    Revoked,
 }
 
 /// <summary>
@@ -43,6 +59,9 @@ public sealed class V2pnPartners
 
     /// <summary>Raised after the set of partners or one of them changed. May come from any thread.</summary>
     public event Action? Changed;
+
+    /// <summary>Raised for each partner dropped, with the reason, before <see cref="Changed"/>. May come from any thread.</summary>
+    public event Action<V2pnPartner, V2pnPartnerGone>? Removed;
 
     public V2pnPartners(IReadOnlyList<string> rootKeys, Func<string> root)
     {
@@ -276,6 +295,65 @@ public sealed class V2pnPartners
         }
     }
 
+    /// <summary>
+    /// Drops partners no subscription points to any more (the subscription was deleted, its panel stopped naming the
+    /// pack, or its link moved to a domain the certificate does not name) and partners whose certificate ran out
+    /// while the app was open. Their kept files go too, so nothing of a former partner stays on the computer.
+    /// </summary>
+    /// <param name="links">Every subscription as (the v2pn-partner folder its panel named last, its link).</param>
+    public IReadOnlyList<V2pnPartner> Prune(IEnumerable<(string? PartnerUrl, string? SubscriptionUrl)> links)
+    {
+        var linked = links.ToList();
+        var gone = new List<(V2pnPartner Partner, V2pnPartnerGone Reason)>();
+        foreach (var partner in _partners.Values.ToList())
+        {
+            V2pnPartnerGone? reason = partner.Cert.Expires < Today() ? V2pnPartnerGone.Expired
+                : linked.Any(l => l.PartnerUrl == partner.SourceUrl && V2pnPartnerTrust.DomainAllowed(partner.Cert, l.SubscriptionUrl)) ? null
+                : V2pnPartnerGone.Unlinked;
+            if (reason is { } why && _partners.TryRemove(partner.Id, out _))
+            {
+                DeleteQuietly(partner.Folder);
+                _errors.TryRemove(partner.SourceUrl, out _);
+                gone.Add((partner, why));
+                Logging.SaveLog($"{Tag}: dropped {partner.Id} ({why})");
+            }
+        }
+        foreach (var (partner, why) in gone)
+        {
+            Removed?.Invoke(partner, why);
+        }
+        if (gone.Count > 0)
+        {
+            Changed?.Invoke();
+        }
+        return gone.Select(g => g.Partner).ToList();
+    }
+
+    /// <summary><see cref="Prune"/> against the subscriptions in the database, once the kept partners are loaded.</summary>
+    public async Task<IReadOnlyList<V2pnPartner>> PruneAsync()
+    {
+        try
+        {
+            await LoadAsync();
+            await SubInfoManager.Instance.LoadAsync();
+            var subs = await AppManager.Instance.SubItems() ?? [];
+            await _gate.WaitAsync();
+            try
+            {
+                return Prune(subs.Select(s => (SubInfoManager.Instance.Get(s.Id)?.PartnerUrl, (string?)s.Url)));
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(Tag, ex);
+            return [];
+        }
+    }
+
     /// <summary>Fetches the signed list of withdrawn certificates from where releases come from; keeps the last good one.</summary>
     private async Task RefreshRevocationsAsync(CancellationToken cancellationToken)
     {
@@ -294,8 +372,12 @@ public sealed class V2pnPartners
             _revoked = revoked;
             foreach (var partner in _partners.Values.Where(p => revoked.Contains(V2pnPartnerTrust.RevocationKey(p.Cert))).ToList())
             {
-                _partners.TryRemove(partner.Id, out _);
-                Changed?.Invoke();
+                if (_partners.TryRemove(partner.Id, out _))
+                {
+                    DeleteQuietly(partner.Folder);
+                    Removed?.Invoke(partner, V2pnPartnerGone.Revoked);
+                    Changed?.Invoke();
+                }
             }
             return;
         }

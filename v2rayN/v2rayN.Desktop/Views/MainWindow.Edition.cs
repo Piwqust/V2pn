@@ -31,6 +31,12 @@ public partial class MainWindow : IEditionActions
             }
         };
         Editions.Changed += RefreshEdition;
+        Editions.Closed += (partner, why) => ShowToast(why == V2pnPartnerGone.Unlinked ? ToastKind.Info : ToastKind.Warning, why switch
+        {
+            V2pnPartnerGone.Expired => string.Format(L.EditionGoneExpired, partner.Name),
+            V2pnPartnerGone.Revoked => string.Format(L.EditionGoneRevoked, partner.Name),
+            _ => string.Format(L.EditionGoneUnlinked, partner.Name),
+        });
         ActualThemeVariantChanged += (_, _) => UpdateLockup(Editions.Partner, Editions.Variant);
         Editions.Start();
     }

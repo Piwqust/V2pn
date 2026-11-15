@@ -52,6 +52,9 @@ public static class Editions
     /// <summary>Raised on the UI thread after the edition, its look, its tuning or the set of partners changed.</summary>
     public static event Action? Changed;
 
+    /// <summary>Raised on the UI thread when the open partner's look went away (with the partner and why).</summary>
+    public static event Action<V2pnPartner, V2pnPartnerGone>? Closed;
+
     private static EditionSettings Settings => _settings ??= Load();
 
     /// <summary>Partners whose certificate grants an edition, in the order the switcher lists them.</summary>
@@ -128,8 +131,28 @@ public static class Editions
         }
         _started = true;
         V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(Apply);
-        _ = V2pnPartners.Instance.LoadAsync();
+        V2pnPartners.Instance.Removed += (partner, why) => Dispatcher.UIThread.Post(() => OnRemoved(partner, why));
+        // Partners of subscriptions deleted while V2pn was closed go now; certificates that run out while it is
+        // open are caught by the hourly check.
+        _ = V2pnPartners.Instance.PruneAsync();
+        _pruneTimer = new DispatcherTimer(TimeSpan.FromHours(1), DispatcherPriority.Background, (_, _) => _ = V2pnPartners.Instance.PruneAsync());
+        _pruneTimer.Start();
         Apply();
+    }
+
+    private static DispatcherTimer? _pruneTimer;
+
+    private static void OnRemoved(V2pnPartner partner, V2pnPartnerGone why)
+    {
+        if (Settings.Partner != partner.Id)
+        {
+            return;
+        }
+        // Plain V2pn opens; the person's tuning of the partner's looks stays, should the partner come back.
+        Settings.Partner = null;
+        Save();
+        Apply();
+        Closed?.Invoke(partner, why);
     }
 
     /// <summary>Opens a partner's edition, or plain V2pn for null.</summary>

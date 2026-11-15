@@ -2521,6 +2521,8 @@ public static class ConfigHandler
             config.SubIndexId = subs.LastOrDefault()?.Id;
         }
 
+        // V2pn: a partner's look goes with the last subscription that came from it.
+        _ = Task.Run(V2pnPartners.Instance.PruneAsync);
         return 0;
     }
 

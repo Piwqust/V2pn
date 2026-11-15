@@ -14,6 +14,27 @@ public static partial class L
         "Переключение между V2pn и оформлением провайдеров (Ctrl+1…9). Подключение не прерывается.");
     public static string EditionOn => T("on", "на");
     public static string EditionLook => T("{0} look", "Вид {0}");
+    // The subscription window: the provider's own look of V2pn.
+    public static string SubPartnerTitle => T("Provider's look", "Оформление провайдера");
+    public static string SubPartnerConfirmed => T("{0}, confirmed by V2pn until {1}.", "{0}, подтверждено V2pn до {1}.");
+    public static string SubPartnerIsOpen => T(" Open now.", " Сейчас открыто.");
+    public static string SubPartnerChecking => T("The provider offers its look; V2pn is checking its signature.", "Провайдер предлагает своё оформление, V2pn проверяет подпись.");
+    public static string SubPartnerRefused => T(
+        "The provider offers its look, but it did not pass V2pn's check, so V2pn keeps its own. The servers work as usual.",
+        "Провайдер предлагает своё оформление, но оно не прошло проверку V2pn, поэтому V2pn остаётся обычным. Серверы работают как обычно.");
+    public static string SubPartnerOpen => T("Open the look", "Открыть оформление");
+
+    // The open partner look went away; plain V2pn opened instead.
+    public static string EditionGoneUnlinked => T(
+        "{0}'s look is off: no subscription comes from {0} any more.",
+        "Оформление {0} выключено: подписок от {0} больше нет.");
+    public static string EditionGoneExpired => T(
+        "{0}'s look is off: its confirmation by V2pn ran out. The connection is as it was.",
+        "Оформление {0} выключено: подтверждение от V2pn истекло. Подключение не изменилось.");
+    public static string EditionGoneRevoked => T(
+        "{0}'s look is off: V2pn withdrew its confirmation of {0}. The connection is as it was.",
+        "Оформление {0} выключено: V2pn отозвал подтверждение {0}. Подключение не изменилось.");
+
     // The Appearance page in a partner's look.
     public static string EditionApHint => T(
         "Settings of the {0} look by {1}. Plain V2pn's appearance stays as it is.",

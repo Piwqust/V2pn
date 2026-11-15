@@ -25,8 +25,10 @@ internal sealed class TestPartner
         }.ToJsonString());
 
     public static byte[] Pack(string id = "configra", string? accent = "#ff7a2f", string[]? variants = null, string? first = "cabinet",
-        string? api = "https://config.example.com/v2pn/api/", (string Name, byte[] Content)[]? assets = null, string name = "Configra") =>
-        Encoding.UTF8.GetBytes(new JsonObject
+        string? api = "https://config.example.com/v2pn/api/", (string Name, byte[] Content)[]? assets = null, string name = "Configra",
+        Action<JsonObject>? more = null)
+    {
+        var pack = new JsonObject
         {
             ["schema"] = 1,
             ["id"] = id,
@@ -46,7 +48,10 @@ internal sealed class TestPartner
                 ["size"] = a.Content.Length,
                 ["sha256"] = Convert.ToHexStringLower(SHA256.HashData(a.Content)),
             }).ToArray()),
-        }.ToJsonString());
+        };
+        more?.Invoke(pack);
+        return Encoding.UTF8.GetBytes(pack.ToJsonString());
+    }
 
     public static string Sign(ECDsa key, byte[] data) =>
         Convert.ToBase64String(key.SignData(data, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence));
@@ -102,14 +107,24 @@ public class V2pnPartnerTests
     }
 
     [Test]
-    public async Task Cert_WithATopLevelWildcardOrUnknownGrant_IsMalformed()
+    public async Task Cert_WithATopLevelWildcardOrBadId_IsMalformed()
     {
         var p = new TestPartner();
-        foreach (var json in new[] { p.Cert(domains: ["*.com"]), p.Cert(grants: ["edition", "root"]), p.Cert(partner: "Bad/Id") })
+        foreach (var json in new[] { p.Cert(domains: ["*.com"]), p.Cert(partner: "Bad/Id") })
         {
             await (V2pnPartnerTrust.ReadCert(json, TestPartner.Sign(p.Root, json), [p.RootPublic], TestPartner.Today, out var error) == null).Should().BeTrue();
             await error.Contains("malformed").Should().BeTrue();
         }
+    }
+
+    [Test]
+    public async Task Cert_WithAGrantThisV2pnDoesNotKnow_IsReadWithoutIt()
+    {
+        var p = new TestPartner();
+        var cert = p.ReadCert(p.Cert(grants: ["edition", "routing-v9", "actions", "lock", "actions"]));
+
+        await cert.Grants.Should().BeEquivalentTo(new[] { "edition", "actions", "lock" });
+        await cert.Allows("routing-v9").Should().BeFalse();
     }
 
     [Test]

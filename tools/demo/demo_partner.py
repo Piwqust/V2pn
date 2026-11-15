@@ -1,14 +1,18 @@
 """A V2pn partner on this computer, for previews and screenshots: subscription, pack and API.
 
 Usage: python tools/demo/demo_partner.py <signed pack folder> [--xray <xray.exe>] [--port 18998]
-                                         [--server-port 24444] [--lock] [--hide-url]
+                                         [--server-port 24444] [--lock] [--hide-url] [--tls-server]
 
 Serves at http://127.0.0.1:<port>/:
   /sub             the subscription "Kestrel" (one VLESS link per server of tools/demo/partner/partner.json, all
                    to one local server so V2pn connects and pings for real), with the headers a partner sends:
                    profile-title, subscription-userinfo, v2pn-partner, v2pn-account-token, and with --lock
-                   hide-settings: 1 (--hide-url adds hide-url: 1).
-  /v2pn/<file>     the pack folder as it is (cert.json, partner.json, their .sig, pictures).
+                   hide-settings: 1 (--hide-url adds hide-url: 1). --tls-server adds "🇺🇸 Нью-Йорк (TLS)", a VLESS
+                   link with TLS to us.kestrel.example that does not answer: its generated config shows the
+                   partner's transport (transport.json fragment), which V2pn puts on TLS and REALITY servers only.
+  /v2pn/<file>     the pack folder as it is (cert.json, partner.json, their .sig, pictures, and routing.json,
+                   transport.json, core.json from tools/demo/partner, used once a certificate reviews them:
+                   partner.cs cert ... --review <pack>/routing.json --review <pack>/transport.json --review <pack>/core.json).
   /v2pn/api/...    the API: account, status, servers, recommend?purpose=, card?id= (bearer token for all but status).
 
 The pack must be signed for http://127.0.0.1:<port>/v2pn/ with a certificate for 127.0.0.1 from a root key the
@@ -75,6 +79,7 @@ class Handler(BaseHTTPRequestHandler):
     server_port = 0
     lock = False
     hide_url = False
+    tls_server = False
     names = []
 
     def log_message(self, format, *args):  # noqa: A002 - the base class names it so
@@ -119,6 +124,9 @@ class Handler(BaseHTTPRequestHandler):
             "vless://%s@127.0.0.1:%d?encryption=none&security=none&type=tcp#%s" % (USER_ID, self.server_port, quote(name))
             for name in self.names
         )
+        if self.tls_server:
+            body += "\nvless://%s@us.kestrel.example:443?encryption=none&security=tls&sni=us.kestrel.example&fp=chrome&type=tcp#%s" % (
+                USER_ID, quote("🇺🇸 Нью-Йорк (TLS)"))
         data = base64.b64encode(body.encode("utf-8"))
         gib = 1024 ** 3
         self.send_response(200)
@@ -165,6 +173,7 @@ def main():
     parser.add_argument("--server-port", type=int, default=24444)
     parser.add_argument("--lock", action="store_true")
     parser.add_argument("--hide-url", action="store_true")
+    parser.add_argument("--tls-server", action="store_true")
     args = parser.parse_args()
 
     server = None
@@ -182,6 +191,7 @@ def main():
     Handler.server_port = args.server_port
     Handler.lock = args.lock
     Handler.hide_url = args.hide_url
+    Handler.tls_server = args.tls_server
     Handler.names = server_names(Handler.pack)
     httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     print("Subscription: http://127.0.0.1:%d/sub" % args.port, flush=True)

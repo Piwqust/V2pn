@@ -137,7 +137,7 @@ switch (args[0])
             Console.WriteLine($"note: {grant} without --review of its file does nothing: V2pn uses only a file whose hash the certificate names.");
         }
         // V2pn up to 1.0.3 refused a certificate with a grant it did not know; later versions skip such grants.
-        Console.WriteLine("note: V2pn 1.0.3 and older refuse certificates with actions or lock; the partner's look works there again after the update.");
+        Console.WriteLine("note: V2pn 1.0.3 and older refuse certificates with actions, lock, routing, transport or core; the partner's look works there again after the update.");
         var days = int.Parse(Option("--days") ?? "365");
         var today = DateOnly.FromDateTime(DateTime.UtcNow);
         var cert = new JsonObject

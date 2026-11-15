@@ -147,7 +147,7 @@ try
             Note($"the certificate runs out in {days} day(s): ask V2pn's owner for a new one");
         }
         Ok($"pack: {partner.Name}, accent {partner.Pack.Accent ?? "(none)"}, looks {string.Join(", ", partner.Pack.Variants)} (opens on {partner.Pack.DefaultVariant})");
-        Ok($"pictures: {string.Join(", ", partner.Pack.Assets.Select(a => $"{a.Name} {a.Size / 1024} KB"))}");
+        Ok($"pictures: {string.Join(", ", partner.Pack.Assets.Where(a => !V2pnReviewedFiles.All.Contains(a.Name)).Select(a => $"{a.Name} {a.Size / 1024} KB"))}");
         foreach (var note in partners.SlotNotesFor(partner.Id))
         {
             Bad($"picture not shown: {note}");

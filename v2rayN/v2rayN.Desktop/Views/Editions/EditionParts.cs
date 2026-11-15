@@ -9,7 +9,9 @@ using v2rayN.Desktop.Common;
 namespace v2rayN.Desktop.Views.EditionLooks;
 
 /// <summary>A server a scene lists. Delay: 0 not checked, below 0 no answer.</summary>
-public sealed record SceneServer(string IndexId, string Name, string? Code, int Delay, bool Selected, string? SubId = null, string? Sub = null, bool Favorite = false);
+/// <param name="Group">The partner's group for it (pack or API), <paramref name="Detail"/> its purposes and note in words.</param>
+public sealed record SceneServer(string IndexId, string Name, string? Code, int Delay, bool Selected, string? SubId = null, string? Sub = null, bool Favorite = false,
+    string? Group = null, string? Detail = null);
 
 /// <summary>A subscription with servers, for the scene's filter chips.</summary>
 public sealed record SceneSub(string Id, string Name, int Count);

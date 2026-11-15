@@ -187,6 +187,8 @@ public sealed class ServerBrowser : UserControl
         {
             key.Add(x.IndexId);
             key.Add(x.Delay);
+            key.Add(x.Group);
+            key.Add(x.Detail);
         }
         key.Add(list.Count);
         var hash = key.ToHashCode();
@@ -197,9 +199,21 @@ public sealed class ServerBrowser : UserControl
         _rowsKey = hash;
 
         _rows.Children.Clear();
-        foreach (var server in list.Take(MaxRows))
+        var showSub = _sub is null or Favourites || (_sub == PartnerChip && s.PartnerSubIds.Count > 1);
+        // The partner's own servers by its groups (pack or API), in the order the list has them; the rest under "Other".
+        var grouped = _sub != null && _sub != Favourites && query.Length == 0 && list.Any(x => x.Group != null);
+        var rows = grouped
+            ? list.Take(MaxRows).GroupBy(x => x.Group, StringComparer.CurrentCultureIgnoreCase).OrderBy(g => g.Key == null ? 1 : 0).SelectMany(g => g.Select((x, i) => (Server: x, Header: i == 0 ? g.Key ?? L.GroupOther : null)))
+            : list.Take(MaxRows).Select(x => (Server: x, Header: (string?)null));
+        foreach (var (server, header) in rows)
         {
-            _rows.Children.Add(Row(server, server.IndexId == s.SelectedId, showSub: _sub is null or Favourites || (_sub == PartnerChip && s.PartnerSubIds.Count > 1)));
+            if (header != null)
+            {
+                var title = Scene.Text(_p.Ascii ? header.ToLower(CultureInfo.CurrentUICulture) : header, 12, _p.Muted, _p.Font, FontWeight.Medium);
+                title.Margin = new Thickness(10, _rows.Children.Count == 0 ? 2 : 12, 0, 4);
+                _rows.Children.Add(title);
+            }
+            _rows.Children.Add(Row(server, server.IndexId == s.SelectedId, showSub));
         }
         _note.Text = list.Count == 0
             ? _sub == Favourites && query.Length == 0 ? L.SceneNoFavourites : L.SceneNothingFound
@@ -297,9 +311,10 @@ public sealed class ServerBrowser : UserControl
         }
         var name = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center };
         name.Children.Add(Scene.Text(server.Name, 13, selected ? _p.Ink : _p.Soft, _p.Font));
-        if (showSub && server.Sub.IsNotEmpty())
+        var detail = string.Join(" · ", new[] { showSub ? server.Sub : null, server.Detail }.Where(t => t.IsNotEmpty()));
+        if (detail.Length > 0)
         {
-            name.Children.Add(Scene.Text(server.Sub!, 11, _p.Muted, _p.Font));
+            name.Children.Add(Scene.Text(detail, 11, _p.Muted, _p.Font));
         }
         Put(grid, name, 0, 1);
         var (ping, color) = server.Delay switch
@@ -458,7 +473,7 @@ public sealed class AccountPanel : UserControl
             }
             var label = action.Id == running ? action.Label + " …" : action.Label;
             content.Children.Add(Scene.Text(_p.Ascii ? $"[ {label.ToLower(CultureInfo.CurrentUICulture)} ]" : label, 13, _p.Ink, _p.Font, FontWeight.Medium));
-            var button = Scene.Button(content, _p.Ascii ? null : _p.Raised, _p.Ink, Math.Min(_p.Radius, 12), new Thickness(_p.Ascii ? 0 : 12, 0), height: 36);
+            var button = Scene.Button(content, _p.Ascii ? null : _p.Raised, _p.Ink, Math.Min(_p.Radius, 12), new Thickness(_p.Ascii ? 0 : 12, 0), height: _p.Ascii ? 26 : 36);
             button.IsEnabled = running == null || action.Id == running;
             button.Opacity = button.IsEnabled ? 1 : 0.55;
             Avalonia.Automation.AutomationProperties.SetName(button, action.Label);

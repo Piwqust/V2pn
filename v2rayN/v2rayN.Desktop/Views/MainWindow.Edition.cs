@@ -458,7 +458,8 @@ public partial class MainWindow : IEditionActions
                 extra.TryGetValue(t.IndexId, out var ex);
                 var note = V2pnPartnerLive.Instance.Describe(t.Subid, t.Remarks, t.Address);
                 return note?.IsHidden == true ? null
-                    : new SceneServer(t.IndexId, CountryResolver.ServerName(t), note?.Country ?? CountryResolver.Resolve(t.Remarks), ex?.Delay ?? 0, false, t.Subid, t.SubRemarks, ex?.IsFavorite == true);
+                    : new SceneServer(t.IndexId, CountryResolver.ServerName(t), note?.Country ?? CountryResolver.Resolve(t.Remarks), ex?.Delay ?? 0, false, t.Subid, t.SubRemarks, ex?.IsFavorite == true,
+                        note?.Group, note == null ? null : NonEmpty(string.Join(" · ", new[] { note.City, note.Note }.Concat(note.Purposes.Select(V2pnPurposes.Label)).Where(x => x.IsNotEmpty()))));
             }).OfType<SceneServer>().ToList();
             var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
             _catalogSubs = subs

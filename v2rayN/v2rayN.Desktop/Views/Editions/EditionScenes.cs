@@ -686,7 +686,8 @@ public sealed class StudioScene : EditionScene
         var parts = new List<Control> { _nodesCard, _modeCard, _routeButton };
         if (_accountCard.IsVisible)
         {
-            parts.Add(_accountCard);
+            // One under another, the subscription (with the partner's buttons) comes first instead of below the fold.
+            parts.Insert(CurrentFit == Fit.Narrow ? 0 : parts.Count, _accountCard);
         }
         var columns = CurrentFit switch
         {

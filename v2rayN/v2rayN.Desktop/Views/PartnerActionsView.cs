@@ -33,7 +33,14 @@ public static class PartnerActionIcons
 /// </summary>
 public sealed class PartnerActionsBar : UserControl
 {
-    private readonly WrapPanel _panel = new() { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Center, ItemSpacing = 8, LineSpacing = 8 };
+    private readonly WrapPanel _panel = new()
+    {
+        Orientation = Orientation.Horizontal,
+        HorizontalAlignment = HorizontalAlignment.Center,
+        ItemsAlignment = WrapPanelItemsAlignment.Center,
+        ItemSpacing = 8,
+        LineSpacing = 8,
+    };
     private string _key = string.Empty;
 
     /// <summary>Raised with the action and the button pressed.</summary>

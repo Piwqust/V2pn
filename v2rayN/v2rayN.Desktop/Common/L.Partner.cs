@@ -8,7 +8,10 @@ public static partial class L
         "Добавить подписку «{0}» с {1}?\n\nV2pn скачает список серверов. Если провайдер — партнёр V2pn, его оформление станет доступно после проверки подписи. Провайдер не видит ваш трафик.");
     public static string LinkAddYes => T("Add", "Добавить");
     public static string LinkAddNo => T("Cancel", "Отмена");
-
+    public static string LinkAlreadyAdded => T("The subscription «{0}» is already in V2pn.", "Подписка «{0}» уже есть в V2pn.");
+    public static string LinkAddBodyPartner => T(
+        "Add the subscription «{0}» from {1}?\n\n{2} is a V2pn partner: V2pn checked its certificate. The servers come into the list, and {2}'s look is there to open. {2} does not see your traffic.",
+        "Добавить подписку «{0}» с {1}?\n\n{2} — партнёр V2pn: V2pn проверил его сертификат. Серверы появятся в списке, а оформление {2} можно будет открыть. {2} не видит ваш трафик.");
     // The edition switcher behind the name in the title bar.
     public static string EditionSwitchTip => T("Switch between V2pn and your providers' looks (Ctrl+1…9). The connection stays as it is.",
         "Переключение между V2pn и оформлением провайдеров (Ctrl+1…9). Подключение не прерывается.");

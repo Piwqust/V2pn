@@ -35,8 +35,20 @@ public partial class MainWindow
         _askingAboutLink = true;
         try
         {
+            // A link to a subscription V2pn already has (a second click in the cabinet): nothing to ask.
+            var subs = await AppManager.Instance.SubItems() ?? [];
+            if (subs.FirstOrDefault(s => string.Equals(s.Url?.Trim(), link.SubscriptionUrl.Trim(), StringComparison.Ordinal)) is { } known)
+            {
+                ShowToast(ToastKind.Info, string.Format(L.LinkAlreadyAdded, ViewModels.SideSubRow.NameOf(known)));
+                return;
+            }
             var host = Utils.TryUri(link.SubscriptionUrl)?.Host ?? link.SubscriptionUrl;
-            var answer = await UI.ShowChoice(L.LinkAddTitle, string.Format(L.LinkAddBody, link.Name ?? host, host), L.LinkAddYes, L.LinkAddNo);
+            // A provider V2pn already vouches for says so; an unknown one gets the general words.
+            var partner = V2pnPartners.Instance.All.FirstOrDefault(p => V2pnPartnerTrust.DomainAllowed(p.Cert, link.SubscriptionUrl));
+            var body = partner != null
+                ? string.Format(L.LinkAddBodyPartner, link.Name ?? host, host, partner.Name)
+                : string.Format(L.LinkAddBody, link.Name ?? host, host);
+            var answer = await UI.ShowChoice(L.LinkAddTitle, body, L.LinkAddYes, L.LinkAddNo);
             if (answer == ButtonResult.Yes)
             {
                 await AddSubscriptionLinksAsync([link.SubscriptionUrl]);

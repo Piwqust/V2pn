@@ -153,7 +153,7 @@ public readonly record struct V2pnColor(byte R, byte G, byte B)
 public sealed record V2pnThemeArea(string Kind, IReadOnlyList<string> Colors, string? Scrim, string Ink, string Soft, string Action, string OnAction, string Glass);
 
 /// <summary>
-/// Every colour of a provider theme in one mode (light or dark), derived from its 1 to 3 brand colours and its tone.
+/// Every colour of a provider theme in one mode (light or dark), derived from its 1 to 3 brand colours.
 /// The provider never sets these: V2pn derives them and guarantees WCAG AA (4.5:1 for text, 3:1 for controls), turns a
 /// brand colour away from the state hues (protected green, attention amber, unprotected red), and darkens or lightens
 /// the brand where it becomes text or a ground for text.
@@ -287,20 +287,10 @@ public static class V2pnThemePalette
         brands = brands.Select(AwayFromState).ToList();
         var brand = brands[0];
 
-        // The neutrals: the tone picks their hue (warm paper, cool steel, or the brand's own hue barely tinted).
+        // The neutrals: the brand's own hue, barely tinted (none for a grey brand).
         var (brandHue, brandSat, _) = brand.Hsl;
-        var hue = theme.Tone switch
-        {
-            V2pnThemeTones.Warm => 36.0,
-            V2pnThemeTones.Cool => 222.0,
-            _ => brandHue,
-        };
-        var sat = (theme.Tone switch
-        {
-            V2pnThemeTones.Warm => 0.16,
-            V2pnThemeTones.Cool => 0.18,
-            _ => brandSat < 0.08 ? 0.0 : 0.07,
-        }) * (dark ? 1.0 : 0.85);
+        var hue = brandHue;
+        var sat = (brandSat < 0.08 ? 0.0 : 0.07) * (dark ? 1.0 : 0.85);
         V2pnColor N(double l, double satFactor = 1) => V2pnColor.FromHsl(hue, sat * satFactor, l);
 
         V2pnColor ground, surface, raised, line, ink, soft, muted;
@@ -485,12 +475,14 @@ public static class V2pnThemePalette
     /// </summary>
     public static double ScrimAlpha(V2pnColor scrim, IReadOnlyList<V2pnColor> texts)
     {
-        for (var alpha = 0.3; alpha < 1; alpha += 0.01)
+        // In steps of the alpha byte the scrim is written with ("#AARRGGBB"), so the checked alpha is the drawn one.
+        for (var step = 77; step < 255; step++)
         {
+            var alpha = step / 255.0;
             if (texts.All(t => V2pnColor.Contrast(t, scrim.Over(V2pnColor.Black, alpha)) >= TextContrast
                     && V2pnColor.Contrast(t, scrim.Over(V2pnColor.White, alpha)) >= TextContrast))
             {
-                return Math.Round(alpha, 2);
+                return alpha;
             }
         }
         return 1;

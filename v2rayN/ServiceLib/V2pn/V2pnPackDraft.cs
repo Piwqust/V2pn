@@ -13,18 +13,14 @@ public sealed class V2pnPackDraft
         public const string Logo = "logo";
         public const string LogoOnLight = "logoOnLight";
         public const string Mark = "mark";
-        public const string Hero = "hero";
-        public const string Banner = "banner";
         public const string Backdrop = "backdrop";
 
-        public static readonly IReadOnlyList<string> All = [Logo, LogoOnLight, Mark, Hero, Banner, Backdrop];
+        public static readonly IReadOnlyList<string> All = [Logo, LogoOnLight, Mark, Backdrop];
 
         public static V2pnPartnerSlots.Slot Slot(string place) => place switch
         {
             Logo or LogoOnLight => V2pnPartnerSlots.Logo,
             Mark => V2pnPartnerSlots.Mark,
-            Hero => V2pnPartnerSlots.Hero,
-            Banner => V2pnPartnerSlots.Banner,
             _ => V2pnPartnerSlots.Backdrop,
         };
     }
@@ -36,11 +32,11 @@ public sealed class V2pnPackDraft
 
     public JsonObject Root { get; }
 
-    /// <summary>A new pack: V2pn's default theme in a calm blue, its theme first and V2pn with its logo second.</summary>
+    /// <summary>A new pack: V2pn's default theme in a calm blue, Neon first and the Pass second.</summary>
     public static V2pnPackDraft New()
     {
         var theme = V2pnTheme.Default(V2pnThemePalette.FallbackBrand);
-        var draft = new V2pnPackDraft(new JsonObject
+        return new V2pnPackDraft(new JsonObject
         {
             ["schema"] = 1,
             ["id"] = string.Empty,
@@ -48,23 +44,17 @@ public sealed class V2pnPackDraft
             ["brand"] = new JsonObject { ["accent"] = V2pnThemePalette.FallbackBrand },
             ["edition"] = new JsonObject
             {
-                ["variants"] = Array([V2pnPartnerVariants.Theme, V2pnPartnerVariants.Signature]),
-                ["default"] = V2pnPartnerVariants.Theme,
+                ["variants"] = Array([V2pnPartnerVariants.Neon, V2pnPartnerVariants.Pass]),
+                ["default"] = V2pnPartnerVariants.Neon,
             },
             ["theme"] = new JsonObject
             {
-                ["template"] = theme.Template,
-                ["connect"] = theme.Connect,
-                ["palette"] = new JsonObject { ["brand"] = Array(theme.Brand), ["tone"] = theme.Tone },
-                ["font"] = theme.Font,
-                ["corners"] = theme.Corners,
-                ["density"] = theme.Density,
+                ["palette"] = new JsonObject { ["brand"] = Array(theme.Brand) },
                 ["background"] = new JsonObject { ["type"] = V2pnThemeBackgroundKinds.Solid },
-                // The wide picture's block comes with the picture (the builder adds it then).
-                ["blocks"] = Array(theme.Blocks.Where(b => b != V2pnThemeBlocks.Art)),
+                ["connect"] = theme.Connect,
+                ["window"] = theme.Window,
             },
         });
-        return draft;
     }
 
     // ---------------------------------------------------------------- the pack
@@ -92,16 +82,31 @@ public sealed class V2pnPackDraft
 
     private JsonObject Theme => Obj(Root, "theme");
 
-    public string Template
+    /// <summary>The look the pack opens in (edition.default): neon or pass.</summary>
+    public string DefaultLook
     {
-        get => Text(Root["theme"]?["template"]) ?? V2pnThemeTemplates.Center;
-        set => Theme["template"] = value;
+        get => V2pnPartnerVariants.Normalize(Text(Root["edition"]?["default"])) ?? V2pnPartnerVariants.Neon;
+        set
+        {
+            var edition = Obj(Root, "edition");
+            edition["default"] = value;
+            // Both looks stay offered; the one the pack opens in comes first.
+            edition["variants"] = Array(V2pnPartnerVariants.All.OrderBy(v => v == value ? 0 : 1));
+        }
     }
 
+    /// <summary>Neon's Connect: a round button or a switch.</summary>
     public string Connect
     {
-        get => Text(Root["theme"]?["connect"]) ?? V2pnThemeTemplates.DefaultConnect(Template);
+        get => Text(Root["theme"]?["connect"]) ?? V2pnThemeConnect.Round;
         set => Theme["connect"] = value;
+    }
+
+    /// <summary>The window Neon opens in: mini or full.</summary>
+    public string Window
+    {
+        get => Text(Root["theme"]?["window"]) ?? V2pnThemeWindow.Mini;
+        set => Theme["window"] = value;
     }
 
     /// <summary>palette.brand: 1 to 3 colours. The first is also written as brand.accent.</summary>
@@ -118,30 +123,6 @@ public sealed class V2pnPackDraft
         }
     }
 
-    public string Tone
-    {
-        get => Text(Root["theme"]?["palette"]?["tone"]) ?? V2pnThemeTones.Neutral;
-        set => Obj(Theme, "palette")["tone"] = value;
-    }
-
-    public string Font
-    {
-        get => Text(Root["theme"]?["font"]) ?? V2pnThemeFonts.Default;
-        set => Theme["font"] = value;
-    }
-
-    public string Corners
-    {
-        get => Text(Root["theme"]?["corners"]) ?? V2pnThemeCorners.Soft;
-        set => Theme["corners"] = value;
-    }
-
-    public string Density
-    {
-        get => Text(Root["theme"]?["density"]) ?? V2pnThemeDensity.Normal;
-        set => Theme["density"] = value;
-    }
-
     public string BackgroundKind
     {
         get => Text(Root["theme"]?["background"]?["type"]) ?? V2pnThemeBackgroundKinds.Solid;
@@ -155,13 +136,6 @@ public sealed class V2pnPackDraft
         set => Obj(Theme, "background")["colors"] = Array(value);
     }
 
-    /// <summary>The blocks in order; V2pn's default order when the pack names none.</summary>
-    public IReadOnlyList<string> Blocks
-    {
-        get => Root["theme"]?["blocks"] is JsonArray ? Strings(Root["theme"]!["blocks"]) : V2pnThemeBlocks.Default.Where(V2pnThemeTemplates.Blocks(Template).Contains).ToList();
-        set => Theme["blocks"] = Array(value);
-    }
-
     // ---------------------------------------------------------------- pictures
 
     /// <summary>The file in a picture place (<see cref="Pictures"/>), or null.</summary>
@@ -170,8 +144,6 @@ public sealed class V2pnPackDraft
         Pictures.Logo => Text(Root["brand"]?["logo"]),
         Pictures.LogoOnLight => Text(Root["brand"]?["logoOnLight"]),
         Pictures.Mark => Text(Root["brand"]?["mark"]),
-        Pictures.Hero => Text(Root["theme"]?["art"]?["hero"]),
-        Pictures.Banner => Text(Root["theme"]?["art"]?["banner"]),
         _ => Text(Root["theme"]?["background"]?["art"]),
     };
 
@@ -184,15 +156,6 @@ public sealed class V2pnPackDraft
             case Pictures.LogoOnLight:
             case Pictures.Mark:
                 Set(Obj(Root, "brand"), place, file);
-                break;
-            case Pictures.Hero:
-            case Pictures.Banner:
-                var art = Obj(Theme, "art");
-                Set(art, place, file);
-                if (art.Count == 0)
-                {
-                    Theme.Remove("art");
-                }
                 break;
             default:
                 Set(Obj(Theme, "background"), "art", file);
@@ -236,40 +199,42 @@ public sealed class V2pnPackDraft
     // ---------------------------------------------------------------- saving
 
     /// <summary>
-    /// Takes out what the template has no place for (blocks, pictures, a background on the map), as V2pn would leave it out
-    /// anyway, and says what, one line each. The builder keeps everything while the person tries templates and calls this on save.
+    /// Takes out the fields of the six-template themes (template, font, corners, density, blocks, art, palette.tone), which
+    /// V2pn no longer reads, and writes the looks by their names (an older pack's "theme" and "signature" become neon and
+    /// pass). Says what it changed, one line each; the builder calls it on save.
     /// </summary>
-    public IReadOnlyList<string> FitTemplate()
+    public IReadOnlyList<string> Tidy()
     {
         var removed = new List<string>();
-        var template = Template;
-        if (Root["theme"]?["blocks"] is JsonArray)
+        if (Root["theme"] is JsonObject theme)
         {
-            var supported = V2pnThemeTemplates.Blocks(template);
-            var blocks = Blocks.ToList();
-            foreach (var block in blocks.Where(b => !supported.Contains(b)).ToList())
+            foreach (var key in new[] { "template", "font", "corners", "density", "blocks", "art" })
             {
-                removed.Add($"theme.blocks: {block}");
-                blocks.Remove(block);
+                if (theme.Remove(key))
+                {
+                    removed.Add($"theme.{key}");
+                }
             }
-            if (removed.Count > 0)
+            if (theme["palette"] is JsonObject palette && palette.Remove("tone"))
             {
-                Blocks = blocks;
-            }
-        }
-        var slots = V2pnThemeTemplates.ArtSlots(template);
-        foreach (var place in new[] { Pictures.Hero, Pictures.Banner })
-        {
-            if (Picture(place) != null && !slots.Contains(place))
-            {
-                removed.Add($"theme.art.{place}");
-                SetPicture(place, null);
+                removed.Add("theme.palette.tone");
             }
         }
-        if (!V2pnThemeTemplates.HasArea(template) && Root["theme"]?["background"] is JsonObject background && Text(background["type"]) != V2pnThemeBackgroundKinds.Solid)
+        if (Root["edition"] is JsonObject edition)
         {
-            removed.Add("theme.background");
-            Theme["background"] = new JsonObject { ["type"] = V2pnThemeBackgroundKinds.Solid };
+            var listed = Strings(edition["variants"]);
+            var looks = V2pnPartnerVariants.For(listed, Root["theme"] != null);
+            if (!listed.SequenceEqual(looks))
+            {
+                edition["variants"] = Array(looks);
+                removed.Add("edition.variants");
+            }
+            var first = Text(edition["default"]);
+            if (first != null && first != (V2pnPartnerVariants.Normalize(first) ?? looks[0]))
+            {
+                edition["default"] = V2pnPartnerVariants.Normalize(first) ?? looks[0];
+                removed.Add("edition.default");
+            }
         }
         return removed;
     }

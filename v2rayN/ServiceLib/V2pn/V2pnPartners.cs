@@ -397,7 +397,7 @@ public sealed class V2pnPartners
         accent = V2pnColor.TryParse(brand?["accent"]?.GetValue<string>())?.Hex ?? accent;
         var theme = V2pnThemeReader.Parse(root?["theme"], accent, f => Picture(f) != null);
         var pack = new V2pnPartnerPack(id, name, accent, Picture(brand?["logo"]?.GetValue<string>()), Picture(brand?["logoOnLight"]?.GetValue<string>()),
-            V2pnPartnerVariants.All.ToList(), root?["theme"] != null ? V2pnPartnerVariants.Theme : V2pnPartnerVariants.Cabinet,
+            V2pnPartnerVariants.All.ToList(), V2pnPartnerVariants.Neon,
             new Dictionary<string, string>(), null, null, null, assets, Picture(brand?["mark"]?.GetValue<string>()),
             Actions: V2pnPartnerCatalog.ParseActions(root?["actions"], cert, hasApi: false), Theme: theme);
         pack = V2pnPartnerSlots.Fit(pack, file => File.Exists(Path.Combine(folder, file)) ? File.ReadAllBytes(Path.Combine(folder, file)) : null, out _);

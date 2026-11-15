@@ -154,8 +154,9 @@ public class V2pnPartnerTests
 
         await error.Should().BeEqualTo(string.Empty);
         await pack!.Accent.Should().BeEqualTo("#FF7A2F");
-        await pack.Variants.Count.Should().BeEqualTo(5);
-        await pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Cabinet);
+        // The older names come to the two looks V2pn draws now; an unknown one is left out.
+        await pack.Variants.Should().BeEquivalentTo(new[] { V2pnPartnerVariants.Pass, V2pnPartnerVariants.Neon });
+        await pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Neon);
         await pack.Logo.Should().BeEqualTo("logo.png");
         await pack.Art.ContainsKey("lamp").Should().BeTrue();
         await pack.Art.ContainsKey("missing").Should().BeFalse();
@@ -198,12 +199,12 @@ public class V2pnPartnerTests
     {
         var p = new TestPartner();
         var cert = p.ReadCert();
-        var json = TestPartner.Pack(api: "https://tracker.example.net/", variants: ["warm", "studio"], first: "ascii");
+        var json = TestPartner.Pack(api: "https://tracker.example.net/", variants: ["pass"], first: "neon");
 
         var pack = V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)!;
 
         await (pack.ApiUrl == null).Should().BeTrue();
-        await pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Warm);
+        await pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Pass);
     }
 
     [Test]

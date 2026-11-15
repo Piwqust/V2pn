@@ -190,9 +190,9 @@ public class V2pnPartnerBuilderTests
         try
         {
             var logo = Png(340, 96);
-            var hero = Png(800, 600, 50);
+            var card = Png(1200, 600, 50);
             File.WriteAllBytes(Path.Combine(folder, "logo.png"), logo);
-            File.WriteAllBytes(Path.Combine(folder, "hero.png"), hero);
+            File.WriteAllBytes(Path.Combine(folder, "card.png"), card);
             File.WriteAllBytes(Path.Combine(folder, "routing.json"), RoutingJson);
             File.WriteAllText(Path.Combine(folder, "notes.txt"), "not part of the pack");
             using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -200,12 +200,13 @@ public class V2pnPartnerBuilderTests
             draft.Id = "kestrel";
             draft.Name = "Kestrel";
             draft.SetPicture(V2pnPackDraft.Pictures.Logo, "logo.png");
-            draft.SetPicture(V2pnPackDraft.Pictures.Hero, "hero.png");
+            draft.SetPicture(V2pnPackDraft.Pictures.Backdrop, "card.png");
+            draft.BackgroundKind = V2pnThemeBackgroundKinds.Image;
 
             var (bytes, signature) = V2pnPackWriter.Write(folder, draft.Root, key);
 
             var assets = (JsonNode.Parse(File.ReadAllBytes(Path.Combine(folder, "partner.json")))!["assets"] as JsonArray)!;
-            await assets.Select(a => a!["name"]!.GetValue<string>()).Should().BeEquivalentTo(new[] { "hero.png", "logo.png", "routing.json" });
+            await assets.Select(a => a!["name"]!.GetValue<string>()).Should().BeEquivalentTo(new[] { "card.png", "logo.png", "routing.json" });
             await assets[1]!["size"]!.GetValue<long>().Should().BeEqualTo(logo.LongLength);
             await assets[1]!["sha256"]!.GetValue<string>().Should().BeEqualTo(Convert.ToHexStringLower(SHA256.HashData(logo)));
             await assets[2]!["sha256"]!.GetValue<string>().Should().BeEqualTo(V2pnReviewedFiles.Hash(RoutingJson));
@@ -216,7 +217,7 @@ public class V2pnPartnerBuilderTests
             var cert = p.ReadCert(V2pnPartnerIssuer.Cert("kestrel", "Kestrel", ["kestrel.example"], V2pnPartnerSigning.PublicKey(key), ["edition", "actions"], null, Today, 365));
             var pack = V2pnPartnerTrust.ReadPack(bytes, signature, cert, out var error);
             await error.Should().BeEqualTo(string.Empty);
-            await pack!.Theme!.Picture(V2pnThemeArt.Hero).Should().BeEqualTo("hero.png");
+            await pack!.Theme!.Background.Art.Should().BeEqualTo("card.png");
             await pack.Logo.Should().BeEqualTo("logo.png");
         }
         finally
@@ -235,9 +236,9 @@ public class V2pnPartnerBuilderTests
             var draft = V2pnPackDraft.New();
             draft.Id = "ember";
             draft.Name = "Эмбер";
-            draft.Template = V2pnThemeTemplates.Half;
+            draft.Connect = V2pnThemeConnect.Toggle;
             draft.Brand = ["#E11D48", "#FB7185"];
-            draft.SetPicture(V2pnPackDraft.Pictures.Hero, "orb.png");
+            draft.SetPicture(V2pnPackDraft.Pictures.Backdrop, "orb.png");
             draft.Root["links"] = new JsonObject { ["support"] = "https://t.me/ember" };
             draft.SetActions([new JsonObject { ["id"] = "fast", ["label"] = "Самый быстрый", ["icon"] = "bolt", ["do"] = "connect.best" }]);
             var (first, _) = V2pnPackWriter.Write(folder, draft.Root, null);
@@ -245,8 +246,8 @@ public class V2pnPartnerBuilderTests
             // Open: the builder reads the folder and edits nothing.
             var opened = new V2pnPackDraft(V2pnPackWriter.Read(folder, out _)!);
             await opened.Name.Should().BeEqualTo("Эмбер");
-            await opened.Picture(V2pnPackDraft.Pictures.Hero).Should().BeEqualTo("orb.png");
-            await opened.FitTemplate().Count.Should().BeEqualTo(0);
+            await opened.Picture(V2pnPackDraft.Pictures.Backdrop).Should().BeEqualTo("orb.png");
+            await opened.Tidy().Count.Should().BeEqualTo(0);
             var (second, _) = V2pnPackWriter.Write(folder, opened.Root, null);
 
             await second.Should().BeEquivalentTo(first);
@@ -319,28 +320,36 @@ public class V2pnPartnerBuilderTests
     }
 
     [Test]
-    public async Task Draft_FitTemplate_TakesOutWhatTheTemplateHasNoPlaceFor()
+    public async Task Draft_Tidy_TakesOutTheOldTemplateFields_AndNamesTheLooks()
     {
-        var draft = V2pnPackDraft.New();
-        draft.Blocks = ["plan", "news", "art", "servers"];
-        draft.SetPicture(V2pnPackDraft.Pictures.Hero, "orb.png");
-        draft.BackgroundKind = V2pnThemeBackgroundKinds.Gradient;
-        draft.BackgroundColors = ["#111111", "#222222"];
-        draft.Template = V2pnThemeTemplates.Map;
+        var draft = new V2pnPackDraft(new JsonObject
+        {
+            ["edition"] = new JsonObject { ["variants"] = new JsonArray("theme", "signature", "cabinet"), ["default"] = "theme" },
+            ["theme"] = new JsonObject
+            {
+                ["template"] = "map",
+                ["font"] = "Manrope",
+                ["blocks"] = new JsonArray("plan", "servers"),
+                ["art"] = new JsonObject { ["hero"] = "orb.png" },
+                ["palette"] = new JsonObject { ["brand"] = new JsonArray("#6D5DFC"), ["tone"] = "cool" },
+                ["connect"] = "round",
+            },
+        });
 
-        var removed = draft.FitTemplate();
+        var removed = draft.Tidy();
 
-        await draft.Blocks.Should().BeEquivalentTo(new[] { "plan", "servers" });
-        await (draft.Picture(V2pnPackDraft.Pictures.Hero) == null).Should().BeTrue();
-        await draft.BackgroundKind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Solid);
-        await removed.Count.Should().BeEqualTo(4);
+        await removed.Should().BeEquivalentTo(new[] { "theme.template", "theme.font", "theme.blocks", "theme.art", "theme.palette.tone", "edition.variants", "edition.default" });
+        await draft.DefaultLook.Should().BeEqualTo(V2pnPartnerVariants.Neon);
+        await draft.Brand.Should().BeEquivalentTo(new[] { "#6D5DFC" });
+        await (draft.Root["edition"]!["variants"] as JsonArray)!.Select(v => v!.GetValue<string>()).Should().BeEquivalentTo(new[] { "neon", "pass" });
+        await draft.Tidy().Count.Should().BeEqualTo(0);
     }
 
     [Test]
     public async Task Slot_Check_SaysWhyAPictureDoesNotFit()
     {
-        await V2pnPartnerSlots.Check(V2pnPartnerSlots.Hero, Png(800, 600)).Problem.Should().BeEqualTo(V2pnPartnerSlots.Problem.None);
-        var small = V2pnPartnerSlots.Check(V2pnPartnerSlots.Hero, Png(120, 90));
+        await V2pnPartnerSlots.Check(V2pnPartnerSlots.Backdrop, Png(1600, 800)).Problem.Should().BeEqualTo(V2pnPartnerSlots.Problem.None);
+        var small = V2pnPartnerSlots.Check(V2pnPartnerSlots.Backdrop, Png(120, 90));
         await small.Problem.Should().BeEqualTo(V2pnPartnerSlots.Problem.WrongSize);
         await small.Width.Should().BeEqualTo(120);
         await V2pnPartnerSlots.Check(V2pnPartnerSlots.Logo, Png(340, 96, V2pnPartnerTrust.MaxAssetBytes + 1)).Problem.Should().BeEqualTo(V2pnPartnerSlots.Problem.TooLarge);
@@ -362,7 +371,7 @@ public class V2pnPartnerBuilderTests
             var draft = V2pnPackDraft.New();
             draft.Id = "kestrel";
             draft.Name = "Kestrel";
-            draft.Template = V2pnThemeTemplates.Split;
+            draft.DefaultLook = V2pnPartnerVariants.Pass;
             draft.SetPicture(V2pnPackDraft.Pictures.Logo, "logo.png");
             V2pnPackWriter.Write(folder, draft.Root, null);
             var manager = new V2pnPartners([], () => root) { Today = () => Today };
@@ -372,7 +381,7 @@ public class V2pnPartnerBuilderTests
             await error.Should().BeEqualTo(string.Empty);
             await preview!.Id.Should().BeEqualTo(V2pnPartners.PreviewId);
             await preview.HasEdition.Should().BeTrue();
-            await preview.Pack.Theme!.Template.Should().BeEqualTo(V2pnThemeTemplates.Split);
+            await preview.Pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Pass);
             await preview.Pack.Logo.Should().BeEqualTo("logo.png");
             await manager.Get(V2pnPartners.PreviewId).Should().BeEqualTo(preview);
             // Drawn from a copy in the temp folder, never from the partners' folder, and no certificate id can be it.
@@ -412,7 +421,7 @@ public class V2pnPartnerBuilderTests
 
             await error.Should().BeEqualTo(string.Empty);
             await partner!.Name.Should().BeEqualTo("Provider");
-            await partner.Pack.Variants.Should().BeEquivalentTo(new[] { "theme", "signature" });
+            await partner.Pack.Variants.Should().BeEquivalentTo(new[] { "neon", "pass" });
         }
         finally
         {

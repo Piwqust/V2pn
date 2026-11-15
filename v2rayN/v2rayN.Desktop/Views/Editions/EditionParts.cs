@@ -290,17 +290,18 @@ internal static class Scene
     /// <summary>V2pn's state pill, the one part of the window every look keeps as it is.</summary>
     public static Border Pill(TextBlock label, bool light)
     {
+        // A long verdict ("couldn't start the connection") ends in "…" where the place is narrow, with the whole of it as a tip.
+        label.TextTrimming = TextTrimming.CharacterEllipsis;
+        var row = new Grid { ColumnDefinitions = new("Auto,*"), ColumnSpacing = 7 };
+        row.Children.Add(new Ellipse { Width = 6, Height = 6, VerticalAlignment = VerticalAlignment.Center });
+        Grid.SetColumn(label, 1);
+        row.Children.Add(label);
         return new Border
         {
             CornerRadius = new CornerRadius(999),
             Padding = new Thickness(11, 6),
             HorizontalAlignment = HorizontalAlignment.Left,
-            Child = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                Spacing = 7,
-                Children = { new Ellipse { Width = 6, Height = 6 }, label },
-            },
+            Child = row,
             Tag = light,
         };
     }
@@ -323,10 +324,11 @@ internal static class Scene
         label.FontSize = 10.5;
         label.FontWeight = FontWeight.SemiBold;
         label.LetterSpacing = 0.8;
-        if (pill.Child is StackPanel { Children: [Ellipse dot, ..] })
+        if (pill.Child is Panel { Children: [Ellipse dot, ..] })
         {
             dot.Fill = new SolidColorBrush(c);
         }
+        ToolTip.SetTip(pill, text);
     }
 
     /// <summary>The globe V2pn's list shows for a server without a country.</summary>

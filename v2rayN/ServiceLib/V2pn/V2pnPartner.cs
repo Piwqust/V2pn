@@ -49,7 +49,8 @@ public sealed record V2pnPartnerPack(
     string? Mark = null,
     IReadOnlyList<V2pnServerNote>? Servers = null,
     IReadOnlyList<V2pnPartnerAction>? Actions = null,
-    bool Lock = false)
+    bool Lock = false,
+    V2pnTheme? Theme = null)
 {
     /// <summary>What the pack says about its servers (needs the actions grant).</summary>
     public IReadOnlyList<V2pnServerNote> ServerNotes => Servers ?? [];
@@ -62,26 +63,60 @@ public sealed record V2pnPartnerPack(
 
 /// <summary>
 /// The looks V2pn can take for a partner. V2pn draws all of them; a pack only picks which it allows and
-/// which comes first, so a partner never ships layout or code.
+/// which comes first, so a partner never ships layout or code. Every partner has the signature look and its own theme
+/// (assembled from V2pn's parts, <see cref="V2pnTheme"/>); the other four were made for Configra and are its edition.
 /// </summary>
 public static class V2pnPartnerVariants
 {
     /// <summary>V2pn as it is, the partner's logo beside V2pn's and on its subscription cards.</summary>
     public const string Signature = "signature";
 
-    /// <summary>V2pn's layout in the partner's colours and type.</summary>
+    /// <summary>The partner's theme: a template, a connect control, its colours, a font, a shape, a background, blocks and pictures.</summary>
+    public const string Theme = "theme";
+
+    /// <summary>V2pn's layout in the partner's colours and type (Configra's edition).</summary>
     public const string Warm = "warm";
 
-    /// <summary>The partner's own personal-cabinet layout.</summary>
+    /// <summary>The partner's own personal-cabinet layout (Configra's edition).</summary>
     public const string Cabinet = "cabinet";
 
-    /// <summary>The partner's website look: light ground, bitmap type, its artwork as the connect lamp.</summary>
+    /// <summary>The partner's website look: light ground, bitmap type, its artwork as the connect lamp (Configra's edition).</summary>
     public const string Studio = "studio";
 
-    /// <summary>Monospace text and an ASCII map.</summary>
+    /// <summary>Monospace text and an ASCII map (Configra's edition).</summary>
     public const string Ascii = "ascii";
 
-    public static readonly IReadOnlyList<string> All = [Signature, Warm, Cabinet, Studio, Ascii];
+    public static readonly IReadOnlyList<string> All = [Signature, Theme, Warm, Cabinet, Studio, Ascii];
+
+    /// <summary>The partner whose edition the looks below are.</summary>
+    public const string ConfigraPartner = "configra";
+
+    /// <summary>Looks written in code for one partner (an edition of its own): only that partner's certificate opens them.</summary>
+    public static readonly IReadOnlyList<string> ConfigraOnly = [Warm, Cabinet, Studio, Ascii];
+
+    /// <summary>True when the partner with this certificate id may wear <paramref name="variant"/>.</summary>
+    public static bool Allowed(string partnerId, string variant) =>
+        All.Contains(variant) && (!ConfigraOnly.Contains(variant) || partnerId == ConfigraPartner);
+
+    /// <summary>
+    /// What a pack's list of looks comes to for <paramref name="partnerId"/>: known looks only, once each; a look of
+    /// another partner's edition becomes the theme (<paramref name="hasTheme"/>) or, without one, the signature look.
+    /// </summary>
+    public static List<string> For(string partnerId, IEnumerable<string> listed, bool hasTheme)
+    {
+        var looks = new List<string>();
+        foreach (var variant in listed)
+        {
+            var look = !All.Contains(variant) ? null
+                : Allowed(partnerId, variant) ? variant
+                : hasTheme ? Theme : Signature;
+            if (look != null && !looks.Contains(look))
+            {
+                looks.Add(look);
+            }
+        }
+        return looks;
+    }
 }
 
 public static class V2pnPartnerGrants
@@ -335,8 +370,19 @@ public static class V2pnPartnerTrust
             }
 
             var edition = root["edition"] as JsonObject;
-            var variants = Strings(edition?["variants"]).Where(V2pnPartnerVariants.All.Contains).Distinct().ToList();
+            var listed = Strings(edition?["variants"]).ToList();
+            var themed = root["theme"] != null || listed.Contains(V2pnPartnerVariants.Theme);
+            // A pack with a theme and no list of looks opens its theme.
+            if (listed.Count == 0 && root["theme"] != null)
+            {
+                listed.Add(V2pnPartnerVariants.Theme);
+            }
+            var variants = V2pnPartnerVariants.For(cert.Partner, listed, themed);
             var first = edition?["default"]?.GetValue<string>();
+            if (first != null)
+            {
+                first = V2pnPartnerVariants.For(cert.Partner, [first], themed).FirstOrDefault();
+            }
             if (!cert.Allows(V2pnPartnerGrants.Edition))
             {
                 // Without the grant the partner keeps its name and links only; V2pn stays as it is.
@@ -346,6 +392,11 @@ public static class V2pnPartnerTrust
             {
                 first = variants[0];
             }
+
+            // The theme is read when the partner may wear it; a theme that gets anything wrong falls back field by field.
+            var theme = variants.Contains(V2pnPartnerVariants.Theme)
+                ? V2pnThemeReader.Parse(root["theme"], accent, file => AssetRef(JsonValue.Create(file)) != null)
+                : null;
 
             var art = new Dictionary<string, string>(StringComparer.Ordinal);
             if (edition?["art"] is JsonObject artObject)
@@ -388,7 +439,8 @@ public static class V2pnPartnerTrust
                 AssetRef(brand?["mark"]),
                 servers,
                 actions,
-                locked);
+                locked,
+                theme);
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {

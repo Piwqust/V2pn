@@ -17,7 +17,7 @@
       "type": "string",
       "minLength": 1,
       "maxLength": 40,
-      "not": { "pattern": "(?i)v\\s*2\\s*p\\s*n" }
+      "not": { "pattern": "[Vv]\\s*2\\s*[Pp]\\s*[Nn]" }
     },
     "brand": {
       "type": "object",

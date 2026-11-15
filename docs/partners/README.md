@@ -134,6 +134,16 @@ or with your own tooling: ECDSA P-256 over SHA-256 of the exact bytes of `partne
 
 Other clients ignore the V2pn headers.
 
+When a subscription answers with a whole Xray, sing-box or Clash config instead of server links, V2pn runs it only through a filter. The servers, the routing between them, DNS and balancing stay, and local ports listen on `127.0.0.1` only. These are taken out:
+
+- the core's API, stats and an external control panel;
+- logs to files;
+- paths to any files on the computer;
+- TUN, which V2pn turns on itself;
+- Xray reverse, and sing-box tor and tailscale.
+
+V2pn does not run a config for other cores from a subscription. Server links are the simplest thing to send.
+
 ## 4. Links
 
 `v2pn://add?url=<subscription link, URL-encoded>&name=<name>` opens V2pn and asks before adding the subscription. V2pn also takes Happ (`happ://add/<link>`), v2RayTun (`v2raytun://import/<link>`) and Hiddify (`hiddify://import/<link>`) links. A link to a subscription V2pn already has only says so. On Windows the `v2pn` scheme is registered by the installed app; on macOS the app bundle claims it.

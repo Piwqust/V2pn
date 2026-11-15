@@ -14,6 +14,27 @@ public static partial class L
         "Переключение между V2pn и оформлением провайдеров (Ctrl+1…9). Подключение не прерывается.");
     public static string EditionOn => T("on", "на");
     public static string EditionLook => T("{0} look", "Вид {0}");
+    // The Appearance page in a partner's look.
+    public static string EditionApHint => T(
+        "Settings of the {0} look by {1}. Plain V2pn's appearance stays as it is.",
+        "Настройки вида «{0}» от {1}. Оформление обычного V2pn они не меняют.");
+    public static string EditionApLook => T("Look", "Вид");
+    public static string EditionApPartners => T("Provider looks", "Оформление провайдера");
+    public static string EditionApAccentHint => T("{0}'s colour or your own.", "Цвет {0} или свой.");
+    public static string EditionApPartnerAccent => T("{0}'s colour", "Цвет {0}");
+    public static string EditionApCornersSquare => T("Square", "Прямые");
+    public static string EditionApTextSizeHint => T("Menus, dialogs and settings.", "Меню, окна и настройки.");
+    public static string EditionApReset => T("Back to {0}'s look", "Вернуть как у {0}");
+
+    public static string EditionVariantShort(string variant) => variant switch
+    {
+        V2pnPartnerVariants.Signature => T("Signature", "Подпись"),
+        V2pnPartnerVariants.Warm => T("Warm", "Тёплый"),
+        V2pnPartnerVariants.Cabinet => T("Cabinet", "Кабинет"),
+        V2pnPartnerVariants.Studio => T("Studio", "Студия"),
+        V2pnPartnerVariants.Ascii => T("ASCII", "ASCII"),
+        _ => variant,
+    };
 
     public static string EditionVariant(string variant) => variant switch
     {

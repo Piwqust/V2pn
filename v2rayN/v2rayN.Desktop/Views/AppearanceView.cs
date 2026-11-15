@@ -12,9 +12,9 @@ namespace v2rayN.Desktop.Views;
 /// <summary>
 /// The Appearance page: light or dark, palette, accent, corners, fonts, text size and the layout
 /// of the main window. Every change is applied and saved at once, so the window behind the dialog
-/// is the preview.
+/// is the preview. In a partner's look it tunes that look instead (AppearanceView.Edition.cs).
 /// </summary>
-public sealed class AppearanceView : UserControl
+public sealed partial class AppearanceView : UserControl
 {
     private readonly ThemeSettingViewModel _theme;
     private readonly WrapPanel _palettes = new() { Orientation = Orientation.Horizontal };
@@ -67,7 +67,7 @@ public sealed class AppearanceView : UserControl
             Children =
             {
                 new TextBlock { Classes = { "spagetitle" }, Text = L.ApTitle },
-                new TextBlock { Classes = { "spagehint" }, Text = L.ApHint },
+                _hint,
             },
         });
         Grid.SetColumn(close, 1);
@@ -82,11 +82,12 @@ public sealed class AppearanceView : UserControl
             Refresh();
         };
 
-        var body = new StackPanel
+        _normalBody = new StackPanel
         {
             Margin = new Thickness(28, 6, 28, 24),
             Children =
             {
+                _looksHost,
                 Group(L.ApGrpTheme,
                     Row(L.ApMode, null, ModeSegment()),
                     Stacked(L.ApPalette, _palettes),
@@ -122,16 +123,18 @@ public sealed class AppearanceView : UserControl
             },
         };
 
-        var scroll = new ScrollViewer
-        {
-            Content = body,
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-        };
+        // Rows above these counts belong to plain V2pn's page; a partner look's page adds its own and drops them again.
+        _baseSegments = _segments.Count;
+        _baseSwitches = _switches.Count;
+
         var root = new DockPanel { MaxHeight = 720 };
         DockPanel.SetDock(header, Dock.Top);
         root.Children.Add(header);
-        root.Children.Add(scroll);
+        root.Children.Add(_scroll);
         Content = root;
+        ShowBody();
+        AttachedToVisualTree += (_, _) => Editions.Changed += OnEditionChanged;
+        DetachedFromVisualTree += (_, _) => Editions.Changed -= OnEditionChanged;
 
         _customAccent.LostFocus += (_, _) => ApplyCustomAccent();
         _customAccent.KeyDown += (_, e) =>
@@ -141,7 +144,17 @@ public sealed class AppearanceView : UserControl
                 ApplyCustomAccent();
             }
         };
-        ActualThemeVariantChanged += (_, _) => Refresh();
+        ActualThemeVariantChanged += (_, _) =>
+        {
+            if (Editions.IsTuned)
+            {
+                ShowBody();
+            }
+            else
+            {
+                Refresh();
+            }
+        };
         Refresh();
     }
 

@@ -210,7 +210,7 @@ switch (args[0])
             // What V2pn will take of the theme and what falls back; the pictures' sizes are checked by partner-check.
             var names = assets.Select(a => a?["name"]?.GetValue<string>()).OfType<string>().Where(n => !V2pnReviewedFiles.All.Contains(n)).ToHashSet();
             var theme = V2pnThemeReader.Parse(pack["theme"], pack["brand"]?["accent"]?.GetValue<string>(), names.Contains);
-            Console.WriteLine($"  theme: {theme.Template}, {theme.Connect}, {string.Join(" ", theme.Brand)} {theme.Tone}, {theme.Font}, {theme.Corners}, {theme.Density}, background {theme.Background.Kind}, blocks {string.Join(",", theme.Blocks)}");
+            Console.WriteLine($"  theme: {string.Join(" ", theme.Brand)}, connect {theme.Connect}, window {theme.Window}, Pass card {theme.Background.Kind}");
             foreach (var note in theme.Notes.Concat(V2pnThemePalette.Describe(theme)))
             {
                 Console.WriteLine($"  theme: {note}");

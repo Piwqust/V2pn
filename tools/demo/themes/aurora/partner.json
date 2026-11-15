@@ -7,24 +7,18 @@
   },
   "edition": {
     "variants": [
-      "theme",
-      "signature"
+      "neon",
+      "pass"
     ],
-    "default": "theme"
+    "default": "neon"
   },
   "theme": {
-    "template": "center",
-    "connect": "round",
     "palette": {
       "brand": [
         "#6D5DFC",
         "#22D3EE"
-      ],
-      "tone": "cool"
+      ]
     },
-    "font": "Manrope",
-    "corners": "round",
-    "density": "normal",
     "background": {
       "type": "gradient",
       "colors": [
@@ -33,17 +27,8 @@
         "#C026D3"
       ]
     },
-    "blocks": [
-      "actions",
-      "banner",
-      "plan",
-      "traffic",
-      "news",
-      "servers"
-    ],
-    "art": {
-      "hero": "orb.png"
-    }
+    "connect": "round",
+    "window": "mini"
   },
   "actions": [
     {

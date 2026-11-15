@@ -177,10 +177,15 @@ void CheckTheme(V2pnPartner p)
     {
         var raw = JsonNode.Parse(File.ReadAllBytes(Path.Combine(p.Folder, "partner.json"))) as JsonObject;
         var listed = (raw?["edition"]?["variants"] as JsonArray)?.Select(n => n?.GetValue<string>()).OfType<string>().ToList() ?? [];
-        var others = listed.Where(v => V2pnPartnerVariants.ConfigraOnly.Contains(v) && !V2pnPartnerVariants.Allowed(p.Id, v)).ToList();
-        if (others.Count > 0)
+        var renamed = listed.Where(v => V2pnPartnerVariants.Normalize(v) is { } look && look != v).ToList();
+        if (renamed.Count > 0)
         {
-            Note($"looks {string.Join(", ", others)} are Configra's own edition; V2pn shows {(p.Pack.Variants.Contains(V2pnPartnerVariants.Theme) ? "your theme" : "the signature look")} instead");
+            Note($"looks {string.Join(", ", renamed)} are older names; V2pn reads them as {string.Join(", ", renamed.Select(V2pnPartnerVariants.Normalize).Distinct())} (write neon and pass)");
+        }
+        var unknown = listed.Where(v => V2pnPartnerVariants.Normalize(v) == null).ToList();
+        if (unknown.Count > 0)
+        {
+            Note($"looks {string.Join(", ", unknown)} are not looks V2pn draws (neon, pass); left out");
         }
     }
     catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or InvalidOperationException)
@@ -190,9 +195,8 @@ void CheckTheme(V2pnPartner p)
     {
         return;
     }
-    var pictures = string.Join(", ", theme.Art.Select(a => $"{a.Key} {a.Value}").Concat(theme.Background.Art is { } bg ? [$"background {bg}"] : []));
-    Ok($"theme: template {theme.Template}, connect {theme.Connect}, brand {string.Join(" ", theme.Brand.DefaultIfEmpty("(the pack's accent)"))}, tone {theme.Tone}, font {theme.Font}, corners {theme.Corners}, density {theme.Density}, background {theme.Background.Kind}{(theme.Background.Colors.Count > 0 ? " " + string.Join(" ", theme.Background.Colors) : "")}");
-    Ok($"theme blocks: {string.Join(", ", theme.Blocks)}; pictures: {(pictures.Length > 0 ? pictures : "none")}");
+    Ok($"looks: {string.Join(", ", p.Pack.Variants)}, opens in {p.Pack.DefaultVariant}");
+    Ok($"theme: brand {string.Join(" ", theme.Brand.DefaultIfEmpty("(the pack's accent)"))}, Neon's connect {theme.Connect}, window {theme.Window}, Pass card {theme.Background.Kind}{(theme.Background.Colors.Count > 0 ? " " + string.Join(" ", theme.Background.Colors) : "")}{(theme.Background.Art is { } art ? " " + art : "")}");
     foreach (var note in theme.Notes)
     {
         Note($"theme: {note}");

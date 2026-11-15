@@ -1,8 +1,8 @@
 ﻿<#
 .SYNOPSIS
-  Screenshots every partner look in light and dark at mini, medium and wide window sizes, off screen, and puts
-  them on one contact sheet: the check to run after any change to the looks. With -Theme it shows a provider theme
-  (a folder with partner.json and its pictures) on each of the six templates instead.
+  Screenshots both partner looks (Pass and Neon) in light and dark at mini, medium and wide window sizes, off screen,
+  and puts them on one contact sheet: the check to run after any change to the looks. With -Theme it shows a provider
+  theme (a folder with partner.json and its pictures): the Pass and Neon with each of its Connect buttons.
 
 .DESCRIPTION
   Builds nothing: it runs the Debug build (or -From) in a sandbox (tools/sandbox.ps1) in background mode with the
@@ -11,21 +11,21 @@
 
 .EXAMPLE
   tools/edition-matrix.ps1
-  tools/edition-matrix.ps1 -Looks 'Кабинет','ASCII' -Sizes 'Мини 380×640' -Out $env:TEMP/matrix
+  tools/edition-matrix.ps1 -Looks 'Неон' -Sizes 'Мини 380×640' -Out $env:TEMP/matrix
   tools/edition-matrix.ps1 -Theme tools/demo/themes/aurora
-  tools/edition-matrix.ps1 -Theme tools/demo/themes/pine -Templates list,compact -Out $env:TEMP/pine
+  tools/edition-matrix.ps1 -Theme tools/demo/themes/pine -Connects toggle -Out $env:TEMP/pine
 #>
 param(
     [string]$From = (Join-Path $PSScriptRoot '..\v2rayN\v2rayN.Desktop\bin\Debug\net10.0'),
     [string]$Dest = (Join-Path $env:TEMP 'v2pn-matrix'),
     [string]$Out = (Join-Path $env:TEMP 'v2pn-matrix-shots'),
-    [string[]]$Looks = @('Подпись', 'Тёплый', 'Кабинет', 'Студия', 'ASCII'),
+    [string[]]$Looks = @('Пропуск', 'Неон'),
     [string[]]$Modes = @('Тёмный', 'Светлый'),
     [string[]]$Sizes = @('Мини 380×640', 'Среднее 820×700', 'Широкое 1280×800'),
-    # A provider theme to show: a folder with partner.json ("brand", "theme") and its pictures. Its look is shown on
-    # each of -Templates (the theme's own blocks and pictures kept where a template has room for them).
+    # A provider theme to show: a folder with partner.json ("brand", "theme") and its pictures. The Pass is shown
+    # once, Neon with each of -Connects.
     [string]$Theme,
-    [string[]]$Templates = @('center', 'half', 'split', 'list', 'map', 'compact'),
+    [string[]]$Connects = @('round', 'toggle'),
     # guiConfigs to start from (servers, subscriptions, a verified partner); a fresh install would open the walkthrough.
     [string]$SeedFrom = (Join-Path $env:TEMP 'v2pn-partner\guiConfigs')
 )
@@ -89,21 +89,21 @@ if ($Theme) {
     Invoke-Debug '11 из 14 по партнёру'
 }
 $files = @()
-# With a theme, the "looks" are its templates: each one is picked in the debug window, then shot like a look.
+# With a theme, the passes are the Pass and Neon with each Connect: each is picked in the debug window, then shot.
 $themeName = if ($Theme) { Split-Path -Leaf (Resolve-Path $Theme).Path } else { $null }
-$passes = if ($Theme) { $Templates } else { $Looks }
+$passes = if ($Theme) { @('Пропуск') + ($Connects | ForEach-Object { "кнопка $_" }) } else { $Looks }
 foreach ($look in $passes) {
-    if ($Theme) { Invoke-Debug "шаблон $look" } else { Invoke-Debug $look }
+    Invoke-Debug $look
     Start-Sleep -Milliseconds 1500
     foreach ($mode in $Modes) {
-        # The signature look keeps plain V2pn's mode; one pass is enough.
-        if ($look -eq 'Подпись' -and $mode -ne $Modes[0]) { continue }
+        # The Pass keeps plain V2pn's mode; one pass is enough.
+        if ($look -eq 'Пропуск' -and $mode -ne $Modes[0]) { continue }
         Invoke-Debug $mode
         Start-Sleep -Milliseconds 1500
         foreach ($size in $Sizes) {
             Invoke-Debug $size
             Start-Sleep -Milliseconds 2200
-            $name = if ($Theme) { "$themeName-$look" } else { $look }
+            $name = if ($Theme) { "$themeName-$($look -replace ' ', '-')" } else { $look }
             $file = Join-Path $Out ("{0}-{1}-{2}.png" -f $name, $mode, ($size -split ' ')[0])
             & $shot -ProcessId $proc.Id -Out $file -Title '* — *' | Out-Null
             $files += [pscustomobject]@{ File = $file; Label = "$name · $mode · $(($size -split ' ')[0])" }

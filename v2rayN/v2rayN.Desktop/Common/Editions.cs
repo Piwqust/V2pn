@@ -1,6 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 using Avalonia.Threading;
+using v2rayN.Desktop.Views.EditionLooks;
 
 namespace v2rayN.Desktop.Common;
 
@@ -72,7 +73,13 @@ public static class Editions
     public static string Variant => Partner is { } partner ? VariantOf(partner) : string.Empty;
 
     /// <summary>True when the open look replaces the sidebar and the map with a scene of its own.</summary>
-    public static bool IsScene => Variant is V2pnPartnerVariants.Cabinet or V2pnPartnerVariants.Studio or V2pnPartnerVariants.Ascii;
+    public static bool IsScene => Variant is V2pnPartnerVariants.Cabinet or V2pnPartnerVariants.Studio or V2pnPartnerVariants.Ascii or V2pnPartnerVariants.Theme;
+
+    /// <summary>The open partner's theme while its theme look is open; null otherwise.</summary>
+    public static V2pnTheme? Theme => Partner is { } partner && Variant == V2pnPartnerVariants.Theme ? ThemeKit.Of(partner) : null;
+
+    /// <summary>The colours of the open theme in the light or dark mode, with the accent the person picked.</summary>
+    public static V2pnThemeColors? ThemeColors(bool dark) => Theme is { } theme ? V2pnThemePalette.Derive(theme, dark, AccentHex) : null;
 
     /// <summary>True when a look other than the signature one is open: the Appearance page then tunes that look.</summary>
     public static bool IsTuned => Partner != null && Variant != V2pnPartnerVariants.Signature;
@@ -94,6 +101,12 @@ public static class Editions
     {
         get
         {
+            // A theme's first brand colour, turned from the state colours the same way the theme's palette does.
+            if (Theme is { } theme)
+            {
+                var brand = V2pnColor.TryParse(theme.Brand.FirstOrDefault()) ?? V2pnColor.Parse(V2pnThemePalette.FallbackBrand);
+                return V2pnThemePalette.AwayFromState(brand).Hex;
+            }
             if (Partner?.Pack.Accent is not { } hex || !Color.TryParse(hex, out var colour))
             {
                 return "#FF3D1F";
@@ -104,16 +117,44 @@ public static class Editions
     }
 
     // What each look is drawn with when the person has not changed it.
-    public static string DefaultMode(string look) => look == V2pnPartnerVariants.Studio ? "light" : "dark";
+    // A theme is drawn for light and dark alike, so it opens in the mode the person uses for plain V2pn.
+    public static string DefaultMode(string look) => look switch
+    {
+        V2pnPartnerVariants.Studio => "light",
+        V2pnPartnerVariants.Theme => PersonsMode(),
+        _ => "dark",
+    };
 
     public static string DefaultCorners(string look) => look switch
     {
         V2pnPartnerVariants.Cabinet or V2pnPartnerVariants.Studio => "round",
         V2pnPartnerVariants.Ascii => "square",
+        V2pnPartnerVariants.Theme => ThemeKit.Corners(Theme?.Corners ?? V2pnThemeCorners.Soft),
         _ => Appearance.Current.Corners,
     };
 
-    public static string DefaultFont(string look) => look == V2pnPartnerVariants.Ascii ? "geistmono" : "geist";
+    public static string DefaultFont(string look) => look switch
+    {
+        V2pnPartnerVariants.Ascii => "geistmono",
+        V2pnPartnerVariants.Theme => ThemeKit.FontId(Theme?.Font ?? V2pnThemeFonts.Default),
+        _ => "geist",
+    };
+
+    /// <summary>Light or dark as plain V2pn is: the person's own choice, or the system's when they follow it.</summary>
+    private static string PersonsMode()
+    {
+        var app = Application.Current;
+        var chosen = _forced != null ? _userVariant : app?.RequestedThemeVariant;
+        if (chosen == ThemeVariant.Light)
+        {
+            return "light";
+        }
+        if (chosen == ThemeVariant.Dark)
+        {
+            return "dark";
+        }
+        return app?.PlatformSettings?.GetColorValues().ThemeVariant == Avalonia.Platform.PlatformThemeVariant.Light ? "light" : "dark";
+    }
 
     /// <summary>The open look's settings in effect: the person's tuning over the look's own.</summary>
     public static string Mode => Prefs.Mode ?? DefaultMode(Variant);
@@ -346,6 +387,25 @@ public static class Editions
         var accent = AccentHex;
         var corners = Corners;
         var font = Font;
+        if (ThemeColors(Mode == "dark") is { } theme)
+        {
+            // A theme dresses the dialogs and menus too: its neutrals, its accent, its shape, its font and density.
+            Appearance.ThemePalette = new AppearancePalette("theme", theme.NeutralHue, theme.NeutralSaturation, 0.9, 1.0, Color.Parse(theme.Ground), Color.Parse(theme.Ground));
+            var density = Theme!.Density;
+            return settings =>
+            {
+                settings.Palette = "theme";
+                settings.Accent = theme.Accent;
+                settings.Corners = corners;
+                settings.Font = font;
+                settings.Headings = font;
+                if (density == V2pnThemeDensity.Compact)
+                {
+                    settings.Density = "compact";
+                }
+                return settings;
+            };
+        }
         return settings =>
         {
             settings.Palette = look switch
@@ -366,8 +426,50 @@ public static class Editions
     /// The looks' dark grounds: the window, the dialogs and menus, the map. The ASCII look is a terminal, flat black
     /// with hairlines; the others share the partner's warm near-black.
     /// </summary>
+    /// <summary>A theme's grounds for every window: the page, cards, menus and the map, from its derived colours.</summary>
+    private static IReadOnlyDictionary<string, string>? ThemeTokens(bool dark)
+    {
+        if (ThemeColors(dark) is not { } c)
+        {
+            return null;
+        }
+        return new Dictionary<string, string>
+        {
+            ["V2WindowBackground"] = c.Ground,
+            ["V2ContentBackground"] = c.Ground,
+            ["V2SidebarBackground"] = c.Surface,
+            ["V2DialogBackground"] = c.Surface,
+            ["V2CardBackground"] = dark ? c.Raised : c.Surface,
+            ["V2CardMutedBackground"] = c.Raised,
+            ["V2FooterBackground"] = c.Raised,
+            ["V2Border"] = c.Line,
+            ["V2PanelBorder"] = c.Line,
+            ["MenuFlyoutBackground"] = c.Surface,
+            ["MenuFlyoutBorderBrush"] = c.Line,
+            ["FlyoutBackground"] = c.Surface,
+            ["FlyoutBorderBrush"] = c.Line,
+            ["ComboBoxPopupBackground"] = c.Surface,
+            ["ComboBoxPopupBorderBrush"] = c.Line,
+            ["NotificationCardBackground"] = c.Surface,
+            ["NotificationCardBorderBrush"] = c.Line,
+            ["TextBoxDefaultBackground"] = dark ? c.Raised : c.Surface,
+            ["ComboBoxSelectorBackground"] = dark ? c.Raised : c.Surface,
+            ["V2Ink"] = c.Ink,
+            ["V2InkSoft"] = c.Soft,
+            ["V2Muted"] = c.Muted,
+            ["V2MapOcean"] = c.Ground,
+            ["V2MapLand"] = c.Raised,
+            ["V2MapBorder"] = c.Line,
+            ["V2MapDot"] = c.Accent,
+        };
+    }
+
     private static IReadOnlyDictionary<string, string>? DarkTokens()
     {
+        if (Theme != null)
+        {
+            return ThemeTokens(dark: true);
+        }
         if (!IsTuned)
         {
             return null;
@@ -406,6 +508,10 @@ public static class Editions
     /// <summary>The looks' light grounds: studio grey with white cards for most, plain paper for the ASCII look.</summary>
     private static IReadOnlyDictionary<string, string>? LightTokens()
     {
+        if (Theme != null)
+        {
+            return ThemeTokens(dark: false);
+        }
         if (!IsTuned)
         {
             return null;

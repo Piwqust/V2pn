@@ -200,8 +200,10 @@ public partial class MainWindow : IEditionActions
         UpdateLockup(partner, variant);
 
         // The look as the person tuned it on the Appearance page; any change there builds the scene again.
-        var look = new SceneLook(Editions.Mode != "light", Editions.AccentHex, Editions.Corners, Editions.DefaultCorners(variant), Editions.Font);
-        var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}:{look}" : null;
+        // A theme is drawn for its own corners: the person's tuning of other looks never rescales it.
+        var theme = Editions.Theme;
+        var look = new SceneLook(Editions.Mode != "light", Editions.AccentHex, Editions.Corners, theme != null ? "normal" : Editions.DefaultCorners(variant), Editions.Font);
+        var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}:{look}:{theme?.Key}" : null;
         if (key != _sceneKey)
         {
             _sceneKey = key;
@@ -210,6 +212,7 @@ public partial class MainWindow : IEditionActions
             {
                 V2pnPartnerVariants.Cabinet => new CabinetScene(partner!, this, look),
                 V2pnPartnerVariants.Studio => new StudioScene(partner!, this, look),
+                V2pnPartnerVariants.Theme => new ThemeScene(partner!, this, look, theme!, Editions.ThemeColors(look.Dark)!),
                 _ => new AsciiScene(partner!, this, look),
             };
             editionHost.Content = _scene;

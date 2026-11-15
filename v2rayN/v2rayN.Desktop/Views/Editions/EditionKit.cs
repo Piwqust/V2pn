@@ -14,7 +14,7 @@ public sealed record SceneLook(bool Dark, string Accent, string Corners, string 
         "geistmono" => Scene.Mono,
         "inter" => Scene.Inter,
         "segoe" => new FontFamily("Segoe UI Variable Text, Segoe UI, avares://V2pn/Assets/Fonts#Inter"),
-        _ => Scene.Geist,
+        _ => ThemeKit.FontOfId(Font) ?? Scene.Geist,
     };
 
     private static double Factor(string corners) => corners switch

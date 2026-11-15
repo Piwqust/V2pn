@@ -35,7 +35,8 @@ public static class V2pnHttp
         }
     }
 
-    public static async Task<Result> GetAsync(string url, IWebProxy? proxy, int maxBytes, CancellationToken cancellationToken = default)
+    /// <param name="bearer">Sent as "Authorization: Bearer"; with it redirects are not followed, so the token reaches only <paramref name="url"/>.</param>
+    public static async Task<Result> GetAsync(string url, IWebProxy? proxy, int maxBytes, CancellationToken cancellationToken = default, string? bearer = null)
     {
         try
         {
@@ -45,9 +46,14 @@ public static class V2pnHttp
                 UseProxy = proxy != null,
                 ConnectTimeout = ConnectTimeout,
                 AutomaticDecompression = DecompressionMethods.All,
+                AllowAutoRedirect = bearer == null,
             };
             using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
             client.DefaultRequestHeaders.UserAgent.TryParseAdd($"{Global.AppName}/{V2pnInfo.Version}");
+            if (bearer != null)
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", bearer);
+            }
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TotalTimeout);

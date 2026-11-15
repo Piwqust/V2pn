@@ -2,7 +2,7 @@
 
 [По-русски](README.ru.md)
 
-A VPN provider can dress V2pn in its own look for the people who use its subscription: its name and mark, its colour, and one of five looks V2pn draws. The connection, the servers, the settings and the state of protection stay V2pn's. People switch between plain V2pn and the provider's look at any time.
+A VPN provider can dress V2pn in its own look for the people who use its subscription: its name and mark and its own theme, assembled from V2pn's parts: a main-screen template, a connect control, colours, a font, a shape, a background and pictures. The connection, the servers, the settings and the state of protection stay V2pn's. People switch between plain V2pn and the provider's look at any time.
 
 This page is for the provider's developers. It describes what to serve, how it is signed and checked, and what V2pn shows.
 
@@ -15,7 +15,7 @@ This page is for the provider's developers. It describes what to serve, how it i
 | Moving the subscription to another of your domains (`new-url`, `new-domain`) | no | yes |
 | `v2pn://add` links from the provider's site or bot | yes | yes, and V2pn says the provider is a confirmed partner |
 | The provider's mark on its subscription in V2pn's list | no | yes |
-| The provider's look of V2pn (five looks, the provider's colour) | no | yes, with the `edition` grant |
+| The provider's look of V2pn: a theme of its own from V2pn's parts, or plain V2pn with its logo | no | yes, with the `edition` grant |
 | Plan, server health by the provider's own checks, devices, incidents in the look | no | yes, with the `account` grant and an API |
 | A description of the servers (groups, countries, purposes) and up to four buttons of your own | no | yes, with the `actions` grant, which every partner gets |
 | Closed settings: server addresses hidden, the link cannot be passed on | no | yes, with the `lock` grant after a manual review |
@@ -74,7 +74,7 @@ https://example.com/v2pn/
   logo-light.png     pictures named in partner.json
   logo-dark.png
   mark.png
-  lamp.webp
+  hero.png
   routing.json       optional, after a review (section 5)
   transport.json
   core.json
@@ -85,18 +85,23 @@ https://example.com/v2pn/
 ```json
 {
   "schema": 1,
-  "id": "configra",
-  "name": "Configra",
+  "id": "kestrel",
+  "name": "Kestrel",
   "brand": {
-    "accent": "#FF7A2F",
+    "accent": "#2F7BFF",
     "logo": "logo-light.png",
     "logoOnLight": "logo-dark.png",
     "mark": "mark.png"
   },
-  "edition": {
-    "variants": ["cabinet", "signature", "warm", "studio", "ascii"],
-    "default": "cabinet",
-    "art": { "lamp": "lamp.webp" }
+  "edition": { "variants": ["theme", "signature"], "default": "theme" },
+  "theme": {
+    "template": "split",
+    "connect": "bar",
+    "palette": { "brand": ["#2F7BFF", "#00C2A8"], "tone": "cool" },
+    "font": "Onest",
+    "background": { "type": "gradient", "colors": ["#1E3A8A", "#2F7BFF"] },
+    "blocks": ["actions", "plan", "traffic", "banner", "news", "servers"],
+    "art": { "hero": "hero.png" }
   },
   "links": { "cabinet": "https://example.com/cabinet", "support": "https://t.me/example_support" },
   "api": "https://example.com/v2pn/api/",
@@ -113,16 +118,16 @@ https://example.com/v2pn/
 | `brand.accent` | `#RRGGBB`; the look's accent until the person picks another |
 | `brand.logo`, `brand.logoOnLight` | the wide logo for dark and light title bars: 2:1 to 8:1, 32–256 px tall, transparent (340×96 works) |
 | `brand.mark` | a square mark on a transparent ground for the subscription card: 64–512 px (128×128 works) |
-| `edition.variants` | which of the five looks you allow, in the order the switcher lists them |
+| `edition.variants` | `theme` (your theme) and `signature` (plain V2pn with your logo), in the order the switcher lists them (section 9). Without a list, a pack with a theme opens its theme |
 | `edition.default` | the look that opens first |
-| `edition.art.lamp` | the picture of the studio look: 200–1600 px a side, at most 2:1; a cut-out on a transparent ground stands on the page, a picture with its own ground is framed like a photo |
+| `theme` | your theme: template, connect control, colours, font, shape, background, blocks and pictures (section 9) |
 | `links.cabinet`, `links.support` | buttons in the look, when the subscription headers have none |
 | `api` | your API's base address (with the `account` grant, on a certified domain) |
 | `assets` | every picture and every reviewed file with its size and SHA-256; `tools/partner.cs pack` fills it |
 
 A picture that does not fit its slot is not shown there (V2pn shows your name, or nothing) and `tools/partner-check.cs` says which and why; the rest of the pack keeps working.
 
-What a pack does not set, on purpose: fonts, corners, spacing and every colour but the accent. Each look has its own type and shape, and V2pn derives the rest of the colours for light and dark, checking that text reads (WCAG AA, 4.5:1). Your accent is used as it is for buttons and marks; where it is text on a light ground, V2pn darkens it just enough to read. An accent close to the "protected" green or the "attention" amber is turned away from them. These limits are what keeps every look working at every window size, in light and dark, for every provider.
+What a pack does not set, on purpose: sizes, spacing, font files and the interface's colours. The theme picks among V2pn's parts, and V2pn derives every colour of light and dark from the brand colours, checking that text reads (WCAG AA, 4.5:1). These limits are what keeps a theme working at every window size, in light and dark, for every provider.
 
 Limits: `partner.json` up to 64 KB, `cert.json` up to 16 KB, at most 8 pictures, PNG, WebP or JPEG only, 1 MB each, file names without folders. Besides pictures, only `routing.json`, `transport.json` and `core.json`, up to 64 KB each.
 
@@ -187,7 +192,7 @@ A field over its limit is not shown (there is no cut-off line), and `partner-che
 | `check.services` | checks whether YouTube, Telegram and ChatGPT open through the current connection and shows the result |
 | `info.card` | shows the card from `GET <api>card?id=<button id>` in a frame with your name. Needs the API |
 
-Where the buttons are: in plain V2pn under the connect button while a server of your subscription is chosen, and in the subscription block of every look of yours, at any window width. At most four are on screen: V2pn takes the first four it can run and leaves out an unknown action, a button missing a field it needs, or one that needs the API when there is none. After connecting, V2pn says where and why: "Germany 2: the fastest", "Netherlands: by <provider>'s check". Pressing the same button again within 3 seconds does nothing.
+Where the buttons are: in plain V2pn under the connect button while a server of your subscription is chosen, and in your look (in a theme, the `actions` block), at any window width. At most four are on screen: V2pn takes the first four it can run and leaves out an unknown action, a button missing a field it needs, or one that needs the API when there is none. After connecting, V2pn says where and why: "Germany 2: the fastest", "Netherlands: by <provider>'s check". Pressing the same button again within 3 seconds does nothing.
 
 ## 4. Closed settings
 
@@ -458,19 +463,85 @@ For buttons and the description of servers (the `actions` grant) V2pn also asks,
 
 Every field is optional; V2pn reads what it knows and ignores the rest. Answers are JSON up to 64 KB with status 200; anything else is treated as no answer. V2pn does not follow redirects with the token. When your site is blocked where the person is, V2pn asks again through the VPN. `servers.healthy`/`total` replace V2pn's own ping count in the look ("11 of 14 by <provider>'s check"). Send counts, never server addresses or credentials.
 
-## 9. The looks
+## 9. Looks: signature and theme
+
+A partner has two looks:
 
 | Look | What it is |
 | --- | --- |
 | `signature` | plain V2pn with your logo beside V2pn's in the title bar |
-| `warm` | V2pn's layout in your colours and the Geist type |
-| `cabinet` | a personal-cabinet layout: a light card with the place, the state and the server squares; servers and routing below |
-| `studio` | a website-like layout: the place in bitmap letters, a capsule with Connect, your picture lit while protected |
-| `ascii` | text all the way: a typed map, values in a monospaced table, buttons in brackets |
+| `theme` | your theme: the main screen assembled from V2pn's parts in your colours |
 
-V2pn draws all five, at every window width, in light and dark. The person can tune each one on the Appearance page; their tuning never changes plain V2pn.
+Configra's five looks (`signature`, `warm`, `cabinet`, `studio`, `ascii`) are an edition of its own that V2pn's team wrote for Configra. Of these, other partners get `signature` only. A pack that names the others gets its theme instead, or `signature` without a theme. If you need a look the templates do not have, V2pn's team can write an edition of your own under an agreement.
 
-What a pack cannot change: the state colours and the state pill (green protected, red unprotected), the Connect button, V2pn's mark and the "on V2pn" note, the switcher back to plain V2pn, the settings and the routing. A provider's own routes are only a separate mode the person picks (section 5).
+### The theme
+
+The theme is the `theme` field of `partner.json` (an example is in section 2). You pick the parts; V2pn assembles the screen and draws it at every window width, in light and dark.
+
+| Field | Values | Default |
+| --- | --- | --- |
+| `template` | `center`, `half`, `split`, `list`, `map`, `compact` (below) | `center` |
+| `connect` | `round` button, `capsule`, wide `bar`, `toggle` switch | each template has its own |
+| `palette.brand` | 1–3 colours, `#RRGGBB`; the first is the accent and the brand area's colour | `brand.accent` |
+| `palette.tone` | `warm`, `neutral`, `cool`: the tint of the ground and the cards | `neutral` |
+| `font` | one of V2pn's fonts (below) | Geist |
+| `corners` | `sharp`, `soft`, `round` | `soft` |
+| `density` | `normal`, `compact` | `normal` |
+| `background` | `{"type": "solid"}`: the first brand colour; `{"type": "gradient", "colors": [2 to 4 colours]}`; `{"type": "image", "art": "<a picture of the pack>"}` | `solid` |
+| `blocks` | the order of the blocks: `plan`, `traffic`, `servers`, `actions`, `banner`, `news`, `art` | `actions`, `banner`, `plan`, `traffic`, `news`, `art`, `servers` |
+| `art.hero`, `art.banner` | pictures for the template's slots | none |
+
+Templates:
+
+| Template | The main screen | Blocks | Pictures |
+| --- | --- | --- | --- |
+| `center` | a big connect button in the middle of the brand area, the place and the state under it; blocks and servers in a column on the right | all | `hero`, `banner` |
+| `half` | the top in the brand colour or picture with the place and the button; blocks and servers below | all | `hero`, `banner` |
+| `split` | a brand column on the left: the state, the button, plan and traffic; servers and the other blocks on the right | all | `hero`, `banner` |
+| `list` | groups as in settings: the connection is the first row, then the server, the mode and the route, then the blocks | no `art` | none |
+| `map` | V2pn's map across the window with panels over it | no `news`, no `art` | none |
+| `compact` | one tall card: made for a small window, centred in a large one | no `art` | `hero` |
+
+In a narrow window every template folds into one column: the state and the button first, then the blocks in your order. The server list takes the room that is left.
+
+Blocks:
+
+| Block | What it shows |
+| --- | --- |
+| `plan` | the plan, devices and term (from the subscription's headers or the API) |
+| `traffic` | traffic used, with a bar |
+| `servers` | the server list with search, filters, ping, update and "+" |
+| `actions` | your buttons (section 3) |
+| `banner` | the subscription's banner and an incident notice |
+| `news` | the panel's announcement with its link |
+| `art` | the wide picture `art.banner` |
+
+A block shows when there is something for it. The server list is always there: without `servers` in `blocks`, V2pn puts it last. A block the template has no place for is left out.
+
+Picture slots:
+
+| Slot | Size |
+| --- | --- |
+| `art.hero` | an illustration in the brand area: 200–1600 px a side, at most 2:1. A cut-out on a transparent ground stands as it is; a picture with its own ground is framed |
+| `art.banner` | the `art` block's wide picture: 400–2400 px wide, 2:1 to 5:1 |
+| `background.art` | the brand area's picture: 640–3200 px a side, at most 3:1 |
+
+The fonts come with V2pn, all with Latin and Cyrillic, under the SIL OFL: Geist, Inter, Manrope, Onest, Golos Text, Montserrat, Rubik, IBM Plex Sans, PT Sans, Raleway, Exo 2, Comfortaa, Unbounded, Spectral, JetBrains Mono. Case, spaces and hyphens do not matter: `golos-text` works too. V2pn takes no font files.
+
+Colours. You give 1–3 brand colours and a tone; V2pn derives the rest for light and dark:
+- text reads everywhere by WCAG AA: 4.5:1 for text, 3:1 for buttons and fields;
+- where a brand colour becomes text or the ground under text, V2pn makes it just dark or light enough to read;
+- in dark, the brand area is a deeper shade of the same hue;
+- a colour that could pass for the "protected" green, the "attention" amber or the "unprotected" red is turned away from it;
+- over a background picture V2pn lays a scrim strong enough for the text to read whatever the picture holds.
+
+A field of the theme V2pn cannot use (an unknown template, a colour in another format, a font not in the list, a picture that does not fit its slot) falls back to its default, and the theme keeps working. `tools/partner.cs pack` and `tools/partner-check.cs` list what fell back and why. Unknown fields are ignored.
+
+On the Appearance page the person picks light or dark and may swap your accent for one of V2pn's colours; plain V2pn's appearance stays as it is. While the theme is open, V2pn's windows and menus take its colours, font and shape too.
+
+Example themes with pictures are in `tools/demo/themes/` (aurora, ember, pine). `tools/edition-matrix.ps1 -Theme <folder>` shoots a theme on every template, at three window widths, in light and dark.
+
+What a pack cannot change: the state colours and the state pill (green protected, red unprotected), what the connect button does (its shape it can), V2pn's mark and the "on V2pn" note, the switcher back to plain V2pn, the settings and the routing. A provider's own routes are only a separate mode the person picks (section 5).
 
 ## 10. Life of a partnership
 
@@ -486,9 +557,9 @@ dotnet run tools/partner-check.cs -- https://example.com/s/<a real subscription 
 dotnet run tools/partner-check.cs -- --folder ./v2pn --subscription https://example.com/s/<token>
 ```
 
-It runs V2pn's own checks with the keys built into the app and prints OK or what is wrong at each step: headers, certificate, signatures, domains, pictures, the description of servers and the buttons (what V2pn leaves out and why), closed settings, the reviewed files (format, filter, whether the hash matches the certificate), the API including `servers`, `recommend` and `card` for your buttons.
+It runs V2pn's own checks with the keys built into the app and prints OK or what is wrong at each step: headers, certificate, signatures, domains, pictures, the theme (what it takes, what fell back and why, what V2pn did to the colours), the description of servers and the buttons (what V2pn leaves out and why), closed settings, the reviewed files (format, filter, whether the hash matches the certificate), the API including `servers`, `recommend` and `card` for your buttons.
 
-An example pack with servers, buttons and the three reviewed files, and a local server with a subscription, the pack and the API for previews, are in `tools/demo/partner/` and `tools/demo/demo_partner.py`.
+An example pack with servers, buttons and the three reviewed files, and a local server with a subscription, the pack and the API for previews, are in `tools/demo/partner/` and `tools/demo/demo_partner.py`; example themes are in `tools/demo/themes/`.
 
 To see the look before publishing, ask V2pn's owner for a preview certificate for `127.0.0.1`, serve the pack and a test subscription from your computer over http, and turn on developer mode in V2pn (About → updates). V2pn then takes a pack served from `127.0.0.1`.
 

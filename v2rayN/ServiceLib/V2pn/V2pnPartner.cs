@@ -360,7 +360,10 @@ public static class V2pnPartnerTrust
     /// before publishing. The certificate must still be V2pn's and name that address.
     /// </summary>
     public static bool DevLoopback(Uri uri) =>
-        uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback && (!V2pnInfo.IsRelease || DeveloperMode());
+        uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback && DebugAllowed;
+
+    /// <summary>A development build, or a release with developer mode on: the debug tools and previews are there.</summary>
+    public static bool DebugAllowed => !V2pnInfo.IsRelease || DeveloperMode();
 
     private static bool DeveloperMode()
     {

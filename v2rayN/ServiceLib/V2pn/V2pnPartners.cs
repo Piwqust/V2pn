@@ -54,6 +54,9 @@ public sealed class V2pnPartners
     private readonly ConcurrentDictionary<string, V2pnPartner> _partners = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _errors = new(StringComparer.Ordinal);
     private HashSet<string> _revoked = [];
+    // The debug window's made-up partners and the subscriptions it counts as theirs; never on disk, never pruned.
+    private readonly ConcurrentDictionary<string, byte> _debugIds = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, string> _debugSubs = new(StringComparer.Ordinal);
     private Task? _load;
     private bool _revocationsChecked;
 
@@ -82,6 +85,10 @@ public sealed class V2pnPartners
     /// <summary>The partner of a subscription: the one its panel's v2pn-partner folder belongs to, if verified.</summary>
     public V2pnPartner? ForSubscription(SubItem? item)
     {
+        if (item?.Id is { } id && _debugSubs.TryGetValue(id, out var debugPartner) && Get(debugPartner) is { } linked)
+        {
+            return linked;
+        }
         var info = SubInfoManager.Instance.Get(item?.Id);
         return ForSource(info?.PartnerUrl, item?.Url);
     }
@@ -305,7 +312,7 @@ public sealed class V2pnPartners
     {
         var linked = links.ToList();
         var gone = new List<(V2pnPartner Partner, V2pnPartnerGone Reason)>();
-        foreach (var partner in _partners.Values.ToList())
+        foreach (var partner in _partners.Values.Where(p => !_debugIds.ContainsKey(p.Id)).ToList())
         {
             V2pnPartnerGone? reason = partner.Cert.Expires < Today() ? V2pnPartnerGone.Expired
                 : linked.Any(l => l.PartnerUrl == partner.SourceUrl && V2pnPartnerTrust.DomainAllowed(partner.Cert, l.SubscriptionUrl)) ? null
@@ -328,6 +335,64 @@ public sealed class V2pnPartners
         }
         return gone.Select(g => g.Partner).ToList();
     }
+
+    /// <summary>
+    /// Debug only (V2pnPartnerTrust.DebugAllowed): a partner made up in memory with every look and grant, no pictures and
+    /// no API, so every look and every scenario can be tried without a provider's site. Null in a plain release.
+    /// </summary>
+    public V2pnPartner? AddDebugPartner(string id, string name, string? accent)
+    {
+        if (!V2pnPartnerTrust.DebugAllowed)
+        {
+            return null;
+        }
+        var today = Today();
+        var cert = new V2pnPartnerCert(id, name, ["localhost"], string.Empty, [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account], today, today.AddYears(1));
+        var pack = new V2pnPartnerPack(id, name, accent, null, null, V2pnPartnerVariants.All.ToList(), V2pnPartnerVariants.Cabinet,
+            new Dictionary<string, string>(), null, null, null, []);
+        var partner = new V2pnPartner(cert, pack, Path.Combine(Path.GetTempPath(), "v2pn-debug-partner-" + id), "debug://" + id + "/");
+        _debugIds[id] = 0;
+        _partners[id] = partner;
+        Changed?.Invoke();
+        return partner;
+    }
+
+    public bool IsDebug(string? id) => id != null && _debugIds.ContainsKey(id);
+
+    /// <summary>Debug only: drops a made-up partner, as if <paramref name="why"/> happened (the look closes with its note).</summary>
+    public void RemoveDebugPartner(string id, V2pnPartnerGone why)
+    {
+        if (_debugIds.TryRemove(id, out _) && _partners.TryRemove(id, out var partner))
+        {
+            foreach (var sub in _debugSubs.Where(s => s.Value == id).Select(s => s.Key).ToList())
+            {
+                _debugSubs.TryRemove(sub, out _);
+            }
+            Removed?.Invoke(partner, why);
+            Changed?.Invoke();
+        }
+    }
+
+    /// <summary>Debug only: counts a subscription as a partner's (null: as V2pn sees it).</summary>
+    public void SetDebugSubscription(string subscriptionId, string? partnerId)
+    {
+        if (!V2pnPartnerTrust.DebugAllowed)
+        {
+            return;
+        }
+        if (partnerId == null)
+        {
+            _debugSubs.TryRemove(subscriptionId, out _);
+        }
+        else
+        {
+            _debugSubs[subscriptionId] = partnerId;
+        }
+        Changed?.Invoke();
+    }
+
+    public string? DebugPartnerOf(string? subscriptionId) =>
+        subscriptionId != null && _debugSubs.TryGetValue(subscriptionId, out var id) ? id : null;
 
     /// <summary><see cref="Prune"/> against the subscriptions in the database, once the kept partners are loaded.</summary>
     public async Task<IReadOnlyList<V2pnPartner>> PruneAsync()

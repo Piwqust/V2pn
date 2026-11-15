@@ -74,6 +74,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnWelcomePaste.Click += async (_, _) => await AddServerViaClipboardAsync();
         InitImport();
         InitEdition();
+        InitDebug();
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();

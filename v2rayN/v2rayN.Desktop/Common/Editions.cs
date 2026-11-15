@@ -231,6 +231,21 @@ public static class Editions
         }
     }
 
+    /// <summary>Debug: the intro shows again for every partner.</summary>
+    public static void DebugResetIntroduced()
+    {
+        Settings.Introduced.Clear();
+        Save();
+        Changed?.Invoke();
+    }
+
+    /// <summary>Debug: <paramref name="partner"/>'s look closes as it would when <paramref name="why"/> happens; its files stay.</summary>
+    public static void DebugClose(V2pnPartner partner, V2pnPartnerGone why)
+    {
+        Settings.Partner = partner.Id;
+        OnRemoved(partner, why);
+    }
+
     /// <summary>Changes the open look's tuning (the Appearance page in an edition); applied at once.</summary>
     public static void Tune(Action<EditionLookPrefs> edit)
     {

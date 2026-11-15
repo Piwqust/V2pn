@@ -562,7 +562,7 @@ public partial class MainWindow : IEditionActions
         var byPartner = api is { Healthy: { } partnerOk, Total: { } partnerTotal } && partnerTotal > 0;
 
         var state = CurrentState();
-        _scene.Update(new EditionSnapshot
+        _scene.Update(DebugOverrides.Apply(new EditionSnapshot
         {
             StateKind = kind,
             StateLabel = AutomationProperties.GetName(txtStatePill) ?? txtStatePill.Text ?? string.Empty,
@@ -590,7 +590,7 @@ public partial class MainWindow : IEditionActions
             ForeignServer = partnerServers.Count > 0 && _hasServer && currentSub != null && !partnerSubIds.Contains(currentSub),
             BestPartnerServer = best?.IndexId,
             Account = account is { IsEmpty: false } ? account : null,
-        });
+        }));
     }
 
     private static string? NonEmpty(string? text) => text.IsNullOrEmpty() ? null : text;

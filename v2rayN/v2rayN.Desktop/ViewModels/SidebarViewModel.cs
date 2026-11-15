@@ -85,7 +85,9 @@ public sealed class SideServerRow : SideRow
     public SideServerRow(ProfileItemModel model, bool showSubscription, bool indent, ServerSeries? memberOf = null)
     {
         Model = model;
-        Code = CountryResolver.Resolve(model.Remarks);
+        // V2pn: the partner's word about its server (pack and API): its country wins over a guess from the name.
+        var partnerNote = V2pnPartnerLive.Instance.Describe(model.Subid, model.Remarks, model.Address);
+        Code = partnerNote?.Country ?? CountryResolver.Resolve(model.Remarks);
         Flag = V2pnConverters.Flag(Code);
         var country = WorldMap.Instance.Get(Code)?.Name;
         var protocol = V2pnConverters.ProtocolName.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string;
@@ -116,12 +118,26 @@ public sealed class SideServerRow : SideRow
                 && string.Equals(CountryResolver.Resolve(CountryResolver.StripFlag(model.Remarks)), Code, StringComparison.OrdinalIgnoreCase);
             Subtitle = sub ?? string.Join(" · ", new[] { namesCountry ? null : country, protocol }.Where(t => t.IsNotEmpty()));
         }
+        if (partnerNote?.City is { } city && !Title.Contains(city, StringComparison.CurrentCultureIgnoreCase))
+        {
+            Subtitle = Subtitle.IsNullOrEmpty() ? city : $"{city} · {Subtitle}";
+        }
+        Note = partnerNote?.Note;
+        Purposes = partnerNote?.Purposes.Select(V2pnPurposes.Label).ToList() ?? [];
         Indent = indent;
         Monogram = V2pnConverters.ProtocolMonogram.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string ?? string.Empty;
     }
 
     public ProfileItemModel Model { get; }
     public string Monogram { get; }
+
+    /// <summary>The partner's short note about the server, under its name; null without one.</summary>
+    public string? Note { get; }
+    public bool HasNote => Note != null;
+
+    /// <summary>What the partner says the server is for ("YouTube", "Games"), as chips on the row.</summary>
+    public IReadOnlyList<string> Purposes { get; }
+    public bool HasPurposes => Purposes.Count > 0;
 
     // Inside a country group the flag repeats the group's own, so those rows show the protocol instead.
     public bool ShowFlag => !Indent && HasFlag;
@@ -606,6 +622,39 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
     }
 
+    /// <summary>
+    /// The servers of a partner's subscription by the groups its pack and API give them, in the partner's order (the
+    /// first server named in each group), the ungrouped ones last. Null when the partner names no group.
+    /// </summary>
+    private static List<(string? Group, List<ProfileItemModel> Members)>? PartnerGroups(string? subId, List<ProfileItemModel> servers)
+    {
+        if (V2pnLocks.Instance.PartnerOf(subId) is not { } partner || servers.Count == 0)
+        {
+            return null;
+        }
+        var byServer = servers.Select(m => (Model: m, Group: V2pnPartnerLive.Instance.Describe(partner, m.Remarks, m.Address)?.Group)).ToList();
+        if (byServer.All(t => t.Group == null))
+        {
+            return null;
+        }
+        var named = partner.Pack.ServerNotes.Concat(V2pnPartnerLive.Instance.Servers(partner.Id) ?? [])
+            .Select(n => n.Group).Where(g => g != null).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+        int Rank(string? group)
+        {
+            if (group == null)
+            {
+                return int.MaxValue;
+            }
+            var i = named.FindIndex(g => string.Equals(g, group, StringComparison.CurrentCultureIgnoreCase));
+            return i < 0 ? int.MaxValue - 1 : i;
+        }
+        return byServer
+            .GroupBy(t => t.Group, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(g => Rank(g.Key))
+            .Select(g => (g.Key, g.Select(t => t.Model).ToList()))
+            .ToList();
+    }
+
     // One count format for every list header; no "(0)" above an empty-state hint.
     private static string Counted(string title, int n) => n > 0 ? $"{title} · {n}" : title;
 
@@ -638,14 +687,27 @@ public sealed partial class SidebarViewModel : ReactiveObject
             {
                 rows.Add(new SideAnnounceRow(info.Announce!, info.AnnounceUrl));
             }
+            // The order the person chose for this subscription, else the provider's, else fastest first.
+            var sort = V2pnSubDefaults.SortOf(info, V2pnLocks.Instance.Hides(OpenedSub.Id));
+            // V2pn: a partner that sorts its servers into groups gets a header per group, in its own order.
+            var groups = PartnerGroups(OpenedSub.Id, all);
+            if (groups != null)
+            {
+                for (var i = 0; i < groups.Count; i++)
+                {
+                    var (group, members) = groups[i];
+                    rows.Add(new SideHeaderRow(Counted(group ?? L.GroupOther, members.Count), i == 0 ? Ping : null));
+                    rows.AddRange(V2pnSubDefaults.Order(members, sort, m => m.Remarks, m => m.Delay).Select(m => new SideServerRow(m, false, false)));
+                }
+                return;
+            }
             if (all.Count > 0)
             {
                 rows.Add(new SideHeaderRow(L.TabServers, Ping));
             }
             var (series, rest) = ServerNames.SplitSeries(all);
             AddSeries(rows, series);
-            // The order the person chose for this subscription, else the provider's, else fastest first.
-            var order = V2pnSubDefaults.Order(rest, V2pnSubDefaults.SortOf(info, V2pnLocks.Instance.Hides(OpenedSub.Id)), m => m.Remarks, m => m.Delay);
+            var order = V2pnSubDefaults.Order(rest, sort, m => m.Remarks, m => m.Delay);
             rows.AddRange(order.Select(m => new SideServerRow(m, false, false)));
             if (all.Count == 0)
             {

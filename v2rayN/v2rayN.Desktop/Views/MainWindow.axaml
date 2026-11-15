@@ -458,6 +458,30 @@
                                                         Text="{Binding Subtitle}"
                                                         TextTrimming="CharacterEllipsis" />
                                                 </DockPanel>
+                                                <!--  V2pn: the partner's note and what the server is for (V2pnPartnerCatalog).  -->
+                                                <TextBlock
+                                                    Classes="muted small"
+                                                    IsVisible="{Binding HasNote}"
+                                                    Text="{Binding Note}"
+                                                    TextTrimming="CharacterEllipsis"
+                                                    ToolTip.Tip="{Binding Note}" />
+                                                <ItemsControl
+                                                    Margin="0,3,0,1"
+                                                    IsVisible="{Binding HasPurposes}"
+                                                    ItemsSource="{Binding Purposes}">
+                                                    <ItemsControl.ItemsPanel>
+                                                        <ItemsPanelTemplate>
+                                                            <WrapPanel ItemSpacing="4" LineSpacing="4" />
+                                                        </ItemsPanelTemplate>
+                                                    </ItemsControl.ItemsPanel>
+                                                    <ItemsControl.ItemTemplate>
+                                                        <DataTemplate x:DataType="x:String">
+                                                            <Border Classes="tag">
+                                                                <TextBlock Text="{Binding}" />
+                                                            </Border>
+                                                        </DataTemplate>
+                                                    </ItemsControl.ItemTemplate>
+                                                </ItemsControl>
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <Panel Classes="rowinfo">

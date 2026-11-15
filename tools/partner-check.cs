@@ -4,7 +4,7 @@
 //   dotnet run tools/partner-check.cs -- <subscription link>
 //       Downloads the subscription as V2pn would, reads its headers (v2pn-partner, v2pn-account-token, the
 //       panel's name, links and traffic), downloads and checks the pack (certificate, signatures, term,
-//       domains, pictures), reads its server notes and buttons (servers, actions, lock), checks its reviewed files
+//       domains, pictures, the theme and what of it falls back), reads its server notes and buttons (servers, actions, lock), checks its reviewed files
 //       (routing.json, transport.json, core.json: format, filter, hash against the certificate), then asks the partner
 //       API (account with the token, status, servers, and recommend and card for the buttons that use them) if the
 //       pack names one.
@@ -160,6 +160,7 @@ try
         {
             Note("no looks: the certificate lacks the edition grant, or the pack lists none V2pn knows");
         }
+        CheckTheme(partner);
         CheckCatalog(partner, panel);
         CheckReviewed(partner);
     }
@@ -167,6 +168,39 @@ try
 catch (Exception ex)
 {
     Bad(ex.Message);
+}
+
+// The theme as V2pn will draw it: what it took, what fell back to V2pn's default and why, what it did to the colours.
+void CheckTheme(V2pnPartner p)
+{
+    try
+    {
+        var raw = JsonNode.Parse(File.ReadAllBytes(Path.Combine(p.Folder, "partner.json"))) as JsonObject;
+        var listed = (raw?["edition"]?["variants"] as JsonArray)?.Select(n => n?.GetValue<string>()).OfType<string>().ToList() ?? [];
+        var others = listed.Where(v => V2pnPartnerVariants.ConfigraOnly.Contains(v) && !V2pnPartnerVariants.Allowed(p.Id, v)).ToList();
+        if (others.Count > 0)
+        {
+            Note($"looks {string.Join(", ", others)} are Configra's own edition; V2pn shows {(p.Pack.Variants.Contains(V2pnPartnerVariants.Theme) ? "your theme" : "the signature look")} instead");
+        }
+    }
+    catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or InvalidOperationException)
+    {
+    }
+    if (p.Pack.Theme is not { } theme)
+    {
+        return;
+    }
+    var pictures = string.Join(", ", theme.Art.Select(a => $"{a.Key} {a.Value}").Concat(theme.Background.Art is { } bg ? [$"background {bg}"] : []));
+    Ok($"theme: template {theme.Template}, connect {theme.Connect}, brand {string.Join(" ", theme.Brand.DefaultIfEmpty("(the pack's accent)"))}, tone {theme.Tone}, font {theme.Font}, corners {theme.Corners}, density {theme.Density}, background {theme.Background.Kind}{(theme.Background.Colors.Count > 0 ? " " + string.Join(" ", theme.Background.Colors) : "")}");
+    Ok($"theme blocks: {string.Join(", ", theme.Blocks)}; pictures: {(pictures.Length > 0 ? pictures : "none")}");
+    foreach (var note in theme.Notes)
+    {
+        Note($"theme: {note}");
+    }
+    foreach (var note in V2pnThemePalette.Describe(theme))
+    {
+        Note($"theme colours: {note}");
+    }
 }
 
 // 3. The API, if the pack names one.

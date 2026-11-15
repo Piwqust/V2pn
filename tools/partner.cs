@@ -22,8 +22,9 @@
 //   dotnet run tools/partner.cs -- pack <folder> --key <partner pem>
 //       Lists every picture in <folder> (png, webp, jpg) and the reviewed files (routing.json, transport.json, core.json)
 //       in partner.json with its size and SHA-256, and signs
-//       partner.json with the partner's key into partner.json.sig. Every other field (brand, edition, links, api,
-//       servers, actions, lock) is signed as written; tools/partner-check.cs says what V2pn takes from it. The folder is what the provider serves at
+//       partner.json with the partner's key into partner.json.sig. Every other field (brand, edition, theme, links, api,
+//       servers, actions, lock) is signed as written; it prints what V2pn takes of the theme and what falls back, and
+//       tools/partner-check.cs says what V2pn takes from the rest. The folder is what the provider serves at
 //       the address of its v2pn-partner header.
 //
 //   dotnet run tools/partner.cs -- revoke [<partner>@<issued> ...] [--out <folder>] [--root <pem>]
@@ -205,6 +206,17 @@ switch (args[0])
         File.WriteAllBytes(packFile, bytes);
         File.WriteAllText(packFile + ".sig", Sign(key, bytes) + "\n");
         Console.WriteLine($"signed {packFile} with {assets.Count} file(s)");
+        if (pack["theme"] != null)
+        {
+            // What V2pn will take of the theme and what falls back; the pictures' sizes are checked by partner-check.
+            var names = assets.Select(a => a?["name"]?.GetValue<string>()).OfType<string>().Where(n => !V2pnReviewedFiles.All.Contains(n)).ToHashSet();
+            var theme = V2pnThemeReader.Parse(pack["theme"], pack["brand"]?["accent"]?.GetValue<string>(), names.Contains);
+            Console.WriteLine($"  theme: {theme.Template}, {theme.Connect}, {string.Join(" ", theme.Brand)} {theme.Tone}, {theme.Font}, {theme.Corners}, {theme.Density}, background {theme.Background.Kind}, blocks {string.Join(",", theme.Blocks)}");
+            foreach (var note in theme.Notes.Concat(V2pnThemePalette.Describe(theme)))
+            {
+                Console.WriteLine($"  theme: {note}");
+            }
+        }
         foreach (var name in V2pnReviewedFiles.All.Where(n => File.Exists(Path.Combine(folder, n))))
         {
             Console.WriteLine($"  {name}: V2pn uses it only after a review; send it to V2pn's owner (dotnet run tools/partner.cs -- review {args[1]})");

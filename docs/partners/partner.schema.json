@@ -29,18 +29,79 @@
       "type": "object",
       "properties": {
         "variants": {
-          "description": "The looks the partner allows, in the order the switcher lists them.",
+          "description": "The looks the partner allows, in the order the switcher lists them: signature (plain V2pn with your logo) and theme (your theme, below). warm, cabinet, studio and ascii are Configra's own edition: for any other partner V2pn shows its theme (or, without one, the signature look) instead. Without variants, a pack with a theme opens its theme.",
           "type": "array",
-          "items": { "enum": ["signature", "warm", "cabinet", "studio", "ascii"] },
+          "items": { "enum": ["signature", "theme", "warm", "cabinet", "studio", "ascii"] },
           "uniqueItems": true
         },
-        "default": { "description": "The look that opens first; one of variants.", "enum": ["signature", "warm", "cabinet", "studio", "ascii"] },
+        "default": { "description": "The look that opens first; one of variants.", "enum": ["signature", "theme", "warm", "cabinet", "studio", "ascii"] },
         "art": {
+          "description": "Pictures of Configra's edition.",
           "type": "object",
           "properties": {
             "lamp": { "description": "The studio look's picture.", "$ref": "#/$defs/assetName" }
           },
           "additionalProperties": { "$ref": "#/$defs/assetName" }
+        }
+      }
+    },
+    "theme": {
+      "description": "Your theme, assembled from V2pn's parts; needs the edition grant. Every field is optional. A field V2pn cannot use falls back to its default (tools/partner-check.cs says which and why); the theme itself always works. Unknown fields are ignored.",
+      "type": "object",
+      "properties": {
+        "template": {
+          "description": "The main screen's layout. center: a big connect control in the middle of the brand area, the blocks beside it. half: the brand area across the top with the place and Connect, blocks and servers below. split: a brand column on the left, servers and blocks on the right. list: settings-style groups, Connect as the first row. map: V2pn's map edge to edge with floating panels. compact: one tall card, made for small windows.",
+          "enum": ["center", "half", "split", "list", "map", "compact"],
+          "default": "center"
+        },
+        "connect": {
+          "description": "The connect control's shape; what it does and the state colours are V2pn's. Default: round for center, capsule for half and map, bar for split and compact, toggle for list.",
+          "enum": ["round", "capsule", "bar", "toggle"]
+        },
+        "palette": {
+          "type": "object",
+          "properties": {
+            "brand": {
+              "description": "1 to 3 brand colours; the first is the accent and the brand area. V2pn derives every other colour for light and dark, keeps text at 4.5:1 and controls at 3:1, darkens or lightens a brand colour where it becomes text, and turns one that could pass for a state colour (protected green, attention amber, unprotected red) away from it. Default: brand.accent.",
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "items": { "$ref": "#/$defs/colour" }
+            },
+            "tone": { "description": "The tint of the grounds: warm paper, cool steel or neutral (the brand's hue, barely).", "enum": ["warm", "neutral", "cool"], "default": "neutral" }
+          }
+        },
+        "font": {
+          "description": "One of V2pn's bundled fonts (Latin and Cyrillic). Case, spaces and hyphens do not matter. Any other name is drawn in Geist.",
+          "enum": ["Geist", "Inter", "Manrope", "Onest", "Golos Text", "Montserrat", "Rubik", "IBM Plex Sans", "PT Sans", "Raleway", "Exo 2", "Comfortaa", "Unbounded", "Spectral", "JetBrains Mono"],
+          "default": "Geist"
+        },
+        "corners": { "enum": ["sharp", "soft", "round"], "default": "soft" },
+        "density": { "enum": ["normal", "compact"], "default": "normal" },
+        "background": {
+          "description": "What fills the template's brand area (the map template has none). solid: the first brand colour. gradient: 2 to 4 colours corner to corner, adjusted like the brand. image: a picture of the pack, 640-3200 px a side, at most 3:1, under a scrim V2pn works out so the text reads whatever the picture holds.",
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["solid", "gradient", "image"] },
+            "colors": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/colour" } },
+            "art": { "$ref": "#/$defs/assetName" }
+          }
+        },
+        "blocks": {
+          "description": "The order of the blocks. A block shows when the subscription has something for it; a template that has no place for a block leaves it out (list and compact: no art; map: no news, no art). The server list is always there; without servers in the list it comes last.",
+          "type": "array",
+          "maxItems": 7,
+          "uniqueItems": true,
+          "items": { "enum": ["plan", "traffic", "servers", "actions", "banner", "news", "art"] }
+        },
+        "art": {
+          "description": "Pictures by slot. hero: an illustration in the brand area (center, half, split, compact), 200-1600 px a side, at most 2:1; a cut-out on a transparent ground stands as it is, a picture with its own ground is framed. banner: the art block's wide picture (center, half, split), 400-2400 px wide, 2:1 to 5:1.",
+          "type": "object",
+          "properties": {
+            "hero": { "$ref": "#/$defs/assetName" },
+            "banner": { "$ref": "#/$defs/assetName" }
+          }
         }
       }
     },
@@ -178,6 +239,7 @@
     }
   },
   "$defs": {
+    "colour": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
     "assetName": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(png|webp|jpg|jpeg)$" },
     "reviewedName": { "enum": ["routing.json", "transport.json", "core.json"] },
     "certReviewed": {

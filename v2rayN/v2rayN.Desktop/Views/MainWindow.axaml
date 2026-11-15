@@ -1464,6 +1464,16 @@
                 x:Name="onboardingHost"
                 Grid.Row="1"
                 IsVisible="False" />
+
+            <!--  V2pn: the old look over the new one while a change of look opens (MainWindow.Edition.cs).  -->
+            <Image
+                x:Name="imgEditionShot"
+                Grid.RowSpan="2"
+                HorizontalAlignment="Left"
+                VerticalAlignment="Top"
+                IsHitTestVisible="False"
+                IsVisible="False"
+                Stretch="Fill" />
         </Grid>
     </dialogHost:DialogHost>
 </Window>

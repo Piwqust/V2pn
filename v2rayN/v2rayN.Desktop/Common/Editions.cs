@@ -55,6 +55,9 @@ public static class Editions
     /// <summary>Raised on the UI thread after the edition, its look, its tuning or the set of partners changed.</summary>
     public static event Action? Changed;
 
+    /// <summary>Raised just before a change of look or tuning is applied, while the old look is still on screen.</summary>
+    public static event Action? Changing;
+
     /// <summary>Raised on the UI thread when the open partner's look went away (with the partner and why).</summary>
     public static event Action<V2pnPartner, V2pnPartnerGone>? Closed;
 
@@ -165,6 +168,7 @@ public static class Editions
         {
             return;
         }
+        Changing?.Invoke();
         Settings.Partner = partnerId;
         Save();
         Apply();
@@ -172,10 +176,11 @@ public static class Editions
 
     public static void SetVariant(string variant)
     {
-        if (Partner is not { } partner || !partner.Pack.Variants.Contains(variant))
+        if (Partner is not { } partner || !partner.Pack.Variants.Contains(variant) || variant == Variant)
         {
             return;
         }
+        Changing?.Invoke();
         Settings.Variants[partner.Id] = variant;
         Save();
         Apply();
@@ -225,6 +230,7 @@ public static class Editions
             prefs = new EditionLookPrefs();
             Settings.Looks[key] = prefs;
         }
+        Changing?.Invoke();
         edit(prefs);
         Save();
         Apply();
@@ -233,8 +239,10 @@ public static class Editions
     /// <summary>Puts the open look back as the partner drew it.</summary>
     public static void ResetTuning()
     {
-        if (Partner is { } partner && Settings.Looks.Remove($"{partner.Id}:{Variant}"))
+        if (Partner is { } partner && Settings.Looks.ContainsKey($"{partner.Id}:{Variant}"))
         {
+            Changing?.Invoke();
+            Settings.Looks.Remove($"{partner.Id}:{Variant}");
             Save();
             Apply();
         }

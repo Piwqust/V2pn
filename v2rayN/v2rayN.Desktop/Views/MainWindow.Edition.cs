@@ -31,6 +31,9 @@ public partial class MainWindow : IEditionActions
                 RefreshSceneVisibility();
             }
         };
+        Editions.Changing += CaptureEditionShot;
+        // Where the circle of a change of look starts: the last place the pointer was.
+        AddHandler(PointerMovedEvent, (_, e) => _lastPointer = e.GetPosition(this), Avalonia.Interactivity.RoutingStrategies.Tunnel, true);
         Editions.Changed += RefreshEdition;
         Editions.Changed += () => Dispatcher.UIThread.Post(MaybeShowPartnerIntro, DispatcherPriority.Background);
         // A look verified while the window was in the tray is offered when it comes back.
@@ -48,6 +51,93 @@ public partial class MainWindow : IEditionActions
     // The last state the tray and the title showed; a change of look renames both without waiting for the next one.
     private (ProtectionState State, string? Problem)? _trayState;
     private NativeMenuItem? _trayEditions;
+
+    private Point? _lastPointer;
+    private RenderTargetBitmap? _editionShot;
+    private DispatcherTimer? _revealTimer;
+
+    /// <summary>A picture of the window as it is, laid over it until the new look has opened.</summary>
+    private void CaptureEditionShot()
+    {
+        StopEditionReveal();
+        if (!IsVisible || imgEditionShot.Parent is not Visual body || body.Bounds.Width < 1 || body.Bounds.Height < 1)
+        {
+            return;
+        }
+        try
+        {
+            var scaling = RenderScaling;
+            var pixels = new PixelSize((int)Math.Ceiling(body.Bounds.Width * scaling), (int)Math.Ceiling(body.Bounds.Height * scaling));
+            var shot = new RenderTargetBitmap(pixels, new Vector(96 * scaling, 96 * scaling));
+            shot.Render(body);
+            _editionShot = shot;
+            imgEditionShot.Source = shot;
+            imgEditionShot.Width = body.Bounds.Width;
+            imgEditionShot.Height = body.Bounds.Height;
+            imgEditionShot.Clip = null;
+            imgEditionShot.Opacity = 1;
+            imgEditionShot.IsVisible = true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn edition shot", ex);
+            StopEditionReveal();
+        }
+    }
+
+    /// <summary>
+    /// The new look opens as a circle from where the pointer was, in about 0.55 s; with animations off in Windows, a
+    /// short fade instead. The old picture is gone at the end either way.
+    /// </summary>
+    private void PlayEditionReveal()
+    {
+        if (_editionShot == null || _revealTimer != null)
+        {
+            return;
+        }
+        var size = new Size(imgEditionShot.Width, imgEditionShot.Height);
+        var origin = _lastPointer is { } p && p.X >= 0 && p.Y >= 0 && p.X <= size.Width && p.Y <= size.Height
+            ? p
+            : new Point(size.Width / 2, size.Height / 2);
+        var reach = new[] { new Point(0, 0), new Point(size.Width, 0), new Point(0, size.Height), new Point(size.Width, size.Height) }
+            .Max(c => Math.Sqrt(Math.Pow(c.X - origin.X, 2) + Math.Pow(c.Y - origin.Y, 2)));
+        var circle = Motion.Enabled;
+        var duration = circle ? 560.0 : 160.0;
+        var started = DateTime.UtcNow;
+        _revealTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(15), DispatcherPriority.Render, (_, _) =>
+        {
+            var t = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / duration, 0, 1);
+            if (t >= 1)
+            {
+                StopEditionReveal();
+                return;
+            }
+            var eased = Motion.InOut.Ease(t);
+            if (circle)
+            {
+                var r = reach * eased;
+                imgEditionShot.Clip = new CombinedGeometry(GeometryCombineMode.Exclude,
+                    new RectangleGeometry(new Rect(size)),
+                    new EllipseGeometry(new Rect(origin.X - r, origin.Y - r, r * 2, r * 2)));
+            }
+            else
+            {
+                imgEditionShot.Opacity = 1 - eased;
+            }
+        });
+        _revealTimer.Start();
+    }
+
+    private void StopEditionReveal()
+    {
+        _revealTimer?.Stop();
+        _revealTimer = null;
+        imgEditionShot.IsVisible = false;
+        imgEditionShot.Source = null;
+        imgEditionShot.Clip = null;
+        _editionShot?.Dispose();
+        _editionShot = null;
+    }
 
     /// <summary>"V2pn × Configra" for the looks on V2pn's layout, "Configra на V2pn" for the partner's own; else V2pn.</summary>
     private static string EditionTitle() => Editions.Partner is not { } partner
@@ -126,6 +216,7 @@ public partial class MainWindow : IEditionActions
         }
         RefreshSceneVisibility();
         PushEditionSnapshot();
+        PlayEditionReveal();
 
         if (_scene != null)
         {

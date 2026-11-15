@@ -59,6 +59,16 @@ A provider can now offer its own routes and tune how V2pn connects to its server
 - The subscription window lists what V2pn checked and whether each part is used, turned off by you, or changed after the check and not used. "<provider> connection settings" turns the fragmentation and the extra servers off for that subscription.
 - When the provider's subscription is deleted or its confirmation ends, its routes go too, and V2pn switches to "Everything through VPN" if they were on.
 
+### For providers: the theme builder
+
+With developer mode on (About → updates), the ☰ menu has "Theme builder". A provider puts its theme together there without writing JSON, before it has a certificate.
+
+- A form for everything a theme has: name and id, colours, the main-screen template (with a small picture of each), the connect button, the font (each name in its own face), corners, density, the background, the blocks in their order, the pictures and the buttons. A picture that does not fit its place is refused at once, and the place says why.
+- On the right, the real theme look draws it on made-up data, mini, medium or wide, light or dark, with what V2pn changed so text reads and what it leaves out.
+- It opens and saves a pack folder, signs it with the provider's key the same way `tools/partner.cs pack` does, and writes the certificate request. The key can be made there too.
+- "Show in V2pn" dresses the running app in the unsigned theme. The title bar marks it "Preview" and takes it away; nothing of it is kept, and it is gone after a restart.
+- A long state in a look's pill now ends in "…" instead of being cut off.
+
 ### First start
 
 A new install now walks you through the setup in five steps: the language (English or Russian), your servers, what goes through the VPN, Proxy or VPN mode, and a summary with a Connect button. Each step can be changed later in the same place on the main screen, and "Skip" is always there.

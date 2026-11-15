@@ -121,10 +121,25 @@
                             Text="{x:Static loc:L.AppName}" />
                     </StackPanel>
                 </Button>
+                <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
+                <!--  The theme builder's preview (ThemeBuilderWindow): marked while it dresses the window, and taken away here.  -->
+                <Button
+                    x:Name="btnPreview"
+                    chrome:WindowDecorationProperties.ElementRole="User"
+                    Margin="10,0,0,0"
+                    VerticalAlignment="Center"
+                    Classes="subtle small"
+                    IsVisible="False"
+                    Theme="{StaticResource V2Button}">
+                    <StackPanel Orientation="Horizontal" Spacing="6">
+                        <Ellipse Width="7" Height="7" Fill="#F2B84B" VerticalAlignment="Center" />
+                        <TextBlock x:Name="txtPreview" Text="{x:Static loc:L.BuilderPreviewMark}" />
+                        <TextBlock Text="✕" Opacity="0.6" />
+                    </StackPanel>
+                </Button>
                 <Button
                     x:Name="btnNewUpdate"
                     chrome:WindowDecorationProperties.ElementRole="User"
-                    Grid.Column="2"
                     Margin="12,0,0,0"
                     VerticalAlignment="Center"
                     Classes="subtle small"
@@ -135,6 +150,7 @@
                         <TextBlock x:Name="txtNewUpdate" Text="{x:Static loc:L.NewVersion}" />
                     </StackPanel>
                 </Button>
+                </StackPanel>
                 <ContentControl
                     x:Name="conTheme"
                     chrome:WindowDecorationProperties.ElementRole="User"

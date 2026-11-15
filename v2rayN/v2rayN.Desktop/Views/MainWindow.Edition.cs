@@ -173,7 +173,7 @@ public partial class MainWindow : IEditionActions
         Add(null, L.AppName);
         foreach (var partner in available)
         {
-            Add(partner.Id, partner.Name);
+            Add(partner.Id, V2pnPartners.IsPreview(partner.Id) ? string.Format(L.BuilderPreviewName, partner.Name) : partner.Name);
         }
         if (_trayEditions == null)
         {
@@ -197,13 +197,15 @@ public partial class MainWindow : IEditionActions
         }
         // With no verified partner the name is plain text and the title bar drags the window there too.
         btnEdition.IsHitTestVisible = Editions.Available.Count > 0;
+        btnPreview.IsVisible = Editions.IsPreview;
         UpdateLockup(partner, variant);
 
         // The look as the person tuned it on the Appearance page; any change there builds the scene again.
         // A theme is drawn for its own corners: the person's tuning of other looks never rescales it.
         var theme = Editions.Theme;
         var look = new SceneLook(Editions.Mode != "light", Editions.AccentHex, Editions.Corners, theme != null ? "normal" : Editions.DefaultCorners(variant), Editions.Font);
-        var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}:{look}:{theme?.Key}" : null;
+        // The folder too: the theme builder's preview comes back from another folder whenever it changes.
+        var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}:{look}:{theme?.Key}:{partner.Folder}" : null;
         if (key != _sceneKey)
         {
             _sceneKey = key;
@@ -386,7 +388,7 @@ public partial class MainWindow : IEditionActions
     {
         var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
         var entries = new List<(string? Id, string Name)> { (null, L.AppName) };
-        entries.AddRange(Editions.Available.Select(p => ((string?)p.Id, p.Name)));
+        entries.AddRange(Editions.Available.Select(p => ((string?)p.Id, V2pnPartners.IsPreview(p.Id) ? string.Format(L.BuilderPreviewName, p.Name) : p.Name)));
         for (var i = 0; i < entries.Count; i++)
         {
             var (id, name) = entries[i];

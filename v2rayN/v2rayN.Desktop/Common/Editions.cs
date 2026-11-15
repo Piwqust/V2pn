@@ -261,7 +261,8 @@ public static class Editions
     {
         foreach (var partner in Available)
         {
-            if (Settings.Introduced.Contains(partner.Id))
+            // The theme builder's preview is opened by the person on purpose; it has no intro.
+            if (V2pnPartners.IsPreview(partner.Id) || Settings.Introduced.Contains(partner.Id))
             {
                 continue;
             }
@@ -298,6 +299,50 @@ public static class Editions
         Settings.Partner = partner.Id;
         OnRemoved(partner, why);
     }
+
+    // The look open before the theme builder's preview, to go back to; the preview itself is never written to the file.
+    private static string? _beforePreview;
+
+    /// <summary>Opens the theme builder's preview (V2pnPartners.SetPreview) in its theme look.</summary>
+    public static void OpenPreview()
+    {
+        if (V2pnPartners.Instance.Get(V2pnPartners.PreviewId) is not { } preview)
+        {
+            return;
+        }
+        Changing?.Invoke();
+        if (!V2pnPartners.IsPreview(Settings.Partner))
+        {
+            _beforePreview = Settings.Partner;
+        }
+        Settings.Partner = preview.Id;
+        if (preview.Pack.Variants.Contains(V2pnPartnerVariants.Theme))
+        {
+            Settings.Variants[preview.Id] = V2pnPartnerVariants.Theme;
+        }
+        Apply();
+    }
+
+    /// <summary>Takes the preview away and opens the look that was open before it.</summary>
+    public static void ClosePreview()
+    {
+        if (V2pnPartners.IsPreview(Settings.Partner))
+        {
+            Changing?.Invoke();
+            Settings.Partner = _beforePreview;
+        }
+        _beforePreview = null;
+        Settings.Variants.Remove(V2pnPartners.PreviewId);
+        foreach (var key in Settings.Looks.Keys.Where(k => k.StartsWith(V2pnPartners.PreviewId + ":", StringComparison.Ordinal)).ToList())
+        {
+            Settings.Looks.Remove(key);
+        }
+        V2pnPartners.Instance.RemovePreview();
+        Apply();
+    }
+
+    /// <summary>True while the window wears the theme builder's preview.</summary>
+    public static bool IsPreview => V2pnPartners.IsPreview(Partner?.Id);
 
     /// <summary>Changes the open look's tuning (the Appearance page in an edition); applied at once.</summary>
     public static void Tune(Action<EditionLookPrefs> edit)
@@ -563,7 +608,15 @@ public static class Editions
     {
         try
         {
-            File.WriteAllText(FilePath, JsonSerializer.Serialize(Settings, EditionJson.Default.EditionSettings));
+            // The theme builder's preview lives in memory only: the file keeps the look that was open before it.
+            var kept = new EditionSettings
+            {
+                Partner = V2pnPartners.IsPreview(Settings.Partner) ? _beforePreview : Settings.Partner,
+                Variants = Settings.Variants.Where(v => !V2pnPartners.IsPreview(v.Key)).ToDictionary(v => v.Key, v => v.Value),
+                Looks = Settings.Looks.Where(l => !l.Key.StartsWith(V2pnPartners.PreviewId + ":", StringComparison.Ordinal)).ToDictionary(l => l.Key, l => l.Value),
+                Introduced = Settings.Introduced.Where(id => !V2pnPartners.IsPreview(id)).ToList(),
+            };
+            File.WriteAllText(FilePath, JsonSerializer.Serialize(kept, EditionJson.Default.EditionSettings));
         }
         catch (Exception ex)
         {

@@ -62,6 +62,23 @@ public sealed class SideHintRow(string text) : SideRow
     public override string ToString() => Text;
 }
 
+/// <summary>V2pn: a subscription's banner (V2pnSubDefaults.Banner), under its row or at the top of its servers.</summary>
+public sealed class SideBannerRow(SubBanner banner, string subId) : SideRow
+{
+    public SubBanner Banner { get; } = banner;
+    public string SubId { get; } = subId;
+    public override string ToString() => Banner.Text;
+}
+
+/// <summary>V2pn: the provider's announcement above its servers, with "More" when it sent announce-url.</summary>
+public sealed class SideAnnounceRow(string text, string? url) : SideRow
+{
+    public string Text { get; } = text;
+    public string? Url { get; } = url;
+    public bool HasUrl => Url.IsNotEmpty();
+    public override string ToString() => Text;
+}
+
 public sealed class SideServerRow : SideRow
 {
     /// <param name="memberOf">Set for a row inside an opened pool: it is titled by its number.</param>
@@ -602,13 +619,25 @@ public sealed partial class SidebarViewModel : ReactiveObject
             _pingScope = all;
             var updated = _failedSubs.Contains(OpenedSub.Id) ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(OpenedSub.Item);
             rows.Add(new SideActionRow(SideActionKind.Back, SideSubRow.NameOf(OpenedSub.Item), $"{L.ServerCount(all.Count)} · {updated}", OpenedSub.Id));
+            // V2pn: what the provider says about this subscription, above its servers.
+            var info = SubInfoManager.Instance.Get(OpenedSub.Id);
+            if (V2pnSubDefaults.Banner(info, DateTimeOffset.Now) is { } openedBanner)
+            {
+                rows.Add(new SideBannerRow(openedBanner, OpenedSub.Id));
+            }
+            if (info?.Announce.IsNotEmpty() == true)
+            {
+                rows.Add(new SideAnnounceRow(info.Announce!, info.AnnounceUrl));
+            }
             if (all.Count > 0)
             {
                 rows.Add(new SideHeaderRow(L.TabServers, Ping));
             }
             var (series, rest) = ServerNames.SplitSeries(all);
             AddSeries(rows, series);
-            rows.AddRange(ByPing(rest).Select(m => new SideServerRow(m, false, false)));
+            // The order the person chose for this subscription, else the provider's, else fastest first.
+            var order = V2pnSubDefaults.Order(rest, V2pnSubDefaults.SortOf(info), m => m.Remarks, m => m.Delay);
+            rows.AddRange(order.Select(m => new SideServerRow(m, false, false)));
             if (all.Count == 0)
             {
                 rows.Add(new SideHintRow(L.SubEmpty));
@@ -627,6 +656,15 @@ public sealed partial class SidebarViewModel : ReactiveObject
             return;
         }
         rows.Add(new SideHeaderRow(Counted(L.TabSubscriptions, subs.Count), subsUpdate: SubsUpdate));
-        rows.AddRange(subs.Select(sub => new SideSubRow(sub, SubBusy(sub.Id), _failedSubs.Contains(sub.Id))));
+        var now = DateTimeOffset.Now;
+        foreach (var sub in subs)
+        {
+            rows.Add(new SideSubRow(sub, SubBusy(sub.Id), _failedSubs.Contains(sub.Id)));
+            // V2pn: the provider's banner, or the reminder that the subscription runs out, right under it.
+            if (V2pnSubDefaults.Banner(SubInfoManager.Instance.Get(sub.Id), now) is { } banner)
+            {
+                rows.Add(new SideBannerRow(banner, sub.Id));
+            }
+        }
     }
 }

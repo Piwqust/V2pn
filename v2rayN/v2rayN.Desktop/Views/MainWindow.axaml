@@ -374,6 +374,29 @@
                                         TextWrapping="Wrap" />
                                 </DataTemplate>
 
+                                <!--  V2pn: a subscription's banner and announcement (SubBannerView, V2pnSubDefaults).  -->
+                                <DataTemplate x:DataType="side:SideBannerRow">
+                                    <views:SubBannerView Margin="4,0,4,6" Banner="{Binding Banner}" />
+                                </DataTemplate>
+
+                                <DataTemplate x:DataType="side:SideAnnounceRow">
+                                    <StackPanel Margin="8,2,8,8" Spacing="4">
+                                        <TextBlock
+                                            Classes="small"
+                                            LineHeight="17"
+                                            Text="{Binding Text}"
+                                            TextWrapping="Wrap" />
+                                        <Button
+                                            HorizontalAlignment="Left"
+                                            Classes="ghost small"
+                                            Click="SideAnnounce_Click"
+                                            Content="{x:Static loc:L.SubAnnounceMore}"
+                                            IsVisible="{Binding HasUrl}"
+                                            Theme="{StaticResource V2Button}"
+                                            ToolTip.Tip="{Binding Url}" />
+                                    </StackPanel>
+                                </DataTemplate>
+
                                 <DataTemplate x:DataType="side:SideServerRow">
                                     <Button
                                         AutomationProperties.Name="{Binding Title}"

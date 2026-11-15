@@ -121,7 +121,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         // Headers without actions and hint text are skipped by the arrow keys. Containers are recycled,
         // so the value is set both ways.
         lstRows.ContainerPrepared += (_, e) =>
-            e.Container.Focusable = lstRows.ItemFromContainer(e.Container) is not (SideHintRow or SideHeaderRow { ShowPing: false, ShowSubActions: false });
+            e.Container.Focusable = lstRows.ItemFromContainer(e.Container) is not (SideHintRow or SideBannerRow or SideAnnounceRow or SideHeaderRow { ShowPing: false, ShowSubActions: false });
         lstRows.ContextRequested += LstRows_ContextRequested;
         txtSearch.KeyDown += TxtSearch_KeyDown;
         txtSearch.TextChanged += (_, _) =>
@@ -1509,6 +1509,15 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void SideSub_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
 
     private void SideAction_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
+
+    // V2pn: "More" under the provider's announcement opens its announce-url (https or tg only, SubPanelHeaders).
+    private void SideAnnounce_Click(object? sender, RoutedEventArgs e)
+    {
+        if ((sender as Control)?.DataContext is SideAnnounceRow { Url: { } url } && SubPanelHeaders.ParseSecureLink(url) != null)
+        {
+            ProcUtils.ProcessStart(url);
+        }
+    }
 
     private async void ActivateRow(SideRow? target)
     {

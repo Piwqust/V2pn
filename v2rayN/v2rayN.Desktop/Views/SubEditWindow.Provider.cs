@@ -237,7 +237,7 @@ public partial class SubEditWindow
             };
             var line = new TextBlock { Text = string.Format(format, feature), TextWrapping = TextWrapping.Wrap };
             line.Classes.Add("srowhint");
-            line.Classes.Set("bad", bad);
+            line.Classes.Set("warn", bad);
             ToolTip.SetTip(line, file.Problem);
             panelReviewed.Children.Add(line);
         }

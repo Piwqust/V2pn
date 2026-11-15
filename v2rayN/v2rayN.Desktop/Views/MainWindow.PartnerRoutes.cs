@@ -7,6 +7,8 @@ namespace v2rayN.Desktop.Views;
 public partial class MainWindow
 {
     private string? _partnerRouteId;
+    // What the partners' reviewed files are now; a change while a partner's server runs reloads the core.
+    private string? _partnerFilesSignature;
     private readonly SemaphoreSlim _partnerRoutesGate = new(1, 1);
 
     private void InitPartnerRoutes()
@@ -45,6 +47,7 @@ public partial class MainWindow
                 }
             }
             OfferPartnerRoutes(changes);
+            ReloadIfPartnerFilesChanged(status);
         }
         catch (Exception ex)
         {
@@ -53,6 +56,22 @@ public partial class MainWindow
         finally
         {
             _partnerRoutesGate.Release();
+        }
+    }
+
+    /// <summary>
+    /// A partner's pack came back with other reviewed files (one changed after the review, a new certificate covers
+    /// another): a running server of a partner reconnects, so a file no longer reviewed stops being used at once.
+    /// </summary>
+    private void ReloadIfPartnerFilesChanged(StatusBarViewModel status)
+    {
+        var signature = string.Join(";", V2pnPartners.Instance.All.Select(p =>
+            p.Id + ":" + string.Join(",", p.Features.Files.Select(f => $"{f.Name}={f.State}"))));
+        var before = _partnerFilesSignature;
+        _partnerFilesSignature = signature;
+        if (before != null && before != signature && IsConnected(status) && V2pnLocks.Instance.PartnerOf(_barSubId) != null)
+        {
+            status.ReloadRequested.Publish();
         }
     }
 

@@ -22,7 +22,7 @@ public sealed class PartnerIntroView : UserControl
             : new TextBlock { Classes = { "spagetitle" }, Text = partner.Name };
 
         var looks = new WrapPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(-4, 4, 0, 0) };
-        var accent = Color.Parse(partner.Pack.Accent ?? "#FF3D1F");
+        var accent = Color.Parse(partner.Pack.Accent ?? partner.Pack.Theme?.Brand.FirstOrDefault() ?? "#FF3D1F");
         foreach (var variant in partner.Pack.Variants)
         {
             var v = variant;

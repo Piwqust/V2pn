@@ -190,7 +190,7 @@ public sealed partial class AppearanceView
 
     private Button LookCard(string look, V2pnPartner? partner, string label, bool selected, Action pick)
     {
-        var accent = partner == null ? Color.Parse("#FF3D1F") : Color.Parse(partner.Pack.Accent ?? "#FF3D1F");
+        var accent = partner == null ? Color.Parse("#FF3D1F") : Color.Parse(partner.Pack.Accent ?? partner.Pack.Theme?.Brand.FirstOrDefault() ?? "#FF3D1F");
         var frame = new Border
         {
             Width = 104,
@@ -238,6 +238,10 @@ public sealed partial class AppearanceView
 
         switch (look)
         {
+            case V2pnPartnerVariants.Theme:
+                // The provider's template in its own colours, light or dark as the app is now.
+                return ThemeKit.Preview(partner != null ? ThemeKit.Of(partner) : V2pnTheme.Default(null),
+                    Application.Current?.ActualThemeVariant != ThemeVariant.Light);
             case V2pnPartnerVariants.Cabinet:
             {
                 var grid = new Grid { RowDefinitions = new("*,*"), Background = B("#0E0E0D") };

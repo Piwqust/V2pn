@@ -28,10 +28,12 @@ public sealed record SceneAccount(
     string? Plan = null,
     string? Devices = null,
     string? Incident = null,
-    bool IncidentSevere = false)
+    bool IncidentSevere = false,
+    string? AnnounceUrl = null,
+    SubBanner? Banner = null)
 {
     public bool IsEmpty => Traffic == null && Expiry == null && Announce == null && CabinetUrl == null && SupportUrl == null
-        && Plan == null && Devices == null && Incident == null;
+        && Plan == null && Devices == null && Incident == null && Banner == null;
 }
 
 /// <summary>

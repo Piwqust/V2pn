@@ -346,6 +346,11 @@ public sealed class AccountPanel : UserControl
     private readonly Border _bar;
     private readonly TextBlock _expiry;
     private readonly TextBlock _announce;
+    private readonly Button _announceMore;
+    private readonly Border _banner;
+    private readonly TextBlock _bannerText;
+    private readonly Button _bannerButton;
+    private readonly TextBlock _bannerButtonText;
     private readonly Button _cabinet;
     private readonly Button _support;
     private SceneAccount? _last;
@@ -364,6 +369,24 @@ public sealed class AccountPanel : UserControl
         _announce = Scene.Text("", 12, p.Muted, p.Font);
         _announce.TextWrapping = TextWrapping.Wrap;
         _announce.TextTrimming = TextTrimming.None;
+        _announceMore = Link(p.Ascii ? "[" + L.SubAnnounceMore + "]" : L.SubAnnounceMore + " ↗");
+        _announceMore.Click += (_, _) => Open(_last?.AnnounceUrl);
+        // V2pn: the subscription's banner (V2pnSubDefaults.Banner) in the look's own type, with V2pn's tone as a stripe.
+        _bannerText = Scene.Text("", 12.5, p.Ink, p.Font);
+        _bannerText.TextWrapping = TextWrapping.Wrap;
+        _bannerText.TextTrimming = TextTrimming.None;
+        _bannerButtonText = Scene.Text("", 12.5, p.AccentText, p.Font, FontWeight.Medium);
+        _bannerButton = Scene.Button(_bannerButtonText, null, p.AccentText, 6, new Thickness(0, 2));
+        _bannerButton.HorizontalAlignment = HorizontalAlignment.Left;
+        _bannerButton.Click += (_, _) => Open(_last?.Banner?.ButtonUrl);
+        _banner = new Border
+        {
+            Background = Scene.B(p.Raised),
+            CornerRadius = Scene.Current.R(8),
+            BorderThickness = new Thickness(3, 0, 0, 0),
+            Padding = new Thickness(10, 8),
+            Child = new StackPanel { Spacing = 4, Children = { _bannerText, _bannerButton } },
+        };
         _bar = new Border { CornerRadius = Scene.Current.R(3), Background = Scene.B(p.Accent), HorizontalAlignment = HorizontalAlignment.Left };
         _barTrack = new Border { Height = 5, CornerRadius = Scene.Current.R(3), Background = Scene.B(p.Raised), Child = _bar, ClipToBounds = true };
         _barTrack.SizeChanged += (_, _) => SizeBar();
@@ -378,12 +401,14 @@ public sealed class AccountPanel : UserControl
             stack.Children.Add(Scene.Text(title, 12, p.Muted, p.Font));
         }
         stack.Children.Add(_incident);
+        stack.Children.Add(_banner);
         stack.Children.Add(_plan);
         stack.Children.Add(_devices);
         stack.Children.Add(_traffic);
         stack.Children.Add(_barTrack);
         stack.Children.Add(_expiry);
         stack.Children.Add(_announce);
+        stack.Children.Add(_announceMore);
         stack.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 14, Children = { _cabinet, _support } });
         Content = stack;
         IsVisible = false;
@@ -432,6 +457,20 @@ public sealed class AccountPanel : UserControl
         _expiry.Foreground = Scene.B(tone);
         _announce.Text = account.Announce ?? string.Empty;
         _announce.IsVisible = account.Announce != null;
+        _announceMore.IsVisible = account.Announce != null && account.AnnounceUrl != null;
+        _banner.IsVisible = account.Banner != null;
+        if (account.Banner is { } banner)
+        {
+            _banner.BorderBrush = Scene.B(banner.Tone switch
+            {
+                SubPanelHeaders.ToneAttention => _p.Bad,
+                SubPanelHeaders.ToneOk => _p.Good,
+                _ => _p.Accent,
+            });
+            _bannerText.Text = banner.Text;
+            _bannerButtonText.Text = banner.ButtonText is { } label ? (_p.Ascii ? $"[{label}]" : label + " ↗") : string.Empty;
+            _bannerButton.IsVisible = banner.ButtonText != null && banner.ButtonUrl != null;
+        }
         _cabinet.IsVisible = account.CabinetUrl != null;
         _support.IsVisible = account.SupportUrl != null;
     }

@@ -581,7 +581,10 @@ public partial class MainWindow : IEditionActions
                 NonEmpty(api?.Plan),
                 api?.Devices is { } count ? api.DeviceLimit is { } limit ? string.Format(L.PartnerDevicesOf, count, limit) : string.Format(L.PartnerDevices, count) : null,
                 incident == null ? null : incident.Text.IsNullOrEmpty() ? incident.Title : $"{incident.Title}. {incident.Text}",
-                incident?.Severe == true);
+                incident?.Severe == true,
+                // The announce-url belongs to the panel's announcement, not to the API's note.
+                NonEmpty(api?.Note) == null ? NonEmpty(info?.AnnounceUrl) : null,
+                V2pnSubDefaults.Banner(info, DateTimeOffset.Now));
         }
         // The partner's own checks of its servers say more than V2pn's pings from one computer.
         var byPartner = api is { Healthy: { } partnerOk, Total: { } partnerTotal } && partnerTotal > 0;

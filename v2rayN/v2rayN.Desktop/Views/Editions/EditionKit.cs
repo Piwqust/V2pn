@@ -84,7 +84,7 @@ public sealed class ServerBrowser : UserControl
         _a = a;
         _search = new TextBox
         {
-            Watermark = p.Ascii ? "> поиск" : "Поиск",
+            Watermark = p.Ascii ? L.SceneSearchAscii : L.SceneSearch,
             FontFamily = p.Font,
             FontSize = 13,
             Foreground = Scene.B(p.Ink),
@@ -97,11 +97,11 @@ public sealed class ServerBrowser : UserControl
         };
         _search.TextChanged += (_, _) => Render();
 
-        var ping = Tool(p.Ascii ? "[пинг]" : "Пинг", "Проверить пинг серверов");
+        var ping = Tool(p.Ascii ? L.ScenePingAscii : L.ScenePing, L.ScenePingTip);
         ping.Click += (_, _) => _a.PingAll();
-        var update = Tool(p.Ascii ? "[↻]" : "↻", "Обновить подписки");
+        var update = Tool(p.Ascii ? "[↻]" : "↻", L.SceneUpdateTip);
         update.Click += (_, _) => _a.UpdateSubscriptions();
-        var add = Tool(p.Ascii ? "[+]" : "+", "Добавить сервер или подписку");
+        var add = Tool(p.Ascii ? "[+]" : "+", L.SceneAddTip);
         add.Click += (_, _) => _a.Add(add);
         var tools = new Grid { ColumnDefinitions = new("*,Auto,Auto,Auto"), ColumnSpacing = 6 };
         Put(tools, _search, 0, 0);
@@ -198,8 +198,8 @@ public sealed class ServerBrowser : UserControl
             _rows.Children.Add(Row(server, server.IndexId == s.SelectedId, showSub: _sub is null or Favourites || (_sub == PartnerChip && s.PartnerSubIds.Count > 1)));
         }
         _note.Text = list.Count == 0
-            ? _sub == Favourites && query.Length == 0 ? "В избранном пока пусто: отметьте сервер звёздочкой в обычном V2pn." : "Ничего не нашлось."
-            : list.Count > MaxRows ? $"Показаны первые {MaxRows} из {list.Count}. Уточните поиск." : string.Empty;
+            ? _sub == Favourites && query.Length == 0 ? L.SceneNoFavourites : L.SceneNothingFound
+            : list.Count > MaxRows ? string.Format(L.SceneFirstRows, MaxRows, list.Count) : string.Empty;
         _note.IsVisible = _note.Text.Length > 0;
     }
 
@@ -226,10 +226,10 @@ public sealed class ServerBrowser : UserControl
         {
             _chips.Children.Add(Chip(PartnerChip, _p.Ascii ? $"{s.PartnerName.ToLowerInvariant()} {partnerCount}" : $"{s.PartnerName}  {partnerCount}"));
         }
-        _chips.Children.Add(Chip(null, _p.Ascii ? $"все {s.Catalog.Count}" : $"Все  {s.Catalog.Count}"));
+        _chips.Children.Add(Chip(null, _p.Ascii ? $"{L.SceneAllAscii} {s.Catalog.Count}" : $"{L.SceneAll}  {s.Catalog.Count}"));
         if (favourites > 0)
         {
-            _chips.Children.Add(Chip(Favourites, _p.Ascii ? $"* избранное {favourites}" : $"★ Избранное  {favourites}"));
+            _chips.Children.Add(Chip(Favourites, _p.Ascii ? $"* {L.SceneFavouritesAscii} {favourites}" : $"★ {L.SceneFavourites}  {favourites}"));
         }
         // One subscription is the same list as "All".
         if (s.Subs.Count > 1)
@@ -300,9 +300,9 @@ public sealed class ServerBrowser : UserControl
         Put(grid, name, 0, 1);
         var (ping, color) = server.Delay switch
         {
-            > 0 and < 150 => ($"{server.Delay} мс", _p.Good),
-            > 0 => ($"{server.Delay} мс", _p.Warn),
-            < 0 => ("нет", _p.Bad),
+            > 0 and < 150 => ($"{server.Delay} {L.SceneMs}", _p.Good),
+            > 0 => ($"{server.Delay} {L.SceneMs}", _p.Warn),
+            < 0 => (L.SceneNo, _p.Bad),
             _ => ("—", _p.Muted),
         };
         Put(grid, Scene.Text(ping, 12, color, server.Delay > 0 ? Scene.Mono : _p.Font), 0, 2);
@@ -313,7 +313,7 @@ public sealed class ServerBrowser : UserControl
         button.HorizontalContentAlignment = HorizontalAlignment.Stretch;
         var id = server.IndexId;
         button.Click += (_, _) => _a.Select(id);
-        Avalonia.Automation.AutomationProperties.SetName(button, server.Delay < 0 ? $"{server.Name}, нет ответа" : $"{server.Name}, {ping}");
+        Avalonia.Automation.AutomationProperties.SetName(button, server.Delay < 0 ? $"{server.Name}, {L.SceneNoAnswer}" : $"{server.Name}, {ping}");
         return button;
     }
 
@@ -363,9 +363,9 @@ public sealed class AccountPanel : UserControl
         _bar = new Border { CornerRadius = Scene.Current.R(3), Background = Scene.B(p.Accent), HorizontalAlignment = HorizontalAlignment.Left };
         _barTrack = new Border { Height = 5, CornerRadius = Scene.Current.R(3), Background = Scene.B(p.Raised), Child = _bar, ClipToBounds = true };
         _barTrack.SizeChanged += (_, _) => SizeBar();
-        _cabinet = Link(p.Ascii ? "[ кабинет ]" : "Кабинет \u2197");
+        _cabinet = Link(p.Ascii ? L.SceneCabinetAscii : L.SceneCabinet + " \u2197");
         _cabinet.Click += (_, _) => Open(_last?.CabinetUrl);
-        _support = Link(p.Ascii ? "[ поддержка ]" : "Поддержка \u2197");
+        _support = Link(p.Ascii ? L.SceneSupportAscii : L.SceneSupport + " \u2197");
         _support.Click += (_, _) => Open(_last?.SupportUrl);
 
         var stack = new StackPanel { Spacing = 8 };
@@ -473,9 +473,9 @@ public sealed class ForeignNote : UserControl
         _target = s.BestPartnerServer;
         var (p, label) = ((ScenePalette, TextBlock))Tag!;
         _text.Text = p.Ascii
-            ? $"! сервер не от {s.PartnerName}: {s.Subscription}"
-            : $"Сейчас сервер не от {s.PartnerName}" + (s.Subscription.IsNotEmpty() ? $" — из «{s.Subscription}»." : ".");
-        label.Text = p.Ascii ? $"[ сервер {s.PartnerName} ]" : $"Перейти на сервер {s.PartnerName} \u2192";
+            ? string.Format(L.SceneForeignAscii, s.PartnerName, s.Subscription)
+            : string.Format(L.SceneForeign, s.PartnerName) + (s.Subscription.IsNotEmpty() ? string.Format(L.SceneForeignFrom, s.Subscription) : ".");
+        label.Text = p.Ascii ? string.Format(L.SceneToPartnerAscii, s.PartnerName) : string.Format(L.SceneToPartner, s.PartnerName) + " \u2192";
         _switch.IsVisible = _target != null;
     }
 }
@@ -487,16 +487,16 @@ public sealed class EmptyState : UserControl
 
     public EmptyState(ScenePalette p, IEditionActions a, string partnerName)
     {
-        var title = Scene.Text(p.Ascii ? "> серверов пока нет" : "Добавьте серверы", p.Ascii ? 15 : 20, p.Ink, p.Font);
-        var lead = Scene.Text($"Скопируйте ссылку на подписку в кабинете {partnerName} и вставьте её сюда. Или добавьте подписку вручную.", 13, p.Muted, p.Font);
+        var title = Scene.Text(p.Ascii ? L.SceneEmptyTitleAscii : L.SceneEmptyTitle, p.Ascii ? 15 : 20, p.Ink, p.Font);
+        var lead = Scene.Text(string.Format(L.SceneEmptyLead, partnerName), 13, p.Muted, p.Font);
         lead.TextWrapping = TextWrapping.Wrap;
         lead.TextTrimming = TextTrimming.None;
 
-        var paste = Action(p, p.Ascii ? "[ вставить ссылку ]" : "Вставить ссылку", primary: true);
+        var paste = Action(p, p.Ascii ? L.ScenePasteAscii : L.ScenePaste, primary: true);
         paste.Click += (_, _) => a.Paste();
-        var sub = Action(p, p.Ascii ? "[ добавить подписку ]" : "Добавить подписку", primary: false);
+        var sub = Action(p, p.Ascii ? L.SceneAddSubAscii : L.SceneAddSub, primary: false);
         sub.Click += (_, _) => a.AddSubscription();
-        _import = Action(p, p.Ascii ? "[ перенести из другого приложения ]" : "Перенести из другого приложения", primary: false);
+        _import = Action(p, p.Ascii ? L.SceneImportAscii : L.SceneImport, primary: false);
         _import.Click += (_, _) => a.Import();
         _import.IsVisible = false;
 

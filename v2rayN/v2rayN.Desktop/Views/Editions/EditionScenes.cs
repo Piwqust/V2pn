@@ -65,7 +65,7 @@ public abstract class EditionScene : UserControl
         {
             var item = new MenuItem
             {
-                Header = server.Delay > 0 ? $"{server.Name}   {server.Delay} мс" : server.Name,
+                Header = server.Delay > 0 ? $"{server.Name}   {server.Delay} {L.SceneMs}" : server.Name,
                 Icon = Scene.Flag(server.Code, 18, 13),
                 FontWeight = server.Selected ? FontWeight.SemiBold : FontWeight.Normal,
             };
@@ -77,7 +77,7 @@ public abstract class EditionScene : UserControl
     }
 
     protected static string NodesText(EditionSnapshot s) =>
-        s.NodesTotal > 0 ? $"{s.NodesOk} из {s.NodesTotal}" : "—";
+        s.NodesTotal > 0 ? string.Format(L.SceneOf, s.NodesOk, s.NodesTotal) : "—";
 
     /// <summary>Takes a part out of the layout it was in, so the next layout can hold it.</summary>
     protected static T Take<T>(T part) where T : Control
@@ -118,8 +118,8 @@ public abstract class EditionScene : UserControl
             Spacing = ascii ? 14 : 16,
             Children =
             {
-                Link(ascii ? "[ ip ]" : "IP-адрес ↗", Actions.OpenIp),
-                Link(ascii ? "[ настройки ]" : "Настройки V2pn", Actions.OpenSettings),
+                Link(ascii ? "[ ip ]" : L.SceneIp + " ↗", Actions.OpenIp),
+                Link(ascii ? L.SceneSettingsAscii : L.SceneSettings, Actions.OpenSettings),
             },
         };
     }
@@ -164,8 +164,8 @@ public sealed class CabinetScene : EditionScene
     private readonly MatrixText _count = new() { Cell = 4.2, Foreground = Scene.B("#121211") };
     private readonly TextBlock _serversCount;
     private readonly TextBlock _route;
-    private readonly TextBlock _countUnit = new() { Text = "серверов", FontSize = 13, Foreground = Scene.B("#5B5750"), VerticalAlignment = VerticalAlignment.Bottom };
-    private readonly TextBlock _changeLabel = Scene.Text("Сменить сервер", 14, "#121211", weight: FontWeight.Medium);
+    private readonly TextBlock _countUnit = new() { Text = L.SceneServersUnit, FontSize = 13, Foreground = Scene.B("#5B5750"), VerticalAlignment = VerticalAlignment.Bottom };
+    private readonly TextBlock _changeLabel = Scene.Text(L.SceneChange, 14, "#121211", weight: FontWeight.Medium);
     private readonly Button _proxy;
     private readonly Button _vpn;
     private readonly Button _change;
@@ -241,8 +241,8 @@ public sealed class CabinetScene : EditionScene
         _change = Scene.Button(_changeLabel, null, "#121211", 14, new Thickness(22, 0), "#40121211", height: 48);
         _change.Click += (_, _) => ShowServers(_change, _last);
 
-        _pingTile = Tile("Отклик", _ping, new TextBlock { Text = "мс", FontFamily = look.Text, FontSize = 13, Foreground = Scene.B("#5B5750"), VerticalAlignment = VerticalAlignment.Bottom });
-        _countTile = Tile("Отвечают", _count, _countUnit);
+        _pingTile = Tile(L.SceneLatency, _ping, new TextBlock { Text = L.SceneMs, FontFamily = look.Text, FontSize = 13, Foreground = Scene.B("#5B5750"), VerticalAlignment = VerticalAlignment.Bottom });
+        _countTile = Tile(L.SceneAnswering, _count, _countUnit);
         _hero = new Border
         {
             Background = new RadialGradientBrush
@@ -261,7 +261,7 @@ public sealed class CabinetScene : EditionScene
             },
         };
 
-        _proxy = Segment("Прокси", () => Actions.SetVpn(false));
+        _proxy = Segment(L.SceneProxy, () => Actions.SetVpn(false));
         _vpn = Segment("VPN", () => Actions.SetVpn(true));
         var segmentGrid = new Grid { ColumnDefinitions = new("*,*") };
         Put(segmentGrid, _proxy, 0, 0);
@@ -283,11 +283,11 @@ public sealed class CabinetScene : EditionScene
             FontSize = 11,
             LineHeight = 12.5,
             Foreground = Scene.B(_c.Doodle),
-            Text = "  .--------.                      .----------.\n  | ###### |---·····---·····---| ######## |\n  | ###### |       сервер       | ######## |\n  '---..---'                      | ####-### |\n    ==''==     ваш ПК → сервер    '----------'",
+            Text = L.SceneDoodle,
         };
         var note = new TextBlock
         {
-            Text = $"{partner.Name} отдаёт список серверов. Трафик идёт с вашего компьютера прямо на сервер — {partner.Name} его не видит.",
+            Text = string.Format(L.SceneTrafficNote, partner.Name),
             TextWrapping = TextWrapping.Wrap,
             FontFamily = look.Text,
             FontSize = 12,
@@ -295,15 +295,15 @@ public sealed class CabinetScene : EditionScene
         };
         var (good, warn, bad) = PingColours;
         var palette = new ScenePalette(_c.Panel, _c.Raised, _c.Text, _c.Soft, _c.Muted, look.Accent, Scene.OnAccent(look.Accent), 12, look.Text, Good: good, Warn: warn, Bad: bad);
-        _account = new AccountPanel(palette, actions, $"Подписка {partner.Name}");
-        _vpnPanel = Panel(new StackPanel { Spacing = 14, Children = { Header("Через VPN", null), _modes, _account, _doodle, note, Extras(_c.Soft, ascii: false) } });
+        _account = new AccountPanel(palette, actions, string.Format(L.SceneSubscriptionOf, partner.Name));
+        _vpnPanel = Panel(new StackPanel { Spacing = 14, Children = { Header(L.SceneThroughVpn, null), _modes, _account, _doodle, note, Extras(_c.Soft, ascii: false) } });
         // On the peach card: ink, not the accent, so the way back to the partner's servers reads on any accent.
         _foreign = new ForeignNote(new ScenePalette("#F7F6F3", "#E8E3DC", "#121211", "#3E3C38", "#5B5750", "#121211", "#F3F2EE", 12, look.Text), actions);
         _foreign.Margin = new Thickness(2, 10, 0, 0);
         _browser = new ServerBrowser(palette, actions);
         _empty = new EmptyState(palette, actions, partner.Name);
         var serversGrid = new Grid { RowDefinitions = new("Auto,*"), RowSpacing = 12 };
-        Put(serversGrid, Header("Серверы", _serversCount), 0, 0);
+        Put(serversGrid, Header(L.SceneServers, _serversCount), 0, 0);
         Put(serversGrid, _serversBody, 1, 0);
         _serversPanel = Panel(serversGrid);
 
@@ -324,7 +324,7 @@ public sealed class CabinetScene : EditionScene
         _connect.MinWidth = narrow ? 0 : 200;
         // Two tiles and two buttons share a narrow card: the count says "servers" in its label already.
         _countUnit.IsVisible = !narrow;
-        _changeLabel.Text = narrow ? "Сменить" : "Сменить сервер";
+        _changeLabel.Text = narrow ? L.SceneChangeShort : L.SceneChange;
         _doodle.IsVisible = wide;
         _state.MaxWidth = narrow ? double.PositiveInfinity : 560;
         _state.HorizontalAlignment = narrow ? HorizontalAlignment.Stretch : HorizontalAlignment.Left;
@@ -444,17 +444,17 @@ public sealed class CabinetScene : EditionScene
         _flag.Source = V2pnConverters.Flag(s.CountryCode);
         _title.Text = s.Title;
         _subtitle.Text = s.Subscription.IsNotEmpty() ? $"{s.Subtitle} · {s.Subscription}" : s.Subtitle;
-        _stateText.Text = s.Protected ? "Работает" : s.StateLabel;
+        _stateText.Text = s.Protected ? L.SceneWorking : s.StateLabel;
         _stateDot.Background = Scene.B(s.StateKind switch { "safe" => "#3DD68C", "warn" => "#E9B04F", "checking" => "#9B9BA8", _ => "#FF5A3D" });
         _nodes.Text = NodesText(s);
         _meter.Set(s.NodesOk, s.NodesTotal);
         _stateNote.Text = s.NodesByPartner
             ? s.NodesTotal > s.NodesOk
-                ? $"{s.NodesTotal - s.NodesOk} не работают по проверке {s.PartnerName}."
-                : $"Все серверы работают по проверке {s.PartnerName}."
+                ? string.Format(L.SceneDownByPartner, s.NodesTotal - s.NodesOk, s.PartnerName)
+                : string.Format(L.SceneAllUpByPartner, s.PartnerName)
             : s.NodesTotal > s.NodesOk && s.NodesTotal > 0
-                ? $"{s.NodesTotal - s.NodesOk} не ответили на последнюю проверку пинга."
-                : s.NodesTotal > 0 ? "Все серверы ответили на последнюю проверку." : "Проверьте пинг, чтобы узнать, какие серверы отвечают.";
+                ? string.Format(L.SceneDownByPing, s.NodesTotal - s.NodesOk)
+                : s.NodesTotal > 0 ? L.SceneAllUpByPing : L.ScenePingFirst;
         _connectLabel.Text = s.ConnectLabel;
         _connect.IsEnabled = s.HasServer;
         Scene.SetPill(_pill, _pillText, s.StateKind, s.StateLabel);
@@ -545,7 +545,7 @@ public sealed class StudioScene : EditionScene
             ? new Border { CornerRadius = look.R(18), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = _lamp }
             : _lamp;
 
-        _proxy = Capsule("Прокси", () => Actions.SetVpn(false));
+        _proxy = Capsule(L.SceneProxy, () => Actions.SetVpn(false));
         _vpn = Capsule("VPN", () => Actions.SetVpn(true));
         _connect = Scene.Button(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 8, Children = { Scene.Power(Scene.OnAccent(look.Accent)), _connectLabel } }, look.Accent, Scene.OnAccent(look.Accent), 999, new Thickness(18, 9));
         _connect.Click += (_, _) => Actions.ToggleConnect();
@@ -557,7 +557,7 @@ public sealed class StudioScene : EditionScene
             HorizontalAlignment = HorizontalAlignment.Center,
             Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4, Children = { _proxy, _vpn, _connect } },
         };
-        _change = Scene.Button(Scene.Text("Сменить сервер", 13, _c.Text, weight: FontWeight.Medium), null, _c.Text, 999, new Thickness(18, 10), _c.ChangeLine);
+        _change = Scene.Button(Scene.Text(L.SceneChange, 13, _c.Text, weight: FontWeight.Medium), null, _c.Text, 999, new Thickness(18, 10), _c.ChangeLine);
         _change.HorizontalAlignment = HorizontalAlignment.Right;
         _change.VerticalAlignment = VerticalAlignment.Center;
         _change.Click += (_, _) => ShowServers(_change, _last);
@@ -568,16 +568,16 @@ public sealed class StudioScene : EditionScene
             Spacing = 14,
             Children =
             {
-                Scene.Text("сейчас вы в", 13, _c.Note, Scene.Mono),
+                Scene.Text(L.SceneYouAreIn, 13, _c.Note, Scene.Mono),
                 new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = _word },
                 new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0), Children = { new Border { CornerRadius = look.R(3), ClipToBounds = true, Child = _flag }, _sub } },
             },
         };
 
         _modeNote.TextWrapping = TextWrapping.Wrap;
-        _nodesCard = Card(_nodesTitle, _meter, Key("01 · серверы"), _nodesKey);
-        _modeCard = Card(_modeTitle, _modeNote, Key("02 · режим"), _modeKey);
-        var routeCard = Card(_routeTitle, Scene.Text("что идёт через VPN, а что напрямую", 12.5, _c.Note), Key("03 · через VPN"), Key("изменить ▾"));
+        _nodesCard = Card(_nodesTitle, _meter, Key(L.SceneKeyServers), _nodesKey);
+        _modeCard = Card(_modeTitle, _modeNote, Key(L.SceneKeyMode), _modeKey);
+        var routeCard = Card(_routeTitle, Scene.Text(L.SceneRouteHint, 12.5, _c.Note), Key(L.SceneKeyRoute), Key(L.SceneChangeArrow));
         _routeButton = Scene.Button(routeCard, null, _c.Text, 18, new Thickness(0));
         _routeButton.HorizontalAlignment = HorizontalAlignment.Stretch;
         _routeButton.Click += (_, _) => Actions.OpenRoute(_routeButton);
@@ -587,11 +587,11 @@ public sealed class StudioScene : EditionScene
         _browser = new ServerBrowser(palette, actions);
         _empty = new EmptyState(palette, actions, partner.Name);
         _account = new AccountPanel(palette, actions, null);
-        _accountCard = Card(Scene.Text($"Подписка {partner.Name}", 18, _c.Text), _account, Key("04 · подписка"), Key(""));
+        _accountCard = Card(Scene.Text(string.Format(L.SceneSubscriptionOf, partner.Name), 18, _c.Text), _account, Key(L.SceneKeyAccount), Key(""));
         _foreign = new ForeignNote(palette, actions);
         _heroLeft.Children.Add(_foreign);
         var top = new Grid { ColumnDefinitions = new("*,Auto") };
-        Put(top, Key("05 · серверы"), 0, 0);
+        Put(top, Key(L.SceneKeyList), 0, 0);
         Put(top, _serversCount, 0, 1);
         var serversGrid = new Grid { RowDefinitions = new("Auto,*,Auto"), RowSpacing = 12 };
         Put(serversGrid, top, 0, 0);
@@ -719,7 +719,7 @@ public sealed class StudioScene : EditionScene
         Scene.SetPill(_pill, _pillText, s.StateKind, s.StateLabel);
         _word.Text = s.Title.ToUpper(CultureInfo.CurrentUICulture);
         _flag.Source = V2pnConverters.Flag(s.CountryCode);
-        _sub.Text = string.Join(" · ", new[] { s.Subtitle, s.Subscription, s.Ping > 0 ? $"{s.Ping} мс" : null }.Where(t => t.IsNotEmpty()));
+        _sub.Text = string.Join(" · ", new[] { s.Subtitle, s.Subscription, s.Ping > 0 ? $"{s.Ping} {L.SceneMs}" : null }.Where(t => t.IsNotEmpty()));
         // The lamp is lit while the connection protects; dim otherwise, so the picture says the state too.
         _lamp.Opacity = s.Protected ? 1 : 0.35;
         _connectLabel.Text = s.ConnectLabel;
@@ -734,11 +734,11 @@ public sealed class StudioScene : EditionScene
         }
         _change.IsEnabled = s.Servers.Count > 0;
         _nodesKey.Text = s.NodesTotal > 0 ? $"{s.NodesOk}/{s.NodesTotal}" : "—";
-        _nodesTitle.Text = s.NodesTotal > 0 ? $"Отвечают {NodesText(s)}" : "Пинг не проверялся";
+        _nodesTitle.Text = s.NodesTotal > 0 ? string.Format(L.SceneAnsweringOf, NodesText(s)) : L.SceneNotPinged;
         _meter.Set(s.NodesOk, s.NodesTotal);
-        _modeKey.Text = s.Vpn ? "vpn" : "прокси";
-        _modeTitle.Text = s.Vpn ? "Весь компьютер" : "Браузеры и программы";
-        _modeNote.Text = s.Vpn ? "весь трафик через сервер" : "с системным прокси";
+        _modeKey.Text = s.Vpn ? "vpn" : L.SceneProxyLower;
+        _modeTitle.Text = s.Vpn ? L.SceneWholeComputer : L.SceneBrowsersApps;
+        _modeNote.Text = s.Vpn ? L.SceneAllThrough : L.SceneWithSystemProxy;
         _routeTitle.Text = s.Route;
         _serversCount.Text = s.Catalog.Count.ToString(CultureInfo.CurrentCulture);
         _account.Update(s.Account);
@@ -817,7 +817,7 @@ public sealed class AsciiScene : EditionScene
             {
                 Children =
                 {
-                    new TextBlock { Text = "карта V2pn · @ ваш сервер · * другие серверы", FontFamily = look.Text, FontSize = 11, Foreground = Scene.B(_c.Legend), TextTrimming = TextTrimming.CharacterEllipsis, [DockPanel.DockProperty] = Dock.Bottom },
+                    new TextBlock { Text = L.SceneMapLegend, FontFamily = look.Text, FontSize = 11, Foreground = Scene.B(_c.Legend), TextTrimming = TextTrimming.CharacterEllipsis, [DockPanel.DockProperty] = Dock.Bottom },
                     new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, Child = _map },
                 },
             },
@@ -838,10 +838,10 @@ public sealed class AsciiScene : EditionScene
         var routeButton = Scene.Button(_route, null, _c.Value, 2, new Thickness(0));
         routeButton.HorizontalAlignment = HorizontalAlignment.Left;
         routeButton.Click += (_, _) => Actions.OpenRoute(routeButton);
-        Row(0, "СЕРВЕР", _server);
-        Row(1, "СЕРВЕРЫ", _nodes);
-        Row(2, "РЕЖИМ", modeButton);
-        Row(3, "ЧЕРЕЗ VPN", routeButton);
+        Row(0, L.SceneKeyServer, _server);
+        Row(1, L.SceneKeyServersAscii, _nodes);
+        Row(2, L.SceneKeyModeAscii, modeButton);
+        Row(3, L.SceneKeyRouteAscii, routeButton);
 
         _connect = Scene.Button(_connectLabel, _c.ButtonFill, _c.ButtonText, 2, new Thickness(14, 9));
         _connect.Click += (_, _) => Actions.ToggleConnect();
@@ -855,7 +855,7 @@ public sealed class AsciiScene : EditionScene
         var palette = new ScenePalette(_c.Ground, _c.Raised, _c.Text, _c.Soft, _c.Muted, look.Accent, _c.Ground, 2, look.Text, Ascii: true, Good: good, Warn: warn, Bad: bad);
         _browser = new ServerBrowser(palette, actions);
         _empty = new EmptyState(palette, actions, partner.Name);
-        _account = new AccountPanel(palette, actions, $"ПОДПИСКА {partner.Name.ToUpperInvariant()}");
+        _account = new AccountPanel(palette, actions, string.Format(L.SceneSubscriptionAscii, partner.Name.ToUpperInvariant()));
         _foreign = new ForeignNote(palette, actions);
         Content = new Border { Background = Scene.B(_c.Ground), Child = _frame };
         Reflow(Fit.Wide);
@@ -904,12 +904,12 @@ public sealed class AsciiScene : EditionScene
         _last = s;
         Scene.SetPill(_pill, _pillText, s.StateKind, s.StateLabel);
         _ping.Text = s.Ping > 0 ? s.Ping.ToString(CultureInfo.InvariantCulture) : "—";
-        _pingNote.Text = s.Ping > 0 ? $"мс до {s.Subtitle}" : s.Subtitle;
+        _pingNote.Text = s.Ping > 0 ? string.Format(L.SceneMsTo, s.Subtitle) : s.Subtitle;
         _server.Text = s.Subscription.IsNotEmpty() ? $"{s.Subtitle} · {s.Subscription}" : s.Subtitle;
         var lit = s.NodesTotal > 0 ? (int)Math.Round(s.NodesOk * 14.0 / s.NodesTotal) : 0;
-        _nodes.Text = s.NodesTotal > 0 ? $"{new string('■', lit)}{new string('□', 14 - lit)}  {s.NodesOk}/{s.NodesTotal}" : "пинг не проверялся";
-        _mode.Text = s.Vpn ? "( ) прокси  (•) vpn" : "(•) прокси  ( ) vpn";
-        _route.Text = $"{s.Route.ToLower(CultureInfo.CurrentUICulture)}  [изменить]";
+        _nodes.Text = s.NodesTotal > 0 ? $"{new string('■', lit)}{new string('□', 14 - lit)}  {s.NodesOk}/{s.NodesTotal}" : L.SceneNotPingedAscii;
+        _mode.Text = s.Vpn ? L.SceneModeVpnAscii : L.SceneModeProxyAscii;
+        _route.Text = $"{s.Route.ToLower(CultureInfo.CurrentUICulture)}  {L.SceneChangeAscii}";
         _connectLabel.Text = $"[ {s.ConnectLabel.ToLower(CultureInfo.CurrentUICulture)} ]";
         _connect.IsEnabled = s.HasServer;
         _account.Update(s.Account);

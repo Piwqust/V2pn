@@ -333,7 +333,7 @@ public sealed partial class AppearanceView
                                 new Avalonia.Controls.Documents.LineBreak(),
                                 new Avalonia.Controls.Documents.Run(".:+##+:. @"),
                                 new Avalonia.Controls.Documents.LineBreak(),
-                                new Avalonia.Controls.Documents.Run("[ подкл ]"),
+                                new Avalonia.Controls.Documents.Run(L.SceneConnectAscii),
                             },
                         },
                     },

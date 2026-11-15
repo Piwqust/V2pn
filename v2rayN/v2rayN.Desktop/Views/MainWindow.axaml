@@ -88,27 +88,39 @@
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
-                <StackPanel
+                <!--  The name is also the edition switcher (MainWindow.Edition.cs): plain V2pn and each partner's look.
+                      Not clickable until a verified partner exists, so the title bar still drags the window there.  -->
+                <Button
+                    x:Name="btnEdition"
                     Grid.Column="1"
-                    Margin="4,0,0,0"
+                    Margin="0,0,0,0"
+                    Padding="6,0"
                     VerticalAlignment="Center"
+                    chrome:WindowDecorationProperties.ElementRole="User"
+                    Classes="ghost"
                     IsHitTestVisible="False"
-                    Orientation="Horizontal"
-                    Spacing="8">
-                    <Path
-                        Width="17"
-                        Height="18"
-                        VerticalAlignment="Center"
-                        Data="{StaticResource V2BrandFork}"
-                        Fill="{DynamicResource V2Accent}"
-                        Stretch="Uniform" />
-                    <TextBlock
-                        VerticalAlignment="Center"
-                        FontSize="13"
-                        FontWeight="SemiBold"
-                        Foreground="{DynamicResource V2InkSoft}"
-                        Text="{x:Static loc:L.AppName}" />
-                </StackPanel>
+                    Theme="{StaticResource V2Button}">
+                    <StackPanel
+                        x:Name="panelBrand"
+                        Orientation="Horizontal"
+                        Spacing="8">
+                        <Path
+                            x:Name="pathBrand"
+                            Width="17"
+                            Height="18"
+                            VerticalAlignment="Center"
+                            Data="{StaticResource V2BrandFork}"
+                            Fill="{DynamicResource V2Accent}"
+                            Stretch="Uniform" />
+                        <TextBlock
+                            x:Name="txtBrand"
+                            VerticalAlignment="Center"
+                            FontSize="13"
+                            FontWeight="SemiBold"
+                            Foreground="{DynamicResource V2InkSoft}"
+                            Text="{x:Static loc:L.AppName}" />
+                    </StackPanel>
+                </Button>
                 <Button
                     x:Name="btnNewUpdate"
                     chrome:WindowDecorationProperties.ElementRole="User"
@@ -1421,6 +1433,13 @@
                     </Panel>
                     </Border>
                 </Border>
+
+                <!--  A partner look with a layout of its own (cabinet, studio, ASCII) covers the sidebar and the
+                      stage; MainWindow.Edition.cs fills it and keeps it in step with the window.  -->
+                <ContentControl
+                    x:Name="editionHost"
+                    Grid.ColumnSpan="2"
+                    IsVisible="False" />
             </Grid>
 
             <!--  V2pn: the first-start walkthrough, over everything under the title bar (MainWindow.Onboarding.cs).  -->

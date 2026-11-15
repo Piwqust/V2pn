@@ -109,17 +109,48 @@ public static class Appearance
     /// <summary>Raised after a change was applied; the main window rearranges itself on it.</summary>
     public static event Action? Changed;
 
-    public static AppearancePalette Palette => Palettes.FirstOrDefault(p => p.Id == Current.Palette) ?? Palettes[0];
+    /// <summary>
+    /// Palettes only partner editions use (EditionLook): never offered on the Appearance page, so a person's own
+    /// choice is never one of them.
+    /// </summary>
+    public static readonly AppearancePalette[] EditionPalettes =
+    [
+        // Configra's warm near-black: a cabinet of ink and paper, not V2pn's blue-grey.
+        new("warm", 40, 0.07, 0.82, 1.00, Color.Parse("#171716"), Color.Parse("#F3F2EE")),
+    ];
 
-    public static Color AccentColor => Accents.FirstOrDefault(a => a.Id == Current.Accent) is { Id: not null } preset
+    private static Func<AppearanceSettings, AppearanceSettings>? _edition;
+    private static IReadOnlyDictionary<string, string>? _editionTokens;
+
+    /// <summary>
+    /// The settings in effect: the person's own, with a partner edition laid over them. Only <see cref="Current"/>
+    /// is stored; the edition never changes what the Appearance page shows or saves.
+    /// </summary>
+    public static AppearanceSettings Effective => _edition?.Invoke(Current.Clone()) ?? Current;
+
+    /// <summary>Lays a partner edition over the person's appearance, or takes it off (null). Applied live.</summary>
+    public static void SetEdition(Func<AppearanceSettings, AppearanceSettings>? edition, IReadOnlyDictionary<string, string>? darkTokens = null)
+    {
+        _edition = edition;
+        _editionTokens = darkTokens;
+        if (Application.Current is { } app)
+        {
+            Apply(app, Effective);
+        }
+        Changed?.Invoke();
+    }
+
+    public static AppearancePalette Palette => Palettes.Concat(EditionPalettes).FirstOrDefault(p => p.Id == Effective.Palette) ?? Palettes[0];
+
+    public static Color AccentColor => Accents.FirstOrDefault(a => a.Id == Effective.Accent) is { Id: not null } preset
         ? preset.Color
-        : Color.TryParse(Current.Accent, out var custom) ? custom : Accents[0].Color;
+        : Color.TryParse(Effective.Accent, out var custom) ? custom : Accents[0].Color;
 
     /// <summary>Applies the stored appearance; called once while the app starts.</summary>
     public static void Install(Application app)
     {
         Capture(app);
-        Apply(app, Current);
+        Apply(app, Effective);
     }
 
     /// <summary>Applies and stores a new appearance. The window updates live.</summary>
@@ -128,7 +159,7 @@ public static class Appearance
         _current = settings;
         if (Application.Current is { } app)
         {
-            Apply(app, settings);
+            Apply(app, Effective);
         }
         Save(settings);
         Changed?.Invoke();
@@ -171,6 +202,18 @@ public static class Appearance
             }
         }
 
+        // A partner's own colours for single tokens (its map, its ground), over the palette, in the dark theme only:
+        // its light theme still comes from the palette, so nothing turns unreadable.
+        if (_editionTokens != null)
+        {
+            var dark = dict.ThemeDictionaries.TryGetValue(ThemeVariant.Dark, out var existing) && existing is ResourceDictionary rd ? rd : new ResourceDictionary();
+            foreach (var (key, hex) in _editionTokens)
+            {
+                dark[key] = new SolidColorBrush(Color.Parse(hex));
+            }
+            dict.ThemeDictionaries[ThemeVariant.Dark] = dark;
+        }
+
         var scale = settings.Corners switch
         {
             "sharp" => 0.35,
@@ -190,13 +233,19 @@ public static class Appearance
         var ui = settings.Font switch
         {
             "segoe" => new FontFamily("Segoe UI Variable Text, Segoe UI, avares://V2pn/Assets/Fonts#Inter"),
+            // Partner editions only (Configra's type); falls back to Inter for anything Geist lacks.
+            "geist" => new FontFamily("avares://V2pn/Assets/Fonts#Geist, avares://V2pn/Assets/Fonts#Inter"),
             _ => null,
         };
         if (ui != null)
         {
             dict["V2UiFont"] = ui;
         }
-        if (settings.Headings == "serif")
+        if (settings.Headings == "geist")
+        {
+            dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Geist, avares://V2pn/Assets/Fonts#Inter");
+        }
+        else if (settings.Headings == "serif")
         {
             dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Spectral");
         }

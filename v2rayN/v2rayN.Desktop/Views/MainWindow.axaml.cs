@@ -2219,7 +2219,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void OnProgramStarted(object state, bool timeout)
     {
         Dispatcher.UIThread.Post(() =>
-                ShowHideWindow(true),
+            {
+                ShowHideWindow(true);
+                // A second start may have come from a click on a v2pn:// link.
+                _ = HandleStashedLinkAsync();
+            },
             DispatcherPriority.Default);
     }
 
@@ -2737,6 +2741,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             await AutoStartupHandler.MigrateAutostartArg(_config);
         });
         WarnAboutOpenLanProxyOnce();
+        _ = HandleStartupLinkAsync();
         if (V2pnImport.Imported is { } imported)
         {
             ShowToast(ToastKind.Success, string.Format(L.ImportDone, imported.Servers, imported.Subscriptions));

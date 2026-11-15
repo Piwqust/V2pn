@@ -78,23 +78,15 @@ public static partial class L
 
     public static string EditionVariantShort(string variant) => variant switch
     {
-        V2pnPartnerVariants.Signature => T("Signature", "Подпись"),
-        V2pnPartnerVariants.Theme => T("Branded", "Фирменный"),
-        V2pnPartnerVariants.Warm => T("Warm", "Тёплый"),
-        V2pnPartnerVariants.Cabinet => T("Cabinet", "Кабинет"),
-        V2pnPartnerVariants.Studio => T("Studio", "Студия"),
-        V2pnPartnerVariants.Ascii => T("ASCII", "ASCII"),
+        V2pnPartnerVariants.Pass => T("Pass", "Пропуск"),
+        V2pnPartnerVariants.Neon => T("Neon", "Неон"),
         _ => variant,
     };
 
     public static string EditionVariant(string variant) => variant switch
     {
-        V2pnPartnerVariants.Signature => T("Signature: V2pn with the logo", "Подпись: V2pn с логотипом"),
-        V2pnPartnerVariants.Theme => T("Branded: the provider's design", "Фирменный: дизайн провайдера"),
-        V2pnPartnerVariants.Warm => T("Warm: V2pn in its colours", "Тёплый: V2pn в его цветах"),
-        V2pnPartnerVariants.Cabinet => T("Cabinet", "Кабинет"),
-        V2pnPartnerVariants.Studio => T("Studio", "Студия"),
-        V2pnPartnerVariants.Ascii => T("ASCII", "ASCII"),
+        V2pnPartnerVariants.Pass => T("Pass: V2pn with the provider's card", "Пропуск: V2pn с картой провайдера"),
+        V2pnPartnerVariants.Neon => T("Neon: one column, like a phone app", "Неон: одна колонка, как в телефоне"),
         _ => variant,
     };
 }

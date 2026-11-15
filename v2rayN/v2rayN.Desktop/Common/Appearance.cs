@@ -255,18 +255,13 @@ public static class Appearance
             // Partner editions only (Configra's type); falls back to Inter for anything Geist lacks.
             "geist" => new FontFamily("avares://V2pn/Assets/Fonts#Geist, avares://V2pn/Assets/Fonts#Inter"),
             "geistmono" => new FontFamily("avares://V2pn/Assets/Fonts#Geist Mono, avares://V2pn/Assets/Fonts#Inter"),
-            // A provider theme's font from V2pn's bundled set.
-            _ => Views.EditionLooks.ThemeKit.FontOfId(settings.Font),
+            _ => null,
         };
         if (ui != null)
         {
             dict["V2UiFont"] = ui;
         }
-        if (Views.EditionLooks.ThemeKit.FontOfId(settings.Headings) is { } themeHeadings)
-        {
-            dict["V2DisplayFont"] = themeHeadings;
-        }
-        else if (settings.Headings == "geistmono")
+        if (settings.Headings == "geistmono")
         {
             dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Geist Mono, avares://V2pn/Assets/Fonts#Inter");
         }

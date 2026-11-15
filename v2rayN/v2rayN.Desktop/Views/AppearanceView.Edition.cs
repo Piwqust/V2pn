@@ -67,7 +67,6 @@ public sealed partial class AppearanceView
 
     private Control BuildEditionBody(V2pnPartner partner)
     {
-        var look = Editions.Variant;
         var body = new StackPanel { Margin = new Thickness(28, 6, 28, 24) };
         body.Children.Add(Group(partner.Name,
             Stacked(L.EditionApLook, LookCards()),
@@ -76,21 +75,6 @@ public sealed partial class AppearanceView
             Row(L.ApAccent, string.Format(L.EditionApAccentHint, partner.Name), EditionAccents(partner)),
             // Corners and type belong to the look; said once, instead of offering choices that break it.
             new Border { Classes = { "srow" }, Child = new TextBlock { Classes = { "srowhint" }, TextWrapping = TextWrapping.Wrap, Text = L.EditionApShapeNote } }));
-
-        // The warm look is V2pn's own layout in the partner's colours, so the layout settings work there too.
-        if (look == V2pnPartnerVariants.Warm)
-        {
-            body.Children.Add(Group(L.ApGrpLayout,
-                Row(L.ApSidebar, null, Segment([L.ApSideLeft, L.ApSideRight],
-                    s => s.SidebarSide == "right" ? 1 : 0, (s, i) => s.SidebarSide = i == 1 ? "right" : "left")),
-                Row(L.ApWidth, null, Segment([L.ApWidthNarrow, L.ApWidthNormal, L.ApWidthWide],
-                    s => Index(WidthIds, s.SidebarWidth, 1), (s, i) => s.SidebarWidth = WidthIds[i])),
-                Row(L.ApDensity, null, Segment([L.ApDensityComfortable, L.ApDensityCompact],
-                    s => s.Density == "compact" ? 1 : 0, (s, i) => s.Density = i == 1 ? "compact" : "comfortable")),
-                Row(L.ApMap, L.ApMapHint, Switch(s => s.ShowMap, (s, v) => s.ShowMap = v)),
-                Row(L.ApStatusCard, null, Switch(s => s.ShowStatusCard, (s, v) => s.ShowStatusCard = v)),
-                Row(L.ApSpeedChart, null, Switch(s => s.ShowSpeedChart, (s, v) => s.ShowSpeedChart = v))));
-        }
 
         body.Children.Add(Group(L.ApGrpMotion,
             Row(L.ApTextSize, L.EditionApTextSizeHint, FontSizeBox()),
@@ -234,114 +218,22 @@ public sealed partial class AppearanceView
         static IBrush B(string hex) => new SolidColorBrush(Color.Parse(hex));
         static Border Bar(IBrush fill, double width, double height = 5, double radius = 3) =>
             new() { Width = width, Height = height, CornerRadius = new CornerRadius(radius), Background = fill, HorizontalAlignment = HorizontalAlignment.Left };
-        var accentBrush = new SolidColorBrush(accent);
 
-        switch (look)
+        if (partner != null && V2pnPartnerVariants.All.Contains(look))
         {
-            case V2pnPartnerVariants.Theme:
-                // The provider's template in its own colours, light or dark as the app is now.
-                return ThemeKit.Preview(partner != null ? ThemeKit.Of(partner) : V2pnTheme.Default(null),
-                    Application.Current?.ActualThemeVariant != ThemeVariant.Light);
-            case V2pnPartnerVariants.Cabinet:
-            {
-                var grid = new Grid { RowDefinitions = new("*,*"), Background = B("#0E0E0D") };
-                grid.Children.Add(new Border
-                {
-                    Margin = new Thickness(4, 4, 4, 1),
-                    CornerRadius = new CornerRadius(6),
-                    Background = new LinearGradientBrush
-                    {
-                        StartPoint = new RelativePoint(0, 0, RelativeUnit.Relative),
-                        EndPoint = new RelativePoint(1, 1, RelativeUnit.Relative),
-                        GradientStops = { new GradientStop(Color.Parse("#ECEAE6"), 0), new GradientStop(Color.Parse("#EDAA80"), 1) },
-                    },
-                    Child = new StackPanel { Margin = new Thickness(6, 5), Spacing = 3, Children = { Bar(B("#121211"), 30, 4), Bar(accentBrush, 40, 3, 1) } },
-                });
-                var low = new Grid { ColumnDefinitions = new("*,*"), ColumnSpacing = 3, Margin = new Thickness(4, 1, 4, 4) };
-                low.Children.Add(new Border { CornerRadius = new CornerRadius(4), Background = B("#1C1B19") });
-                low.Children.Add(new Border { CornerRadius = new CornerRadius(4), Background = B("#1C1B19"), [Grid.ColumnProperty] = 1 });
-                Grid.SetRow(low, 1);
-                grid.Children.Add(low);
-                return grid;
-            }
-            case V2pnPartnerVariants.Studio:
-                return new Panel
-                {
-                    Background = B("#E2E2E0"),
-                    Children =
-                    {
-                        new StackPanel
-                        {
-                            Margin = new Thickness(8, 7),
-                            Spacing = 6,
-                            Children =
-                            {
-                                new Border
-                                {
-                                    Background = B("#1A1918"),
-                                    CornerRadius = new CornerRadius(8),
-                                    Padding = new Thickness(3),
-                                    HorizontalAlignment = HorizontalAlignment.Center,
-                                    Child = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 3, Children = { Bar(B("#3A3936"), 12, 6), Bar(accentBrush, 18, 6) } },
-                                },
-                                Bar(B("#121211"), 52, 8, 1),
-                                Bar(B("#8E8C86"), 34, 3),
-                            },
-                        },
-                    },
-                };
-            case V2pnPartnerVariants.Ascii:
-                return new Panel
-                {
-                    Background = B("#121211"),
-                    Children =
-                    {
-                        new TextBlock
-                        {
-                            Margin = new Thickness(7, 5),
-                            FontFamily = Scene.Mono,
-                            FontSize = 8.5,
-                            LineHeight = 10,
-                            Foreground = B("#6E6C66"),
-                            Inlines =
-                            {
-                                new Avalonia.Controls.Documents.Run("> v2pn  "),
-                                new Avalonia.Controls.Documents.Run("*") { Foreground = accentBrush },
-                                new Avalonia.Controls.Documents.LineBreak(),
-                                new Avalonia.Controls.Documents.Run(".:+##+:. @"),
-                                new Avalonia.Controls.Documents.LineBreak(),
-                                new Avalonia.Controls.Documents.Run(L.SceneConnectAscii),
-                            },
-                        },
-                    },
-                };
+            // The partner's look in its own colours, light or dark as the app is now.
+            return ThemeKit.Preview(look, ThemeKit.Of(partner), Application.Current?.ActualThemeVariant != ThemeVariant.Light);
         }
 
-        // V2pn's own layout: plain, signature (with the partner's logo) or warm (in the partner's colours).
-        var warm = look == V2pnPartnerVariants.Warm;
-        var ground = warm ? "#171716" : "#1C1C23";
-        var side = warm ? "#201F1D" : "#24242C";
-        var line = warm ? "#3A3833" : "#3A3A46";
-        var preview = new Grid { ColumnDefinitions = new("30,*"), Background = B(ground) };
-        preview.Children.Add(new Border { Background = B(side) });
+        // Plain V2pn.
+        var preview = new Grid { ColumnDefinitions = new("30,*"), Background = B("#1C1C23") };
+        preview.Children.Add(new Border { Background = B("#24242C") });
         var content = new StackPanel { Margin = new Thickness(7, 8), Spacing = 5 };
-        content.Children.Add(Bar(B(line), 40));
-        content.Children.Add(Bar(B(line), 26));
-        content.Children.Add(Bar(warm ? accentBrush : B("#FF3D1F"), 30, 9, 5));
+        content.Children.Add(Bar(B("#3A3A46"), 40));
+        content.Children.Add(Bar(B("#3A3A46"), 26));
+        content.Children.Add(Bar(B("#FF3D1F"), 30, 9, 5));
         Grid.SetColumn(content, 1);
         preview.Children.Add(content);
-        if (look == V2pnPartnerVariants.Signature && partner != null && Scene.Picture(partner, partner.Pack.Logo) is { } logo)
-        {
-            preview.Children.Add(new Image
-            {
-                Source = logo,
-                Height = 9,
-                Stretch = Stretch.Uniform,
-                Margin = new Thickness(4, 5),
-                HorizontalAlignment = HorizontalAlignment.Left,
-                VerticalAlignment = VerticalAlignment.Top,
-            });
-        }
         return preview;
     }
 }

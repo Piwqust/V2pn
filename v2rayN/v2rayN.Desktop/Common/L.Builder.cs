@@ -27,50 +27,35 @@ public static partial class L
 
     // ------------------------------------------------------------ colours
     public static string BuilderColours => T("Colours", "Цвета");
-    public static string BuilderBrand => T("Brand colours, 1 to 3. The first one is the accent and the brand area.", "Цвета бренда, от 1 до 3. Первый — акцент и цвет фирменной области.");
+    public static string BuilderBrand => T("Brand colours, 1 to 3. The first is the accent (Connect, the glow of Neon, the Pass card); the others colour Neon's ring.",
+        "Цвета бренда, от 1 до 3. Первый — акцент (кнопка, свечение «Неона», карта «Пропуска»), остальные красят кольцо «Неона».");
     public static string BuilderAddColour => T("+ Colour", "+ Цвет");
-    public static string BuilderTone => T("Tone of the grounds and cards", "Тон фона и карточек");
-    public static string BuilderColourHex => T("#RRGGBB", "#RRGGBB");
     public static string BuilderHue => T("Hue", "Оттенок");
     public static string BuilderSaturation => T("Saturation", "Насыщенность");
     public static string BuilderLightness => T("Lightness", "Яркость");
 
-    public static string BuilderToneName(string tone) => tone switch
-    {
-        V2pnThemeTones.Warm => T("Warm", "Тёплый"),
-        V2pnThemeTones.Cool => T("Cool", "Холодный"),
-        _ => T("Neutral", "Нейтральный"),
-    };
-
-    // ------------------------------------------------------------ layout
-    public static string BuilderTemplate => T("Main screen", "Главный экран");
-    public static string BuilderConnect => T("Connect button", "Кнопка подключения");
+    // ------------------------------------------------------------ looks
+    public static string BuilderLooks => T("Looks", "Виды");
+    public static string BuilderLooksHint => T("V2pn draws two looks in your colours; the person picks one on the Appearance page. Click the one your pack opens in.",
+        "V2pn рисует два вида в ваших цветах, человек выбирает на странице «Оформление». Нажмите тот, в котором пакет откроется.");
+    public static string BuilderConnect => T("Neon's Connect", "Кнопка «Неона»");
 
     public static string BuilderConnectName(string connect) => connect switch
     {
-        V2pnThemeConnect.Round => T("Round", "Круглая"),
-        V2pnThemeConnect.Capsule => T("Capsule", "Капсула"),
-        V2pnThemeConnect.Bar => T("Bar", "Полоса"),
-        _ => T("Toggle", "Переключатель"),
+        V2pnThemeConnect.Round => T("Round, with a ring", "Круглая с кольцом"),
+        _ => T("Switch in a row", "Переключатель в строке"),
     };
 
-    public static string BuilderFont => T("Font", "Шрифт");
-    public static string BuilderFontSample => T("Aa Бб 123", "Аа Bb 123");
-    public static string BuilderShape => T("Shape", "Форма");
-    public static string BuilderCorners => T("Corners", "Углы");
-    public static string BuilderDensity => T("Density", "Плотность");
+    public static string BuilderWindow => T("Neon's window", "Окно «Неона»");
+    public static string BuilderWindowHint => T("Mini opens Neon as a narrow window (380×640), like a phone at the edge of the screen; the person can widen it.",
+        "«Мини» открывает «Неон» узким окном 380×640, как телефон у края экрана; человек может его расширить.");
 
-    public static string BuilderCornersName(string corners) => corners switch
-    {
-        V2pnThemeCorners.Sharp => T("Sharp", "Острые"),
-        V2pnThemeCorners.Round => T("Round", "Круглые"),
-        _ => T("Soft", "Мягкие"),
-    };
+    public static string BuilderWindowName(string window) =>
+        window == V2pnThemeWindow.Mini ? T("Mini", "Мини") : T("As the person left it", "Как оставил человек");
 
-    public static string BuilderDensityName(string density) =>
-        density == V2pnThemeDensity.Compact ? T("Compact", "Плотная") : T("Normal", "Обычная");
-
-    public static string BuilderBackground => T("Background of the brand area", "Фон фирменной области");
+    public static string BuilderBackground => T("The Pass card", "Карта «Пропуска»");
+    public static string BuilderBackgroundHint => T("The card with the plan, the days left and the traffic at the bottom of the Pass look.",
+        "Карта с тарифом, сроком и трафиком внизу вида «Пропуск».");
 
     public static string BuilderBackgroundName(string kind) => kind switch
     {
@@ -80,25 +65,7 @@ public static partial class L
     };
 
     public static string BuilderStops => T("Gradient colours, 2 to 4, corner to corner", "Цвета градиента, от 2 до 4, из угла в угол");
-    public static string BuilderNoArea => T("The map template has no brand area: V2pn's map is its ground.", "У шаблона «Карта» нет фирменной области: её фон — карта V2pn.");
-    public static string BuilderBlocks => T("Blocks and their order", "Блоки и их порядок");
-    public static string BuilderBlocksHint => T("The server list is always there. A block shows when there is something for it.",
-        "Список серверов есть всегда. Блок появляется, когда для него есть данные.");
-    public static string BuilderAddBlock => T("Add:", "Добавить:");
-    public static string BuilderUp => T("Up", "Выше");
-    public static string BuilderDown => T("Down", "Ниже");
     public static string BuilderRemove => T("Remove", "Убрать");
-
-    public static string BuilderBlockName(string block) => block switch
-    {
-        V2pnThemeBlocks.Plan => T("Plan and term", "Тариф и срок"),
-        V2pnThemeBlocks.Traffic => T("Traffic", "Трафик"),
-        V2pnThemeBlocks.Servers => T("Server list", "Список серверов"),
-        V2pnThemeBlocks.Actions => T("Your buttons", "Ваши кнопки"),
-        V2pnThemeBlocks.Banner => T("Banner", "Баннер"),
-        V2pnThemeBlocks.News => T("News", "Новости"),
-        _ => T("Wide picture", "Широкая картинка"),
-    };
 
     // ------------------------------------------------------------ pictures
     public static string BuilderPictures => T("Pictures", "Картинки");
@@ -109,7 +76,6 @@ public static partial class L
     public static string BuilderPictureTooLarge => T("{0} is larger than 1 MB.", "{0} больше 1 МБ.");
     public static string BuilderPictureNotImage => T("{0} is not a PNG, JPEG or WebP.", "{0} — не PNG, JPEG и не WebP.");
     public static string BuilderPictureWrongSize => T("{0} is {1}×{2}; this place takes {3}.", "{0}: {1}×{2}, а сюда подходит {3}.");
-    public static string BuilderPictureNoPlace => T("The “{0}” template has no place for it.", "В шаблоне «{0}» для неё нет места.");
     public static string BuilderPictureTooMany => T("A pack holds at most 8 pictures.", "В пакете не больше 8 картинок.");
     public static string BuilderPictureEmpty => T("None", "Нет");
 
@@ -118,17 +84,13 @@ public static partial class L
         V2pnPackDraft.Pictures.Logo => T("Logo on dark", "Логотип на тёмном"),
         V2pnPackDraft.Pictures.LogoOnLight => T("Logo on light", "Логотип на светлом"),
         V2pnPackDraft.Pictures.Mark => T("Square mark", "Квадратный знак"),
-        V2pnPackDraft.Pictures.Hero => T("Illustration", "Иллюстрация"),
-        V2pnPackDraft.Pictures.Banner => T("Wide picture", "Широкая картинка"),
-        _ => T("Background picture", "Картинка фона"),
+        _ => T("Card picture", "Картинка карты"),
     };
 
     public static string BuilderSlotSize(string place) => place switch
     {
         V2pnPackDraft.Pictures.Logo or V2pnPackDraft.Pictures.LogoOnLight => T("2:1 to 8:1, 32–256 px tall", "от 2:1 до 8:1, высота 32–256 px"),
         V2pnPackDraft.Pictures.Mark => T("a square of 64–512 px", "квадрат 64–512 px"),
-        V2pnPackDraft.Pictures.Hero => T("200–1600 px a side, at most 2:1", "200–1600 px по стороне, не шире 2:1"),
-        V2pnPackDraft.Pictures.Banner => T("2:1 to 5:1, 400–2400 px wide", "от 2:1 до 5:1, ширина 400–2400 px"),
         _ => T("640–3200 px a side, at most 3:1", "640–3200 px по стороне, не шире 3:1"),
     };
 
@@ -205,28 +167,14 @@ public static partial class L
         {
             return $"{m.Groups[1].Value} похож на цвет состояния V2pn (защищено, внимание, не защищено): V2pn берёт {m.Groups[2].Value}";
         }
-        // V2pnThemeReader: what a template has no place for.
-        m = System.Text.RegularExpressions.Regex.Match(note, "^theme\\.blocks: the (\\w+) template has no place for \"(\\w+)\"; left out$");
+        // V2pnThemeReader: fields of the six-template themes.
+        m = System.Text.RegularExpressions.Regex.Match(note, "^theme\\.([\\w.]+) is no longer used");
         if (m.Success)
         {
-            return $"Для блока «{BuilderBlockName(m.Groups[2].Value)}» в шаблоне «{ThemeTemplate(m.Groups[1].Value)}» нет места: V2pn его пропустит, при сохранении он уйдёт из пакета";
-        }
-        m = System.Text.RegularExpressions.Regex.Match(note, "^theme\\.art\\.(\\w+): the (\\w+) template has (no picture slots|the slots [^;]*); ignored$");
-        if (m.Success)
-        {
-            var name = m.Groups[1].Value == V2pnThemeArt.Banner ? BuilderPictureName(V2pnPackDraft.Pictures.Banner) : BuilderPictureName(V2pnPackDraft.Pictures.Hero);
-            return $"Для картинки «{name}» в шаблоне «{ThemeTemplate(m.Groups[2].Value)}» нет места: V2pn её пропустит";
-        }
-        if (note.StartsWith("theme.background: the map template has no brand area", StringComparison.Ordinal))
-        {
-            return BuilderNoArea + " Фон пакета не используется.";
-        }
-        if (note.StartsWith("theme.blocks has \"art\" but theme.art.banner names no picture", StringComparison.Ordinal))
-        {
-            return $"Блок «{BuilderBlockName(V2pnThemeBlocks.Art)}» есть, а картинки для него нет: блок останется пустым";
+            return $"theme.{m.Groups[1].Value} больше не используется: V2pn сам раскладывает свои два вида; при сохранении поле уйдёт из пакета";
         }
         // V2pnPartnerSlots.Fit: a picture that does not fit its place.
-        m = System.Text.RegularExpressions.Regex.Match(note, "^(brand\\.logo|brand\\.logoOnLight|brand\\.mark|theme\\.art\\.hero|theme\\.art\\.banner|theme\\.background\\.art) (\\S+) is (\\d+)×(\\d+); ");
+        m = System.Text.RegularExpressions.Regex.Match(note, "^(brand\\.logo|brand\\.logoOnLight|brand\\.mark|theme\\.background\\.art) (\\S+) is (\\d+)×(\\d+); ");
         if (m.Success)
         {
             var place = m.Groups[1].Value switch
@@ -234,8 +182,6 @@ public static partial class L
                 "brand.logo" => V2pnPackDraft.Pictures.Logo,
                 "brand.logoOnLight" => V2pnPackDraft.Pictures.LogoOnLight,
                 "brand.mark" => V2pnPackDraft.Pictures.Mark,
-                "theme.art.hero" => V2pnPackDraft.Pictures.Hero,
-                "theme.art.banner" => V2pnPackDraft.Pictures.Banner,
                 _ => V2pnPackDraft.Pictures.Backdrop,
             };
             return $"{m.Groups[1].Value}: {m.Groups[2].Value} — {m.Groups[3].Value}×{m.Groups[4].Value}, а сюда подходит {BuilderSlotSize(place)}; V2pn её не покажет";

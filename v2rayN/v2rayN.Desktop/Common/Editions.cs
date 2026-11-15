@@ -19,6 +19,9 @@ public sealed class EditionSettings
 
     /// <summary>Partners whose look was already offered (the intro shows once per partner).</summary>
     public List<string> Introduced { get; set; } = [];
+
+    /// <summary>Partners whose Neon already opened the mini window once (theme.window "mini"); after that the window stays as the person leaves it.</summary>
+    public List<string> Minified { get; set; } = [];
 }
 
 /// <summary>A look's own appearance choices; null keeps what the partner's look has.</summary>
@@ -72,21 +75,21 @@ public static class Editions
 
     public static string Variant => Partner is { } partner ? VariantOf(partner) : string.Empty;
 
-    /// <summary>True when the open look replaces the sidebar and the map with a scene of its own.</summary>
-    public static bool IsScene => Variant is V2pnPartnerVariants.Cabinet or V2pnPartnerVariants.Studio or V2pnPartnerVariants.Ascii or V2pnPartnerVariants.Theme;
+    /// <summary>True when the open look (Neon) replaces the sidebar and the map with a scene of its own.</summary>
+    public static bool IsScene => Variant == V2pnPartnerVariants.Neon;
 
-    /// <summary>The open partner's theme while its theme look is open; null otherwise.</summary>
-    public static V2pnTheme? Theme => Partner is { } partner && Variant == V2pnPartnerVariants.Theme ? ThemeKit.Of(partner) : null;
+    /// <summary>The open partner's theme (both looks wear it: Neon all over, the Pass on its card); null for plain V2pn.</summary>
+    public static V2pnTheme? Theme => Partner is { } partner ? ThemeKit.Of(partner) : null;
 
     /// <summary>The colours of the open theme in the light or dark mode, with the accent the person picked.</summary>
     public static V2pnThemeColors? ThemeColors(bool dark) => Theme is { } theme ? V2pnThemePalette.Derive(theme, dark, AccentHex) : null;
 
-    /// <summary>True when a look other than the signature one is open: the Appearance page then tunes that look.</summary>
-    public static bool IsTuned => Partner != null && Variant != V2pnPartnerVariants.Signature;
+    /// <summary>True when Neon is open: the Appearance page then tunes it. The Pass keeps plain V2pn's appearance.</summary>
+    public static bool IsTuned => Partner != null && Variant == V2pnPartnerVariants.Neon;
 
     public static string VariantOf(V2pnPartner partner) =>
-        Settings.Variants.TryGetValue(partner.Id, out var chosen) && partner.Pack.Variants.Contains(chosen)
-            ? chosen
+        Settings.Variants.TryGetValue(partner.Id, out var chosen) && V2pnPartnerVariants.Normalize(chosen) is { } look && partner.Pack.Variants.Contains(look)
+            ? look
             : partner.Pack.DefaultVariant;
 
     /// <summary>The open look's tuning as the person left it (empty when untouched).</summary>
@@ -116,29 +119,13 @@ public static class Editions
         }
     }
 
-    // What each look is drawn with when the person has not changed it.
-    // A theme is drawn for light and dark alike, so it opens in the mode the person uses for plain V2pn.
-    public static string DefaultMode(string look) => look switch
-    {
-        V2pnPartnerVariants.Studio => "light",
-        V2pnPartnerVariants.Theme => PersonsMode(),
-        _ => "dark",
-    };
+    // What each look is drawn with when the person has not changed it. Neon is made dark first, as INCY is; the
+    // person may switch it to light. The Pass is plain V2pn and keeps the person's own settings.
+    public static string DefaultMode(string look) => look == V2pnPartnerVariants.Neon ? "dark" : PersonsMode();
 
-    public static string DefaultCorners(string look) => look switch
-    {
-        V2pnPartnerVariants.Cabinet or V2pnPartnerVariants.Studio => "round",
-        V2pnPartnerVariants.Ascii => "square",
-        V2pnPartnerVariants.Theme => ThemeKit.Corners(Theme?.Corners ?? V2pnThemeCorners.Soft),
-        _ => Appearance.Current.Corners,
-    };
+    public static string DefaultCorners(string look) => look == V2pnPartnerVariants.Neon ? "round" : Appearance.Current.Corners;
 
-    public static string DefaultFont(string look) => look switch
-    {
-        V2pnPartnerVariants.Ascii => "geistmono",
-        V2pnPartnerVariants.Theme => ThemeKit.FontId(Theme?.Font ?? V2pnThemeFonts.Default),
-        _ => "geist",
-    };
+    public static string DefaultFont(string look) => "geist";
 
     /// <summary>Light or dark as plain V2pn is: the person's own choice, or the system's when they follow it.</summary>
     private static string PersonsMode()
@@ -159,9 +146,8 @@ public static class Editions
     /// <summary>The open look's settings in effect: the person's tuning over the look's own.</summary>
     public static string Mode => Prefs.Mode ?? DefaultMode(Variant);
 
-    // Corners and type are part of what a look is (ASCII is monospaced and square, the cabinet round): free
-    // choices there multiplied the looks into combinations nobody had seen, and broke them. A look keeps its own.
-    // Older tuning files may still carry a choice; it is ignored.
+    // Corners and type are part of what a look is: free choices there multiplied the looks into combinations nobody
+    // had seen, and broke them. A look keeps its own. Older tuning files may still carry a choice; it is ignored.
     public static string Corners => DefaultCorners(Variant);
 
     public static string Font => DefaultFont(Variant);
@@ -316,11 +302,24 @@ public static class Editions
             _beforePreview = Settings.Partner;
         }
         Settings.Partner = preview.Id;
-        if (preview.Pack.Variants.Contains(V2pnPartnerVariants.Theme))
-        {
-            Settings.Variants[preview.Id] = V2pnPartnerVariants.Theme;
-        }
+        Settings.Variants[preview.Id] = preview.Pack.DefaultVariant;
         Apply();
+    }
+
+    /// <summary>
+    /// True once for each partner whose Neon asks for the mini window (theme.window "mini"), the first time it opens:
+    /// the window then goes mini; the next times it stays as the person left it.
+    /// </summary>
+    public static bool TakeMiniStart()
+    {
+        if (Partner is not { } partner || Variant != V2pnPartnerVariants.Neon || Theme?.Window != V2pnThemeWindow.Mini
+            || Settings.Minified.Contains(partner.Id))
+        {
+            return false;
+        }
+        Settings.Minified.Add(partner.Id);
+        Save();
+        return true;
     }
 
     /// <summary>Takes the preview away and opens the look that was open before it.</summary>
@@ -428,50 +427,26 @@ public static class Editions
         {
             return null;
         }
-        var look = Variant;
-        var accent = AccentHex;
         var corners = Corners;
         var font = Font;
-        if (ThemeColors(Mode == "dark") is { } theme)
+        if (ThemeColors(Mode == "dark") is not { } theme)
         {
-            // A theme dresses the dialogs and menus too: its neutrals, its accent, its shape, its font and density.
-            Appearance.ThemePalette = new AppearancePalette("theme", theme.NeutralHue, theme.NeutralSaturation, 0.9, 1.0, Color.Parse(theme.Ground), Color.Parse(theme.Ground));
-            var density = Theme!.Density;
-            return settings =>
-            {
-                settings.Palette = "theme";
-                settings.Accent = theme.Accent;
-                settings.Corners = corners;
-                settings.Font = font;
-                settings.Headings = font;
-                if (density == V2pnThemeDensity.Compact)
-                {
-                    settings.Density = "compact";
-                }
-                return settings;
-            };
+            return null;
         }
+        // Neon dresses the dialogs and menus too: its neutrals, its accent, its shape and its font.
+        Appearance.ThemePalette = new AppearancePalette("theme", theme.NeutralHue, theme.NeutralSaturation, 0.9, 1.0, Color.Parse(theme.Ground), Color.Parse(theme.Ground));
         return settings =>
         {
-            settings.Palette = look switch
-            {
-                V2pnPartnerVariants.Studio => "studio",
-                V2pnPartnerVariants.Ascii => "ink",
-                _ => "warm",
-            };
-            settings.Accent = accent;
+            settings.Palette = "theme";
+            settings.Accent = theme.Accent;
             settings.Corners = corners;
             settings.Font = font;
-            settings.Headings = font is "geist" or "geistmono" ? font : "inter";
+            settings.Headings = font;
             return settings;
         };
     }
 
-    /// <summary>
-    /// The looks' dark grounds: the window, the dialogs and menus, the map. The ASCII look is a terminal, flat black
-    /// with hairlines; the others share the partner's warm near-black.
-    /// </summary>
-    /// <summary>A theme's grounds for every window: the page, cards, menus and the map, from its derived colours.</summary>
+    /// <summary>Neon's grounds for every window: the page, cards, menus and the map, from its derived colours.</summary>
     private static IReadOnlyDictionary<string, string>? ThemeTokens(bool dark)
     {
         if (ThemeColors(dark) is not { } c)
@@ -509,82 +484,9 @@ public static class Editions
         };
     }
 
-    private static IReadOnlyDictionary<string, string>? DarkTokens()
-    {
-        if (Theme != null)
-        {
-            return ThemeTokens(dark: true);
-        }
-        if (!IsTuned)
-        {
-            return null;
-        }
-        var ascii = Variant == V2pnPartnerVariants.Ascii;
-        var (window, ground, dialog, card, muted, line, menu, menuLine) = ascii
-            ? ("#0C0C0B", "#121211", "#121211", "#121211", "#1C1B19", "#2E2D29", "#121211", "#3A3934")
-            : ("#0B0B0A", "#0E0E0D", "#171716", "#1C1B19", "#232321", "#2A2926", "#1C1B19", "#34312C");
-        return new Dictionary<string, string>
-        {
-            ["V2WindowBackground"] = window,
-            ["V2SidebarBackground"] = dialog,
-            ["V2ContentBackground"] = ground,
-            ["V2DialogBackground"] = dialog,
-            ["V2CardBackground"] = card,
-            ["V2CardMutedBackground"] = muted,
-            ["V2Border"] = line,
-            ["V2PanelBorder"] = line,
-            ["MenuFlyoutBackground"] = menu,
-            ["MenuFlyoutBorderBrush"] = menuLine,
-            ["FlyoutBackground"] = menu,
-            ["FlyoutBorderBrush"] = menuLine,
-            ["ComboBoxPopupBackground"] = menu,
-            ["ComboBoxPopupBorderBrush"] = menuLine,
-            ["NotificationCardBackground"] = menu,
-            ["NotificationCardBorderBrush"] = menuLine,
-            ["V2MapOcean"] = ground,
-            ["V2MapLand"] = ascii ? "#2A2926" : "#262421",
-            ["V2MapBorder"] = menuLine,
-            ["V2MapDot"] = AccentHex,
-            ["V2RowSelected"] = ascii ? "#22201C" : "#2A2420",
-            ["V2RowSelectedBorder"] = "#5A3A26",
-        };
-    }
+    private static IReadOnlyDictionary<string, string>? DarkTokens() => IsTuned ? ThemeTokens(dark: true) : null;
 
-    /// <summary>The looks' light grounds: studio grey with white cards for most, plain paper for the ASCII look.</summary>
-    private static IReadOnlyDictionary<string, string>? LightTokens()
-    {
-        if (Theme != null)
-        {
-            return ThemeTokens(dark: false);
-        }
-        if (!IsTuned)
-        {
-            return null;
-        }
-        var ascii = Variant == V2pnPartnerVariants.Ascii;
-        var (window, sidebar, card, muted, menu) = ascii
-            ? ("#ECEAE4", "#F3F2EE", "#F7F6F2", "#E7E5DF", "#F7F6F2")
-            : ("#E2E2E0", "#F4F3F0", "#FFFFFF", "#ECEBE8", "#FFFFFF");
-        return new Dictionary<string, string>
-        {
-            ["V2WindowBackground"] = window,
-            ["V2ContentBackground"] = window,
-            ["V2SidebarBackground"] = sidebar,
-            ["V2DialogBackground"] = sidebar,
-            ["V2CardBackground"] = card,
-            ["V2CardMutedBackground"] = muted,
-            ["V2FooterBackground"] = muted,
-            ["V2Primary"] = "#121211",
-            ["V2PrimaryHover"] = "#2E2D2B",
-            ["V2OnPrimary"] = "#F3F2EE",
-            ["MenuFlyoutBackground"] = menu,
-            ["FlyoutBackground"] = menu,
-            ["ComboBoxPopupBackground"] = menu,
-            ["NotificationCardBackground"] = menu,
-            ["TextBoxDefaultBackground"] = card,
-            ["ComboBoxSelectorBackground"] = card,
-        };
-    }
+    private static IReadOnlyDictionary<string, string>? LightTokens() => IsTuned ? ThemeTokens(dark: false) : null;
 
     private static string FilePath => Utils.GetConfigPath(FileName);
 
@@ -615,6 +517,7 @@ public static class Editions
                 Variants = Settings.Variants.Where(v => !V2pnPartners.IsPreview(v.Key)).ToDictionary(v => v.Key, v => v.Value),
                 Looks = Settings.Looks.Where(l => !l.Key.StartsWith(V2pnPartners.PreviewId + ":", StringComparison.Ordinal)).ToDictionary(l => l.Key, l => l.Value),
                 Introduced = Settings.Introduced.Where(id => !V2pnPartners.IsPreview(id)).ToList(),
+                Minified = Settings.Minified.Where(id => !V2pnPartners.IsPreview(id)).ToList(),
             };
             File.WriteAllText(FilePath, JsonSerializer.Serialize(kept, EditionJson.Default.EditionSettings));
         }

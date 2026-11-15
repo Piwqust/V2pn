@@ -3,183 +3,6 @@ using Avalonia.Layout;
 
 namespace v2rayN.Desktop.Views.EditionLooks;
 
-/// <summary>The colours a connect control is drawn with on the ground it stands on.</summary>
-/// <param name="Fill">Its fill (the brand's action colour); <paramref name="Label"/> reads on it.</param>
-/// <param name="Outer">Text beside or under it, on the ground.</param>
-/// <param name="Track">A switch that is off.</param>
-public sealed record ConnectInk(string Fill, string Label, string Outer, string Track, string Good, string Warn, string Checking);
-
-/// <summary>
-/// The theme's connect control: round, capsule, bar or toggle. Its shape is the provider's; what it does and the state
-/// colours are V2pn's (the protected green, attention amber), the same as everywhere else in the app.
-/// </summary>
-public sealed class ThemeConnect : UserControl
-{
-    private readonly string _style;
-    private readonly ConnectInk _ink;
-    private readonly IEditionActions _actions;
-    private readonly Button _button;
-    private readonly Border _fill;
-    private readonly TextBlock _label;
-    private readonly TextBlock _caption;
-    private readonly Ellipse _dot = new() { Width = 9, Height = 9, StrokeThickness = 2 };
-    private readonly Ellipse _ring = new() { StrokeThickness = 3, IsHitTestVisible = false };
-    private readonly Avalonia.Controls.Shapes.Path _power;
-    private readonly Border _thumb = new();
-    private double _scale = 1;
-    private EditionSnapshot? _last;
-
-    public ThemeConnect(string style, ConnectInk ink, IEditionActions actions, FontFamily font)
-    {
-        _style = style;
-        _ink = ink;
-        _actions = actions;
-        _label = Scene.Text("", 15, ink.Label, font, FontWeight.SemiBold);
-        _caption = Scene.Text("", 15, ink.Outer, font, FontWeight.SemiBold);
-        _caption.HorizontalAlignment = HorizontalAlignment.Center;
-        _power = Scene.Power(ink.Label, 18);
-        _dot.Stroke = Scene.B(ink.Label);
-
-        Control content = style switch
-        {
-            V2pnThemeConnect.Round => _power,
-            V2pnThemeConnect.Toggle => _thumb,
-            _ => new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { _dot, _power, _label } },
-        };
-        _button = Scene.Button(content, ink.Fill, ink.Label, 14, default);
-        _fill = (Border)_button.Content!;
-        _button.Click += (_, _) => _actions.ToggleConnect();
-
-        switch (style)
-        {
-            case V2pnThemeConnect.Round:
-                _power.HorizontalAlignment = HorizontalAlignment.Center;
-                Content = new StackPanel
-                {
-                    Spacing = 12,
-                    HorizontalAlignment = HorizontalAlignment.Center,
-                    Children = { new Panel { HorizontalAlignment = HorizontalAlignment.Center, Children = { _ring, _button } }, _caption },
-                };
-                break;
-            case V2pnThemeConnect.Toggle:
-                _fill.Child = _thumb;
-                Content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 14, Children = { _button, _caption } };
-                _caption.HorizontalAlignment = HorizontalAlignment.Left;
-                break;
-            default:
-                Content = _button;
-                break;
-        }
-        Resize(1);
-    }
-
-    /// <summary>The connect control is as wide as its place (a bar always is).</summary>
-    public bool Stretch
-    {
-        set
-        {
-            if (_style is V2pnThemeConnect.Bar or V2pnThemeConnect.Capsule)
-            {
-                _button.HorizontalAlignment = value ? HorizontalAlignment.Stretch : HorizontalAlignment.Left;
-            }
-        }
-    }
-
-    /// <summary>The label under a round button or beside a switch; off where the row around it says it already.</summary>
-    public bool ShowCaption
-    {
-        set => _caption.IsVisible = value;
-    }
-
-    /// <summary>Grows or shrinks the control with the window (1 is the wide window's size).</summary>
-    public void Resize(double scale)
-    {
-        _scale = scale;
-        switch (_style)
-        {
-            case V2pnThemeConnect.Round:
-            {
-                var size = Math.Round(148 * scale);
-                _button.Width = _button.Height = size;
-                _button.CornerRadius = new CornerRadius(size / 2);
-                _fill.CornerRadius = new CornerRadius(size / 2);
-                _ring.Width = _ring.Height = size + 14;
-                _ring.HorizontalAlignment = HorizontalAlignment.Center;
-                _ring.VerticalAlignment = VerticalAlignment.Center;
-                _power.Width = _power.Height = Math.Round(size * 0.3);
-                _power.StrokeThickness = Math.Max(2.4, size / 34);
-                _caption.FontSize = scale < 0.85 ? 14 : 16;
-                break;
-            }
-            case V2pnThemeConnect.Capsule:
-                _button.Height = Math.Round(50 * Math.Max(scale, 0.92));
-                _button.CornerRadius = new CornerRadius(999);
-                _fill.CornerRadius = new CornerRadius(999);
-                _fill.Padding = new Thickness(26, 0);
-                _button.MinWidth = 200;
-                break;
-            case V2pnThemeConnect.Bar:
-                _button.Height = Math.Round(54 * Math.Max(scale, 0.9));
-                _fill.Padding = new Thickness(20, 0);
-                _button.HorizontalAlignment = HorizontalAlignment.Stretch;
-                break;
-            case V2pnThemeConnect.Toggle:
-            {
-                var height = Math.Round(40 * Math.Max(scale, 0.85));
-                _button.Width = Math.Round(height * 1.8);
-                _button.Height = height;
-                _button.CornerRadius = new CornerRadius(height / 2);
-                _fill.CornerRadius = new CornerRadius(height / 2);
-                _fill.Padding = new Thickness(4);
-                _thumb.Width = _thumb.Height = height - 8;
-                _thumb.CornerRadius = new CornerRadius((height - 8) / 2);
-                _thumb.VerticalAlignment = VerticalAlignment.Center;
-                _caption.VerticalAlignment = VerticalAlignment.Center;
-                break;
-            }
-        }
-        if (_last != null)
-        {
-            Update(_last);
-        }
-    }
-
-    public void Update(EditionSnapshot s)
-    {
-        _last = s;
-        var on = s.ConnectLabel != L.Connect;
-        var state = s.StateKind switch
-        {
-            "safe" => _ink.Good,
-            "warn" => _ink.Warn,
-            "checking" => _ink.Checking,
-            _ => null,
-        };
-        _label.Text = s.ConnectLabel;
-        _caption.Text = s.ConnectLabel;
-        _button.IsEnabled = s.HasServer;
-        Avalonia.Automation.AutomationProperties.SetName(_button, s.ConnectLabel);
-        ToolTip.SetTip(_button, s.StateLabel);
-        _dot.IsVisible = state != null;
-        if (state != null)
-        {
-            _dot.Fill = Scene.B(state);
-        }
-        switch (_style)
-        {
-            case V2pnThemeConnect.Round:
-                // V2pn's state as a ring around the provider's button: green while it protects.
-                _ring.Stroke = state == null ? Brushes.Transparent : Scene.B(state);
-                break;
-            case V2pnThemeConnect.Toggle:
-                _fill.Background = Scene.B(on ? state ?? _ink.Checking : _ink.Track);
-                _thumb.Background = Scene.B(on ? "#FFFFFF" : _ink.Fill);
-                _thumb.HorizontalAlignment = on ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-                break;
-        }
-    }
-}
-
 /// <summary>Proxy or VPN: two halves, the one in use filled with the ink of the page.</summary>
 public sealed class ThemeSegment : UserControl
 {
@@ -250,8 +73,14 @@ public sealed class ThemeBlock : UserControl
     private SceneAccount? _account;
     private double _fraction;
 
+    public const string Plan = "plan";
+    public const string Traffic = "traffic";
+    public const string Actions = "actions";
+    public const string Banner = "banner";
+    public const string News = "news";
+
     /// <param name="fill">The card's fill; <paramref name="fieldFill"/> is for the buttons and the bar's track inside it.</param>
-    public ThemeBlock(string kind, V2pnThemeColors c, string fill, string fieldFill, FontFamily font, IEditionActions actions, Bitmap? picture, Func<double, CornerRadius> r)
+    public ThemeBlock(string kind, V2pnThemeColors c, string fill, string fieldFill, FontFamily font, IEditionActions actions, Func<double, CornerRadius> r)
     {
         _kind = kind;
         _c = c;
@@ -283,42 +112,31 @@ public sealed class ThemeBlock : UserControl
 
         switch (kind)
         {
-            case V2pnThemeBlocks.Plan:
+            case Plan:
                 _body.Children.Add(_a);
                 _body.Children.Add(_b);
                 _body.Children.Add(_cText);
                 break;
-            case V2pnThemeBlocks.Traffic:
+            case Traffic:
                 _body.Children.Add(_b);
                 _body.Children.Add(_barTrack);
                 break;
-            case V2pnThemeBlocks.Actions:
+            case Actions:
                 _body.Children.Add(_buttons);
                 break;
-            case V2pnThemeBlocks.Banner:
+            case Banner:
                 _body.Spacing = 10;
                 _body.Children.Add(_a);
                 _body.Children.Add(_banner);
                 _a.FontSize = 13.5;
                 break;
-            case V2pnThemeBlocks.News:
+            case News:
                 _body.Children.Add(_b);
                 _body.Children.Add(_link);
                 break;
-            case V2pnThemeBlocks.Art:
-                if (picture != null)
-                {
-                    _body.Children.Add(new Border
-                    {
-                        CornerRadius = r(12),
-                        ClipToBounds = true,
-                        Child = new Image { Source = picture, Stretch = Stretch.UniformToFill, MaxHeight = 180 },
-                    });
-                }
-                break;
         }
         Content = _body;
-        IsVisible = kind == V2pnThemeBlocks.Art && picture != null;
+        IsVisible = false;
     }
 
     private static TextBlock Wrap(TextBlock text)
@@ -343,7 +161,7 @@ public sealed class ThemeBlock : UserControl
         _account = account;
         switch (_kind)
         {
-            case V2pnThemeBlocks.Plan:
+            case Plan:
             {
                 _a.Text = account?.Plan ?? string.Empty;
                 _a.IsVisible = account?.Plan != null;
@@ -355,7 +173,7 @@ public sealed class ThemeBlock : UserControl
                 IsVisible = _a.IsVisible || _b.IsVisible || _cText.IsVisible;
                 break;
             }
-            case V2pnThemeBlocks.Traffic:
+            case Traffic:
                 _b.Text = account?.Traffic ?? string.Empty;
                 _barTrack.IsVisible = account?.ShowBar == true;
                 _fraction = Math.Clamp(account?.Fraction ?? 0, 0, 1);
@@ -363,11 +181,11 @@ public sealed class ThemeBlock : UserControl
                 _bar.Background = Scene.B(account?.Bad == true ? _c.Bad : account?.Warn == true ? _c.Warn : _c.Secondary);
                 IsVisible = account?.Traffic != null;
                 break;
-            case V2pnThemeBlocks.Actions:
+            case Actions:
                 UpdateButtons(s.Actions, s.ActionRunning);
                 IsVisible = s.Actions.Count > 0;
                 break;
-            case V2pnThemeBlocks.Banner:
+            case Banner:
             {
                 _a.Text = account?.Incident ?? string.Empty;
                 _a.IsVisible = account?.Incident != null;
@@ -389,7 +207,7 @@ public sealed class ThemeBlock : UserControl
                 IsVisible = _a.IsVisible || _banner.IsVisible;
                 break;
             }
-            case V2pnThemeBlocks.News:
+            case News:
                 _b.Text = account?.Announce ?? string.Empty;
                 _link.IsVisible = account?.AnnounceUrl != null;
                 IsVisible = account?.Announce != null;
@@ -421,93 +239,6 @@ public sealed class ThemeBlock : UserControl
             var id = action.Id;
             button.Click += (_, _) => _actions.RunAction(id, button);
             _buttons.Children.Add(button);
-        }
-    }
-}
-
-/// <summary>
-/// A theme's column of parts: they stack top to bottom at their own height, except one (the server list) that takes
-/// what the window leaves, never less than its minimum; when that does not fit, the whole column scrolls.
-/// </summary>
-public sealed class ThemeStack : ScrollViewer
-{
-    private readonly FillPanel _panel = new();
-
-    public ThemeStack(double spacing, double fillMin, Thickness margin)
-    {
-        HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled;
-        VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto;
-        _panel.Spacing = spacing;
-        _panel.FillMin = fillMin;
-        _panel.Margin = margin;
-        Content = _panel;
-        SizeChanged += (_, e) =>
-        {
-            var viewport = Math.Max(0, e.NewSize.Height - margin.Top - margin.Bottom);
-            if (Math.Abs(viewport - _panel.Viewport) > 0.5)
-            {
-                _panel.Viewport = viewport;
-                _panel.InvalidateMeasure();
-            }
-        };
-    }
-
-    public Avalonia.Controls.Controls Parts => _panel.Children;
-
-    /// <summary>The part that fills the rest; null stacks every part at its own height.</summary>
-    public Control? Fill
-    {
-        get => _panel.Fill;
-        set
-        {
-            _panel.Fill = value;
-            _panel.InvalidateMeasure();
-        }
-    }
-
-    private sealed class FillPanel : Panel
-    {
-        public double Spacing { get; set; }
-        public double FillMin { get; set; }
-        public double Viewport { get; set; }
-        public Control? Fill { get; set; }
-
-        private double FillHeight(IReadOnlyList<Control> parts, double used) =>
-            Fill != null && parts.Contains(Fill) ? Math.Floor(Math.Max(FillMin, Viewport - used)) : 0;
-
-        protected override Size MeasureOverride(Size availableSize)
-        {
-            var parts = Children.Where(c => c.IsVisible).ToList();
-            var width = availableSize.Width;
-            double used = 0;
-            foreach (var part in parts.Where(p => p != Fill))
-            {
-                part.Measure(new Size(width, double.PositiveInfinity));
-                used += part.DesiredSize.Height;
-            }
-            used += Math.Max(0, parts.Count - 1) * Spacing;
-            var fill = FillHeight(parts, used);
-            if (Fill != null && parts.Contains(Fill))
-            {
-                Fill.Measure(new Size(width, fill));
-            }
-            var desiredWidth = double.IsInfinity(width) ? parts.Select(p => p.DesiredSize.Width).DefaultIfEmpty(0).Max() : width;
-            return new Size(desiredWidth, used + fill);
-        }
-
-        protected override Size ArrangeOverride(Size finalSize)
-        {
-            var parts = Children.Where(c => c.IsVisible).ToList();
-            var used = parts.Where(p => p != Fill).Sum(p => p.DesiredSize.Height) + (Math.Max(0, parts.Count - 1) * Spacing);
-            var fill = Fill != null && parts.Contains(Fill) ? Math.Max(FillMin, finalSize.Height - used) : 0;
-            double y = 0;
-            foreach (var part in parts)
-            {
-                var height = part == Fill ? fill : part.DesiredSize.Height;
-                part.Arrange(new Rect(0, y, finalSize.Width, height));
-                y += height + Spacing;
-            }
-            return finalSize;
         }
     }
 }

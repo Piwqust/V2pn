@@ -12,6 +12,8 @@ namespace v2rayN.Desktop.Views;
 public partial class MainWindow : IEditionActions
 {
     private EditionScene? _scene;
+    private PassCard? _passCard;
+    private string? _passKey;
     private string? _sceneKey;
     private DispatcherTimer? _sceneTimer;
     private IReadOnlyList<SceneServer> _catalog = [];
@@ -142,7 +144,7 @@ public partial class MainWindow : IEditionActions
     /// <summary>"V2pn × Configra" for the looks on V2pn's layout, "Configra на V2pn" for the partner's own; else V2pn.</summary>
     private static string EditionTitle() => Editions.Partner is not { } partner
         ? L.AppName
-        : Editions.Variant is V2pnPartnerVariants.Signature or V2pnPartnerVariants.Warm
+        : Editions.Variant == V2pnPartnerVariants.Pass
             ? $"{L.AppName} × {partner.Name}"
             : string.Format(L.EditionTitleOn, partner.Name, L.AppName);
 
@@ -201,29 +203,28 @@ public partial class MainWindow : IEditionActions
         UpdateLockup(partner, variant);
 
         // The look as the person tuned it on the Appearance page; any change there builds the scene again.
-        // A theme is drawn for its own corners: the person's tuning of other looks never rescales it.
         var theme = Editions.Theme;
-        var look = new SceneLook(Editions.Mode != "light", Editions.AccentHex, Editions.Corners, theme != null ? "normal" : Editions.DefaultCorners(variant), Editions.Font);
+        var look = new SceneLook(Editions.Mode != "light", Editions.AccentHex, Editions.Corners, "normal", Editions.Font);
         // The folder too: the theme builder's preview comes back from another folder whenever it changes.
         var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}:{look}:{theme?.Key}:{partner.Folder}" : null;
         if (key != _sceneKey)
         {
             _sceneKey = key;
             Scene.Current = look;
-            _scene = key == null ? null : variant switch
-            {
-                V2pnPartnerVariants.Cabinet => new CabinetScene(partner!, this, look),
-                V2pnPartnerVariants.Studio => new StudioScene(partner!, this, look),
-                V2pnPartnerVariants.Theme => new ThemeScene(partner!, this, look, theme!, Editions.ThemeColors(look.Dark)!),
-                _ => new AsciiScene(partner!, this, look),
-            };
+            _scene = key == null ? null : new NeonScene(partner!, this, look, theme!, Editions.ThemeColors(look.Dark)!);
             editionHost.Content = _scene;
         }
+        RefreshPassCard(partner, variant);
         RefreshSceneVisibility();
+        // A partner's Neon made for the mini window opens in it the first time; the person may widen it after.
+        if (_tier != BodyTier.Stacked && Editions.TakeMiniStart())
+        {
+            Dispatcher.UIThread.Post(() => _ = SnapAsync(), DispatcherPriority.Background);
+        }
         PushEditionSnapshot();
         PlayEditionReveal();
 
-        if (_scene != null)
+        if (_scene != null || _passCard != null)
         {
             _sceneTimer ??= new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) =>
             {
@@ -294,7 +295,7 @@ public partial class MainWindow : IEditionActions
             logo.MaxWidth = 90;
             ((TextBlock)logo).TextTrimming = TextTrimming.CharacterEllipsis;
         }
-        if (variant is V2pnPartnerVariants.Signature or V2pnPartnerVariants.Warm)
+        if (variant == V2pnPartnerVariants.Pass)
         {
             panelBrand.Children.Add(new TextBlock { Text = "×", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
             panelBrand.Children.Add(logo);
@@ -445,7 +446,7 @@ public partial class MainWindow : IEditionActions
     /// <summary>Every server V2pn has, in the plain list's order, with its last ping and favourite mark.</summary>
     private async Task RefreshEditionCatalogAsync()
     {
-        if (_catalogBusy || _scene == null)
+        if (_catalogBusy || (_scene == null && _passCard == null))
         {
             return;
         }
@@ -548,7 +549,7 @@ public partial class MainWindow : IEditionActions
 
     private void PushEditionSnapshot()
     {
-        if (_scene == null)
+        if (_scene == null && _passCard == null)
         {
             return;
         }
@@ -598,13 +599,14 @@ public partial class MainWindow : IEditionActions
                 incident?.Severe == true,
                 // The announce-url belongs to the panel's announcement, not to the API's note.
                 NonEmpty(api?.Note) == null ? NonEmpty(info?.AnnounceUrl) : null,
-                V2pnSubDefaults.Banner(info, DateTimeOffset.Now));
+                V2pnSubDefaults.Banner(info, DateTimeOffset.Now),
+                usage?.DaysLeft ?? (api?.Until is { } end ? Math.Max(0, end.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber) : null));
         }
         // The partner's own checks of its servers say more than V2pn's pings from one computer.
         var byPartner = api is { Healthy: { } partnerOk, Total: { } partnerTotal } && partnerTotal > 0;
 
         var state = CurrentState();
-        _scene.Update(DebugOverrides.Apply(new EditionSnapshot
+        var snapshot = DebugOverrides.Apply(new EditionSnapshot
         {
             StateKind = kind,
             StateLabel = AutomationProperties.GetName(txtStatePill) ?? txtStatePill.Text ?? string.Empty,
@@ -634,7 +636,45 @@ public partial class MainWindow : IEditionActions
             Account = account is { IsEmpty: false } ? account : null,
             Actions = partner?.Pack.ActionList ?? [],
             ActionRunning = RunningAction(partner),
-        }));
+        });
+        _scene?.Update(snapshot);
+        _passCard?.Update(snapshot.Account, partner?.Name ?? string.Empty);
+        UpdatePassPlace();
+    }
+
+    /// <summary>
+    /// The Pass: the partner's card on V2pn's own stage, over the status card. Built again when the partner, its
+    /// theme or light and dark change; gone in plain V2pn and in Neon.
+    /// </summary>
+    private void RefreshPassCard(V2pnPartner? partner, string variant)
+    {
+        var light = ActualThemeVariant == ThemeVariant.Light;
+        var key = partner != null && variant == V2pnPartnerVariants.Pass ? $"{partner.Id}:{Editions.Theme?.Key}:{light}:{partner.Folder}" : null;
+        if (key == _passKey)
+        {
+            return;
+        }
+        _passKey = key;
+        _passCard = key == null || Editions.ThemeColors(!light) is not { } colours
+            ? null
+            : new PassCard(partner!, colours, url => ((IEditionActions)this).OpenUrl(url));
+        passHost.Content = _passCard;
+        if (_passCard != null)
+        {
+            PushEditionSnapshot();
+        }
+    }
+
+    /// <summary>The card sits just over the status card (or at the stage's bottom without it), wide or stacked as the stage allows.</summary>
+    private void UpdatePassPlace()
+    {
+        if (_passCard == null)
+        {
+            return;
+        }
+        var status = contentStatusBarView.IsVisible && contentStatusBarView.Bounds.Height > 0 ? contentStatusBarView.Bounds.Height + 12 : 0;
+        passHost.Margin = new Thickness(16, 0, 16, 16 + status);
+        _passCard.Arrange(wide: passHost.Bounds.Width >= 540 || (passHost.Bounds.Width == 0 && _tier != BodyTier.Stacked));
     }
 
     private static string? NonEmpty(string? text) => text.IsNullOrEmpty() ? null : text;

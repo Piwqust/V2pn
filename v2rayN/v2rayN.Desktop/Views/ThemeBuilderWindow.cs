@@ -9,7 +9,7 @@ namespace v2rayN.Desktop.Views;
 
 /// <summary>
 /// The theme builder: a provider assembles its theme (V2pnTheme) from V2pn's parts in a form and sees it at once, drawn by
-/// the real theme look (ThemeScene) on made-up data, mini to wide, light and dark, with what V2pn changed for contrast and
+/// the real look (Neon, or the Pass card) on made-up data, mini to wide, light and dark, with what V2pn changed for contrast and
 /// what it left out. It opens and saves a pack folder (partner.json with its assets, and the pictures), signs it with the
 /// provider's key through the code tools/partner.cs uses, writes the certificate request, and can dress this running V2pn
 /// in the unsigned theme as a marked preview. Developer mode only; no certificate needed.
@@ -181,21 +181,39 @@ public sealed partial class ThemeBuilderWindow : Window
         }
         var theme = ThemeKit.Of(_partner);
         var accent = V2pnThemePalette.AwayFromState(V2pnColor.TryParse(theme.Brand.FirstOrDefault()) ?? V2pnColor.Parse(V2pnThemePalette.FallbackBrand)).Hex;
-        var look = new SceneLook(_dark, accent, ThemeKit.Corners(theme.Corners), "normal", ThemeKit.FontId(theme.Font));
+        var look = new SceneLook(_dark, accent, "round", "normal", "geist");
         var colours = V2pnThemePalette.Derive(theme, _dark, accent);
         // The scene's helpers read the look being built; the main window's own look is put back at once.
         var before = Scene.Current;
         Scene.Current = look;
         try
         {
-            var scene = new ThemeScene(_partner, _actions, look, theme, colours);
-            scene.Update(BuilderSample.Snapshot(_partner));
             var (width, height) = _size switch
             {
                 PreviewSize.Mini => (380, 640),
                 PreviewSize.Medium => (820, 700),
                 _ => (1280, 800),
             };
+            var sample = BuilderSample.Snapshot(_partner);
+            Control scene;
+            if (_draft.DefaultLook == V2pnPartnerVariants.Pass)
+            {
+                // The Pass is V2pn's own window with the card on it: the card is what the pack decides, shown at the stage's width.
+                var card = new PassCard(_partner, colours, _ => { });
+                card.Update(sample.Account, _partner.Name);
+                card.Arrange(wide: width >= 700);
+                scene = new Panel
+                {
+                    Background = new SolidColorBrush(Color.Parse(colours.Raised)),
+                    Children = { new Border { Margin = new Thickness(16), VerticalAlignment = VerticalAlignment.Bottom, Child = card } },
+                };
+            }
+            else
+            {
+                var neon = new NeonScene(_partner, _actions, look, theme, colours);
+                neon.Update(sample);
+                scene = neon;
+            }
             _frame.Width = width;
             _frame.Height = height;
             _frame.Background = new SolidColorBrush(Color.Parse(colours.Ground));
@@ -211,7 +229,7 @@ public sealed partial class ThemeBuilderWindow : Window
             Scene.Current = before;
         }
         RefreshNotes(theme);
-        RefreshTemplates(theme);
+        RefreshLooks(theme);
         RefreshActionNotes();
     }
 
@@ -322,7 +340,7 @@ public sealed partial class ThemeBuilderWindow : Window
         }
         try
         {
-            var removed = _draft.FitTemplate();
+            var removed = _draft.Tidy();
             Directory.CreateDirectory(folder);
             var previous = V2pnPackWriter.Read(folder, out _)?["assets"] as JsonArray;
             var named = _draft.PictureFiles.ToHashSet(StringComparer.Ordinal);
@@ -468,14 +486,6 @@ public sealed partial class ThemeBuilderWindow : Window
         var old = _draft.Picture(place);
         File.Copy(path, Path.Combine(_work, name), true);
         _draft.SetPicture(place, name);
-        // The wide picture shows in its own block: a picture without the block would never be seen.
-        if (place == V2pnPackDraft.Pictures.Banner && !_draft.Blocks.Contains(V2pnThemeBlocks.Art))
-        {
-            var blocks = _draft.Blocks.ToList();
-            var at = blocks.IndexOf(V2pnThemeBlocks.Servers);
-            blocks.Insert(at < 0 ? blocks.Count : at, V2pnThemeBlocks.Art);
-            _draft.Blocks = blocks;
-        }
         _pictureState[place] = Verdict(place, name, content);
         DropUnused(old);
         RebuildForm();
@@ -487,10 +497,6 @@ public sealed partial class ThemeBuilderWindow : Window
         var old = _draft.Picture(place);
         _draft.SetPicture(place, null);
         _pictureState.Remove(place);
-        if (place == V2pnPackDraft.Pictures.Banner && _draft.Blocks.Contains(V2pnThemeBlocks.Art))
-        {
-            _draft.Blocks = _draft.Blocks.Where(b => b != V2pnThemeBlocks.Art).ToList();
-        }
         DropUnused(old);
         RebuildForm();
         Changed();

@@ -2860,6 +2860,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         const double clearance = 40;
         var top = panelHeader.IsVisible ? panelHeader.Bounds.Bottom : 0;
         var bottom = contentStatusBarView.IsVisible && contentStatusBarView.Bounds.Height > 0 ? contentStatusBarView.Bounds.Top : h;
+        if (passHost.Content != null && passHost.IsVisible && passHost.Bounds.Height > 0)
+        {
+            bottom = Math.Min(bottom, passHost.Bounds.Top);
+        }
         var y = h * MapView.DefaultFocusY;
         y = top + clearance <= bottom - clearance
             ? Math.Clamp(y, top + clearance, bottom - clearance)

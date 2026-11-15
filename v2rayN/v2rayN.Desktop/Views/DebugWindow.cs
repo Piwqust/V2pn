@@ -117,11 +117,12 @@ public sealed class DebugWindow : Window
     private Control LookSection()
     {
         var editions = new List<Control> { Mark(Action("V2pn", () => Editions.Select(null)), () => Editions.Partner == null) };
-        var looks = V2pnPartnerVariants.All.Select(v => (Control)Mark(Action(L.EditionVariantShort(v), () => OpenLook(v)), () => Editions.Variant == v)).ToArray();
+        // The debug window speaks Russian whatever the app's language, so tools/edition-matrix.ps1 finds its buttons.
+        var looks = V2pnPartnerVariants.All.Select(v => (Control)Mark(Action(v == V2pnPartnerVariants.Pass ? "Пропуск" : "Неон", () => OpenLook(v)), () => Editions.Variant == v)).ToArray();
         return Card("Вид",
             Row("Оформление", [.. editions, Action("партнёр из списка выше", () => Selected()?.Let(p => Editions.Select(p.Id)))]),
             Row("Вид партнёра", looks),
-            Row("Шаблон темы", V2pnThemeTemplates.All.Select(t => (Control)Mark(Action("шаблон " + t, () => SetTemplate(t)), () => Editions.Theme?.Template == t)).ToArray()),
+            Row("Кнопка «Неона»", V2pnThemeConnect.All.Select(c => (Control)Mark(Action("кнопка " + c, () => SetConnect(c)), () => Editions.Theme?.Connect == c)).ToArray()),
             Row("Режим вида",
                 Mark(Action("Светлый", () => Editions.Tune(p => p.Mode = "light")), () => Editions.IsTuned && Editions.Mode == "light"),
                 Mark(Action("Тёмный", () => Editions.Tune(p => p.Mode = "dark")), () => Editions.IsTuned && Editions.Mode == "dark"),
@@ -206,17 +207,17 @@ public sealed class DebugWindow : Window
         Editions.SetVariant(variant);
     }
 
-    /// <summary>The test partner's theme on another template (its blocks and pictures kept where that one has room).</summary>
-    private void SetTemplate(string template)
+    /// <summary>The test partner's Neon with the other Connect (round or the switch).</summary>
+    private void SetConnect(string connect)
     {
         if (!V2pnPartners.Instance.IsDebug(TestPartnerId))
         {
-            _main.DebugToast(ToastKind.Warning, "Шаблоны меняются у тестового партнёра: добавьте его.");
+            _main.DebugToast(ToastKind.Warning, "Кнопка меняется у тестового партнёра: добавьте его.");
             return;
         }
-        V2pnPartners.Instance.EditDebugTheme(TestPartnerId, theme => V2pnThemeReader.WithTemplate(theme, template));
+        V2pnPartners.Instance.EditDebugTheme(TestPartnerId, theme => theme with { Connect = connect });
         Editions.Select(TestPartnerId);
-        OpenLook(V2pnPartnerVariants.Theme);
+        OpenLook(V2pnPartnerVariants.Neon);
     }
 
     private void Gone(V2pnPartnerGone why)
@@ -279,7 +280,7 @@ public sealed class DebugWindow : Window
             lines.Add($"вид: {Editions.Mode} · акцент {Editions.AccentHex} · углы {Editions.Corners} · шрифт {Editions.Font}");
             if (Editions.Theme is { } theme)
             {
-                lines.Add($"тема: {theme.Template} · {theme.Connect} · {string.Join(" ", theme.Brand)} {theme.Tone} · {theme.Font} · {theme.Corners}/{theme.Density} · фон {theme.Background.Kind} · {string.Join(",", theme.Blocks)}");
+                lines.Add($"тема: {string.Join(" ", theme.Brand)} · кнопка {theme.Connect} · окно {theme.Window} · карта {theme.Background.Kind}");
                 foreach (var note in theme.Notes)
                 {
                     lines.Add("  " + note);

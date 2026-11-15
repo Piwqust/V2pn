@@ -11,7 +11,7 @@ namespace v2rayN.Desktop.Views;
 public sealed partial class ThemeBuilderWindow
 {
     private readonly List<(Button Button, Func<bool> IsOn)> _formMarks = [];
-    private readonly ContentControl _templates = new();
+    private readonly ContentControl _looks = new();
     private readonly List<(string Id, TextBlock Note)> _actionNotes = [];
 
     private void RebuildForm()
@@ -21,15 +21,12 @@ public sealed partial class ThemeBuilderWindow
         _actionNotes.Clear();
         Detach(_signPanel);
         Detach(_requestCard);
-        Detach(_templates);
+        Detach(_looks);
         var body = new StackPanel { Margin = new Thickness(20, 16, 20, 28), Spacing = 14 };
         body.Children.Add(ProviderCard());
         body.Children.Add(ColoursCard());
-        body.Children.Add(TemplateCard());
-        body.Children.Add(FontCard());
-        body.Children.Add(ShapeCard());
+        body.Children.Add(LooksCard());
         body.Children.Add(BackgroundCard());
-        body.Children.Add(BlocksCard());
         body.Children.Add(PicturesCard());
         body.Children.Add(ActionsCard());
         body.Children.Add(_signPanel);
@@ -38,7 +35,7 @@ public sealed partial class ThemeBuilderWindow
         RefreshFormMarks();
         if (_partner != null)
         {
-            RefreshTemplates(ThemeKit.Of(_partner));
+            RefreshLooks(ThemeKit.Of(_partner));
         }
         Dispatcher.UIThread.Post(() => _formScroll.Offset = offset, DispatcherPriority.Loaded);
     }
@@ -212,23 +209,23 @@ public sealed partial class ThemeBuilderWindow
                 Changed();
             }).Also(b => b.HorizontalAlignment = HorizontalAlignment.Left));
         }
-        var tones = Choice(V2pnThemeTones.All.Select(t => (t, L.BuilderToneName(t))), () => _draft.Tone, t => _draft.Tone = t);
-        return Card(L.BuilderColours, Hint(L.BuilderBrand), rows, Field(L.BuilderTone, tones));
+        return Card(L.BuilderColours, Hint(L.BuilderBrand), rows);
     }
 
-    // ------------------------------------------------------------------ template, connect
+    // ------------------------------------------------------------------ looks, connect, window
 
-    private Control TemplateCard()
+    private Control LooksCard()
     {
         var connect = Choice(V2pnThemeConnect.All.Select(c => (c, L.BuilderConnectName(c))), () => _draft.Connect, c => _draft.Connect = c);
-        return Card(L.BuilderTemplate, _templates, Field(L.BuilderConnect, connect));
+        var window = Choice(V2pnThemeWindow.All.Select(w => (w, L.BuilderWindowName(w))), () => _draft.Window, w => _draft.Window = w);
+        return Card(L.BuilderLooks, Hint(L.BuilderLooksHint), _looks, Field(L.BuilderConnect, connect), Field(L.BuilderWindow, window, Hint(L.BuilderWindowHint)));
     }
 
-    /// <summary>A thumbnail of each template in the theme's colours; the one in use lit.</summary>
-    private void RefreshTemplates(V2pnTheme theme)
+    /// <summary>A thumbnail of both looks in the theme's colours; the one the pack opens in lit.</summary>
+    private void RefreshLooks(V2pnTheme theme)
     {
         var panel = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 8, LineSpacing = 8 };
-        foreach (var template in V2pnThemeTemplates.All)
+        foreach (var look in V2pnPartnerVariants.All)
         {
             var thumb = new Border
             {
@@ -236,7 +233,7 @@ public sealed partial class ThemeBuilderWindow
                 Height = 60,
                 CornerRadius = new CornerRadius(6),
                 ClipToBounds = true,
-                Child = ThemeKit.Preview(V2pnThemeReader.WithTemplate(theme, template), _dark),
+                Child = ThemeKit.Preview(look, theme, _dark),
             };
             var button = new Button
             {
@@ -244,71 +241,28 @@ public sealed partial class ThemeBuilderWindow
                 Content = new StackPanel
                 {
                     Spacing = 5,
-                    Children = { thumb, new TextBlock { Text = L.ThemeTemplate(template), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center } },
+                    Children = { thumb, new TextBlock { Text = L.EditionVariantShort(look), FontSize = 12, HorizontalAlignment = HorizontalAlignment.Center } },
                 },
             };
             button.Bind(ThemeProperty, button.GetResourceObservable("V2Button"));
-            button.Classes.Set("accent", _draft.Template == template);
-            AutomationProperties.SetName(button, L.ThemeTemplate(template));
-            var picked = template;
+            button.Classes.Set("accent", _draft.DefaultLook == look);
+            AutomationProperties.SetName(button, L.EditionVariant(look));
+            var picked = look;
             button.Click += (_, _) =>
             {
-                _draft.Template = picked;
+                _draft.DefaultLook = picked;
                 RebuildForm();
                 Changed();
             };
             panel.Children.Add(button);
         }
-        _templates.Content = panel;
+        _looks.Content = panel;
     }
-
-    // ------------------------------------------------------------------ font, shape
-
-    private Control FontCard()
-    {
-        var panel = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 6, LineSpacing = 6 };
-        var current = V2pnThemeFonts.Resolve(_draft.Font).Family;
-        foreach (var font in V2pnThemeFonts.All)
-        {
-            var family = font.Family;
-            var button = new Button
-            {
-                Padding = new Thickness(10, 6),
-                Content = new TextBlock { Text = family, FontFamily = ThemeKit.Font(family), FontSize = 14 },
-            };
-            button.Bind(ThemeProperty, button.GetResourceObservable("V2Button"));
-            AutomationProperties.SetName(button, family);
-            button.Click += (_, _) =>
-            {
-                _draft.Font = family;
-                RebuildForm();
-                Changed();
-            };
-            _formMarks.Add((button, () => V2pnThemeFonts.Resolve(_draft.Font).Family == family));
-            panel.Children.Add(button);
-        }
-        var sample = new TextBlock
-        {
-            Text = $"{L.BuilderFontSample} · {L.Connect} · Германия 1 · 38 {L.SceneMs}",
-            FontFamily = ThemeKit.Font(current),
-            FontSize = 18,
-            TextWrapping = TextWrapping.Wrap,
-        };
-        return Card(L.BuilderFont, panel, sample);
-    }
-
-    private Control ShapeCard() => Card(L.BuilderShape,
-        Field(L.BuilderCorners, Choice(V2pnThemeCorners.All.Select(c => (c, L.BuilderCornersName(c))), () => _draft.Corners, c => _draft.Corners = c)),
-        Field(L.BuilderDensity, Choice(V2pnThemeDensity.All.Select(d => (d, L.BuilderDensityName(d))), () => _draft.Density, d => _draft.Density = d)));
 
     // ------------------------------------------------------------------ background
 
     private Control BackgroundCard()
     {
-        if (!V2pnThemeTemplates.HasArea(_draft.Template))
-        {
-            return Card(L.BuilderBackground, Hint(L.BuilderNoArea));
-        }
         var kinds = Choice(V2pnThemeBackgroundKinds.All.Select(k => (k, L.BuilderBackgroundName(k))), () => _draft.BackgroundKind, k =>
         {
             _draft.BackgroundKind = k;
@@ -367,114 +321,17 @@ public sealed partial class ThemeBuilderWindow
         {
             rows.Add(PictureRow(V2pnPackDraft.Pictures.Backdrop, allowed: true));
         }
-        return Card(L.BuilderBackground, [.. rows]);
-    }
-
-    // ------------------------------------------------------------------ blocks
-
-    private Control BlocksCard()
-    {
-        var supported = V2pnThemeTemplates.Blocks(_draft.Template);
-        var all = _draft.Blocks.ToList();
-        if (!all.Contains(V2pnThemeBlocks.Servers))
-        {
-            all.Add(V2pnThemeBlocks.Servers);
-        }
-        var shown = all.Where(supported.Contains).ToList();
-        var list = new StackPanel { Spacing = 6 };
-        for (var i = 0; i < shown.Count; i++)
-        {
-            var block = shown[i];
-            var row = new Grid { ColumnDefinitions = new ColumnDefinitions("*,Auto"), ColumnSpacing = 8 };
-            row.Children.Add(new TextBlock { Text = $"{i + 1}. {L.BuilderBlockName(block)}", VerticalAlignment = VerticalAlignment.Center, FontSize = 13 });
-            var buttons = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 4 };
-            if (i > 0)
-            {
-                buttons.Children.Add(Action("↑", () => MoveBlock(block, -1)).Also(b => AutomationProperties.SetName(b, $"{L.BuilderUp}: {L.BuilderBlockName(block)}")));
-            }
-            if (i < shown.Count - 1)
-            {
-                buttons.Children.Add(Action("↓", () => MoveBlock(block, +1)).Also(b => AutomationProperties.SetName(b, $"{L.BuilderDown}: {L.BuilderBlockName(block)}")));
-            }
-            if (block != V2pnThemeBlocks.Servers)
-            {
-                buttons.Children.Add(Action("✕", () =>
-                {
-                    _draft.Blocks = _draft.Blocks.Where(b => b != block).ToList();
-                    RebuildForm();
-                    Changed();
-                }).Also(b => AutomationProperties.SetName(b, $"{L.BuilderRemove}: {L.BuilderBlockName(block)}")));
-            }
-            Grid.SetColumn(buttons, 1);
-            row.Children.Add(buttons);
-            list.Children.Add(row);
-        }
-        var missing = supported.Where(b => !shown.Contains(b)).ToList();
-        var rows = new List<Control> { Hint(L.BuilderBlocksHint), list };
-        if (missing.Count > 0)
-        {
-            var add = new WrapPanel { Orientation = Orientation.Horizontal, ItemSpacing = 6, LineSpacing = 6 };
-            add.Children.Add(new TextBlock { Text = L.BuilderAddBlock, VerticalAlignment = VerticalAlignment.Center, FontSize = 12.5, Opacity = 0.75 });
-            foreach (var block in missing)
-            {
-                add.Children.Add(Action("+ " + L.BuilderBlockName(block), () =>
-                {
-                    var now = _draft.Blocks.ToList();
-                    // In front of the server list, which fills what is left of the column.
-                    var at = now.IndexOf(V2pnThemeBlocks.Servers);
-                    now.Insert(at < 0 ? now.Count : at, block);
-                    _draft.Blocks = now;
-                    RebuildForm();
-                    Changed();
-                }));
-            }
-            rows.Add(add);
-        }
-        return Card(L.BuilderBlocks, [.. rows]);
-    }
-
-    /// <summary>Moves a block past its visible neighbour; blocks the template has no place for keep their spots.</summary>
-    private void MoveBlock(string block, int step)
-    {
-        var supported = V2pnThemeTemplates.Blocks(_draft.Template);
-        var all = _draft.Blocks.ToList();
-        if (!all.Contains(V2pnThemeBlocks.Servers))
-        {
-            all.Add(V2pnThemeBlocks.Servers);
-        }
-        var from = all.IndexOf(block);
-        var to = from + step;
-        while (to >= 0 && to < all.Count && !supported.Contains(all[to]))
-        {
-            to += step;
-        }
-        if (from < 0 || to < 0 || to >= all.Count)
-        {
-            return;
-        }
-        (all[from], all[to]) = (all[to], all[from]);
-        _draft.Blocks = all;
-        RebuildForm();
-        Changed();
+        return Card(L.BuilderBackground, [Hint(L.BuilderBackgroundHint), .. rows]);
     }
 
     // ------------------------------------------------------------------ pictures
 
     private Control PicturesCard()
     {
-        var slots = V2pnThemeTemplates.ArtSlots(_draft.Template);
         var rows = new List<Control> { Hint(L.BuilderPicturesHint) };
         foreach (var place in new[] { V2pnPackDraft.Pictures.Logo, V2pnPackDraft.Pictures.LogoOnLight, V2pnPackDraft.Pictures.Mark })
         {
             rows.Add(PictureRow(place, allowed: true));
-        }
-        foreach (var place in new[] { V2pnPackDraft.Pictures.Hero, V2pnPackDraft.Pictures.Banner })
-        {
-            var allowed = slots.Contains(place);
-            if (allowed || _draft.Picture(place) != null)
-            {
-                rows.Add(PictureRow(place, allowed));
-            }
         }
         return Card(L.BuilderPictures, [.. rows]);
     }
@@ -531,11 +388,7 @@ public sealed partial class ThemeBuilderWindow
                 buttons,
             },
         };
-        if (!allowed)
-        {
-            text.Children.Add(Problem(string.Format(L.BuilderPictureNoPlace, L.ThemeTemplate(_draft.Template))));
-        }
-        else if (_pictureState.TryGetValue(place, out var state))
+        if (allowed && _pictureState.TryGetValue(place, out var state))
         {
             text.Children.Add(state.Ok ? Fine(state.Text) : Problem(state.Text));
         }

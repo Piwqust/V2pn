@@ -47,8 +47,13 @@ public static class SubscriptionHandler
 
                 // Process download result
                 var imported = await ProcessDownloadResult(config, item.Id, result, hashCode, updateFunc);
-                // V2pn: name, traffic and expiry from the panel's response headers.
-                await SubInfoManager.Instance.ApplyAsync(config, item, downloadHandle.ResponseHeaders, imported);
+                // V2pn: a verified partner's panel may move the subscription to another of its domains.
+                if (imported)
+                {
+                    await MoveIfAskedAsync(config, item, downloadHandle.ResponseHeaders, hashCode, updateFunc);
+                }
+                // V2pn: name, traffic, expiry and the Happ/INCY values from the panel's headers and the body's "#key: value" lines.
+                await SubInfoManager.Instance.ApplyAsync(config, item, downloadHandle.ResponseHeaders, imported, result);
                 if (imported)
                 {
                     successCount++;
@@ -75,6 +80,41 @@ public static class SubscriptionHandler
         }
 
         await updateFunc?.Invoke(successCount > 0, $"{ResUI.MsgUpdateSubscriptionEnd}");
+    }
+
+    /// <summary>
+    /// V2pn: new-url or new-domain from the panel (HTTP headers only), honoured for a subscription whose verified
+    /// partner certificate names the new host (V2pnSubDefaults.MovedUrl). The subscription keeps its id, name and
+    /// settings; only its address changes, and the log says so.
+    /// </summary>
+    private static async Task MoveIfAskedAsync(Config config, SubItem item, IReadOnlyDictionary<string, string>? headers, string hashCode, Func<bool, string, Task> updateFunc)
+    {
+        string? Get(string name) => headers?.FirstOrDefault(h => string.Equals(h.Key, name, StringComparison.OrdinalIgnoreCase)).Value;
+        var newUrl = Get(SubPanelHeaders.NewUrl);
+        var newDomain = Get(SubPanelHeaders.NewDomain);
+        if (newUrl.IsNullOrEmpty() && newDomain.IsNullOrEmpty())
+        {
+            return;
+        }
+        var partner = V2pnPartners.Instance.ForSubscription(item);
+        var target = V2pnSubDefaults.MovedUrl(item.Url, newUrl, newDomain, partner?.Cert);
+        if (target == null)
+        {
+            Logging.SaveLog($"V2pn: {Utils.TryUri(item.Url)?.Host} asked to move the subscription; ignored (no verified partner certificate for the new address)");
+            return;
+        }
+        var subs = await AppManager.Instance.SubItems() ?? [];
+        if (subs.Any(s => s.Id != item.Id && string.Equals(s.Url?.Trim(), target, StringComparison.Ordinal)))
+        {
+            Logging.SaveLog("V2pn: the subscription's new address belongs to another subscription already; not moved");
+            return;
+        }
+        var from = Utils.TryUri(item.Url)?.Host;
+        item.Url = target;
+        await ConfigHandler.AddSubItem(config, item);
+        var to = Utils.TryUri(target)?.Host ?? target;
+        Logging.SaveLog($"V2pn: subscription {item.Id} moved from {from} to {to} ({partner!.Id})");
+        await updateFunc?.Invoke(false, $"{hashCode}{string.Format(ResUI.MsgV2pnSubMoved, to)}");
     }
 
     private static bool IsValidSubscription(SubItem item, string subId)

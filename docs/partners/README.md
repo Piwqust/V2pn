@@ -6,6 +6,22 @@ A VPN provider can dress V2pn in its own look for the people who use its subscri
 
 This page is for the provider's developers. It describes what to serve, how it is signed and checked, and what V2pn shows.
 
+## Quick start
+
+1. Install V2pn and turn on developer mode: About → updates → "Developer mode".
+2. Open the ☰ menu → "Theme builder". Type the name and id, pick colours, a template, the connect button, a font, the background, blocks, pictures and buttons. The theme shows on the right at once, in three window sizes, light and dark. No certificate is needed for this.
+3. "Show in V2pn" dresses the app itself in the theme. The title bar marks it "Preview" and removes it from there.
+4. "Save pack…" writes a folder with `partner.json` and the pictures.
+5. Under "Certificate request", press "Create a key…" and keep `provider-key.pem` to yourself. Type the domains of the subscription and the pack, tick the grants and press "Save request…".
+6. Send `request.json` to V2pn's owner. If the pack has `routing.json`, `transport.json` or `core.json`, send them along (section 5).
+7. The owner sends back `cert.json` and `cert.json.sig`. Put them into the pack folder.
+8. Sign the pack: "Sign with my key" in the builder, or `dotnet run tools/partner.cs -- pack <folder> --key provider-key.pem`.
+9. Serve the folder over https on a domain of the certificate, for example `https://example.com/v2pn/`.
+10. Add the header `v2pn-partner: https://example.com/v2pn/` to the subscription's answer (section 6).
+11. Check it all at once: `dotnet run tools/partner-check.cs -- https://example.com/s/<subscription token>` (section 11).
+
+Without the builder, `tools/partner.cs new-key`, `request` and `pack` do the same (sections 1 and 2).
+
 ## What a provider gets
 
 | | Any panel | Partner (certificate from V2pn) |
@@ -36,7 +52,7 @@ A pack that fails any check is not used; V2pn stays plain and the subscription w
 
 ## 1. Keys and the certificate
 
-Make a key pair (ECDSA P-256) and keep the private half on your side:
+Make a key pair (ECDSA P-256) and keep the private half on your side. In the builder it is "Create a key…"; in a terminal:
 
 ```
 dotnet run tools/partner.cs -- new-key provider-key.pem
@@ -49,13 +65,25 @@ openssl ecparam -name prime256v1 -genkey -noout -out provider-key.pem
 openssl ec -in provider-key.pem -pubout -outform DER | base64
 ```
 
-Send the owner of V2pn:
+A certificate is issued from a request. The builder writes it ("Save request…"), or:
+
+```
+dotnet run tools/partner.cs -- request --id kestrel --name "Kestrel" --domains example.com,*.example.com --key provider-key.pem --grants edition,account --contact "@kestrel_admin" --out request.json
+```
+
+Files to review are added with `--review routing.json` (one per file). The request holds:
 
 - a partner id: lowercase letters, digits and hyphens, 2–32 characters (`configra`);
 - the name people see, up to 40 characters, without "V2pn" in it;
 - the domains your subscription and pack are served from (`example.com`, `*.example.com`);
 - the public key (base64 of the DER SubjectPublicKeyInfo, as printed above);
-- the grants you need: `edition` (the look), `account` (the API) and, if needed, `lock` (closed settings), `routing`, `transport`, `core` (your routes, transport and core config, section 5); these four after a manual review. Every partner gets `actions` (buttons and the description of servers).
+- the grants you need: `edition` (the look), `account` (the API) and, if needed, `lock` (closed settings), `routing`, `transport`, `core` (your routes, transport and core config, section 5); these four after a manual review. Every partner gets `actions` (buttons and the description of servers);
+- the SHA-256 of the files to review;
+- how to reach you.
+
+The request is signed with your key. That shows V2pn's owner that the private key is yours and that nobody changed the request on the way. The private key itself never goes into the request. Send `request.json` to V2pn's owner, with the files to review attached.
+
+The owner checks the signature, sees who asks for what (`partner.cs cert --from request.json`), reads the files to review and issues the certificate. This is done by hand: there is no bot or website that issues certificates, and there will not be one, because V2pn's root key must not sit on a server.
 
 V2pn 1.0.3 and older refused a certificate with grants it did not know; with the `actions` grant your look does not open there until the person updates V2pn. Newer versions skip unknown grants.
 
@@ -131,13 +159,13 @@ What a pack does not set, on purpose: sizes, spacing, font files and the interfa
 
 Limits: `partner.json` up to 64 KB, `cert.json` up to 16 KB, at most 8 pictures, PNG, WebP or JPEG only, 1 MB each, file names without folders. Besides pictures, only `routing.json`, `transport.json` and `core.json`, up to 64 KB each.
 
-Sign `partner.json` after every change:
+Sign `partner.json` after every change, with "Sign with my key" in the builder or with
 
 ```
 dotnet run tools/partner.cs -- pack <pack folder> --key provider-key.pem
 ```
 
-or with your own tooling: ECDSA P-256 over SHA-256 of the exact bytes of `partner.json`, the DER signature in base64 in `partner.json.sig`. Serve the files byte for byte (no re-encoding of line ends); V2pn checks the bytes it receives.
+or with your own tooling: ECDSA P-256 over SHA-256 of the exact bytes of `partner.json`, the DER signature in base64 in `partner.json.sig`. Serve the files byte for byte (no re-encoding of line ends); V2pn checks the bytes it receives. The builder and `partner.cs pack` write the same bytes of `partner.json`.
 
 ## 3. Servers and buttons
 
@@ -476,7 +504,7 @@ Configra's five looks (`signature`, `warm`, `cabinet`, `studio`, `ascii`) are an
 
 ### The theme
 
-The theme is the `theme` field of `partner.json` (an example is in section 2). You pick the parts; V2pn assembles the screen and draws it at every window width, in light and dark.
+The theme is the `theme` field of `partner.json` (an example is in section 2). You pick the parts; V2pn assembles the screen and draws it at every window width, in light and dark. The easiest way to put a theme together is the builder (quick start above): it writes this field and shows the result at once.
 
 | Field | Values | Default |
 | --- | --- | --- |
@@ -561,7 +589,9 @@ It runs V2pn's own checks with the keys built into the app and prints OK or what
 
 An example pack with servers, buttons and the three reviewed files, and a local server with a subscription, the pack and the API for previews, are in `tools/demo/partner/` and `tools/demo/demo_partner.py`; example themes are in `tools/demo/themes/`.
 
-To see the look before publishing, ask V2pn's owner for a preview certificate for `127.0.0.1`, serve the pack and a test subscription from your computer over http, and turn on developer mode in V2pn (About → updates). V2pn then takes a pack served from `127.0.0.1`.
+To see the theme before publishing and without a certificate, open the pack folder in the builder and press "Show in V2pn". The preview is marked in the title bar, unsigned, stays on this computer and is gone after a restart.
+
+To try the whole way with a subscription, ask V2pn's owner for a preview certificate for `127.0.0.1`, serve the pack and a test subscription from your computer over http, and turn on developer mode in V2pn (About → updates). V2pn then takes a pack served from `127.0.0.1`.
 
 ## Privacy
 

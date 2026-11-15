@@ -82,8 +82,8 @@
         </Style.Animations>
     </Style>
 
-    <!--  The chosen routing preset's tick lands with a small pop.  -->
-    <Style Selector="Button.routeoption.active PathIcon.routetick">
+    <!--  The chosen routing preset's radio dot lands with a small pop.  -->
+    <Style Selector="Button.routeoption.active Ellipse.routedot">
         <Style.Animations>
             <Animation Easing="0.34,1.36,0.64,1" FillMode="Forward" Duration="0:0:0.22">
                 <KeyFrame Cue="0%">

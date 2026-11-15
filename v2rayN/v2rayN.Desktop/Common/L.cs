@@ -221,22 +221,22 @@ public static partial class L
         "Сайты, которые идут напрямую, видят ваш настоящий IP. Изменения применяются сразу.");
     public static string RouteRussiaDirect => T("Russian sites direct", "Российские сайты напрямую");
     public static string RouteRussiaDirectHint => Tk("Sites in .ru and .рф, banks, Gosuslugi and Russian IPs open directly. Everything else goes through the VPN, including blocked .ru sites.",
-        "Banks, Gosuslugi and .ru sites open directly; everything else, blocked .ru sites too, goes through the VPN.",
+        "Banks, Gosuslugi and .ru sites open directly. The rest goes through the VPN, blocked .ru sites too.",
         "Банки, Госуслуги и сайты в\u00A0.ru\u00A0— напрямую, остальное и заблокированные .ru\u00A0— через VPN.");
     public static string RouteBlockedOnly => T("Only blocked sites", "Только заблокированное");
     public static string RouteBlockedOnlyHint => Tk("Only sites blocked in Russia, YouTube, Discord, Telegram and AI services go through the VPN. The rest opens directly and faster.",
-        "Only blocked sites, YouTube, Discord, Telegram and AI services go through the VPN; the rest opens directly.",
+        "Only blocked sites, YouTube, Discord, Telegram and AI go through the VPN. The rest opens directly.",
         "Через VPN\u00A0— только заблокированное, YouTube, Discord, Telegram и ИИ. Остальное\u00A0— напрямую.");
     public static string RouteAll => T("Everything through VPN", "Всё через VPN");
     public static string RouteBuiltinWhitelist => T("Everything except China (v2rayN)", "Всё, кроме Китая (v2rayN)");
     public static string RouteBuiltinBlacklist => T("Sites blocked in China (v2rayN)", "Заблокированное в Китае (v2rayN)");
     public static string RouteBuiltinGlobal => T("Everything, v2rayN rules", "Всё, правила v2rayN");
     public static string RouteAllHint => Tk("All traffic except the local network goes through the server. Some Russian banks and Gosuslugi may refuse a foreign IP.",
-        "All traffic goes through the server. Some banks and Gosuslugi may refuse a foreign IP.",
+        "All traffic goes through the server. Some banks and Gosuslugi refuse a foreign IP.",
         "Весь трафик через сервер. Некоторые банки и Госуслуги не пускают с иностранного IP.");
     public static string Recommended => T("Recommended", "Рекомендуем");
     public static string BlockAds => T("Block ads and trackers", "Блокировать рекламу и трекеры");
-    public static string BlockAdsHint => Tk("By the category-ads-all list, in the three modes above.", "Hides ads on sites and in apps, in all three modes.", "Скрывает рекламу на сайтах и в приложениях, в любом режиме.");
+    public static string BlockAdsHint => Tk("By the category-ads-all list, in the three modes above.", "Hides ads on sites and in apps, in any mode.", "Скрывает рекламу на сайтах и в приложениях, в любом режиме.");
     public static string RouteCustom => T("Your rules", "Свои правила");
     public static string RouteCustomHint => T("Sets from the routing settings.", "Наборы из настройки маршрутов.");
     public static string RouteCustomPick => T("Choose…", "Выбрать…");

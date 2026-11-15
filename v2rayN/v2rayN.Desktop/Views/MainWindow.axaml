@@ -965,78 +965,82 @@
                                         </Grid>
                                         <Button.Flyout>
                                             <Flyout Placement="Bottom">
-                                                <StackPanel Width="380" Spacing="12">
-                                                    <StackPanel Spacing="3">
+                                                <StackPanel Width="420" Spacing="14">
+                                                    <StackPanel Margin="4,0" Spacing="3">
                                                         <TextBlock Classes="title" Text="{x:Static loc:L.RouteTitle}" />
                                                         <TextBlock
                                                             Classes="muted small"
                                                             Text="{x:Static loc:L.RouteSubtitle}"
                                                             TextWrapping="Wrap" />
                                                     </StackPanel>
-                                                    <StackPanel Spacing="4">
-                                                        <Button
-                                                            x:Name="btnRouteRussia"
-                                                            AutomationProperties.Name="{x:Static loc:L.RouteRussiaDirect}"
-                                                            Classes="routeoption"
-                                                            Theme="{StaticResource V2SideRow}">
-                                                            <Grid ColumnDefinitions="*,Auto">
-                                                                <StackPanel Spacing="2">
-                                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                                        <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteRussiaDirect}" />
-                                                                        <Border Classes="recommend">
-                                                                            <TextBlock Text="{x:Static loc:L.Recommended}" />
-                                                                        </Border>
+
+                                                    <!--  The presets sit on the menu itself; the picked one is marked by its accent icon and radio.  -->
+                                                    <Border Classes="routegroup">
+                                                        <StackPanel Spacing="2">
+                                                            <Button
+                                                                x:Name="btnRouteRussia"
+                                                                AutomationProperties.Name="{x:Static loc:L.RouteRussiaDirect}"
+                                                                Classes="routeoption"
+                                                                Theme="{StaticResource V2SideRow}">
+                                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                                    <Border Classes="routeicon">
+                                                                        <PathIcon Data="{StaticResource SemiIconBranch}" />
+                                                                    </Border>
+                                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                                        <StackPanel Orientation="Horizontal" Spacing="8">
+                                                                            <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteRussiaDirect}" />
+                                                                            <Border Classes="recommend">
+                                                                                <TextBlock Text="{x:Static loc:L.Recommended}" />
+                                                                            </Border>
+                                                                        </StackPanel>
+                                                                        <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteRussiaDirectHint}" />
                                                                     </StackPanel>
-                                                                    <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteRussiaDirectHint}" />
-                                                                </StackPanel>
-                                                                <Panel Grid.Column="1" VerticalAlignment="Center">
-                                                                    <Ellipse Classes="routeempty" />
-                                                                    <PathIcon
-                                                                        x:Name="tickRouteRussia"
-                                                                        Classes="routetick"
-                                                                        Data="{StaticResource SemiIconTickCircle}" />
-                                                                </Panel>
-                                                            </Grid>
-                                                        </Button>
-                                                        <Button
-                                                            x:Name="btnRouteBlocked"
-                                                            AutomationProperties.Name="{x:Static loc:L.RouteBlockedOnly}"
-                                                            Classes="routeoption"
-                                                            Theme="{StaticResource V2SideRow}">
-                                                            <Grid ColumnDefinitions="*,Auto">
-                                                                <StackPanel Spacing="2">
-                                                                    <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteBlockedOnly}" />
-                                                                    <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteBlockedOnlyHint}" />
-                                                                </StackPanel>
-                                                                <Panel Grid.Column="1" VerticalAlignment="Center">
-                                                                    <Ellipse Classes="routeempty" />
-                                                                    <PathIcon
-                                                                        x:Name="tickRouteBlocked"
-                                                                        Classes="routetick"
-                                                                        Data="{StaticResource SemiIconTickCircle}" />
-                                                                </Panel>
-                                                            </Grid>
-                                                        </Button>
-                                                        <Button
-                                                            x:Name="btnRouteAll"
-                                                            AutomationProperties.Name="{x:Static loc:L.RouteAll}"
-                                                            Classes="routeoption"
-                                                            Theme="{StaticResource V2SideRow}">
-                                                            <Grid ColumnDefinitions="*,Auto">
-                                                                <StackPanel Spacing="2">
-                                                                    <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteAll}" />
-                                                                    <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteAllHint}" />
-                                                                </StackPanel>
-                                                                <Panel Grid.Column="1" VerticalAlignment="Center">
-                                                                    <Ellipse Classes="routeempty" />
-                                                                    <PathIcon
-                                                                        x:Name="tickRouteAll"
-                                                                        Classes="routetick"
-                                                                        Data="{StaticResource SemiIconTickCircle}" />
-                                                                </Panel>
-                                                            </Grid>
-                                                        </Button>
-                                                    </StackPanel>
+                                                                    <Panel Grid.Column="2" Classes="routeradio">
+                                                                        <Ellipse Classes="routering" />
+                                                                        <Ellipse Classes="routedot" />
+                                                                    </Panel>
+                                                                </Grid>
+                                                            </Button>
+                                                            <Button
+                                                                x:Name="btnRouteBlocked"
+                                                                AutomationProperties.Name="{x:Static loc:L.RouteBlockedOnly}"
+                                                                Classes="routeoption"
+                                                                Theme="{StaticResource V2SideRow}">
+                                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                                    <Border Classes="routeicon">
+                                                                        <PathIcon Data="{StaticResource SemiIconFilterStroked}" />
+                                                                    </Border>
+                                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                                        <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteBlockedOnly}" />
+                                                                        <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteBlockedOnlyHint}" />
+                                                                    </StackPanel>
+                                                                    <Panel Grid.Column="2" Classes="routeradio">
+                                                                        <Ellipse Classes="routering" />
+                                                                        <Ellipse Classes="routedot" />
+                                                                    </Panel>
+                                                                </Grid>
+                                                            </Button>
+                                                            <Button
+                                                                x:Name="btnRouteAll"
+                                                                AutomationProperties.Name="{x:Static loc:L.RouteAll}"
+                                                                Classes="routeoption"
+                                                                Theme="{StaticResource V2SideRow}">
+                                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                                    <Border Classes="routeicon">
+                                                                        <PathIcon Data="{StaticResource SemiIconGlobeStroke}" />
+                                                                    </Border>
+                                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                                        <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteAll}" />
+                                                                        <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteAllHint}" />
+                                                                    </StackPanel>
+                                                                    <Panel Grid.Column="2" Classes="routeradio">
+                                                                        <Ellipse Classes="routering" />
+                                                                        <Ellipse Classes="routedot" />
+                                                                    </Panel>
+                                                                </Grid>
+                                                            </Button>
+                                                        </StackPanel>
+                                                    </Border>
 
                                                     <Border
                                                         x:Name="borderRouteBusy"
@@ -1064,32 +1068,42 @@
                                                         </DockPanel>
                                                     </Border>
 
-                                                    <Border Classes="hairline" />
-                                                    <Grid ColumnDefinitions="*,Auto">
-                                                        <StackPanel Spacing="2">
-                                                            <TextBlock Classes="routetitle" Text="{x:Static loc:L.BlockAds}" />
-                                                            <TextBlock Classes="routehint" Text="{x:Static loc:L.BlockAdsHint}" />
-                                                        </StackPanel>
-                                                        <ToggleSwitch
-                                                            x:Name="togBlockAds"
-                                                            Grid.Column="1"
-                                                            VerticalAlignment="Center"
-                                                            OffContent=""
-                                                            OnContent="" />
-                                                    </Grid>
+                                                    <!--  Extras keep the icon column of the presets, so every label starts on one line.  -->
+                                                    <StackPanel Spacing="16">
+                                                        <Grid Classes="routeextra" ColumnDefinitions="Auto,*,Auto">
+                                                            <Border Classes="routeicon plain">
+                                                                <PathIcon Data="{StaticResource SemiIconMinusCircleStroked}" />
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" Spacing="2">
+                                                                <TextBlock Classes="routetitle" Text="{x:Static loc:L.BlockAds}" />
+                                                                <TextBlock Classes="routehint" Text="{x:Static loc:L.BlockAdsHint}" />
+                                                            </StackPanel>
+                                                            <ToggleSwitch
+                                                                x:Name="togBlockAds"
+                                                                Grid.Column="2"
+                                                                VerticalAlignment="Center"
+                                                                AutomationProperties.Name="{x:Static loc:L.BlockAds}"
+                                                                OffContent=""
+                                                                OnContent="" />
+                                                        </Grid>
 
-                                                    <StackPanel x:Name="panelCustomRoutes" Spacing="12">
-                                                        <Border Classes="hairline" />
-                                                        <Grid ColumnDefinitions="*,Auto">
-                                                            <StackPanel Spacing="2">
+                                                        <Grid
+                                                            x:Name="panelCustomRoutes"
+                                                            Classes="routeextra"
+                                                            ColumnDefinitions="Auto,*,Auto">
+                                                            <Border Classes="routeicon plain">
+                                                                <PathIcon Data="{StaticResource SemiIconListView}" />
+                                                            </Border>
+                                                            <StackPanel Grid.Column="1" Spacing="2">
                                                                 <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteCustom}" />
                                                                 <TextBlock Classes="routehint" Text="{x:Static loc:L.RouteCustomHint}" />
                                                             </StackPanel>
                                                             <ComboBox
                                                                 x:Name="lstCustomRoutes"
-                                                                Grid.Column="1"
-                                                                Width="170"
+                                                                Grid.Column="2"
+                                                                Width="150"
                                                                 VerticalAlignment="Center"
+                                                                AutomationProperties.Name="{x:Static loc:L.RouteCustom}"
                                                                 PlaceholderText="{x:Static loc:L.RouteCustomPick}">
                                                                 <ComboBox.ItemTemplate>
                                                                     <DataTemplate x:DataType="ent:RoutingItem">
@@ -1099,12 +1113,31 @@
                                                             </ComboBox>
                                                         </Grid>
                                                     </StackPanel>
-                                                    <Button
-                                                        x:Name="btnRoutingSettings"
-                                                        HorizontalAlignment="Stretch"
-                                                        Classes="subtle small"
-                                                        Content="{x:Static loc:L.RoutingSettings}"
-                                                        Theme="{StaticResource V2Button}" />
+
+                                                    <!--  Opens a window, so it reads as a way out of the menu rather than one more setting.  -->
+                                                    <StackPanel Spacing="6">
+                                                        <Border Classes="hairline" />
+                                                        <Button
+                                                            x:Name="btnRoutingSettings"
+                                                            AutomationProperties.Name="{x:Static loc:L.RoutingSettings}"
+                                                            Classes="routelink"
+                                                            Theme="{StaticResource V2SideRow}">
+                                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                                <Border Classes="routeicon plain">
+                                                                    <PathIcon Data="{StaticResource SemiIconSettingStroked}" />
+                                                                </Border>
+                                                                <TextBlock
+                                                                    Grid.Column="1"
+                                                                    VerticalAlignment="Center"
+                                                                    Classes="routetitle"
+                                                                    Text="{x:Static loc:L.RoutingSettings}" />
+                                                                <PathIcon
+                                                                    Grid.Column="2"
+                                                                    Classes="i12 routechevron"
+                                                                    Data="{StaticResource SemiIconChevronRight}" />
+                                                            </Grid>
+                                                        </Button>
+                                                    </StackPanel>
                                                 </StackPanel>
                                             </Flyout>
                                         </Button.Flyout>
@@ -1190,14 +1223,18 @@
                                 <Border Classes="hairline" />
                                 <StackPanel Spacing="8">
                                     <TextBlock Classes="sectionlabel" Text="{x:Static loc:L.RouteTitle}" />
-                                    <StackPanel Spacing="4">
+                                    <Border Classes="routegroup">
+                                    <StackPanel Spacing="2">
                                         <Button
                                             x:Name="btnWelcomeRouteRu"
                                             AutomationProperties.Name="{x:Static loc:L.RouteRussiaDirect}"
                                             Classes="routeoption"
                                             Theme="{StaticResource V2SideRow}">
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <StackPanel Spacing="2">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                <Border Classes="routeicon">
+                                                    <PathIcon Data="{StaticResource SemiIconBranch}" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Spacing="2">
                                                     <StackPanel Orientation="Horizontal" Spacing="8">
                                                         <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteRussiaDirect}" />
                                                         <Border Classes="recommend">
@@ -1206,11 +1243,9 @@
                                                     </StackPanel>
                                                     <TextBlock Classes="routehint" Text="{x:Static loc:L.WelcomeRouteRuHint}" />
                                                 </StackPanel>
-                                                <Panel Grid.Column="1" VerticalAlignment="Center">
-                                                    <Ellipse Classes="routeempty" />
-                                                    <PathIcon
-                                                        Classes="routetick"
-                                                        Data="{StaticResource SemiIconTickCircle}" />
+                                                <Panel Grid.Column="2" Classes="routeradio">
+                                                    <Ellipse Classes="routering" />
+                                                    <Ellipse Classes="routedot" />
                                                 </Panel>
                                             </Grid>
                                         </Button>
@@ -1219,20 +1254,22 @@
                                             AutomationProperties.Name="{x:Static loc:L.RouteAll}"
                                             Classes="routeoption"
                                             Theme="{StaticResource V2SideRow}">
-                                            <Grid ColumnDefinitions="*,Auto">
-                                                <StackPanel Spacing="2">
+                                            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                <Border Classes="routeicon">
+                                                    <PathIcon Data="{StaticResource SemiIconGlobeStroke}" />
+                                                </Border>
+                                                <StackPanel Grid.Column="1" Spacing="2">
                                                     <TextBlock Classes="routetitle" Text="{x:Static loc:L.RouteAll}" />
                                                     <TextBlock Classes="routehint" Text="{x:Static loc:L.WelcomeRouteAllHint}" />
                                                 </StackPanel>
-                                                <Panel Grid.Column="1" VerticalAlignment="Center">
-                                                    <Ellipse Classes="routeempty" />
-                                                    <PathIcon
-                                                        Classes="routetick"
-                                                        Data="{StaticResource SemiIconTickCircle}" />
+                                                <Panel Grid.Column="2" Classes="routeradio">
+                                                    <Ellipse Classes="routering" />
+                                                    <Ellipse Classes="routedot" />
                                                 </Panel>
                                             </Grid>
                                         </Button>
                                     </StackPanel>
+                                    </Border>
                                     <Border
                                         x:Name="borderWelcomeBusy"
                                         Classes="routebusy"

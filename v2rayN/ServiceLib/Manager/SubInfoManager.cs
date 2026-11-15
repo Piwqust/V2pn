@@ -61,8 +61,9 @@ public sealed class SubInfoManager
     /// Stores what the panel sent with a download of <paramref name="item"/>. When the servers were
     /// imported, also takes the name and the update interval from the panel where the user has not set
     /// their own, and saves <paramref name="item"/>. No headers (a failed or non-HTTP download): no change.
+    /// The "#key: value" lines at the top of <paramref name="body"/> fill in what the headers did not say.
     /// </summary>
-    public async Task ApplyAsync(Config config, SubItem item, IReadOnlyDictionary<string, string>? headers, bool imported)
+    public async Task ApplyAsync(Config config, SubItem item, IReadOnlyDictionary<string, string>? headers, bool imported, string? body = null)
     {
         if (headers == null || item.Id.IsNullOrEmpty())
         {
@@ -71,7 +72,7 @@ public sealed class SubInfoManager
         try
         {
             await LoadAsync();
-            var panel = SubPanelHeaders.Parse(headers);
+            var panel = SubPanelHeaders.Parse(SubPanelHeaders.WithBody(headers, body));
             var info = Get(item.Id) ?? new SubInfoItem { Id = item.Id };
 
             info.HasUserInfo = panel.HasUserInfo;
@@ -85,6 +86,7 @@ public sealed class SubInfoManager
             info.Announce = panel.Announce;
             info.PartnerUrl = panel.PartnerUrl;
             info.AccountToken = panel.AccountToken;
+            CopyCompat(panel, info);
             info.ReceivedTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (imported && ApplyToSubscription(item, info, panel))
@@ -113,6 +115,29 @@ public sealed class SubInfoManager
         {
             Logging.SaveLog(_tag, ex);
         }
+    }
+
+    /// <summary>The Happ, INCY and v2RayTun values of a response; the person's own choices on <paramref name="info"/> stay.</summary>
+    public static void CopyCompat(SubPanelInfo panel, SubInfoItem info)
+    {
+        info.AnnounceUrl = panel.AnnounceUrl;
+        info.InfoText = panel.InfoText;
+        info.InfoTone = panel.InfoTone;
+        info.InfoButtonText = panel.InfoButtonText;
+        info.InfoButtonUrl = panel.InfoButtonUrl;
+        info.ExpiryNotice = panel.ExpiryNotice switch { true => 1, false => -1, null => 0 };
+        info.ExpiryText = panel.ExpiryText;
+        info.ExpiryButtonText = panel.ExpiryButtonText;
+        info.ExpiryButtonUrl = panel.ExpiryButtonUrl;
+        info.Autoconnect = panel.Autoconnect;
+        info.AutoconnectType = panel.AutoconnectType;
+        info.SortType = panel.SortType;
+        info.PingOnOpen = panel.PingOnOpen;
+        info.PingType = panel.PingType;
+        info.CheckUrl = panel.CheckUrl;
+        info.UpdateOnOpen = panel.UpdateOnOpen;
+        info.HideSettings = panel.HideSettings;
+        info.HideUrl = panel.HideUrl;
     }
 
     /// <summary>Name and interval from the panel; true when <paramref name="item"/> changed.</summary>

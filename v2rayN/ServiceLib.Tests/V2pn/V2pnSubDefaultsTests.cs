@@ -103,6 +103,18 @@ public class V2pnSubDefaultsTests
     }
 
     [Test]
+    public async Task ClosedSettings_KeepTheProvidersOrderAndStart()
+    {
+        var info = new SubInfoItem { Id = "a", SortType = SubPanelHeaders.SortAlphabet, OwnSort = SubPanelHeaders.SortWithout, Autoconnect = true, OwnAutoconnect = true };
+        SubInfoItem? Get(string _) => info;
+
+        await V2pnSubDefaults.SortOf(info, locked: true).Should().BeEqualTo(SubPanelHeaders.SortAlphabet);
+        await V2pnSubDefaults.AutoconnectOn(info, locked: true).Should().BeTrue();
+        await V2pnSubDefaults.StartPlan(false, [Sub("a")], "a", Get, _ => true, _ => true).Should().NotBeNull();
+        await V2pnSubDefaults.StartPlan(false, [Sub("a")], "a", Get, _ => true, _ => false).Should().BeNull();
+    }
+
+    [Test]
     public async Task Order_ShouldSortByPingNameOrNothing()
     {
         var servers = new[] { ("Germany 10", 0), ("Germany 2", 300), ("Austria", 120), ("Finland", -1) };

@@ -21,6 +21,7 @@ public partial class MainWindow
         {
             await vm.Initialized;
             await SubInfoManager.Instance.LoadAsync();
+            await V2pnLocks.Instance.RefreshAsync();
             // Read once the start is done: a person who left V2pn connected is connected again by now.
             var startsConnected = !V2pnConnection.IsOff(_config);
             var subs = (await AppManager.Instance.SubItems() ?? []).Where(s => s.Id.IsNotEmpty() && s.Enabled).ToList();
@@ -36,7 +37,8 @@ public partial class MainWindow
             }
 
             var tested = new HashSet<string>();
-            var plan = V2pnSubDefaults.StartPlan(startsConnected, subs, serverSubId, SubInfoManager.Instance.Get, bySub.ContainsKey);
+            var plan = V2pnSubDefaults.StartPlan(startsConnected, subs, serverSubId, SubInfoManager.Instance.Get, bySub.ContainsKey,
+                id => V2pnLocks.Instance.Hides(id));
             if (plan != null)
             {
                 var sub = subs.First(s => s.Id == plan.SubId);

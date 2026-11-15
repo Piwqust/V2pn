@@ -60,15 +60,22 @@ public static class V2pnSubDefaults
         return new SubBanner(info.InfoText!, tone, button, url, false);
     }
 
-    /// <summary>The provider advises connecting at start and the person left that to it.</summary>
-    public static bool AutoconnectOn(SubInfoItem? info) => info is { Autoconnect: true, OwnAutoconnect: false };
+    /// <summary>
+    /// The provider advises connecting at start and the person left that to it, or the provider closed the
+    /// subscription's settings (<paramref name="locked"/>, V2pnLockState.Settings): then its advice holds.
+    /// </summary>
+    public static bool AutoconnectOn(SubInfoItem? info, bool locked = false) =>
+        info is { Autoconnect: true } && (locked || !info.OwnAutoconnect);
 
     /// <summary>How the server is picked when the provider's autoconnect runs: its type, else the last used one.</summary>
     public static string AutoconnectType(SubInfoItem? info) => info?.AutoconnectType ?? SubPanelHeaders.ConnectLastUsed;
 
-    /// <summary>The order of a subscription's servers: the person's, else the provider's, else fastest first.</summary>
-    public static string SortOf(SubInfoItem? info) =>
-        SubPanelHeaders.ParseSortType(info?.OwnSort) ?? SubPanelHeaders.ParseSortType(info?.SortType) ?? SubPanelHeaders.SortPing;
+    /// <summary>
+    /// The order of a subscription's servers: the person's, else the provider's, else fastest first. With the settings
+    /// closed (<paramref name="locked"/>) the provider's order holds.
+    /// </summary>
+    public static string SortOf(SubInfoItem? info, bool locked = false) =>
+        (locked ? null : SubPanelHeaders.ParseSortType(info?.OwnSort)) ?? SubPanelHeaders.ParseSortType(info?.SortType) ?? SubPanelHeaders.SortPing;
 
     /// <summary>Puts servers in the order <see cref="SortOf"/> names. "without" keeps the order they came in.</summary>
     public static IEnumerable<T> Order<T>(IEnumerable<T> items, string sort, Func<T, string?> name, Func<T, int> delay) => sort switch
@@ -92,8 +99,9 @@ public static class V2pnSubDefaults
     /// <param name="subs">Enabled subscriptions in the order the app lists them.</param>
     /// <param name="serverSubId">The subscription of the chosen server: null when none is chosen, "" for a server in no subscription.</param>
     /// <param name="hasServers">Whether a subscription has servers.</param>
+    /// <param name="locked">Whether a provider closed a subscription's settings: its advice then holds.</param>
     public static SubAutoconnectPlan? StartPlan(bool startsConnected, IEnumerable<SubItem> subs, string? serverSubId,
-        Func<string, SubInfoItem?> info, Func<string, bool> hasServers)
+        Func<string, SubInfoItem?> info, Func<string, bool> hasServers, Func<string, bool>? locked = null)
     {
         if (startsConnected)
         {
@@ -111,7 +119,7 @@ public static class V2pnSubDefaults
             return null;
         }
         var subInfo = info(sub.Id);
-        return AutoconnectOn(subInfo) ? new SubAutoconnectPlan(sub.Id, AutoconnectType(subInfo)) : null;
+        return AutoconnectOn(subInfo, locked?.Invoke(sub.Id) == true) ? new SubAutoconnectPlan(sub.Id, AutoconnectType(subInfo)) : null;
     }
 
     /// <summary>

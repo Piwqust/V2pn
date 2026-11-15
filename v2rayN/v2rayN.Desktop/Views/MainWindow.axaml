@@ -713,21 +713,23 @@
                                                 </StackPanel>
                                                 <!--  V2pn: the partner closed the subscription's settings (V2pnLocks); said so the person
                                                       never takes it for V2pn being broken.  -->
-                                                <StackPanel
-                                                    Margin="0,2,0,0"
+                                                <Grid
+                                                    Margin="0,3,0,0"
+                                                    ColumnDefinitions="Auto,*"
                                                     IsVisible="{Binding IsLocked}"
-                                                    Orientation="Horizontal"
-                                                    Spacing="5"
                                                     ToolTip.Tip="{x:Static loc:L.LockedHint}">
                                                     <PathIcon
+                                                        Margin="0,2,5,0"
+                                                        VerticalAlignment="Top"
                                                         Classes="i12"
                                                         Foreground="{DynamicResource V2Muted}"
                                                         Data="{StaticResource SemiIconLock}" />
                                                     <TextBlock
+                                                        Grid.Column="1"
                                                         Classes="muted small"
                                                         Text="{Binding LockText}"
-                                                        TextTrimming="CharacterEllipsis" />
-                                                </StackPanel>
+                                                        TextWrapping="Wrap" />
+                                                </Grid>
                                             </StackPanel>
                                             <!--  Actions and chevron overlap: the column keeps the buttons' width, so hovering
                                                   swaps them without moving the text.  -->

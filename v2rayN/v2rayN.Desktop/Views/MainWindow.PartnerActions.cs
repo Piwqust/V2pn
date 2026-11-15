@@ -273,7 +273,8 @@ public partial class MainWindow
                     ShowToast(ToastKind.Warning, string.Format(L.ActionPartnerSilent, partner.Name));
                     return;
                 }
-                await ShowPartnerDialogAsync(new PartnerCardView(string.Format(L.CardFrom, partner.Name), card.Title ?? action.Label, PartnerCardView.Text(card.Text)));
+                // Not awaited: the button is free again while the card is open.
+                _ = ShowPartnerDialogAsync(new PartnerCardView(string.Format(L.CardFrom, partner.Name), card.Title ?? action.Label, PartnerCardView.Text(card.Text)));
                 break;
         }
     }
@@ -297,7 +298,7 @@ public partial class MainWindow
         var status = new TextBlock { Classes = { "srowhint" }, Margin = new Thickness(0), Text = L.ServicesChecking, TextWrapping = TextWrapping.Wrap };
         rows.Children.Add(status);
         var view = new PartnerCardView(L.AppName, L.ServicesTitle, rows);
-        var shown = ShowPartnerDialogAsync(view);
+        _ = ShowPartnerDialogAsync(view);
         var results = await Task.Run(() => V2pnServiceCheck.RunAsync());
         if (results == null)
         {
@@ -309,13 +310,10 @@ public partial class MainWindow
             foreach (var result in results)
             {
                 var grid = new Grid { ColumnDefinitions = new("Auto,*,Auto"), ColumnSpacing = 10 };
-                grid.Children.Add(new PathIcon
-                {
-                    Classes = { "i16" },
-                    Data = this.FindResource(result.Opens ? "SemiIconTickCircle" : "SemiIconAlertCircle") as Geometry,
-                    Foreground = this.FindResource(result.Opens ? "V2Safe" : "V2Unsafe") as IBrush,
-                    VerticalAlignment = VerticalAlignment.Center,
-                });
+                var mark = new PathIcon { Width = 16, Height = 16, VerticalAlignment = VerticalAlignment.Center };
+                mark.Bind(PathIcon.DataProperty, mark.GetResourceObservable(result.Opens ? "SemiIconTickCircle" : "SemiIconAlertCircle"));
+                mark.Bind(PathIcon.ForegroundProperty, mark.GetResourceObservable(result.Opens ? "V2Safe" : "V2Unsafe"));
+                grid.Children.Add(mark);
                 var name = new TextBlock { Text = result.Name, FontWeight = FontWeight.Medium, VerticalAlignment = VerticalAlignment.Center };
                 Grid.SetColumn(name, 1);
                 grid.Children.Add(name);
@@ -330,7 +328,6 @@ public partial class MainWindow
                 rows.Children.Add(grid);
             }
         }
-        await shown;
     }
 
     private static async Task ShowPartnerDialogAsync(Control view)

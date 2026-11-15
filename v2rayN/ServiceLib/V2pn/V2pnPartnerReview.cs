@@ -79,7 +79,8 @@ public sealed class V2pnPartnerFeatures
         V2pnRoutingPreset? routing = null;
         V2pnTransport? transport = null;
         V2pnCoreFragment? core = null;
-        foreach (var asset in pack.Assets.Where(a => V2pnReviewedFiles.All.Contains(a.Name)))
+        // Routes, then connection settings, then core config, whatever order the pack lists them in.
+        foreach (var asset in V2pnReviewedFiles.All.Select(pack.Asset).OfType<V2pnPartnerAsset>())
         {
             var grant = V2pnReviewedFiles.GrantOf(asset.Name);
             if (!cert.Allows(grant) || !cert.ReviewedFiles.TryGetValue(asset.Name, out var reviewed))

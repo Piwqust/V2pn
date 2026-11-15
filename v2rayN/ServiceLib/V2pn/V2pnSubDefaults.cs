@@ -35,10 +35,12 @@ public static class V2pnSubDefaults
         {
             return null;
         }
-        var days = (int)Math.Ceiling(left.TotalDays);
+        // Whole days, as the subscription's row counts them ("1 day left" until the last day, then hours).
+        var days = (int)left.TotalDays;
         var text = info.ExpiryText.IsNotEmpty() ? info.ExpiryText
             : left <= TimeSpan.Zero ? ResUI.V2pnSubEnded
-            : days <= 1 ? ResUI.V2pnSubEndsInOneDay
+            : days < 1 ? ResUI.V2pnSubEndsWithinDay
+            : days == 1 ? ResUI.V2pnSubEndsInOneDay
             : string.Format(ResUI.V2pnSubEndsInDays, days);
         var url = info.ExpiryButtonUrl.IsNotEmpty() ? info.ExpiryButtonUrl : info.WebPageUrl.IsNotEmpty() ? info.WebPageUrl : null;
         var button = url == null ? null : info.ExpiryButtonText.IsNotEmpty() ? info.ExpiryButtonText : ResUI.V2pnSubRenew;

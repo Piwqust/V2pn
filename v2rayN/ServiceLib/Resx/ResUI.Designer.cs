@@ -5529,9 +5529,9 @@ namespace ServiceLib.Resx {
         /// <summary>
         ///   Looks up a localized string similar to Your subscription ends within a day.
         /// </summary>
-        public static string V2pnSubEndsInOneDay {
+        public static string V2pnSubEndsWithinDay {
             get {
-                return ResourceManager.GetString("V2pnSubEndsInOneDay", resourceCulture);
+                return ResourceManager.GetString("V2pnSubEndsWithinDay", resourceCulture);
             }
         }
 
@@ -5568,6 +5568,15 @@ namespace ServiceLib.Resx {
         public static string MsgV2pnSubMoved {
             get {
                 return ResourceManager.GetString("MsgV2pnSubMoved", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription ends in 1 day.
+        /// </summary>
+        public static string V2pnSubEndsInOneDay {
+            get {
+                return ResourceManager.GetString("V2pnSubEndsInOneDay", resourceCulture);
             }
         }
     }

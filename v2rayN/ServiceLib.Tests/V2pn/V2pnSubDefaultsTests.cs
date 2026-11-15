@@ -24,7 +24,8 @@ public class V2pnSubDefaultsTests
         await soon!.Text.Should().BeEqualTo(string.Format(ResUI.V2pnSubEndsInDays, 2));
         await soon.Tone.Should().BeEqualTo(SubPanelHeaders.ToneAttention);
         await soon.IsExpiry.Should().BeTrue();
-        await V2pnSubDefaults.ExpiryBanner(Info(TimeSpan.FromHours(5)), Now)!.Text.Should().BeEqualTo(ResUI.V2pnSubEndsInOneDay);
+        await V2pnSubDefaults.ExpiryBanner(Info(TimeSpan.FromHours(5)), Now)!.Text.Should().BeEqualTo(ResUI.V2pnSubEndsWithinDay);
+        await V2pnSubDefaults.ExpiryBanner(Info(TimeSpan.FromHours(47)), Now)!.Text.Should().BeEqualTo(ResUI.V2pnSubEndsInOneDay);
         await V2pnSubDefaults.ExpiryBanner(Info(TimeSpan.FromDays(-1)), Now)!.Text.Should().BeEqualTo(ResUI.V2pnSubEnded);
     }
 

@@ -1941,7 +1941,7 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="V2pnSubEnded" xml:space="preserve">
     <value>Your subscription has ended</value>
   </data>
-  <data name="V2pnSubEndsInOneDay" xml:space="preserve">
+  <data name="V2pnSubEndsWithinDay" xml:space="preserve">
     <value>Your subscription ends within a day</value>
   </data>
   <data name="V2pnSubEndsInDays" xml:space="preserve">
@@ -1955,5 +1955,8 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   </data>
   <data name="MsgV2pnSubMoved" xml:space="preserve">
     <value>The provider moved the subscription to {0}. Its partner certificate names this address, so V2pn will update from it from now on.</value>
+  </data>
+  <data name="V2pnSubEndsInOneDay" xml:space="preserve">
+    <value>Your subscription ends in 1 day</value>
   </data>
 </root>

@@ -70,7 +70,10 @@ public sealed class ServerBrowser : UserControl
     private readonly StackPanel _rows = new() { Spacing = 2 };
     private readonly TextBlock _note;
     private readonly ScrollViewer _list;
+    private const string PartnerChip = "@partner";
     private string? _sub;
+    // Until the person picks a chip, a partner's look opens on the partner's own servers.
+    private bool _picked;
     private EditionSnapshot? _last;
     private int _rowsKey;
     private int _chipsKey;
@@ -153,7 +156,11 @@ public sealed class ServerBrowser : UserControl
 
         var query = _search.Text?.Trim() ?? string.Empty;
         IEnumerable<SceneServer> items = s.Catalog;
-        if (_sub == Favourites)
+        if (_sub == PartnerChip)
+        {
+            items = items.Where(x => x.SubId != null && s.PartnerSubIds.Contains(x.SubId));
+        }
+        else if (_sub == Favourites)
         {
             items = items.Where(x => x.Favorite);
         }
@@ -188,7 +195,7 @@ public sealed class ServerBrowser : UserControl
         _rows.Children.Clear();
         foreach (var server in list.Take(MaxRows))
         {
-            _rows.Children.Add(Row(server, server.IndexId == s.SelectedId, showSub: _sub == null || _sub == Favourites));
+            _rows.Children.Add(Row(server, server.IndexId == s.SelectedId, showSub: _sub is null or Favourites || (_sub == PartnerChip && s.PartnerSubIds.Count > 1)));
         }
         _note.Text = list.Count == 0
             ? _sub == Favourites && query.Length == 0 ? "В избранном пока пусто: отметьте сервер звёздочкой в обычном V2pn." : "Ничего не нашлось."
@@ -199,17 +206,26 @@ public sealed class ServerBrowser : UserControl
     private void RenderChips(EditionSnapshot s)
     {
         var favourites = s.Catalog.Count(x => x.Favorite);
-        if (_sub != null && _sub != Favourites && s.Subs.All(x => x.Id != _sub))
+        var partnerCount = s.Catalog.Count(x => x.SubId != null && s.PartnerSubIds.Contains(x.SubId));
+        if (!_picked)
+        {
+            _sub = partnerCount > 0 ? PartnerChip : null;
+        }
+        if (_sub == PartnerChip ? partnerCount == 0 : _sub != null && _sub != Favourites && s.Subs.All(x => x.Id != _sub))
         {
             _sub = null;
         }
-        var key = HashCode.Combine(_sub, favourites, s.Catalog.Count, string.Join("|", s.Subs.Select(x => $"{x.Id}:{x.Name}:{x.Count}")));
+        var key = HashCode.Combine(_sub, favourites, partnerCount, s.Catalog.Count, string.Join("|", s.Subs.Select(x => $"{x.Id}:{x.Name}:{x.Count}")));
         if (key == _chipsKey)
         {
             return;
         }
         _chipsKey = key;
         _chips.Children.Clear();
+        if (partnerCount > 0 && s.PartnerName != null)
+        {
+            _chips.Children.Add(Chip(PartnerChip, _p.Ascii ? $"{s.PartnerName.ToLowerInvariant()} {partnerCount}" : $"{s.PartnerName}  {partnerCount}"));
+        }
         _chips.Children.Add(Chip(null, _p.Ascii ? $"все {s.Catalog.Count}" : $"Все  {s.Catalog.Count}"));
         if (favourites > 0)
         {
@@ -235,6 +251,7 @@ public sealed class ServerBrowser : UserControl
         chip.Click += (_, _) =>
         {
             _sub = id;
+            _picked = true;
             _chipsKey = 0;
             Render();
             _list.Offset = default;
@@ -306,6 +323,142 @@ public sealed class ServerBrowser : UserControl
         Grid.SetColumn(child, column);
         Grid.SetColumnSpan(child, columnSpan);
         grid.Children.Add(child);
+    }
+}
+
+/// <summary>
+/// The partner subscription as its panel describes it: traffic used, the term, the provider's note, and its cabinet
+/// and support. Hidden when the panel sent none of these.
+/// </summary>
+public sealed class AccountPanel : UserControl
+{
+    private readonly ScenePalette _p;
+    private readonly IEditionActions _a;
+    private readonly TextBlock _traffic;
+    private readonly Border _barTrack;
+    private readonly Border _bar;
+    private readonly TextBlock _expiry;
+    private readonly TextBlock _announce;
+    private readonly Button _cabinet;
+    private readonly Button _support;
+    private SceneAccount? _last;
+
+    public AccountPanel(ScenePalette p, IEditionActions a, string? title)
+    {
+        _p = p;
+        _a = a;
+        _traffic = Scene.Text("", 13, p.Soft, p.Font);
+        _expiry = Scene.Text("", 13, p.Soft, p.Font);
+        _announce = Scene.Text("", 12, p.Muted, p.Font);
+        _announce.TextWrapping = TextWrapping.Wrap;
+        _announce.TextTrimming = TextTrimming.None;
+        _bar = new Border { CornerRadius = Scene.Current.R(3), Background = Scene.B(p.Accent), HorizontalAlignment = HorizontalAlignment.Left };
+        _barTrack = new Border { Height = 5, CornerRadius = Scene.Current.R(3), Background = Scene.B(p.Raised), Child = _bar, ClipToBounds = true };
+        _barTrack.SizeChanged += (_, _) => SizeBar();
+        _cabinet = Link(p.Ascii ? "[ кабинет ]" : "Кабинет \u2197");
+        _cabinet.Click += (_, _) => Open(_last?.CabinetUrl);
+        _support = Link(p.Ascii ? "[ поддержка ]" : "Поддержка \u2197");
+        _support.Click += (_, _) => Open(_last?.SupportUrl);
+
+        var stack = new StackPanel { Spacing = 8 };
+        if (title != null)
+        {
+            stack.Children.Add(Scene.Text(title, 12, p.Muted, p.Font));
+        }
+        stack.Children.Add(_traffic);
+        stack.Children.Add(_barTrack);
+        stack.Children.Add(_expiry);
+        stack.Children.Add(_announce);
+        stack.Children.Add(new StackPanel { Orientation = Orientation.Horizontal, Spacing = 14, Children = { _cabinet, _support } });
+        Content = stack;
+        IsVisible = false;
+    }
+
+    private Button Link(string text)
+    {
+        var button = Scene.Button(Scene.Text(text, 12.5, _p.Soft, _p.Font), null, _p.Soft, 6, new Thickness(0, 3));
+        button.HorizontalAlignment = HorizontalAlignment.Left;
+        return button;
+    }
+
+    private void Open(string? url)
+    {
+        if (url.IsNotEmpty())
+        {
+            _a.OpenUrl(url!);
+        }
+    }
+
+    private void SizeBar() => _bar.Width = Math.Max(0, _barTrack.Bounds.Width * Math.Clamp(_last?.Fraction ?? 0, 0, 1));
+
+    public void Update(SceneAccount? account)
+    {
+        _last = account;
+        IsVisible = account is { IsEmpty: false };
+        if (account == null)
+        {
+            return;
+        }
+        var tone = account.Bad ? _p.Bad : account.Warn ? _p.Warn : _p.Soft;
+        _traffic.Text = account.Traffic ?? string.Empty;
+        _traffic.IsVisible = account.Traffic != null;
+        _barTrack.IsVisible = account.ShowBar;
+        _bar.Background = Scene.B(account.Bad ? _p.Bad : account.Warn ? _p.Warn : _p.Accent);
+        SizeBar();
+        _expiry.Text = account.Expiry ?? string.Empty;
+        _expiry.IsVisible = account.Expiry != null;
+        _expiry.Foreground = Scene.B(tone);
+        _announce.Text = account.Announce ?? string.Empty;
+        _announce.IsVisible = account.Announce != null;
+        _cabinet.IsVisible = account.CabinetUrl != null;
+        _support.IsVisible = account.SupportUrl != null;
+    }
+}
+
+/// <summary>
+/// The server in use belongs to another provider: said in the look's words, with a way to the partner's best server.
+/// The state pill keeps telling the truth either way.
+/// </summary>
+public sealed class ForeignNote : UserControl
+{
+    private readonly TextBlock _text;
+    private readonly Button _switch;
+    private string? _target;
+
+    public ForeignNote(ScenePalette p, IEditionActions a)
+    {
+        _text = Scene.Text("", 12.5, p.Soft, p.Font);
+        _text.TextWrapping = TextWrapping.Wrap;
+        _text.TextTrimming = TextTrimming.None;
+        var label = Scene.Text("", 12.5, p.Accent, p.Font, FontWeight.Medium);
+        _switch = Scene.Button(label, null, p.Accent, 6, new Thickness(0, 2));
+        _switch.HorizontalAlignment = HorizontalAlignment.Left;
+        _switch.Click += (_, _) =>
+        {
+            if (_target != null)
+            {
+                a.Select(_target);
+            }
+        };
+        Content = new StackPanel { Spacing = 2, Children = { _text, _switch } };
+        IsVisible = false;
+        Tag = (p, label);
+    }
+
+    public void Update(EditionSnapshot s)
+    {
+        IsVisible = s.ForeignServer && s.PartnerName != null;
+        if (!IsVisible)
+        {
+            return;
+        }
+        _target = s.BestPartnerServer;
+        var (p, label) = ((ScenePalette, TextBlock))Tag!;
+        _text.Text = p.Ascii
+            ? $"! сервер не от {s.PartnerName}: {s.Subscription}"
+            : $"Сейчас сервер не от {s.PartnerName}" + (s.Subscription.IsNotEmpty() ? $" — из «{s.Subscription}»." : ".");
+        label.Text = p.Ascii ? $"[ сервер {s.PartnerName} ]" : $"Перейти на сервер {s.PartnerName} \u2192";
+        _switch.IsVisible = _target != null;
     }
 }
 

@@ -41,6 +41,9 @@ public abstract class EditionScene : UserControl
     protected IEditionActions Actions { get; }
     protected SceneLook Look { get; }
 
+    /// <summary>The layout in use; wide until the first measure.</summary>
+    protected Fit CurrentFit => _fit ?? Fit.Wide;
+
     /// <summary>Ping colours that read on this look's ground.</summary>
     protected (string Good, string Warn, string Bad) PingColours =>
         Look.Dark ? ("#5BD08F", "#E9B04F", "#E5684F") : ("#16804F", "#B07508", "#C8381F");
@@ -183,6 +186,8 @@ public sealed class CabinetScene : EditionScene
     private readonly EmptyState _empty;
     private readonly ContentControl _serversBody = new();
     private readonly ThemeVariantScope _frame;
+    private readonly AccountPanel _account;
+    private readonly ForeignNote _foreign;
     private EditionSnapshot? _last;
 
     public CabinetScene(V2pnPartner partner, IEditionActions actions, SceneLook look) : base(partner, actions, look)
@@ -288,10 +293,13 @@ public sealed class CabinetScene : EditionScene
             FontSize = 12,
             Foreground = Scene.B(_c.Muted),
         };
-        _vpnPanel = Panel(new StackPanel { Spacing = 14, Children = { Header("Через VPN", null), _modes, _doodle, note, Extras(_c.Soft, ascii: false) } });
-
         var (good, warn, bad) = PingColours;
         var palette = new ScenePalette(_c.Panel, _c.Raised, _c.Text, _c.Soft, _c.Muted, look.Accent, Scene.OnAccent(look.Accent), 12, look.Text, Good: good, Warn: warn, Bad: bad);
+        _account = new AccountPanel(palette, actions, $"Подписка {partner.Name}");
+        _vpnPanel = Panel(new StackPanel { Spacing = 14, Children = { Header("Через VPN", null), _modes, _account, _doodle, note, Extras(_c.Soft, ascii: false) } });
+        // On the peach card: ink, not the accent, so the way back to the partner's servers reads on any accent.
+        _foreign = new ForeignNote(new ScenePalette("#F7F6F3", "#E8E3DC", "#121211", "#3E3C38", "#5B5750", "#121211", "#F3F2EE", 12, look.Text), actions);
+        _foreign.Margin = new Thickness(2, 10, 0, 0);
         _browser = new ServerBrowser(palette, actions);
         _empty = new EmptyState(palette, actions, partner.Name);
         var serversGrid = new Grid { RowDefinitions = new("Auto,*"), RowSpacing = 12 };
@@ -344,13 +352,13 @@ public sealed class CabinetScene : EditionScene
             Put(tiles, _pingTile, 0, 0);
             Put(tiles, _countTile, 0, 1);
             _who.Margin = new Thickness(0, 12, 0, 0);
-            _hero.Child = new StackPanel { Children = { pill, Take(_who), Take(_state), tiles, actions } };
+            _hero.Child = new StackPanel { Children = { pill, Take(_who), Take(_state), Take(_foreign), tiles, actions } };
         }
         else
         {
             _who.Margin = default;
             var grid = new Grid { ColumnDefinitions = new(wide ? "*,300" : "*,230"), ColumnSpacing = 20 };
-            ServerBrowser.Put(grid, new StackPanel { Children = { Take(_who), Take(_state), actions } }, 0, 0);
+            ServerBrowser.Put(grid, new StackPanel { Children = { Take(_who), Take(_state), Take(_foreign), actions } }, 0, 0);
             ServerBrowser.Put(grid, new StackPanel { Spacing = 10, Children = { pill, Take(_pingTile), Take(_countTile) } }, 0, 1);
             _hero.Child = grid;
         }
@@ -453,6 +461,8 @@ public sealed class CabinetScene : EditionScene
         SetSegment(_vpn, s.Vpn);
         _serversCount.Text = s.Catalog.Count.ToString(CultureInfo.CurrentCulture);
         _change.IsEnabled = s.Servers.Count > 0;
+        _account.Update(s.Account);
+        _foreign.Update(s);
         ShowListOrEmpty(_serversBody, _browser, _empty, s);
     }
 }
@@ -504,6 +514,10 @@ public sealed class StudioScene : EditionScene
     private readonly EmptyState _empty;
     private readonly ContentControl _serversBody = new();
     private readonly ContentControl _host = new();
+    private readonly AccountPanel _account;
+    private readonly Border _accountCard;
+    private readonly ForeignNote _foreign;
+    private readonly Grid _cards = new() { ColumnSpacing = 10, RowSpacing = 10 };
     private EditionSnapshot? _last;
 
     public StudioScene(V2pnPartner partner, IEditionActions actions, SceneLook look) : base(partner, actions, look)
@@ -568,8 +582,12 @@ public sealed class StudioScene : EditionScene
         var palette = new ScenePalette(_c.Panel, _c.Raised, _c.Text, _c.Soft, _c.Muted, look.Accent, Scene.OnAccent(look.Accent), 14, look.Text, Good: good, Warn: warn, Bad: bad);
         _browser = new ServerBrowser(palette, actions);
         _empty = new EmptyState(palette, actions, partner.Name);
+        _account = new AccountPanel(palette, actions, null);
+        _accountCard = Card(Scene.Text($"Подписка {partner.Name}", 18, _c.Text), _account, Key("04 · подписка"), Key(""));
+        _foreign = new ForeignNote(palette, actions);
+        _heroLeft.Children.Add(_foreign);
         var top = new Grid { ColumnDefinitions = new("*,Auto") };
-        Put(top, Key("04 · серверы"), 0, 0);
+        Put(top, Key("05 · серверы"), 0, 0);
         Put(top, _serversCount, 0, 1);
         var serversGrid = new Grid { RowDefinitions = new("Auto,*,Auto"), RowSpacing = 12 };
         Put(serversGrid, top, 0, 0);
@@ -633,10 +651,8 @@ public sealed class StudioScene : EditionScene
         }
         _heroLeft.Margin = narrow ? new Thickness(0, 10, 0, 6) : default;
 
-        var cards = new UniformGrid { Columns = narrow ? 1 : 3, ColumnSpacing = 10, RowSpacing = 10 };
-        cards.Children.Add(Take(_nodesCard));
-        cards.Children.Add(Take(_modeCard));
-        cards.Children.Add(Take(_routeButton));
+        LayoutCards();
+        var cards = Take(_cards);
 
         var column = new SceneColumn(12, 340, narrow ? new Thickness(14, 6, 14, 14) : new Thickness(26, 6, 26, 22));
         column.Parts.Add(nav);
@@ -644,6 +660,29 @@ public sealed class StudioScene : EditionScene
         column.Parts.Add(cards);
         column.Parts.Add(Take(_servers));
         _host.Content = column;
+    }
+
+    /// <summary>Three cards in a row, four with the subscription; two by two in a medium window, one under another in a narrow one.</summary>
+    private void LayoutCards()
+    {
+        var parts = new List<Control> { _nodesCard, _modeCard, _routeButton };
+        if (_accountCard.IsVisible)
+        {
+            parts.Add(_accountCard);
+        }
+        var columns = CurrentFit switch
+        {
+            Fit.Narrow => 1,
+            Fit.Medium => parts.Count == 4 ? 2 : 3,
+            _ => parts.Count,
+        };
+        _cards.Children.Clear();
+        _cards.ColumnDefinitions = new(string.Join(",", Enumerable.Repeat("*", columns)));
+        _cards.RowDefinitions = new(string.Join(",", Enumerable.Repeat("Auto", (parts.Count + columns - 1) / columns)));
+        for (var i = 0; i < parts.Count; i++)
+        {
+            Put(_cards, parts[i], i / columns, i % columns);
+        }
     }
 
     private Button Capsule(string text, Action click)
@@ -698,6 +737,14 @@ public sealed class StudioScene : EditionScene
         _modeNote.Text = s.Vpn ? "весь трафик через сервер" : "с системным прокси";
         _routeTitle.Text = s.Route;
         _serversCount.Text = s.Catalog.Count.ToString(CultureInfo.CurrentCulture);
+        _account.Update(s.Account);
+        var hasAccount = _account.IsVisible;
+        if (_accountCard.IsVisible != hasAccount)
+        {
+            _accountCard.IsVisible = hasAccount;
+            LayoutCards();
+        }
+        _foreign.Update(s);
         ShowListOrEmpty(_serversBody, _browser, _empty, s);
     }
 }
@@ -737,6 +784,8 @@ public sealed class AsciiScene : EditionScene
     private readonly EmptyState _empty;
     private readonly ContentControl _listBody = new();
     private readonly ThemeVariantScope _frame;
+    private readonly AccountPanel _account;
+    private readonly ForeignNote _foreign;
     private string? _mapFor;
     private EditionSnapshot? _last;
 
@@ -802,6 +851,8 @@ public sealed class AsciiScene : EditionScene
         var palette = new ScenePalette(_c.Ground, _c.Raised, _c.Text, _c.Soft, _c.Muted, look.Accent, _c.Ground, 2, look.Text, Ascii: true, Good: good, Warn: warn, Bad: bad);
         _browser = new ServerBrowser(palette, actions);
         _empty = new EmptyState(palette, actions, partner.Name);
+        _account = new AccountPanel(palette, actions, $"ПОДПИСКА {partner.Name.ToUpperInvariant()}");
+        _foreign = new ForeignNote(palette, actions);
         Content = new Border { Background = Scene.B(_c.Ground), Child = _frame };
         Reflow(Fit.Wide);
     }
@@ -816,7 +867,7 @@ public sealed class AsciiScene : EditionScene
         {
             _mapBox.Height = 200;
             var column = new SceneColumn(14, 300, new Thickness(14, 4, 14, 14));
-            foreach (var part in new Control[] { _pill, _pingRow, _kv, _buttons, _mapBox, _listBody })
+            foreach (var part in new Control[] { _pill, _pingRow, _foreign, _kv, _buttons, _account, _mapBox, _listBody })
             {
                 column.Parts.Add(Take(part));
             }
@@ -826,7 +877,7 @@ public sealed class AsciiScene : EditionScene
 
         _mapBox.Height = double.NaN;
         var side = new SceneColumn(16, 260, default);
-        foreach (var part in new Control[] { _pill, _pingRow, _kv, _buttons, _listBody })
+        foreach (var part in new Control[] { _pill, _pingRow, _foreign, _kv, _buttons, _account, _listBody })
         {
             side.Parts.Add(Take(part));
         }
@@ -857,6 +908,8 @@ public sealed class AsciiScene : EditionScene
         _route.Text = $"{s.Route.ToLower(CultureInfo.CurrentUICulture)}  [изменить]";
         _connectLabel.Text = $"[ {s.ConnectLabel.ToLower(CultureInfo.CurrentUICulture)} ]";
         _connect.IsEnabled = s.HasServer;
+        _account.Update(s.Account);
+        _foreign.Update(s);
         ShowListOrEmpty(_listBody, _browser, _empty, s);
 
         var centre = s.CountryCode ?? "DE";

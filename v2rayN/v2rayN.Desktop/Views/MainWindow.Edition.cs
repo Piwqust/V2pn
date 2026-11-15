@@ -292,7 +292,11 @@ public partial class MainWindow : IEditionActions
         PushEditionSnapshot();
     }
 
-    /// <summary>What the plain header shows right now, for the scene to show the same.</summary>
+    /// <summary>
+    /// What the plain header shows right now, for the scene to show the same, plus the partner's side: its
+    /// subscriptions (the list starts with their servers), whether the server in use is someone else's, and what its
+    /// panel says about the subscription.
+    /// </summary>
     private void PushEditionSnapshot()
     {
         if (_scene == null)
@@ -301,10 +305,40 @@ public partial class MainWindow : IEditionActions
         }
         var kind = new[] { "safe", "warn", "checking", "unsafe" }.FirstOrDefault(c => pillState.Classes.Contains(c)) ?? "unsafe";
         var profiles = ViewModel?.ProfilesViewModel;
-        var current = profiles?.ProfileItems.FirstOrDefault(t => t.IndexId == _config.IndexId);
-        var sameSub = current == null || profiles == null
+        var listed = profiles?.ProfileItems.FirstOrDefault(t => t.IndexId == _config.IndexId);
+        // The catalog knows every server; the sidebar's list only the ones its filter shows.
+        var current = _catalog.FirstOrDefault(t => t.IndexId == _config.IndexId);
+        var currentSub = current?.SubId ?? listed?.Subid;
+
+        var partner = Editions.Partner;
+        var partnerSubs = partner == null || profiles == null
             ? []
-            : profiles.ProfileItems.Where(t => t.Subid == current.Subid).Take(40).ToList();
+            : profiles.SubItems.Where(t => t.Id.IsNotEmpty() && V2pnPartners.Instance.ForSubscription(t)?.Id == partner.Id).ToList();
+        var partnerSubIds = partnerSubs.Select(t => t.Id).ToList();
+        var partnerServers = _catalog.Where(t => t.SubId != null && partnerSubIds.Contains(t.SubId)).ToList();
+
+        // The node squares count the partner's servers in its look, else the subscription of the server in use.
+        var counted = partnerServers.Count > 0 ? partnerServers : _catalog.Where(t => t.SubId == currentSub).ToList();
+        var sameSub = _catalog.Where(t => t.SubId == currentSub).Take(40).ToList();
+        var best = partnerServers.Where(t => t.Delay > 0).OrderBy(t => t.Delay).FirstOrDefault() ?? partnerServers.FirstOrDefault();
+
+        SceneAccount? account = null;
+        if (partner != null)
+        {
+            var info = partnerSubs.Select(t => SubInfoManager.Instance.Get(t.Id)).FirstOrDefault(t => t != null);
+            var usage = SubUsage.From(info);
+            account = new SceneAccount(
+                usage?.HasTraffic == true ? usage.TrafficText : null,
+                usage?.Fraction ?? 0,
+                usage?.ShowBar == true,
+                usage?.HasExpiry == true ? usage.ExpiryLong : null,
+                usage?.TrafficWarn == true || usage?.ExpiryWarn == true,
+                usage?.TrafficBad == true || usage?.ExpiryBad == true,
+                info?.Announce.IsNotEmpty() == true ? info.Announce : null,
+                NonEmpty(info?.WebPageUrl) ?? NonEmpty(partner.Pack.CabinetUrl),
+                NonEmpty(info?.SupportUrl) ?? NonEmpty(partner.Pack.SupportUrl));
+        }
+
         var state = CurrentState();
         _scene.Update(new EditionSnapshot
         {
@@ -315,21 +349,28 @@ public partial class MainWindow : IEditionActions
             Title = txtHeaderTitle.Text ?? string.Empty,
             Subtitle = txtHeaderSubtitle.Text ?? string.Empty,
             CountryCode = _mapCode,
-            Subscription = current?.SubRemarks,
-            Ping = current?.Delay > 0 ? current.Delay : 0,
+            Subscription = current?.Sub ?? listed?.SubRemarks,
+            Ping = current?.Delay > 0 ? current.Delay : listed?.Delay > 0 ? listed.Delay : 0,
             Vpn = lstMode.SelectedItem == itemModeVpn,
             Route = txtRoute.Text ?? string.Empty,
-            NodesOk = sameSub.Count(t => t.Delay > 0),
-            NodesTotal = sameSub.Count(t => t.Delay != 0),
+            NodesOk = counted.Count(t => t.Delay > 0),
+            NodesTotal = counted.Count(t => t.Delay != 0),
             ConnectLabel = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect,
-            Servers = sameSub.Select(t => new SceneServer(t.IndexId, CountryResolver.ServerName(t), CountryResolver.Resolve(t.Remarks), t.Delay, t.IndexId == _config.IndexId)).ToList(),
+            Servers = sameSub.Select(t => t with { Selected = t.IndexId == _config.IndexId }).ToList(),
             Catalog = _catalog,
             Subs = _catalogSubs,
             SelectedId = _config.IndexId,
             AnyServers = _catalog.Count > 0 || (profiles?.AllServersCount ?? 0) > 0,
             CanImport = btnWelcomeImport.IsVisible && panelWelcomeImport.IsVisible,
+            PartnerName = partner?.Name,
+            PartnerSubIds = partnerSubIds,
+            ForeignServer = partnerServers.Count > 0 && _hasServer && currentSub != null && !partnerSubIds.Contains(currentSub),
+            BestPartnerServer = best?.IndexId,
+            Account = account is { IsEmpty: false } ? account : null,
         });
     }
+
+    private static string? NonEmpty(string? text) => text.IsNullOrEmpty() ? null : text;
 
     void IEditionActions.ToggleConnect() => btnConnect.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
 
@@ -354,4 +395,6 @@ public partial class MainWindow : IEditionActions
     void IEditionActions.OpenSettings() => ViewModel?.OptionSettingCmd.Execute().Subscribe();
 
     void IEditionActions.OpenIp() => _ = ShowRoomyDialog(new IpInfoView());
+
+    void IEditionActions.OpenUrl(string url) => ProcUtils.ProcessStart(url);
 }

@@ -14,6 +14,21 @@ public sealed record SceneServer(string IndexId, string Name, string? Code, int 
 /// <summary>A subscription with servers, for the scene's filter chips.</summary>
 public sealed record SceneSub(string Id, string Name, int Count);
 
+/// <summary>What the partner's panel says about the person's subscription: traffic, term, its note and its links.</summary>
+public sealed record SceneAccount(
+    string? Traffic,
+    double Fraction,
+    bool ShowBar,
+    string? Expiry,
+    bool Warn,
+    bool Bad,
+    string? Announce,
+    string? CabinetUrl,
+    string? SupportUrl)
+{
+    public bool IsEmpty => Traffic == null && Expiry == null && Announce == null && CabinetUrl == null && SupportUrl == null;
+}
+
 /// <summary>
 /// What a partner scene shows, read from the main window each time it refreshes: the same verdict, server,
 /// mode and route the plain V2pn header shows, so a scene can never say something V2pn does not.
@@ -44,6 +59,17 @@ public sealed record EditionSnapshot
     public bool AnyServers { get; init; }
     /// <summary>Other VPN apps with servers were found; the empty state offers the move.</summary>
     public bool CanImport { get; init; }
+
+    /// <summary>The open partner's name, and its subscriptions: the list starts with their servers.</summary>
+    public string? PartnerName { get; init; }
+    public IReadOnlyList<string> PartnerSubIds { get; init; } = [];
+
+    /// <summary>The server in use comes from another provider; the look says so and offers the partner's best one.</summary>
+    public bool ForeignServer { get; init; }
+    public string? BestPartnerServer { get; init; }
+
+    /// <summary>The partner subscription's traffic, term and links; null when the panel sent none.</summary>
+    public SceneAccount? Account { get; init; }
 }
 
 /// <summary>What a scene's controls do: the plain window's own actions, so behaviour never forks.</summary>
@@ -62,6 +88,7 @@ public interface IEditionActions
     void Import();
     void OpenSettings();
     void OpenIp();
+    void OpenUrl(string url);
 }
 
 /// <summary>Shared drawing for the partner scenes.</summary>

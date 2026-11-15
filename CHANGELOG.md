@@ -2,6 +2,43 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### Provider looks
+
+A provider can now dress V2pn in its own look. The first is Configra.
+
+- A provider's site or bot can open V2pn with a `v2pn://add` link. V2pn always asks before adding the subscription. Happ, v2RayTun and Hiddify add links work the same way.
+- When the provider is a V2pn partner, its look becomes available once its signature checks out: the name in the title bar switches between plain V2pn and the provider (also Ctrl+1…9). The connection, settings and servers stay as they are.
+- A provider picks among five looks that V2pn draws itself, and you can switch between them: V2pn with its logo, V2pn in its colours, its cabinet, its website and plain text.
+- The provider does not see your traffic, gets nothing about your device, and cannot change what the connection state says.
+
+### First start
+
+A new install now walks you through the setup in five steps: the language (English or Russian), your servers, what goes through the VPN, Proxy or VPN mode, and a summary with a Connect button. Each step can be changed later in the same place on the main screen, and "Skip" is always there.
+
+- The language can be picked right away. A new install no longer has to start in English and be switched in Appearance.
+- The servers step shows the download as it goes: how many servers have arrived, and when they are ready.
+- The summary shows which server Connect will use, and every choice has a "Change" link.
+
+### Moving from other apps
+
+On the first start V2pn looks for other VPN apps on the computer and offers to bring their subscriptions and servers over: Clash Verge, Clash Party (Mihomo Party), Clash Nyanpasu, Clash for Windows, FlClash, NekoRay and NekoBox, Throne, Hiddify, v2RayTun, Karing, GUI.for.Clash and GUI.for.SingBox, and v2rayN as before. With several apps found, the card lists them with ticks; one button moves all that are ticked.
+
+- Subscriptions come over with the names you gave them and download right away. Servers you added by hand come over as they are.
+- The other apps are only read: they keep working as they did.
+- A server V2pn already has, or a subscription it already has, is not added twice.
+- Kinds of servers V2pn cannot run (plain HTTP proxies, shadow-tls, h2) stay behind, and the message says how many.
+- Routing rules of other apps don't come over; V2pn's own modes cover what they are usually for.
+- The same is in the menu any time: Tools → "Move from another app". A portable copy the search missed (NekoRay or Throne unpacked somewhere unusual) is found with "Choose the app's folder…".
+- Happ keeps its servers encrypted, so V2pn can't read them. The menu shows Happ with a hint: copy the subscription link in Happ and paste it into V2pn.
+- A subscription that answers only in Clash format now becomes a list of servers, each on the map, instead of one opaque Clash profile.
+
+### Interface
+
+- The "What goes through the VPN" menu is redone. It has the same dark surface as the bar it opens from instead of a light grey one. Each mode has its own icon, and a radio button shows which one is on. The ad blocker and your own rules line up under the modes, and "Routing settings" became a link at the bottom. The modes on the first-run card look the same.
+- Other pop-up panels (pickers in the server window, the theme and backup menus) use the same dark surface too.
+
 ## 1.0.3
 
 ### Fixes

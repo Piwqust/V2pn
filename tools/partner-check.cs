@@ -4,14 +4,15 @@
 //   dotnet run tools/partner-check.cs -- <subscription link>
 //       Downloads the subscription as V2pn would, reads its headers (v2pn-partner, v2pn-account-token, the
 //       panel's name, links and traffic), downloads and checks the pack (certificate, signatures, term,
-//       domains, pictures), reads its server notes and buttons (servers, actions, lock), then asks the partner API
-//       (account with the token, status, servers, and recommend and card for the buttons that use them) if the
+//       domains, pictures), reads its server notes and buttons (servers, actions, lock), checks its reviewed files
+//       (routing.json, transport.json, core.json: format, filter, hash against the certificate), then asks the partner
+//       API (account with the token, status, servers, and recommend and card for the buttons that use them) if the
 //       pack names one.
 //
 //   dotnet run tools/partner-check.cs -- --folder <pack folder> --subscription <subscription link>
 //       The same checks for a pack on disk, before it is published.
 //
-// Every step prints OK or what is wrong; the exit code is 0 only when the look will show.
+// Every step prints OK or what is wrong; the exit code is 0 only when the look will show and every reviewed file is used.
 
 using System.Net;
 using System.Text.Json.Nodes;
@@ -34,6 +35,7 @@ if (subscription == null)
 }
 
 var failed = false;
+var reviewFailed = false;
 void Ok(string text) => Console.WriteLine($"  OK   {text}");
 void Bad(string text)
 {
@@ -159,6 +161,7 @@ try
             Note("no looks: the certificate lacks the edition grant, or the pack lists none V2pn knows");
         }
         CheckCatalog(partner, panel);
+        CheckReviewed(partner);
     }
 }
 catch (Exception ex)
@@ -246,7 +249,72 @@ catch (IOException)
 {
 }
 Console.WriteLine(failed ? "RESULT: V2pn will not show this partner's look" : "RESULT: V2pn will show this partner's look");
-return failed ? 1 : 0;
+if (reviewFailed)
+{
+    Console.WriteLine("RESULT: some reviewed files are not used (see \"reviewed files\" above)");
+}
+return failed || reviewFailed ? 1 : 0;
+
+// routing.json, transport.json, core.json: V2pn's checks of each, and whether the certificate's reviewed hash matches.
+void CheckReviewed(V2pnPartner partner)
+{
+    var listed = partner.Pack.Assets.Where(a => V2pnReviewedFiles.All.Contains(a.Name)).ToList();
+    var unlisted = folder == null ? new List<string>() : V2pnReviewedFiles.All.Where(n => File.Exists(Path.Combine(folder, n)) && listed.All(a => a.Name != n)).ToList();
+    if (listed.Count == 0 && unlisted.Count == 0 && partner.Cert.ReviewedFiles.Count == 0)
+    {
+        return;
+    }
+    Console.WriteLine("reviewed files");
+    foreach (var name in unlisted)
+    {
+        Bad($"{name} is in the folder but not in partner.json's assets: sign the pack again (tools/partner.cs pack)");
+        reviewFailed = true;
+    }
+    foreach (var asset in listed)
+    {
+        var content = File.ReadAllBytes(Path.Combine(partner.Folder, asset.Name));
+        var grant = V2pnReviewedFiles.GrantOf(asset.Name);
+        string problem;
+        var valid = asset.Name switch
+        {
+            V2pnReviewedFiles.Routing => V2pnRoutingPreset.Parse(content, out problem) != null,
+            V2pnReviewedFiles.Transport => V2pnTransport.Parse(content, out problem) != null,
+            _ => V2pnCoreFragment.Parse(content, out problem) != null,
+        };
+        if (valid)
+        {
+            Ok($"{asset.Name}: format and filter pass (sha256 {asset.Sha256})");
+        }
+        else
+        {
+            Bad($"{asset.Name}: {problem}");
+            reviewFailed = true;
+        }
+        var state = partner.Features.File(asset.Name)?.State;
+        switch (state)
+        {
+            case V2pnReviewState.Ready:
+                Ok($"{asset.Name}: the certificate's {grant} grant names this very file; V2pn uses it");
+                break;
+            case V2pnReviewState.Changed:
+                Bad($"{asset.Name}: changed after the review (certificate {partner.Cert.ReviewedFiles[asset.Name][..12]}..., pack {asset.Sha256[..12]}...); V2pn does not use it until a new certificate");
+                reviewFailed = true;
+                break;
+            case V2pnReviewState.NotReviewed:
+                Note($"{asset.Name}: not reviewed yet (no {grant} grant with its hash); send it with a description to V2pn's owner");
+                reviewFailed = true;
+                break;
+            default:
+                Bad($"{asset.Name}: reviewed, but this V2pn refuses it: {partner.Features.File(asset.Name)?.Problem}");
+                reviewFailed = true;
+                break;
+        }
+    }
+    foreach (var (name, hash) in partner.Cert.ReviewedFiles.Where(r => listed.All(a => a.Name != r.Key)))
+    {
+        Note($"the certificate names {name} ({hash[..12]}...), but the pack has no such file");
+    }
+}
 
 // The pack's server notes and buttons: what V2pn took, and what it left out and why.
 void CheckCatalog(V2pnPartner partner, SubPanelInfo? panelInfo)

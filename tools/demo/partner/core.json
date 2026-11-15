@@ -1,0 +1,54 @@
+{
+  "core": "xray",
+  "outbounds": [
+    {
+      "tag": "ai-us",
+      "protocol": "vless",
+      "settings": {
+        "vnext": [
+          {
+            "address": "us.kestrel.example",
+            "port": 443,
+            "users": [
+              {
+                "id": "184dc50a-10b0-57a7-906d-63ad1fe207b4",
+                "encryption": "none"
+              }
+            ]
+          }
+        ]
+      },
+      "streamSettings": {
+        "network": "raw",
+        "security": "tls",
+        "tlsSettings": {
+          "serverName": "us.kestrel.example"
+        }
+      }
+    }
+  ],
+  "balancers": [
+    {
+      "tag": "ai",
+      "selector": [
+        "ai-us",
+        "proxy"
+      ],
+      "strategy": "leastPing"
+    }
+  ],
+  "observatory": {
+    "probeUrl": "https://www.gstatic.com/generate_204",
+    "probeInterval": "5m"
+  },
+  "rules": [
+    {
+      "domains": [
+        "geosite:openai",
+        "domain:chatgpt.com",
+        "domain:claude.ai"
+      ],
+      "to": "ai"
+    }
+  ]
+}

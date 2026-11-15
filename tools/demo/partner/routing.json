@@ -1,0 +1,33 @@
+{
+  "name": "YouTube, Telegram и ИИ через VPN",
+  "rules": [
+    {
+      "domains": [
+        "geosite:youtube",
+        "geosite:telegram",
+        "geosite:openai",
+        "domain:chatgpt.com",
+        "domain:claude.ai"
+      ],
+      "ips": [
+        "geoip:telegram"
+      ],
+      "to": "proxy"
+    },
+    {
+      "domains": [
+        "domain:gosuslugi.ru",
+        "domain:sberbank.ru",
+        "domain:tbank.ru"
+      ],
+      "to": "direct"
+    },
+    {
+      "domains": [
+        "geosite:category-ads-all"
+      ],
+      "to": "block"
+    }
+  ],
+  "default": "direct"
+}

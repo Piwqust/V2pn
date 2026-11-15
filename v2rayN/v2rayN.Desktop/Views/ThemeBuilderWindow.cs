@@ -468,6 +468,14 @@ public sealed partial class ThemeBuilderWindow : Window
         var old = _draft.Picture(place);
         File.Copy(path, Path.Combine(_work, name), true);
         _draft.SetPicture(place, name);
+        // The wide picture shows in its own block: a picture without the block would never be seen.
+        if (place == V2pnPackDraft.Pictures.Banner && !_draft.Blocks.Contains(V2pnThemeBlocks.Art))
+        {
+            var blocks = _draft.Blocks.ToList();
+            var at = blocks.IndexOf(V2pnThemeBlocks.Servers);
+            blocks.Insert(at < 0 ? blocks.Count : at, V2pnThemeBlocks.Art);
+            _draft.Blocks = blocks;
+        }
         _pictureState[place] = Verdict(place, name, content);
         DropUnused(old);
         RebuildForm();
@@ -479,6 +487,10 @@ public sealed partial class ThemeBuilderWindow : Window
         var old = _draft.Picture(place);
         _draft.SetPicture(place, null);
         _pictureState.Remove(place);
+        if (place == V2pnPackDraft.Pictures.Banner && _draft.Blocks.Contains(V2pnThemeBlocks.Art))
+        {
+            _draft.Blocks = _draft.Blocks.Where(b => b != V2pnThemeBlocks.Art).ToList();
+        }
         DropUnused(old);
         RebuildForm();
         Changed();

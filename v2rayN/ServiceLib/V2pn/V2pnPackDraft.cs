@@ -60,7 +60,8 @@ public sealed class V2pnPackDraft
                 ["corners"] = theme.Corners,
                 ["density"] = theme.Density,
                 ["background"] = new JsonObject { ["type"] = V2pnThemeBackgroundKinds.Solid },
-                ["blocks"] = Array(theme.Blocks),
+                // The wide picture's block comes with the picture (the builder adds it then).
+                ["blocks"] = Array(theme.Blocks.Where(b => b != V2pnThemeBlocks.Art)),
             },
         });
         return draft;

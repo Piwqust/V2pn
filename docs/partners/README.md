@@ -17,6 +17,8 @@ This page is for the provider's developers. It describes what to serve, how it i
 | The provider's mark on its subscription in V2pn's list | no | yes |
 | The provider's look of V2pn (five looks, the provider's colour) | no | yes, with the `edition` grant |
 | Plan, server health by the provider's own checks, devices, incidents in the look | no | yes, with the `account` grant and an API |
+| A description of the servers (groups, countries, purposes) and up to four buttons of your own | no | yes, with the `actions` grant, which every partner gets |
+| Closed settings: server addresses hidden, the link cannot be passed on | no | yes, with the `lock` grant after a manual review |
 
 ## How it works
 
@@ -52,7 +54,9 @@ Send the owner of V2pn:
 - the name people see, up to 40 characters, without "V2pn" in it;
 - the domains your subscription and pack are served from (`example.com`, `*.example.com`);
 - the public key (base64 of the DER SubjectPublicKeyInfo, as printed above);
-- the grants you need: `edition` (the look) and `account` (the API).
+- the grants you need: `edition` (the look), `account` (the API) and, if needed, `lock` (closed settings, after a manual review). Every partner gets `actions` (buttons and the description of servers).
+
+V2pn 1.0.3 and older refused a certificate with grants it did not know; with the `actions` grant your look does not open there until the person updates V2pn. Newer versions skip unknown grants.
 
 You get `cert.json` and `cert.json.sig` back, valid for one year. Put both into the pack folder as they are.
 
@@ -126,7 +130,80 @@ dotnet run tools/partner.cs -- pack <pack folder> --key provider-key.pem
 
 or with your own tooling: ECDSA P-256 over SHA-256 of the exact bytes of `partner.json`, the DER signature in base64 in `partner.json.sig`. Serve the files byte for byte (no re-encoding of line ends); V2pn checks the bytes it receives.
 
-## 3. Headers of the subscription
+## 3. Servers and buttons
+
+With the `actions` grant (every partner gets it) the pack describes the servers of your subscription and sets up to four buttons of your own. A button is a label, an icon and an action from V2pn's catalogue: no logic of yours runs in the app. The server is chosen either by V2pn from its own measurements or by your API.
+
+### Describing servers
+
+```json
+"servers": [
+  { "name": "🇩🇪 Germany 2", "group": "Main", "country": "DE", "city": "Berlin",
+    "purpose": ["youtube"], "priority": 5, "note": "Fast route to Europe" },
+  { "host": "nl1.example.com", "group": "Gaming", "purpose": ["games"] },
+  { "name": "Reserve", "hidden": true }
+]
+```
+
+| Field | What V2pn does with it |
+| --- | --- |
+| `name` or `host` | finds the server of your subscription: by its exact name (as in the link) or by its address; one of the two is required |
+| `group` | up to 24 characters; a header in the subscription's server list and in the look. Groups come in the order they first appear in the pack; servers without one come last, under "Other" |
+| `country` | ISO 3166 alpha-2 code: the flag and the place on the map instead of a guess from the name |
+| `city` | up to 32 characters, on a line under the name |
+| `purpose` | what the server is for: `youtube`, `games`, `mobile`, `whitelist`, `streaming`, `ai`, `torrents`. V2pn names them in the person's language as chips on the server's row; other values are left out |
+| `priority` | an integer from −1000 to 1000; between equal measurements the higher one is picked |
+| `hidden` | `true`: the server is not listed or offered. Only a recommendation from your API can connect to it |
+| `note` | up to 60 characters, on a line under the name |
+
+A field over its limit is not shown (there is no cut-off line), and `partner-check` says which one. At most 300 entries.
+
+### Buttons
+
+```json
+"actions": [
+  { "id": "fast",   "label": "Fastest",     "icon": "bolt",   "do": "connect.best", "strategy": "ping" },
+  { "id": "stable", "label": "Most stable", "icon": "shield", "do": "connect.best", "strategy": "stable", "scope": { "group": "main" } },
+  { "id": "yt",     "label": "For YouTube", "icon": "play",   "do": "connect.recommend", "purpose": "youtube" },
+  { "id": "renew",  "label": "Renew",       "icon": "card",   "do": "open.renew" }
+]
+```
+
+`id`: lowercase letters, digits, `-` and `_`, up to 32 characters; `label`: up to 24 characters; `icon`: one of V2pn's icons, `bolt`, `shield`, `play`, `game`, `card`, `chat`, `globe`, `star`, `refresh`, `check`, `info`, `gift` (with another the button has none).
+
+| `do` | What V2pn does |
+| --- | --- |
+| `connect.best` | tests the servers and connects to the best by `strategy`: `ping`, the lowest delay now; `stable`, the most answers over V2pn's last 10 checks, then the lowest median, then the smallest spread; `load`, the lowest load from `GET servers` (by ping without load numbers). `scope` narrows the choice: `group`, `purpose` or a list of `servers` (names or addresses) |
+| `connect.recommend` | asks `GET <api>recommend?purpose=<purpose>` and connects to the first server of the answer that is in the subscription and answers. When the API does not answer or none of them does, to the fastest server with that purpose. Needs the API |
+| `connect.server` | to the server `server` (a name or an address) |
+| `connect.group` | to the fastest server of the group `group` |
+| `open.cabinet`, `open.renew`, `open.support` | opens the cabinet, renewal or support: the links of the subscription's headers, else the pack's `links` |
+| `open.link` | opens `url`: https on a certified domain or `t.me`, or `tg:` |
+| `subscription.update` | updates the subscription |
+| `check.services` | checks whether YouTube, Telegram and ChatGPT open through the current connection and shows the result |
+| `info.card` | shows the card from `GET <api>card?id=<button id>` in a frame with your name. Needs the API |
+
+Where the buttons are: in plain V2pn under the connect button while a server of your subscription is chosen, and in the subscription block of every look of yours, at any window width. At most four are on screen: V2pn takes the first four it can run and leaves out an unknown action, a button missing a field it needs, or one that needs the API when there is none. After connecting, V2pn says where and why: "Germany 2: the fastest", "Netherlands: by <provider>'s check". Pressing the same button again within 3 seconds does nothing.
+
+## 4. Closed settings
+
+With the `lock` grant a provider can close the settings of its subscription, as in Happ and INCY: the `hide-settings: 1` header or `"lock": true` in the pack. The grant is given after a manual review: explain what you protect your servers from. Without it the header and the field do nothing; otherwise any subscription could hide where the person's traffic goes.
+
+For the servers of that subscription V2pn then:
+
+- does not show addresses, ports or keys (in the list, the table, the connection card, search by address);
+- does not open the server editor and does not share it, copy its link, show a QR code, export its config or move it to another subscription;
+- leaves these servers out of backups (a subscription update brings them back after a restore);
+- does not let the subscription's link, User-Agent, headers and conversion be changed, and keeps your values for connecting at start and the server order;
+- says on the subscription's card and in its window: "Settings closed by <name>".
+
+`hide-url: 1` (also only with the `lock` grant) hides the subscription's link itself.
+
+What the person always keeps: connecting and disconnecting, any server of the subscription, deleting the subscription, plain V2pn, their own servers and routing next to yours, the kill switch and V2pn's updates.
+
+The protection is not absolute: the core's config is on disk and an experienced person can read it. The aim is the same as Happ's: addresses cannot be passed on in two clicks.
+
+## 5. Headers of the subscription
 
 | Header | |
 | --- | --- |
@@ -162,7 +239,7 @@ V2pn also reads the headers that providers already send to Happ, INCY and v2RayT
 | `update-always: true` (v2RayTun), `subscription-auto-update-open-enable: 1` (Happ) | updates this subscription when V2pn starts. Only this one: Happ updates every subscription. |
 | `new-url`, `new-domain` | moves the subscription to a new address, only for a V2pn partner whose certificate names the new host, and only in HTTP headers of a response with servers. https only; `new-url` wins over `new-domain`, and a bad `new-url` does not fall back to it; `new-domain` keeps the port, path and query; a move to the same host or to an address another subscription has is ignored. Without a certificate the headers are ignored: otherwise anyone answering on the old address could take the subscription away. The person's log says where it moved. |
 | `ping-type`, `check-url-via-proxy` | read and kept, not used yet: V2pn tests every server through the server itself, to the test address the person set |
-| `hide-settings`, `hide-url` | read and kept; they will apply only to partners with the `lock` grant |
+| `hide-settings`, `hide-url` | closed settings of the subscription, only for a partner with the `lock` grant (section 4); without it V2pn only keeps them |
 
 **In the body.** As Happ and INCY do, V2pn reads `#key: value` lines at the top of a subscription that is a list of links, plain or base64:
 
@@ -210,11 +287,11 @@ A header wins over the same key in the body. Only from headers: `new-url`, `new-
 }
 ```
 
-## 4. Links
+## 6. Links
 
 `v2pn://add?url=<subscription link, URL-encoded>&name=<name>` opens V2pn and asks before adding the subscription. V2pn also takes Happ (`happ://add/<link>`), v2RayTun (`v2raytun://import/<link>`) and Hiddify (`hiddify://import/<link>`) links. A link to a subscription V2pn already has only says so. On Windows the `v2pn` scheme is registered by the installed app; on macOS the app bundle claims it.
 
-## 5. The API (optional)
+## 7. The API (optional)
 
 With the `account` grant and an `api` address on a certified domain, V2pn asks:
 
@@ -237,9 +314,29 @@ With the `account` grant and an `api` address on a certified domain, V2pn asks:
 { "incidents": [ { "title": "Germany is down", "text": "We are on it.", "severity": "major" } ] }
 ```
 
+For buttons and the description of servers (the `actions` grant) V2pn also asks, always with the subscription's token when it has one:
+
+`GET <api>servers`, as often as `account`: when the look opens or a server of your subscription is chosen, at most every 30 minutes. The same fields as the pack's `servers`, plus `load` (0–100) and `healthy`. The API's values win over the pack's, field by field:
+
+```json
+{ "servers": [ { "name": "🇩🇪 Germany 2", "load": 31, "healthy": true }, { "host": "nl1.example.com", "load": 90, "healthy": false } ] }
+```
+
+`GET <api>recommend?purpose=youtube`, when a `connect.recommend` button is pressed: servers in order, best first (names or addresses, up to 50):
+
+```json
+{ "servers": ["🇳🇱 Netherlands", "🇩🇪 Germany 2"] }
+```
+
+`GET <api>card?id=plan`, when an `info.card` button with that `id` is pressed: a title of up to 60 characters and plain text of up to 600; line breaks are kept, there is no markup:
+
+```json
+{ "title": "Family plan", "text": "5 devices, unlimited traffic.\nPaid until 31 January 2027." }
+```
+
 Every field is optional; V2pn reads what it knows and ignores the rest. Answers are JSON up to 64 KB with status 200; anything else is treated as no answer. V2pn does not follow redirects with the token. When your site is blocked where the person is, V2pn asks again through the VPN. `servers.healthy`/`total` replace V2pn's own ping count in the look ("11 of 14 by <provider>'s check"). Send counts, never server addresses or credentials.
 
-## 6. The looks
+## 8. The looks
 
 | Look | What it is |
 | --- | --- |
@@ -253,21 +350,23 @@ V2pn draws all five, at every window width, in light and dark. The person can tu
 
 What a pack cannot change: the state colours and the state pill (green protected, red unprotected), the Connect button, V2pn's mark and the "on V2pn" note, the switcher back to plain V2pn, the settings and the routing.
 
-## 7. Life of a partnership
+## 9. Life of a partnership
 
 - **Updates.** Change and re-sign the pack whenever you like; V2pn picks it up at the next subscription update.
 - **The term.** A certificate lasts a year. V2pn checks it at start and every hour; when it runs out the look closes with a note, and plain V2pn opens. Ask for a new one a month ahead; `tools/partner-check.cs` warns.
 - **Leaving.** Stop sending `v2pn-partner` and the look goes away at the next update. A person who deletes your subscription loses your look with it.
 - **Withdrawal.** The owner of V2pn can withdraw a certificate before its term; installed apps learn it from the release channel and close the look.
 
-## 8. Checking
+## 10. Checking
 
 ```
 dotnet run tools/partner-check.cs -- https://example.com/s/<a real subscription token>
 dotnet run tools/partner-check.cs -- --folder ./v2pn --subscription https://example.com/s/<token>
 ```
 
-It runs V2pn's own checks with the keys built into the app and prints OK or what is wrong at each step: headers, certificate, signatures, domains, pictures, the API.
+It runs V2pn's own checks with the keys built into the app and prints OK or what is wrong at each step: headers, certificate, signatures, domains, pictures, the description of servers and the buttons (what V2pn leaves out and why), closed settings, the API including `servers`, `recommend` and `card` for your buttons.
+
+An example pack with servers and buttons, and a local server with a subscription, the pack and the API for previews, are in `tools/demo/partner/partner.json` and `tools/demo/demo_partner.py`.
 
 To see the look before publishing, ask V2pn's owner for a preview certificate for `127.0.0.1`, serve the pack and a test subscription from your computer over http, and turn on developer mode in V2pn (About → updates). V2pn then takes a pack served from `127.0.0.1`.
 

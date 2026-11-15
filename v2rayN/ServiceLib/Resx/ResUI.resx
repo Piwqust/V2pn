@@ -1980,4 +1980,10 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="V2pnPurposeTorrents" xml:space="preserve">
     <value>Torrents</value>
   </data>
+  <data name="V2pnLockedServer" xml:space="preserve">
+    <value>{0} closed this server's settings: it cannot be edited, shared or exported.</value>
+  </data>
+  <data name="V2pnLockedServerNoName" xml:space="preserve">
+    <value>The provider closed this server's settings: it cannot be edited, shared or exported.</value>
+  </data>
 </root>

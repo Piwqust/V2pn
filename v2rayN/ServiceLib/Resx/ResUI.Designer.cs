@@ -5642,5 +5642,23 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("V2pnPurposeTorrents", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} closed this server's settings: it cannot be edited, shared or exported..
+        /// </summary>
+        public static string V2pnLockedServer {
+            get {
+                return ResourceManager.GetString("V2pnLockedServer", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The provider closed this server's settings: it cannot be edited, shared or exported..
+        /// </summary>
+        public static string V2pnLockedServerNoName {
+            get {
+                return ResourceManager.GetString("V2pnLockedServerNoName", resourceCulture);
+            }
+        }
     }
 }

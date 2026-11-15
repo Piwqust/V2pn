@@ -1962,4 +1962,10 @@
   <data name="V2pnPurposeTorrents" xml:space="preserve">
     <value>Торренты</value>
   </data>
+  <data name="V2pnLockedServer" xml:space="preserve">
+    <value>Настройки этого сервера закрыл провайдер {0}: его нельзя изменить, отправить или выгрузить.</value>
+  </data>
+  <data name="V2pnLockedServerNoName" xml:space="preserve">
+    <value>Настройки этого сервера закрыл провайдер: его нельзя изменить, отправить или выгрузить.</value>
+  </data>
 </root>

@@ -672,6 +672,22 @@ public partial class ProfilesViewModel : MyReactiveObject
         return lstSelected;
     }
 
+    /// <summary>
+    /// V2pn: true (and the person is told why) when a partner closed the settings of any of <paramref name="items"/>
+    /// (V2pnLocks): its servers are not edited, copied, shared, exported or moved out of its subscription.
+    /// </summary>
+    private static async Task<bool> ClosedByPartnerAsync(IEnumerable<ProfileItem> items)
+    {
+        var list = items.ToList();
+        if (!await V2pnLocks.Instance.AnyClosedAsync(list))
+        {
+            return false;
+        }
+        var name = list.Select(i => V2pnLocks.Instance.ForSub(i.Subid).PartnerName).FirstOrDefault(n => n != null);
+        NoticeManager.Instance.Enqueue(name != null ? string.Format(ResUI.V2pnLockedServer, name) : ResUI.V2pnLockedServerNoName);
+        return true;
+    }
+
     public async Task EditServerAsync()
     {
         if (string.IsNullOrEmpty(SelectedProfile?.IndexId))
@@ -682,6 +698,10 @@ public partial class ProfilesViewModel : MyReactiveObject
         if (item is null)
         {
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);
+            return;
+        }
+        if (await ClosedByPartnerAsync([item]))
+        {
             return;
         }
         var eConfigType = item.ConfigType;
@@ -757,7 +777,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     private async Task CopyServer()
     {
         var lstSelected = await GetProfileItems(false);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }
@@ -807,6 +827,10 @@ public partial class ProfilesViewModel : MyReactiveObject
         if (item is null)
         {
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);
+            return;
+        }
+        if (await ClosedByPartnerAsync([item]))
+        {
             return;
         }
         var url = FmtHandler.GetShareUri(item);
@@ -871,7 +895,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     private async Task MoveToGroup()
     {
         var lstSelected = await GetProfileItems(true);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }
@@ -992,6 +1016,10 @@ public partial class ProfilesViewModel : MyReactiveObject
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);
             return;
         }
+        if (await ClosedByPartnerAsync([item]))
+        {
+            return;
+        }
 
         var (context, validatorResult) = await CoreConfigContextBuilder.Build(_config, item);
         if (NoticeManager.Instance.NotifyValidatorResult(validatorResult) && !validatorResult.Success)
@@ -1020,7 +1048,7 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task Export2ClientConfigResult(string fileName, ProfileItem item)
     {
-        if (fileName.IsNullOrEmpty())
+        if (fileName.IsNullOrEmpty() || await ClosedByPartnerAsync([item]))
         {
             return;
         }
@@ -1043,7 +1071,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     public async Task Export2ShareUrlAsync(bool blEncode)
     {
         var lstSelected = await GetProfileItems(true);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }
@@ -1076,7 +1104,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     public async Task Export2InnerUrlAsync()
     {
         var lstSelected = await GetProfileItems(true);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }

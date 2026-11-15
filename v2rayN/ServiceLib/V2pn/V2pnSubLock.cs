@@ -129,6 +129,32 @@ public sealed class V2pnLocks
         }
     }
 
+    /// <summary>
+    /// Takes what a partner closed out of a copy of the database on its way into a backup: the servers of a subscription
+    /// with closed settings (an update brings them back after a restore), and with hide-url the subscription itself.
+    /// </summary>
+    public async Task StripFromBackupAsync(string dbFile)
+    {
+        await RefreshAsync();
+        var closed = _bySub.Where(kv => kv.Value.Any).ToList();
+        if (closed.Count == 0 || !File.Exists(dbFile))
+        {
+            return;
+        }
+        using var db = new SQLiteConnection(dbFile, false);
+        db.RunInTransaction(() =>
+        {
+            foreach (var (subId, state) in closed)
+            {
+                db.Execute("DELETE FROM ProfileItem WHERE Subid = ?", subId);
+                if (state.HideUrl)
+                {
+                    db.Execute("DELETE FROM SubItem WHERE Id = ?", subId);
+                }
+            }
+        });
+    }
+
     public async Task RefreshAsync()
     {
         if (Interlocked.Exchange(ref _refreshing, 1) == 1)

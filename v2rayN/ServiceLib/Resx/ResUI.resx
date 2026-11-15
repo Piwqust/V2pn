@@ -1938,4 +1938,22 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="MsgV2pnSubOutboundRefused" xml:space="preserve">
     <value>V2pn does not run the server “{0}” from the subscription: its settings read files or run programs on this computer.</value>
   </data>
+  <data name="V2pnSubEnded" xml:space="preserve">
+    <value>Your subscription has ended</value>
+  </data>
+  <data name="V2pnSubEndsInOneDay" xml:space="preserve">
+    <value>Your subscription ends within a day</value>
+  </data>
+  <data name="V2pnSubEndsInDays" xml:space="preserve">
+    <value>Your subscription ends in {0} days</value>
+  </data>
+  <data name="V2pnSubRenew" xml:space="preserve">
+    <value>Renew</value>
+  </data>
+  <data name="V2pnSubMore" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="MsgV2pnSubMoved" xml:space="preserve">
+    <value>The provider moved the subscription to {0}. Its partner certificate names this address, so V2pn will update from it from now on.</value>
+  </data>
 </root>

@@ -1920,4 +1920,22 @@
   <data name="MsgV2pnSubOutboundRefused" xml:space="preserve">
     <value>V2pn не запускает сервер «{0}» из подписки: его настройки читают файлы или запускают программы на этом компьютере.</value>
   </data>
+  <data name="V2pnSubEnded" xml:space="preserve">
+    <value>Подписка закончилась</value>
+  </data>
+  <data name="V2pnSubEndsInOneDay" xml:space="preserve">
+    <value>Подписка закончится в течение суток</value>
+  </data>
+  <data name="V2pnSubEndsInDays" xml:space="preserve">
+    <value>Подписка закончится через {0} дн.</value>
+  </data>
+  <data name="V2pnSubRenew" xml:space="preserve">
+    <value>Продлить</value>
+  </data>
+  <data name="V2pnSubMore" xml:space="preserve">
+    <value>Подробнее</value>
+  </data>
+  <data name="MsgV2pnSubMoved" xml:space="preserve">
+    <value>Провайдер перенёс подписку на {0}. Этот адрес есть в его сертификате партнёра, дальше V2pn обновляет подписку оттуда.</value>
+  </data>
 </root>

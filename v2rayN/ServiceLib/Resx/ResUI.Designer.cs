@@ -5516,5 +5516,59 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("MsgV2pnSubOutboundRefused", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription has ended.
+        /// </summary>
+        public static string V2pnSubEnded {
+            get {
+                return ResourceManager.GetString("V2pnSubEnded", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription ends within a day.
+        /// </summary>
+        public static string V2pnSubEndsInOneDay {
+            get {
+                return ResourceManager.GetString("V2pnSubEndsInOneDay", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription ends in {0} days.
+        /// </summary>
+        public static string V2pnSubEndsInDays {
+            get {
+                return ResourceManager.GetString("V2pnSubEndsInDays", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Renew.
+        /// </summary>
+        public static string V2pnSubRenew {
+            get {
+                return ResourceManager.GetString("V2pnSubRenew", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to More.
+        /// </summary>
+        public static string V2pnSubMore {
+            get {
+                return ResourceManager.GetString("V2pnSubMore", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The provider moved the subscription to {0}. Its partner certificate names this address, so V2pn will update from it from now on..
+        /// </summary>
+        public static string MsgV2pnSubMoved {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubMoved", resourceCulture);
+            }
+        }
     }
 }

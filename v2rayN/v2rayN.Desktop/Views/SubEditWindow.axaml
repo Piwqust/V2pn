@@ -40,6 +40,10 @@
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProvider}" />
                     <Border Classes="sgroupcard">
                         <StackPanel x:Name="panelProvider">
+                            <!--  V2pn: the provider's banner or the reminder that the subscription runs out (V2pnSubDefaults).  -->
+                            <Border x:Name="rowBanner" Classes="srow stack" IsVisible="False">
+                                <views:SubBannerView x:Name="viewBanner" />
+                            </Border>
                             <Border x:Name="rowTraffic" Classes="srow stack">
                                 <StackPanel Spacing="8">
                                     <Grid ColumnDefinitions="*,Auto">
@@ -62,6 +66,16 @@
                                 <StackPanel Spacing="6">
                                     <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubAnnounce}" />
                                     <SelectableTextBlock x:Name="txtAnnounce" Classes="announce" />
+                                    <Button
+                                        x:Name="btnAnnounceMore"
+                                        HorizontalAlignment="Left"
+                                        Classes="small"
+                                        Theme="{StaticResource V2Button}">
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <TextBlock Text="{x:Static loc:L.SubAnnounceMore}" />
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconExternalOpenStroked}" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Border>
                             <Border x:Name="rowLinks" Classes="srow">
@@ -79,6 +93,32 @@
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
+                            </Border>
+                            <!--  V2pn: what the provider advises for its subscription; the person can take it or decide (SubEditWindow.Provider.cs).  -->
+                            <Border x:Name="rowStartConnect" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubStartConnect}" />
+                                        <TextBlock x:Name="txtStartConnectHint" Classes="srowhint" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbStartConnect" Width="220" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border x:Name="rowOrder" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubOrder}" />
+                                        <TextBlock x:Name="txtOrderHint" Classes="srowhint" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbOrder" Width="220" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border x:Name="rowOnStart" Classes="srow" IsVisible="False">
+                                <TextBlock x:Name="txtOnStart" Classes="srowhint" Margin="0" TextWrapping="Wrap" />
                             </Border>
                             <!--  V2pn: the provider's own look of V2pn, if its panel offers one (SubEditWindow.Provider.cs).  -->
                             <Border x:Name="rowPartner" Classes="srow" IsVisible="False">

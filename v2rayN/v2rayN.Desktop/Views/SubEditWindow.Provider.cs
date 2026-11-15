@@ -22,11 +22,17 @@ public partial class SubEditWindow
         rowTraffic.IsVisible = usage?.HasTraffic == true;
         rowExpiry.IsVisible = usage?.HasExpiry == true;
         rowAnnounce.IsVisible = info?.Announce.IsNotEmpty() == true;
+        btnAnnounceMore.IsVisible = info?.AnnounceUrl.IsNotEmpty() == true;
+        btnAnnounceMore.Tag = info?.AnnounceUrl;
+        ToolTip.SetTip(btnAnnounceMore, info?.AnnounceUrl);
+        viewBanner.Banner = V2pnSubDefaults.Banner(info, DateTimeOffset.Now);
+        rowBanner.IsVisible = viewBanner.Banner != null;
+        ShowProviderDefaults(info);
         btnSupport.IsVisible = info?.SupportUrl.IsNotEmpty() == true;
         btnWebPage.IsVisible = info?.WebPageUrl.IsNotEmpty() == true;
         rowLinks.IsVisible = btnSupport.IsVisible || btnWebPage.IsVisible;
         ShowPartner(source, info);
-        var rows = new Border[] { rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowPartner };
+        var rows = new Border[] { rowBanner, rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowStartConnect, rowOrder, rowOnStart, rowPartner };
         if (info == null || !rows.Any(r => r.IsVisible))
         {
             grpProvider.IsVisible = false;
@@ -59,6 +65,62 @@ public partial class SubEditWindow
         // Rows hidden above the first visible one would leave its top divider hanging.
         rows.First(r => r.IsVisible).BorderThickness = new Thickness(0);
         grpProvider.IsVisible = true;
+    }
+
+    // Order choices, in the combo box's order; null follows the provider.
+    private static readonly string?[] OrderChoices = [null, SubPanelHeaders.SortPing, SubPanelHeaders.SortAlphabet, SubPanelHeaders.SortWithout];
+
+    private static string OrderName(string? sort) => sort switch
+    {
+        SubPanelHeaders.SortAlphabet => L.SubOrderName,
+        SubPanelHeaders.SortWithout => L.SubOrderAsIs,
+        _ => L.SubOrderPing,
+    };
+
+    /// <summary>
+    /// What the provider advises (connecting at start, the order of its servers, updating and testing at start), each
+    /// shown only when the provider set it, with the person's own choice next to it.
+    /// </summary>
+    private void ShowProviderDefaults(SubInfoItem? info)
+    {
+        rowStartConnect.IsVisible = info?.Autoconnect == true;
+        if (info?.Autoconnect == true)
+        {
+            cmbStartConnect.ItemsSource = new[] { L.SubStartConnectProvider, L.SubStartConnectOwn };
+            cmbStartConnect.SelectedIndex = info.OwnAutoconnect ? 1 : 0;
+            txtStartConnectHint.Text = V2pnSubDefaults.AutoconnectType(info) switch
+            {
+                SubPanelHeaders.ConnectLowestDelay => L.SubStartConnectLowestDelay,
+                SubPanelHeaders.ConnectRandom => L.SubStartConnectRandom,
+                _ => L.SubStartConnectLastUsed,
+            };
+        }
+
+        rowOrder.IsVisible = info?.SortType.IsNotEmpty() == true;
+        if (info?.SortType.IsNotEmpty() == true)
+        {
+            cmbOrder.ItemsSource = new[] { L.SubOrderProvider, L.SubOrderPing, L.SubOrderName, L.SubOrderAsIs };
+            cmbOrder.SelectedIndex = Math.Max(0, Array.IndexOf(OrderChoices, SubPanelHeaders.ParseSortType(info.OwnSort)));
+            txtOrderHint.Text = string.Format(L.SubOrderAdvice, OrderName(info.SortType).ToLower(CultureInfo.CurrentUICulture));
+        }
+
+        var update = V2pnSubDefaults.UpdatesOnStart(info);
+        var ping = V2pnSubDefaults.PingsOnStart(info);
+        rowOnStart.IsVisible = update || ping;
+        txtOnStart.Text = update && ping ? L.SubOnStartBoth : update ? L.SubOnStartUpdate : L.SubOnStartPing;
+    }
+
+    /// <summary>Keeps the person's choices next to the provider's defaults; called on Save.</summary>
+    private void SaveProviderChoices()
+    {
+        var source = ViewModel?.SelectedSource;
+        if (_isNew || source?.Id.IsNotEmpty() != true || SubInfoManager.Instance.Get(source.Id) is not { } info)
+        {
+            return;
+        }
+        var ownAutoconnect = rowStartConnect.IsVisible ? cmbStartConnect.SelectedIndex == 1 : info.OwnAutoconnect;
+        var ownSort = rowOrder.IsVisible ? OrderChoices.ElementAtOrDefault(cmbOrder.SelectedIndex) : info.OwnSort;
+        _ = SubInfoManager.Instance.SetOwnChoicesAsync(source.Id, ownAutoconnect, ownSort);
     }
 
     /// <summary>

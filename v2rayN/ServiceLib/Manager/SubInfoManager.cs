@@ -117,6 +117,30 @@ public sealed class SubInfoManager
         }
     }
 
+    /// <summary>
+    /// The person's own choices for a subscription whose provider set defaults: deciding about connecting at start
+    /// themselves, and the order of its servers (null follows the provider). Updates never overwrite them.
+    /// </summary>
+    public async Task SetOwnChoicesAsync(string subId, bool ownAutoconnect, string? ownSort)
+    {
+        try
+        {
+            await LoadAsync();
+            if (Get(subId) is not { } info || (info.OwnAutoconnect == ownAutoconnect && info.OwnSort == ownSort))
+            {
+                return;
+            }
+            info.OwnAutoconnect = ownAutoconnect;
+            info.OwnSort = SubPanelHeaders.ParseSortType(ownSort);
+            await SQLiteHelper.Instance.ReplaceAsync(info);
+            Changed?.Invoke(subId);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+        }
+    }
+
     /// <summary>The Happ, INCY and v2RayTun values of a response; the person's own choices on <paramref name="info"/> stay.</summary>
     public static void CopyCompat(SubPanelInfo panel, SubInfoItem info)
     {

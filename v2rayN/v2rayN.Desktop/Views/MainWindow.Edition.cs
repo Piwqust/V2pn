@@ -13,6 +13,10 @@ public partial class MainWindow : IEditionActions
     private EditionScene? _scene;
     private string? _sceneKey;
     private DispatcherTimer? _sceneTimer;
+    private IReadOnlyList<SceneServer> _catalog = [];
+    private IReadOnlyList<SceneSub> _catalogSubs = [];
+    private bool _catalogBusy;
+    private int _sceneTicks;
 
     private void InitEdition()
     {
@@ -27,6 +31,7 @@ public partial class MainWindow : IEditionActions
             }
         };
         Editions.Changed += RefreshEdition;
+        ActualThemeVariantChanged += (_, _) => UpdateLockup(Editions.Partner, Editions.Variant);
         Editions.Start();
     }
 
@@ -38,20 +43,21 @@ public partial class MainWindow : IEditionActions
         btnEdition.IsHitTestVisible = Editions.Available.Count > 0;
         UpdateLockup(partner, variant);
 
-        var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}" : null;
+        // The look as the person tuned it on the Appearance page; any change there builds the scene again.
+        var look = new SceneLook(Editions.Mode != "light", Editions.AccentHex, Editions.Corners, Editions.DefaultCorners(variant), Editions.Font);
+        var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}:{look}" : null;
         if (key != _sceneKey)
         {
             _sceneKey = key;
+            Scene.Current = look;
             _scene = key == null ? null : variant switch
             {
-                V2pnPartnerVariants.Cabinet => new CabinetScene(partner!, this),
-                V2pnPartnerVariants.Studio => new StudioScene(partner!, this),
-                _ => new AsciiScene(partner!, this),
+                V2pnPartnerVariants.Cabinet => new CabinetScene(partner!, this, look),
+                V2pnPartnerVariants.Studio => new StudioScene(partner!, this, look),
+                _ => new AsciiScene(partner!, this, look),
             };
             editionHost.Content = _scene;
         }
-        // The studio look is light whatever the app's theme, so its title bar and dialogs are light with it.
-        RequestedThemeVariant = partner != null && variant == V2pnPartnerVariants.Studio ? ThemeVariant.Light : null;
         RefreshSceneVisibility();
         PushEditionSnapshot();
 
@@ -59,12 +65,19 @@ public partial class MainWindow : IEditionActions
         {
             _sceneTimer ??= new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) =>
             {
-                if (IsVisible)
+                if (!IsVisible)
                 {
-                    PushEditionSnapshot();
+                    return;
                 }
+                // The list (every server, with its last ping) is read from the database every few seconds.
+                if (++_sceneTicks % 3 == 0)
+                {
+                    _ = RefreshEditionCatalogAsync();
+                }
+                PushEditionSnapshot();
             });
             _sceneTimer.Start();
+            _ = RefreshEditionCatalogAsync();
         }
         else
         {
@@ -105,7 +118,8 @@ public partial class MainWindow : IEditionActions
             return;
         }
 
-        var light = variant == V2pnPartnerVariants.Studio;
+        // The partner's logo for a light title bar where the look (or plain V2pn's mode) is light.
+        var light = Editions.IsTuned ? Editions.Mode == "light" : ActualThemeVariant == ThemeVariant.Light;
         var bitmap = Scene.Picture(partner, light ? partner.Pack.LogoOnLight ?? partner.Pack.Logo : partner.Pack.Logo);
         Control logo = bitmap == null
             ? new TextBlock { Text = partner.Name, FontSize = 13, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center }
@@ -212,6 +226,43 @@ public partial class MainWindow : IEditionActions
         }
     }
 
+    /// <summary>Every server V2pn has, in the plain list's order, with its last ping and favourite mark.</summary>
+    private async Task RefreshEditionCatalogAsync()
+    {
+        if (_catalogBusy || _scene == null)
+        {
+            return;
+        }
+        _catalogBusy = true;
+        try
+        {
+            var all = await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? [];
+            var extra = (await ProfileExManager.Instance.GetProfileExs())
+                .GroupBy(t => t.IndexId)
+                .ToDictionary(g => g.Key, g => g.First());
+            var subs = await AppManager.Instance.SubItems() ?? [];
+            _catalog = all.Select(t =>
+            {
+                extra.TryGetValue(t.IndexId, out var ex);
+                return new SceneServer(t.IndexId, CountryResolver.ServerName(t), CountryResolver.Resolve(t.Remarks), ex?.Delay ?? 0, false, t.Subid, t.SubRemarks, ex?.IsFavorite == true);
+            }).ToList();
+            var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
+            _catalogSubs = subs
+                .Where(t => t.Id.IsNotEmpty() && counts.GetValueOrDefault(t.Id) > 0)
+                .Select(t => new SceneSub(t.Id, t.Remarks.IsNotEmpty() ? t.Remarks : t.Url, counts[t.Id]))
+                .ToList();
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn edition list", ex);
+        }
+        finally
+        {
+            _catalogBusy = false;
+        }
+        PushEditionSnapshot();
+    }
+
     /// <summary>What the plain header shows right now, for the scene to show the same.</summary>
     private void PushEditionSnapshot()
     {
@@ -243,6 +294,11 @@ public partial class MainWindow : IEditionActions
             NodesTotal = sameSub.Count(t => t.Delay != 0),
             ConnectLabel = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect,
             Servers = sameSub.Select(t => new SceneServer(t.IndexId, CountryResolver.ServerName(t), CountryResolver.Resolve(t.Remarks), t.Delay, t.IndexId == _config.IndexId)).ToList(),
+            Catalog = _catalog,
+            Subs = _catalogSubs,
+            SelectedId = _config.IndexId,
+            AnyServers = _catalog.Count > 0 || (profiles?.AllServersCount ?? 0) > 0,
+            CanImport = btnWelcomeImport.IsVisible && panelWelcomeImport.IsVisible,
         });
     }
 
@@ -253,4 +309,20 @@ public partial class MainWindow : IEditionActions
     void IEditionActions.OpenRoute(Control anchor) => btnRoute.Flyout?.ShowAt(anchor);
 
     void IEditionActions.Select(string indexId) => _ = ConnectToAsync(indexId);
+
+    void IEditionActions.PingAll() => _ = PingAllAsync();
+
+    void IEditionActions.UpdateSubscriptions() => ViewModel?.SubUpdateCmd.Execute().Subscribe();
+
+    void IEditionActions.Add(Control anchor) => btnAdd.Flyout?.ShowAt(anchor);
+
+    void IEditionActions.Paste() => _ = AddServerViaClipboardAsync();
+
+    void IEditionActions.AddSubscription() => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
+
+    void IEditionActions.Import() => btnWelcomeImport.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+
+    void IEditionActions.OpenSettings() => ViewModel?.OptionSettingCmd.Execute().Subscribe();
+
+    void IEditionActions.OpenIp() => _ = ShowRoomyDialog(new IpInfoView());
 }

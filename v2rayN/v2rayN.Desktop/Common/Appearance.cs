@@ -92,7 +92,7 @@ public static class Appearance
 
     private static readonly string[] RadiusKeys =
     [
-        "V2RadiusPanel", "V2RadiusPanelInner", "V2RadiusFloating", "V2RadiusFloatingInner", "V2RadiusCard", "V2RadiusTile", "V2RadiusRow", "V2RadiusControl",
+        "V2RadiusPanel", "V2RadiusPanelInner", "V2RadiusDialog", "V2RadiusFloating", "V2RadiusFloatingInner", "V2RadiusCard", "V2RadiusTile", "V2RadiusRow", "V2RadiusControl",
         "V2RadiusBar", "V2RadiusBarInner", "V2RadiusSegment", "V2RadiusIconTile",
         "TextBoxDefaultCornerRadius", "ComboBoxSelectorCornerRadius", "ComboBoxPopupBoxCornerRadius",
         "MenuFlyoutCornerRadius", "MenuItemCornerRadius", "NotificationCardCornerRadius",
@@ -117,10 +117,14 @@ public static class Appearance
     [
         // Configra's warm near-black: a cabinet of ink and paper, not V2pn's blue-grey.
         new("warm", 40, 0.07, 0.82, 1.00, Color.Parse("#171716"), Color.Parse("#F3F2EE")),
+        // The studio look's paper grey (light) and the ASCII look's terminal black (dark).
+        new("studio", 45, 0.04, 0.90, 1.00, Color.Parse("#1A1918"), Color.Parse("#E2E2E0")),
+        new("ink", 40, 0.04, 0.55, 1.00, Color.Parse("#121211"), Color.Parse("#F3F2EE")),
     ];
 
     private static Func<AppearanceSettings, AppearanceSettings>? _edition;
     private static IReadOnlyDictionary<string, string>? _editionTokens;
+    private static IReadOnlyDictionary<string, string>? _editionLightTokens;
 
     /// <summary>
     /// The settings in effect: the person's own, with a partner edition laid over them. Only <see cref="Current"/>
@@ -129,10 +133,14 @@ public static class Appearance
     public static AppearanceSettings Effective => _edition?.Invoke(Current.Clone()) ?? Current;
 
     /// <summary>Lays a partner edition over the person's appearance, or takes it off (null). Applied live.</summary>
-    public static void SetEdition(Func<AppearanceSettings, AppearanceSettings>? edition, IReadOnlyDictionary<string, string>? darkTokens = null)
+    public static void SetEdition(
+        Func<AppearanceSettings, AppearanceSettings>? edition,
+        IReadOnlyDictionary<string, string>? darkTokens = null,
+        IReadOnlyDictionary<string, string>? lightTokens = null)
     {
         _edition = edition;
         _editionTokens = darkTokens;
+        _editionLightTokens = lightTokens;
         if (Application.Current is { } app)
         {
             Apply(app, Effective);
@@ -202,21 +210,27 @@ public static class Appearance
             }
         }
 
-        // A partner's own colours for single tokens (its map, its ground), over the palette, in the dark theme only:
-        // its light theme still comes from the palette, so nothing turns unreadable.
-        if (_editionTokens != null)
+        // A partner look's own colours for single tokens (its ground, its dialogs, its map), over the palette. Each
+        // set is for one theme only, so a look made for dark never paints a light window.
+        foreach (var (variant, tokens) in new[] { (ThemeVariant.Dark, _editionTokens), (ThemeVariant.Light, _editionLightTokens) })
         {
-            var dark = dict.ThemeDictionaries.TryGetValue(ThemeVariant.Dark, out var existing) && existing is ResourceDictionary rd ? rd : new ResourceDictionary();
-            foreach (var (key, hex) in _editionTokens)
+            if (tokens == null)
             {
-                dark[key] = new SolidColorBrush(Color.Parse(hex));
+                continue;
             }
-            dict.ThemeDictionaries[ThemeVariant.Dark] = dark;
+            var themed = dict.ThemeDictionaries.TryGetValue(variant, out var existing) && existing is ResourceDictionary rd ? rd : new ResourceDictionary();
+            foreach (var (key, hex) in tokens)
+            {
+                themed[key] = new SolidColorBrush(Color.Parse(hex));
+            }
+            dict.ThemeDictionaries[variant] = themed;
         }
 
         var scale = settings.Corners switch
         {
             "sharp" => 0.35,
+            // The ASCII look's terminal: nearly square, never a pill.
+            "square" => 0.12,
             "round" => 1.45,
             _ => 1.0,
         };
@@ -235,13 +249,18 @@ public static class Appearance
             "segoe" => new FontFamily("Segoe UI Variable Text, Segoe UI, avares://V2pn/Assets/Fonts#Inter"),
             // Partner editions only (Configra's type); falls back to Inter for anything Geist lacks.
             "geist" => new FontFamily("avares://V2pn/Assets/Fonts#Geist, avares://V2pn/Assets/Fonts#Inter"),
+            "geistmono" => new FontFamily("avares://V2pn/Assets/Fonts#Geist Mono, avares://V2pn/Assets/Fonts#Inter"),
             _ => null,
         };
         if (ui != null)
         {
             dict["V2UiFont"] = ui;
         }
-        if (settings.Headings == "geist")
+        if (settings.Headings == "geistmono")
+        {
+            dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Geist Mono, avares://V2pn/Assets/Fonts#Inter");
+        }
+        else if (settings.Headings == "geist")
         {
             dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Geist, avares://V2pn/Assets/Fonts#Inter");
         }

@@ -418,6 +418,8 @@
     <Thickness x:Key="NotificationCardIconMargin">0</Thickness>
     <!--  Floating cards sit 16 px inside the stage (17 px clip), so they are no rounder than its corner.  -->
     <CornerRadius x:Key="V2RadiusFloating">16</CornerRadius>
+    <!--  In-window dialogs (DialogHost); partner looks scale it with the rest.  -->
+    <CornerRadius x:Key="V2RadiusDialog">20</CornerRadius>
     <!--  The feature rail's tiles inside a floating card with 6 px padding (16 - 6).  -->
     <CornerRadius x:Key="V2RadiusFloatingInner">10</CornerRadius>
     <CornerRadius x:Key="V2RadiusCard">18</CornerRadius>

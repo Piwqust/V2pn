@@ -8,8 +8,11 @@ using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views.EditionLooks;
 
-/// <summary>A server a scene lists.</summary>
-public sealed record SceneServer(string IndexId, string Name, string? Code, int Delay, bool Selected);
+/// <summary>A server a scene lists. Delay: 0 not checked, below 0 no answer.</summary>
+public sealed record SceneServer(string IndexId, string Name, string? Code, int Delay, bool Selected, string? SubId = null, string? Sub = null, bool Favorite = false);
+
+/// <summary>A subscription with servers, for the scene's filter chips.</summary>
+public sealed record SceneSub(string Id, string Name, int Count);
 
 /// <summary>
 /// What a partner scene shows, read from the main window each time it refreshes: the same verdict, server,
@@ -33,6 +36,14 @@ public sealed record EditionSnapshot
     public int NodesTotal { get; init; }
     public string ConnectLabel { get; init; } = string.Empty;
     public IReadOnlyList<SceneServer> Servers { get; init; } = [];
+    /// <summary>Every server V2pn has, in its list order; Selected is not set here, see SelectedId.</summary>
+    public IReadOnlyList<SceneServer> Catalog { get; init; } = [];
+    public IReadOnlyList<SceneSub> Subs { get; init; } = [];
+    public string? SelectedId { get; init; }
+    /// <summary>False before the first server: the scene shows how to add one instead of the list.</summary>
+    public bool AnyServers { get; init; }
+    /// <summary>Other VPN apps with servers were found; the empty state offers the move.</summary>
+    public bool CanImport { get; init; }
 }
 
 /// <summary>What a scene's controls do: the plain window's own actions, so behaviour never forks.</summary>
@@ -42,6 +53,15 @@ public interface IEditionActions
     void SetVpn(bool vpn);
     void OpenRoute(Control anchor);
     void Select(string indexId);
+    void PingAll();
+    void UpdateSubscriptions();
+    /// <summary>The window's "+" menu: a link, a subscription, a QR code, by hand.</summary>
+    void Add(Control anchor);
+    void Paste();
+    void AddSubscription();
+    void Import();
+    void OpenSettings();
+    void OpenIp();
 }
 
 /// <summary>Shared drawing for the partner scenes.</summary>
@@ -51,13 +71,27 @@ internal static class Scene
     public static readonly FontFamily Mono = new("avares://V2pn/Assets/Fonts#Geist Mono, Consolas, monospace");
     public static readonly FontFamily Inter = new("avares://V2pn/Assets/Fonts#Inter");
 
+    /// <summary>The look being built: set by the window before it makes a scene, read by the helpers below.</summary>
+    public static SceneLook Current { get; set; } = new(true, "#FF7A2F", "round", "round", "geist");
+
+    /// <summary>Near-black labels on a light accent, white on a dark one.</summary>
+    public static string OnAccent(string accent)
+    {
+        var c = Color.Parse(accent);
+        var luma = (0.299 * c.R) + (0.587 * c.G) + (0.114 * c.B);
+        return luma > 140 ? "#170B03" : "#FFFFFF";
+    }
+
+    /// <summary>The accent with an alpha in front, "#59FF7A2F" for "59".</summary>
+    public static string Alpha(string alpha, string color) => "#" + alpha + color.TrimStart('#')[^6..];
+
     public static IBrush B(string hex) => new SolidColorBrush(Color.Parse(hex));
 
     public static TextBlock Text(string text, double size, string color, FontFamily? font = null, FontWeight weight = FontWeight.Normal) => new()
     {
         Text = text,
         FontSize = size,
-        FontFamily = font ?? Geist,
+        FontFamily = font ?? Current.Text,
         FontWeight = weight,
         Foreground = B(color),
         TextTrimming = TextTrimming.CharacterEllipsis,
@@ -73,9 +107,10 @@ internal static class Scene
         var button = new Button
         {
             Background = Brushes.Transparent,
-            BorderThickness = new Thickness(0),
+            BorderBrush = Brushes.Transparent,
+            BorderThickness = new Thickness(1.5),
             Padding = new Thickness(0),
-            CornerRadius = new CornerRadius(radius),
+            CornerRadius = new CornerRadius(Current.Radius(radius) + 1.5),
             Foreground = B(foreground),
             Height = height,
             HorizontalContentAlignment = HorizontalAlignment.Stretch,
@@ -87,7 +122,7 @@ internal static class Scene
                 Background = fill == null ? Brushes.Transparent : B(fill),
                 BorderBrush = border == null ? null : B(border),
                 BorderThickness = new Thickness(border == null ? 0 : 1),
-                CornerRadius = new CornerRadius(radius),
+                CornerRadius = new CornerRadius(Current.Radius(radius)),
                 Padding = padding,
                 Child = content,
             },
@@ -105,12 +140,33 @@ internal static class Scene
         {
             content.VerticalAlignment = VerticalAlignment.Center;
         }
-        if (Application.Current?.FindResource("V2Button") is ControlTheme theme)
-        {
-            button.Theme = theme;
-        }
+        button.Theme = ButtonTheme;
         return button;
     }
+
+    // Only a presenter: V2Button's own hover, press and disabled fills would paint the theme's grey over the
+    // partner's colours (a plain button then read as disabled). The scene's styles do hover and press.
+    private static ControlTheme? _buttonTheme;
+
+    private static ControlTheme ButtonTheme => _buttonTheme ??= new ControlTheme(typeof(Button))
+    {
+        Setters =
+        {
+            new Setter(Avalonia.Controls.Primitives.TemplatedControl.TemplateProperty, new Avalonia.Controls.Templates.FuncControlTemplate<Button>((b, _) => new Avalonia.Controls.Presenters.ContentPresenter
+            {
+                Name = "PART_ContentPresenter",
+                Background = Brushes.Transparent,
+                [!Avalonia.Controls.Presenters.ContentPresenter.ContentProperty] = b[!ContentControl.ContentProperty],
+                [!Avalonia.Controls.Presenters.ContentPresenter.PaddingProperty] = b[!Avalonia.Controls.Primitives.TemplatedControl.PaddingProperty],
+                [!Avalonia.Controls.Presenters.ContentPresenter.CornerRadiusProperty] = b[!Avalonia.Controls.Primitives.TemplatedControl.CornerRadiusProperty],
+                [!Avalonia.Controls.Presenters.ContentPresenter.BorderBrushProperty] = b[!Avalonia.Controls.Primitives.TemplatedControl.BorderBrushProperty],
+                [!Avalonia.Controls.Presenters.ContentPresenter.BorderThicknessProperty] = b[!Avalonia.Controls.Primitives.TemplatedControl.BorderThicknessProperty],
+                [!Avalonia.Controls.Presenters.ContentPresenter.HorizontalContentAlignmentProperty] = b[!ContentControl.HorizontalContentAlignmentProperty],
+                [!Avalonia.Controls.Presenters.ContentPresenter.VerticalContentAlignmentProperty] = b[!ContentControl.VerticalContentAlignmentProperty],
+            })),
+            new Setter(InputElement.FocusableProperty, true),
+        },
+    };
 
     /// <summary>Hover and press for scene buttons; added once to each scene root.</summary>
     public static void AddButtonStyles(StyledElement root)
@@ -122,6 +178,15 @@ internal static class Scene
         root.Styles.Add(new Style(x => x.OfType<Button>().Class("scene").Class(":pressed"))
         {
             Setters = { new Setter(Visual.RenderTransformProperty, TransformOperations.Parse("scale(0.97)")) },
+        });
+        root.Styles.Add(new Style(x => x.OfType<Button>().Class("scene").Class(":disabled"))
+        {
+            Setters = { new Setter(Visual.OpacityProperty, 0.4) },
+        });
+        // Keyboard focus gets a ring; a click does not.
+        root.Styles.Add(new Style(x => x.OfType<Button>().Class("scene").Class(":focus-visible"))
+        {
+            Setters = { new Setter(Avalonia.Controls.Primitives.TemplatedControl.BorderBrushProperty, B(Current.Accent)) },
         });
     }
 

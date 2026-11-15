@@ -3,8 +3,12 @@ namespace ServiceLib.Services.CoreConfig;
 // V2pn: a partner's reviewed transport.json and core.json, only for the servers of its subscription.
 public partial class CoreConfigSingboxService
 {
-    /// <summary>The partner's transport turns sing-box's TLS fragment on for its servers, whatever the person's own setting.</summary>
-    private bool V2pnPartnerFragment => context.V2pnTrafficFor(_node)?.Transport?.Fragment != null;
+    /// <summary>
+    /// The partner's transport turns sing-box's TLS fragment on for its servers, whatever the person's own setting;
+    /// not for a server dialed through the partner's relay (core.json dialer), as with Xray.
+    /// </summary>
+    private bool V2pnPartnerFragment =>
+        context.V2pnTrafficFor(_node) is { Transport.Fragment: not null } traffic && traffic.CoreFor(ECoreType.sing_box)?.Dialer == null;
 
     /// <summary>Dials a partner's server through its core.json dialer.</summary>
     private void ApplyV2pnPartnerServer(BaseServer4Sbox outbound)

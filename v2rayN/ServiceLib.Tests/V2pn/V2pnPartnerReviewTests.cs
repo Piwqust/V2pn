@@ -450,8 +450,10 @@ public class V2pnPartnerReviewTests
 
     #region Generated configs
 
-    private static ProfileItem VlessNode(string id, string subId, ECoreType core) => new()
+    private static ProfileItem VlessNode(string id, string subId, ECoreType core)
     {
+        var node = new ProfileItem
+        {
         IndexId = id,
         ConfigType = EConfigType.VLESS,
         CoreType = core,
@@ -463,7 +465,10 @@ public class V2pnPartnerReviewTests
         StreamSecurity = Global.StreamSecurity,
         Sni = id + ".example.com",
         Subid = subId,
-    };
+        };
+        node.SetProtocolExtra(node.GetProtocolExtra() with { VlessEncryption = Global.None });
+        return node;
+    }
 
     private static CoreConfigContext Context(ProfileItem node, ProfileItem other, ECoreType core, byte[] coreJson)
     {
@@ -531,9 +536,21 @@ public class V2pnPartnerReviewTests
         var ownConfig = JsonNode.Parse(new CoreConfigSingboxService(Context(ownNode, partnerNode, ECoreType.sing_box, CoreSingboxJson))
             .GenerateClientConfigContent().Data!.ToString()!)!.AsObject();
 
+        // Dialed through the relay: the relay carries the fragment (its own TLS), the server inside it does not.
         var proxy = partnerConfig["outbounds"]!.AsArray().First(o => o!["tag"]!.GetValue<string>() == Global.ProxyTag)!;
-        await proxy["tls"]!["fragment"]!.GetValue<bool>().Should().BeTrue();
         await proxy["detour"]!.GetValue<string>().Should().BeEqualTo("partner-kestrel-relay");
+        await (proxy["tls"]!["fragment"] == null).Should().BeTrue();
+        var relay = partnerConfig["outbounds"]!.AsArray().First(o => o!["tag"]!.GetValue<string>() == "partner-kestrel-relay")!;
+        await relay["tls"]!["fragment"]!.GetValue<bool>().Should().BeTrue();
+        // Without core.json the partner's own server dials directly and gets the fragment.
+        var config = CoreConfigTestFactory.CreateConfig(ECoreType.sing_box);
+        var transportOnly = CoreConfigTestFactory.CreateContext(config, partnerNode, ECoreType.sing_box) with
+        {
+            V2pnPartnerSubs = new Dictionary<string, V2pnPartnerTraffic> { ["sub-kestrel"] = new("kestrel", "Kestrel", V2pnTransport.Parse(TransportJson, out _), null) },
+        };
+        var direct = JsonNode.Parse(new CoreConfigSingboxService(transportOnly).GenerateClientConfigContent().Data!.ToString()!)!["outbounds"]!.AsArray()
+            .First(o => o!["tag"]!.GetValue<string>() == Global.ProxyTag)!;
+        await direct["tls"]!["fragment"]!.GetValue<bool>().Should().BeTrue();
         await partnerConfig["outbounds"]!.AsArray().Any(o => o!["tag"]!.GetValue<string>() == "partner-kestrel-fast").Should().BeTrue();
         await partnerConfig["route"]!["rules"]!.AsArray().Any(r => r!["outbound"]?.GetValue<string>() == "partner-kestrel-fast").Should().BeTrue();
 
@@ -541,6 +558,61 @@ public class V2pnPartnerReviewTests
         await (own["tls"]!["fragment"] == null).Should().BeTrue();
         await (own["detour"] == null).Should().BeTrue();
         await ownConfig["outbounds"]!.AsArray().Any(o => o!["tag"]!.GetValue<string>().StartsWith("partner-")).Should().BeFalse();
+    }
+
+    /// <summary>
+    /// With V2PN_CORES set to a folder like dist/V2pn-win-x64/bin (xray/, sing_box/, geo files), the configs generated
+    /// for a partner's server with its transport and core.json are checked by the bundled cores themselves; they are
+    /// kept in V2PN_CORES_OUT (or a temp folder) to read. Without it the test does nothing.
+    /// </summary>
+    [Test]
+    public async Task GeneratedConfigs_PassTheBundledCores()
+    {
+        var cores = Environment.GetEnvironmentVariable("V2PN_CORES");
+        if (cores.IsNullOrEmpty() || !Directory.Exists(cores))
+        {
+            return;
+        }
+        var scratch = Environment.GetEnvironmentVariable("V2PN_CORES_OUT") is { Length: > 0 } outDir
+            ? outDir
+            : Path.Combine(Path.GetTempPath(), "v2pn-partner-cores-" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(scratch);
+
+        var xrayNode = VlessNode("kestrel-de", "sub-kestrel", ECoreType.Xray);
+        var xray = new CoreConfigV2rayService(Context(xrayNode, xrayNode, ECoreType.Xray, CoreXrayJson)).GenerateClientConfigContent().Data!.ToString()!;
+        var singboxNode = VlessNode("kestrel-de", "sub-kestrel", ECoreType.sing_box);
+        var singbox = new CoreConfigSingboxService(Context(singboxNode, singboxNode, ECoreType.sing_box, CoreSingboxJson)).GenerateClientConfigContent().Data!.ToString()!;
+        await File.WriteAllTextAsync(Path.Combine(scratch, "xray-partner.json"), xray);
+        await File.WriteAllTextAsync(Path.Combine(scratch, "sing-box-partner.json"), singbox);
+
+        async Task<(int Code, string Output)> Run(string exe, params string[] arguments)
+        {
+            var start = new ProcessStartInfo(exe)
+            {
+                WorkingDirectory = scratch,
+                CreateNoWindow = true,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+            };
+            foreach (var argument in arguments)
+            {
+                start.ArgumentList.Add(argument);
+            }
+            start.Environment["XRAY_LOCATION_ASSET"] = cores;
+            using var process = Process.Start(start)!;
+            var output = await process.StandardOutput.ReadToEndAsync() + await process.StandardError.ReadToEndAsync();
+            await process.WaitForExitAsync();
+            return (process.ExitCode, output);
+        }
+
+        var exe = OperatingSystem.IsWindows() ? ".exe" : string.Empty;
+        var xrayResult = await Run(Path.Combine(cores, "xray", "xray" + exe), "run", "-test", "-c", "xray-partner.json");
+        await File.WriteAllTextAsync(Path.Combine(scratch, "xray-test.txt"), xrayResult.Output);
+        await xrayResult.Output.Contains("Configuration OK").Should().BeTrue();
+        var singboxResult = await Run(Path.Combine(cores, "sing_box", "sing-box" + exe), "check", "-c", "sing-box-partner.json");
+        await File.WriteAllTextAsync(Path.Combine(scratch, "sing-box-check.txt"), singboxResult.Output);
+        await singboxResult.Code.Should().BeEqualTo(0);
     }
 
     #endregion Generated configs

@@ -1169,6 +1169,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnRouteRussia.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.RussiaDirect);
         btnRouteBlocked.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.BlockedOnly);
         btnRouteAll.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.All);
+        InitPartnerRoutes();
         togBlockAds.IsChecked = _config.UiItem.V2pnBlockAds;
         togBlockAds.IsCheckedChanged += async (_, _) => await SetBlockAdsAsync(togBlockAds.IsChecked == true);
         lstCustomRoutes.SelectionChanged += async (_, _) =>
@@ -1274,6 +1275,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         try
         {
             var changed = await RoutingPresets.EnsureAsync(_config);
+            await SyncPartnerRoutesAsync(refresh: false);
             await UseV2pnRouteOnFreshInstallAsync();
             await status.RefreshRoutingsMenu();
             if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id))
@@ -1342,9 +1344,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         NameOption(btnRouteRussia, L.RouteRussiaDirect, kind == RoutingPresetKind.RussiaDirect);
         NameOption(btnRouteBlocked, L.RouteBlockedOnly, kind == RoutingPresetKind.BlockedOnly);
         NameOption(btnRouteAll, L.RouteAll, kind == RoutingPresetKind.All);
+        RefreshPartnerRoute(status, active);
         Avalonia.Automation.AutomationProperties.SetName(btnRoute, txtRoute.Text == L.RouteTitle ? L.RouteTitle : $"{L.RouteTitle}: {txtRoute.Text}");
 
-        var custom = status.RoutingItems.Where(t => !RoutingPresets.IsPreset(t.Id)).ToList();
+        var custom = status.RoutingItems.Where(t => !RoutingPresets.IsPreset(t.Id) && !V2pnPartnerRoutes.IsPartnerRoute(t.Id)).ToList();
         _routeSync = true;
         lstCustomRoutes.ItemsSource = custom;
         lstCustomRoutes.SelectedItem = kind == null ? custom.FirstOrDefault(t => t.Id == active?.Id) : null;
@@ -1386,6 +1389,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnRouteRussia.IsEnabled = enabled;
         btnRouteBlocked.IsEnabled = enabled;
         btnRouteAll.IsEnabled = enabled;
+        btnRoutePartner.IsEnabled = enabled;
     }
 
     // The failure stays readable for a few seconds, unless a new attempt has replaced it by then.

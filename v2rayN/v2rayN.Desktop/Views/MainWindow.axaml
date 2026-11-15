@@ -1135,6 +1135,26 @@
                                                                     </Panel>
                                                                 </Grid>
                                                             </Button>
+                                                            <!--  The provider's own preset (reviewed routing.json), while its subscription is in use or the preset is on.  -->
+                                                            <Button
+                                                                x:Name="btnRoutePartner"
+                                                                Classes="routeoption"
+                                                                IsVisible="False"
+                                                                Theme="{StaticResource V2SideRow}">
+                                                                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                                                                    <Border Classes="routeicon">
+                                                                        <PathIcon Data="{StaticResource SemiIconShieldStroked}" />
+                                                                    </Border>
+                                                                    <StackPanel Grid.Column="1" Spacing="2">
+                                                                        <TextBlock x:Name="txtRoutePartner" Classes="routetitle" />
+                                                                        <TextBlock x:Name="txtRoutePartnerHint" Classes="routehint" />
+                                                                    </StackPanel>
+                                                                    <Panel Grid.Column="2" Classes="routeradio">
+                                                                        <Ellipse Classes="routering" />
+                                                                        <Ellipse Classes="routedot" />
+                                                                    </Panel>
+                                                                </Grid>
+                                                            </Button>
                                                         </StackPanel>
                                                     </Border>
 

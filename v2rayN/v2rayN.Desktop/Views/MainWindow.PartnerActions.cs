@@ -70,6 +70,11 @@ public partial class MainWindow
     {
         _barSubId = subId;
         RefreshPartnerActionBar();
+        // The partner's routing mode shows while its subscription is in use (once the menu has its routes).
+        if (_routeShown)
+        {
+            RefreshRouteUi();
+        }
     }
 
     private void RefreshPartnerActionBar()

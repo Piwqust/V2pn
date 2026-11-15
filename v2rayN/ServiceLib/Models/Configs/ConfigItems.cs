@@ -107,6 +107,9 @@ public class UIItem
 
     public bool V2pnBlockAds { get; set; }
 
+    // V2pn: the partner routing presets ("v2pn-partner-<id>") already offered once with a note.
+    public List<string>? V2pnPartnerRoutesOffered { get; set; }
+
     // Settings window shows the expert rows and pages.
     public bool V2pnSettingsAdvanced { get; set; }
 

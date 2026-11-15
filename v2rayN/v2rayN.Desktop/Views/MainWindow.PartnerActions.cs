@@ -278,10 +278,11 @@ public partial class MainWindow
         }
     }
 
-    // Links from the subscription's headers are checked when they arrive, the pack's when it is read; only https and tg.
+    // Links from the subscription's headers are checked when they arrive, the pack's when it is read; here only that
+    // nothing but a web page or Telegram opens.
     private void OpenPartnerLink(V2pnPartner partner, string? url)
     {
-        if (url.IsNullOrEmpty() || (SubPanelHeaders.ParseSecureLink(url) == null && V2pnPartnerCatalog.ActionLink(partner.Cert, url) == null))
+        if (url.IsNullOrEmpty() || SubPanelHeaders.ParseLink(url) == null)
         {
             ShowToast(ToastKind.Warning, string.Format(L.ActionNoLink, partner.Name));
             return;

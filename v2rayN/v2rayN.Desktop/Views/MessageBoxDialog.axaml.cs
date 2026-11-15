@@ -14,6 +14,7 @@ public partial class MessageBoxDialog : Window
         InitializeComponent();
         Classes.Add("dialog");
         DialogChrome.Attach(this);
+        OffscreenMode.Attach(this);
 
         if (Design.IsDesignMode)
         {

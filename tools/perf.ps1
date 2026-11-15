@@ -29,6 +29,8 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Every V2pn this script starts (and restarts) keeps its windows off the screen; see tools/sandbox.ps1.
+$env:V2PN_BACKGROUND = '1'
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type @"
 using System;

@@ -79,6 +79,13 @@ internal class Program
             builder = builder.With(new MacOSPlatformOptions { ShowInDock = showInDock });
         }
 
+        // V2pn: in background mode menus and flyouts are drawn inside their parked window; as separate
+        // popup windows they are pushed back onto a monitor.
+        if (OperatingSystem.IsWindows() && Common.OffscreenMode.IsOn)
+        {
+            builder = builder.With(new Win32PlatformOptions { OverlayPopups = true });
+        }
+
         return builder;
     }
 }

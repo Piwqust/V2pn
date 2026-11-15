@@ -10,6 +10,10 @@
   The app keeps its data next to the exe, so each sandbox is fully separate. Only one
   sandbox can run at a time: V2pn allows a single instance per user session.
 
+  -Launch starts the app in background mode (V2PN_BACKGROUND=1): its windows open off the screen,
+  take no focus and get no taskbar button, so nothing flashes in front of the owner. tools/shot.ps1
+  and UI Automation still see them. Pass -Visible to put the windows on the screen.
+
 .EXAMPLE
   tools/sandbox.ps1 -From v2rayN/v2rayN.Desktop/bin/Release/net10.0 -Dest $env:TEMP/v2pn-a -Launch
   tools/sandbox.ps1 -Dest $env:TEMP/v2pn-a -Stop
@@ -22,6 +26,8 @@ param(
     # Copies bin/ (cores and geo files) from this folder, e.g. dist/V2pn-win-x64.
     [string]$CoresFrom,
     [switch]$Launch,
+    # Shows the windows on the screen instead of keeping them off it.
+    [switch]$Visible,
     [switch]$Stop,
     # Keeps guiConfigs/ when -From refreshes the app files.
     [switch]$KeepData
@@ -83,6 +89,10 @@ if (-not (Test-Path $configFile)) {
 if ($Launch) {
     $exe = Join-Path $Dest 'V2pn.exe'
     if (-not (Test-Path $exe)) { throw "V2pn.exe not found in $Dest" }
-    $p = Start-Process -FilePath $exe -WorkingDirectory $Dest -PassThru
-    Write-Host "Started V2pn ($($p.Id)) from $Dest"
+    $old = $env:V2PN_BACKGROUND
+    $env:V2PN_BACKGROUND = if ($Visible) { $null } else { '1' }
+    try { $p = Start-Process -FilePath $exe -WorkingDirectory $Dest -PassThru }
+    finally { $env:V2PN_BACKGROUND = $old }
+    $mode = if ($Visible) { 'on screen' } else { 'in the background, windows off screen' }
+    Write-Host "Started V2pn ($($p.Id)) from $Dest, $mode"
 }

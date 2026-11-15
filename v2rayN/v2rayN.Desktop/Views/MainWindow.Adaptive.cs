@@ -307,7 +307,7 @@ public partial class MainWindow
 
         Width = width;
         Height = height;
-        Position = new PixelPoint((int)x, (int)y);
+        Position = Common.OffscreenMode.Place(new PixelPoint((int)x, (int)y));
         _normalSize = new Size(width, height);
         _normalPosition = Position;
     }

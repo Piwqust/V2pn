@@ -444,6 +444,59 @@ public partial class MainWindow : IEditionActions
     /// subscriptions (the list starts with their servers), whether the server in use is someone else's, and what its
     /// panel says about the subscription.
     /// </summary>
+    // The partner's API, if it has one: asked when its look opens, then every 30 min (account) and 15 min (status)
+    // while the window shows the look.
+    private V2pnPartnerAccount? _partnerAccount;
+    private IReadOnlyList<V2pnPartnerIncident>? _partnerIncidents;
+    private string? _apiPartner;
+    private DateTime _accountAsked;
+    private DateTime _statusAsked;
+    private bool _apiBusy;
+
+    private async Task RefreshPartnerApiAsync(V2pnPartner partner, IReadOnlyList<SubItem> partnerSubs)
+    {
+        var now = DateTime.UtcNow;
+        if (_apiPartner != partner.Id)
+        {
+            (_apiPartner, _partnerAccount, _partnerIncidents, _accountAsked, _statusAsked) = (partner.Id, null, null, default, default);
+        }
+        var wantAccount = now - _accountAsked > TimeSpan.FromMinutes(30);
+        var wantStatus = now - _statusAsked > TimeSpan.FromMinutes(15);
+        if (_apiBusy || partner.Pack.ApiUrl == null || (!wantAccount && !wantStatus))
+        {
+            return;
+        }
+        _apiBusy = true;
+        try
+        {
+            if (wantAccount)
+            {
+                _accountAsked = now;
+                var token = partnerSubs.Select(t => SubInfoManager.Instance.Get(t.Id)?.AccountToken).FirstOrDefault(t => t.IsNotEmpty());
+                if (token != null && await Task.Run(() => V2pnPartnerApi.GetAccountAsync(partner, token)) is { } account && _apiPartner == partner.Id)
+                {
+                    _partnerAccount = account;
+                }
+            }
+            if (wantStatus)
+            {
+                _statusAsked = now;
+                if (await Task.Run(() => V2pnPartnerApi.GetStatusAsync(partner)) is { } incidents && _apiPartner == partner.Id)
+                {
+                    _partnerIncidents = incidents;
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn partner API", ex);
+        }
+        finally
+        {
+            _apiBusy = false;
+        }
+    }
+
     private void PushEditionSnapshot()
     {
         if (_scene == null)
@@ -470,21 +523,33 @@ public partial class MainWindow : IEditionActions
         var best = partnerServers.Where(t => t.Delay > 0).OrderBy(t => t.Delay).FirstOrDefault() ?? partnerServers.FirstOrDefault();
 
         SceneAccount? account = null;
+        var api = partner != null && _apiPartner == partner.Id ? _partnerAccount : null;
         if (partner != null)
         {
+            if (IsVisible && partnerSubs.Count > 0)
+            {
+                _ = RefreshPartnerApiAsync(partner, partnerSubs);
+            }
             var info = partnerSubs.Select(t => SubInfoManager.Instance.Get(t.Id)).FirstOrDefault(t => t != null);
             var usage = SubUsage.From(info);
+            var incident = _apiPartner == partner.Id ? _partnerIncidents?.FirstOrDefault() : null;
             account = new SceneAccount(
                 usage?.HasTraffic == true ? usage.TrafficText : null,
                 usage?.Fraction ?? 0,
                 usage?.ShowBar == true,
-                usage?.HasExpiry == true ? usage.ExpiryLong : null,
+                usage?.HasExpiry == true ? usage.ExpiryLong : api?.Until is { } until ? string.Format(L.PartnerUntil, until.ToDateTime(TimeOnly.MinValue).ToString("d MMMM yyyy", CultureInfo.CurrentUICulture)) : null,
                 usage?.TrafficWarn == true || usage?.ExpiryWarn == true,
                 usage?.TrafficBad == true || usage?.ExpiryBad == true,
-                info?.Announce.IsNotEmpty() == true ? info.Announce : null,
+                NonEmpty(api?.Note) ?? (info?.Announce.IsNotEmpty() == true ? info.Announce : null),
                 NonEmpty(info?.WebPageUrl) ?? NonEmpty(partner.Pack.CabinetUrl),
-                NonEmpty(info?.SupportUrl) ?? NonEmpty(partner.Pack.SupportUrl));
+                NonEmpty(info?.SupportUrl) ?? NonEmpty(partner.Pack.SupportUrl),
+                NonEmpty(api?.Plan),
+                api?.Devices is { } count ? api.DeviceLimit is { } limit ? string.Format(L.PartnerDevicesOf, count, limit) : string.Format(L.PartnerDevices, count) : null,
+                incident == null ? null : incident.Text.IsNullOrEmpty() ? incident.Title : $"{incident.Title}. {incident.Text}",
+                incident?.Severe == true);
         }
+        // The partner's own checks of its servers say more than V2pn's pings from one computer.
+        var byPartner = api is { Healthy: { } partnerOk, Total: { } partnerTotal } && partnerTotal > 0;
 
         var state = CurrentState();
         _scene.Update(new EditionSnapshot
@@ -500,8 +565,9 @@ public partial class MainWindow : IEditionActions
             Ping = current?.Delay > 0 ? current.Delay : listed?.Delay > 0 ? listed.Delay : 0,
             Vpn = lstMode.SelectedItem == itemModeVpn,
             Route = txtRoute.Text ?? string.Empty,
-            NodesOk = counted.Count(t => t.Delay > 0),
-            NodesTotal = counted.Count(t => t.Delay != 0),
+            NodesOk = byPartner ? api!.Healthy!.Value : counted.Count(t => t.Delay > 0),
+            NodesTotal = byPartner ? api!.Total!.Value : counted.Count(t => t.Delay != 0),
+            NodesByPartner = byPartner,
             ConnectLabel = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect,
             Servers = sameSub.Select(t => t with { Selected = t.IndexId == _config.IndexId }).ToList(),
             Catalog = _catalog,

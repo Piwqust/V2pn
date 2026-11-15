@@ -17,6 +17,11 @@ public static partial class L
         "Переключение между V2pn и оформлением провайдеров (Ctrl+1…9). Подключение не прерывается.");
     public static string EditionOn => T("on", "на");
     public static string EditionLook => T("{0} look", "Вид {0}");
+    // What a partner's API says about the subscription (its look's subscription block).
+    public static string PartnerUntil => T("Paid until {0}", "Оплачено до {0}");
+    public static string PartnerDevices => T("Devices: {0}", "Устройств: {0}");
+    public static string PartnerDevicesOf => T("Devices: {0} of {1}", "Устройств: {0} из {1}");
+
     // The partner's mark on its subscription in the list.
     public static string SubPartnerMarkTip => T("{0}, a V2pn partner", "{0} — партнёр V2pn");
 

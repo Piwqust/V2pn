@@ -448,9 +448,13 @@ public sealed class CabinetScene : EditionScene
         _stateDot.Background = Scene.B(s.StateKind switch { "safe" => "#3DD68C", "warn" => "#E9B04F", "checking" => "#9B9BA8", _ => "#FF5A3D" });
         _nodes.Text = NodesText(s);
         _meter.Set(s.NodesOk, s.NodesTotal);
-        _stateNote.Text = s.NodesTotal > s.NodesOk && s.NodesTotal > 0
-            ? $"{s.NodesTotal - s.NodesOk} не ответили на последнюю проверку пинга."
-            : s.NodesTotal > 0 ? "Все серверы ответили на последнюю проверку." : "Проверьте пинг, чтобы узнать, какие серверы отвечают.";
+        _stateNote.Text = s.NodesByPartner
+            ? s.NodesTotal > s.NodesOk
+                ? $"{s.NodesTotal - s.NodesOk} не работают по проверке {s.PartnerName}."
+                : $"Все серверы работают по проверке {s.PartnerName}."
+            : s.NodesTotal > s.NodesOk && s.NodesTotal > 0
+                ? $"{s.NodesTotal - s.NodesOk} не ответили на последнюю проверку пинга."
+                : s.NodesTotal > 0 ? "Все серверы ответили на последнюю проверку." : "Проверьте пинг, чтобы узнать, какие серверы отвечают.";
         _connectLabel.Text = s.ConnectLabel;
         _connect.IsEnabled = s.HasServer;
         Scene.SetPill(_pill, _pillText, s.StateKind, s.StateLabel);

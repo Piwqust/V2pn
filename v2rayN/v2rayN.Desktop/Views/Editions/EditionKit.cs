@@ -334,6 +334,9 @@ public sealed class AccountPanel : UserControl
 {
     private readonly ScenePalette _p;
     private readonly IEditionActions _a;
+    private readonly TextBlock _incident;
+    private readonly TextBlock _plan;
+    private readonly TextBlock _devices;
     private readonly TextBlock _traffic;
     private readonly Border _barTrack;
     private readonly Border _bar;
@@ -347,6 +350,11 @@ public sealed class AccountPanel : UserControl
     {
         _p = p;
         _a = a;
+        _incident = Scene.Text("", 12.5, p.Warn, p.Font, FontWeight.Medium);
+        _incident.TextWrapping = TextWrapping.Wrap;
+        _incident.TextTrimming = TextTrimming.None;
+        _plan = Scene.Text("", 14, p.Ink, p.Font, FontWeight.Medium);
+        _devices = Scene.Text("", 13, p.Soft, p.Font);
         _traffic = Scene.Text("", 13, p.Soft, p.Font);
         _expiry = Scene.Text("", 13, p.Soft, p.Font);
         _announce = Scene.Text("", 12, p.Muted, p.Font);
@@ -365,6 +373,9 @@ public sealed class AccountPanel : UserControl
         {
             stack.Children.Add(Scene.Text(title, 12, p.Muted, p.Font));
         }
+        stack.Children.Add(_incident);
+        stack.Children.Add(_plan);
+        stack.Children.Add(_devices);
         stack.Children.Add(_traffic);
         stack.Children.Add(_barTrack);
         stack.Children.Add(_expiry);
@@ -400,6 +411,13 @@ public sealed class AccountPanel : UserControl
             return;
         }
         var tone = account.Bad ? _p.Bad : account.Warn ? _p.Warn : _p.Soft;
+        _incident.Text = account.Incident ?? string.Empty;
+        _incident.IsVisible = account.Incident != null;
+        _incident.Foreground = Scene.B(account.IncidentSevere ? _p.Bad : _p.Warn);
+        _plan.Text = account.Plan ?? string.Empty;
+        _plan.IsVisible = account.Plan != null;
+        _devices.Text = account.Devices ?? string.Empty;
+        _devices.IsVisible = account.Devices != null;
         _traffic.Text = account.Traffic ?? string.Empty;
         _traffic.IsVisible = account.Traffic != null;
         _barTrack.IsVisible = account.ShowBar;

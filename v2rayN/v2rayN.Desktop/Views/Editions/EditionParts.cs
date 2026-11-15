@@ -24,9 +24,14 @@ public sealed record SceneAccount(
     bool Bad,
     string? Announce,
     string? CabinetUrl,
-    string? SupportUrl)
+    string? SupportUrl,
+    string? Plan = null,
+    string? Devices = null,
+    string? Incident = null,
+    bool IncidentSevere = false)
 {
-    public bool IsEmpty => Traffic == null && Expiry == null && Announce == null && CabinetUrl == null && SupportUrl == null;
+    public bool IsEmpty => Traffic == null && Expiry == null && Announce == null && CabinetUrl == null && SupportUrl == null
+        && Plan == null && Devices == null && Incident == null;
 }
 
 /// <summary>
@@ -70,6 +75,9 @@ public sealed record EditionSnapshot
 
     /// <summary>The partner subscription's traffic, term and links; null when the panel sent none.</summary>
     public SceneAccount? Account { get; init; }
+
+    /// <summary>The node counts are the partner's own checks of its servers, not V2pn's pings.</summary>
+    public bool NodesByPartner { get; init; }
 }
 
 /// <summary>What a scene's controls do: the plain window's own actions, so behaviour never forks.</summary>

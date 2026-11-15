@@ -36,7 +36,8 @@ public sealed record V2pnPartnerPack(
     string? CabinetUrl,
     string? SupportUrl,
     string? ApiUrl,
-    IReadOnlyList<V2pnPartnerAsset> Assets)
+    IReadOnlyList<V2pnPartnerAsset> Assets,
+    string? Mark = null)
 {
     public V2pnPartnerAsset? Asset(string? name) => Assets.FirstOrDefault(a => a.Name == name);
 }
@@ -325,7 +326,8 @@ public static class V2pnPartnerTrust
                 Https(links?["cabinet"]?.GetValue<string>()),
                 Https(links?["support"]?.GetValue<string>()),
                 api,
-                assets);
+                assets,
+                AssetRef(brand?["mark"]));
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
@@ -336,7 +338,11 @@ public static class V2pnPartnerTrust
     private static string? Name(string? text)
     {
         text = text?.Trim();
-        return text is { Length: > 0 and <= MaxName } && !text.Any(char.IsControl) ? text : null;
+        // A partner never passes itself off as V2pn: "V2pn Pro" would read as the app's own edition.
+        return text is { Length: > 0 and <= MaxName } && !text.Any(char.IsControl)
+               && !text.Replace(" ", string.Empty).Contains("v2pn", StringComparison.OrdinalIgnoreCase)
+            ? text
+            : null;
     }
 
     private static IEnumerable<string> Strings(JsonNode? node) =>

@@ -14,6 +14,9 @@ public static partial class L
         "Переключение между V2pn и оформлением провайдеров (Ctrl+1…9). Подключение не прерывается.");
     public static string EditionOn => T("on", "на");
     public static string EditionLook => T("{0} look", "Вид {0}");
+    // The partner's mark on its subscription in the list.
+    public static string SubPartnerMarkTip => T("{0}, a V2pn partner", "{0} — партнёр V2pn");
+
     // The window title and the tray in a partner's look.
     public static string EditionTitleOn => T("{0} on {1}", "{0} на {1}");
     public static string TrayEditions => T("Look", "Оформление");

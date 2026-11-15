@@ -25,13 +25,13 @@ internal sealed class TestPartner
         }.ToJsonString());
 
     public static byte[] Pack(string id = "configra", string? accent = "#ff7a2f", string[]? variants = null, string? first = "cabinet",
-        string? api = "https://config.example.com/v2pn/api/", (string Name, byte[] Content)[]? assets = null) =>
+        string? api = "https://config.example.com/v2pn/api/", (string Name, byte[] Content)[]? assets = null, string name = "Configra") =>
         Encoding.UTF8.GetBytes(new JsonObject
         {
             ["schema"] = 1,
             ["id"] = id,
-            ["name"] = "Configra",
-            ["brand"] = new JsonObject { ["accent"] = accent, ["logo"] = "logo.png" },
+            ["name"] = name,
+            ["brand"] = new JsonObject { ["accent"] = accent, ["logo"] = "logo.png", ["mark"] = "logo.png" },
             ["edition"] = new JsonObject
             {
                 ["variants"] = new JsonArray((variants ?? ["signature", "warm", "cabinet", "studio", "ascii", "bogus"]).Select(v => (JsonNode)v).ToArray()),
@@ -203,6 +203,21 @@ public class V2pnPartnerTests
         {
             await (V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out var error) == null).Should().BeTrue();
             await error.Contains("malformed").Should().BeTrue();
+        }
+    }
+
+    [Test]
+    public async Task Pack_ReadsTheSquareMark_AndRefusesANameThatPassesForV2pn()
+    {
+        var p = new TestPartner();
+        var cert = p.ReadCert();
+        var json = TestPartner.Pack();
+        await V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)!.Mark.Should().BeEqualTo("logo.png");
+
+        foreach (var name in new[] { "V2pn Pro", "Super v2 PN", "v2pn" })
+        {
+            var fake = TestPartner.Pack(name: name);
+            await (V2pnPartnerTrust.ReadPack(fake, TestPartner.Sign(p.Key, fake), cert, out _) == null).Should().BeTrue();
         }
     }
 

@@ -588,9 +588,25 @@
                                         ContextRequested="SideSub_ContextRequested"
                                         Theme="{StaticResource V2SideRow}">
                                         <Grid ColumnDefinitions="Auto,*,Auto">
-                                            <Border Classes="subtile" Background="{Binding Tint}">
+                                            <Border
+                                                Classes="subtile"
+                                                Background="{Binding Tint}"
+                                                ToolTip.Tip="{Binding PartnerTip}">
                                                 <Panel>
-                                                    <TextBlock Text="{Binding Monogram}" IsVisible="{Binding !Busy.IsBusy}" />
+                                                    <TextBlock Text="{Binding Monogram}">
+                                                        <TextBlock.IsVisible>
+                                                            <MultiBinding Converter="{x:Static BoolConverters.And}">
+                                                                <Binding Path="!Busy.IsBusy" />
+                                                                <Binding Path="!HasMark" />
+                                                            </MultiBinding>
+                                                        </TextBlock.IsVisible>
+                                                    </TextBlock>
+                                                    <!--  V2pn: a verified partner's mark (SideSubRow.Mark).  -->
+                                                    <Image
+                                                        Width="22"
+                                                        Height="22"
+                                                        IsVisible="{Binding HasMark}"
+                                                        Source="{Binding Mark}" />
                                                     <Path Classes="spinner" IsVisible="{Binding Busy.IsBusy}" />
                                                 </Panel>
                                             </Border>

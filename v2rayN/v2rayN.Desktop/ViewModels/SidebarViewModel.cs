@@ -187,6 +187,13 @@ public sealed class SideSubRow : SideRow
             hash = unchecked((hash * 31) + c);
         }
         Tint = Application.Current?.TryGetResource(Tints[Math.Abs(hash % Tints.Length)], null, out var brush) == true ? brush as IBrush : null;
+        // V2pn: a verified partner's subscription wears the partner's mark on its own ink, not a letter.
+        if (V2pnPartners.Instance.ForSubscription(sub.Item) is { } partner && MarkOf(partner) is { } mark)
+        {
+            Mark = mark;
+            Tint = new SolidColorBrush(Color.Parse("#171716"));
+            PartnerTip = string.Format(L.SubPartnerMarkTip, partner.Name);
+        }
 
         var updated = sub.Item.UpdateTime > 0 ? DateTimeOffset.FromUnixTimeSeconds(sub.Item.UpdateTime).LocalDateTime : (DateTime?)null;
         var age = updated.HasValue ? DateTime.Now - updated.Value : (TimeSpan?)null;
@@ -214,6 +221,32 @@ public sealed class SideSubRow : SideRow
     public bool HasUsage => Usage != null;
     public BusyState Busy { get; }
     public string Monogram { get; }
+
+    /// <summary>The partner's square mark, when the subscription comes from a verified partner whose pack has one.</summary>
+    public Bitmap? Mark { get; }
+    public bool HasMark => Mark != null;
+    public bool ShowMonogram => Mark == null && !Busy.IsBusy;
+    public string? PartnerTip { get; }
+
+    private static readonly Dictionary<string, Bitmap?> Marks = [];
+
+    private static Bitmap? MarkOf(V2pnPartner partner)
+    {
+        var path = partner.AssetPath(partner.Pack.Mark);
+        if (path == null)
+        {
+            return null;
+        }
+        lock (Marks)
+        {
+            if (!Marks.TryGetValue(path, out var bitmap))
+            {
+                bitmap = Views.EditionLooks.Scene.Picture(partner, partner.Pack.Mark);
+                Marks[path] = bitmap;
+            }
+            return bitmap;
+        }
+    }
     public IBrush? Tint { get; }
     public string Info { get; }
     public bool IsFresh { get; }
@@ -294,6 +327,8 @@ public sealed partial class SidebarViewModel : ReactiveObject
 
         profiles.ProfileItems.CollectionChanged += (_, _) => QueueRebuild();
         profiles.FavoriteItems.CollectionChanged += (_, _) => QueueRebuild();
+        // V2pn: a partner verified or dropped changes the mark on its subscription.
+        V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
         profiles.SubNavItems.CollectionChanged += (_, _) => QueueRebuild();
         // Fastest server and the best ping per country are computed on rebuild.
         profiles.PingTestFinished.AsObservable()

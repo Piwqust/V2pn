@@ -118,9 +118,25 @@ public static class Editions
     /// <summary>The open look's settings in effect: the person's tuning over the look's own.</summary>
     public static string Mode => Prefs.Mode ?? DefaultMode(Variant);
 
-    public static string Corners => Prefs.Corners ?? DefaultCorners(Variant);
+    // Corners and type are part of what a look is (ASCII is monospaced and square, the cabinet round): free
+    // choices there multiplied the looks into combinations nobody had seen, and broke them. A look keeps its own.
+    // Older tuning files may still carry a choice; it is ignored.
+    public static string Corners => DefaultCorners(Variant);
 
-    public static string Font => Prefs.Font ?? DefaultFont(Variant);
+    public static string Font => DefaultFont(Variant);
+
+    /// <summary>
+    /// The accents a person may pick for a partner's look: the partner's own, then V2pn's presets that cannot pass for
+    /// a state colour (no green, no amber). Only these are offered, so every pick is one that was looked at.
+    /// </summary>
+    public static IReadOnlyList<(string? Id, Color Color)> AccentChoices()
+    {
+        var choices = new List<(string? Id, Color Color)> { (null, Color.Parse(PartnerAccent)) };
+        choices.AddRange(Appearance.Accents
+            .Where(a => !Appearance.NearHue(a.Color, Appearance.StatusHues))
+            .Select(a => ((string?)a.Id, a.Color)));
+        return choices;
+    }
 
     /// <summary>The accent in effect as "#RRGGBB", for the looks' own drawing.</summary>
     public static string AccentHex
@@ -128,15 +144,11 @@ public static class Editions
         get
         {
             var accent = Prefs.Accent;
-            if (accent == null)
-            {
-                return PartnerAccent;
-            }
-            if (Appearance.Accents.FirstOrDefault(a => a.Id == accent) is { Id: not null } preset)
+            if (accent != null && AccentChoices().FirstOrDefault(a => a.Id == accent) is { Id: not null } preset)
             {
                 return $"#{preset.Color.R:X2}{preset.Color.G:X2}{preset.Color.B:X2}";
             }
-            return Color.TryParse(accent, out _) ? accent : PartnerAccent;
+            return PartnerAccent;
         }
     }
 
@@ -331,7 +343,7 @@ public static class Editions
             return null;
         }
         var look = Variant;
-        var accent = Prefs.Accent ?? PartnerAccent;
+        var accent = AccentHex;
         var corners = Corners;
         var font = Font;
         return settings =>

@@ -70,9 +70,11 @@ public static partial class L
     public static string EditionApPartners => T("Provider looks", "Оформление провайдера");
     public static string EditionApAccentHint => T("{0}'s colour or your own.", "Цвет {0} или свой.");
     public static string EditionApPartnerAccent => T("{0}'s colour", "Цвет {0}");
-    public static string EditionApCornersSquare => T("Square", "Прямые");
     public static string EditionApTextSizeHint => T("Menus, dialogs and settings.", "Меню, окна и настройки.");
     public static string EditionApReset => T("Back to {0}'s look", "Вернуть как у {0}");
+    public static string EditionApShapeNote => T(
+        "Type and corners belong to the look: switch the look to change them.",
+        "Шрифт и скругления — часть вида: чтобы их поменять, выберите другой вид.");
 
     public static string EditionVariantShort(string variant) => variant switch
     {

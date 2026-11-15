@@ -11,8 +11,6 @@ namespace v2rayN.Desktop.Views;
 // settings are kept as they were and come back with plain V2pn.
 public sealed partial class AppearanceView
 {
-    private static readonly string[] EditionCornerIds = ["square", "sharp", "normal", "round"];
-    private static readonly string[] EditionFontIds = ["geist", "geistmono", "inter", "segoe"];
 
     private readonly TextBlock _hint = new() { Classes = { "spagehint" }, TextWrapping = TextWrapping.Wrap };
     private readonly ContentControl _looksHost = new();
@@ -76,10 +74,8 @@ public sealed partial class AppearanceView
             Row(L.ApMode, null, Choice([L.ApModeLight, L.ApModeDark], Editions.Mode == "light" ? 0 : 1,
                 i => Editions.Tune(p => p.Mode = i == 0 ? "light" : "dark"))),
             Row(L.ApAccent, string.Format(L.EditionApAccentHint, partner.Name), EditionAccents(partner)),
-            Row(L.ApCorners, null, Choice([L.EditionApCornersSquare, L.ApCornersSharp, L.ApCornersNormal, L.ApCornersRound],
-                Array.IndexOf(EditionCornerIds, Editions.Corners), i => Editions.Tune(p => p.Corners = EditionCornerIds[i]))),
-            Row(L.ApFont, null, Choice(["Geist", "Geist Mono", "Inter", "Segoe UI"],
-                Array.IndexOf(EditionFontIds, Editions.Font), i => Editions.Tune(p => p.Font = EditionFontIds[i])))));
+            // Corners and type belong to the look; said once, instead of offering choices that break it.
+            new Border { Classes = { "srow" }, Child = new TextBlock { Classes = { "srowhint" }, TextWrapping = TextWrapping.Wrap, Text = L.EditionApShapeNote } }));
 
         // The warm look is V2pn's own layout in the partner's colours, so the layout settings work there too.
         if (look == V2pnPartnerVariants.Warm)
@@ -125,43 +121,20 @@ public sealed partial class AppearanceView
         return box;
     }
 
-    /// <summary>The partner's own colour first, then V2pn's accents and a custom one.</summary>
+    /// <summary>
+    /// The partner's own colour first, then V2pn's presets that cannot pass for a state colour. No free colour: every
+    /// choice here was looked at in every look, light and dark.
+    /// </summary>
     private Control EditionAccents(V2pnPartner partner)
     {
-        var chosen = Editions.Prefs.Accent;
+        var chosen = Editions.AccentChoices().Any(a => a.Id != null && a.Id == Editions.Prefs.Accent) ? Editions.Prefs.Accent : null;
         var swatches = new WrapPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-        swatches.Children.Add(Swatch(Color.Parse(Editions.PartnerAccent), chosen == null, string.Format(L.EditionApPartnerAccent, partner.Name),
-            () => Editions.Tune(p => p.Accent = null)));
-        foreach (var (id, color) in Appearance.Accents)
+        foreach (var (id, color) in Editions.AccentChoices())
         {
-            swatches.Children.Add(Swatch(color, chosen == id, L.ApAccentName(id), () => Editions.Tune(p => p.Accent = id)));
+            var name = id == null ? string.Format(L.EditionApPartnerAccent, partner.Name) : L.ApAccentName(id);
+            swatches.Children.Add(Swatch(color, chosen == id, name, () => Editions.Tune(p => p.Accent = id)));
         }
-        var custom = new TextBox { Width = 110, Watermark = "#RRGGBB", MaxLength = 7, Text = chosen?.StartsWith('#') == true ? chosen : string.Empty };
-        void Apply()
-        {
-            var text = custom.Text?.Trim() ?? string.Empty;
-            if (!text.StartsWith('#'))
-            {
-                text = "#" + text;
-            }
-            if (text.Length == 7 && Color.TryParse(text, out _) && text != chosen)
-            {
-                Editions.Tune(p => p.Accent = text.ToUpperInvariant());
-            }
-        }
-        custom.LostFocus += (_, _) => Apply();
-        custom.KeyDown += (_, e) =>
-        {
-            if (e.Key == Key.Enter)
-            {
-                Apply();
-            }
-        };
-        var row = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, Children = { swatches, custom } };
-        // The same warning plain V2pn gives: an accent near green or amber makes Connect read as a state.
-        return Appearance.NearHue(Color.Parse(Editions.AccentHex), Appearance.StatusHues)
-            ? new StackPanel { Spacing = 4, Children = { row, new TextBlock { Classes = { "srowhint" }, MaxWidth = 420, Text = L.ApAccentNearStatus, TextWrapping = TextWrapping.Wrap } } }
-            : row;
+        return swatches;
     }
 
     private static Button Swatch(Color color, bool selected, string name, Action click)

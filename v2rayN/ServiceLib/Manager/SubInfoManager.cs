@@ -83,6 +83,8 @@ public sealed class SubInfoManager
             info.SupportUrl = panel.SupportUrl;
             info.WebPageUrl = panel.WebPageUrl;
             info.Announce = panel.Announce;
+            info.PartnerUrl = panel.PartnerUrl;
+            info.AccountToken = panel.AccountToken;
             info.ReceivedTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (imported && ApplyToSubscription(item, info, panel))
@@ -93,6 +95,14 @@ public sealed class SubInfoManager
             await SQLiteHelper.Instance.ReplaceAsync(info);
             _items[item.Id] = info;
             Changed?.Invoke(item.Id);
+
+            if (info.PartnerUrl.IsNotEmpty() && item.Url.IsNotEmpty())
+            {
+                // The pack is checked in the background; a slow or broken partner site never holds up the update.
+                var partnerUrl = info.PartnerUrl;
+                var subscriptionUrl = item.Url;
+                _ = Task.Run(() => V2pnPartners.Instance.RefreshAsync(subscriptionUrl, partnerUrl));
+            }
         }
         catch (Exception ex)
         {

@@ -42,4 +42,10 @@ public class SubInfoItem
 
     /// <summary>Unix seconds of the response these values came from.</summary>
     public long ReceivedTime { get; set; }
+
+    /// <summary>The v2pn-partner folder the panel named; null when it named none.</summary>
+    public string? PartnerUrl { get; set; }
+
+    /// <summary>The v2pn-account-token for the partner's live-data API; never shown or logged.</summary>
+    public string? AccountToken { get; set; }
 }

@@ -22,6 +22,12 @@ public sealed record SubPanelInfo
     public string? SupportUrl { get; init; }
     public string? WebPageUrl { get; init; }
     public string? Announce { get; init; }
+
+    /// <summary>v2pn-partner: the https folder of the provider's signed partner pack (V2pnPartner); null when absent.</summary>
+    public string? PartnerUrl { get; init; }
+
+    /// <summary>v2pn-account-token: the holder's token for the partner's live-data API; null when absent.</summary>
+    public string? AccountToken { get; init; }
 }
 
 /// <summary>
@@ -38,8 +44,13 @@ public static class SubPanelHeaders
     public const string SupportUrl = "support-url";
     public const string WebPageUrl = "profile-web-page-url";
     public const string Announce = "announce";
+    public const string Partner = "v2pn-partner";
+    public const string AccountToken = "v2pn-account-token";
 
-    private static readonly string[] Known = [ProfileTitle, ContentDisposition, UserInfo, UpdateInterval, SupportUrl, WebPageUrl, Announce];
+    private static readonly string[] Known = [ProfileTitle, ContentDisposition, UserInfo, UpdateInterval, SupportUrl, WebPageUrl, Announce, Partner, AccountToken];
+
+    // A token is an opaque value the partner gives each holder; anything longer or stranger is not one.
+    private const int MaxToken = 200;
 
     // Panels name the download after the format; the extension is not part of the provider's name.
     private static readonly string[] FileExtensions = [".txt", ".yaml", ".yml", ".json", ".conf", ".list"];
@@ -104,6 +115,8 @@ public static class SubPanelHeaders
             SupportUrl = ParseLink(Get(SupportUrl)),
             WebPageUrl = ParseLink(Get(WebPageUrl)),
             Announce = Clip(DecodeText(Get(Announce)), MaxAnnounce),
+            PartnerUrl = ParsePartnerUrl(Get(Partner)),
+            AccountToken = ParseToken(Get(AccountToken)),
         };
     }
 
@@ -249,6 +262,27 @@ public static class SubPanelHeaders
             return null;
         }
         return uri.Scheme is "http" or "https" or "tg" ? text : null;
+    }
+
+    /// <summary>An https folder URL with no user info, ending in "/"; null for anything else.</summary>
+    public static string? ParsePartnerUrl(string? value)
+    {
+        var text = value?.Trim();
+        if (text.IsNullOrEmpty() || text.Any(char.IsWhiteSpace) || !Uri.TryCreate(text, UriKind.Absolute, out var uri)
+            || !(uri.Scheme == Uri.UriSchemeHttps || V2pnPartnerTrust.DevLoopback(uri)) || uri.UserInfo.Length > 0 || uri.Query.Length > 0 || uri.Fragment.Length > 0)
+        {
+            return null;
+        }
+        var url = uri.GetLeftPart(UriPartial.Path);
+        return url.EndsWith('/') ? url : url + "/";
+    }
+
+    public static string? ParseToken(string? value)
+    {
+        var text = value?.Trim();
+        return text is { Length: > 0 and <= MaxToken } && text.All(c => char.IsAsciiLetterOrDigit(c) || c is '-' or '_' or '.' or '~')
+            ? text
+            : null;
     }
 
     private static bool TryParseNumber(string? text, out long number)

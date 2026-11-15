@@ -1,7 +1,8 @@
 ﻿<#
 .SYNOPSIS
   Screenshots every partner look in light and dark at mini, medium and wide window sizes, off screen, and puts
-  them on one contact sheet: the check to run after any change to the looks.
+  them on one contact sheet: the check to run after any change to the looks. With -Theme it shows a provider theme
+  (a folder with partner.json and its pictures) on each of the six templates instead.
 
 .DESCRIPTION
   Builds nothing: it runs the Debug build (or -From) in a sandbox (tools/sandbox.ps1) in background mode with the
@@ -11,6 +12,8 @@
 .EXAMPLE
   tools/edition-matrix.ps1
   tools/edition-matrix.ps1 -Looks 'Кабинет','ASCII' -Sizes 'Мини 380×640' -Out $env:TEMP/matrix
+  tools/edition-matrix.ps1 -Theme tools/demo/themes/aurora
+  tools/edition-matrix.ps1 -Theme tools/demo/themes/pine -Templates list,compact -Out $env:TEMP/pine
 #>
 param(
     [string]$From = (Join-Path $PSScriptRoot '..\v2rayN\v2rayN.Desktop\bin\Debug\net10.0'),
@@ -19,6 +22,10 @@ param(
     [string[]]$Looks = @('Подпись', 'Тёплый', 'Кабинет', 'Студия', 'ASCII'),
     [string[]]$Modes = @('Тёмный', 'Светлый'),
     [string[]]$Sizes = @('Мини 380×640', 'Среднее 820×700', 'Широкое 1280×800'),
+    # A provider theme to show: a folder with partner.json ("brand", "theme") and its pictures. Its look is shown on
+    # each of -Templates (the theme's own blocks and pictures kept where a template has room for them).
+    [string]$Theme,
+    [string[]]$Templates = @('center', 'half', 'split', 'list', 'map', 'compact'),
     # guiConfigs to start from (servers, subscriptions, a verified partner); a fresh install would open the walkthrough.
     [string]$SeedFrom = (Join-Path $env:TEMP 'v2pn-partner\guiConfigs')
 )
@@ -37,7 +44,8 @@ if (Test-Path $SeedFrom) {
     & $sandbox -Dest $Dest | Out-Null
 }
 $env:V2PN_DEBUG = '1'
-try { & $sandbox -Dest $Dest -Launch | Out-Null } finally { Remove-Item Env:V2PN_DEBUG }
+if ($Theme) { $env:V2PN_DEBUG_THEME = (Resolve-Path $Theme).Path }
+try { & $sandbox -Dest $Dest -Launch | Out-Null } finally { Remove-Item Env:V2PN_DEBUG; Remove-Item Env:V2PN_DEBUG_THEME -ErrorAction SilentlyContinue }
 
 $proc = $null
 for ($i = 0; $i -lt 40 -and -not $proc; $i++) {
@@ -74,9 +82,18 @@ Start-Sleep -Seconds 2
 Invoke-Debug 'партнёр из списка выше'
 Start-Sleep -Seconds 2
 
+if ($Theme) {
+    # A theme's blocks show what the subscription has: lay the debug window's full data over it (plan, traffic,
+    # announcement, banner, the provider's check of its servers).
+    Invoke-Debug 'всё (API)'
+    Invoke-Debug '11 из 14 по партнёру'
+}
 $files = @()
-foreach ($look in $Looks) {
-    Invoke-Debug $look
+# With a theme, the "looks" are its templates: each one is picked in the debug window, then shot like a look.
+$themeName = if ($Theme) { Split-Path -Leaf (Resolve-Path $Theme).Path } else { $null }
+$passes = if ($Theme) { $Templates } else { $Looks }
+foreach ($look in $passes) {
+    if ($Theme) { Invoke-Debug "шаблон $look" } else { Invoke-Debug $look }
     Start-Sleep -Milliseconds 1500
     foreach ($mode in $Modes) {
         # The signature look keeps plain V2pn's mode; one pass is enough.
@@ -86,9 +103,10 @@ foreach ($look in $Looks) {
         foreach ($size in $Sizes) {
             Invoke-Debug $size
             Start-Sleep -Milliseconds 2200
-            $file = Join-Path $Out ("{0}-{1}-{2}.png" -f $look, $mode, ($size -split ' ')[0])
+            $name = if ($Theme) { "$themeName-$look" } else { $look }
+            $file = Join-Path $Out ("{0}-{1}-{2}.png" -f $name, $mode, ($size -split ' ')[0])
             & $shot -ProcessId $proc.Id -Out $file -Title '* — *' | Out-Null
-            $files += [pscustomobject]@{ File = $file; Label = "$look · $mode · $(($size -split ' ')[0])" }
+            $files += [pscustomobject]@{ File = $file; Label = "$name · $mode · $(($size -split ' ')[0])" }
         }
     }
 }
@@ -127,7 +145,7 @@ foreach ($images in $sheetRows) {
     $y += $rowHeight + 30
 }
 $g.Dispose()
-$sheetFile = Join-Path $Out 'matrix.png'
+$sheetFile = Join-Path $Out $(if ($Theme) { "matrix-$themeName.png" } else { 'matrix.png' })
 $sheet.Save($sheetFile, [System.Drawing.Imaging.ImageFormat]::Png)
 $sheet.Dispose()
 Write-Host "$($files.Count) shots, sheet: $sheetFile"

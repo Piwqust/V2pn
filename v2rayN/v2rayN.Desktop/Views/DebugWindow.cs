@@ -20,6 +20,8 @@ public sealed class DebugWindow : Window
     private readonly ComboBox _subs = new() { MinWidth = 220 };
     private readonly TextBox _testName = new() { Text = "Тест-провайдер", Width = 170 };
     private readonly TextBox _testAccent = new() { Text = "#3B82F6", Width = 100 };
+    // A folder with a partner.json (brand, theme) and its pictures; V2PN_DEBUG_THEME fills it for scripted checks.
+    private readonly TextBox _themeFolder = new() { Text = Environment.GetEnvironmentVariable("V2PN_DEBUG_THEME") ?? string.Empty, Watermark = "папка с partner.json и картинками", MinWidth = 300 };
     private readonly TextBox _link = new() { Watermark = "v2pn://add?url=…", MinWidth = 360 };
     private readonly DispatcherTimer _timer;
     private string _partnersKey = string.Empty;
@@ -66,7 +68,8 @@ public sealed class DebugWindow : Window
             var accent = Color.TryParse(_testAccent.Text?.Trim(), out _) ? _testAccent.Text!.Trim().ToUpperInvariant() : null;
             // Its intro waits for the "Показать" button below instead of covering the window.
             Editions.MarkIntroduced(TestPartnerId);
-            if (V2pnPartners.Instance.AddDebugPartner(TestPartnerId, (_testName.Text ?? "Тест-провайдер").Trim(), accent) == null)
+            var folder = _themeFolder.Text?.Trim();
+            if (V2pnPartners.Instance.AddDebugPartner(TestPartnerId, (_testName.Text ?? "Тест-провайдер").Trim(), accent, Directory.Exists(folder) ? folder : null) == null)
             {
                 _main.DebugToast(ToastKind.Warning, "Тестовый партнёр есть только в сборке разработчика или в режиме разработчика.");
             }
@@ -89,7 +92,8 @@ public sealed class DebugWindow : Window
         _partners.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<V2pnPartner>((p, _) => new TextBlock { Text = p == null ? "" : $"{p.Name} ({p.Id}{(V2pnPartners.Instance.IsDebug(p.Id) ? ", тестовый" : "")})" });
 
         return Card("Партнёры",
-            Row("Тестовый партнёр (все виды, без картинок и API, только в памяти)", _testName, _testAccent, add),
+            Row("Тестовый партнёр (все виды, без API, только в памяти)", _testName, _testAccent, add),
+            Row("Тема тестового партнёра (необязательно)", _themeFolder),
             Row("Партнёр для действий ниже", _partners),
             Row("Подписка", _subs, link, unlink),
             Row("Интро",
@@ -116,6 +120,7 @@ public sealed class DebugWindow : Window
         return Card("Вид",
             Row("Оформление", [.. editions, Action("партнёр из списка выше", () => Selected()?.Let(p => Editions.Select(p.Id)))]),
             Row("Вид партнёра", looks),
+            Row("Шаблон темы", V2pnThemeTemplates.All.Select(t => (Control)Mark(Action("шаблон " + t, () => SetTemplate(t)), () => Editions.Theme?.Template == t)).ToArray()),
             Row("Режим вида",
                 Mark(Action("Светлый", () => Editions.Tune(p => p.Mode = "light")), () => Editions.IsTuned && Editions.Mode == "light"),
                 Mark(Action("Тёмный", () => Editions.Tune(p => p.Mode = "dark")), () => Editions.IsTuned && Editions.Mode == "dark"),
@@ -200,6 +205,19 @@ public sealed class DebugWindow : Window
         Editions.SetVariant(variant);
     }
 
+    /// <summary>The test partner's theme on another template (its blocks and pictures kept where that one has room).</summary>
+    private void SetTemplate(string template)
+    {
+        if (!V2pnPartners.Instance.IsDebug(TestPartnerId))
+        {
+            _main.DebugToast(ToastKind.Warning, "Шаблоны меняются у тестового партнёра: добавьте его.");
+            return;
+        }
+        V2pnPartners.Instance.EditDebugTheme(TestPartnerId, theme => V2pnThemeReader.WithTemplate(theme, template));
+        Editions.Select(TestPartnerId);
+        OpenLook(V2pnPartnerVariants.Theme);
+    }
+
     private void Gone(V2pnPartnerGone why)
     {
         if (Selected() is not { } partner)
@@ -258,6 +276,14 @@ public sealed class DebugWindow : Window
         if (Editions.IsTuned)
         {
             lines.Add($"вид: {Editions.Mode} · акцент {Editions.AccentHex} · углы {Editions.Corners} · шрифт {Editions.Font}");
+            if (Editions.Theme is { } theme)
+            {
+                lines.Add($"тема: {theme.Template} · {theme.Connect} · {string.Join(" ", theme.Brand)} {theme.Tone} · {theme.Font} · {theme.Corners}/{theme.Density} · фон {theme.Background.Kind} · {string.Join(",", theme.Blocks)}");
+                foreach (var note in theme.Notes)
+                {
+                    lines.Add("  " + note);
+                }
+            }
         }
         foreach (var partner in partners)
         {

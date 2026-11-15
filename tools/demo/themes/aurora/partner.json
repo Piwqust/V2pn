@@ -1,0 +1,64 @@
+{
+  "schema": 1,
+  "id": "aurora",
+  "name": "Aurora",
+  "brand": {
+    "accent": "#6D5DFC"
+  },
+  "edition": {
+    "variants": [
+      "theme",
+      "signature"
+    ],
+    "default": "theme"
+  },
+  "theme": {
+    "template": "center",
+    "connect": "round",
+    "palette": {
+      "brand": [
+        "#6D5DFC",
+        "#22D3EE"
+      ],
+      "tone": "cool"
+    },
+    "font": "Manrope",
+    "corners": "round",
+    "density": "normal",
+    "background": {
+      "type": "gradient",
+      "colors": [
+        "#3B2FD9",
+        "#6D28D9",
+        "#C026D3"
+      ]
+    },
+    "blocks": [
+      "actions",
+      "banner",
+      "plan",
+      "traffic",
+      "news",
+      "servers"
+    ],
+    "art": {
+      "hero": "orb.png"
+    }
+  },
+  "actions": [
+    {
+      "id": "fast",
+      "label": "Самый быстрый",
+      "icon": "bolt",
+      "do": "connect.best",
+      "strategy": "ping"
+    },
+    {
+      "id": "stable",
+      "label": "Самый стабильный",
+      "icon": "shield",
+      "do": "connect.best",
+      "strategy": "stable"
+    }
+  ]
+}

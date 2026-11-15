@@ -1,0 +1,63 @@
+{
+  "schema": 1,
+  "id": "pine",
+  "name": "Pine",
+  "brand": {
+    "accent": "#0E7C86"
+  },
+  "edition": {
+    "variants": [
+      "theme",
+      "signature"
+    ],
+    "default": "theme"
+  },
+  "theme": {
+    "template": "list",
+    "connect": "toggle",
+    "palette": {
+      "brand": [
+        "#0E7C86",
+        "#F97316"
+      ],
+      "tone": "neutral"
+    },
+    "font": "Golos Text",
+    "corners": "soft",
+    "density": "compact",
+    "background": {
+      "type": "solid"
+    },
+    "blocks": [
+      "banner",
+      "actions",
+      "plan",
+      "traffic",
+      "news",
+      "servers"
+    ]
+  },
+  "actions": [
+    {
+      "id": "fast",
+      "label": "Самый быстрый",
+      "icon": "bolt",
+      "do": "connect.best",
+      "strategy": "ping"
+    },
+    {
+      "id": "stable",
+      "label": "Самый стабильный",
+      "icon": "shield",
+      "do": "connect.best",
+      "strategy": "stable"
+    },
+    {
+      "id": "support",
+      "label": "Поддержка",
+      "icon": "chat",
+      "do": "open.link",
+      "url": "https://t.me/example_support"
+    }
+  ]
+}

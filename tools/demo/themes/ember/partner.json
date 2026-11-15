@@ -1,0 +1,62 @@
+{
+  "schema": 1,
+  "id": "ember",
+  "name": "Ember",
+  "brand": {
+    "accent": "#E11D48"
+  },
+  "edition": {
+    "variants": [
+      "theme",
+      "signature"
+    ],
+    "default": "theme"
+  },
+  "theme": {
+    "template": "half",
+    "connect": "capsule",
+    "palette": {
+      "brand": [
+        "#E11D48",
+        "#FB7185"
+      ],
+      "tone": "warm"
+    },
+    "font": "Unbounded",
+    "corners": "sharp",
+    "density": "normal",
+    "background": {
+      "type": "image",
+      "art": "dunes.jpg"
+    },
+    "blocks": [
+      "plan",
+      "traffic",
+      "actions",
+      "banner",
+      "news",
+      "art",
+      "servers"
+    ],
+    "art": {
+      "hero": "orb.png",
+      "banner": "strip.png"
+    }
+  },
+  "actions": [
+    {
+      "id": "fast",
+      "label": "Самый быстрый",
+      "icon": "bolt",
+      "do": "connect.best",
+      "strategy": "ping"
+    },
+    {
+      "id": "renew",
+      "label": "Продлить",
+      "icon": "card",
+      "do": "open.link",
+      "url": "https://t.me/example_renew"
+    }
+  ]
+}

@@ -60,6 +60,7 @@ public sealed class V2pnPartners
     private HashSet<string> _revoked = [];
     // The debug window's made-up partners and the subscriptions it counts as theirs; never on disk, never pruned.
     private readonly ConcurrentDictionary<string, byte> _debugIds = new(StringComparer.Ordinal);
+    private readonly ConcurrentDictionary<string, V2pnTheme> _debugThemes = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _debugSubs = new(StringComparer.Ordinal);
     private Task? _load;
     private bool _revocationsChecked;
@@ -364,7 +365,7 @@ public sealed class V2pnPartners
             return null;
         }
         var today = Today();
-        var cert = new V2pnPartnerCert(id, name, ["localhost"], string.Empty, [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account], today, today.AddYears(1));
+        var cert = new V2pnPartnerCert(id, name, ["localhost"], string.Empty, [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account, V2pnPartnerGrants.Actions], today, today.AddYears(1));
         var folder = Path.Combine(Path.GetTempPath(), "v2pn-debug-partner-" + id);
         var assets = new List<V2pnPartnerAsset>();
         JsonObject? root = null;
@@ -393,23 +394,28 @@ public sealed class V2pnPartners
         var theme = V2pnThemeReader.Parse(root?["theme"], accent, f => Picture(f) != null);
         var pack = new V2pnPartnerPack(id, name, accent, Picture(brand?["logo"]?.GetValue<string>()), Picture(brand?["logoOnLight"]?.GetValue<string>()),
             V2pnPartnerVariants.All.ToList(), root?["theme"] != null ? V2pnPartnerVariants.Theme : V2pnPartnerVariants.Cabinet,
-            new Dictionary<string, string>(), null, null, null, assets, Picture(brand?["mark"]?.GetValue<string>()), Theme: theme);
+            new Dictionary<string, string>(), null, null, null, assets, Picture(brand?["mark"]?.GetValue<string>()),
+            Actions: V2pnPartnerCatalog.ParseActions(root?["actions"], cert, hasApi: false), Theme: theme);
         pack = V2pnPartnerSlots.Fit(pack, file => File.Exists(Path.Combine(folder, file)) ? File.ReadAllBytes(Path.Combine(folder, file)) : null, out _);
         var partner = new V2pnPartner(cert, pack, folder, "debug://" + id + "/");
+        _debugThemes[id] = pack.Theme!;
         _debugIds[id] = 0;
         _partners[id] = partner;
         Changed?.Invoke();
         return partner;
     }
 
-    /// <summary>Debug only: the made-up partner with its theme changed by <paramref name="edit"/> (another template, say).</summary>
+    /// <summary>
+    /// Debug only: the made-up partner with its theme as it was added, changed by <paramref name="edit"/> (another
+    /// template, say); edits never pile up, so a template that drops a picture does not take it from the next one.
+    /// </summary>
     public void EditDebugTheme(string id, Func<V2pnTheme, V2pnTheme> edit)
     {
         if (!_debugIds.ContainsKey(id) || !_partners.TryGetValue(id, out var partner))
         {
             return;
         }
-        var theme = edit(partner.Pack.Theme ?? V2pnTheme.Default(partner.Pack.Accent));
+        var theme = edit(_debugThemes.GetValueOrDefault(id) ?? partner.Pack.Theme ?? V2pnTheme.Default(partner.Pack.Accent));
         _partners[id] = new V2pnPartner(partner.Cert, partner.Pack with { Theme = theme }, partner.Folder, partner.SourceUrl, partner.Features);
         Changed?.Invoke();
     }

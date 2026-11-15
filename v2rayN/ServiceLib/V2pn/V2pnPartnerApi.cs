@@ -21,7 +21,9 @@ public sealed record V2pnPartnerIncident(string Title, string? Text, bool Severe
 
 /// <summary>
 /// A partner's optional API (pack field "api", only with the "account" grant and on the certificate's domains):
-/// <c>GET account</c> with the subscription's v2pn-account-token as a bearer token, <c>GET status</c> without one.
+/// <c>GET account</c> with the subscription's v2pn-account-token as a bearer token, <c>GET status</c> without one, and
+/// for the partner's buttons <c>GET servers</c>, <c>GET recommend?purpose=</c> and <c>GET card?id=</c> with the token
+/// when the subscription has one.
 /// Answers are JSON up to 64 KB and read field by field, so a partner can add fields without breaking older V2pn;
 /// nothing in them runs, and nothing V2pn knows about the device or its traffic is sent.
 /// </summary>
@@ -55,6 +57,39 @@ public static class V2pnPartnerApi
         }
         var result = await Fetch(api + "status", null, cancellationToken);
         return result.Body is { } body ? ParseStatus(body) : null;
+    }
+
+    /// <summary>The partner's live notes about its servers (load, health, groups); null when it has no API or the call fails.</summary>
+    public static async Task<IReadOnlyList<V2pnServerNote>?> GetServersAsync(V2pnPartner partner, string? token, CancellationToken cancellationToken = default)
+    {
+        if (Base(partner) is not { } api)
+        {
+            return null;
+        }
+        var result = await Fetch(api + "servers", SubPanelHeaders.ParseToken(token), cancellationToken);
+        return result.Ok ? V2pnPartnerCatalog.ParseServersAnswer(result.Body!) : null;
+    }
+
+    /// <summary>The servers the partner recommends now for <paramref name="purpose"/>, best first; null when it has no API or the call fails.</summary>
+    public static async Task<IReadOnlyList<string>?> GetRecommendAsync(V2pnPartner partner, string? token, string purpose, CancellationToken cancellationToken = default)
+    {
+        if (Base(partner) is not { } api || !V2pnPurposes.All.Contains(purpose))
+        {
+            return null;
+        }
+        var result = await Fetch(api + "recommend?purpose=" + Uri.EscapeDataString(purpose), SubPanelHeaders.ParseToken(token), cancellationToken);
+        return result.Ok ? V2pnPartnerCatalog.ParseRecommendAnswer(result.Body!) : null;
+    }
+
+    /// <summary>The text of an info.card button; null when the partner has no API or the call fails.</summary>
+    public static async Task<V2pnPartnerCard?> GetCardAsync(V2pnPartner partner, string? token, string actionId, CancellationToken cancellationToken = default)
+    {
+        if (Base(partner) is not { } api)
+        {
+            return null;
+        }
+        var result = await Fetch(api + "card?id=" + Uri.EscapeDataString(actionId), SubPanelHeaders.ParseToken(token), cancellationToken);
+        return result.Ok ? V2pnPartnerCatalog.ParseCardAnswer(result.Body!) : null;
     }
 
     private static string? Base(V2pnPartner partner)

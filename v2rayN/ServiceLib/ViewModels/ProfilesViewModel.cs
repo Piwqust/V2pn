@@ -464,7 +464,9 @@ public partial class ProfilesViewModel : MyReactiveObject
 
         AllServersCount = all.Count;
 
-        var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
+        // V2pn: a server its partner hides is not counted either.
+        var counts = all.Where(t => !V2pnPartnerLive.Instance.Hidden(t.Subid, t.Remarks, t.Address))
+            .GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
         // An update writes UpdateTime to the database; the cached items need it too for "updated 5 min ago".
         var stored = (await AppManager.Instance.SubItems() ?? []).ToDictionary(t => t.Id ?? string.Empty, t => t.UpdateTime);
         foreach (var sub in SubNavItems)

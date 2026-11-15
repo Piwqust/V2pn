@@ -150,6 +150,8 @@ public sealed class CabinetScene : EditionScene
 
     private readonly Ink _c;
     private readonly Image _flag = Scene.Flag(null, 34, 24);
+    // A server whose country V2pn does not know (a group, a host name): a globe, as in the plain list.
+    private readonly PathIcon _globe = Scene.Globe("#5B5750", 26);
     private readonly TextBlock _title = Scene.Text("", 44, "#121211");
     private readonly TextBlock _subtitle = Scene.Text("", 13, "#55524C");
     private readonly TextBlock _stateText = Scene.Text("", 18, "#121211");
@@ -207,7 +209,14 @@ public sealed class CabinetScene : EditionScene
             Width = 62,
             Height = 62,
             Background = Scene.B("#F7F6F3"),
-            Child = new Border { CornerRadius = look.R(4), ClipToBounds = true, Width = 34, Height = 24, Child = _flag },
+            Child = new Panel
+            {
+                Children =
+                {
+                    new Border { CornerRadius = look.R(4), ClipToBounds = true, Width = 34, Height = 24, Child = _flag },
+                    _globe,
+                },
+            },
         };
         _who = new StackPanel
         {
@@ -442,6 +451,8 @@ public sealed class CabinetScene : EditionScene
     {
         _last = s;
         _flag.Source = V2pnConverters.Flag(s.CountryCode);
+        _flag.IsVisible = _flag.Source != null;
+        _globe.IsVisible = _flag.Source == null;
         _title.Text = s.Title;
         _subtitle.Text = s.Subscription.IsNotEmpty() ? $"{s.Subtitle} · {s.Subscription}" : s.Subtitle;
         _stateText.Text = s.Protected ? L.SceneWorking : s.StateLabel;
@@ -495,6 +506,7 @@ public sealed class StudioScene : EditionScene
     private readonly TextBlock _sub;
     private readonly Image _lamp = new() { Stretch = Stretch.Uniform };
     private readonly Control _lampPart;
+    private readonly Border _flagBox;
     private readonly TextBlock _connectLabel;
     private readonly Button _proxy;
     private readonly Button _vpn;
@@ -539,9 +551,11 @@ public sealed class StudioScene : EditionScene
         _routeTitle = Scene.Text("", 18, _c.Text);
         _serversCount = Scene.Text("", 12, _c.Muted, Scene.Mono);
         _pill = Scene.Pill(_pillText, light: !look.Dark);
+        _flagBox = new Border { CornerRadius = look.R(3), ClipToBounds = true, Child = _flag };
         _lamp.Source = Scene.Picture(partner, partner.Pack.Art.GetValueOrDefault("lamp"));
-        // The lamp is shot on the studio's grey; on the dark ground it hangs as a framed photo instead of a grey box.
-        _lampPart = look.Dark
+        // A picture cut out on a transparent ground stands on the page as it is; one shot on its own ground (opaque
+        // corners) hangs as a framed photo, so its ground never reads as a stray box on ours.
+        _lampPart = _lamp.Source is Bitmap art && !Scene.HasTransparentCorners(art)
             ? new Border { CornerRadius = look.R(18), ClipToBounds = true, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Child = _lamp }
             : _lamp;
 
@@ -570,7 +584,7 @@ public sealed class StudioScene : EditionScene
             {
                 Scene.Text(L.SceneYouAreIn, 13, _c.Note, Scene.Mono),
                 new Viewbox { Stretch = Stretch.Uniform, StretchDirection = StretchDirection.DownOnly, HorizontalAlignment = HorizontalAlignment.Left, Child = _word },
-                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0), Children = { new Border { CornerRadius = look.R(3), ClipToBounds = true, Child = _flag }, _sub } },
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 12, Margin = new Thickness(0, 4, 0, 0), Children = { _flagBox, _sub } },
             },
         };
 
@@ -719,6 +733,7 @@ public sealed class StudioScene : EditionScene
         Scene.SetPill(_pill, _pillText, s.StateKind, s.StateLabel);
         _word.Text = s.Title.ToUpper(CultureInfo.CurrentUICulture);
         _flag.Source = V2pnConverters.Flag(s.CountryCode);
+        _flagBox.IsVisible = _flag.Source != null;
         _sub.Text = string.Join(" · ", new[] { s.Subtitle, s.Subscription, s.Ping > 0 ? $"{s.Ping} {L.SceneMs}" : null }.Where(t => t.IsNotEmpty()));
         // The lamp is lit while the connection protects; dim otherwise, so the picture says the state too.
         _lamp.Opacity = s.Protected ? 1 : 0.35;

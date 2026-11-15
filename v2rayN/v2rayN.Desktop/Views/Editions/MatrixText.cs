@@ -40,8 +40,44 @@ public sealed class MatrixText : Control
         return table[' '];
     }
 
+    /// <summary>
+    /// True when every character has a glyph. A name in Latin letters, a dash for "no ping" and the like do not: the
+    /// text is then set in the look's own type at the same height instead of coming out blank or as stray dots.
+    /// </summary>
+    private bool Drawable
+    {
+        get
+        {
+            foreach (var c in Text ?? string.Empty)
+            {
+                var upper = char.ToUpperInvariant(c);
+                var known = c == ' ' || (Square ? Pixels.ContainsKey(upper) || Dots.ContainsKey(c) : Dots.ContainsKey(upper));
+                if (!known)
+                {
+                    return false;
+                }
+            }
+            return true;
+        }
+    }
+
+    // Cap height is about 0.72 of the size: the fallback stands as tall as the seven rows of dots.
+    private FormattedText Fallback() => new(
+        Text ?? string.Empty,
+        CultureInfo.CurrentUICulture,
+        FlowDirection.LeftToRight,
+        new Typeface(Scene.Current.Text, FontStyle.Normal, Square ? FontWeight.Bold : FontWeight.SemiBold),
+        7 * Cell / 0.72,
+        Foreground ?? Brushes.White)
+    { MaxLineCount = 1 };
+
     protected override Size MeasureOverride(Size availableSize)
     {
+        if (!Drawable)
+        {
+            var text = Fallback();
+            return new Size(text.WidthIncludingTrailingWhitespace, 7 * Cell);
+        }
         var columns = 0;
         foreach (var c in Text ?? string.Empty)
         {
@@ -54,6 +90,13 @@ public sealed class MatrixText : Control
     {
         if (Foreground is not { } brush)
         {
+            return;
+        }
+        if (!Drawable)
+        {
+            var text = Fallback();
+            // Baseline on the bottom row of where the dots would be.
+            context.DrawText(text, new Point(0, 7 * Cell - text.Baseline));
             return;
         }
         var x = 0.0;

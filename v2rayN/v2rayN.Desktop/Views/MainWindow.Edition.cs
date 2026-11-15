@@ -262,8 +262,10 @@ public partial class MainWindow : IEditionActions
         {
             panelBrand.Children.RemoveAt(2);
         }
+        // In a mini window the title bar has room for one name: the words go, the marks stay (with the full name as tip).
+        var compact = partner != null && _tier == BodyTier.Stacked;
         pathBrand.IsVisible = true;
-        txtBrand.IsVisible = true;
+        txtBrand.IsVisible = !compact;
         AutomationProperties.SetName(btnEdition, partner == null ? L.AppName : $"{L.AppName} × {partner.Name}");
         ToolTip.SetTip(btnEdition, Editions.Available.Count > 0 ? L.EditionSwitchTip : null);
         if (partner == null)
@@ -282,10 +284,33 @@ public partial class MainWindow : IEditionActions
             ? new TextBlock { Text = partner.Name, FontSize = 13, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center }
             : new Image { Source = bitmap, Height = 16, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center };
 
+        if (logo is TextBlock && compact)
+        {
+            logo.MaxWidth = 90;
+            ((TextBlock)logo).TextTrimming = TextTrimming.CharacterEllipsis;
+        }
         if (variant is V2pnPartnerVariants.Signature or V2pnPartnerVariants.Warm)
         {
             panelBrand.Children.Add(new TextBlock { Text = "×", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
             panelBrand.Children.Add(logo);
+        }
+        else if (compact)
+        {
+            // The partner's logo, then V2pn's fork alone: still "on V2pn", in a tenth of the room.
+            pathBrand.IsVisible = false;
+            txtBrand.IsVisible = false;
+            panelBrand.Children.Add(logo);
+            var fork = new Avalonia.Controls.Shapes.Path
+            {
+                Width = 9,
+                Height = 10,
+                Stretch = Stretch.Uniform,
+                Data = this.FindResource("V2BrandFork") as Geometry,
+                Fill = new SolidColorBrush(Color.Parse("#FF3D1F")),
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            ToolTip.SetTip(fork, $"{L.EditionOn} {L.AppName}");
+            panelBrand.Children.Add(fork);
         }
         else
         {

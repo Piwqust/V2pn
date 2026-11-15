@@ -162,6 +162,8 @@ public partial class MainWindow
         conTheme.IsVisible = !stacked;
         RefreshUpdateBadge();
         RefreshSnapButton();
+        // V2pn: a partner's name in the title bar shortens in a mini window (MainWindow.Edition.cs).
+        UpdateLockup(Editions.Partner, Editions.Variant);
         ApplyWindowLimits();
         UpdateStackedRows();
     }

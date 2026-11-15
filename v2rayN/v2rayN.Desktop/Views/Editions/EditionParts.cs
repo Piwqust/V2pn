@@ -279,6 +279,55 @@ internal static class Scene
         }
     }
 
+    /// <summary>The globe V2pn's list shows for a server without a country.</summary>
+    public static PathIcon Globe(string color, double size) => new()
+    {
+        Width = size,
+        Height = size,
+        Data = Application.Current?.FindResource("SemiIconGlobeStroke") as Geometry,
+        Foreground = B(color),
+        HorizontalAlignment = HorizontalAlignment.Center,
+        VerticalAlignment = VerticalAlignment.Center,
+        IsVisible = false,
+    };
+
+    /// <summary>True when the picture's four corners are (almost) transparent: a cut-out, not a photo on its own ground.</summary>
+    public static bool HasTransparentCorners(Bitmap bitmap)
+    {
+        try
+        {
+            var size = bitmap.PixelSize;
+            if (size.Width < 2 || size.Height < 2)
+            {
+                return true;
+            }
+            var pixel = new byte[4];
+            var handle = System.Runtime.InteropServices.GCHandle.Alloc(pixel, System.Runtime.InteropServices.GCHandleType.Pinned);
+            try
+            {
+                foreach (var (x, y) in new[] { (0, 0), (size.Width - 1, 0), (0, size.Height - 1), (size.Width - 1, size.Height - 1) })
+                {
+                    bitmap.CopyPixels(new PixelRect(x, y, 1, 1), handle.AddrOfPinnedObject(), 4, 4);
+                    // Bgra8888 and Rgba8888 both keep alpha last.
+                    if (pixel[3] > 24)
+                    {
+                        return false;
+                    }
+                }
+            }
+            finally
+            {
+                handle.Free();
+            }
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("EditionScene", ex);
+            return false;
+        }
+    }
+
     public static Image Flag(string? code, double width, double height) => new()
     {
         Source = V2pnConverters.Flag(code),

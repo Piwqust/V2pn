@@ -10,7 +10,9 @@ param(
     [Parameter(Mandatory = $true)][int]$ProcessId,
     [Parameter(Mandatory = $true)][string]$Out,
     # Saves every visible top-level window into the -Out folder instead of only the largest one.
-    [switch]$All
+    [switch]$All,
+    # Only windows whose title matches this wildcard (e.g. '*V2pn —*' for the main window, not the debug one).
+    [string]$Title
 )
 
 $ErrorActionPreference = 'Stop'
@@ -63,7 +65,8 @@ function Save-Window([IntPtr]$h, [string]$path) {
 # and PrintWindow fills only its top-left part.
 [void][V2pnShot]::SetThreadDpiAwarenessContext([IntPtr]::new(-4))
 $wins = [V2pnShot]::Windows([uint32]$ProcessId)
-if ($wins.Count -eq 0) { throw "No visible windows for process $ProcessId" }
+if ($Title) { $wins = @($wins | Where-Object { [V2pnShot]::Title($_) -like $Title }) }
+if ($wins.Count -eq 0) { throw "No visible windows for process $ProcessId$(if ($Title) { " titled like $Title" })" }
 
 if ($All) {
     New-Item -ItemType Directory -Force $Out | Out-Null

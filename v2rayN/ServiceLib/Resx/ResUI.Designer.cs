@@ -5579,5 +5579,68 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("V2pnSubEndsInOneDay", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to YouTube.
+        /// </summary>
+        public static string V2pnPurposeYouTube {
+            get {
+                return ResourceManager.GetString("V2pnPurposeYouTube", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Games.
+        /// </summary>
+        public static string V2pnPurposeGames {
+            get {
+                return ResourceManager.GetString("V2pnPurposeGames", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Mobile internet.
+        /// </summary>
+        public static string V2pnPurposeMobile {
+            get {
+                return ResourceManager.GetString("V2pnPurposeMobile", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Whitelists.
+        /// </summary>
+        public static string V2pnPurposeWhitelist {
+            get {
+                return ResourceManager.GetString("V2pnPurposeWhitelist", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Streaming.
+        /// </summary>
+        public static string V2pnPurposeStreaming {
+            get {
+                return ResourceManager.GetString("V2pnPurposeStreaming", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to AI.
+        /// </summary>
+        public static string V2pnPurposeAi {
+            get {
+                return ResourceManager.GetString("V2pnPurposeAi", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Torrents.
+        /// </summary>
+        public static string V2pnPurposeTorrents {
+            get {
+                return ResourceManager.GetString("V2pnPurposeTorrents", resourceCulture);
+            }
+        }
     }
 }

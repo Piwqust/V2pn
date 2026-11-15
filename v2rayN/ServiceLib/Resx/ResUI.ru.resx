@@ -1941,4 +1941,25 @@
   <data name="V2pnSubEndsInOneDay" xml:space="preserve">
     <value>Подписка закончится через 1 день</value>
   </data>
+  <data name="V2pnPurposeYouTube" xml:space="preserve">
+    <value>YouTube</value>
+  </data>
+  <data name="V2pnPurposeGames" xml:space="preserve">
+    <value>Игры</value>
+  </data>
+  <data name="V2pnPurposeMobile" xml:space="preserve">
+    <value>Мобильный интернет</value>
+  </data>
+  <data name="V2pnPurposeWhitelist" xml:space="preserve">
+    <value>Белые списки</value>
+  </data>
+  <data name="V2pnPurposeStreaming" xml:space="preserve">
+    <value>Стриминг</value>
+  </data>
+  <data name="V2pnPurposeAi" xml:space="preserve">
+    <value>Нейросети</value>
+  </data>
+  <data name="V2pnPurposeTorrents" xml:space="preserve">
+    <value>Торренты</value>
+  </data>
 </root>

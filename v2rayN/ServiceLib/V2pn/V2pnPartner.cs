@@ -37,8 +37,17 @@ public sealed record V2pnPartnerPack(
     string? SupportUrl,
     string? ApiUrl,
     IReadOnlyList<V2pnPartnerAsset> Assets,
-    string? Mark = null)
+    string? Mark = null,
+    IReadOnlyList<V2pnServerNote>? Servers = null,
+    IReadOnlyList<V2pnPartnerAction>? Actions = null,
+    bool Lock = false)
 {
+    /// <summary>What the pack says about its servers (needs the actions grant).</summary>
+    public IReadOnlyList<V2pnServerNote> ServerNotes => Servers ?? [];
+
+    /// <summary>The partner's buttons, at most four (needs the actions grant).</summary>
+    public IReadOnlyList<V2pnPartnerAction> ActionList => Actions ?? [];
+
     public V2pnPartnerAsset? Asset(string? name) => Assets.FirstOrDefault(a => a.Name == name);
 }
 
@@ -74,7 +83,16 @@ public static class V2pnPartnerGrants
     /// <summary>V2pn may ask the partner's API for the holder's plan and server state.</summary>
     public const string Account = "account";
 
-    public static readonly IReadOnlyList<string> All = [Edition, Account];
+    /// <summary>The partner's buttons and its description of its servers (groups, countries, purposes). Every partner gets it.</summary>
+    public const string Actions = "actions";
+
+    /// <summary>
+    /// The partner may close its subscription's settings (hide-settings, hide-url, pack "lock"): the addresses of its
+    /// servers are not shown or exported, its link and its defaults cannot be changed. Given after a review only.
+    /// </summary>
+    public const string Lock = "lock";
+
+    public static readonly IReadOnlyList<string> All = [Edition, Account, Actions, Lock];
 }
 
 /// <summary>Reads and checks a partner's certificate and pack. Pure: no network, no files, no clock but the one passed in.</summary>
@@ -208,9 +226,10 @@ public static class V2pnPartnerTrust
             var name = Name(root["name"]?.GetValue<string>());
             var key = root["key"]?.GetValue<string>();
             var domains = Strings(root["domains"]).Select(d => d.Trim().TrimEnd('.').ToLowerInvariant()).ToList();
-            var grants = Strings(root["grants"]).ToList();
+            // A grant this V2pn does not know yet is left out, so a newer certificate still works here.
+            var grants = Strings(root["grants"]).Where(V2pnPartnerGrants.All.Contains).Distinct().ToList();
             if (partner == null || !PartnerId.IsMatch(partner) || name == null || key.IsNullOrEmpty() || !IsP256Key(key)
-                || domains.Count == 0 || !domains.All(IsDomain) || grants.Any(g => !V2pnPartnerGrants.All.Contains(g))
+                || domains.Count == 0 || !domains.All(IsDomain)
                 || !DateOnly.TryParseExact(root["issued"]?.GetValue<string>(), "yyyy-MM-dd", out var issued)
                 || !DateOnly.TryParseExact(root["expires"]?.GetValue<string>(), "yyyy-MM-dd", out var expires)
                 || expires < issued)
@@ -314,6 +333,12 @@ public static class V2pnPartnerTrust
                 api = null;
             }
 
+            // Buttons and server notes come with the actions grant; closed settings only with the lock grant.
+            var catalog = cert.Allows(V2pnPartnerGrants.Actions);
+            var servers = catalog ? V2pnPartnerCatalog.ParseServers(root["servers"], live: false) : [];
+            var actions = catalog ? V2pnPartnerCatalog.ParseActions(root["actions"], cert, api != null) : [];
+            var locked = cert.Allows(V2pnPartnerGrants.Lock) && root["lock"] is JsonValue lockValue && lockValue.TryGetValue<bool>(out var lockOn) && lockOn;
+
             return new V2pnPartnerPack(
                 id,
                 name,
@@ -327,7 +352,10 @@ public static class V2pnPartnerTrust
                 Https(links?["support"]?.GetValue<string>()),
                 api,
                 assets,
-                AssetRef(brand?["mark"]));
+                AssetRef(brand?["mark"]),
+                servers,
+                actions,
+                locked);
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {

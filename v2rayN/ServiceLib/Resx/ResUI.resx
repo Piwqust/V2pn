@@ -1959,4 +1959,25 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="V2pnSubEndsInOneDay" xml:space="preserve">
     <value>Your subscription ends in 1 day</value>
   </data>
+  <data name="V2pnPurposeYouTube" xml:space="preserve">
+    <value>YouTube</value>
+  </data>
+  <data name="V2pnPurposeGames" xml:space="preserve">
+    <value>Games</value>
+  </data>
+  <data name="V2pnPurposeMobile" xml:space="preserve">
+    <value>Mobile internet</value>
+  </data>
+  <data name="V2pnPurposeWhitelist" xml:space="preserve">
+    <value>Whitelists</value>
+  </data>
+  <data name="V2pnPurposeStreaming" xml:space="preserve">
+    <value>Streaming</value>
+  </data>
+  <data name="V2pnPurposeAi" xml:space="preserve">
+    <value>AI</value>
+  </data>
+  <data name="V2pnPurposeTorrents" xml:space="preserve">
+    <value>Torrents</value>
+  </data>
 </root>

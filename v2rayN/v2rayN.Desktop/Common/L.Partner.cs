@@ -79,6 +79,7 @@ public static partial class L
     public static string EditionVariantShort(string variant) => variant switch
     {
         V2pnPartnerVariants.Signature => T("Signature", "Подпись"),
+        V2pnPartnerVariants.Theme => T("Branded", "Фирменный"),
         V2pnPartnerVariants.Warm => T("Warm", "Тёплый"),
         V2pnPartnerVariants.Cabinet => T("Cabinet", "Кабинет"),
         V2pnPartnerVariants.Studio => T("Studio", "Студия"),
@@ -89,6 +90,7 @@ public static partial class L
     public static string EditionVariant(string variant) => variant switch
     {
         V2pnPartnerVariants.Signature => T("Signature: V2pn with the logo", "Подпись: V2pn с логотипом"),
+        V2pnPartnerVariants.Theme => T("Branded: the provider's design", "Фирменный: дизайн провайдера"),
         V2pnPartnerVariants.Warm => T("Warm: V2pn in its colours", "Тёплый: V2pn в его цветах"),
         V2pnPartnerVariants.Cabinet => T("Cabinet", "Кабинет"),
         V2pnPartnerVariants.Studio => T("Studio", "Студия"),

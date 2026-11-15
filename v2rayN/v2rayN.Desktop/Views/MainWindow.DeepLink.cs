@@ -6,14 +6,32 @@ namespace v2rayN.Desktop.Views;
 public partial class MainWindow
 {
     private bool _askingAboutLink;
+    // A link that came before the window was up (macOS starts the app for a click and then hands it the link).
+    private V2pnAddLink? _queuedLink;
+    private bool _linksReady;
 
     /// <summary>The link V2pn was started with, once the window is up.</summary>
     private async Task HandleStartupLinkAsync()
     {
-        if (Program.StartupLink is { } link)
+        _linksReady = true;
+        var link = Program.StartupLink ?? _queuedLink;
+        _queuedLink = null;
+        if (link != null)
         {
             await AskToAddLinkAsync(link);
         }
+    }
+
+    /// <summary>A link from the system (macOS's open-URL event): asked about now, or once the window is up.</summary>
+    public void QueueAddLink(V2pnAddLink link)
+    {
+        if (!_linksReady)
+        {
+            _queuedLink = link;
+            return;
+        }
+        ShowHideWindow(true);
+        _ = AskToAddLinkAsync(link);
     }
 
     /// <summary>A link a second start handed over (a click on v2pn:// while V2pn already runs).</summary>

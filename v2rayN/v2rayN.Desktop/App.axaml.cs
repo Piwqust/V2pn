@@ -60,6 +60,17 @@ public partial class App : Application
 
     private void OnMacOSActivated(object? sender, ActivatedEventArgs args)
     {
+        // V2pn: a click on a v2pn:// link (Info.plist claims the scheme). macOS hands it to the running app, also
+        // the one it starts for the click, instead of passing it as an argument.
+        if (args.Kind == ActivationKind.OpenUri && args is ProtocolActivatedEventArgs protocol)
+        {
+            if (V2pnDeepLink.Parse(protocol.Uri.OriginalString) is { } link
+                && (ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow is MainWindow window)
+            {
+                Dispatcher.UIThread.Post(() => window.QueueAddLink(link));
+            }
+            return;
+        }
         if (args.Kind != ActivationKind.Reopen)
         {
             return;

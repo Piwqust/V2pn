@@ -27,7 +27,7 @@ public sealed class DebugWindow : Window
     public DebugWindow(MainWindow main)
     {
         _main = main;
-        Title = "V2pn — отладка";
+        Title = "Отладка V2pn";
         Width = 640;
         Height = 860;
         MinWidth = 460;
@@ -64,6 +64,8 @@ public sealed class DebugWindow : Window
         var add = Action("Добавить тестового", () =>
         {
             var accent = Color.TryParse(_testAccent.Text?.Trim(), out _) ? _testAccent.Text!.Trim().ToUpperInvariant() : null;
+            // Its intro waits for the "Показать" button below instead of covering the window.
+            Editions.MarkIntroduced(TestPartnerId);
             if (V2pnPartners.Instance.AddDebugPartner(TestPartnerId, (_testName.Text ?? "Тест-провайдер").Trim(), accent) == null)
             {
                 _main.DebugToast(ToastKind.Warning, "Тестовый партнёр есть только в сборке разработчика или в режиме разработчика.");

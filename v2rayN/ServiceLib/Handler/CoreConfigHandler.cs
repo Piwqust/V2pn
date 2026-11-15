@@ -68,6 +68,22 @@ public static class CoreConfigHandler
                 ret.Msg = ResUI.FailedGenDefaultConfiguration;
                 return ret;
             }
+            // V2pn: a whole config that came with a subscription runs only after V2pnCoreConfigFilter.
+            if (V2pnCoreConfigFilter.FromSubscription(node))
+            {
+                var removed = new List<string>();
+                var filtered = V2pnCoreConfigFilter.FilterWhole(node.CoreType, await File.ReadAllTextAsync(addressFileName), removed);
+                if (filtered == null)
+                {
+                    ret.Msg = string.Format(ResUI.MsgV2pnSubConfigRefused, node.CoreType);
+                    return ret;
+                }
+                NoteFiltered(node, removed);
+                await File.WriteAllTextAsync(fileName, filtered);
+                ret.Msg = string.Format(ResUI.SuccessfulConfiguration, "");
+                ret.Success = true;
+                return ret;
+            }
             File.Copy(addressFileName, fileName);
             File.SetAttributes(fileName, FileAttributes.Normal); //Copy will keep the attributes of addressFileName, so we need to add write permissions to fileName just in case of addressFileName is a read-only file.
 
@@ -88,6 +104,18 @@ public static class CoreConfigHandler
             ret.Msg = ResUI.FailedGenDefaultConfiguration;
             return ret;
         }
+    }
+
+    /// <summary>V2pn: says in the log panel what the filter took out of a subscription's config.</summary>
+    public static void NoteFiltered(ProfileItem node, List<string> removed)
+    {
+        if (removed.Count == 0)
+        {
+            return;
+        }
+        var text = string.Format(ResUI.MsgV2pnSubConfigFiltered, string.Join(", ", removed.Distinct()));
+        Logging.SaveLog($"{_tag}: {node.Remarks}: {text}");
+        NoticeManager.Instance.SendMessage(text);
     }
 
     public static async Task<RetResult> GenerateClientSpeedtestConfig(Config config, string fileName, List<ServerTestItem> selecteds, ECoreType coreType)

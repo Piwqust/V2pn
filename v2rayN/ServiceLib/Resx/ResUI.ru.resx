@@ -1911,4 +1911,13 @@
   <data name="MsgV2pnLocalPortBusy" xml:space="preserve">
     <value>Порт {0} уже занят другой программой, скорее всего другим VPN-клиентом. Закройте её или смените локальный порт в настройках, иначе V2pn не подключится.</value>
   </data>
+  <data name="MsgV2pnSubConfigFiltered" xml:space="preserve">
+    <value>V2pn убрал из конфига подписки то, что подписка задавать не может: {0}.</value>
+  </data>
+  <data name="MsgV2pnSubConfigRefused" xml:space="preserve">
+    <value>V2pn не запускает конфиг ядра {0} из подписки: такой конфиг он проверить не может. Попросите у провайдера ссылки на серверы.</value>
+  </data>
+  <data name="MsgV2pnSubOutboundRefused" xml:space="preserve">
+    <value>V2pn не запускает сервер «{0}» из подписки: его настройки читают файлы или запускают программы на этом компьютере.</value>
+  </data>
 </root>

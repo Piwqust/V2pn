@@ -1929,4 +1929,13 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="MsgV2pnLocalPortBusy" xml:space="preserve">
     <value>Port {0} is already taken by another program, probably another VPN client. Close it or change the local port in Settings, otherwise V2pn cannot connect.</value>
   </data>
+  <data name="MsgV2pnSubConfigFiltered" xml:space="preserve">
+    <value>V2pn took out of the subscription's config what a subscription may not set: {0}.</value>
+  </data>
+  <data name="MsgV2pnSubConfigRefused" xml:space="preserve">
+    <value>V2pn does not run a {0} config that came with a subscription: it cannot check one. Ask the provider for server links instead.</value>
+  </data>
+  <data name="MsgV2pnSubOutboundRefused" xml:space="preserve">
+    <value>V2pn does not run the server “{0}” from the subscription: its settings read files or run programs on this computer.</value>
+  </data>
 </root>

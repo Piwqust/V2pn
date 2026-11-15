@@ -358,7 +358,25 @@ public class CoreConfigContextBuilder
             try
             {
                 var fileContent = await File.ReadAllTextAsync(addressFileName);
-                context.CustomOutboundContent[node.IndexId] = fileContent;
+                // V2pn: a server that came with a subscription as an outbound runs only after V2pnCoreConfigFilter.
+                if (V2pnCoreConfigFilter.FromSubscription(node))
+                {
+                    var removed = new List<string>();
+                    var filtered = V2pnCoreConfigFilter.FilterOutbound(node.CoreType, fileContent, removed);
+                    if (filtered == null)
+                    {
+                        nodeValidatorResult.Errors.Add(string.Format(ResUI.MsgV2pnSubOutboundRefused, node.Remarks));
+                    }
+                    else
+                    {
+                        CoreConfigHandler.NoteFiltered(node, removed);
+                        context.CustomOutboundContent[node.IndexId] = filtered;
+                    }
+                }
+                else
+                {
+                    context.CustomOutboundContent[node.IndexId] = fileContent;
+                }
             }
             catch
             {

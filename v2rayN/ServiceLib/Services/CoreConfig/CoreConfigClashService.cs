@@ -70,6 +70,13 @@ public class CoreConfigClashService(Config config, bool isTunEnabled)
                 return ret;
             }
 
+            // V2pn: a config that came with a subscription loses what a subscription may not set, before V2pn
+            // sets its own port, controller and TUN below.
+            if (V2pnCoreConfigFilter.FromSubscription(node))
+            {
+                CoreConfigHandler.NoteFiltered(node, V2pnCoreConfigFilter.FilterClash(fileContent));
+            }
+
             //mixed-port
             //fileContent["mixed-port"] = AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
             fileContent.Children[new YamlScalarNode("mixed-port")] = new YamlScalarNode(AppManager.Instance.GetLocalPort(EInboundProtocol.socks).ToString());

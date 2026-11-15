@@ -5489,5 +5489,32 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("MsgV2pnLocalPortBusy", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to V2pn took out of the subscription's config what a subscription may not set: {0}..
+        /// </summary>
+        public static string MsgV2pnSubConfigFiltered {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubConfigFiltered", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to V2pn does not run a {0} config that came with a subscription: it cannot check one. Ask the provider for server links instead..
+        /// </summary>
+        public static string MsgV2pnSubConfigRefused {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubConfigRefused", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to V2pn does not run the server “{0}” from the subscription: its settings read files or run programs on this computer..
+        /// </summary>
+        public static string MsgV2pnSubOutboundRefused {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubOutboundRefused", resourceCulture);
+            }
+        }
     }
 }

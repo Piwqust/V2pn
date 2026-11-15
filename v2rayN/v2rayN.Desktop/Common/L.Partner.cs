@@ -68,7 +68,7 @@ public static partial class L
         "Настройки вида «{0}» от {1}. Оформление обычного V2pn они не меняют.");
     public static string EditionApLook => T("Look", "Вид");
     public static string EditionApPartners => T("Provider looks", "Оформление провайдера");
-    public static string EditionApAccentHint => T("{0}'s colour or your own.", "Цвет {0} или свой.");
+    public static string EditionApAccentHint => T("{0}'s colour or one of V2pn's.", "Цвет {0} или один из цветов V2pn.");
     public static string EditionApPartnerAccent => T("{0}'s colour", "Цвет {0}");
     public static string EditionApTextSizeHint => T("Menus, dialogs and settings.", "Меню, окна и настройки.");
     public static string EditionApReset => T("Back to {0}'s look", "Вернуть как у {0}");

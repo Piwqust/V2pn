@@ -25,7 +25,7 @@ This page is for the provider's developers. It describes what to serve, how it i
    - the subscription and the folder are on domains the certificate names;
    - every picture matches the size and SHA-256 in `partner.json`.
 3. When everything checks out, V2pn keeps the pack and offers the look once: "Open <provider>'s look" or "Stay in plain V2pn".
-4. The person switches looks from the name in the title bar, from the tray menu, with Ctrl+1…9 (⌘ on a Mac) or on the Appearance page, where the look is also tuned (light or dark, accent, corners, font).
+4. The person switches looks from the name in the title bar, from the tray menu, with Ctrl+1…9 (⌘ on a Mac) or on the Appearance page, where the look is also tuned (light or dark, accent).
 
 A pack that fails any check is not used; V2pn stays plain and the subscription window says the provider's look did not pass the check. The servers work as usual either way.
 

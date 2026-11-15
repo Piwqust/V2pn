@@ -219,7 +219,7 @@ public static class SubscriptionHandler
         }
 
         // Download and return result directly
-        return await DownloadSubscriptionContent(downloadHandle, url, blProxy, item.UserAgent);
+        return await DownloadSubscriptionContent(downloadHandle, url, blProxy, V2pnSubs.UserAgentFor(item));
     }
 
     private static async Task<string> DownloadAdditionalSubscriptions(SubItem item, string mainResult, bool blProxy, DownloadService downloadHandle)
@@ -242,7 +242,7 @@ public static class SubscriptionHandler
                 continue;
             }
 
-            var additionalResult = await DownloadSubscriptionContent(downloadHandle, url2, blProxy, item.UserAgent);
+            var additionalResult = await DownloadSubscriptionContent(downloadHandle, url2, blProxy, V2pnSubs.UserAgentFor(item));
 
             if (additionalResult.IsNotEmpty())
             {

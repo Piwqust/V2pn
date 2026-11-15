@@ -89,4 +89,15 @@ public class V2pnSubsTests
         await SubInfoManager.ReadableName(new SubItem { Remarks = "My VPN", Url = "https://panel.example.com/x" }).Should().BeEqualTo("My VPN");
         await SubInfoManager.ReadableName(new SubItem { Remarks = "import_sub", Url = "" }).Should().BeNull();
     }
+
+    [Test]
+    public async Task UserAgent_KeepsV2rayNFirstAndNamesV2pn()
+    {
+        // Panels pick the config format by a leading "v2rayN/x.y"; a Remnawave rule on "V2pn" picks V2pn out.
+        var agent = V2pnSubs.SubscriptionUserAgent;
+        await agent.Should().StartWith("v2rayN/");
+        await agent.Should().Contain(" V2pn/");
+        await V2pnSubs.UserAgentFor(new SubItem { UserAgent = "" }).Should().BeEqualTo(agent);
+        await V2pnSubs.UserAgentFor(new SubItem { UserAgent = "Happ/3.0" }).Should().BeEqualTo("Happ/3.0");
+    }
 }

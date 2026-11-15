@@ -21,6 +21,26 @@ public static class V2pnPartnerSlots
     public static readonly Slot Art = new("art", "a picture, 200-1600 px a side, at most 2:1",
         (w, h) => w is >= 200 and <= 1600 && h is >= 200 and <= 1600 && w <= h * 2 && h <= w * 2);
 
+    /// <summary>A theme's illustration in the brand area (theme.art.hero): as the studio picture, 200 to 1600 px a side, at most 2:1.</summary>
+    public static readonly Slot Hero = new("hero", "a picture, 200-1600 px a side, at most 2:1",
+        (w, h) => w is >= 200 and <= 1600 && h is >= 200 and <= 1600 && w <= h * 2 && h <= w * 2);
+
+    /// <summary>A theme's wide picture for the art block (theme.art.banner): 2:1 to 5:1, 400 to 2400 px wide.</summary>
+    public static readonly Slot Banner = new("banner", "a wide picture, 2:1 to 5:1, 400-2400 px wide",
+        (w, h) => w is >= 400 and <= 2400 && w >= h * 2 && w <= h * 5);
+
+    /// <summary>A theme's background picture (theme.background.art): 640 to 3200 px a side, at most 3:1 either way.</summary>
+    public static readonly Slot Backdrop = new("backdrop", "a background picture, 640-3200 px a side, at most 3:1",
+        (w, h) => w is >= 640 and <= 3200 && h is >= 640 and <= 3200 && w <= h * 3 && h <= w * 3);
+
+    /// <summary>The slot of a theme's picture by its name in theme.art.</summary>
+    public static Slot? ThemeSlot(string name) => name switch
+    {
+        V2pnThemeArt.Hero => Hero,
+        V2pnThemeArt.Banner => Banner,
+        _ => null,
+    };
+
     /// <summary>
     /// The pack with every picture that does not fit its slot taken out of that slot, and why, one line each.
     /// A picture whose size cannot be read counts as not fitting.
@@ -55,6 +75,25 @@ public static class V2pnPartnerSlots
                 art[key] = kept;
             }
         }
+        var theme = pack.Theme;
+        if (theme != null)
+        {
+            var themeArt = new Dictionary<string, string>(StringComparer.Ordinal);
+            foreach (var (slot, file) in theme.Art)
+            {
+                if (ThemeSlot(slot) is { } fits && Check(file, fits, $"theme.art.{slot}") is { } kept)
+                {
+                    themeArt[slot] = kept;
+                }
+            }
+            var background = theme.Background;
+            if (background.Kind == V2pnThemeBackgroundKinds.Image && Check(background.Art, Backdrop, "theme.background.art") == null)
+            {
+                // No picture that fits: the brand colour, as a theme without a background.
+                background = V2pnThemeBackground.Solid;
+            }
+            theme = theme with { Art = themeArt, Background = background };
+        }
         problems = notes;
         return pack with
         {
@@ -62,6 +101,7 @@ public static class V2pnPartnerSlots
             LogoOnLight = Check(pack.LogoOnLight, Logo, "brand.logoOnLight"),
             Mark = Check(pack.Mark, Mark, "brand.mark"),
             Art = art,
+            Theme = theme,
         };
     }
 

@@ -1,10 +1,13 @@
 namespace ServiceLib;
 
 /// <summary>A partner whose certificate and pack passed every check, with its files on disk.</summary>
-public sealed class V2pnPartner(V2pnPartnerCert cert, V2pnPartnerPack pack, string folder, string sourceUrl)
+public sealed class V2pnPartner(V2pnPartnerCert cert, V2pnPartnerPack pack, string folder, string sourceUrl, V2pnPartnerFeatures? features = null)
 {
     public V2pnPartnerCert Cert { get; } = cert;
     public V2pnPartnerPack Pack { get; } = pack;
+
+    /// <summary>Its reviewed files (routing.json, transport.json, core.json) and what of them V2pn may use.</summary>
+    public V2pnPartnerFeatures Features { get; } = features ?? V2pnPartnerFeatures.None;
     public string Id => Cert.Partner;
     public string Name => Pack.Name;
 
@@ -242,7 +245,7 @@ public sealed class V2pnPartners
                 var content = await GetBytesAsync(partnerUrl + Uri.EscapeDataString(asset.Name), V2pnPartnerTrust.MaxAssetBytes, cancellationToken);
                 if (content == null || !V2pnPartnerTrust.AssetMatches(asset, content))
                 {
-                    Fail($"The picture {asset.Name} does not match the signed pack.");
+                    Fail($"The file {asset.Name} does not match the signed pack.");
                     return null;
                 }
                 pictures[asset.Name] = content;
@@ -250,6 +253,7 @@ public sealed class V2pnPartners
             }
             pack = V2pnPartnerSlots.Fit(pack, name => pictures.GetValueOrDefault(name), out var notes);
             _slotNotes[cert.Partner] = notes;
+            var features = ReadFeatures(cert, pack, name => pictures.GetValueOrDefault(name));
             await File.WriteAllBytesAsync(Path.Combine(staging, "cert.json"), certJson!, cancellationToken);
             await File.WriteAllTextAsync(Path.Combine(staging, "cert.json.sig"), certSig!, cancellationToken);
             await File.WriteAllBytesAsync(Path.Combine(staging, "partner.json"), packJson!, cancellationToken);
@@ -262,7 +266,7 @@ public sealed class V2pnPartners
                 Directory.Delete(target, true);
             }
             Directory.Move(staging, target);
-            return new V2pnPartner(cert, pack, target, partnerUrl);
+            return new V2pnPartner(cert, pack, target, partnerUrl, features);
         }
         finally
         {
@@ -297,14 +301,14 @@ public sealed class V2pnPartners
                 var content = ReadOrNull(dir, asset.Name);
                 if (content == null || !V2pnPartnerTrust.AssetMatches(asset, content))
                 {
-                    error = $"The kept picture {asset.Name} changed.";
+                    error = $"The kept file {asset.Name} changed.";
                     return null;
                 }
             }
             pack = V2pnPartnerSlots.Fit(pack, name => ReadOrNull(dir, name), out var notes);
             _slotNotes[cert.Partner] = notes;
             error = string.Empty;
-            return new V2pnPartner(cert, pack, dir, source);
+            return new V2pnPartner(cert, pack, dir, source, ReadFeatures(cert, pack, name => ReadOrNull(dir, name)));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -457,6 +461,17 @@ public sealed class V2pnPartners
             }
             return;
         }
+    }
+
+    /// <summary>The reviewed files; a file that is not used is logged with why, the rest of the partner works as before.</summary>
+    private static V2pnPartnerFeatures ReadFeatures(V2pnPartnerCert cert, V2pnPartnerPack pack, Func<string, byte[]?> content)
+    {
+        var features = V2pnPartnerFeatures.Read(cert, pack, content);
+        foreach (var file in features.Files.Where(f => f.State != V2pnReviewState.Ready))
+        {
+            Logging.SaveLog($"{Tag}: {cert.Partner}: {file.Name} is not used: {file.Problem}");
+        }
+        return features;
     }
 
     private HashSet<string>? ReadKeptRevocations(string root) =>

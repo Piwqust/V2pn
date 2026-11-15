@@ -12,9 +12,18 @@ public sealed record V2pnPartnerCert(
     string Key,
     IReadOnlyList<string> Grants,
     DateOnly Issued,
-    DateOnly Expires)
+    DateOnly Expires,
+    IReadOnlyDictionary<string, string>? Reviewed = null)
 {
     public bool Allows(string grant) => Grants.Contains(grant);
+
+    /// <summary>
+    /// "reviewed": the SHA-256 of each file of the pack the owner of V2pn read by hand (routing.json, transport.json,
+    /// core.json). A routing, transport or core grant counts only for the file with exactly this hash.
+    /// </summary>
+    public IReadOnlyDictionary<string, string> ReviewedFiles => Reviewed ?? EmptyReviewed;
+
+    private static readonly IReadOnlyDictionary<string, string> EmptyReviewed = new Dictionary<string, string>();
 }
 
 /// <summary>A file of the pack (logo, artwork), pinned by size and SHA-256 in the signed partner.json.</summary>
@@ -92,7 +101,16 @@ public static class V2pnPartnerGrants
     /// </summary>
     public const string Lock = "lock";
 
-    public static readonly IReadOnlyList<string> All = [Edition, Account, Actions, Lock];
+    /// <summary>The partner's routing preset (routing.json), offered as a mode of "What goes through the VPN". Given after a review only.</summary>
+    public const string Routing = "routing";
+
+    /// <summary>Fragmentation and noise for the partner's servers (transport.json). Given after a review only.</summary>
+    public const string Transport = "transport";
+
+    /// <summary>Extra outbounds, balancers and rules for the partner's servers (core.json). Given after a review only.</summary>
+    public const string Core = "core";
+
+    public static readonly IReadOnlyList<string> All = [Edition, Account, Actions, Lock, Routing, Transport, Core];
 }
 
 /// <summary>Reads and checks a partner's certificate and pack. Pure: no network, no files, no clock but the one passed in.</summary>
@@ -228,6 +246,19 @@ public static class V2pnPartnerTrust
             var domains = Strings(root["domains"]).Select(d => d.Trim().TrimEnd('.').ToLowerInvariant()).ToList();
             // A grant this V2pn does not know yet is left out, so a newer certificate still works here.
             var grants = Strings(root["grants"]).Where(V2pnPartnerGrants.All.Contains).Distinct().ToList();
+            // A file name this V2pn does not know, or a value that is not a SHA-256, is left out the same way.
+            var reviewed = new Dictionary<string, string>(StringComparer.Ordinal);
+            if (root["reviewed"] is JsonObject reviewedObject)
+            {
+                foreach (var (file, value) in reviewedObject)
+                {
+                    if (V2pnReviewedFiles.All.Contains(file) && value is JsonValue hashValue && hashValue.TryGetValue<string>(out var hash)
+                        && hash is { Length: 64 } && hash.All(Uri.IsHexDigit))
+                    {
+                        reviewed[file] = hash.ToLowerInvariant();
+                    }
+                }
+            }
             if (partner == null || !PartnerId.IsMatch(partner) || name == null || key.IsNullOrEmpty() || !IsP256Key(key)
                 || domains.Count == 0 || !domains.All(IsDomain)
                 || !DateOnly.TryParseExact(root["issued"]?.GetValue<string>(), "yyyy-MM-dd", out var issued)
@@ -236,7 +267,7 @@ public static class V2pnPartnerTrust
             {
                 return null;
             }
-            return new V2pnPartnerCert(partner, name, domains, key, grants, issued, expires);
+            return new V2pnPartnerCert(partner, name, domains, key, grants, issued, expires, reviewed);
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
@@ -273,10 +304,12 @@ public static class V2pnPartnerTrust
                     var file = node?["name"]?.GetValue<string>();
                     var size = node?["size"]?.GetValue<long>() ?? -1;
                     var hash = node?["sha256"]?.GetValue<string>()?.ToLowerInvariant();
-                    // Names become file names on disk: a plain picture file and nothing else.
+                    // Names become file names on disk: a plain picture file, or one of the reviewed JSON files, and nothing else.
+                    var reviewedFile = V2pnReviewedFiles.All.Contains(file ?? string.Empty);
                     if (file.IsNullOrEmpty() || file != Path.GetFileName(file) || file.Contains("..")
-                        || !AssetExtensions.Contains(Path.GetExtension(file).ToLowerInvariant())
-                        || size is <= 0 or > MaxAssetBytes || hash is not { Length: 64 } || !hash.All(Uri.IsHexDigit)
+                        || !(reviewedFile || AssetExtensions.Contains(Path.GetExtension(file).ToLowerInvariant()))
+                        || size <= 0 || size > (reviewedFile ? V2pnReviewedFiles.MaxBytes : MaxAssetBytes)
+                        || hash is not { Length: 64 } || !hash.All(Uri.IsHexDigit)
                         || assets.Any(a => a.Name == file))
                     {
                         return null;
@@ -284,14 +317,14 @@ public static class V2pnPartnerTrust
                     assets.Add(new V2pnPartnerAsset(file, size, hash));
                 }
             }
-            if (assets.Count > MaxAssets)
+            if (assets.Count(a => !V2pnReviewedFiles.All.Contains(a.Name)) > MaxAssets)
             {
                 return null;
             }
             string? AssetRef(JsonNode? node)
             {
                 var file = node?.GetValue<string>();
-                return file != null && assets.Any(a => a.Name == file) ? file : null;
+                return file != null && !V2pnReviewedFiles.All.Contains(file) && assets.Any(a => a.Name == file) ? file : null;
             }
 
             var brand = root["brand"] as JsonObject;

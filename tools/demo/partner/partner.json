@@ -8,9 +8,17 @@
     "logoOnLight": "logo-light.png",
     "mark": "mark.png"
   },
-  "edition": {
-    "variants": ["cabinet", "signature", "warm", "studio", "ascii"],
-    "default": "cabinet"
+  "edition": { "variants": ["theme", "signature"], "default": "theme" },
+  "theme": {
+    "template": "split",
+    "connect": "bar",
+    "palette": { "brand": ["#2F7BFF", "#00C2A8"], "tone": "cool" },
+    "font": "Onest",
+    "corners": "soft",
+    "density": "normal",
+    "background": { "type": "gradient", "colors": ["#1E3A8A", "#2F7BFF"] },
+    "blocks": ["actions", "plan", "traffic", "banner", "news", "servers"],
+    "art": { "hero": "hero.png" }
   },
   "links": {
     "cabinet": "http://127.0.0.1:18998/cabinet",

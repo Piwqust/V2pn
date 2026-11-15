@@ -23,7 +23,8 @@ V2pn build trusts. A development build takes http on 127.0.0.1 (V2pnPartnerTrust
   dotnet run tools/partner.cs -- new-key <scratch>/kestrel.pem           # the partner's key
   dotnet run tools/partner.cs -- cert --partner kestrel --name Kestrel --domains 127.0.0.1 \\
       --key <kestrel public key> --grants edition,account,lock --root <scratch>/root.pem --out <scratch>/pack
-  copy tools/demo/partner/partner.json (and pictures) to <scratch>/pack, then
+  copy tools/demo/partner/partner.json and its pictures (logo-dark.png, logo-light.png, mark.png, and hero.png for
+  its theme) to <scratch>/pack, then
   dotnet run tools/partner.cs -- pack <scratch>/pack --key <scratch>/kestrel.pem
 
 With --xray the script starts a local VLESS server (127.0.0.1 only, freedom outbound) without a window; run xray from

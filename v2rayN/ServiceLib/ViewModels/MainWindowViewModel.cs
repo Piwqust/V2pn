@@ -505,6 +505,13 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
     }
 
+    /// <summary>V2pn: the lists catch up with servers and subscriptions added behind their back (a move from another app).</summary>
+    public async Task RefreshAfterImportAsync()
+    {
+        await RefreshSubscriptions();
+        await RefreshServersDispatcherAsync();
+    }
+
     /// <returns>How many servers were added; V2pn passes notifyFailure false and words the failure itself.</returns>
     public async Task<int> AddServerViaClipboardAsync(string? clipboardData, bool notifyFailure = true)
     {

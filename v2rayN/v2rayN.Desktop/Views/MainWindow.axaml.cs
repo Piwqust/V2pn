@@ -72,9 +72,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuAddServerViaClipboard.Click += async (_, _) => await AddServerViaClipboardAsync();
         btnConnect.Click += BtnConnect_Click;
         btnWelcomePaste.Click += async (_, _) => await AddServerViaClipboardAsync();
-        btnWelcomeImport.Click += async (_, _) => await ImportFromV2rayNAsync(fromWelcome: true);
-        menuImportV2rayN.Click += async (_, _) => await ImportFromV2rayNAsync(fromWelcome: false);
-        _ = LookForV2rayNAsync();
+        InitImport();
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();
@@ -2744,74 +2742,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private string? _announcedVersion;
 
-    #region V2pn: moving from v2rayN
-
-    private V2rayNInstall? _v2rayN;
-
-    /// <summary>Offers the move on the first-run card when a v2rayN with servers is on this computer.</summary>
-    private async Task LookForV2rayNAsync()
-    {
-        try
-        {
-            _v2rayN = await Task.Run(() => V2pnImport.Find().FirstOrDefault(i => i.Servers > 0 || i.Subscriptions > 0));
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog("V2pn import", ex);
-        }
-        var found = _v2rayN != null;
-        panelWelcomeImport.IsVisible = found;
-        // One solid button on the card: the move when it is offered, else pasting a link.
-        btnWelcomePaste.Classes.Set("accent", !found);
-        if (_v2rayN is { } install)
-        {
-            txtWelcomeImport.Text = string.Format(L.ImportFoundCounts, install.Servers, install.Subscriptions);
-        }
-    }
-
-    /// <summary>
-    /// Closes v2rayN, notes where from and restarts: the copy is made at the next start, before V2pn
-    /// reads its settings. From the menu, over servers V2pn already has, it asks first.
-    /// </summary>
-    private async Task ImportFromV2rayNAsync(bool fromWelcome)
-    {
-        try
-        {
-            var install = _v2rayN ?? await Task.Run(() => V2pnImport.Find().FirstOrDefault());
-            if (install == null)
-            {
-                ShowToast(ToastKind.Info, L.ImportNone);
-                return;
-            }
-            var hasOwn = (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) > 0;
-            if ((!fromWelcome || hasOwn)
-                && await UI.ShowYesNo(string.Format(L.ImportConfirm, install.DataDir), L.ImportConfirmYes) != ButtonResult.Yes)
-            {
-                return;
-            }
-            if (!await Task.Run(() => V2pnImport.Stop(install)))
-            {
-                ShowToast(ToastKind.Warning, L.ImportCloseFirst);
-                return;
-            }
-            V2pnImport.Schedule(install.DataDir);
-            ShowToast(ToastKind.Info, L.ImportRestarting);
-            // Lets the message paint before the window goes.
-            await Task.Delay(800);
-            if (!ProcUtils.RebootAsAdmin(false))
-            {
-                ShowToast(ToastKind.Error, L.ImportRestartFailed);
-                return;
-            }
-            await AppManager.Instance.AppExitAsync(true);
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog("V2pn import", ex);
-        }
-    }
-
-    #endregion V2pn: moving from v2rayN
 
     private void OnAppUpdateState(EV2pnUpdateState state)
     {

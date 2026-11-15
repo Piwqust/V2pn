@@ -1907,6 +1907,18 @@ public static class ConfigHandler
             return -1;
         }
 
+        // V2pn: a Clash config becomes its servers, each on the map and in the list, instead of one
+        // opaque mihomo profile. Subscriptions that answer only in Clash format and configs moved from
+        // Clash clients both land here. Proxies a link cannot hold fall through to the whole-config profile.
+        if (V2pnForeignLinks.FromClashYaml(strData, out _) is { Count: > 0 } clashLinks)
+        {
+            var count = await AddBatchServersCommon(config, string.Join(Environment.NewLine, clashLinks), subid, isSub);
+            if (count > 0)
+            {
+                return count;
+            }
+        }
+
         var profileItem = ClashFmt.ResolveFull(strData, subRemarks)
             ?? Hysteria2Fmt.ResolveFull2(strData, subRemarks);
 

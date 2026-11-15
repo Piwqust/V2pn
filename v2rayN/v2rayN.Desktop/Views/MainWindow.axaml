@@ -69,7 +69,7 @@
                             <MenuItem x:Name="menuTools" Header="{x:Static loc:L.MenuTools}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconMoreStroked}" /></MenuItem.Icon>
                                 <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpData}" IsEnabled="False" />
                                 <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static loc:L.MenuBackup}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconArchive}" /></MenuItem.Icon></MenuItem>
-                                <MenuItem x:Name="menuImportV2rayN" Header="{x:Static loc:L.ImportMenu}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconDownloadStroked}" /></MenuItem.Icon></MenuItem>
+                                <MenuItem x:Name="menuImportV2rayN" Header="{x:Static loc:L.ImportMenu}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconDownloadStroked}" /></MenuItem.Icon><MenuItem Header="{x:Static loc:L.ImportMenuSearching}" IsEnabled="False" /></MenuItem>
                                 <MenuItem x:Name="menuOpenTheFileLocation" Header="{x:Static loc:L.MenuOpenFolder}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconFolderOpen}" /></MenuItem.Icon></MenuItem>
                                 <Separator />
                                 <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpSystem}" IsEnabled="False" />
@@ -1167,34 +1167,44 @@
                             Opacity="0">
                             <StackPanel Spacing="16">
                                 <StackPanel Spacing="6">
+                                    <!--  Both are reworded when other apps are found: the card then leads with the move.  -->
                                     <TextBlock
+                                        x:Name="txtWelcomeTitle"
                                         Classes="display h3"
                                         Text="{x:Static loc:L.WelcomeTitle}"
                                         TextWrapping="Wrap" />
                                     <TextBlock
+                                        x:Name="txtWelcomeLead"
                                         Classes="muted"
                                         LineHeight="20"
                                         Text="{x:Static loc:L.WelcomeText}"
                                         TextWrapping="Wrap" />
                                 </StackPanel>
-                                <!--  V2pn: a v2rayN with servers on this computer is the quickest start of all.  -->
-                                <StackPanel x:Name="panelWelcomeImport" IsVisible="False" Spacing="10">
-                                    <StackPanel Spacing="4">
-                                        <TextBlock Classes="sectionlabel" Text="{x:Static loc:L.ImportFound}" />
-                                        <TextBlock
-                                            x:Name="txtWelcomeImport"
-                                            Classes="muted"
-                                            LineHeight="20"
-                                            TextWrapping="Wrap" />
-                                    </StackPanel>
+                                <!--  V2pn: servers already set up in another client on this computer are the quickest start of all.
+                                      Each app is a row in the same well as the routing modes below: its tile, what it holds and,
+                                      with several apps, a tick (all on). One button moves the ticked ones.  -->
+                                <StackPanel x:Name="panelWelcomeImport" IsVisible="False" Spacing="14">
+                                    <Border Classes="routegroup">
+                                        <StackPanel x:Name="panelWelcomeImportApps" Spacing="2" />
+                                    </Border>
                                     <Button
                                         x:Name="btnWelcomeImport"
                                         Height="42"
                                         HorizontalAlignment="Stretch"
                                         Classes="accent"
-                                        Content="{x:Static loc:L.ImportButton}"
+                                        Content="{x:Static loc:L.ImportMoveSelected}"
                                         Theme="{StaticResource V2Button}" />
-                                    <Border Classes="hairline" />
+                                    <Grid ColumnDefinitions="*,Auto,*" ColumnSpacing="10">
+                                        <Border VerticalAlignment="Center" Classes="hairline" />
+                                        <TextBlock
+                                            Grid.Column="1"
+                                            Classes="muted small"
+                                            Text="{x:Static loc:L.ImportOrByHand}" />
+                                        <Border
+                                            Grid.Column="2"
+                                            VerticalAlignment="Center"
+                                            Classes="hairline" />
+                                    </Grid>
                                 </StackPanel>
                                 <StackPanel Spacing="8">
                                     <Button
@@ -1204,7 +1214,7 @@
                                         Classes="accent"
                                         Content="{x:Static loc:L.WelcomePaste}"
                                         Theme="{StaticResource V2Button}" />
-                                    <Grid ColumnDefinitions="*,8,*">
+                                    <Grid x:Name="gridWelcomeHand" ColumnDefinitions="*,8,*">
                                         <Button
                                             x:Name="btnWelcomeSub"
                                             HorizontalAlignment="Stretch"

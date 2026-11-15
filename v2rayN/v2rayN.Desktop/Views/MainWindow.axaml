@@ -388,7 +388,7 @@
                                             TextWrapping="Wrap" />
                                         <!--  Pulled left by its padding, so its label lines up with the text above.  -->
                                         <Button
-                                            Margin="-11,0,0,0"
+                                            Margin="-8,0,0,0"
                                             HorizontalAlignment="Left"
                                             Classes="ghost small"
                                             Click="SideAnnounce_Click"

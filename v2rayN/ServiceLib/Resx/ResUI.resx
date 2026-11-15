@@ -1989,4 +1989,7 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="V2pnLockedSub" xml:space="preserve">
     <value>{0} closed this subscription's settings: its link cannot be shared.</value>
   </data>
+  <data name="V2pnPartnerRoutesName" xml:space="preserve">
+    <value>{0} routes</value>
+  </data>
 </root>

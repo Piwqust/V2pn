@@ -1971,4 +1971,7 @@
   <data name="V2pnLockedSub" xml:space="preserve">
     <value>Настройки этой подписки закрыл провайдер {0}: её ссылкой нельзя поделиться.</value>
   </data>
+  <data name="V2pnPartnerRoutesName" xml:space="preserve">
+    <value>Маршруты {0}</value>
+  </data>
 </root>

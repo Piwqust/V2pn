@@ -5669,5 +5669,14 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("V2pnLockedSub", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} routes.
+        /// </summary>
+        public static string V2pnPartnerRoutesName {
+            get {
+                return ResourceManager.GetString("V2pnPartnerRoutesName", resourceCulture);
+            }
+        }
     }
 }

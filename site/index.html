@@ -1,0 +1,451 @@
+<!doctype html>
+<html lang="ru" data-type="software" data-radius="round" data-ground="sage" data-buttons="solid" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>V2pn: VPN-клиент для Windows и macOS под подписку вашего провайдера</title>
+<meta name="description" content="Бесплатное приложение с открытым кодом: вставьте ссылку на подписку, выберите страну и подключайтесь к VLESS, Hysteria2, Trojan и другим серверам.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="V2pn: VPN-клиент для Windows и macOS">
+<meta property="og:description" content="Бесплатное приложение с открытым кодом для подписок VLESS, Hysteria2 и других протоколов v2rayN.">
+<meta property="og:image" content="https://v2pn.angleford.co/share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#eceef3">
+<link rel="canonical" href="https://v2pn.angleford.co/">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="stylesheet" href="assets/system.css">
+<link rel="stylesheet" href="assets/ui/cards.css">
+<link rel="stylesheet" href="assets/motion/motion.css">
+<link rel="stylesheet" href="assets/backgrounds/backgrounds.css">
+<link rel="stylesheet" href="assets/layout/layout.css">
+<link rel="stylesheet" href="assets/icons/icon.css">
+<link rel="stylesheet" href="assets/site/tokens.css">
+<link rel="stylesheet" href="assets/site/site.css">
+<script src="assets/site/head.js"></script>
+<script src="assets/backgrounds/backgrounds.js"></script>
+<link rel="modulepreload" href="assets/moments/moments.js">
+<link rel="modulepreload" href="assets/moments/lib.js">
+<link rel="modulepreload" href="assets/moments/word-highlight/moment.js">
+<style>
+  /* page CSS: the card group's panel height, the app window's frame (app-frame), the install frame's window */
+  #features .panel { --p-h: 300px; }
+  @media (max-width: 639px) { #features .panel { --p-h: 220px; } }
+  #app .app-v2 { margin-top: var(--s-7); }
+  #app .app-v2 > .v2w { height: 100%; }
+  #install .stage > .at-corner { --ax: 48px; --ay: 48px; }
+  #providers .frame { background: var(--ground-bg); }
+  @media (max-width: 359px) { .closing__cta .btn--xl { font-size: 16px; padding-inline: 20px; } }
+  @media (max-width: 1023px) { #install .stage > .at-corner { --ax: 24px; --ay: 32px; } }
+</style>
+</head>
+<body>
+<!-- type: software (an app: V2pn, a VPN client for Windows and macOS)
+     deal: hero collage (UI), nav nav-centre, close close-type, footer footer-columns, rhythm space, buttons solid,
+     mark initial (not used: V2pn's own fork is the logo), palette the client's own (start.mjs brand: V2pn's app
+     tokens; the dealt soot-pale-lime clashes with the red fork), type geist (the client's own face, set in the app;
+     the dealt familjen replaced), radius round (a consumer app), ground sage (the hero's frame and the card panels),
+     effect silk-folds in the one [data-visual] frame (#install), moment word-highlight (#promise), one moment:
+     the page has seven sections.
+     plan, screens at 1440x900:
+       hero      collage: V2pn's window (object), the connection being checked on the small card (its loop)       1
+       #app      app-frame: V2pn's whole window across the wrap (object)                                          1
+       #features features-2x2: four pieces of the window on lit panels (use)                                      2
+       #promise  statement: what V2pn does and does not do (type), word-highlight                                  1
+       #providers split-text-left: a provider's tab in the title bar, Scene (object)                               1
+       #faq      faq: six answers, open (calm)                                                                   1
+       #install  split, [data-visual] silk-folds: the one command running in PowerShell (use), the files          1
+       footer    close-type and footer-columns                                                                   1
+     motion: hero entrance (the name, then what to do); the small card checks the connection (Protected only after
+     the check); word-highlight in #promise (the one promise read word by word); hover on every link. -->
+
+<header class="nav nav--centre">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">К содержанию</a>
+    <a class="nav__logo" href="#top"><svg class="v2mark" viewBox="0 0 104 112" aria-hidden="true"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</a>
+    <nav class="nav__links" aria-label="Разделы">
+      <div class="nav__item"><a class="nav__link" href="#features">Возможности</a></div>
+      <div class="nav__item"><a class="nav__link" href="#install">Установка</a></div>
+      <div class="nav__item"><a class="nav__link" href="providers/">Провайдерам</a></div>
+      <div class="nav__item"><a class="nav__link" href="providers/guide/">Руководство</a></div>
+      <div class="nav__item"><a class="nav__link" href="providers/builder/">Конструктор</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--primary" href="#install" data-download>Скачать V2pn</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top">
+  <section class="hero hero--collage" data-enter aria-labelledby="hero-h">
+    <div class="wrap"><div class="hero-text grid hero__grid">
+      <div class="hero__text span-5">
+        <h1 id="hero-h">VPN-клиент для подписок на Windows и macOS</h1>
+        <p class="hero__lead">Скопируйте ссылку на подписку у провайдера, вставьте её в V2pn и нажмите «Подключиться». Внутри v2rayN с ядрами Xray, sing-box и mihomo, поэтому работают VLESS, Hysteria2, Trojan и другие протоколы.</p>
+        <div class="btn-row"><a class="btn btn--primary" href="#install" data-download>Скачать V2pn<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a><a class="btn btn--secondary" href="#install">Установить одной командой</a></div>
+        <p class="t-small muted"><span data-download-for>Windows 10 и 11, macOS 13.6 и новее</span>. Бесплатно, открытый код GPL-3.0.</p>
+      </div>
+      <div class="hero__art span-6 start-7" role="img" aria-label="Окно V2pn: слева страны с пингом, справа «Защищено», Германия, Франкфурт; на карточке поверх окна проверка соединения">
+        <div class="ly-piece ly-piece--main" aria-hidden="true">
+          <div class="v2w" style="height: 760px; --w-side-w: 44%">
+            <div class="v2w__bar">
+              <svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+              <span class="v2w__brand"><svg class="fork" viewBox="0 0 104 112"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</span>
+              <span class="v2w__sp"></span>
+              <span class="v2w__ctl"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-1.3-1-1.6-1-2.6 0-.9.7-1.4 1.6-1.4H17a4 4 0 0 0 4-4c0-4.7-4-8.4-9-8.4z"/><circle cx="7.5" cy="11" r="1"/><circle cx="10" cy="7" r="1"/><circle cx="15" cy="7.5" r="1"/></svg><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+            </div>
+            <div class="v2w__body">
+              <div class="v2-side">
+                <div class="v2-search"><span><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg>Поиск</span><span class="v2-plus"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></div>
+                <div class="v2-seg"><span class="is-on">Главная</span><span>Страны</span><span>Подписки</span></div>
+                <div class="v2-fast"><span class="v2-bolt"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span><b>Самый быстрый сервер</b><small>Германия · 41 мс</small></span></div>
+                <div class="v2-label"><span>Избранное · 2</span><span>Проверить пинг</span></div>
+                <div class="v2-row is-on"><img src="assets/v2pn/flags/de.png" alt=""><span><b>Германия</b><small><span class="v2-star">★</span> Франкфурт · VLESS</small></span><span class="v2-ping">41 мс</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/nl.png" alt=""><span><b>Нидерланды</b><small><span class="v2-star">★</span> Hysteria2</small></span><span class="v2-ping">48 мс</span></div>
+                <div class="v2-label"><span>Недавние</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/fi.png" alt=""><span><b>Финляндия</b><small>VLESS · 2 сервера</small></span><span class="v2-ping">52 мс</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/se.png" alt=""><span><b>Швеция</b><small>Hysteria2</small></span><span class="v2-ping">57 мс</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/pl.png" alt=""><span><b>Польша</b><small>Trojan</small></span><span class="v2-ping">63 мс</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/tr.png" alt=""><span><b>Турция</b><small>VLESS</small></span><span class="v2-ping">78 мс</span></div>
+              </div>
+              <div class="v2-main">
+                <span class="v2-map"><span class="v2-pin"></span></span>
+                <div class="v2-head">
+                  <span class="v2-pill">Защищено</span>
+                  <span class="v2-title"><img class="v2-flag" src="assets/v2pn/flags/de.png" alt="">Германия</span>
+                  <span class="v2-sub">Франкфурт</span>
+                </div>
+                <span class="v2-connect"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v8M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>Отключиться</span>
+                <div class="v2-modes">
+                  <small>Режим</small><small>Что идёт через VPN</small>
+                  <span class="v2-modes__seg"><span class="is-on">Прокси</span><span>VPN</span></span>
+                  <span class="v2-modes__route">Российские сайты напрямую <svg class="ic" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+                </div>
+                <div class="v2-status">
+                  <span class="v2-status__top"><b>Защищено</b> · 39 с</span>
+                  <span><small>Сервер</small><strong>Франкфурт</strong></span>
+                  <span><small>Пинг</small><strong>41 мс</strong></span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="ly-piece ly-piece--note v2-note" aria-hidden="true" data-ly-steps="700" style="left: var(--s-6); bottom: var(--s-6); width: 300px">
+          <div class="v2-note__head"><b>Германия, Франкфурт</b><span class="v2-pill" data-step data-step-at="4">Защищено</span></div>
+          <div class="v2-note__line" data-step><i>✓</i><span>Ядро Xray запущено</span></div>
+          <div class="v2-note__line" data-step><i>✓</i><span>Проверка соединения: 41 мс</span></div>
+          <div class="v2-note__line" data-step><i>✓</i><span>Системный прокси включён</span></div>
+        </div>
+      </div>
+    </div></div>
+  </section>
+
+  <section class="section" id="app" aria-labelledby="app-h">
+    <div class="wrap">
+      <div class="grid">
+        <h2 id="app-h" class="span-5">Окно V2pn. <span class="muted">Сервер, режим и одна кнопка.</span></h2>
+        <div class="span-6 start-7 stack-4">
+          <p class="t-lead">Слева избранное, недавние и самый быстрый сервер. Справа «Подключиться», режим «Прокси» или VPN и что идёт через VPN. Внизу пинг, скорость и трафик за сессию.</p>
+          <p><a class="link" href="#features">Посмотреть, что делает каждая часть</a></p>
+        </div>
+      </div>
+      <div class="ui ui-v2pn app-v2 fill" role="img" aria-label="Окно V2pn целиком: подписка Configra, Германия подключена, скорость 4,2 МБ/с">
+        <div class="v2w" aria-hidden="true">
+          <div class="v2w__bar">
+            <svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+            <span class="v2w__brand"><svg class="fork" viewBox="0 0 104 112"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</span>
+            <span class="v2w__sp"></span>
+            <span class="v2w__ctl"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3a9 9 0 1 0 0 18c1.1 0 1.6-.8 1.6-1.6 0-1.3-1-1.6-1-2.6 0-.9.7-1.4 1.6-1.4H17a4 4 0 0 0 4-4c0-4.7-4-8.4-9-8.4z"/></svg><svg class="ic" viewBox="0 0 24 24"><path d="M5 12h14"/></svg><svg class="ic" viewBox="0 0 24 24"><rect x="5" y="5" width="14" height="14" rx="1.5"/></svg><svg class="ic" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg></span>
+          </div>
+          <div class="v2w__body">
+            <div class="v2-side">
+              <div class="v2-search"><span><svg class="ic" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m20 20-4.3-4.3"/></svg>Поиск</span><span class="v2-plus"><svg class="ic" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg></span></div>
+              <div class="v2-seg"><span class="is-on">Главная</span><span>Страны</span><span>Подписки</span></div>
+              <div class="v2-fast"><span class="v2-bolt"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span><b>Самый быстрый сервер</b><small>Германия · 41 мс · проверено 4 мин назад</small></span></div>
+              <div class="v2-label"><span>Избранное · 3</span><span>Проверить пинг</span></div>
+              <div class="v2-row is-on"><img src="assets/v2pn/flags/de.png" alt=""><span><b>Германия</b><small><span class="v2-star">★</span> Франкфурт · Configra</small></span><span class="v2-ping">41 мс</span></div>
+              <div class="v2-row"><img src="assets/v2pn/flags/nl.png" alt=""><span><b>Нидерланды</b><small><span class="v2-star">★</span> Hysteria2 · Configra</small></span><span class="v2-ping">48 мс</span></div>
+              <div class="v2-row"><img src="assets/v2pn/flags/kz.png" alt=""><span><b>Казахстан</b><small><span class="v2-star">★</span> VLESS · своя ссылка</small></span><span class="v2-ping">66 мс</span></div>
+              <div class="v2-label"><span>Недавние</span></div>
+              <div class="v2-row"><img src="assets/v2pn/flags/fi.png" alt=""><span><b>Финляндия</b><small>VLESS · Configra</small></span><span class="v2-ping">52 мс</span></div>
+              <div class="v2-row"><img src="assets/v2pn/flags/se.png" alt=""><span><b>Швеция</b><small>Hysteria2 · Configra</small></span><span class="v2-ping">57 мс</span></div>
+              <div class="v2-label"><span>Самые быстрые</span><span>Проверить пинг</span></div>
+              <div class="v2-row"><img src="assets/v2pn/flags/lv.png" alt=""><span><b>Латвия</b><small>Trojan · Configra</small></span><span class="v2-ping">44 мс</span></div>
+              <div class="v2-row"><img src="assets/v2pn/flags/pl.png" alt=""><span><b>Польша</b><small>VLESS · Configra</small></span><span class="v2-ping">46 мс</span></div>
+              <div class="v2-row"><img src="assets/v2pn/flags/fr.png" alt=""><span><b>Франция</b><small>VLESS · Configra</small></span><span class="v2-ping">49 мс</span></div>
+            </div>
+            <div class="v2-main">
+              <span class="v2-map"><span class="v2-pin"></span></span>
+              <div class="v2-rail"><span><svg class="ic" viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5M20 20v-4h-4"/></svg>Обновить<br>подписки</span><span><svg class="ic" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M4.2 4.2l2.1 2.1M17.7 17.7l2.1 2.1M2 12h3M19 12h3M4.2 19.8l2.1-2.1M17.7 6.3l2.1-2.1"/></svg>Настройки</span></div>
+              <div class="v2-head">
+                <span class="v2-pill">Защищено</span>
+                <span class="v2-title"><img class="v2-flag" src="assets/v2pn/flags/de.png" alt="">Германия</span>
+                <span class="v2-sub">Франкфурт</span>
+              </div>
+              <span class="v2-connect"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v8M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>Отключиться</span>
+              <div class="v2-modes">
+                <small>Режим</small><small>Что идёт через VPN</small>
+                <span class="v2-modes__seg"><span class="is-on">Прокси</span><span>VPN</span></span>
+                <span class="v2-modes__route">Российские сайты напрямую <svg class="ic" viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></span>
+              </div>
+              <div class="v2-status">
+                <span class="v2-status__top"><b>Защищено</b> · 2 мин 14 с <span class="v2-works">Работает · 41 мс</span></span>
+                <span><small>Сервер</small><strong>Франкфурт</strong></span>
+                <span><small>Пинг</small><strong>41 мс</strong></span>
+                <span><small>Подписка</small><strong>Configra</strong></span>
+                <span><small>Трафик за сессию</small><strong>126,9 МБ</strong></span>
+                <span class="v2-speed"><small>Текущая скорость · 4,2 МБ/с</small><svg viewBox="0 0 300 44" preserveAspectRatio="none"><path d="M0 42 L120 42 L132 20 L146 14 L160 22 L174 10 L190 18 L204 8 L220 16 L236 12 L252 20 L268 9 L284 15 L300 12 L300 44 L0 44 Z" fill="rgba(4,107,57,.14)"/><path d="M0 42 L120 42 L132 20 L146 14 L160 22 L174 10 L190 18 L204 8 L220 16 L236 12 L252 20 L268 9 L284 15 L300 12" fill="none" stroke="#046B39" stroke-width="1.6"/></svg></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section g2" id="features" aria-labelledby="features-h">
+    <div class="wrap">
+      <div class="group">
+        <div class="section-head">
+          <h2 id="features-h">Что делает V2pn. <span class="muted">Без редактора правил и настройки ядер.</span></h2>
+        </div>
+        <div class="grid">
+          <article class="card card--row card--open span-6 m-nolift">
+            <h3>Собирает серверы по странам</h3>
+            <p>Пинг виден у каждой страны. Серии вроде «AUTO 1/34» собраны в одну строку, избранное и самый быстрый сервер наверху.</p>
+            <div class="panel" role="img" aria-label="Список стран V2pn с пингом: Германия 41 мс, Нидерланды 48 мс, Финляндия 52 мс, AUTO 1/34 одной строкой">
+              <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 400px; --ax: max(24px, 50% - 200px); --ay: 40px; --ay-sm: 24px">
+                <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
+                  <div class="v2-label"><span>Страны · 16</span><span>Проверить пинг</span></div>
+                  <div class="v2-row"><img src="assets/v2pn/flags/de.png" alt=""><span><b>Германия</b><small>2 сервера</small></span><span class="v2-ping">41 мс</span></div>
+                  <div class="v2-row"><img src="assets/v2pn/flags/nl.png" alt=""><span><b>Нидерланды</b><small>2 сервера</small></span><span class="v2-ping">48 мс</span></div>
+                  <div class="v2-row"><img src="assets/v2pn/flags/fi.png" alt=""><span><b>Финляндия</b><small>1 сервер</small></span><span class="v2-ping">52 мс</span></div>
+                  <div class="v2-row"><img src="assets/v2pn/flags/eu.png" alt=""><span><b>AUTO 1/34</b><small>34 сервера в одной строке</small></span><span class="v2-ping">44 мс</span></div>
+                  <div class="v2-row"><img src="assets/v2pn/flags/us.png" alt=""><span><b>США</b><small>1 сервер</small></span><span class="v2-ping">118 мс</span></div>
+                </div>
+              </div></div>
+            </div>
+          </article>
+          <article class="card card--row card--open span-6 m-nolift">
+            <h3>Решает, что идёт через VPN</h3>
+            <p>Три пресета: российские сайты напрямую, только заблокированное или всё через VPN. Банки и госсервисы продолжают работать.</p>
+            <div class="panel" role="img" aria-label="Меню «Что идёт через VPN»: российские сайты напрямую выбраны, блокировка рекламы включена">
+              <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 400px; --ax: max(24px, 50% - 200px); --ay: 72px; --ay-sm: 32px">
+                <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
+                  <div class="v2-menu">
+                    <div class="v2-menu__item is-on"><span class="v2-menu__tick">✓</span><span><b>Российские сайты напрямую</b><small>Остальное через VPN</small></span></div>
+                    <div class="v2-menu__item"><span></span><span><b>Только заблокированное</b><small>Всё остальное напрямую</small></span></div>
+                    <div class="v2-menu__item"><span></span><span><b>Всё через VPN</b><small>Весь трафик компьютера</small></span></div>
+                  </div>
+                  <div class="v2-switch-row"><span>Блокировать рекламу и трекеры</span><span class="v2-switch"></span></div>
+                </div>
+              </div></div>
+            </div>
+          </article>
+        </div>
+      </div>
+      <div class="grid">
+        <article class="card card--row card--open span-6 m-nolift">
+          <h3>Пишет «Защищено» после проверки</h3>
+          <p>Статус меняется только после настоящей проверки соединения. Перестал отвечать сервер — V2pn предложит другой из той же страны.</p>
+          <div class="panel" role="img" aria-label="Карточка состояния V2pn: защищено, работает, пинг 41 мс, сервер Франкфурт">
+            <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 420px; --ax: max(24px, 50% - 210px); --ay: 64px; --ay-sm: 32px">
+              <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true" style="display: grid; gap: 12px; grid-template-columns: 1fr 1fr">
+                <span class="v2-status__top" style="grid-column: 1 / -1; display: flex; gap: 8px; color: var(--w-muted)"><b style="color: var(--w-safe); font-weight: 500">Защищено</b> · 39 с <span class="v2-works" style="margin-left: auto; padding: 2px 9px; border-radius: 999px; color: var(--w-safe); background: var(--w-safe-soft)">Работает · 41 мс</span></span>
+                <span><small style="display: block; color: var(--w-muted); font-size: 12px">Сервер</small><b style="font-weight: 500">Франкфурт</b></span>
+                <span><small style="display: block; color: var(--w-muted); font-size: 12px">Пинг</small><b style="font-weight: 500">41 мс</b></span>
+                <span><small style="display: block; color: var(--w-muted); font-size: 12px">Подписка</small><b style="font-weight: 500">Configra</b></span>
+                <span><small style="display: block; color: var(--w-muted); font-size: 12px">Трафик за сессию</small><b style="font-weight: 500">126,9 МБ</b></span>
+                <span style="grid-column: 1 / -1; display: flex; justify-content: space-between; padding-top: 10px; border-top: 1px solid var(--w-line)"><span>Проверить соединение</span><span style="color: var(--w-muted)">Мой IP</span></span>
+                <span style="grid-column: 1 / -1"><small style="display: block; color: var(--w-muted); font-size: 12px">Текущая скорость · 4,2 МБ/с</small><svg viewBox="0 0 300 44" preserveAspectRatio="none" style="width: 100%; height: 44px; display: block"><path d="M0 42 L120 42 L132 20 L146 14 L160 22 L174 10 L190 18 L204 8 L220 16 L236 12 L252 20 L268 9 L284 15 L300 12 L300 44 L0 44 Z" fill="rgba(4,107,57,.14)"/><path d="M0 42 L120 42 L132 20 L146 14 L160 22 L174 10 L190 18 L204 8 L220 16 L236 12 L252 20 L268 9 L284 15 L300 12" fill="none" stroke="#046B39" stroke-width="1.6"/></svg></span>
+              </div>
+            </div></div>
+          </div>
+        </article>
+        <article class="card card--row card--open span-6 m-nolift">
+          <h3>Хранит выбор при обновлении подписки</h3>
+          <p>В списке видно, сколько трафика осталось и до какого числа оплачено. Избранное, недавние и пинг после обновления на месте.</p>
+          <div class="panel" role="img" aria-label="Подписка в списке V2pn: израсходовано 44 ГБ из 200 ГБ, оплачено до 31 января">
+            <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 400px; --ax: max(24px, 50% - 200px); --ay: 40px; --ay-sm: 24px">
+              <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
+                <div class="v2-sub-card">
+                  <div class="v2-sub-card__head"><span class="ico"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span><b>Configra</b><small>24 сервера · обновлено сегодня</small></span></div>
+                  <div class="v2-bar" style="--v: 22%"><i></i></div>
+                  <small>44 ГБ из 200 ГБ · оплачено до 31 января</small>
+                </div>
+                <div class="v2-row"><img src="assets/v2pn/flags/de.png" alt=""><span><b>Германия</b><small><span class="v2-star">★</span> в избранном</small></span><span class="v2-ping">41 мс</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/nl.png" alt=""><span><b>Нидерланды</b><small>недавний</small></span><span class="v2-ping">48 мс</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/fi.png" alt=""><span><b>Финляндия</b><small>VLESS</small></span><span class="v2-ping">52 мс</span></div>
+                <div class="v2-row"><img src="assets/v2pn/flags/se.png" alt=""><span><b>Швеция</b><small>Hysteria2</small></span><span class="v2-ping">57 мс</span></div>
+              </div>
+            </div></div>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="section statement" id="promise" data-moment="word-highlight" aria-label="Серверы и подписка">
+    <div class="wrap">
+      <p class="t-label">Серверы и подписка</p>
+      <p class="mo-wh__text">V2pn не продаёт серверы. Подписка остаётся у вашего провайдера, а V2pn подключает её серверы, обновляется сам с подписанных релизов и пишет <strong>«Защищено»</strong> только после проверки соединения.</p>
+    </div>
+  </section>
+
+  <section class="section" id="providers" aria-labelledby="providers-h">
+    <div class="wrap">
+      <div class="grid">
+        <div class="span-5 stack-6">
+          <h2 id="providers-h">Вкладка вашего провайдера</h2>
+          <p class="t-lead">Скачали V2pn со страницы провайдера или вошли по коду из его Telegram-бота? Тогда в заголовке окна две вкладки: V2pn и провайдер, с его цветом, вашим тарифом и только его серверами.</p>
+          <ul class="stack-2">
+            <li>Без провайдера вкладок нет, V2pn выглядит как обычно.</li>
+            <li>Ctrl+Tab переключает вкладки, подключение не прерывается.</li>
+            <li>Первый партнёр — Configra.</li>
+          </ul>
+          <p><a class="link" href="providers/">Прочитать о вкладке для провайдеров</a></p>
+        </div>
+        <div class="frame frame--split span-6 start-7" role="img" aria-label="V2pn с вкладкой Configra: оранжевый фон «Сцены», 77 дней тарифа, кнопки «Продлить» и «Поддержка»">
+          <div class="stage stage--fade-br">
+            <div class="at-corner to-edge" style="--ax: 48px; --ay: 48px">
+              <div class="v2w ui ui-v2pn" data-theme="dark" aria-hidden="true" style="width: 760px; height: 700px; --w-scene: linear-gradient(135deg, #FF7A2F, #EDAA80); --w-brand: #FF7A2F">
+                <div class="v2w__bar">
+                  <svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
+                  <span class="v2-tabs-bar"><span class="v2-tab"><svg class="fork" viewBox="0 0 104 112"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</span><span class="v2-tab is-on"><img src="assets/partners/configra/mark.png" alt="">Configra</span></span>
+                  <span class="v2w__sp"></span>
+                </div>
+                <div class="v2w__body" style="--w-side-w: 34%">
+                  <div class="v2-side">
+                    <div class="v2-seg"><span class="is-on">Главная</span><span>Страны</span><span>Подписки</span></div>
+                    <div class="v2-fast"><span class="v2-bolt"><svg class="ic" viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></span><span><b>Самый быстрый сервер</b><small>Швеция · 67 мс</small></span></div>
+                    <div class="v2-label"><span>Самые быстрые</span></div>
+                    <div class="v2-row"><img src="assets/v2pn/flags/se.png" alt=""><span><b>Швеция</b><small>Hysteria 100/GBIT</small></span><span class="v2-ping">67 мс</span></div>
+                    <div class="v2-row"><img src="assets/v2pn/flags/de.png" alt=""><span><b>Германия</b><small>Vless TCP 1/GBIT</small></span><span class="v2-ping">88 мс</span></div>
+                    <div class="v2-row"><img src="assets/v2pn/flags/fi.png" alt=""><span><b>Финляндия</b><small>Hysteria 5/GBIT</small></span><span class="v2-ping">88 мс</span></div>
+                  </div>
+                  <div class="v2-main v2-main--scene">
+                    <div class="v2-panel-dark">
+                      <div class="v2-head" style="margin-top: 12px"><span class="v2-pill v2-pill--off">Не защищено</span><span class="v2-title">Швеция</span></div>
+                      <span class="v2-connect v2-connect--go"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v8M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>Подключиться</span>
+                    </div>
+                    <div class="v2-scene-plan">
+                      <img src="assets/partners/configra/logo-dark.png" alt="">
+                      <small>Личный доступ · Устройств: 2 из 5</small>
+                      <span class="days">77<small>осталось дней<br>Оплачено до 31 января 2027</small></span>
+                      <div class="v2-bar" style="--v: 25%"><i></i></div>
+                      <div class="v2-scene-plan__btns"><span>Продлить</span><span>Поддержка</span></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="faq" aria-labelledby="faq-h">
+    <div class="wrap">
+      <div class="section-head"><h2 id="faq-h">Вопросы о V2pn</h2></div>
+      <div class="grid">
+      <div class="faq span-6">
+        <div class="faq__item"><h3>Сколько стоит V2pn?</h3><p>Нисколько: V2pn бесплатный, его код открыт под GPL-3.0 на <a href="https://github.com/Piwqust/V2pn"><img class="faq__icon" data-icon="github" src="assets/icons/github.svg" alt="" width="16" height="16"> GitHub</a>. Платите вы только провайдеру за подписку.</p></div>
+        <div class="faq__item"><h3>Где взять серверы?</h3><p>У VPN-провайдера: V2pn серверы не продаёт. Подойдёт ссылка на подписку или на сервер вида vless://…</p></div>
+        <div class="faq__item"><h3>Есть ли V2pn для телефона?</h3><p>Нет. V2pn работает на Windows 10 и 11 (x64 и ARM) и на macOS 13.6 и новее (Apple silicon и Intel).</p></div>
+      </div>
+      <div class="faq span-6">
+        <div class="faq__item"><h3>Почему Windows предупреждает при запуске?</h3><p>У V2pn нет платной подписи разработчика: нажмите «Подробнее», затем «Выполнить в любом случае». Команда установки обходится без этого окна.</p></div>
+        <div class="faq__item"><h3>Как перейти с v2rayN?</h3><p>При первом запуске V2pn предложит забрать серверы, подписки и настройки v2rayN. Файлы v2rayN остаются на месте.</p></div>
+        <div class="faq__item"><h3>Почему окно на английском?</h3><p>Английский стоит по умолчанию. Русский включается в «Оформлении»: значок палитры в заголовке окна.</p></div>
+      </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="install" aria-labelledby="install-h">
+    <div class="wrap">
+      <div class="grid">
+        <div class="span-5 stack-5">
+          <h2 id="install-h">Установка одной командой</h2>
+          <p>Команда скачает последнюю версию, сверит её со списком файлов релиза и поставит V2pn без прав администратора. Если на компьютере есть v2rayN, V2pn заберёт его серверы.</p>
+          <div class="cmd">
+            <span class="cmd__label"><img data-icon="windows" src="assets/icons/windows.svg" alt="" width="16" height="16">Windows, в Терминале (Win+X → Терминал)</span>
+            <div class="cmd__row"><code id="cmd-win">irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex</code><button class="btn btn--secondary" type="button" data-copy="cmd-win">Копировать</button></div>
+          </div>
+          <div class="cmd">
+            <span class="cmd__label"><img data-icon="apple" src="assets/icons/apple.svg" alt="" width="16" height="16">macOS, в Терминале</span>
+            <div class="cmd__row"><code id="cmd-mac">curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh | bash</code><button class="btn btn--secondary" type="button" data-copy="cmd-mac">Копировать</button></div>
+          </div>
+          <p class="t-small">Файлы вручную: <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip">Windows x64</a>, <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip">Windows на ARM</a>, <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-arm64.dmg">Mac с Apple silicon</a>, <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-x64.dmg">Mac на Intel</a>.</p>
+        </div>
+        <div class="frame frame--split span-6 start-7" data-visual data-fx="silk-folds" data-fx-seed="11" data-fx-params='{"speed":0.25,"tone":1,"scale":1.3,"folds":0.55,"sheen":0.5,"angle":-28,"calm":0.25,"calmX":0.45,"calmY":0.5}' style="--calm-k: 0%" role="img" aria-label="Установка V2pn командой в Терминале Windows: пакет скачан, размер и SHA-256 совпали с релизом, ярлыки созданы">
+          <div class="stage stage--fade-br">
+            <div class="at-corner to-edge">
+              <div class="term ui ui-v2pn" aria-hidden="true" style="width: 640px; height: 100%">
+                <div class="term__bar"><i></i><i></i><i></i><span>Windows PowerShell</span></div>
+                <div class="term__body"><span class="p">PS&gt;</span> irm …/install.ps1 | iex
+
+   <span class="b">V2pn</span>: a simple VPN client for Windows and macOS, by Piwqust
+   <span class="d">Built on v2rayN by 2dust · GPL-3.0 · github.com/Piwqust/V2pn</span>
+
+     <span class="d">Version    </span><span class="b">1.2.1</span>
+     <span class="d">Package    </span>V2pn-windows-x64.zip   <span class="d">Windows x64</span>
+     <span class="d">Into       </span>%LOCALAPPDATA%\Programs\V2pn
+     <span class="d">Rights     </span>this Windows user only, no administrator needed
+
+   <span class="ok">✓</span> Download   <span class="d">done</span>
+   <span class="ok">✓</span> Check      size and SHA-256 match the release
+   <span class="ok">✓</span> Install    <span class="d">V2pn and its cores</span>
+   <span class="ok">✓</span> Shortcuts  Start menu and desktop
+   <span class="ok">✓</span> v2rayN     if it is here with servers, V2pn takes them over
+
+   <span class="b">V2pn 1.2.1</span> is ready. Opening it now.</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer closing" id="contact" aria-labelledby="close-h">
+  <div class="wrap">
+    <div class="closing__cta close--type">
+      <div class="section-head">
+        <h2 id="close-h">V2pn для Windows и macOS</h2>
+        <p>Бесплатно и с открытым кодом. Обновляется сам раз в шесть часов, с подписанных релизов.</p>
+      </div>
+      <a class="btn btn--primary btn--xl btn--wide" href="#install" data-download>Скачать V2pn<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+    </div>
+    <div class="closing__links">
+      <div class="grid">
+        <div class="span-6 stack-4">
+          <a class="nav__logo" href="#top"><svg class="v2mark" viewBox="0 0 104 112" aria-hidden="true"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</a>
+          <p class="footer__lede">Бесплатный VPN-клиент с открытым кодом для Windows и macOS, на основе v2rayN.</p>
+        </div>
+        <div class="span-2 footer__col"><h3>Приложение</h3><ul><li><a href="#app">Окно</a></li><li><a href="#features">Возможности</a></li><li><a href="#install">Установка</a></li><li><a href="#faq">Вопросы</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Провайдерам</h3><ul><li><a href="providers/">Вкладка провайдера</a></li><li><a href="providers/guide/">Руководство</a></li><li><a href="providers/builder/">Конструктор</a></li><li><a href="p/configra/">Configra</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Проект</h3><ul><li><a href="https://github.com/Piwqust/V2pn">Код на GitHub</a></li><li><a href="https://github.com/Piwqust/V2pn/blob/v2pn/CHANGELOG.md">Что нового</a></li><li><a href="https://github.com/Piwqust/V2pn/releases">Все релизы</a></li><li><a href="https://github.com/Piwqust/V2pn/issues/new/choose">Сообщить о проблеме</a></li></ul></div>
+      </div>
+      <div class="footer__legal">
+        <span>&copy; 2026 V2pn &nbsp; <a href="https://github.com/Piwqust/V2pn/blob/v2pn/LICENSE">Лицензия GPL-3.0</a></span>
+        <div class="socials"></div>
+        <span class="credits">Названия и логотипы продуктов принадлежат их владельцам.</span>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="assets/system.js"></script>
+<script type="module" src="assets/motion/motion.js"></script>
+<script type="module" src="assets/layout/layout.js"></script>
+<script type="module" src="assets/site/site.js"></script>
+</body>
+</html>

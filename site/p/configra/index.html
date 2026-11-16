@@ -1,0 +1,145 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>V2pn для Configra</title>
+<meta name="description" content="V2pn — простой VPN-клиент для Windows и macOS.">
+<style>
+@font-face { font-family: Geist; src: url(fonts/Geist-Regular.ttf); font-weight: 400; font-display: swap; }
+@font-face { font-family: Geist; src: url(fonts/Geist-SemiBold.ttf); font-weight: 600; font-display: swap; }
+:root { color-scheme: light dark; --bg: #ECEEF3; --card: #FFFFFF; --mutedBg: #F0F1F5; --line: #DCDEE5; --ink: #16161B; --soft: #34343F; --muted: #5E5E6B; --accent: #FF7A2F; --onAccent: #0B0B0D; --link: #C25201; --linkBg: #B34D0B; --focus: #C25201; --hero: linear-gradient(135deg, #FF7A2F, #EDAA80); --scrim: transparent; --heroInk: #111114; --heroSoft: #3D302A; --ghost: rgba(17,17,20,0.0784); --solid: #111114; --onSolid: #FFFFFF; }
+@media (prefers-color-scheme: dark) { :root { --bg: #0E0E11; --card: #1A1A21; --mutedBg: #26262F; --line: #2A2A33; --ink: #ECECF1; --soft: #C9C9D3; --muted: #9B9BA8; --accent: #FF7A2F; --onAccent: #0B0B0D; --link: #FF7A2F; --linkBg: #FF7A2F; --focus: #FF7A2F; --hero: linear-gradient(135deg, #BC510B, #B1754F); --scrim: rgba(255,255,255,0.0902); --heroInk: #111114; --heroSoft: #111114; --ghost: rgba(255,255,255,0.2980); --solid: #111114; --onSolid: #FFFFFF; } }
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.55 Geist, "Segoe UI", system-ui, -apple-system, sans-serif;
+  -webkit-font-smoothing: antialiased; }
+a { color: var(--linkBg); text-underline-offset: 3px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+.wrap { max-width: 1040px; margin: 0 auto; padding: 0 24px; }
+.bar { display: flex; align-items: center; gap: 10px; height: 64px; }
+.lockup { display: flex; align-items: center; gap: 10px; min-width: 0; font-weight: 600; color: inherit; text-decoration: none; }
+.v2 { width: 17px; height: 18px; flex: none; }
+.x { color: var(--muted); font-weight: 400; }
+.barlogo { height: 20px; width: auto; display: block; max-width: 160px; object-fit: contain; object-position: left center; }
+.name { font-weight: 600; }
+.sp { flex: 1; }
+.switch { display: inline-flex; padding: 3px; border-radius: 10px; background: var(--mutedBg); flex: none; }
+.switch button { font: inherit; font-size: 13px; font-weight: 600; border: 0; background: none; color: var(--muted); height: 30px; min-width: 40px;
+  padding: 0 10px; border-radius: 8px; cursor: pointer; }
+.switch button[aria-pressed=true] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.hero { position: relative; overflow: hidden; border-radius: 24px; background: var(--hero); color: var(--heroInk); margin-top: 8px;
+  box-shadow: 0 1px 2px rgba(0,0,0,.06), 0 18px 40px -22px rgba(0,0,0,.35); }
+.hero::before { content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none; }
+.hero-in { position: relative; padding: 56px 56px 48px; display: grid; gap: 22px; max-width: 720px; }
+.herologo { height: 44px; width: auto; max-width: 320px; display: block; object-fit: contain; object-position: left center; }
+.hero .name { font-size: 28px; }
+h1 { margin: 0; font-size: 46px; line-height: 1.08; letter-spacing: -0.03em; font-weight: 600; text-wrap: balance; }
+.lead { margin: 0; font-size: 18.5px; color: var(--heroSoft); max-width: 36em; text-wrap: pretty; }
+.dl { display: flex; flex-wrap: wrap; gap: 14px 18px; margin-top: 6px; }
+.dl .opt { display: grid; gap: 8px; justify-items: start; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; padding: 0 24px; border-radius: 999px;
+  font: inherit; font-weight: 600; font-size: 16px; text-decoration: none; border: 0; cursor: pointer; white-space: nowrap;
+  transition: transform 140ms cubic-bezier(.23,1,.32,1), filter 150ms ease; }
+.btn:active { transform: scale(.97); }
+.btn:hover { filter: brightness(1.06); }
+.btn svg { width: 18px; height: 18px; flex: none; }
+.hero .btn { background: var(--ghost); color: var(--heroInk); }
+.hero .btn.primary { background: var(--solid); color: var(--onSolid); box-shadow: 0 1px 2px rgba(0,0,0,.18), 0 10px 22px -12px rgba(0,0,0,.5); }
+.btn.small { height: 40px; padding: 0 16px; font-size: 14.5px; }
+.note { font-size: 13.5px; color: var(--heroSoft); padding-left: 4px; }
+.hero a:not(.btn) { color: var(--heroInk); }
+.phone { display: none; gap: 12px; justify-items: start; }
+.phone h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+.phone p { margin: 0; color: var(--heroSoft); }
+body.is-phone .phone { display: grid; }
+body.is-phone .dl { display: none; }
+.steps { margin: 44px 0 0; }
+.steps h2 { font-size: 24px; letter-spacing: -0.02em; margin: 0 0 16px; }
+ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+li { background: var(--card); border-radius: 18px; padding: 22px; display: grid; gap: 10px; align-content: start;
+  box-shadow: 0 0 0 1px var(--line); }
+.num { width: 32px; height: 32px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--onAccent);
+  font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
+li h3 { margin: 0; font-size: 17px; font-weight: 600; }
+li p { margin: 0; color: var(--soft); font-size: 15px; }
+li p b { color: var(--ink); font-weight: 600; }
+li a { color: var(--link); }
+li .btn.quiet { background: var(--accent); color: var(--onAccent); justify-self: start; margin-top: 4px; }
+li .cmd { font-size: 13.5px; color: var(--muted); }
+li code { display: block; margin-top: 4px; padding: 8px 10px; border-radius: 10px; background: var(--mutedBg); color: var(--ink);
+  font: 12.5px/1.45 ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace; overflow-wrap: anywhere; user-select: all; }
+body.os-win [data-os=mac], body.os-mac [data-os=win] { display: none; }
+.osl { display: none; }
+body.os-any .osl, body.os-phone .osl { display: inline; }
+footer { margin: 48px 0 40px; color: var(--muted); font-size: 13.5px; }
+footer a { color: var(--muted); }
+@media (max-width: 860px) {
+  ol { grid-template-columns: 1fr; }
+  .hero-in { padding: 40px 32px 36px; }
+  h1 { font-size: 36px; }
+}
+@media (max-width: 560px) {
+  .wrap { padding: 0 16px; }
+  .bar { height: 56px; }
+  .hero { border-radius: 20px; }
+  .hero-in { padding: 28px 20px 26px; gap: 18px; }
+  .herologo { height: 34px; max-width: 100%; }
+  h1 { font-size: 30px; }
+  .lead { font-size: 16.5px; }
+  .dl, .dl .opt { width: 100%; }
+  .btn { width: 100%; }
+  .btn.small { width: auto; }
+  li { padding: 18px; }
+}
+@media (prefers-reduced-motion: reduce) { .btn { transition: none; } .btn:active { transform: none; } }
+</style>
+</head>
+<body class="os-any">
+<div class="wrap">
+  <header class="bar">
+    <a class="lockup" href="../../"><svg class="v2" viewBox="0 0 17 18" aria-hidden="true"><path fill="#FF3D1F" d="M0 0h5.2l3.3 6.4L11.8 0H17L10.9 11.2V18H6.1v-6.8z"/></svg><span>V2pn</span><span class="x">×</span><picture><source srcset="logo-light.png" media="(prefers-color-scheme: dark)"><img class="barlogo" src="logo-dark.png" alt="Configra"></picture></a>
+    <div class="sp"></div>
+    <div class="switch" role="group" aria-label="Язык" data-t-label="lang">
+      <button type="button" data-lang="ru" aria-pressed="true">RU</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
+    </div>
+  </header>
+  <main>
+    <section class="hero">
+      <div class="hero-in">
+        <img class="herologo" src="logo-dark.png" alt="Configra">
+        <h1 data-t="h1">Configra на компьютере</h1>
+        <p class="lead" data-t="lead">V2pn — простой VPN-клиент для Windows и macOS. Отсюда он ставится с вкладкой Configra: в ней ваш тариф, серверы и цвета Configra. Подписка Configra входит в него по коду из бота, без ссылок.</p>
+        <div class="dl">
+          <div class="opt" data-dl="win">
+            <a class="btn primary" id="win" href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-x64.zip"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M3 5.5 10.4 4.5v7H3zm8.4-1.1L21 3v8.5h-9.6zM3 12.5h7.4v7L3 18.5zm8.4 0H21V21l-9.6-1.4z"/></svg><span data-t="win">Скачать для Windows</span></a>
+            <span class="note" id="win-note" data-t="winNote">Windows 10 и 11 · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-arm64.zip" data-os-link="win-alt">для ARM</a></span>
+          </div>
+          <div class="opt" data-dl="mac">
+            <a class="btn" id="mac" href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-arm64.zip"><svg viewBox="0 0 24 24" aria-hidden="true"><path fill="currentColor" d="M16.4 12.6c0-2.4 2-3.6 2.1-3.7a4.6 4.6 0 0 0-3.6-1.9c-1.5-.2-3 .9-3.7.9-.8 0-2-.9-3.2-.9a4.8 4.8 0 0 0-4 2.5c-1.7 3-.4 7.4 1.2 9.8.8 1.2 1.8 2.5 3 2.4 1.2 0 1.7-.8 3.1-.8s1.9.8 3.1.8c1.3 0 2.1-1.2 2.9-2.4a10 10 0 0 0 1.3-2.7 4.2 4.2 0 0 1-2.2-4zM14 5.5A4.3 4.3 0 0 0 15 2.4a4.4 4.4 0 0 0-2.9 1.5 4.1 4.1 0 0 0-1 3 3.6 3.6 0 0 0 2.9-1.4z"/></svg><span data-t="mac">Скачать для macOS</span></a>
+            <span class="note" data-t="macNote">macOS 13.6 и новее, Apple silicon · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-x64.zip">для Intel</a></span>
+          </div>
+        </div>
+        <div class="phone">
+          <h2 data-t="phoneTitle">V2pn — для компьютера</h2>
+          <p data-t="phoneText">На телефоне V2pn не работает. Откройте эту страницу на компьютере с Windows или macOS.</p>
+          <button type="button" class="btn primary" id="share" data-t="share">Отправить ссылку себе</button>
+          <span class="note" data-t="phoneFiles">Файлы для компьютера: <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-x64.zip">Windows</a> · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-arm64.zip">macOS</a></span>
+        </div>
+      </div>
+    </section>
+    <section class="steps">
+      <h2 data-t="stepsTitle">Три шага</h2>
+      <ol>
+        <li><span class="num">1</span><h3 data-t="s1">Установите V2pn</h3><p data-os="win"><b class="osl">Windows. </b><span data-t="s1win">Распакуйте архив в свою папку и запустите V2pn.exe. Если Windows скажет, что защитила компьютер, нажмите «Подробнее» → «Выполнить в любом случае».</span></p><p class="cmd" data-os="win"><span data-t="cmdWin">Или одной командой в PowerShell. Если V2pn уже установлен, команда только добавит вкладку Configra, серверы и настройки останутся:</span><code>$env:V2PN_PARTNER=&#x27;configra&#x27;; irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex</code></p><p data-os="mac"><b class="osl">macOS. </b><span data-t="s1mac">Распакуйте архив и перетащите V2pn в «Программы». В первый раз разрешите запуск: «Системные настройки» → «Конфиденциальность и безопасность» → «Всё равно открыть».</span></p><p class="cmd" data-os="mac"><span data-t="cmdMac">Или одной командой в Терминале. Если V2pn уже установлен, команда только добавит вкладку Configra, серверы и настройки останутся:</span><code>curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh | V2PN_PARTNER=configra bash</code></p></li>
+        <li><span class="num">2</span><h3 data-t="s2">Войдите в Configra</h3><p data-t="s2t">При первом запуске нажмите «У меня подписка от провайдера». Если V2pn уже настроен: «+» → «Войти через провайдера».</p></li>
+        <li><span class="num">3</span><h3 data-t="s3">Подтвердите в боте</h3><p data-t="s3t">V2pn покажет код. Подтвердите его в боте Configra, и V2pn сам добавит подписку: останется нажать «Подключиться».</p></li>
+      </ol>
+    </section>
+  </main>
+  <footer data-t="foot">V2pn — открытый код, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn на GitHub</a></footer>
+</div>
+<script type="application/json" id="page-data">{"text": {"ru": {"title": "V2pn для Configra", "h1": "Configra на компьютере", "lead": "V2pn — простой VPN-клиент для Windows и macOS. Отсюда он ставится с вкладкой Configra: в ней ваш тариф, серверы и цвета Configra. Подписка Configra входит в него по коду из бота, без ссылок.", "win": "Скачать для Windows", "mac": "Скачать для macOS", "winNote": "Windows 10 и 11 · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-arm64.zip\" data-os-link=\"win-alt\">для ARM<\/a>", "winNoteArm": "Windows на ARM · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-x64.zip\" data-os-link=\"win-alt\">для x64<\/a>", "macNote": "macOS 13.6 и новее, Apple silicon · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-x64.zip\">для Intel<\/a>", "phoneTitle": "V2pn — для компьютера", "phoneText": "На телефоне V2pn не работает. Откройте эту страницу на компьютере с Windows или macOS.", "share": "Отправить ссылку себе", "copied": "Ссылка скопирована", "phoneFiles": "Файлы для компьютера: <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-x64.zip\">Windows<\/a> · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-arm64.zip\">macOS<\/a>", "stepsTitle": "Три шага", "s1": "Установите V2pn", "s1win": "Распакуйте архив в свою папку и запустите V2pn.exe. Если Windows скажет, что защитила компьютер, нажмите «Подробнее» → «Выполнить в любом случае».", "s1mac": "Распакуйте архив и перетащите V2pn в «Программы». В первый раз разрешите запуск: «Системные настройки» → «Конфиденциальность и безопасность» → «Всё равно открыть».", "cmdWin": "Или одной командой в PowerShell. Если V2pn уже установлен, команда только добавит вкладку Configra, серверы и настройки останутся:", "cmdMac": "Или одной командой в Терминале. Если V2pn уже установлен, команда только добавит вкладку Configra, серверы и настройки останутся:", "s2": "Войдите в Configra", "s2t": "При первом запуске нажмите «У меня подписка от провайдера». Если V2pn уже настроен: «+» → «Войти через провайдера».", "s3": "Подтвердите в боте", "s3t": "V2pn покажет код. Подтвердите его в боте Configra, и V2pn сам добавит подписку: останется нажать «Подключиться».", "bot": "Открыть бота", "foot": "V2pn — открытый код, GPL-3.0. <a href=\"https://github.com/Piwqust/V2pn\">V2pn на GitHub<\/a>", "lang": "Язык"}, "en": {"title": "V2pn for Configra", "h1": "Configra on your computer", "lead": "V2pn is a simple VPN client for Windows and macOS. From here it comes with a Configra tab: your plan, servers and Configra's colours. Your Configra subscription gets into it by a code from the bot, no links to copy.", "win": "Download for Windows", "mac": "Download for macOS", "winNote": "Windows 10 and 11 · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-arm64.zip\" data-os-link=\"win-alt\">for ARM<\/a>", "winNoteArm": "Windows on ARM · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-x64.zip\" data-os-link=\"win-alt\">for x64<\/a>", "macNote": "macOS 13.6 or later, Apple silicon · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-x64.zip\">for Intel<\/a>", "phoneTitle": "V2pn is for computers", "phoneText": "V2pn does not run on phones. Open this page on a Windows or macOS computer.", "share": "Send the link to yourself", "copied": "Link copied", "phoneFiles": "Files for a computer: <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-x64.zip\">Windows<\/a> · <a href=\"https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-arm64.zip\">macOS<\/a>", "stepsTitle": "Three steps", "s1": "Install V2pn", "s1win": "Unpack the archive into a folder of yours and run V2pn.exe. If Windows says it protected your PC, press “More info”, then “Run anyway”.", "s1mac": "Unpack the archive and drag V2pn to Applications. The first time, allow it: System Settings → Privacy & Security → “Open Anyway”.", "cmdWin": "Or in one command in PowerShell. If V2pn is installed already, it only adds the Configra tab; your servers and settings stay:", "cmdMac": "Or in one command in Terminal. If V2pn is installed already, it only adds the Configra tab; your servers and settings stay:", "s2": "Sign in to Configra", "s2t": "At first start press “I have a subscription from a provider”. If V2pn is set up already: “+” → “Sign in with a provider”.", "s3": "Confirm in the bot", "s3t": "V2pn shows a code. Confirm it in Configra's bot and V2pn adds the subscription itself: then press “Connect”.", "bot": "Open the bot", "foot": "V2pn is open source, GPL-3.0. <a href=\"https://github.com/Piwqust/V2pn\">V2pn on GitHub<\/a>", "lang": "Language"}}, "urls": {"win": "https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-x64.zip", "winArm": "https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-windows-arm64.zip", "mac": "https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-arm64.zip", "macIntel": "https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-configra-macos-x64.zip"}}</script>
+<script src="page.js"></script>
+</body>
+</html>

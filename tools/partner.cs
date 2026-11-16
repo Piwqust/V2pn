@@ -1,14 +1,16 @@
 #:project ../v2rayN/ServiceLib/ServiceLib.csproj
-// The partners of V2pn (providers whose subscriptions V2pn dresses in their brand), kept in partners/<id> in this
+// The partners of V2pn (providers with their own build of V2pn, which wears their brand), kept in partners/<id> in this
 // repository and published by the owner of V2pn with the releases.
 //
-//   dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partners.json>] [--local]
+//   dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partner-index.json>] [--local]
 //       Reads every partners/<id> folder (listing.json, partner.json and its files), checks each pack with the reader
-//       the app uses, and writes into --out (default partners/out, not in git): partners.json, partners.json.sig
+//       the app uses, and writes into --out (default partners/out, not in git): partner-index.json, partner-index.json.sig
 //       (signed with --root-key, default ~/.v2pn/partner-root-key.pem, over the exact bytes) and partner-<id>.zip for
-//       each partner. The hash of each reviewed file (routing.json, transport.json, core.json) goes into the index when
-//       listing.json grants it. Prints who, which domains, which grants, until when, and what changed since --previous
-//       (default: the partners.json already in --out). Nothing is written when any partner has a problem.
+//       each partner, which partner builds read; and partners.json(.sig), signed and empty, which V2pn 1.2.1 and older
+//       read, so they never dress plain V2pn in a partner's look again. The hash of each reviewed file (routing.json,
+//       transport.json, core.json) goes into the index when listing.json grants it. Prints who, which domains, which
+//       grants, until when, and what changed since --previous (default: the partner-index.json already in --out).
+//       Nothing is written when any partner has a problem.
 //       tools/sign-release.ps1 and tools/publish-mirror.ps1 ship the result with a release. --local lets listing.json
 //       name 127.0.0.1 and localhost, for tools/demo with a test root key; only development builds take those domains.
 //
@@ -126,25 +128,23 @@ int Publish()
     var hadPrevious = File.Exists(previousFile);
     var previous = hadPrevious ? ReadUnsigned(File.ReadAllBytes(previousFile)) : null;
 
-    Directory.CreateDirectory(outDir);
-    foreach (var old in Directory.EnumerateFiles(outDir).Where(f => Regex.IsMatch(Path.GetFileName(f), @"^(partner-[a-z0-9-]+\.zip|partners\.json(\.sig)?)$")))
-    {
-        File.Delete(old);
-    }
-    var signature = V2pnPartnerSigning.Sign(root, publication.Index);
-    File.WriteAllBytes(Path.Combine(outDir, V2pnPartnerTrust.IndexFile), publication.Index);
-    File.WriteAllText(Path.Combine(outDir, V2pnPartnerTrust.IndexFile + ".sig"), signature + "\n");
-    foreach (var partner in publication.Partners)
-    {
-        File.WriteAllBytes(Path.Combine(outDir, partner.Listing.Zip.File), partner.Zip);
-    }
+    V2pnPartnerPublisher.WriteOut(outDir, publication, root);
+    var signature = File.ReadAllText(Path.Combine(outDir, V2pnPartnerTrust.IndexFile + ".sig")).Trim();
 
     // Read back the way the app reads it: the signature over these bytes, every zip against the index.
     var check = V2pnPartnerTrust.ReadIndex(File.ReadAllBytes(Path.Combine(outDir, V2pnPartnerTrust.IndexFile)),
-        File.ReadAllText(Path.Combine(outDir, V2pnPartnerTrust.IndexFile + ".sig")).Trim(), [V2pnPartnerSigning.PublicKey(root)], out var readError);
+        signature, [V2pnPartnerSigning.PublicKey(root)], out var readError);
     if (check == null || check.Problems.Count > 0 || check.Partners.Count != publication.Partners.Count)
     {
         Console.Error.WriteLine($"The written index does not read back: {readError}{string.Join("; ", check?.Problems ?? [])}");
+        return 1;
+    }
+    // And the one older copies read: signed, with no partner in it.
+    var legacy = V2pnPartnerTrust.ReadIndex(File.ReadAllBytes(Path.Combine(outDir, V2pnPartnerTrust.LegacyIndexFile)),
+        File.ReadAllText(Path.Combine(outDir, V2pnPartnerTrust.LegacyIndexFile + ".sig")).Trim(), [V2pnPartnerSigning.PublicKey(root)], out var legacyError);
+    if (legacy == null || legacy.Partners.Count != 0)
+    {
+        Console.Error.WriteLine($"The written {V2pnPartnerTrust.LegacyIndexFile} is not an empty signed index: {legacyError}");
         return 1;
     }
     foreach (var listing in check.Partners)
@@ -156,7 +156,7 @@ int Publish()
         }
     }
 
-    Console.WriteLine($"Published {publication.Partners.Count} partner(s) into {outDir}:");
+    Console.WriteLine($"Published {publication.Partners.Count} partner(s) into {outDir} ({V2pnPartnerTrust.IndexFile}; {V2pnPartnerTrust.LegacyIndexFile} empty, for 1.2.1 and older):");
     foreach (var partner in publication.Partners)
     {
         var l = partner.Listing;
@@ -201,7 +201,7 @@ int Publish()
     return CheckAgainstBuiltInKeys(publication.Index, signature);
 }
 
-// An earlier partners.json as written, without its signature: only to say what changed.
+// An earlier partner-index.json as written, without its signature: only to say what changed.
 static V2pnPartnerIndex? ReadUnsigned(byte[] json)
 {
     try
@@ -460,7 +460,7 @@ static int Usage()
 {
     Console.Error.WriteLine("""
         usage:
-          dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partners.json>] [--local]
+          dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partner-index.json>] [--local]
           dotnet run tools/partner.cs -- pack <folder>
           dotnet run tools/partner.cs -- review <folder>
         """);

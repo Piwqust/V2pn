@@ -151,8 +151,12 @@ public sealed record V2pnPartnerSource(string Id, string Name, IReadOnlyList<str
 /// <summary>One partner ready to publish: its listing as the index will carry it, its zip, and what the owner should know.</summary>
 public sealed record V2pnPublishedPartner(V2pnPartnerListing Listing, byte[] Zip, IReadOnlyList<string> Notes, string? Contact);
 
-/// <summary>Everything a publication writes: partners.json (to be signed as these bytes) and one zip per partner.</summary>
-public sealed record V2pnPublication(byte[] Index, IReadOnlyList<V2pnPublishedPartner> Partners, IReadOnlyList<string> Problems)
+/// <summary>
+/// Everything a publication writes: partner-index.json (to be signed as these bytes), one zip per partner, and
+/// <paramref name="LegacyIndex"/>, partners.json with no partner at all, for the copies of V2pn 1.2.1 and older that
+/// still read it (they then drop every partner and stay plain V2pn).
+/// </summary>
+public sealed record V2pnPublication(byte[] Index, IReadOnlyList<V2pnPublishedPartner> Partners, IReadOnlyList<string> Problems, byte[] LegacyIndex)
 {
     public bool Ok => Problems.Count == 0;
 }
@@ -160,7 +164,8 @@ public sealed record V2pnPublication(byte[] Index, IReadOnlyList<V2pnPublishedPa
 /// <summary>
 /// Builds the published form of partners/ (tools/partner.cs publish): each partners/&lt;id&gt; folder (listing.json,
 /// partner.json and its files) is checked with the reader the app uses, packed into partner-&lt;id&gt;.zip, and listed in
-/// partners.json with its domains, grants, term, reviewed hashes and the zip's size and SHA-256.
+/// partner-index.json with its domains, grants, term, reviewed hashes and the zip's size and SHA-256. partners.json
+/// goes out beside it, signed and empty, for older copies.
 /// </summary>
 public static class V2pnPartnerPublisher
 {
@@ -268,8 +273,44 @@ public static class V2pnPartnerPublisher
         {
             problems.Add($"{domain.Key} is listed by {string.Join(" and ", domain.Select(x => x.Id))}: a subscription would belong to both.");
         }
-        return new V2pnPublication(IndexBytes(partners.Select(p => p.Listing), published), partners, problems);
+        return new V2pnPublication(IndexBytes(partners.Select(p => p.Listing), published), partners, problems, IndexBytes([], published));
     }
+
+    /// <summary>
+    /// Writes <paramref name="publication"/> into <paramref name="outDir"/>, signed with <paramref name="root"/>:
+    /// partner-index.json(.sig), the empty partners.json(.sig) and every partner-&lt;id&gt;.zip, after removing what an
+    /// earlier publication left there. Returns the names written.
+    /// </summary>
+    public static IReadOnlyList<string> WriteOut(string outDir, V2pnPublication publication, ECDsa root)
+    {
+        Directory.CreateDirectory(outDir);
+        foreach (var old in Directory.EnumerateFiles(outDir).Where(f => IsPublishedName(Path.GetFileName(f))))
+        {
+            File.Delete(old);
+        }
+        var written = new List<string>();
+        void Put(string name, byte[] content)
+        {
+            File.WriteAllBytes(Path.Combine(outDir, name), content);
+            written.Add(name);
+        }
+        Put(V2pnPartnerTrust.IndexFile, publication.Index);
+        Put(V2pnPartnerTrust.IndexFile + ".sig", Encoding.UTF8.GetBytes(V2pnPartnerSigning.Sign(root, publication.Index) + "\n"));
+        Put(V2pnPartnerTrust.LegacyIndexFile, publication.LegacyIndex);
+        Put(V2pnPartnerTrust.LegacyIndexFile + ".sig", Encoding.UTF8.GetBytes(V2pnPartnerSigning.Sign(root, publication.LegacyIndex) + "\n"));
+        foreach (var partner in publication.Partners)
+        {
+            Put(partner.Listing.Zip.File, partner.Zip);
+        }
+        return written;
+    }
+
+    /// <summary>A file a publication writes (and the next one replaces).</summary>
+    public static bool IsPublishedName(string? name) =>
+        name != null && (name == V2pnPartnerTrust.IndexFile || name == V2pnPartnerTrust.IndexFile + ".sig"
+            || name == V2pnPartnerTrust.LegacyIndexFile || name == V2pnPartnerTrust.LegacyIndexFile + ".sig"
+            || (name.StartsWith("partner-", StringComparison.Ordinal) && name.EndsWith(".zip", StringComparison.Ordinal)
+                && V2pnPartnerTrust.ValidId(name["partner-".Length..^".zip".Length])));
 
     /// <summary>One partners/&lt;id&gt; folder checked and packed; null with the reason when the app would refuse any of it.</summary>
     public static V2pnPublishedPartner? Build(string folder, DateOnly today, out string error, bool local = false)
@@ -356,7 +397,7 @@ public static class V2pnPartnerPublisher
         return new V2pnPublishedPartner(listing, zip, notes, source.Contact);
     }
 
-    /// <summary>partners.json for <paramref name="listings"/>, by id; the bytes the root key signs.</summary>
+    /// <summary>partner-index.json (or partners.json) for <paramref name="listings"/>, by id; the bytes the root key signs.</summary>
     public static byte[] IndexBytes(IEnumerable<V2pnPartnerListing> listings, DateTimeOffset published)
     {
         var partners = new JsonArray();

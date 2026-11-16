@@ -1,8 +1,8 @@
 namespace ServiceLib.Tests.V2pn;
 
 /// <summary>
-/// tools/partner.cs publish: partners/&lt;id&gt; folders in the repository become partners.json and one zip each, which the app
-/// reads back with the checks it uses for a download.
+/// tools/partner.cs publish: partners/&lt;id&gt; folders in the repository become partner-index.json and one zip each, which
+/// the app reads back with the checks it uses for a download, and an empty partners.json for older copies.
 /// </summary>
 public class V2pnPartnerPublishTests
 {
@@ -97,6 +97,46 @@ public class V2pnPartnerPublishTests
             await files.Keys.Order().Should().BeEquivalentTo(new[] { "logo.png", "mark.png", "partner.json" });
             await pack!.Theme!.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Gradient);
             await pack.ApiUrl.Should().BeEqualTo("https://kestrel.example/v2pn/api/");
+        }
+        finally
+        {
+            Delete(dir);
+        }
+    }
+
+    [Test]
+    public async Task WriteOut_GivesPartnerBuildsTheIndex_AndOlderCopiesAnEmptySignedOne()
+    {
+        var dir = Partners(ids: ["kestrel", "configra"]);
+        var outDir = Path.Combine(dir, "out");
+        using var root = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var key = V2pnPartnerSigning.PublicKey(root);
+        try
+        {
+            // What an earlier publication left, including a zip of a partner gone since.
+            Directory.CreateDirectory(outDir);
+            File.WriteAllText(Path.Combine(outDir, "partner-gone.zip"), "old");
+            File.WriteAllText(Path.Combine(outDir, "notes.txt"), "mine");
+
+            var publication = V2pnPartnerPublisher.Publish(dir, Today, Now);
+            var written = V2pnPartnerPublisher.WriteOut(outDir, publication, root);
+
+            await written.Should().BeEquivalentTo(["partner-index.json", "partner-index.json.sig", "partners.json", "partners.json.sig",
+                "partner-configra.zip", "partner-kestrel.zip"]);
+            var index = V2pnPartnerTrust.ReadIndex(File.ReadAllBytes(Path.Combine(outDir, "partner-index.json")),
+                File.ReadAllText(Path.Combine(outDir, "partner-index.json.sig")).Trim(), [key], out var error);
+            await error.Should().BeEqualTo(string.Empty);
+            await index!.Partners.Select(l => l.Id).ToList().Should().BeEquivalentTo(["configra", "kestrel"]);
+
+            // V2pn 1.2.1 reads partners.json: signed, as new as the index, and with no partner, so it drops the one it kept.
+            var legacyBytes = File.ReadAllBytes(Path.Combine(outDir, "partners.json"));
+            var legacy = V2pnPartnerTrust.ReadIndex(legacyBytes, File.ReadAllText(Path.Combine(outDir, "partners.json.sig")).Trim(), [key], out error);
+            await error.Should().BeEqualTo(string.Empty);
+            await legacy!.Partners.Count.Should().BeEqualTo(0);
+            await JsonNode.Parse(legacyBytes)!["published"]!.GetValue<string>().Should().BeEqualTo("2026-11-16T09:30:00Z");
+
+            await File.Exists(Path.Combine(outDir, "partner-gone.zip")).Should().BeFalse();
+            await File.Exists(Path.Combine(outDir, "notes.txt")).Should().BeTrue();
         }
         finally
         {

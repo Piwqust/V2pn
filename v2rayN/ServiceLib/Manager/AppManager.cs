@@ -136,6 +136,7 @@ public sealed class AppManager
             await ConfigHandler.SaveConfig(_config);
             await ProfileExManager.Instance.SaveTo();
             await StatisticsManager.Instance.SaveTo();
+            await ServerUsageManager.Instance.SaveAsync();
             await CoreManager.Instance.CoreStop();
             StatisticsManager.Instance.Close();
 

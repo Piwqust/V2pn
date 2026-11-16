@@ -395,6 +395,11 @@ public partial class StatusBarViewModel : MyReactiveObject
         {
             ProfileExManager.Instance.SetTestDelay(item.IndexId, result.Time);
         }
+        else if (CoreManager.Instance.IsCoreAlive)
+        {
+            // V2pn: a failed check counts against the server only when the core was running.
+            ServerUsageManager.Instance.RecordTest(item.IndexId, -1);
+        }
 
         NoticeManager.Instance.SendMessageEx(msg);
         await TestServerAvailabilitySub(msg);

@@ -5,9 +5,24 @@ namespace v2rayN.Desktop.ViewModels;
 
 public enum SidebarTab
 {
-    Favorites,
+    Home,
     Countries,
     Subscriptions,
+}
+
+/// <summary>List order; stored in UiItem.V2pnSort (countries) and V2pnServerSort (server lists).</summary>
+public enum SideSort
+{
+    Name,
+    Ping,
+    Usage,
+}
+
+/// <summary>What a header's order button sorts: the country list, or a flat list of servers.</summary>
+public enum SideSortTarget
+{
+    Countries,
+    Servers,
 }
 
 public enum SideActionKind
@@ -19,6 +34,12 @@ public enum SideActionKind
     UpdateSub,
     ClearSearch,
     BrowseCountries,
+    ShowAllFavorites,
+    ShowFewerFavorites,
+    OpenStats,
+    EnableStats,
+    ClearStats,
+    DisableStats,
 }
 
 public abstract class SideRow : ReactiveObject;
@@ -44,11 +65,37 @@ public sealed partial class BusyState : ReactiveObject
     public partial bool IsBusy { get; set; }
 }
 
+/// <summary>A header's order button: what it sorts and the order now.</summary>
+public sealed class SortState(SideSortTarget target, SideSort mode)
+{
+    public SideSortTarget Target { get; } = target;
+    public SideSort Mode { get; } = mode;
+    public string Label => Mode switch
+    {
+        SideSort.Ping => L.SortPing,
+        SideSort.Usage => L.SortUsage,
+        _ => L.SortName,
+    };
+    public string Tip => $"{L.SortBy}: {Label}";
+}
+
 public sealed class SideHeaderRow(string title, PingState? ping = null, BusyState? subsUpdate = null) : SideRow
 {
     public string Title { get; } = title;
     public PingState? Ping { get; } = ping;
     public bool ShowPing => Ping != null;
+
+    /// <summary>The servers this header's ping button tests; null tests what the list shows.</summary>
+    public IReadOnlyList<ProfileItemModel>? PingScope { get; init; }
+
+    /// <summary>The order button; null on headers of lists that have no choice.</summary>
+    public SortState? Sort { get; init; }
+    public bool ShowSort => Sort != null;
+
+    /// <summary>A link on the right ("All statistics"), opening another view.</summary>
+    public string? Link { get; init; }
+    public SideActionKind LinkKind { get; init; }
+    public bool ShowLink => Link != null;
 
     /// <summary>Set on the subscriptions header: it carries "update all" and "add" instead of rows below the list.</summary>
     public BusyState? SubsUpdate { get; } = subsUpdate;
@@ -234,10 +281,56 @@ public sealed class SideActionRow(SideActionKind kind, string title, string subt
     public bool IsFastest => Kind == SideActionKind.Fastest;
     public override string ToString() => Title;
     public bool IsBack => Kind == SideActionKind.Back;
+
+    /// <summary>Back out of a subscription, which carries its update button; the statistics' back row does not.</summary>
+    public bool IsBackToSub => IsBack && TargetId != null;
     public bool IsAdd => Kind == SideActionKind.AddSubscription;
     public bool IsRefresh => Kind is SideActionKind.UpdateAll or SideActionKind.UpdateSub;
     public bool IsClearSearch => Kind == SideActionKind.ClearSearch;
     public bool IsBrowse => Kind == SideActionKind.BrowseCountries;
+    public bool IsMore => Kind is SideActionKind.ShowAllFavorites or SideActionKind.ShowFewerFavorites or SideActionKind.OpenStats;
+    public bool IsStats => Kind is SideActionKind.EnableStats or SideActionKind.DisableStats;
+    public bool IsClearStats => Kind == SideActionKind.ClearStats;
+}
+
+/// <summary>
+/// One line of the statistics: a server (connects on click) or a country (opens it), with its number on
+/// the right and a bar for its share of the leader's.
+/// </summary>
+public sealed class SideStatRow : SideRow
+{
+    public SideStatRow(ProfileItemModel? model, string? code, string title, string subtitle, string value, double fraction)
+    {
+        Model = model;
+        Code = code;
+        Flag = V2pnConverters.Flag(code);
+        Title = title;
+        Subtitle = subtitle;
+        Value = value;
+        Fraction = fraction;
+    }
+
+    public ProfileItemModel? Model { get; }
+    public string? Code { get; }
+    public Bitmap? Flag { get; }
+    public bool HasFlag => Flag != null;
+    public string Title { get; }
+    public string Subtitle { get; }
+    public string Value { get; }
+    public double Fraction { get; }
+    public bool IsActive => Model?.IsActive == true;
+    public override string ToString() => $"{Title}, {Value}";
+}
+
+public sealed record ChartBar(double Height, string Tip, bool IsToday);
+
+/// <summary>Connected time per day as small bars, with the total above.</summary>
+public sealed class SideChartRow(string title, IReadOnlyList<ChartBar> bars) : SideRow
+{
+    public const double MaxBarHeight = 44;
+    public string Title { get; } = title;
+    public IReadOnlyList<ChartBar> Bars { get; } = bars;
+    public override string ToString() => Title;
 }
 
 /// <summary>
@@ -287,6 +380,47 @@ public sealed partial class SidebarViewModel : ReactiveObject
     [Reactive]
     public partial SubItemModel? OpenedSub { get; set; }
 
+    /// <summary>The statistics view, opened from the home tab.</summary>
+    [Reactive]
+    public partial bool StatsOpen { get; set; }
+
+    // Home shows the first few favorites; "show all" opens the rest until the user folds them again.
+    private const int FavoritesShown = 5;
+    private bool _favoritesExpanded;
+    private DateTime _statsRebuilt;
+
+    private static UIItem Ui => AppManager.Instance.Config.UiItem;
+
+    public static bool StatsEnabled => Ui.V2pnStats;
+
+    public static SideSort CountrySort => Ui.V2pnSort is int v && Enum.IsDefined((SideSort)v) ? (SideSort)v : SideSort.Name;
+
+    // By use needs statistics: with them off, the list (and its button) says by ping instead.
+    public static SideSort ServerSort => Ui.V2pnServerSort is int v && Enum.IsDefined((SideSort)v) && ((SideSort)v != SideSort.Usage || StatsEnabled) ? (SideSort)v : SideSort.Ping;
+
+    public void SetSort(SideSortTarget target, SideSort mode)
+    {
+        if (target == SideSortTarget.Countries)
+        {
+            Ui.V2pnSort = (int)mode;
+        }
+        else
+        {
+            Ui.V2pnServerSort = (int)mode;
+        }
+        Rebuild();
+    }
+
+    public void SetStatsEnabled(bool on)
+    {
+        Ui.V2pnStats = on;
+        if (!on)
+        {
+            StatsOpen = false;
+        }
+        Rebuild();
+    }
+
     public SidebarViewModel(ProfilesViewModel profiles)
     {
         _profiles = profiles;
@@ -309,8 +443,18 @@ public sealed partial class SidebarViewModel : ReactiveObject
                 Ping.Progress = t.testing ? string.Format(L.FindProgress, t.done, t.total) : string.Empty;
             });
 
-        this.WhenAnyValue(x => x.Tab, x => x.Search, x => x.OpenedSub)
+        this.WhenAnyValue(x => x.Tab, x => x.Search, x => x.OpenedSub, x => x.StatsOpen)
             .Subscribe(_ => ApplyNavigation());
+
+        // The connected time grows every few seconds; the open statistics follow it, at most once a minute.
+        ServerUsageManager.Instance.Changed += () => Dispatcher.UIThread.Post(() =>
+        {
+            if (StatsOpen && Tab == SidebarTab.Home && Search.IsNullOrEmpty() && DateTime.Now - _statsRebuilt > TimeSpan.FromMinutes(1))
+            {
+                QueueRebuild();
+            }
+        });
+        ServerUsageManager.Instance.LoadAsync().ContinueWith(_ => Dispatcher.UIThread.Post(QueueRebuild), TaskScheduler.Default);
 
         SubInfoManager.Instance.Changed += id => Dispatcher.UIThread.Post(async () => await OnSubInfoChangedAsync(id));
         SubInfoManager.Instance.LoadAsync().ContinueWith(_ => Dispatcher.UIThread.Post(QueueRebuild), TaskScheduler.Default);
@@ -336,15 +480,52 @@ public sealed partial class SidebarViewModel : ReactiveObject
         QueueRebuild();
     }
 
-    /// <summary>Pings what the list shows now, or stops a run in progress.</summary>
-    public async Task TogglePingAsync()
+    /// <summary>Pings <paramref name="scope"/> (what the list shows when null), or stops a run in progress.</summary>
+    public async Task TogglePingAsync(IReadOnlyList<ProfileItemModel>? scope = null)
     {
         if (Ping.IsTesting)
         {
             _profiles.ServerSpeedtestStop();
             return;
         }
-        await _profiles.PingProfilesAsync(_pingScope);
+        await _profiles.PingProfilesAsync(scope ?? _pingScope);
+    }
+
+    /// <summary>
+    /// The quickest server by the last results. With statistics on, a server that failed most of its
+    /// tests is passed over even when its last answer was quick: it is likely to drop again.
+    /// </summary>
+    public static ProfileItemModel? PickFastest(IEnumerable<ProfileItemModel> items)
+    {
+        var answered = items.Where(m => m.Delay > 0).ToList();
+        return answered.Where(m => !Unreliable(m)).MinBy(m => m.Delay) ?? answered.MinBy(m => m.Delay);
+    }
+
+    private static bool Unreliable(ProfileItemModel m) =>
+        StatsEnabled && ServerUsageManager.Instance.Get(m.IndexId) is { Tests: >= 4 } u && u.AnswerRate < 0.5;
+
+    /// <summary>The last ping run is older than this: "fastest" tests its candidates again before connecting.</summary>
+    public static readonly TimeSpan FastestFresh = TimeSpan.FromMinutes(30);
+
+    public static DateTime? LastPing => Ui.V2pnLastPing > 0 ? DateTimeOffset.FromUnixTimeSeconds(Ui.V2pnLastPing).LocalDateTime : null;
+
+    public static bool PingIsStale => LastPing is not { } last || DateTime.Now - last > FastestFresh;
+
+    /// <summary>
+    /// What a quick recheck before "fastest" tests: the servers that were quickest last time, plus
+    /// favorites and recent ones. A couple of dozen answer in seconds; a big subscription takes a minute.
+    /// </summary>
+    public List<ProfileItemModel> FastestCandidates()
+    {
+        var all = _profiles.ProfileItems.ToList();
+        var recent = (Ui.V2pnRecent ?? []).ToHashSet();
+        return ServerNames.DistinctConnections(all.Where(m => m.Delay > 0).OrderBy(m => m.Delay).Take(12)
+                .Concat(_profiles.FavoriteItems)
+                .Concat(all.Where(m => recent.Contains(m.IndexId))))
+            .GroupBy(m => m.IndexId)
+            .Select(g => g.First())
+            .Take(24)
+            .ToList();
     }
 
     /// <summary>Starts a ping of every server in the list; does nothing while a run is already going.</summary>
@@ -401,6 +582,12 @@ public sealed partial class SidebarViewModel : ReactiveObject
             // Countries, favorites and search all work from the full server list.
             _profiles.SelectNav(null, false);
         }
+        if (Tab != SidebarTab.Home && StatsOpen)
+        {
+            // Setting it runs this method again.
+            StatsOpen = false;
+            return;
+        }
         Rebuild();
     }
 
@@ -418,8 +605,11 @@ public sealed partial class SidebarViewModel : ReactiveObject
                     || (WorldMap.Instance.Get(CountryResolver.Resolve(m.Remarks))?.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
                 .ToList();
             _pingScope = found;
-            rows.Add(new SideHeaderRow(Counted(L.SearchResults, found.Count), found.Count > 0 ? Ping : null));
-            rows.AddRange(ByPing(found).Take(400).Select(m => new SideServerRow(m, true, false)));
+            rows.Add(new SideHeaderRow(Counted(L.SearchResults, found.Count), found.Count > 0 ? Ping : null)
+            {
+                Sort = found.Count > 1 ? new SortState(SideSortTarget.Servers, ServerSort) : null,
+            });
+            rows.AddRange(SortServers(found, ServerSort).Take(400).Select(m => new SideServerRow(m, true, false)));
             if (found.Count == 0)
             {
                 rows.Add(new SideHintRow(L.NothingFoundServers));
@@ -430,8 +620,13 @@ public sealed partial class SidebarViewModel : ReactiveObject
         {
             switch (Tab)
             {
-                case SidebarTab.Favorites:
-                    BuildFavorites(rows, all);
+                case SidebarTab.Home when StatsOpen:
+                    BuildStats(rows, all);
+                    _statsRebuilt = DateTime.Now;
+                    break;
+
+                case SidebarTab.Home:
+                    BuildHome(rows, all);
                     break;
 
                 case SidebarTab.Countries:
@@ -451,26 +646,56 @@ public sealed partial class SidebarViewModel : ReactiveObject
     /// <summary>Raised after the rows were replaced; the list puts keyboard focus back on the same row.</summary>
     public event Action? Rebuilt;
 
-    private void BuildFavorites(List<SideRow> rows, List<ProfileItemModel> all)
+    private void BuildHome(List<SideRow> rows, List<ProfileItemModel> all)
     {
         // Nothing added yet: "fastest server" and favorites hints would point at servers that don't exist.
         if (_profiles.AllServersCount == 0 && _profiles.FavoriteItems.Count == 0)
         {
             _pingScope = [];
-            rows.Add(new SideHeaderRow(L.TabFavorites));
+            rows.Add(new SideHeaderRow(L.TabHome));
             rows.Add(new SideHintRow(L.NoServersYet));
             rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, L.SubsEmptyAction));
             return;
         }
-        var fastest = all.Concat(_profiles.FavoriteItems).Where(m => m.Delay > 0).MinBy(m => m.Delay);
-        rows.Add(fastest != null
-            ? new SideActionRow(SideActionKind.Fastest, L.Fastest, $"{CountryResolver.ServerName(fastest)} · {L.Ms(fastest.Delay)}", fastest.IndexId, Ping)
-            : new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone, ping: Ping));
+        var everything = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).Select(g => g.First()).ToList();
+        _pingScope = everything;
+        var fastest = PickFastest(everything);
+        if (fastest == null)
+        {
+            rows.Add(new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone, ping: Ping));
+        }
+        else
+        {
+            // An old result is still shown, with a word that the click tests again first.
+            var age = LastPing is { } last ? Fmt.Ago(last) : null;
+            var subtitle = PingIsStale
+                ? $"{CountryResolver.ServerName(fastest)} · {string.Format(L.FastestRecheck, age ?? L.Ms(fastest.Delay))}"
+                : string.Format(L.FastestAge, CountryResolver.ServerName(fastest), L.Ms(fastest.Delay), age ?? L.JustNow);
+            rows.Add(new SideActionRow(SideActionKind.Fastest, L.Fastest, subtitle, fastest.IndexId, Ping));
+        }
+
+        // Favorites: the first few; the rest one click away, so the other sections stay in view.
+        var favorites = _profiles.FavoriteItems.ToList();
+        rows.Add(new SideHeaderRow(Counted(L.TabFavorites, favorites.Count), favorites.Count > 0 ? Ping : null) { PingScope = favorites });
+        var shown = _favoritesExpanded ? favorites : favorites.Take(FavoritesShown).ToList();
+        rows.AddRange(shown.Select(m => new SideServerRow(m, true, false)));
+        if (favorites.Count > FavoritesShown)
+        {
+            rows.Add(_favoritesExpanded
+                ? new SideActionRow(SideActionKind.ShowFewerFavorites, L.ShowFewer, string.Empty)
+                : new SideActionRow(SideActionKind.ShowAllFavorites, L.ShowAllFavorites, string.Format(L.MoreCount, favorites.Count - FavoritesShown)));
+        }
+        if (favorites.Count == 0)
+        {
+            rows.Add(new SideHintRow(L.FavoritesEmpty));
+            // The home tab has no servers to star; Countries does.
+            rows.Add(new SideActionRow(SideActionKind.BrowseCountries, L.BrowseCountries, string.Empty));
+        }
 
         // Recent connections, Proton-style: the last few servers, newest first, unless they are favorites already.
-        var byId = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).ToDictionary(g => g.Key, g => g.First());
-        var favoriteIds = _profiles.FavoriteItems.Select(m => m.IndexId).ToHashSet();
-        var recent = (AppManager.Instance.Config.UiItem.V2pnRecent ?? [])
+        var byId = everything.ToDictionary(m => m.IndexId);
+        var favoriteIds = favorites.Select(m => m.IndexId).ToHashSet();
+        var recent = (Ui.V2pnRecent ?? [])
             .Where(id => !favoriteIds.Contains(id) && byId.ContainsKey(id))
             .Take(3)
             .Select(id => byId[id])
@@ -481,16 +706,119 @@ public sealed partial class SidebarViewModel : ReactiveObject
             rows.AddRange(recent.Select(m => new SideServerRow(m, true, false)));
         }
 
-        var favorites = _profiles.FavoriteItems.ToList();
-        _pingScope = favorites;
-        rows.Add(new SideHeaderRow(Counted(L.TabFavorites, favorites.Count), favorites.Count > 0 ? Ping : null));
-        rows.AddRange(favorites.Select(m => new SideServerRow(m, true, false)));
-        if (favorites.Count == 0)
+        // The quickest five right now: what to pick from when the very fastest is not the one wanted.
+        var quick = ServerNames.DistinctConnections(everything).Where(m => m.Delay > 0).OrderBy(m => m.Delay).Take(5).ToList();
+        rows.Add(new SideHeaderRow(L.FastestList, Ping) { PingScope = everything });
+        if (quick.Count > 0)
         {
-            rows.Add(new SideHintRow(L.FavoritesEmpty));
-            // The Favorites tab has no servers to star; Countries does.
-            rows.Add(new SideActionRow(SideActionKind.BrowseCountries, L.BrowseCountries, string.Empty));
+            rows.AddRange(quick.Select(m => new SideServerRow(m, true, false)));
         }
+        else
+        {
+            rows.Add(new SideHintRow(L.FastestListEmpty));
+        }
+
+        BuildStatsSummary(rows, byId);
+    }
+
+    private static void BuildStatsSummary(List<SideRow> rows, Dictionary<string, ProfileItemModel> byId)
+    {
+        if (!StatsEnabled)
+        {
+            rows.Add(new SideHeaderRow(L.Stats));
+            rows.Add(new SideHintRow(L.StatsOffHint));
+            rows.Add(new SideActionRow(SideActionKind.EnableStats, L.StatsEnable, L.StatsEnableSub));
+            return;
+        }
+        rows.Add(new SideHeaderRow(L.Stats) { Link = L.StatsMore, LinkKind = SideActionKind.OpenStats });
+        var used = ServerUsageBook.MostUsed(ServerUsageManager.Instance.All().Where(t => byId.ContainsKey(t.IndexId)), 3);
+        if (used.Count == 0)
+        {
+            rows.Add(new SideHintRow(L.StatsEmpty));
+            return;
+        }
+        rows.AddRange(UsedRows(used, byId));
+    }
+
+    private void BuildStats(List<SideRow> rows, List<ProfileItemModel> all)
+    {
+        _pingScope = [];
+        var byId = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).ToDictionary(g => g.Key, g => g.First());
+        var usage = ServerUsageManager.Instance.All().Where(t => byId.ContainsKey(t.IndexId)).ToList();
+        var days = ServerUsageManager.Instance.LastDays(14);
+        var total = days.Sum(d => d.Seconds);
+        rows.Add(new SideActionRow(SideActionKind.Back, L.Stats, string.Format(L.StatsDays, L.Spent(total))));
+
+        var max = Math.Max(1, days.Max(d => d.Seconds));
+        var today = DateTime.Today;
+        rows.Add(new SideChartRow(L.StatsDaysTip, days.Select(d => new ChartBar(
+            d.Seconds <= 0 ? 2 : Math.Max(4, SideChartRow.MaxBarHeight * d.Seconds / max),
+            $"{d.Day.ToString("d MMM", CultureInfo.CurrentUICulture)}: {L.Spent(d.Seconds)}",
+            d.Day == today)).ToList()));
+
+        var used = ServerUsageBook.MostUsed(usage, 10);
+        rows.Add(new SideHeaderRow(L.StatsMostUsed));
+        if (used.Count == 0)
+        {
+            rows.Add(new SideHintRow(L.StatsEmpty));
+        }
+        rows.AddRange(UsedRows(used, byId));
+
+        var reliable = ServerUsageBook.MostReliable(usage, 10);
+        rows.Add(new SideHeaderRow(L.StatsMostReliable));
+        if (reliable.Count == 0)
+        {
+            rows.Add(new SideHintRow(L.StatsReliableEmpty));
+        }
+        foreach (var t in reliable)
+        {
+            var m = byId[t.IndexId];
+            rows.Add(new SideStatRow(m, CountryResolver.Resolve(m.Remarks), StatName(m),
+                string.Format(L.StatsAnswered, t.Answers, t.Tests, L.Ms(t.AverageDelay)),
+                L.Percent(t.AnswerRate ?? 0), t.AnswerRate ?? 0));
+        }
+
+        // Countries by time: where the user actually goes, whichever server took them there.
+        var countries = usage.Where(t => t.ConnectedSeconds > 0)
+            .GroupBy(t => CountryResolver.Resolve(byId[t.IndexId].Remarks) ?? string.Empty)
+            .Where(g => g.Key.IsNotEmpty())
+            .Select(g => (Code: g.Key, Seconds: g.Sum(t => t.ConnectedSeconds), Sessions: g.Sum(t => t.Sessions)))
+            .OrderByDescending(c => c.Seconds)
+            .Take(5)
+            .ToList();
+        if (countries.Count > 0)
+        {
+            rows.Add(new SideHeaderRow(L.StatsCountries));
+            var top = Math.Max(1, countries[0].Seconds);
+            rows.AddRange(countries.Select(c => new SideStatRow(null, c.Code, CountryName(c.Code), L.Connections(c.Sessions),
+                L.Spent(c.Seconds), (double)c.Seconds / top)));
+        }
+
+        rows.Add(new SideHeaderRow(string.Empty));
+        rows.Add(new SideActionRow(SideActionKind.DisableStats, L.StatsDisable, L.StatsDisableSub));
+        rows.Add(new SideActionRow(SideActionKind.ClearStats, L.StatsClear, string.Empty));
+    }
+
+    private static IEnumerable<SideStatRow> UsedRows(List<ServerUsageItem> used, Dictionary<string, ProfileItemModel> byId)
+    {
+        var top = Math.Max(1, used.FirstOrDefault()?.ConnectedSeconds ?? 1);
+        foreach (var t in used)
+        {
+            var m = byId[t.IndexId];
+            var last = t.LastConnected > 0 ? Fmt.Ago(DateTimeOffset.FromUnixTimeSeconds(t.LastConnected).LocalDateTime) : null;
+            yield return new SideStatRow(m, CountryResolver.Resolve(m.Remarks), StatName(m),
+                string.Join(" · ", new[] { L.Connections(t.Sessions), last }.Where(x => x.IsNotEmpty())),
+                L.Spent(t.ConnectedSeconds), (double)t.ConnectedSeconds / top);
+        }
+    }
+
+    // The name as the server rows show it: without the flag emoji the row draws as a picture already.
+    private static string StatName(ProfileItemModel m) => ServerNames.TrimLeadingSymbols(CountryResolver.ServerName(m));
+
+    public void ToggleFavoritesExpanded()
+    {
+        _favoritesExpanded = !_favoritesExpanded;
+        Rebuild();
     }
 
     /// <summary>
@@ -515,11 +843,10 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private void BuildCountries(List<SideRow> rows, List<ProfileItemModel> all)
     {
         var (series, rest) = ServerNames.SplitSeries(all);
-        var groups = ServerNames.DistinctConnections(rest)
+        var sort = CountrySort == SideSort.Usage && !StatsEnabled ? SideSort.Name : CountrySort;
+        var groups = SortCountries(ServerNames.DistinctConnections(rest)
             .GroupBy(m => CountryResolver.Resolve(m.Remarks) ?? string.Empty)
-            .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: ByPing(g).ToList()))
-            .OrderBy(g => g.Code.IsNullOrEmpty() ? 1 : 0)
-            .ThenBy(g => g.Name, StringComparer.CurrentCulture)
+            .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: SortServers(g, sort == SideSort.Usage ? SideSort.Usage : SideSort.Ping).ToList())), sort)
             .ToList();
 
         _pingScope = all;
@@ -529,7 +856,10 @@ public sealed partial class SidebarViewModel : ReactiveObject
             rows.Add(new SideHeaderRow(Counted(L.SeriesHeader, series.Count), Ping));
             AddSeries(rows, series);
         }
-        rows.Add(new SideHeaderRow(Counted(L.TabCountries, groups.Count(g => g.Code.IsNotEmpty())), all.Count > 0 && series.Count == 0 ? Ping : null));
+        rows.Add(new SideHeaderRow(Counted(L.TabCountries, groups.Count(g => g.Code.IsNotEmpty())), all.Count > 0 && series.Count == 0 ? Ping : null)
+        {
+            Sort = groups.Count > 1 ? new SortState(SideSortTarget.Countries, sort) : null,
+        });
         foreach (var (code, name, items) in groups)
         {
             var expanded = _expanded.Contains(code);
@@ -548,10 +878,38 @@ public sealed partial class SidebarViewModel : ReactiveObject
     // One count format for every list header; no "(0)" above an empty-state hint.
     private static string Counted(string title, int n) => n > 0 ? $"{title} · {n}" : title;
 
-    // Picking a server is mostly picking the fastest one: tested servers first, quickest on top,
-    // the rest keep their own order.
+    // Picking a server is mostly picking the fastest one: answered servers first, quickest on top, then
+    // the untested ones, and the ones that did not answer last; each group keeps its own order.
     private static IEnumerable<ProfileItemModel> ByPing(IEnumerable<ProfileItemModel> items) =>
-        items.OrderBy(m => m.Delay > 0 ? m.Delay : int.MaxValue);
+        items.OrderBy(m => m.Delay > 0 ? 0 : m.Delay == 0 ? 1 : 2).ThenBy(m => m.Delay > 0 ? m.Delay : 0);
+
+    private static long Seconds(ProfileItemModel m) => ServerUsageManager.Instance.Get(m.IndexId)?.ConnectedSeconds ?? 0;
+
+    /// <summary>A flat list of servers in the chosen order; by use needs statistics and falls back to ping.</summary>
+    private static IEnumerable<ProfileItemModel> SortServers(IEnumerable<ProfileItemModel> items, SideSort sort) => sort switch
+    {
+        SideSort.Name => items.OrderBy(m => CountryResolver.ServerName(m), NaturalComparer.Instance),
+        SideSort.Usage when StatsEnabled => ByPing(items).OrderByDescending(Seconds),
+        _ => ByPing(items),
+    };
+
+    private static IEnumerable<(string Code, string Name, List<ProfileItemModel> Items)> SortCountries(
+        IEnumerable<(string Code, string Name, List<ProfileItemModel> Items)> groups, SideSort sort)
+    {
+        // "Unknown location" always last: it is not a place to pick.
+        var ordered = groups.OrderBy(g => g.Code.IsNullOrEmpty() ? 1 : 0);
+        return sort switch
+        {
+            SideSort.Ping => ordered
+                .ThenBy(g => g.Items.Any(m => m.Delay > 0) ? 0 : g.Items.Any(m => m.Delay == 0) ? 1 : 2)
+                .ThenBy(g => g.Items.Where(m => m.Delay > 0).Select(m => m.Delay).DefaultIfEmpty(0).Min())
+                .ThenBy(g => g.Name, StringComparer.CurrentCulture),
+            SideSort.Usage => ordered
+                .ThenByDescending(g => g.Items.Sum(Seconds))
+                .ThenBy(g => g.Name, StringComparer.CurrentCulture),
+            _ => ordered.ThenBy(g => g.Name, StringComparer.CurrentCulture),
+        };
+    }
 
     private static string CountryName(string code) => code switch
     {
@@ -569,11 +927,14 @@ public sealed partial class SidebarViewModel : ReactiveObject
             rows.Add(new SideActionRow(SideActionKind.Back, SideSubRow.NameOf(OpenedSub.Item), $"{L.ServerCount(all.Count)} · {updated}", OpenedSub.Id));
             if (all.Count > 0)
             {
-                rows.Add(new SideHeaderRow(L.TabServers, Ping));
+                rows.Add(new SideHeaderRow(L.TabServers, Ping)
+                {
+                    Sort = all.Count > 1 ? new SortState(SideSortTarget.Servers, ServerSort) : null,
+                });
             }
             var (series, rest) = ServerNames.SplitSeries(all);
             AddSeries(rows, series);
-            rows.AddRange(ByPing(rest).Select(m => new SideServerRow(m, false, false)));
+            rows.AddRange(SortServers(rest, ServerSort).Select(m => new SideServerRow(m, false, false)));
             if (all.Count == 0)
             {
                 rows.Add(new SideHintRow(L.SubEmpty));
@@ -593,5 +954,52 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
         rows.Add(new SideHeaderRow(Counted(L.TabSubscriptions, subs.Count), subsUpdate: SubsUpdate));
         rows.AddRange(subs.Select(sub => new SideSubRow(sub, SubBusy(sub.Id), _failedSubs.Contains(sub.Id))));
+    }
+}
+
+/// <summary>Compares names with their numbers as numbers: "Server 2" before "Server 10".</summary>
+public sealed class NaturalComparer : IComparer<string?>
+{
+    public static readonly NaturalComparer Instance = new();
+
+    public int Compare(string? x, string? y)
+    {
+        if (x == null || y == null)
+        {
+            return x == null ? (y == null ? 0 : -1) : 1;
+        }
+        int i = 0, j = 0;
+        while (i < x.Length && j < y.Length)
+        {
+            if (char.IsDigit(x[i]) && char.IsDigit(y[j]))
+            {
+                var si = i;
+                var sj = j;
+                while (i < x.Length && char.IsDigit(x[i]))
+                {
+                    i++;
+                }
+                while (j < y.Length && char.IsDigit(y[j]))
+                {
+                    j++;
+                }
+                var a = x[si..i].TrimStart('0');
+                var b = y[sj..j].TrimStart('0');
+                var c = a.Length != b.Length ? a.Length.CompareTo(b.Length) : string.CompareOrdinal(a, b);
+                if (c != 0)
+                {
+                    return c;
+                }
+                continue;
+            }
+            var d = string.Compare(x[i].ToString(), y[j].ToString(), StringComparison.CurrentCultureIgnoreCase);
+            if (d != 0)
+            {
+                return d;
+            }
+            i++;
+            j++;
+        }
+        return (x.Length - i).CompareTo(y.Length - j);
     }
 }

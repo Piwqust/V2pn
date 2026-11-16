@@ -56,10 +56,14 @@ The main window follows its width (`MainWindow.Adaptive.cs`), from 360 px up:
 
 ## The server list
 
-- **Favorites:**
-  - "Fastest server" by the last test;
+- **Home:**
+  - "Fastest server" by the last test. A result older than 30 minutes (`UiItem.V2pnLastPing`) is retested before connecting: the 12 quickest, the favorites and the recent servers, at most 24; if none answers, all servers. With statistics on, a server with four or more tests and under half answered is skipped;
+  - **Favorites:** the first five, "Show all favorites" for the rest;
   - **Recent:** the last three servers you connected through, except those already in favorites;
-  - your favorites.
+  - **Fastest now:** the five quickest distinct connections;
+  - **Statistics:** the three servers with the most time, or an offer to turn statistics on.
+- **Statistics** (`UiItem.V2pnStats`, off by default; tables `ServerUsageItem` and `UsageDayItem` in guiNDB.db, `ServerUsageManager`). Time counts in 15-second ticks while the core runs, the state is not "Unprotected" and the last check did not fail; a gap over two minutes (sleep) is not counted and starts a new session. Every ping result and every connection check counts as a test; a check that failed because the core was down does not. Saved every two minutes and on exit. The "All statistics" view: 14 days of connected time, the most used servers, the ones that answer most often (three tests at least), countries by time; clear and turn off at the bottom.
+- **List order:** the header of Countries sorts countries by name (default), ping or use (`V2pnSort`); a subscription's servers and search results by ping (default), name or use (`V2pnServerSort`). By ping means answered servers by delay, then untested, then those that did not answer. By use needs statistics.
 - **Countries:** groups with the best ping, expanding to their servers.
 - **Subscriptions.** The subscription menu (⋮ or a right click): update, test ping, delete servers that do not answer (after a confirmation), edit, delete. The row shows the plan's traffic and end date when the provider sends `subscription-userinfo`.
 

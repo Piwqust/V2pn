@@ -1249,6 +1249,19 @@
     <Style Selector="views|UsageBar.bad">
         <Setter Property="Fill" Value="{DynamicResource V2PingBad}" />
     </Style>
+    <!--  Statistics: a server's share of the leader's time or answers, and the bars of connected time per day.  -->
+    <Style Selector="views|UsageBar.stat">
+        <Setter Property="Height" Value="3" />
+        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="Border.chartbar">
+        <Setter Property="Background" Value="{DynamicResource V2Folder}" />
+        <Setter Property="Opacity" Value="0.55" />
+    </Style>
+    <Style Selector="Border.chartbar.today">
+        <Setter Property="Background" Value="{DynamicResource V2Safe}" />
+        <Setter Property="Opacity" Value="1" />
+    </Style>
     <Style Selector="TextBlock.usagevalue">
         <Setter Property="FontSize" Value="13" />
         <Setter Property="FontFeatures" Value="+tnum" />

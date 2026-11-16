@@ -162,6 +162,7 @@ public class ProfileExManager
 
         profileEx.Delay = delay;
         IndexIdEnqueue(indexId);
+        ServerUsageManager.Instance.RecordTest(indexId, delay);
     }
 
     public void SetTestSpeed(string indexId, decimal speed)

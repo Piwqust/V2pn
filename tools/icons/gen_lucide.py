@@ -114,6 +114,10 @@ MAP = {
     "SemiIconMoon": "moon",
     "SemiIconSun": "sun",
     "SemiIconPower": "power",
+    "SemiIconHome": "house",
+    "SemiIconSort": "arrow-down-wide-narrow",
+    "SemiIconHistogram": "chart-column",
+    "SemiIconTrophy": "trophy",
 }
 
 # Drawn filled as well as outlined: a set favourite star.

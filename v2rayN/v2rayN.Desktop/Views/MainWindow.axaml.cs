@@ -14,6 +14,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private static Config _config;
     private readonly WindowNotificationManager? _manager;
     private readonly DispatcherTimer _pingTimer;
+    // Counts connected time for server statistics; runs while the window is hidden in the tray too.
+    private readonly DispatcherTimer _usageTimer;
+    private int _usageTicks;
     private CheckUpdateView? _checkUpdateView;
     private BackupAndRestoreView? _backupAndRestoreView;
     private bool _blCloseByUser = false;
@@ -50,6 +53,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             Margin = new Thickness(0, 0, 20, 196),
         };
         _pingTimer = new DispatcherTimer(TimeSpan.FromSeconds(1.5), DispatcherPriority.Background, (_, _) => RefreshActivePing());
+        _usageTimer = new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, (_, _) => TickUsage());
+        _usageTimer.Start();
         // Toasts sit just above the status card, or near the bottom when it is hidden (Appearance, welcome, pages).
         contentStatusBarView.SizeChanged += (_, _) => UpdateNoticeMargin();
         contentStatusBarView.GetObservable(IsVisibleProperty).Subscribe(_ => UpdateNoticeMargin());
@@ -584,6 +589,28 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             ESysProxyType.Unchanged => ProtectionState.LocalOnly,
             _ => ProtectionState.Unprotected,
         };
+    }
+
+    /// <summary>
+    /// Server statistics: the connection counts as up while the core runs, the state is not "Unprotected"
+    /// and the last check did not fail. Saved every couple of minutes so a crash loses little.
+    /// </summary>
+    private void TickUsage()
+    {
+        if (!ServerUsageManager.Enabled)
+        {
+            ServerUsageManager.Instance.Tick(null);
+            return;
+        }
+        var up = _activeIndexId.IsNotEmpty()
+                 && CurrentState() != ProtectionState.Unprotected
+                 && CoreManager.Instance.IsCoreAlive
+                 && ViewModel?.StatusBarViewModel.AvailabilityDelay is not -1;
+        ServerUsageManager.Instance.Tick(up ? _activeIndexId : null);
+        if (++_usageTicks % 8 == 0)
+        {
+            _ = ServerUsageManager.Instance.SaveAsync();
+        }
     }
 
     // Servers the user actually connected through, newest first, for the "Recent" section.
@@ -1528,7 +1555,61 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             case SideActionRow action:
                 await RunActionAsync(action);
                 return;
+
+            case SideStatRow { Model: { } model }:
+                await ConnectToAsync(model.IndexId);
+                return;
+
+            case SideStatRow { Code: { } code }:
+                MapView_LocationClicked(code);
+                return;
         }
+    }
+
+    private void SideStat_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
+
+    private void SideHeaderLink_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideHeaderRow { ShowLink: true } header })
+        {
+            RunRowAction(() => RunActionAsync(new SideActionRow(header.LinkKind, header.Link ?? string.Empty, string.Empty)));
+        }
+    }
+
+    private void SideSort_Click(object? sender, RoutedEventArgs e)
+    {
+        e.Handled = true;
+        if (sender is Control { DataContext: SideHeaderRow { Sort: { } sort } } button)
+        {
+            ShowSortMenu(button, sort);
+        }
+    }
+
+    private void ShowSortMenu(Control target, SortState sort)
+    {
+        if (_sidebar == null)
+        {
+            return;
+        }
+        var sidebar = _sidebar;
+        var flyout = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedRight };
+        foreach (var mode in Enum.GetValues<SideSort>())
+        {
+            var label = new SortState(sort.Target, mode).Label;
+            var usageOff = mode == SideSort.Usage && !SidebarViewModel.StatsEnabled;
+            var item = new MenuItem
+            {
+                Header = usageOff ? L.SortUsageOff : label,
+                ToggleType = MenuItemToggleType.Radio,
+                IsChecked = mode == sort.Mode,
+                IsEnabled = !usageOff,
+            };
+            Avalonia.Automation.AutomationProperties.SetName(item, mode == sort.Mode ? label + L.OptionSelected : label);
+            item.Click += (_, _) => sidebar.SetSort(sort.Target, mode);
+            flyout.Items.Add(item);
+        }
+        flyout.ShowAt(target);
     }
 
     // The row the keyboard was last on, as a key that survives a rebuild (rows are new objects then).
@@ -1538,6 +1619,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private static string? KeyOf(SideRow row) => row switch
     {
         SideServerRow s => "s:" + s.Model.IndexId,
+        SideStatRow t => "t:" + (t.Model?.IndexId ?? t.Code),
         SideCountryRow c => "c:" + c.Code,
         SideSubRow u => "u:" + u.Sub.Id,
         SideActionRow a => "a:" + a.Kind,
@@ -1581,7 +1663,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (header.ShowPing && _sidebar != null)
             {
                 e.Handled = true;
-                RunRowAction(_sidebar.TogglePingAsync);
+                var sidebar = _sidebar;
+                RunRowAction(() => sidebar.TogglePingAsync(header.PingScope));
+            }
+            else if (header.ShowLink)
+            {
+                e.Handled = true;
+                RunRowAction(() => RunActionAsync(new SideActionRow(header.LinkKind, header.Link ?? string.Empty, string.Empty)));
             }
             else if (header.ShowSubActions)
             {
@@ -1609,6 +1697,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             e.Handled = true;
             _sidebar.OpenedSub = null;
+        }
+        else if (e.Key == Key.Back && _sidebar?.StatsOpen == true)
+        {
+            e.Handled = true;
+            _sidebar.StatsOpen = false;
         }
     }
 
@@ -1693,12 +1786,50 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 await FindFastestAsync();
                 break;
 
+            case SideActionKind.Fastest when SidebarViewModel.PingIsStale:
+                await RecheckFastestAsync();
+                break;
+
             case SideActionKind.Fastest:
                 await ConnectToAsync(row.TargetId);
                 break;
 
+            case SideActionKind.Back when _sidebar.StatsOpen:
+                _sidebar.StatsOpen = false;
+                break;
+
             case SideActionKind.Back:
                 _sidebar.OpenedSub = null;
+                break;
+
+            case SideActionKind.ShowAllFavorites:
+            case SideActionKind.ShowFewerFavorites:
+                _sidebar.ToggleFavoritesExpanded();
+                SelectRow(r => r is SideActionRow { IsMore: true });
+                break;
+
+            case SideActionKind.OpenStats:
+                _sidebar.StatsOpen = true;
+                break;
+
+            case SideActionKind.EnableStats:
+                _sidebar.SetStatsEnabled(true);
+                TickUsage();
+                ShowToast(ToastKind.Success, L.StatsEnableSub);
+                break;
+
+            case SideActionKind.DisableStats:
+                ServerUsageManager.Instance.Tick(null);
+                await ServerUsageManager.Instance.SaveAsync();
+                _sidebar.SetStatsEnabled(false);
+                break;
+
+            case SideActionKind.ClearStats:
+                if (await UI.ShowYesNo(L.StatsClearConfirm, L.StatsClear, danger: true) == ButtonResult.Yes)
+                {
+                    await ServerUsageManager.Instance.ClearAsync();
+                    _sidebar.QueueRebuild();
+                }
                 break;
 
             case SideActionKind.AddSubscription:
@@ -1783,13 +1914,43 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return;
         }
-        var best = await FastestOfAsync(ids);
+        var ok = ids.ToHashSet();
+        var best = SidebarViewModel.PickFastest(profiles.ProfileItems.Where(m => ok.Contains(m.IndexId)))?.IndexId ?? await FastestOfAsync(ids);
         if (best == null)
         {
             ShowToast(ToastKind.Warning, L.NoneResponding);
             return;
         }
         await profiles.SetDefaultServer(best);
+    }
+
+    /// <summary>
+    /// "Fastest server" with an old result: the servers that were quickest, the favorites and the recent
+    /// ones are tested again (seconds, not the minute a whole big subscription takes), and the winner is
+    /// connected. When none of them answers, everything is tested.
+    /// </summary>
+    private async Task RecheckFastestAsync()
+    {
+        var profiles = ViewModel?.ProfilesViewModel;
+        if (profiles == null || _sidebar == null)
+        {
+            return;
+        }
+        var sidebar = _sidebar;
+        var candidates = sidebar.FastestCandidates();
+        if (candidates.Count == 0 || !await PingAndWaitAsync(() => profiles.PingProfilesAsync(candidates)))
+        {
+            await FindFastestAsync();
+            return;
+        }
+        var ids = candidates.Select(m => m.IndexId).ToHashSet();
+        var best = SidebarViewModel.PickFastest(profiles.ProfileItems.Where(m => ids.Contains(m.IndexId)));
+        if (best == null)
+        {
+            await FindFastestAsync();
+            return;
+        }
+        await ConnectToAsync(best.IndexId);
     }
 
     /// <summary>The country's bolt: the fastest tested server, or a ping of the country first when none is.</summary>
@@ -1894,7 +2055,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         e.Handled = true;
         if (_sidebar != null)
         {
-            await _sidebar.TogglePingAsync();
+            await _sidebar.TogglePingAsync((sender as Control)?.DataContext is SideHeaderRow header ? header.PingScope : null);
         }
     }
 
@@ -2460,6 +2621,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             {
                 e.Handled = true;
                 _sidebar.OpenedSub = null;
+            }
+            else if (_sidebar?.StatsOpen == true)
+            {
+                e.Handled = true;
+                _sidebar.StatsOpen = false;
             }
         }
         else if (e.Key == Key.F5)

@@ -112,6 +112,17 @@ public class UIItem
 
     public List<string>? V2pnRecent { get; set; }
 
+    // Server statistics in the sidebar: off until the user turns them on.
+    public bool V2pnStats { get; set; }
+
+    // Sidebar list order (SideSort in the desktop app): of countries, null by name; of servers, null by ping.
+    public int? V2pnSort { get; set; }
+
+    public int? V2pnServerSort { get; set; }
+
+    // Unix seconds of the last finished ping run, so "fastest" can tell an old result from a fresh one.
+    public long V2pnLastPing { get; set; }
+
     // Null means on: new versions download in the background and install at the next start.
     public bool? V2pnAutoUpdate { get; set; }
 

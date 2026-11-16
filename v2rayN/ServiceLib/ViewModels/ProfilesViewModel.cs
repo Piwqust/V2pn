@@ -331,7 +331,9 @@ public partial class ProfilesViewModel : MyReactiveObject
                 // The sidebar shows progress and completion inline, so no toast for the routine ending.
                 IsPingTesting = false;
                 _pingPending.Clear();
+                _config.UiItem.V2pnLastPing = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
                 PingTestFinished.Publish(RxVoid.Default);
+                _ = ServerUsageManager.Instance.SaveAsync();
             }
             else
             {

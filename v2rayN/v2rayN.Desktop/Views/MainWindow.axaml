@@ -259,10 +259,10 @@
                             DockPanel.Dock="Top"
                             SelectedIndex="0"
                             Theme="{StaticResource V2Segmented}">
-                            <ListBoxItem AutomationProperties.AcceleratorKey="Ctrl+1" AutomationProperties.Name="{x:Static loc:L.TabFavorites}" ToolTip.Tip="Ctrl+1">
+                            <ListBoxItem AutomationProperties.AcceleratorKey="Ctrl+1" AutomationProperties.Name="{x:Static loc:L.TabHome}" ToolTip.Tip="Ctrl+1">
                                 <StackPanel Spacing="3">
-                                    <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconStarStroked}" />
-                                    <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabFavorites}" />
+                                    <PathIcon Classes="i16" HorizontalAlignment="Center" Data="{StaticResource SemiIconHome}" />
+                                    <TextBlock HorizontalAlignment="Center" Text="{x:Static loc:L.TabHome}" />
                                 </StackPanel>
                             </ListBoxItem>
                             <ListBoxItem AutomationProperties.AcceleratorKey="Ctrl+2" AutomationProperties.Name="{x:Static loc:L.TabCountries}" ToolTip.Tip="Ctrl+2">
@@ -327,8 +327,36 @@
                                                 <PathIcon Classes="i14" Data="{StaticResource SemiIconPlus}" />
                                             </Button>
                                         </StackPanel>
-                                        <Button
+                                        <StackPanel
                                             Grid.Column="1"
+                                            Margin="0,0,-2,0"
+                                            VerticalAlignment="Center"
+                                            Orientation="Horizontal"
+                                            Spacing="2">
+                                        <Button
+                                            AutomationProperties.Name="{Binding Sort.Tip, FallbackValue=''}"
+                                            Classes="ghost tiny"
+                                            Click="SideSort_Click"
+                                            IsVisible="{Binding ShowSort}"
+                                            Theme="{StaticResource V2Button}"
+                                            ToolTip.Tip="{Binding Sort.Tip, FallbackValue=''}">
+                                            <StackPanel Orientation="Horizontal" Spacing="5">
+                                                <PathIcon Classes="i12" Data="{StaticResource SemiIconSort}" />
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Sort.Label, FallbackValue=''}" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button
+                                            AutomationProperties.Name="{Binding Link, FallbackValue=''}"
+                                            Classes="ghost tiny"
+                                            Click="SideHeaderLink_Click"
+                                            IsVisible="{Binding ShowLink}"
+                                            Theme="{StaticResource V2Button}">
+                                            <StackPanel Orientation="Horizontal" Spacing="4">
+                                                <TextBlock VerticalAlignment="Center" Text="{Binding Link, FallbackValue=''}" />
+                                                <PathIcon Classes="i12" Data="{StaticResource SemiIconChevronRight}" />
+                                            </StackPanel>
+                                        </Button>
+                                        <Button
                                             MinWidth="104"
                                             AutomationProperties.Name="{Binding Ping.Label, FallbackValue=''}"
                                             Classes="ghost tiny"
@@ -350,6 +378,7 @@
                                                     Text="{Binding Ping.Label, FallbackValue=''}" />
                                             </StackPanel>
                                         </Button>
+                                        </StackPanel>
                                     </Grid>
                                 </DataTemplate>
 
@@ -676,6 +705,88 @@
                                     </Button>
                                 </DataTemplate>
 
+                                <DataTemplate x:DataType="side:SideStatRow">
+                                    <Button
+                                        AutomationProperties.Name="{Binding}"
+                                        Classes="siderow"
+                                        Classes.active="{Binding IsActive}"
+                                        Click="SideStat_Click"
+                                        Theme="{StaticResource V2SideRow}">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Panel
+                                                Width="26"
+                                                Height="20"
+                                                VerticalAlignment="Center">
+                                                <Border
+                                                    Width="24"
+                                                    Height="18"
+                                                    BoxShadow="{DynamicResource V2FlagRing}"
+                                                    ClipToBounds="True"
+                                                    CornerRadius="4"
+                                                    IsVisible="{Binding HasFlag}">
+                                                    <Image Source="{Binding Flag}" Stretch="UniformToFill" />
+                                                </Border>
+                                                <PathIcon
+                                                    Width="16"
+                                                    Height="16"
+                                                    Foreground="{DynamicResource V2Faint}"
+                                                    Data="{StaticResource SemiIconGlobeStroke}"
+                                                    IsVisible="{Binding !HasFlag}" />
+                                                <Ellipse Classes="badge" IsVisible="{Binding IsActive}" />
+                                            </Panel>
+                                            <StackPanel
+                                                Grid.Column="1"
+                                                Grid.ColumnSpan="2"
+                                                Margin="12,0,4,0"
+                                                VerticalAlignment="Center"
+                                                Spacing="2">
+                                                <Grid ColumnDefinitions="*,Auto">
+                                                    <TextBlock
+                                                        Classes="title"
+                                                        Text="{Binding Title}"
+                                                        TextTrimming="CharacterEllipsis" />
+                                                    <TextBlock
+                                                        Grid.Column="1"
+                                                        Margin="8,0,0,0"
+                                                        VerticalAlignment="Center"
+                                                        Classes="usagevalue"
+                                                        Text="{Binding Value}" />
+                                                </Grid>
+                                                <TextBlock
+                                                    Classes="muted small"
+                                                    Text="{Binding Subtitle}"
+                                                    TextTrimming="CharacterEllipsis" />
+                                                <views:UsageBar Classes="stat" Margin="0,3,0,0" Value="{Binding Fraction}" />
+                                            </StackPanel>
+                                        </Grid>
+                                    </Button>
+                                </DataTemplate>
+
+                                <DataTemplate x:DataType="side:SideChartRow">
+                                    <StackPanel Margin="10,2,10,10" Spacing="6" ToolTip.Tip="{Binding Title}">
+                                        <ItemsControl Height="44" ItemsSource="{Binding Bars}">
+                                            <ItemsControl.ItemsPanel>
+                                                <ItemsPanelTemplate>
+                                                    <UniformGrid Rows="1" />
+                                                </ItemsPanelTemplate>
+                                            </ItemsControl.ItemsPanel>
+                                            <ItemsControl.ItemTemplate>
+                                                <DataTemplate x:DataType="side:ChartBar">
+                                                    <Border
+                                                        Height="{Binding Height}"
+                                                        Margin="2,0"
+                                                        VerticalAlignment="Bottom"
+                                                        Classes="chartbar"
+                                                        Classes.today="{Binding IsToday}"
+                                                        CornerRadius="3"
+                                                        ToolTip.Tip="{Binding Tip}" />
+                                                </DataTemplate>
+                                            </ItemsControl.ItemTemplate>
+                                        </ItemsControl>
+                                        <TextBlock Classes="muted small" Text="{Binding Title}" />
+                                    </StackPanel>
+                                </DataTemplate>
+
                                 <DataTemplate x:DataType="side:SideActionRow">
                                     <Button
                                         AutomationProperties.Name="{Binding Title}"
@@ -734,6 +845,27 @@
                                                     Foreground="{DynamicResource V2Muted}"
                                                     Data="{StaticResource SemiIconGlobe}"
                                                     IsVisible="{Binding IsBrowse}" />
+                                                <PathIcon
+                                                    Width="14"
+                                                    Height="14"
+                                                    Foreground="{DynamicResource V2Muted}"
+                                                    Data="{StaticResource SemiIconMore}"
+                                                    IsVisible="{Binding IsMore}" />
+                                                <Border
+                                                    Background="{DynamicResource V2FolderSoft}"
+                                                    CornerRadius="7"
+                                                    IsVisible="{Binding IsStats}">
+                                                    <PathIcon
+                                                        Classes="i14"
+                                                        Foreground="{DynamicResource V2Folder}"
+                                                        Data="{StaticResource SemiIconHistogram}" />
+                                                </Border>
+                                                <PathIcon
+                                                    Width="14"
+                                                    Height="14"
+                                                    Foreground="{DynamicResource V2Muted}"
+                                                    Data="{StaticResource SemiIconDeleteStroked}"
+                                                    IsVisible="{Binding IsClearStats}" />
                                             </Panel>
                                             <StackPanel
                                                 Grid.Column="1"
@@ -763,7 +895,7 @@
                                                 AutomationProperties.Name="{x:Static loc:L.UpdateSubscription}"
                                                 Classes="ghost small icon"
                                                 Click="SideBackUpdate_Click"
-                                                IsVisible="{Binding IsBack}"
+                                                IsVisible="{Binding IsBackToSub}"
                                                 Theme="{StaticResource V2Button}"
                                                 ToolTip.Tip="{x:Static loc:L.UpdateSubscription}">
                                                 <PathIcon Classes="i14" Data="{StaticResource SemiIconRefresh}" />

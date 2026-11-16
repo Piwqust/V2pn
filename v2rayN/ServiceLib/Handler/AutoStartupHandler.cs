@@ -258,7 +258,7 @@ public static class AutoStartupHandler
 
     private static string GetAutoRunNameWindows()
     {
-        return V2pnEdition.AutoRunName; // V2pn: one fixed name per build, see V2pnAutostart
+        return Global.AutoRunName; // V2pn: one fixed name, see V2pnAutostart
     }
 
     #endregion Windows
@@ -303,7 +303,7 @@ public static class AutoStartupHandler
     [SupportedOSPlatform("linux")]
     private static string GetHomePathLinux()
     {
-        var homePath = Path.Combine(Utils.GetHomePath(), ".config", "autostart", $"{V2pnEdition.InstallName}.desktop");
+        var homePath = Path.Combine(Utils.GetHomePath(), ".config", "autostart", $"{Global.AppName}.desktop");
         Directory.CreateDirectory(Path.GetDirectoryName(homePath));
         return homePath;
     }
@@ -354,7 +354,7 @@ public static class AutoStartupHandler
     private static string GetLaunchAgentPathMacOS()
     {
         var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var launchAgentPath = Path.Combine(homePath, "Library", "LaunchAgents", $"{V2pnEdition.InstallName}-LaunchAgent.plist");
+        var launchAgentPath = Path.Combine(homePath, "Library", "LaunchAgents", $"{Global.AppName}-LaunchAgent.plist");
         Directory.CreateDirectory(Path.GetDirectoryName(launchAgentPath));
         return launchAgentPath;
     }
@@ -369,7 +369,7 @@ public static class AutoStartupHandler
 <plist version=""1.0"">
 <dict>
     <key>Label</key>
-    <string>{V2pnEdition.InstallName}-LaunchAgent</string>
+    <string>{Global.AppName}-LaunchAgent</string>
     <key>ProgramArguments</key>
     <array>
         <string>/bin/sh</string>

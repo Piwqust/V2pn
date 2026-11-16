@@ -50,8 +50,7 @@ internal class Program
         }
         else
         {
-            // V2pn: plain V2pn and a partner's build (V2pnEdition) run side by side, each once.
-            _ = new Mutex(true, V2pnEdition.InstallName, out var bOnlyOneInstance);
+            _ = new Mutex(true, "V2pn", out var bOnlyOneInstance);
             if (!bOnlyOneInstance)
             {
                 return false;

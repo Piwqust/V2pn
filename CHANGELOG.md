@@ -8,7 +8,7 @@ What changes for the people who use the app. Each version's section becomes the 
 
 A provider's look is now one look, Accent, and it follows the server you pick: while one of the provider's servers is selected, V2pn wears its brand; pick another server and plain V2pn is back. Neon, the Pass, the look switcher (the title bar, the tray, Ctrl+1…9, the Appearance page), the circle reveal and the intro are gone.
 
-- Accent keeps V2pn's own window: the provider's logo beside V2pn's in the title bar, Connect in its colour, its subscription card first in the sidebar with your plan, the days left, devices, traffic, its offer and "Renew" and "Support" links, and its buttons under the connect panel.
+- Accent keeps V2pn's own window: the provider's logo beside V2pn's in the title bar, Connect in its colour, its subscription card in the sidebar with your plan, the days left, devices, traffic, its offer and "Renew" and "Support" links, and its buttons under the connect panel.
 - When the provider has a background, the look becomes Scene: the background takes the world map's place, and your plan stands on it. Text on it always reads, in light and dark.
 - What says whether you are protected keeps V2pn's own colours, whatever the provider's.
 

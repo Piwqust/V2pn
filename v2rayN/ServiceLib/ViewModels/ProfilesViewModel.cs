@@ -1003,7 +1003,11 @@ public partial class ProfilesViewModel : MyReactiveObject
             });
             await Task.CompletedTask;
         });
-        _speedtestService?.RunLoop(actionType, lstSelected);
+        // V2pn: on the thread pool. Started from here, every await of the run came back to the UI thread, which built
+        // the test config for all the servers (about a second for 1000) while the window stood still. Results reach
+        // the UI through the callback above.
+        var service = _speedtestService;
+        _ = Task.Run(() => service?.RunLoop(actionType, lstSelected) ?? Task.CompletedTask);
         await Task.CompletedTask;
     }
 

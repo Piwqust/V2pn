@@ -19,7 +19,8 @@ V2pn's owner now keeps every partner's look in V2pn's repository and publishes i
 - A subscription belongs to a partner when its address is on the partner's domains. The provider's site no longer has to send anything for it.
 - V2pn checks the list of partners when it starts and every few hours, and downloads a partner's look only when you have its subscription. Everything is checked before use; anything that does not check out is not used, and the last good look stays.
 - A partner taken off the list, or whose term ends, loses its look at your next check, with a note. Your servers work as before either way.
-- The theme builder is gone; a web page where a provider puts its look together will come later. The provider guide describes the new way.
+- The theme builder is gone. A provider now puts its look together on a web page beside the provider guide ("Build your look"): it sees V2pn's window wear it, in Accent and Scene, light and dark, at every window size, with the same notes the owner's check gives, and downloads the files to send.
+- A partner can send its people to a download page of its own: its logo and colours, V2pn for Windows and macOS (the visitor's system first), and the three steps to get its subscription into V2pn. Configra's is the first.
 
 ### Sign in with your provider
 

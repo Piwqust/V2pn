@@ -45,7 +45,7 @@ Send the owner of V2pn:
 - if you want them: buttons and a description of your servers (section 3), the address of your API (section 9), links to your cabinet and support;
 - how to reach you.
 
-A web page where a provider puts this together and sees the result will come later; until then, the list above, by message.
+You can put all this together on [Build your look](builder/): it shows V2pn's window in your look (Accent and Scene, light and dark, three window sizes) and what `partner-check` will say, and downloads `partner.json` and `listing.json`. The page sends nothing anywhere: you send the files and pictures yourself.
 
 What the owner does: makes `partners/<id>/` from it, checks it with `tools/partner-check.cs partners/<id>`, decides on the grants and publishes it with the next release, or at once on its own. Your look reaches people as section 10 says.
 
@@ -547,6 +547,14 @@ The first checks a partner folder before it is published, offline: `listing.json
 The second checks a live subscription against the published index: the subscription's headers, the signature of `partners.json`, which partner the link belongs to, the zip and every check above, and the API including `servers`, `recommend` and `card` for your buttons. With `login`, it asks `login/start` once and checks the answer's shape (six digits, the token, the link, the term); it never polls, so no sign-in is completed. `--index partners/out` takes a local publish instead of the release page; `--key <public key>` checks one signed with a test root key.
 
 An example pack with servers, buttons and the three reviewed files, and a local server with a subscription, a releases page and the API for previews, are in `tools/demo/partner/`, `tools/demo/demo_partner.py` and `tools/demo/try-partner.ps1`.
+
+## 12. A download page
+
+```
+python tools/partner-page.py partners/<id>
+```
+
+Builds a page from the partner's folder that leads its people to V2pn, into `partners/out/site/<id>/` (`index.html`, `page.js`, the font and the pictures). It carries the partner's logo and colours (the Scene's background as its header), "Download for Windows" and "Download for macOS" from the newest release (the strong button for the visitor's system), three steps (sign-in by code with `login`) and "Open the bot" when `links.support` is on t.me or `--bot` is given. Russian and English (`?lang=en`), light and dark; a phone gets "Send the link to yourself" instead of a download. The colours follow V2pn's rules, and the build stops if any text would read below 4.5:1. The folder can go onto your site as it is: no external scripts or fonts, and the script is a file of its own, so a strict CSP (`script-src 'self'`) serves it. Configra serves it at `/v2pn/download/`.
 
 ## Privacy
 

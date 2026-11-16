@@ -18,6 +18,7 @@ V2pn's owner keeps the partners: every partner's look lives in the V2pn reposito
 | Accent: your logo, your colour, your subscription card (section 5) | no | yes, every partner |
 | Scene: your background behind the connect panel, your plan on it (section 5) | no | yes, when your theme has a background |
 | Plan, server health by your own checks, devices, incidents | no | with the `account` grant and an API (section 9) |
+| Sign-in by code: the person confirms in your bot and V2pn adds their subscription itself, no link to copy | no | with an API and `"login": true` (section 9) |
 | A description of the servers (groups, countries, purposes) and up to four buttons of your own | no | with the `actions` grant (section 3) |
 | Closed settings: server addresses hidden, the link cannot be passed on | no | with the `lock` grant, after a review (section 4) |
 | Your own routes, fragmentation, extra servers and balancing | no | with the `routing`, `transport`, `core` grants, after a review of each file (section 6) |
@@ -123,6 +124,7 @@ partners/kestrel/
 | `theme` | the brand colour and the Scene's background (section 5) |
 | `links.cabinet`, `links.support` | the card's "Renew" and "Support" links, when the subscription headers have none |
 | `api` | your API's base address (with the `account` grant, on a domain of the listing) |
+| `login` | `true`: V2pn offers to sign in with you by code (section 9). Needs `api` |
 | `assets` | every picture and every reviewed file with its size and SHA-256; `tools/partner.cs pack partners/<id>` fills it in |
 
 A picture that does not fit its slot is not shown there (V2pn shows your name, or nothing) and `tools/partner-check.cs` says which and why; the rest of the pack keeps working.
@@ -492,6 +494,39 @@ For buttons and the description of servers (the `actions` grant) V2pn also asks,
 
 Every field is optional; V2pn reads what it knows and ignores the rest. Answers are JSON up to 64 KB with status 200; anything else is treated as no answer. V2pn does not follow redirects with the token. When your site is blocked where the person is, V2pn asks again through the VPN. `servers.healthy`/`total` replace V2pn's own ping count in the look ("11 of 14 by <provider>'s check"). Send counts, never server addresses or credentials.
 
+### Sign-in by code
+
+With `"login": true` in the pack (and so an `api`), a person who has just installed V2pn adds your subscription without copying a link: «I have a subscription from a provider» in the first-start walkthrough, or «Sign in with a provider» in the add menu («+»). V2pn shows your mark and name, the QR code of your bot link, six digits and «Open the bot»; the person confirms in your bot, and V2pn adds the subscription, updates it and selects its first server (it does not connect). The person's own subscription link is all V2pn gets; it is added as a pasted link is, and your look follows as for any subscription of yours.
+
+`POST <api>login/start`, when the sign-in opens and at «New code», with a JSON body:
+
+```json
+{ "device": "Windows · DESKTOP-7Q2", "app": "V2pn 1.2.0" }
+```
+
+`device` is the operating system and the computer's name (at most 60 characters), for your bot to say what is asking. Answer:
+
+```json
+{ "code": "482913", "token": "<opaque, 32 to 256 url-safe characters>", "url": "https://t.me/kestrel_bot?start=v2pn-482913", "expires": 600 }
+```
+
+- `code`: exactly six digits, unique among your codes that are still waiting.
+- `token`: what V2pn asks with; it stays on that computer, never shown. `A–Z a–z 0–9 - _ . ~`.
+- `url`: optional; the QR code and «Open the bot». Only https on `t.me` or on your listed domains; anything else, and V2pn shows only the digits.
+- `expires`: seconds the code lives; 600 is usual (V2pn keeps it between 60 and 1800, and counts down from the moment it got the answer).
+
+`GET <api>login/poll?token=<token>`, every 2 seconds while the sign-in is open, until the code expires or the person closes it:
+
+```json
+{ "state": "waiting" }
+{ "state": "done", "subscription": "https://sub.kestrel.example/s/<the person's link>", "name": "Kestrel" }
+{ "state": "expired" }
+```
+
+`404` means the same as `expired`; so does the person refusing in the bot. V2pn takes `subscription` only when it is https on your listed domains, without a user name or password; anything else is an error V2pn shows as it is. `name` is optional (up to 40 characters). A token is good for one `done`: forget it once that answer has gone out, and V2pn never asks again after it. A state V2pn does not know counts as `waiting`.
+
+In your bot: `/start v2pn-<code>` (from the QR code) or the six digits typed. Say what is asking («Sign in to V2pn on "Windows · DESKTOP-7Q2"? Confirm only if this code is on your screen now.») with a confirm and a refuse button; on confirm, hand over the person's own stable link (never a shared one). Limit `login/start` per address and `login/poll` per token, bind a code to the first account that asks about it, and limit how many codes one account may try, so codes cannot be guessed. Configra's bot is a worked example.
+
 ## 10. How changes reach people
 
 - **A change of the look.** The owner changes `partners/<id>` and publishes. A running V2pn asks for `partners.json` at most every six hours, and at every start; when your zip's hash changed, it downloads the new zip once. A zip whose files did not change keeps its hash, so publishing again makes nobody download it.
@@ -509,10 +544,10 @@ dotnet run tools/partner-check.cs -- https://example.com/s/<a real subscription 
 
 The first checks a partner folder before it is published, offline: `listing.json`, the pack packed as `publish` packs it and read back with V2pn's own reader, the pictures and their slots, Accent or Scene and the colours V2pn derives, the old fields it ignores, the description of servers and the buttons (what V2pn leaves out and why), closed settings, the reviewed files (format, filter, grant).
 
-The second checks a live subscription against the published index: the subscription's headers, the signature of `partners.json`, which partner the link belongs to, the zip and every check above, and the API including `servers`, `recommend` and `card` for your buttons. `--index partners/out` takes a local publish instead of the release page; `--key <public key>` checks one signed with a test root key.
+The second checks a live subscription against the published index: the subscription's headers, the signature of `partners.json`, which partner the link belongs to, the zip and every check above, and the API including `servers`, `recommend` and `card` for your buttons. With `login`, it asks `login/start` once and checks the answer's shape (six digits, the token, the link, the term); it never polls, so no sign-in is completed. `--index partners/out` takes a local publish instead of the release page; `--key <public key>` checks one signed with a test root key.
 
 An example pack with servers, buttons and the three reviewed files, and a local server with a subscription, a releases page and the API for previews, are in `tools/demo/partner/`, `tools/demo/demo_partner.py` and `tools/demo/try-partner.ps1`.
 
 ## Privacy
 
-V2pn takes `partners.json` and the packs from V2pn's own release page, not from your site. Your site gets only what any subscription gets: the subscription request and, with an API, its calls with V2pn's user agent and, for `account`, `servers`, `recommend` and `card`, the token you issued. V2pn never sends the person's traffic, their other subscriptions, the device or anything it measures.
+V2pn takes `partners.json` and the packs from V2pn's own release page, not from your site. Your site gets only what any subscription gets: the subscription request and, with an API, its calls with V2pn's user agent and, for `account`, `servers`, `recommend` and `card`, the token you issued. V2pn never sends the person's traffic, their other subscriptions, the device or anything it measures. The one exception is the sign-in by code, when the person opens it: `login/start` gets the operating system and the computer's name, so your bot can name what is asking.

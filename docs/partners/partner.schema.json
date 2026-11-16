@@ -72,6 +72,10 @@
       "format": "uri",
       "pattern": "^https://"
     },
+    "login": {
+      "description": "Sign-in by code (guide, section 9): V2pn offers to sign in with this partner, asks POST <api>login/start for six digits and a token, shows them with a QR code of the bot link and polls GET <api>login/poll?token= until the person confirms in the partner's bot. The subscription handed over must be https on the listing's domains. Needs api (and so the account grant); without it the flag does nothing.",
+      "type": "boolean"
+    },
     "servers": {
       "description": "Needs the actions grant. What V2pn shows about the servers of the partner's subscriptions: each entry matches a server by its exact name or its address. The API's GET servers may say the same with load and health; its values win.",
       "type": "array",

@@ -1,6 +1,6 @@
 name: V2pn upstream sync
 
-# Every Monday, merges the latest v2rayN on a sync branch, builds, tests and opens a pull request
+# Every Monday, brings the latest v2rayN onto a sync branch as one commit, builds, tests and opens a pull request
 # with the report from tools/sync-upstream.ps1. A red build or test run still opens the pull
 # request (as a draft) so the breakage is visible; the main branch never changes on its own.
 on:

@@ -4,7 +4,9 @@
 
 .DESCRIPTION
   1. Fetches 2dust/v2rayN (remote "upstream", added when missing).
-  2. Merges it on a branch sync/v2rayN-<commit> made from the current branch. Views V2pn
+  2. Brings it in as one commit on a branch sync/v2rayN-<commit> made from the current branch:
+     V2pn's history holds no v2rayN commits, so this is a three-way merge against the v2rayN
+     commit named in tools/v2rayN-upstream.txt (the last one taken), not a git merge. Views V2pn
      rewrote keep the V2pn version (see v2rayN/v2rayN.Desktop/Views/.gitattributes).
   3. Builds V2pn and AmazTool and runs the tests.
   4. Writes docs/upstream-sync/<date>-<commit>.md: the v2rayN commits that came in, what v2rayN
@@ -42,8 +44,12 @@ Invoke-Git fetch upstream --quiet
 
 $branch = git rev-parse --abbrev-ref HEAD
 $target = git rev-parse $Ref
-$base = git merge-base HEAD $target
-if ($base -eq $target) {
+$lockFile = Join-Path $PSScriptRoot 'v2rayN-upstream.txt'
+$base = (Get-Content $lockFile -TotalCount 1).Trim()
+git cat-file -e "$base^{commit}" 2>$null
+if ($LASTEXITCODE -ne 0) { throw "The v2rayN commit $base from $lockFile is not in upstream." }
+git merge-base --is-ancestor $target $base
+if ($LASTEXITCODE -eq 0) {
     Write-Host "V2pn already has everything from $Ref."
     exit 0
 }
@@ -72,13 +78,20 @@ $conflicts = @()
 $buildLog = ''
 $testSummary = ''
 
+# Cherry-picking a commit that turns the last v2rayN taken into the new one runs a three-way merge
+# with that v2rayN as the base, and brings in none of v2rayN's commits. Both helper commits are
+# parentless snapshots and stay out of every branch.
 # merge.ours.driver is set for this merge only: the views marked merge=ours keep V2pn's version
 # against v2rayN, while merges of V2pn's own branches must still bring their view changes in.
-$mergeMessage = "Merge v2rayN $toVersion ($short) into V2pn"
+$mergeMessage = "V2pn: v2rayN $toVersion ($short)`n`nhttps://github.com/2dust/v2rayN/compare/$($base.Substring(0, 8))...$short"
+$from = git commit-tree "$base^{tree}" -m "v2rayN $fromVersion"
+$step = git commit-tree "$target^{tree}" -p $from -m $mergeMessage
 $previousPreference = $ErrorActionPreference
 $ErrorActionPreference = 'Continue'
-git -c merge.ours.driver=true merge --no-ff --no-commit $target 2>&1 | Out-Host
+git -c merge.ours.driver=true cherry-pick --no-commit $step 2>&1 | Out-Host
 $ErrorActionPreference = $previousPreference
+[IO.File]::WriteAllText($lockFile, "$target`n")
+Invoke-Git add -- $lockFile
 
 # V2pn has its own GitHub workflows (v2pn-*.yml) and removed v2rayN's: they would publish v2rayN's
 # packages from this repository, one of them to winget. Whatever v2rayN changed or added there is
@@ -128,12 +141,12 @@ $fence = '```'
 $md = @()
 $md += "# v2rayN $fromVersion -> $toVersion ($short): $status"
 $md += ''
-$md += "Merged on branch ``$syncBranch`` from ``$branch``. Commits from v2rayN: $($commits.Count)."
+$md += "Taken as one commit on branch ``$syncBranch`` from ``$branch``. Commits from v2rayN: $($commits.Count)."
 $md += ''
 if ($conflicts) {
     $md += '## Conflicts'
     $md += ''
-    $md += 'The merge is left in progress on the sync branch. Resolve, `git commit`, then run the script again.'
+    $md += 'The merge is left uncommitted on the sync branch. Resolve, `git add` and `git commit`.'
     $md += ''
     $md += $conflicts | ForEach-Object { "- ``$_``" }
     $md += ''

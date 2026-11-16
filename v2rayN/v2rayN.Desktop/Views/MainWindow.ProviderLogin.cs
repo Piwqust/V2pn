@@ -7,10 +7,11 @@ using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
 
-// V2pn: sign-in with a provider by code (PartnerLoginView, V2pnPartnerLogin). Only a partner's build has it (V2pnEdition),
-// with its own partner: first in the walkthrough's servers step, and in the add menu while the partner offers it. A
-// confirmed sign-in adds the subscription as a confirmed v2pn://add does, updates it and selects its first server
-// without connecting. Plain V2pn has neither the row nor the menu item.
+// V2pn: sign-in with a provider by code (PartnerLoginView, V2pnPartnerLogin), for everyone: in the add menu and in the
+// walkthrough's servers step, where a copy with a partner's v2pn-partner.txt puts that partner's sign-in first. It is
+// how a person comes from a partner without the marker: a confirmed sign-in adds the subscription as a confirmed
+// v2pn://add does, updates it, records that the person came from that partner (V2pnEdition), opens its tab and selects
+// its first server without connecting. The list of providers is asked for only when the person opens the sign-in.
 public partial class MainWindow
 {
     private IReadOnlyList<V2pnPartner> _loginOffers = [];
@@ -19,16 +20,11 @@ public partial class MainWindow
 
     private void InitProviderLogin()
     {
-        if (!V2pnEdition.IsPartner)
-        {
-            return;
-        }
         if (btnAdd.Flyout is MenuFlyout flyout)
         {
             _menuProviderLogin = new MenuItem
             {
                 Classes = { "rich" },
-                IsVisible = false,
                 Icon = new PathIcon { Classes = { "mi" }, Data = this.TryFindResource("SemiIconUser", out var glyph) ? glyph as Geometry : null },
                 Header = new StackPanel
                 {
@@ -42,26 +38,30 @@ public partial class MainWindow
             AutomationProperties.SetName(_menuProviderLogin, L.MenuProviderLogin);
             _menuProviderLogin.Click += (_, _) => OpenProviderLogin();
             flyout.Items.Insert(flyout.Items.IndexOf(menuAddSubscription) + 1, _menuProviderLogin);
-            // A partner may have started offering it since the last look.
-            flyout.Opening += (_, _) => _ = RefreshLoginOffersAsync();
         }
-        V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(() => _ = RefreshLoginOffersAsync());
-        _ = RefreshLoginOffersAsync();
+        // The walkthrough's row wears the marker partner's mark once its pack is here.
+        V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(() =>
+        {
+            if (OnboardingShown && _obStep == ObStep.Servers && MarkerLoginPartner()?.Id != _obLoginMark)
+            {
+                GoTo(ObStep.Servers);
+            }
+        });
     }
 
+    // The partner whose mark the walkthrough's row showed last.
+    private string? _obLoginMark;
+
+    /// <summary>The partner of this copy's v2pn-partner.txt when its pack is here and offers the sign-in; the walkthrough leads with it.</summary>
+    private static V2pnPartner? MarkerLoginPartner() =>
+        V2pnEdition.Instance.Marker is { } id && V2pnPartners.Instance.Get(id) is { } partner && V2pnPartnerLogin.Offers(partner) ? partner : null;
+
+    /// <summary>Asks for the providers that offer the sign-in: the list of partners is downloaded here, when the person asks for it.</summary>
     private async Task RefreshLoginOffersAsync()
     {
         try
         {
-            var offers = await Task.Run(() => V2pnPartners.Instance.LoginOffersAsync());
-            var changed = !offers.Select(p => p.Id).SequenceEqual(_loginOffers.Select(p => p.Id));
-            _loginOffers = offers;
-            _menuProviderLogin?.IsVisible = offers.Count > 0;
-            // The walkthrough's servers step gains or loses its «I have a subscription from a provider».
-            if (changed && OnboardingShown && _obStep == ObStep.Servers)
-            {
-                GoTo(ObStep.Servers);
-            }
+            _loginOffers = await Task.Run(() => V2pnPartners.Instance.LoginOffersAsync());
         }
         catch (Exception ex)
         {
@@ -69,26 +69,27 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>The sign-in: straight to the code with one provider, a short list first with several.</summary>
-    internal async void OpenProviderLogin()
+    /// <summary>
+    /// The sign-in: straight to the code with one provider, a short list first with several. <paramref name="partnerId"/>
+    /// goes straight to that provider (the walkthrough of a copy with its marker) when it offers the sign-in.
+    /// </summary>
+    internal async void OpenProviderLogin(string? partnerId = null)
     {
-        if (_loginOpen || !V2pnEdition.IsPartner)
+        if (_loginOpen)
         {
             return;
         }
         _loginOpen = true;
         try
         {
-            if (_loginOffers.Count == 0)
-            {
-                await RefreshLoginOffersAsync();
-            }
+            await RefreshLoginOffersAsync();
             if (_loginOffers.Count == 0)
             {
                 ShowToast(ToastKind.Warning, V2pnPartners.Instance.Index == null ? L.LoginNoList : L.LoginNoProviders);
                 return;
             }
-            var view = new PartnerLoginView(_loginOffers);
+            var offers = _loginOffers.Where(p => p.Id == partnerId).ToList() is { Count: > 0 } only ? only : _loginOffers;
+            var view = new PartnerLoginView(offers);
             view.SignedIn += (partner, answer) => _ = FinishProviderLoginAsync(view, partner, answer);
             // Over the walkthrough too: a dialog of its own sits above the walkthrough's scrim.
             if (DialogHost.IsDialogOpen(null))
@@ -121,6 +122,11 @@ public partial class MainWindow
                 return;
             }
             Logging.SaveLog($"V2pn: sign-in with {partner.Id} {(existed ? "found" : "added")} subscription {item.Id}");
+            // After the subscription is in: from now on the person came from this partner, and its tab opens (as soon as
+            // its pack is here, which the refresh brings).
+            V2pnEdition.Instance.RecordSignIn(partner.Id);
+            V2pnEdition.Instance.Open(partner.Id);
+            _ = Task.Run(() => V2pnPartners.Instance.RefreshAsync());
             await ViewModel.ProfilesViewModel.RefreshSubscriptions();
             if (!existed)
             {
@@ -162,11 +168,13 @@ public partial class MainWindow
         }
     }
 
-    /// <summary>The walkthrough's row: the provider's mark when there is one provider, a person otherwise.</summary>
+    /// <summary>The walkthrough's row: the marker partner's mark in a copy with its marker, a person otherwise.</summary>
     private Button ProviderLoginRow()
     {
-        Control icon = _loginOffers.Count == 1
-            ? EditionLooks.Scene.Mark(_loginOffers[0], _loginOffers[0].Pack.Accent ?? "#3B82F6", "#FFFFFF", 32)
+        var marker = MarkerLoginPartner();
+        _obLoginMark = marker?.Id;
+        Control icon = marker != null
+            ? EditionLooks.Scene.Mark(marker, marker.Pack.Accent ?? "#3B82F6", "#FFFFFF", 32)
             : new Border { Classes = { "routeicon" }, Child = Icon("SemiIconUser", "i16") };
         var text = new StackPanel
         {
@@ -190,7 +198,7 @@ public partial class MainWindow
             Content = new Grid { ColumnDefinitions = new("Auto,*,Auto"), ColumnSpacing = 12, Children = { icon, text, chevron } },
         };
         AutomationProperties.SetName(row, L.ObProviderLogin);
-        row.Click += (_, _) => OpenProviderLogin();
+        row.Click += (_, _) => OpenProviderLogin(V2pnEdition.Instance.Marker);
         return row;
     }
 }

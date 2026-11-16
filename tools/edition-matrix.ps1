@@ -1,32 +1,35 @@
 ﻿<#
 .SYNOPSIS
-  Screenshots both partner looks (Pass and Neon) in light and dark at mini, medium and wide window sizes, off screen,
-  and puts them on one contact sheet: the check to run after any change to the looks. With -Theme it shows a provider
-  theme (a folder with partner.json and its pictures): the Pass and Neon with each of its Connect buttons.
+  Screenshots plain V2pn and a partner's brand on it ("Accent", and "Scene" when the theme has a background) in light
+  and dark at mini, medium and wide window sizes, off screen, and puts them on one contact sheet: the check to run
+  after any change to the partner look. With -Theme it shows a provider theme (a folder with partner.json and its
+  pictures) and adds Scene when that theme has a gradient or picture background.
 
 .DESCRIPTION
   Builds nothing: it runs the Debug build (or -From) in a sandbox (tools/sandbox.ps1) in background mode with the
-  debug window (V2PN_DEBUG=1), and drives that window through UI Automation. With no verified partner in the sandbox it
-  adds the debug window's test partner (every look, no pictures). Windows only (UI Automation, System.Drawing).
+  debug window (V2PN_DEBUG=1), and drives that window through UI Automation. It adds the debug window's test partner
+  (with -Theme's brand and background) and shows it whatever server is selected ("показать партнёра"), with the
+  subscription data of -Account laid over. Windows only (UI Automation, System.Drawing).
 
 .EXAMPLE
   tools/edition-matrix.ps1
-  tools/edition-matrix.ps1 -Looks 'Неон' -Sizes 'Мини 380×640' -Out $env:TEMP/matrix
   tools/edition-matrix.ps1 -Theme tools/demo/themes/aurora
-  tools/edition-matrix.ps1 -Theme tools/demo/themes/pine -Connects toggle -Out $env:TEMP/pine
+  tools/edition-matrix.ps1 -Theme tools/demo/themes/ember -Looks 'Сцена' -Sizes 'Мини 380×640' -Out $env:TEMP/ember
+  tools/edition-matrix.ps1 -Theme tools/demo/themes/aurora -Account 'ничего' -Out $env:TEMP/noplan
 #>
 param(
     [string]$From = (Join-Path $PSScriptRoot '..\v2rayN\v2rayN.Desktop\bin\Debug\net10.0'),
     [string]$Dest = (Join-Path $env:TEMP 'v2pn-matrix'),
     [string]$Out = (Join-Path $env:TEMP 'v2pn-matrix-shots'),
-    [string[]]$Looks = @('Пропуск', 'Неон'),
+    # V2pn (no partner), Акцент (the partner's colour, logo and card) and Сцена (its background and plan; needs -Theme).
+    [string[]]$Looks = @('V2pn', 'Акцент', 'Сцена'),
     [string[]]$Modes = @('Тёмный', 'Светлый'),
     [string[]]$Sizes = @('Мини 380×640', 'Среднее 820×700', 'Широкое 1280×800'),
-    # A provider theme to show: a folder with partner.json ("brand", "theme") and its pictures. The Pass is shown
-    # once, Neon with each of -Connects.
+    # A provider theme to show: a folder with partner.json ("brand", "theme") and its pictures.
     [string]$Theme,
-    [string[]]$Connects = @('round', 'toggle'),
-    # guiConfigs to start from (servers, subscriptions, a verified partner); a fresh install would open the walkthrough.
+    # What the partner's panel says, as the debug window lays it over: 'всё (API)', 'только панель', 'заканчивается', 'ничего'…
+    [string]$Account = 'всё (API)',
+    # guiConfigs to start from (servers, subscriptions); a fresh install would open the walkthrough.
     [string]$SeedFrom = (Join-Path $env:TEMP 'v2pn-partner\guiConfigs')
 )
 
@@ -78,34 +81,28 @@ Start-Sleep -Seconds 4
 Invoke-Debug 'Сбросить всё'
 Invoke-Debug 'Добавить тестового'
 Start-Sleep -Seconds 2
-# The test partner's intro is in the way: open its look, which closes the intro.
-Invoke-Debug 'партнёр из списка выше'
-Start-Sleep -Seconds 2
+Invoke-Debug $Account
 
-if ($Theme) {
-    # A theme's blocks show what the subscription has: lay the debug window's full data over it (plan, traffic,
-    # announcement, banner, the provider's check of its servers).
-    Invoke-Debug 'всё (API)'
-    Invoke-Debug '11 из 14 по партнёру'
-}
-$files = @()
-# With a theme, the passes are the Pass and Neon with each Connect: each is picked in the debug window, then shot.
+# Scene needs a theme with a background; without -Theme the test partner has none.
+$looksToShoot = $Looks | Where-Object { $_ -in @('V2pn', 'Акцент', 'Сцена') -and ($Theme -or $_ -ne 'Сцена') }
 $themeName = if ($Theme) { Split-Path -Leaf (Resolve-Path $Theme).Path } else { $null }
-$passes = if ($Theme) { @('Пропуск') + ($Connects | ForEach-Object { "кнопка $_" }) } else { $Looks }
-foreach ($look in $passes) {
-    Invoke-Debug $look
+$files = @()
+foreach ($look in $looksToShoot) {
+    switch ($look) {
+        'V2pn' { Invoke-Debug 'обычный V2pn' }
+        'Акцент' { Invoke-Debug 'показать партнёра'; Invoke-Debug 'без фона' }
+        'Сцена' { Invoke-Debug 'показать партнёра'; Invoke-Debug 'как в теме' }
+    }
     Start-Sleep -Milliseconds 1500
     foreach ($mode in $Modes) {
-        # The Pass keeps plain V2pn's mode; one pass is enough.
-        if ($look -eq 'Пропуск' -and $mode -ne $Modes[0]) { continue }
         Invoke-Debug $mode
         Start-Sleep -Milliseconds 1500
         foreach ($size in $Sizes) {
             Invoke-Debug $size
             Start-Sleep -Milliseconds 2200
-            $name = if ($Theme) { "$themeName-$($look -replace ' ', '-')" } else { $look }
+            $name = if ($Theme) { "$themeName-$look" } else { $look }
             $file = Join-Path $Out ("{0}-{1}-{2}.png" -f $name, $mode, ($size -split ' ')[0])
-            & $shot -ProcessId $proc.Id -Out $file -Title '* — *' | Out-Null
+            & $shot -ProcessId $proc.Id -Out $file -Title 'V2pn*' | Out-Null
             $files += [pscustomobject]@{ File = $file; Label = "$name · $mode · $(($size -split ' ')[0])" }
         }
     }

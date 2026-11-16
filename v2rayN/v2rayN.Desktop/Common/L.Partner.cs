@@ -4,14 +4,14 @@ namespace v2rayN.Desktop;
 public static partial class L
 {
     public static string LinkAddTitle => T("Add a subscription", "Добавить подписку");
-    public static string LinkAddBody => T("Add the subscription «{0}» from {1}?\n\nV2pn downloads its server list. If the provider is a V2pn partner and its signature checks out, V2pn wears its colours while one of its servers is selected. The provider does not see your traffic.",
-        "Добавить подписку «{0}» с {1}?\n\nV2pn скачает список серверов. Если провайдер — партнёр V2pn и его подпись верна, V2pn будет в его цветах, пока выбран его сервер. Провайдер не видит ваш трафик.");
+    public static string LinkAddBody => T("Add the subscription «{0}» from {1}?\n\nV2pn downloads its server list. If the provider is a V2pn partner, V2pn wears its colours while one of its servers is selected. The provider does not see your traffic.",
+        "Добавить подписку «{0}» с {1}?\n\nV2pn скачает список серверов. Если провайдер — партнёр V2pn, V2pn будет в его цветах, пока выбран его сервер. Провайдер не видит ваш трафик.");
     public static string LinkAddYes => T("Add", "Добавить");
     public static string LinkAddNo => T("Cancel", "Отмена");
     public static string LinkAlreadyAdded => T("The subscription «{0}» is already in V2pn.", "Подписка «{0}» уже есть в V2pn.");
     public static string LinkAddBodyPartner => T(
-        "Add the subscription «{0}» from {1}?\n\n{2} is a V2pn partner: V2pn checked its certificate. The servers come into the list, and while one of them is selected V2pn wears {2}'s colours. {2} does not see your traffic.",
-        "Добавить подписку «{0}» с {1}?\n\n{2} — партнёр V2pn: V2pn проверил его сертификат. Серверы появятся в списке, и пока выбран один из них, V2pn будет в цветах {2}. {2} не видит ваш трафик.");
+        "Add the subscription «{0}» from {1}?\n\n{2} is a V2pn partner: it is on V2pn's list of partners. The servers come into the list, and while one of them is selected V2pn wears {2}'s colours. {2} does not see your traffic.",
+        "Добавить подписку «{0}» с {1}?\n\n{2} — партнёр V2pn: он есть в списке партнёров V2pn. Серверы появятся в списке, и пока выбран один из них, V2pn будет в цветах {2}. {2} не видит ваш трафик.");
     // What a partner's API says about the subscription (its card and its plan on the stage).
     public static string PartnerUntil => T("Paid until {0}", "Оплачено до {0}");
     public static string PartnerDevices => T("Devices: {0}", "Устройств: {0}");

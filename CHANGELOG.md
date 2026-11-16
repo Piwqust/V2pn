@@ -2,7 +2,7 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
+## 1.2.2
 
 V2pn no longer changes its look for any provider. A provider gets its own build of V2pn instead.
 

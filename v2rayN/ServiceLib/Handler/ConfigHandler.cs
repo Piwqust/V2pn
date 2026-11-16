@@ -2351,11 +2351,18 @@ public static class ConfigHandler
         foreach (var (item, old) in pairs)
         {
             finalIds[item.IndexId] = old.IndexId;
-            await SQLiteHelper.Instance.DeleteAsync(item);
-            item.IndexId = old.IndexId;
-            await SQLiteHelper.Instance.ReplaceAsync(item);
             kept.Add(old.IndexId);
         }
+        // One transaction: row by row, a subscription of 1000 servers meant 2000 commits, each synced to disk.
+        await SQLiteHelper.Instance.RunInTransactionAsync(db =>
+        {
+            foreach (var (item, old) in pairs)
+            {
+                db.Delete<ProfileItem>(item.IndexId);
+                item.IndexId = old.IndexId;
+                db.InsertOrReplace(item, typeof(ProfileItem));
+            }
+        });
 
         var sort = ProfileExManager.Instance.GetMaxSort();
         foreach (var tempId in order)

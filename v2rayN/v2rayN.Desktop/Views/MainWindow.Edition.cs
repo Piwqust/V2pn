@@ -147,14 +147,16 @@ public partial class MainWindow
         var partner = Editions.Partner;
         txtBrand.IsVisible = partner == null || _tier != BodyTier.Stacked;
         AutomationProperties.SetName(borderBrand, EditionTitle());
+        // The accent is the partner's now; V2pn's fork beside its logo keeps V2pn's own red.
         if (partner == null)
         {
+            pathBrand.Bind(Avalonia.Controls.Shapes.Shape.FillProperty, pathBrand.GetResourceObservable("V2Accent"));
             return;
         }
+        pathBrand.Fill = new SolidColorBrush(Color.Parse(ActualThemeVariant == ThemeVariant.Light ? "#E8391B" : "#FF3D1F"));
         Control logo = Scene.Logo(partner, onLight: ActualThemeVariant == ThemeVariant.Light) is { } bitmap
             ? new Image { Source = bitmap, Height = 15, MaxWidth = 140, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center }
             : new TextBlock { Text = partner.Name, FontSize = 13, FontWeight = FontWeight.SemiBold, MaxWidth = 140, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-        ToolTip.SetTip(borderBrand, EditionTitle());
         panelBrand.Children.Add(new TextBlock { Text = "×", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
         panelBrand.Children.Add(logo);
     }

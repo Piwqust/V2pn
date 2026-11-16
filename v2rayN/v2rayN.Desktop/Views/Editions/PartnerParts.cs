@@ -149,14 +149,18 @@ internal static class Scene
         var radius = new CornerRadius(Math.Round(size * 0.28));
         if (Picture(partner, partner.Pack.Mark) is { } mark)
         {
+            // A cut-out mark (a white glyph, say) vanishes on a ground of its own lightness: it gets a tile that sets it off.
+            var tile = CutOutLight(mark) is { } light ? light > 0.55 ? "#18181B" : light < 0.45 ? "#F2F2F4" : null : null;
             return new Border
             {
                 Width = size,
                 Height = size,
                 CornerRadius = radius,
                 ClipToBounds = true,
+                Background = tile == null ? null : B(tile),
+                Padding = new Thickness(tile == null ? 0 : Math.Round(size * 0.16)),
                 VerticalAlignment = VerticalAlignment.Center,
-                Child = new Image { Source = mark, Stretch = Stretch.UniformToFill },
+                Child = new Image { Source = mark, Stretch = tile == null ? Stretch.UniformToFill : Stretch.Uniform },
             };
         }
         var letter = Text(partner.Name[..1].ToUpperInvariant(), size * 0.45, onAccent, FontWeight.SemiBold);
@@ -170,6 +174,55 @@ internal static class Scene
             VerticalAlignment = VerticalAlignment.Center,
             Child = letter,
         };
+    }
+
+    /// <summary>
+    /// For a picture whose corners are see-through (a cut-out), the mean lightness (0 to 1) of its opaque pixels; null
+    /// for a picture that brings its own ground, or one that cannot be read.
+    /// </summary>
+    private static double? CutOutLight(Bitmap bitmap)
+    {
+        try
+        {
+            var size = bitmap.PixelSize;
+            if (size.Width < 2 || size.Height < 2)
+            {
+                return null;
+            }
+            var stride = size.Width * 4;
+            var pixels = new byte[stride * size.Height];
+            var handle = System.Runtime.InteropServices.GCHandle.Alloc(pixels, System.Runtime.InteropServices.GCHandleType.Pinned);
+            try
+            {
+                bitmap.CopyPixels(new PixelRect(size), handle.AddrOfPinnedObject(), pixels.Length, stride);
+            }
+            finally
+            {
+                handle.Free();
+            }
+            // Bgra8888 and Rgba8888 both keep alpha last; the mean of the three channels does for either order.
+            int At(int x, int y) => (y * stride) + (x * 4);
+            if (new[] { At(0, 0), At(size.Width - 1, 0), At(0, size.Height - 1), At(size.Width - 1, size.Height - 1) }.Any(i => pixels[i + 3] > 24))
+            {
+                return null;
+            }
+            double sum = 0;
+            var count = 0;
+            for (var i = 0; i < pixels.Length; i += 4)
+            {
+                if (pixels[i + 3] > 128)
+                {
+                    sum += (pixels[i] + pixels[i + 1] + pixels[i + 2]) / (3 * 255.0);
+                    count++;
+                }
+            }
+            return count == 0 ? null : sum / count;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn partner mark", ex);
+            return null;
+        }
     }
 
     /// <summary>The partner's wide logo for a light or a dark ground, or null when its pack has none that fits.</summary>

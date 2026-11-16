@@ -34,7 +34,7 @@ public sealed class PartnerLoginView : UserControl
     public PartnerLoginView(IReadOnlyList<V2pnPartner> partners)
     {
         _partners = partners;
-        Width = 420;
+        Width = 460;
         Content = _body;
         _clock = new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) => Tick());
         AttachedToVisualTree += (_, _) =>
@@ -217,11 +217,14 @@ public sealed class PartnerLoginView : UserControl
             FontWeight = FontWeight.SemiBold,
             LetterSpacing = 6,
             FontFeatures = [FontFeature.Parse("+tnum")],
-            HorizontalAlignment = HorizontalAlignment.Center,
-            Margin = new Thickness(0, 4, 0, 0),
         };
-        AutomationProperties.SetName(digits, string.Format(L.LoginCodeName, string.Join(' ', code.Code.ToCharArray())));
-        parts.Add(digits);
+        // A text block reads out its own text ("735 570", a number); the frame around it reads the digits one by one.
+        AutomationProperties.SetAccessibilityView(digits, AccessibilityView.Raw);
+        var spoken = new Border { Child = digits, HorizontalAlignment = HorizontalAlignment.Center, Margin = new Thickness(0, 4, 0, 0) };
+        AutomationProperties.SetName(spoken, string.Format(L.LoginCodeName, string.Join(' ', code.Code.ToCharArray())));
+        AutomationProperties.SetAccessibilityView(spoken, AccessibilityView.Content);
+        AutomationProperties.SetControlTypeOverride(spoken, AutomationControlType.Text);
+        parts.Add(spoken);
 
         Button? open = null;
         if (code.Url != null)

@@ -20,13 +20,13 @@ public static partial class L
     public static string LoginTitle => T("Sign in with {0}", "Вход через {0}");
     public static string LoginFrom => T("Sign-in by code", "Вход по коду");
     public static string LoginGetting => T("Getting a code from {0}…", "Получаю код у {0}…");
-    public static string LoginScan => T("Scan the QR code with your phone, or open the bot on this computer.", "Наведите камеру телефона на QR-код или откройте бота на этом компьютере.");
+    public static string LoginScan => T("Scan the QR code with your phone or open the bot here.", "Наведите камеру телефона на QR-код или откройте бота здесь.");
     public static string LoginTypeCode => T("Send these six digits to {0}'s bot.", "Отправьте эти шесть цифр боту {0}.");
     public static string LoginCodeName => T("Code: {0}", "Код: {0}");
     public static string LoginQrName => T("QR code of {0}'s bot", "QR-код бота {0}");
     public static string LoginOpenBot => T("Open the bot", "Открыть бота");
-    public static string LoginConfirmIn => T("Confirm the sign-in in {0}'s bot. The code is good for {1} min.", "Подтвердите вход в боте {0}. Код действует {1} мин.");
-    public static string LoginConfirmInSeconds => T("Confirm the sign-in in {0}'s bot. The code is good for {1} s.", "Подтвердите вход в боте {0}. Код действует {1} с.");
+    public static string LoginConfirmIn => T("Confirm in {0}'s bot. The code works for {1} min.", "Подтвердите вход в боте {0}. Код действует {1} мин.");
+    public static string LoginConfirmInSeconds => T("Confirm in {0}'s bot. The code works for {1} s.", "Подтвердите вход в боте {0}. Код действует {1} с.");
     public static string LoginWaiting => T("Waiting for your confirmation…", "Жду подтверждения…");
     public static string LoginSilent => T("{0} is not answering; trying again…", "{0} не отвечает, пробую ещё…");
     public static string LoginAdding => T("Confirmed. Adding the subscription…", "Вход подтверждён. Добавляю подписку…");

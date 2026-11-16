@@ -21,6 +21,10 @@ V2pn's owner now keeps every partner's look in V2pn's repository and publishes i
 - A partner taken off the list, or whose term ends, loses its look at your next check, with a note. Your servers work as before either way.
 - The theme builder is gone; a web page where a provider puts its look together will come later. The provider guide describes the new way.
 
+### Sign in with your provider
+
+- A partner provider can let you sign in by code instead of copying a link: "I have a subscription from a provider" in the first-start walkthrough, or "Sign in with a provider" in the + menu. V2pn shows a QR code and six digits; you confirm in the provider's Telegram bot, and V2pn adds your subscription, updates it and selects its first server. Configra is the first.
+
 ## 1.1.0
 
 ### Provider looks

@@ -3,6 +3,7 @@
     python tools/partner-page.py partners/configra             # into partners/out/site/configra/
     python tools/partner-page.py partners/configra --out D:/x  # somewhere else
     python tools/partner-page.py partners/configra --bot https://t.me/example_bot
+    python tools/partner-page.py partners/configra --home ../../   # the V2pn lockup links to V2pn's site (tools/site.py)
 
 The page carries the partner's logo and colours (its Scene background as the hero when the pack has one), one line on
 what V2pn is, "Download for Windows" and "Download for macOS" pointing at the partner's package in the newest release
@@ -500,7 +501,7 @@ def strings(name, login, has_bot, cabinet):
     return ru, en
 
 
-def build(folder, out, source, bot_override=None):
+def build(folder, out, source, bot_override=None, home=None):
     folder = os.path.abspath(folder)
     with open(os.path.join(folder, "partner.json"), encoding="utf-8") as fh:
         pack = json.load(fh)
@@ -630,6 +631,8 @@ def build(folder, out, source, bot_override=None):
         light=tokens_css(css_modes["light"]),
         dark=tokens_css(css_modes["dark"]),
         v2mark=V2MARK,
+        lockup_open=(f'<a class="lockup" href="{html.escape(home)}">' if home else '<div class="lockup">'),
+        lockup_close=("</a>" if home else "</div>"),
         bar_logo=pic("barlogo", bar_logo, html.escape(name)),
         hero_logo=pic("herologo", hero_logo, html.escape(name)),
         name=html.escape(name),
@@ -691,7 +694,7 @@ a {{ color: var(--linkBg); text-underline-offset: 3px; }}
 :focus-visible {{ outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }}
 .wrap {{ max-width: 1040px; margin: 0 auto; padding: 0 24px; }}
 .bar {{ display: flex; align-items: center; gap: 10px; height: 64px; }}
-.lockup {{ display: flex; align-items: center; gap: 10px; min-width: 0; font-weight: 600; }}
+.lockup {{ display: flex; align-items: center; gap: 10px; min-width: 0; font-weight: 600; color: inherit; text-decoration: none; }}
 .v2 {{ width: 17px; height: 18px; flex: none; }}
 .x {{ color: var(--muted); font-weight: 400; }}
 .barlogo {{ height: 20px; width: auto; display: block; max-width: 160px; object-fit: contain; object-position: left center; }}
@@ -771,7 +774,7 @@ footer a {{ color: var(--muted); }}
 <body class="os-any">
 <div class="wrap">
   <header class="bar">
-    <div class="lockup">{v2mark}<span>V2pn</span><span class="x">×</span>{bar_logo}</div>
+    {lockup_open}{v2mark}<span>V2pn</span><span class="x">×</span>{bar_logo}{lockup_close}
     <div class="sp"></div>
     <div class="switch" role="group" aria-label="Язык" data-t-label="lang">
       <button type="button" data-lang="ru" aria-pressed="true">RU</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
@@ -889,13 +892,14 @@ def main():
     ap.add_argument("--out", help="where to write the page (default partners/out/site/<id>)")
     ap.add_argument("--source", help="the releases page the buttons download from (default: the first V2pnUpdateSources)")
     ap.add_argument("--bot", help="the partner's bot link for «Открыть бота» (default: links.support when it is on t.me)")
+    ap.add_argument("--home", help="where the V2pn lockup in the bar leads (V2pn's site; default: no link)")
     args = ap.parse_args()
     folder = args.folder if os.path.isdir(args.folder) else os.path.join(REPO, "partners", args.folder)
     if not os.path.isfile(os.path.join(folder, "partner.json")):
         raise SystemExit(f"{args.folder}: no partner.json there")
     pid = os.path.basename(os.path.abspath(folder))
     out = args.out or os.path.join(REPO, "partners", "out", "site", pid)
-    build(folder, out, (args.source or release_source()).rstrip("/"), args.bot)
+    build(folder, out, (args.source or release_source()).rstrip("/"), args.bot, args.home)
 
 
 if __name__ == "__main__":

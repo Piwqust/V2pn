@@ -434,8 +434,15 @@ public partial class MainWindow
             panel.Children.Add(Divider(L.ImportOrByHand));
         }
 
+        // A provider's subscription without copying its link: the code confirmed in its bot (MainWindow.ProviderLogin.cs).
+        var login = _loginOffers.Count > 0;
+        if (login)
+        {
+            var row = ProviderLoginRow();
+            panel.Children.Add(new Border { Classes = { "routegroup" }, Margin = new Thickness(-4, sources.Count > 0 ? 0 : 18, -4, 10), Child = row });
+        }
         var qr = Utils.IsWindows();
-        var tiles = new Grid { ColumnDefinitions = new(qr ? "*,*,*" : "*,*"), ColumnSpacing = 8, Margin = new Thickness(0, sources.Count > 0 ? 0 : 20, 0, 0) };
+        var tiles = new Grid { ColumnDefinitions = new(qr ? "*,*,*" : "*,*"), ColumnSpacing = 8, Margin = new Thickness(0, sources.Count > 0 || login ? 0 : 20, 0, 0) };
         var paste = HandTile("SemiIconCopy", L.HandPaste, L.ObPasteHint);
         paste.Click += async (_, _) =>
         {

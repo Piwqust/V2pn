@@ -91,6 +91,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         InitImport();
         InitEdition();
         InitPartnerActions();
+        InitProviderLogin();
         InitDebug();
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();

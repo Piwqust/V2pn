@@ -1,0 +1,51 @@
+{
+  "schema": 1,
+  "id": "pine",
+  "name": "Pine",
+  "brand": {
+    "accent": "#0E7C86"
+  },
+  "edition": {
+    "variants": [
+      "neon",
+      "pass"
+    ],
+    "default": "neon"
+  },
+  "theme": {
+    "palette": {
+      "brand": [
+        "#0E7C86",
+        "#F97316"
+      ]
+    },
+    "background": {
+      "type": "solid"
+    },
+    "connect": "toggle",
+    "window": "mini"
+  },
+  "actions": [
+    {
+      "id": "fast",
+      "label": "Самый быстрый",
+      "icon": "bolt",
+      "do": "connect.best",
+      "strategy": "ping"
+    },
+    {
+      "id": "stable",
+      "label": "Самый стабильный",
+      "icon": "shield",
+      "do": "connect.best",
+      "strategy": "stable"
+    },
+    {
+      "id": "support",
+      "label": "Поддержка",
+      "icon": "chat",
+      "do": "open.link",
+      "url": "https://t.me/example_support"
+    }
+  ]
+}

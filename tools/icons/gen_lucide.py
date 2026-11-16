@@ -16,6 +16,10 @@ import xml.etree.ElementTree as ET
 
 # Semi icon name used by the views -> Lucide icon file.
 MAP = {
+    # V2pn: icons a partner's buttons may wear (V2pnActionIcons) that no Semi name stood for.
+    "V2pnIconGame": "gamepad-2",
+    "V2pnIconCard": "credit-card",
+    "V2pnIconGift": "gift",
     "SemiIconRefresh": "refresh-cw",
     "SemiIconRefresh2": "refresh-ccw",
     "SemiIconRotate": "rotate-cw",

@@ -12,6 +12,8 @@ public static class V2pnRunTrail
     private static readonly TimeSpan HealthEvery = TimeSpan.FromMinutes(30);
     private static readonly object Gate = new();
     private static bool _begun;
+    // Set once the run starts ending, so the late "running" refresh with the start context cannot overwrite it.
+    private static volatile bool _ending;
     private static DateTimeOffset _started;
     private static string _startedBy = string.Empty;
 
@@ -43,14 +45,30 @@ public static class V2pnRunTrail
         try
         {
             var previous = Read();
-            LogStartContext();
             Write(RunState.Running, null);
             AppDomain.CurrentDomain.ProcessExit += (_, _) => MarkClosed();
-            if (previous is not null && previous.Pid != Environment.ProcessId)
+            // Walking the process tree and the job takes a few hundred milliseconds; the window need not wait for
+            // lines that only go to the log.
+            Task.Run(async () =>
             {
-                ReportPrevious(previous);
-            }
-            Task.Run(BeatLoop);
+                try
+                {
+                    LogStartContext();
+                    if (!_ending)
+                    {
+                        TryWrite(RunState.Running, null);
+                    }
+                    if (previous is not null && previous.Pid != Environment.ProcessId)
+                    {
+                        ReportPrevious(previous);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logging.SaveLog(nameof(V2pnRunTrail), ex);
+                }
+                await BeatLoop();
+            });
         }
         catch (Exception ex)
         {
@@ -58,9 +76,17 @@ public static class V2pnRunTrail
         }
     }
 
-    public static void MarkExiting() => TryWrite(RunState.Exiting, null);
+    public static void MarkExiting()
+    {
+        _ending = true;
+        TryWrite(RunState.Exiting, null);
+    }
 
-    public static void MarkClosed() => TryWrite(RunState.Closed, null);
+    public static void MarkClosed()
+    {
+        _ending = true;
+        TryWrite(RunState.Closed, null);
+    }
 
     /// <summary>
     /// The process is going down on an unhandled exception. All of it goes to the log at once, type and
@@ -71,6 +97,7 @@ public static class V2pnRunTrail
         try
         {
             Logging.SaveLog($"V2pn: unhandled exception in {source}, the app is closing: {ex}");
+            _ending = true;
             TryWrite(RunState.Crashed, $"{ex.GetType().Name}: {ex.Message}");
             NLog.LogManager.Flush(TimeSpan.FromSeconds(2));
         }
@@ -186,7 +213,7 @@ public static class V2pnRunTrail
                     Logging.SaveLog($"V2pn: {Span(now - lastBeat)} passed since the previous heartbeat; the computer was probably asleep.");
                 }
                 lastBeat = now;
-                if (!Write(RunState.Running, null))
+                if (_ending || !Write(RunState.Running, null))
                 {
                     return;
                 }

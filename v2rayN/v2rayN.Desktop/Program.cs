@@ -10,6 +10,9 @@ internal class Program
     // V2pn: started by the sign-in entry (Global.AutostartArg), not by the user.
     public static bool StartedAtSignIn { get; private set; }
 
+    // V2pn: a v2pn:// (or happ://, v2raytun://, hiddify://) link V2pn was started with; the window asks about it once shown.
+    public static V2pnAddLink? StartupLink { get; private set; }
+
     // Initialization code. Don't use any Avalonia, third-party APIs or any
     // SynchronizationContext-reliant code before AppMain is called: things aren't initialized
     // yet and stuff might break.
@@ -35,6 +38,11 @@ internal class Program
             ProgramStarted = new EventWaitHandle(false, EventResetMode.AutoReset, exePathKey, out var bCreatedNew);
             if (!rebootas && !bCreatedNew)
             {
+                // A click on a v2pn:// link while V2pn runs: hand the link to the running copy, then wake it.
+                if ((Args ?? []).FirstOrDefault(a => V2pnDeepLink.Parse(a) != null) is { } link)
+                {
+                    V2pnDeepLink.Stash(link);
+                }
                 WindowsShell.AllowAnyForeground();
                 ProgramStarted.Set();
                 return false;
@@ -50,6 +58,7 @@ internal class Program
         }
 
         StartedAtSignIn = (Args ?? []).Any(t => t == Global.AutostartArg);
+        StartupLink = V2pnDeepLink.FromArgs(Args);
 
         if (!AppManager.Instance.InitApp())
         {
@@ -57,6 +66,7 @@ internal class Program
         }
 
         AppManager.Instance.WindowDialog = new WindowDialog();
+        V2pnDeepLink.RegisterScheme();
         return true;
     }
 
@@ -77,6 +87,13 @@ internal class Program
         {
             var showInDock = Design.IsDesignMode || AppManager.Instance.Config.UiItem.MacOSShowInDock;
             builder = builder.With(new MacOSPlatformOptions { ShowInDock = showInDock });
+        }
+
+        // V2pn: in background mode menus and flyouts are drawn inside their parked window; as separate
+        // popup windows they are pushed back onto a monitor.
+        if (OperatingSystem.IsWindows() && Common.OffscreenMode.IsOn)
+        {
+            builder = builder.With(new Win32PlatformOptions { OverlayPopups = true });
         }
 
         return builder;

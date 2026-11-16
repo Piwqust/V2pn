@@ -1907,6 +1907,18 @@ public static class ConfigHandler
             return -1;
         }
 
+        // V2pn: a Clash config becomes its servers, each on the map and in the list, instead of one
+        // opaque mihomo profile. Subscriptions that answer only in Clash format and configs moved from
+        // Clash clients both land here. Proxies a link cannot hold fall through to the whole-config profile.
+        if (V2pnForeignLinks.FromClashYaml(strData, out _) is { Count: > 0 } clashLinks)
+        {
+            var count = await AddBatchServersCommon(config, string.Join(Environment.NewLine, clashLinks), subid, isSub);
+            if (count > 0)
+            {
+                return count;
+            }
+        }
+
         var profileItem = ClashFmt.ResolveFull(strData, subRemarks)
             ?? Hysteria2Fmt.ResolveFull2(strData, subRemarks);
 
@@ -2339,11 +2351,18 @@ public static class ConfigHandler
         foreach (var (item, old) in pairs)
         {
             finalIds[item.IndexId] = old.IndexId;
-            await SQLiteHelper.Instance.DeleteAsync(item);
-            item.IndexId = old.IndexId;
-            await SQLiteHelper.Instance.ReplaceAsync(item);
             kept.Add(old.IndexId);
         }
+        // One transaction: row by row, a subscription of 1000 servers meant 2000 commits, each synced to disk.
+        await SQLiteHelper.Instance.RunInTransactionAsync(db =>
+        {
+            foreach (var (item, old) in pairs)
+            {
+                db.Delete<ProfileItem>(item.IndexId);
+                item.IndexId = old.IndexId;
+                db.InsertOrReplace(item, typeof(ProfileItem));
+            }
+        });
 
         var sort = ProfileExManager.Instance.GetMaxSort();
         foreach (var tempId in order)
@@ -2509,6 +2528,8 @@ public static class ConfigHandler
             config.SubIndexId = subs.LastOrDefault()?.Id;
         }
 
+        // V2pn: a partner's look goes with the last subscription that came from it.
+        _ = Task.Run(V2pnPartners.Instance.PruneAsync);
         return 0;
     }
 

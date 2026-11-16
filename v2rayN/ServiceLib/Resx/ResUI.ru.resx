@@ -1911,4 +1911,67 @@
   <data name="MsgV2pnLocalPortBusy" xml:space="preserve">
     <value>Порт {0} уже занят другой программой, скорее всего другим VPN-клиентом. Закройте её или смените локальный порт в настройках, иначе V2pn не подключится.</value>
   </data>
+  <data name="MsgV2pnSubConfigFiltered" xml:space="preserve">
+    <value>V2pn убрал из конфига подписки то, что подписка задавать не может: {0}.</value>
+  </data>
+  <data name="MsgV2pnSubConfigRefused" xml:space="preserve">
+    <value>V2pn не запускает конфиг ядра {0} из подписки: такой конфиг он проверить не может. Попросите у провайдера ссылки на серверы.</value>
+  </data>
+  <data name="MsgV2pnSubOutboundRefused" xml:space="preserve">
+    <value>V2pn не запускает сервер «{0}» из подписки: его настройки читают файлы или запускают программы на этом компьютере.</value>
+  </data>
+  <data name="V2pnSubEnded" xml:space="preserve">
+    <value>Подписка закончилась</value>
+  </data>
+  <data name="V2pnSubEndsWithinDay" xml:space="preserve">
+    <value>Подписка закончится в течение суток</value>
+  </data>
+  <data name="V2pnSubEndsInDays" xml:space="preserve">
+    <value>Подписка закончится через {0} дн.</value>
+  </data>
+  <data name="V2pnSubRenew" xml:space="preserve">
+    <value>Продлить</value>
+  </data>
+  <data name="V2pnSubMore" xml:space="preserve">
+    <value>Подробнее</value>
+  </data>
+  <data name="MsgV2pnSubMoved" xml:space="preserve">
+    <value>Провайдер перенёс подписку на {0}. Этот адрес есть в списке партнёров V2pn, дальше V2pn обновляет подписку оттуда.</value>
+  </data>
+  <data name="V2pnSubEndsInOneDay" xml:space="preserve">
+    <value>Подписка закончится через 1 день</value>
+  </data>
+  <data name="V2pnPurposeYouTube" xml:space="preserve">
+    <value>YouTube</value>
+  </data>
+  <data name="V2pnPurposeGames" xml:space="preserve">
+    <value>Игры</value>
+  </data>
+  <data name="V2pnPurposeMobile" xml:space="preserve">
+    <value>Мобильный интернет</value>
+  </data>
+  <data name="V2pnPurposeWhitelist" xml:space="preserve">
+    <value>Белые списки</value>
+  </data>
+  <data name="V2pnPurposeStreaming" xml:space="preserve">
+    <value>Стриминг</value>
+  </data>
+  <data name="V2pnPurposeAi" xml:space="preserve">
+    <value>Нейросети</value>
+  </data>
+  <data name="V2pnPurposeTorrents" xml:space="preserve">
+    <value>Торренты</value>
+  </data>
+  <data name="V2pnLockedServer" xml:space="preserve">
+    <value>Настройки этого сервера закрыл провайдер {0}: его нельзя изменить, отправить или выгрузить.</value>
+  </data>
+  <data name="V2pnLockedServerNoName" xml:space="preserve">
+    <value>Настройки этого сервера закрыл провайдер: его нельзя изменить, отправить или выгрузить.</value>
+  </data>
+  <data name="V2pnLockedSub" xml:space="preserve">
+    <value>Настройки этой подписки закрыл провайдер {0}: её ссылкой нельзя поделиться.</value>
+  </data>
+  <data name="V2pnPartnerRoutesName" xml:space="preserve">
+    <value>Маршруты {0}</value>
+  </data>
 </root>

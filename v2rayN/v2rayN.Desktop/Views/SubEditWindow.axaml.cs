@@ -22,9 +22,17 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
             // A pasted link often carries a trailing space or line break.
             txtUrl.Text = txtUrl.Text?.Trim();
             FillEmptyName();
+            SaveProviderChoices();
         };
         btnSupport.Click += (s, e) => ProcUtils.ProcessStart(btnSupport.Tag as string);
         btnWebPage.Click += (s, e) => ProcUtils.ProcessStart(btnWebPage.Tag as string);
+        btnAnnounceMore.Click += (s, e) =>
+        {
+            if (btnAnnounceMore.Tag is string url && SubPanelHeaders.ParseSecureLink(url) != null)
+            {
+                ProcUtils.ProcessStart(url);
+            }
+        };
         Closed += (s, e) => AnnounceIfAdded();
         SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
 

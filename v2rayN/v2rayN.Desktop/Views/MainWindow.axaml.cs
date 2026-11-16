@@ -33,6 +33,22 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private ClashConnectionsView? _clashConnectionsView;
     private ClashProxiesView? _clashProxiesView;
 
+    // The log, the server table and the Clash pages are built the first time they open: they bind to their
+    // view models only while shown, and building all four at start cost about a third of a second.
+    private MsgView? MsgPage => ViewModel is { } vm ? _msgView ??= new MsgView { DataContext = vm.MsgViewModel } : null;
+
+    private ProfilesView? TablePage => ViewModel is { } vm
+        ? _profilesView ??= new ProfilesView { DataContext = vm.ProfilesViewModel, MainViewModel = vm }
+        : null;
+
+    private ClashProxiesView? ClashProxiesPage => ViewModel is { } vm
+        ? _clashProxiesView ??= new ClashProxiesView { DataContext = vm.ClashProxiesViewModel }
+        : null;
+
+    private ClashConnectionsView? ClashConnectionsPage => ViewModel is { } vm
+        ? _clashConnectionsView ??= new ClashConnectionsView { DataContext = vm.ClashConnectionsViewModel }
+        : null;
+
     private string? _activeIndexId;
     private bool _hasServer;
 
@@ -77,9 +93,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuAddServerViaClipboard.Click += async (_, _) => await AddServerViaClipboardAsync();
         btnConnect.Click += BtnConnect_Click;
         btnWelcomePaste.Click += async (_, _) => await AddServerViaClipboardAsync();
-        btnWelcomeImport.Click += async (_, _) => await ImportFromV2rayNAsync(fromWelcome: true);
-        menuImportV2rayN.Click += async (_, _) => await ImportFromV2rayNAsync(fromWelcome: false);
-        _ = LookForV2rayNAsync();
+        InitImport();
+        InitEdition();
+        InitPartnerActions();
+        InitProviderLogin();
+        InitDebug();
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();
@@ -106,10 +124,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnCloseWindow.Click += (_, _) => Close();
         btnPageBack.Click += (_, _) => ClosePage();
         menuPingAll.Click += async (_, _) => await PingAllAsync();
-        menuPageLog.Click += (_, _) => ShowPage(L.MenuLog, _msgView);
-        menuPageTable.Click += (_, _) => ShowPage(L.MenuTable, _profilesView);
-        menuPageProxies.Click += (_, _) => ShowPage(L.MenuClashProxies, _clashProxiesView);
-        menuPageConnections.Click += (_, _) => ShowPage(L.MenuClashConnections, _clashConnectionsView);
+        menuPageLog.Click += (_, _) => ShowPage(L.MenuLog, MsgPage);
+        menuPageTable.Click += (_, _) => ShowPage(L.MenuTable, TablePage);
+        menuPageProxies.Click += (_, _) => ShowPage(L.MenuClashProxies, ClashProxiesPage);
+        menuPageConnections.Click += (_, _) => ShowPage(L.MenuClashConnections, ClashConnectionsPage);
         lstTabs.SelectionChanged += LstTabs_SelectionChanged;
         lstRows.KeyDown += LstRows_KeyDown;
         lstRows.SelectionChanged += (_, _) =>
@@ -126,7 +144,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         // Headers without actions and hint text are skipped by the arrow keys. Containers are recycled,
         // so the value is set both ways.
         lstRows.ContainerPrepared += (_, e) =>
-            e.Container.Focusable = lstRows.ItemFromContainer(e.Container) is not (SideHintRow or SideHeaderRow { ShowPing: false, ShowSubActions: false });
+            e.Container.Focusable = lstRows.ItemFromContainer(e.Container) is not (SideHintRow or SideBannerRow or SideAnnounceRow or SideHeaderRow { ShowPing: false, ShowSubActions: false });
         lstRows.ContextRequested += LstRows_ContextRequested;
         txtSearch.KeyDown += TxtSearch_KeyDown;
         txtSearch.TextChanged += (_, _) =>
@@ -148,7 +166,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (_pillOpensLog)
             {
                 e.Handled = true;
-                ShowPage(L.MenuLog, _msgView);
+                ShowPage(L.MenuLog, MsgPage);
             }
         };
 
@@ -395,12 +413,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         contentStatusBarView.Content = _statusView;
         ApplyLayout();
-
-        _msgView ??= new MsgView { DataContext = vm.MsgViewModel };
-        _profilesView ??= new ProfilesView { DataContext = vm.ProfilesViewModel };
-        _profilesView.MainViewModel = vm;
-        _clashProxiesView ??= new ClashProxiesView { DataContext = vm.ClashProxiesViewModel };
-        _clashConnectionsView ??= new ClashConnectionsView { DataContext = vm.ClashConnectionsViewModel };
 
         if (_sidebar == null)
         {
@@ -685,7 +697,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             var serverChanged = _shownOnce && item?.IndexId != _activeIndexId;
             _activeIndexId = item?.IndexId;
 
-            var code = CountryResolver.Resolve(item?.Remarks);
+            // V2pn: the partner's country for its server (pack or API) wins over a guess from the name.
+            var code = V2pnPartnerLive.Instance.Describe(item?.Subid, item?.Remarks, item?.Address)?.Country ?? CountryResolver.Resolve(item?.Remarks);
             var country = WorldMap.Instance.Get(code);
             _mapCode = country?.Code ?? code;
             _serverName = item == null ? null : CountryResolver.ServerName(item);
@@ -744,6 +757,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (empty)
             {
                 RefreshWelcomeRoute();
+                ShowImportOnWelcomeOnce();
             }
             var unprotected = state == ProtectionState.Unprotected;
             SetConnectLabel(unprotected ? L.Connect : L.Disconnect);
@@ -773,10 +787,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (!_shownOnce)
             {
                 RevealStage();
+                _ = MaybeStartOnboardingAsync();
             }
             _shownOnce = true;
         }
 
+        // V2pn: the partner's buttons under Connect while a server of its subscription is in use.
+        RefreshPartnerActionBar(item?.Subid);
         _statusView?.SetServer(item, FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId));
     }
 
@@ -991,6 +1008,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     /// </summary>
     private void RefreshTray(ProtectionState state, string? problem)
     {
+        _trayState = (state, problem);
         var status = ViewModel?.StatusBarViewModel;
         var server = _serverName ?? L.NoServer;
         if (server.Length > 40)
@@ -1011,17 +1029,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             var mode = status?.EnableTun == true ? L.ModeVpn : state == ProtectionState.LocalOnly ? L.LocalOnly : L.ModeProxy;
             text = $"{L.Connected} · {server} · {mode}";
         }
+        // V2pn: the open partner look names itself too (MainWindow.Edition.cs).
+        var app = EditionTitle();
         Title = state == ProtectionState.Unprotected
-            ? $"{L.AppName} — {problem ?? L.Unprotected}"
+            ? $"{app} — {problem ?? L.Unprotected}"
             : problem != null
-                ? $"{L.AppName} — {problem} · {server}"
-                : $"{L.AppName} — {L.Connected} · {server}";
+                ? $"{app} — {problem} · {server}"
+                : $"{app} — {L.Connected} · {server}";
         if (status == null)
         {
             return;
         }
         status.TrayStatusText = text;
-        var tip = $"{L.AppName} — {text}";
+        var tip = $"{app} — {text}";
         // Windows cuts a tray tooltip at 127 characters; Linux trays keep v2rayN's plain name.
         status.TrayToolTipText = Utils.IsLinux() ? Global.AppName : tip.Length > 127 ? tip[..126] + "…" : tip;
         status.TrayConnectText = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect;
@@ -1188,6 +1208,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnRouteRussia.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.RussiaDirect);
         btnRouteBlocked.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.BlockedOnly);
         btnRouteAll.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.All);
+        InitPartnerRoutes();
         togBlockAds.IsChecked = _config.UiItem.V2pnBlockAds;
         togBlockAds.IsCheckedChanged += async (_, _) => await SetBlockAdsAsync(togBlockAds.IsChecked == true);
         lstCustomRoutes.SelectionChanged += async (_, _) =>
@@ -1293,6 +1314,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         try
         {
             var changed = await RoutingPresets.EnsureAsync(_config);
+            await SyncPartnerRoutesAsync(refresh: false);
             await UseV2pnRouteOnFreshInstallAsync();
             await status.RefreshRoutingsMenu();
             if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id))
@@ -1338,6 +1360,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnWelcomeRouteAll.Classes.Set("active", kind == RoutingPresetKind.All);
         NameOption(btnWelcomeRouteRu, L.RouteRussiaDirect, kind == RoutingPresetKind.RussiaDirect);
         NameOption(btnWelcomeRouteAll, L.RouteAll, kind == RoutingPresetKind.All);
+        RefreshOnboardingRoute();
     }
 
     // The tick of the chosen option is visual only; a screen reader hears it in the name.
@@ -1360,9 +1383,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         NameOption(btnRouteRussia, L.RouteRussiaDirect, kind == RoutingPresetKind.RussiaDirect);
         NameOption(btnRouteBlocked, L.RouteBlockedOnly, kind == RoutingPresetKind.BlockedOnly);
         NameOption(btnRouteAll, L.RouteAll, kind == RoutingPresetKind.All);
+        RefreshPartnerRoute(status, active);
         Avalonia.Automation.AutomationProperties.SetName(btnRoute, txtRoute.Text == L.RouteTitle ? L.RouteTitle : $"{L.RouteTitle}: {txtRoute.Text}");
 
-        var custom = status.RoutingItems.Where(t => !RoutingPresets.IsPreset(t.Id)).ToList();
+        var custom = status.RoutingItems.Where(t => !RoutingPresets.IsPreset(t.Id) && !V2pnPartnerRoutes.IsPartnerRoute(t.Id)).ToList();
         _routeSync = true;
         lstCustomRoutes.ItemsSource = custom;
         lstCustomRoutes.SelectedItem = kind == null ? custom.FirstOrDefault(t => t.Id == active?.Id) : null;
@@ -1400,9 +1424,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var enabled = text == null || failed;
         btnWelcomeRouteRu.IsEnabled = enabled;
         btnWelcomeRouteAll.IsEnabled = enabled;
+        OnboardingRouteBusy(text, failed);
         btnRouteRussia.IsEnabled = enabled;
         btnRouteBlocked.IsEnabled = enabled;
         btnRouteAll.IsEnabled = enabled;
+        btnRoutePartner.IsEnabled = enabled;
     }
 
     // The failure stays readable for a few seconds, unless a new attempt has replaced it by then.
@@ -1530,6 +1556,15 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void SideSub_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
 
     private void SideAction_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
+
+    // V2pn: "More" under the provider's announcement opens its announce-url (https or tg only, SubPanelHeaders).
+    private void SideAnnounce_Click(object? sender, RoutedEventArgs e)
+    {
+        if ((sender as Control)?.DataContext is SideAnnounceRow { Url: { } url } && SubPanelHeaders.ParseSecureLink(url) != null)
+        {
+            ProcUtils.ProcessStart(url);
+        }
+    }
 
     private async void ActivateRow(SideRow? target)
     {
@@ -2129,6 +2164,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var busy = _sidebar?.SubBusy(subId);
         busy?.IsBusy = true;
+        _subUpdatesRunning++;
         try
         {
             var before = await V2pnSubs.SnapshotAsync(subId);
@@ -2142,8 +2178,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         finally
         {
             busy?.IsBusy = false;
+            _subUpdatesRunning--;
         }
     }
+
+    // How many subscriptions are downloading right now; the walkthrough shows a spinner while any is.
+    private int _subUpdatesRunning;
 
     // "Update all" (either way) compares every subscription's update time from the start of the run to its end.
     private IDisposable TrackSubUpdates(ReactiveCommand<RxVoid, RxVoid> command)
@@ -2263,9 +2303,22 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         flyout.Items.Add(Item(L.MenuTcping, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Tcping); }, "SemiIconPulse"));
         flyout.Items.Add(Item(L.TestSpeed, async () => { Select(); await profiles.ServerSpeedtest(ESpeedActionType.Speedtest); }, "SemiIconStopwatchStroked"));
         flyout.Items.Add(new Separator());
-        flyout.Items.Add(Item(L.Edit, async () => { Select(); await profiles.EditServerAsync(); }, "SemiIconEditStroked", gesture: new KeyGesture(Key.D, KeyModifiers.Control)));
-        flyout.Items.Add(Item(L.Share, async () => { Select(); await profiles.ShareServerAsync(); }, "SemiIconQrCode"));
-        flyout.Items.Add(Item(L.CopyLink, async () => { Select(); await profiles.Export2ShareUrlAsync(false); }, "SemiIconCopyStroked", gesture: new KeyGesture(Key.C, KeyModifiers.Control)));
+        if (V2pnLocks.Instance.ForSub(model.Subid) is { Settings: true } locked)
+        {
+            // V2pn: the partner closed this server's settings; the menu says so instead of offering what it would refuse.
+            flyout.Items.Add(new MenuItem
+            {
+                Header = string.Format(L.LockedMenu, locked.PartnerName),
+                IsEnabled = false,
+                Icon = new PathIcon { Classes = { "mi" }, Data = this.FindResource("SemiIconLock") as Geometry },
+            });
+        }
+        else
+        {
+            flyout.Items.Add(Item(L.Edit, async () => { Select(); await profiles.EditServerAsync(); }, "SemiIconEditStroked", gesture: new KeyGesture(Key.D, KeyModifiers.Control)));
+            flyout.Items.Add(Item(L.Share, async () => { Select(); await profiles.ShareServerAsync(); }, "SemiIconQrCode"));
+            flyout.Items.Add(Item(L.CopyLink, async () => { Select(); await profiles.Export2ShareUrlAsync(false); }, "SemiIconCopyStroked", gesture: new KeyGesture(Key.C, KeyModifiers.Control)));
+        }
         flyout.Items.Add(new Separator());
         flyout.Items.Add(Item(L.MenuDelete, async () => { Select(); await profiles.RemoveServerAsync(); }, "SemiIconDeleteStroked", danger: true, gesture: new KeyGesture(Key.Delete)));
         flyout.ShowAt(target, placement == PlacementMode.Pointer);
@@ -2374,7 +2427,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void OnProgramStarted(object state, bool timeout)
     {
         Dispatcher.UIThread.Post(() =>
-                ShowHideWindow(true),
+            {
+                ShowHideWindow(true);
+                // A second start may have come from a click on a v2pn:// link.
+                _ = HandleStashedLinkAsync();
+            },
             DispatcherPriority.Default);
     }
 
@@ -2897,6 +2954,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             await AutoStartupHandler.MigrateAutostartArg(_config);
         });
         WarnAboutOpenLanProxyOnce();
+        _ = HandleStartupLinkAsync();
+        // V2pn: what providers ask for at start (connect, update, test), once the start itself is done.
+        _ = RunProviderStartAsync();
         if (V2pnImport.Imported is { } imported)
         {
             ShowToast(ToastKind.Success, string.Format(L.ImportDone, imported.Servers, imported.Subscriptions));
@@ -2910,74 +2970,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private string? _announcedVersion;
 
-    #region V2pn: moving from v2rayN
-
-    private V2rayNInstall? _v2rayN;
-
-    /// <summary>Offers the move on the first-run card when a v2rayN with servers is on this computer.</summary>
-    private async Task LookForV2rayNAsync()
-    {
-        try
-        {
-            _v2rayN = await Task.Run(() => V2pnImport.Find().FirstOrDefault(i => i.Servers > 0 || i.Subscriptions > 0));
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog("V2pn import", ex);
-        }
-        var found = _v2rayN != null;
-        panelWelcomeImport.IsVisible = found;
-        // One solid button on the card: the move when it is offered, else pasting a link.
-        btnWelcomePaste.Classes.Set("accent", !found);
-        if (_v2rayN is { } install)
-        {
-            txtWelcomeImport.Text = string.Format(L.ImportFoundCounts, install.Servers, install.Subscriptions);
-        }
-    }
-
-    /// <summary>
-    /// Closes v2rayN, notes where from and restarts: the copy is made at the next start, before V2pn
-    /// reads its settings. From the menu, over servers V2pn already has, it asks first.
-    /// </summary>
-    private async Task ImportFromV2rayNAsync(bool fromWelcome)
-    {
-        try
-        {
-            var install = _v2rayN ?? await Task.Run(() => V2pnImport.Find().FirstOrDefault());
-            if (install == null)
-            {
-                ShowToast(ToastKind.Info, L.ImportNone);
-                return;
-            }
-            var hasOwn = (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) > 0;
-            if ((!fromWelcome || hasOwn)
-                && await UI.ShowYesNo(string.Format(L.ImportConfirm, install.DataDir), L.ImportConfirmYes) != ButtonResult.Yes)
-            {
-                return;
-            }
-            if (!await Task.Run(() => V2pnImport.Stop(install)))
-            {
-                ShowToast(ToastKind.Warning, L.ImportCloseFirst);
-                return;
-            }
-            V2pnImport.Schedule(install.DataDir);
-            ShowToast(ToastKind.Info, L.ImportRestarting);
-            // Lets the message paint before the window goes.
-            await Task.Delay(800);
-            if (!ProcUtils.RebootAsAdmin(false))
-            {
-                ShowToast(ToastKind.Error, L.ImportRestartFailed);
-                return;
-            }
-            await AppManager.Instance.AppExitAsync(true);
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog("V2pn import", ex);
-        }
-    }
-
-    #endregion V2pn: moving from v2rayN
 
     private void OnAppUpdateState(EV2pnUpdateState state)
     {
@@ -3046,6 +3038,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         const double clearance = 40;
         var top = panelHeader.IsVisible ? panelHeader.Bounds.Bottom : 0;
         var bottom = contentStatusBarView.IsVisible && contentStatusBarView.Bounds.Height > 0 ? contentStatusBarView.Bounds.Top : h;
+        if (passHost.Content != null && passHost.IsVisible && passHost.Bounds.Height > 0)
+        {
+            bottom = Math.Min(bottom, passHost.Bounds.Top);
+        }
         var y = h * MapView.DefaultFocusY;
         y = top + clearance <= bottom - clearance
             ? Math.Clamp(y, top + clearance, bottom - clearance)

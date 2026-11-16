@@ -69,13 +69,54 @@ The main window follows its width (`MainWindow.Adaptive.cs`), from 360 px up:
 
 ## First start
 
-With no servers, the map shows an "Add your first server" card instead of the header, the Connect button and the statistics card. It has three actions: "Paste from clipboard" (a subscription and `vless://` links both work), "Add subscription" and "Scan QR code". The list on the left says "No servers yet" and offers to add a subscription. If v2rayN with servers is on the computer, the card offers "Move from v2rayN" first.
+### The walkthrough
+
+A fresh install opens a five-step walkthrough over the window (`MainWindow.Onboarding.cs`). Bars at the top show the steps; "Skip" is always there; Back and the main button stay in the footer while a long step scrolls.
+
+1. **Welcome.** The language: English or Русский. Picking the other one restarts V2pn in it, back on this step.
+2. **Your servers.** Other VPN apps found on the computer, with ticks and "Move from N apps" (see "Moving from other apps"), and three tiles: paste a link, add a subscription, scan a QR code. While the search runs, a line says so, and the step redraws when it ends. The footer counts the servers as subscriptions download ("Downloading servers… 180 servers", then "180 servers ready"). Without servers the main button reads "Add later".
+3. **What goes through the VPN.** The three routing modes and "Block ads and trackers", through the same code as the menu under Connect; the Russian mode shows its download progress.
+4. **How to connect.** Proxy or VPN. Only the choice is saved: the administrator question comes with the first connection, as with the switch under Connect.
+5. **All set.** Servers, the server Connect will use, the route and the mode, each with "Change". "Connect" ends the walkthrough and connects; "Not now" ends it.
+
+The step is saved (`V2pnOnboardingStep`), so a restart it causes comes back to it; `V2pnOnboarded` marks it done or skipped. While it is open, the window under it is disabled, so Tab and screen readers cannot reach Connect behind it. People who already had servers are marked done without seeing it; so is a move from v2rayN, which brings its own routing and settings. A skipped walkthrough leaves the first-run card below.
+
+### The first-run card
+
+
+With no servers, the map shows an "Add your first server" card instead of the header, the Connect button and the statistics card. It has three actions: "Paste from clipboard" (a subscription and `vless://` links both work), "Add subscription" and "Scan QR code". The list on the left says "No servers yet" and offers to add a subscription. If other VPN apps with servers are on the computer, the card offers to move from them first (see "Moving from other apps" below).
 
 Lower in the same card you choose what goes through the VPN: "Russian sites direct" or "Everything through VPN". On a clean install v2rayN turns on its own set "All except China", so V2pn switches it once to "Everything through VPN": the same in practice, and no files are needed. The Russian mode downloads the runetfreedom site lists only when picked; the progress shows right in the card.
 
 A new subscription updates itself every 12 hours (720 minutes). v2rayN's default is 0, that is, never.
 
-A new install starts in English on every system; the other languages are in Appearance.
+A new install starts in English on every system; the walkthrough offers Russian on its first step, and the other languages are in Appearance.
+
+## Moving from other apps
+
+V2pn looks for other clients at start (in the background) and in Tools → "Move from another app". When it finds some, the first-run card leads with the move: the title becomes "Move your servers to V2pn", and the apps are rows in the same well as the routing modes, each with a coloured tile, its name and what it holds. With several apps each row has a tick (all on) and the button counts them ("Move from 3 apps"); with one, the button names it. More than four apps show three rows and "N more". The ways to add a server by hand move under a divider ("or add a server by hand") as one row of three short buttons. Happ, which V2pn cannot read, is a row without a tick that says to copy its link.
+
+| Client | What V2pn reads |
+| --- | --- |
+| v2rayN | alone: the whole guiConfigs folder, with routing and settings (a restart); with other apps: its subscriptions and hand-added servers |
+| Clash Verge (Rev), Clash Nyanpasu, Clash Party | `profiles.yaml` / `profile.yaml`: remote profiles are subscriptions, local ones are read for their `proxies` |
+| Clash for Windows | `~/.config/clash/profiles/list.yml` |
+| FlClash, FlClashX | `database.sqlite` or `shared_preferences.json`, and `profiles/<id>.yaml` |
+| NekoRay, NekoBox, Throne up to 1.0 | `config/groups/*.json` (a group with a url is a subscription) and `config/profiles/*.json` |
+| Throne 1.1+ | `config/throne.db` |
+| Hiddify | `db.sqlite` (`profile_entries`) and `configs/<id>.json` |
+| v2RayTun | `shared_preferences.json` (`flutter.sub_*`, `flutter.config_*`) |
+| Karing | `karing_subscribe.json` (remote subscriptions only) |
+| GUI.for.Clash, GUI.for.SingBox | `data/subscribes.yaml` |
+| Happ | nothing: it encrypts its data; the menu says to copy the link in Happ |
+
+- Subscriptions are added with the name the person gave them (names the other app made up, like "Remote File", are left for the panel to replace) and download at once, in view in the Subscriptions tab.
+- Servers added by hand become share links and go through the same importer as a pasted link (`V2pnForeignLinks`). A server V2pn already has (same kind, address, port and secret) is skipped; so is a subscription with the same link.
+- Other apps' files are only read; SQLite databases are copied to guiTemps first, so a running app is never touched.
+- Portable copies are found next to running processes and a few levels into Downloads, Desktop, Documents, Programs and the user folder. "Choose the app's folder…" covers the rest.
+- A Clash subscription becomes separate servers instead of one mihomo profile; proxies a link can't hold fall back to the whole-config profile.
+
+Code: `ServiceLib/V2pn/V2pnForeignImport.cs` (finding and adding), `V2pnForeignReaders.cs` (one reader per client), `V2pnForeignLinks.cs` (Clash, sing-box and NekoRay servers to links), `v2rayN.Desktop/Views/MainWindow.Import.cs` (card and menu).
 
 ## Connection state
 

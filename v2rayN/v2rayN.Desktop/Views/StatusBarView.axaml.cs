@@ -48,6 +48,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         _config = AppManager.Instance.Config;
         btnCheck.Click += (_, _) => _ = CheckConnectionAsync();
         Avalonia.Automation.AutomationProperties.SetName(btnCheck, L.CheckConnection);
+        btnIpInfo.Click += (_, _) => _ = MainWindow.ShowRoomyDialog(new IpInfoView());
+        Avalonia.Automation.AutomationProperties.SetName(btnIpInfo, L.IpButtonTip);
         btnFindWorking.Click += (_, _) =>
         {
             if (_findProgress == null)
@@ -209,7 +211,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         }
         else
         {
-            txtStatServer.Text = item.Port > 0 ? $"{item.Address}:{item.Port}" : item.Address;
+            // V2pn: a partner that closed its settings keeps the address out of sight.
+            txtStatServer.Text = V2pnLocks.Instance.Hides(item.Subid) ? L.AddressHidden : item.Port > 0 ? $"{item.Address}:{item.Port}" : item.Address;
             var transport = string.Join(" · ", new[] { item.GetNetwork(), item.StreamSecurity }.Where(t => t.IsNotEmpty()));
             txtStatProtocol.Text = transport.IsNotEmpty() ? $"{item.ConfigType} · {transport}" : item.ConfigType.ToString();
         }
@@ -355,6 +358,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         // Both labels don't fit the header at the minimum width in Russian; Check keeps its icon, tooltip and name.
         // A compact card keeps only the icon too.
         txtCheckAction.IsVisible = !btnFindWorking.IsVisible && !_compact;
+        txtIpInfo.IsVisible = txtCheckAction.IsVisible;
         spinFind.IsVisible = finding;
         txtFindWorking.Text = _findProgress ?? L.FindWorkingServer;
         // While the offer is up, the pill above already says the server is not answering; a "No response"

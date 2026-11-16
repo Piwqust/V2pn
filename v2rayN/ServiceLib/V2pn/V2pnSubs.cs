@@ -9,6 +9,16 @@ public static class V2pnSubs
     /// <summary>Minutes between automatic updates of a new subscription: twice a day, what panels usually ask for.</summary>
     public const int NewSubUpdateMinutes = 720;
 
+    /// <summary>
+    /// The User-Agent of a subscription download when the subscription sets none: v2rayN's, which panels pick the
+    /// config format by, followed by V2pn's own name, so a panel can answer V2pn with its own headers (a Remnawave
+    /// response rule on "V2pn"). "v2rayN/7.25.6 V2pn/1.0.3".
+    /// </summary>
+    public static string SubscriptionUserAgent => $"{Utils.GetVersion(false)} {Global.AppName}/{V2pnInfo.Version}";
+
+    /// <summary>What a subscription download sends: the subscription's own User-Agent, else <see cref="SubscriptionUserAgent"/>.</summary>
+    public static string UserAgentFor(SubItem item) => item.UserAgent.IsNullOrEmpty() ? SubscriptionUserAgent : item.UserAgent;
+
     /// <summary>The links when every non-empty line of <paramref name="text"/> is an http(s) link; otherwise null.</summary>
     public static List<string>? SubscriptionLinks(string? text)
     {

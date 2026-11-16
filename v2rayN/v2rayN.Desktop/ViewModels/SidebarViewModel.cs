@@ -109,13 +109,32 @@ public sealed class SideHintRow(string text) : SideRow
     public override string ToString() => Text;
 }
 
+/// <summary>V2pn: a subscription's banner (V2pnSubDefaults.Banner), under its row or at the top of its servers.</summary>
+public sealed class SideBannerRow(SubBanner banner, string subId) : SideRow
+{
+    public SubBanner Banner { get; } = banner;
+    public string SubId { get; } = subId;
+    public override string ToString() => Banner.Text;
+}
+
+/// <summary>V2pn: the provider's announcement above its servers, with "More" when it sent announce-url.</summary>
+public sealed class SideAnnounceRow(string text, string? url) : SideRow
+{
+    public string Text { get; } = text;
+    public string? Url { get; } = url;
+    public bool HasUrl => Url.IsNotEmpty();
+    public override string ToString() => Text;
+}
+
 public sealed class SideServerRow : SideRow
 {
     /// <param name="memberOf">Set for a row inside an opened pool: it is titled by its number.</param>
     public SideServerRow(ProfileItemModel model, bool showSubscription, bool indent, ServerSeries? memberOf = null)
     {
         Model = model;
-        Code = CountryResolver.Resolve(model.Remarks);
+        // V2pn: the partner's word about its server (pack and API): its country wins over a guess from the name.
+        var partnerNote = V2pnPartnerLive.Instance.Describe(model.Subid, model.Remarks, model.Address);
+        Code = partnerNote?.Country ?? CountryResolver.Resolve(model.Remarks);
         Flag = V2pnConverters.Flag(Code);
         var country = WorldMap.Instance.Get(Code)?.Name;
         var protocol = V2pnConverters.ProtocolName.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string;
@@ -146,12 +165,29 @@ public sealed class SideServerRow : SideRow
                 && string.Equals(CountryResolver.Resolve(CountryResolver.StripFlag(model.Remarks)), Code, StringComparison.OrdinalIgnoreCase);
             Subtitle = sub ?? string.Join(" · ", new[] { namesCountry ? null : country, protocol }.Where(t => t.IsNotEmpty()));
         }
+        if (partnerNote?.City is { } city && !Title.Contains(city, StringComparison.CurrentCultureIgnoreCase))
+        {
+            Subtitle = Subtitle.IsNullOrEmpty() ? city : $"{city} · {Subtitle}";
+        }
+        Note = partnerNote?.Note;
+        Purposes = partnerNote?.Purposes.Select(V2pnPurposes.Label).ToList() ?? [];
         Indent = indent;
         Monogram = V2pnConverters.ProtocolMonogram.Convert(model.ConfigType, typeof(string), null, CultureInfo.CurrentCulture) as string ?? string.Empty;
     }
 
     public ProfileItemModel Model { get; }
     public string Monogram { get; }
+
+    /// <summary>The partner's short note about the server, under its name; null without one.</summary>
+    public string? Note { get; }
+    public bool HasNote => Note != null;
+
+    /// <summary>What the partner says the server is for ("YouTube", "Games"), as chips on the row.</summary>
+    public IReadOnlyList<string> Purposes { get; }
+    public bool HasPurposes => Purposes.Count > 0;
+
+    /// <summary>Taller than a plain row (a note or chips under the name): it gets padding above and below.</summary>
+    public bool IsRich => HasNote || HasPurposes;
 
     // Inside a country group the flag repeats the group's own, so those rows show the protocol instead.
     public bool ShowFlag => !Indent && HasFlag;
@@ -234,6 +270,13 @@ public sealed class SideSubRow : SideRow
             hash = unchecked((hash * 31) + c);
         }
         Tint = Application.Current?.TryGetResource(Tints[Math.Abs(hash % Tints.Length)], null, out var brush) == true ? brush as IBrush : null;
+        // V2pn: a verified partner's subscription wears the partner's mark on its own ink, not a letter.
+        if (V2pnPartners.Instance.ForSubscription(sub.Item) is { } partner && MarkOf(partner) is { } mark)
+        {
+            Mark = mark;
+            Tint = new SolidColorBrush(Color.Parse("#171716"));
+            PartnerTip = string.Format(L.SubPartnerMarkTip, partner.Name);
+        }
 
         var updated = sub.Item.UpdateTime > 0 ? DateTimeOffset.FromUnixTimeSeconds(sub.Item.UpdateTime).LocalDateTime : (DateTime?)null;
         var age = updated.HasValue ? DateTime.Now - updated.Value : (TimeSpan?)null;
@@ -242,7 +285,13 @@ public sealed class SideSubRow : SideRow
         Info = $"{L.ServerCount(sub.Count)} · {(updateFailed ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(sub.Item))}";
         Freshness = updateFailed ? L.SubUpdateFailedTip : age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
         Usage = SubUsage.From(SubInfoManager.Instance.Get(sub.Id));
+        var locked = V2pnLocks.Instance.ForSub(sub.Id);
+        LockText = locked.Settings ? string.Format(L.LockedBy, locked.PartnerName) : locked.HideUrl ? string.Format(L.LockedUrl, locked.PartnerName) : null;
     }
+
+    /// <summary>"Settings closed by Kestrel" when the partner closed them (V2pnLocks); null otherwise.</summary>
+    public string? LockText { get; }
+    public bool IsLocked => LockText != null;
 
     /// <summary>
     /// The name to show: v2rayN's "import_sub" placeholder and an empty name read as the link's host, so an
@@ -261,6 +310,32 @@ public sealed class SideSubRow : SideRow
     public bool HasUsage => Usage != null;
     public BusyState Busy { get; }
     public string Monogram { get; }
+
+    /// <summary>The partner's square mark, when the subscription comes from a verified partner whose pack has one.</summary>
+    public Bitmap? Mark { get; }
+    public bool HasMark => Mark != null;
+    public bool ShowMonogram => Mark == null && !Busy.IsBusy;
+    public string? PartnerTip { get; }
+
+    private static readonly Dictionary<string, Bitmap?> Marks = [];
+
+    private static Bitmap? MarkOf(V2pnPartner partner)
+    {
+        var path = partner.AssetPath(partner.Pack.Mark);
+        if (path == null)
+        {
+            return null;
+        }
+        lock (Marks)
+        {
+            if (!Marks.TryGetValue(path, out var bitmap))
+            {
+                bitmap = Views.EditionLooks.Scene.Picture(partner, partner.Pack.Mark);
+                Marks[path] = bitmap;
+            }
+            return bitmap;
+        }
+    }
     public IBrush? Tint { get; }
     public string Info { get; }
     public bool IsFresh { get; }
@@ -428,6 +503,11 @@ public sealed partial class SidebarViewModel : ReactiveObject
 
         profiles.ProfileItems.CollectionChanged += (_, _) => QueueRebuild();
         profiles.FavoriteItems.CollectionChanged += (_, _) => QueueRebuild();
+        // V2pn: a partner verified or dropped changes the mark on its subscription.
+        V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
+        // V2pn: what a partner closed, and its live word about its servers (groups, purposes, notes).
+        V2pnLocks.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
+        V2pnPartnerLive.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
         profiles.SubNavItems.CollectionChanged += (_, _) => QueueRebuild();
         // Fastest server and the best ping per country are computed on rebuild.
         profiles.PingTestFinished.AsObservable()
@@ -601,7 +681,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
             var q = Search.Trim();
             var found = all.Where(m =>
                     m.Remarks?.Contains(q, StringComparison.OrdinalIgnoreCase) == true
-                    || m.Address?.Contains(q, StringComparison.OrdinalIgnoreCase) == true
+                    || (m.Address?.Contains(q, StringComparison.OrdinalIgnoreCase) == true && !V2pnLocks.Instance.Hides(m.Subid))
                     || (WorldMap.Instance.Get(CountryResolver.Resolve(m.Remarks))?.Name.Contains(q, StringComparison.OrdinalIgnoreCase) ?? false))
                 .ToList();
             _pingScope = found;
@@ -844,8 +924,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
     {
         var (series, rest) = ServerNames.SplitSeries(all);
         var sort = CountrySort == SideSort.Usage && !StatsEnabled ? SideSort.Name : CountrySort;
+        // V2pn: a partner's own country for a server wins over a guess from its name.
         var groups = SortCountries(ServerNames.DistinctConnections(rest)
-            .GroupBy(m => CountryResolver.Resolve(m.Remarks) ?? string.Empty)
+            .GroupBy(m => V2pnPartnerLive.Instance.Describe(m.Subid, m.Remarks, m.Address)?.Country ?? CountryResolver.Resolve(m.Remarks) ?? string.Empty)
             .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: SortServers(g, sort == SideSort.Usage ? SideSort.Usage : SideSort.Ping).ToList())), sort)
             .ToList();
 
@@ -873,6 +954,39 @@ public sealed partial class SidebarViewModel : ReactiveObject
         {
             rows.Add(new SideHintRow(_profiles.AllServersCount == 0 ? L.NoServersYet : L.SubEmpty));
         }
+    }
+
+    /// <summary>
+    /// The servers of a partner's subscription by the groups its pack and API give them, in the partner's order (the
+    /// first server named in each group), the ungrouped ones last. Null when the partner names no group.
+    /// </summary>
+    private static List<(string? Group, List<ProfileItemModel> Members)>? PartnerGroups(string? subId, List<ProfileItemModel> servers)
+    {
+        if (V2pnLocks.Instance.PartnerOf(subId) is not { } partner || servers.Count == 0)
+        {
+            return null;
+        }
+        var byServer = servers.Select(m => (Model: m, Group: V2pnPartnerLive.Instance.Describe(partner, m.Remarks, m.Address)?.Group)).ToList();
+        if (byServer.All(t => t.Group == null))
+        {
+            return null;
+        }
+        var named = partner.Pack.ServerNotes.Concat(V2pnPartnerLive.Instance.Servers(partner.Id) ?? [])
+            .Select(n => n.Group).Where(g => g != null).Distinct(StringComparer.CurrentCultureIgnoreCase).ToList();
+        int Rank(string? group)
+        {
+            if (group == null)
+            {
+                return int.MaxValue;
+            }
+            var i = named.FindIndex(g => string.Equals(g, group, StringComparison.CurrentCultureIgnoreCase));
+            return i < 0 ? int.MaxValue - 1 : i;
+        }
+        return byServer
+            .GroupBy(t => t.Group, StringComparer.CurrentCultureIgnoreCase)
+            .OrderBy(g => Rank(g.Key))
+            .Select(g => (g.Key, g.Select(t => t.Model).ToList()))
+            .ToList();
     }
 
     // One count format for every list header; no "(0)" above an empty-state hint.
@@ -925,6 +1039,30 @@ public sealed partial class SidebarViewModel : ReactiveObject
             _pingScope = all;
             var updated = _failedSubs.Contains(OpenedSub.Id) ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(OpenedSub.Item);
             rows.Add(new SideActionRow(SideActionKind.Back, SideSubRow.NameOf(OpenedSub.Item), $"{L.ServerCount(all.Count)} · {updated}", OpenedSub.Id));
+            // V2pn: what the provider says about this subscription, above its servers.
+            var info = SubInfoManager.Instance.Get(OpenedSub.Id);
+            if (V2pnSubDefaults.Banner(info, DateTimeOffset.Now) is { } openedBanner)
+            {
+                rows.Add(new SideBannerRow(openedBanner, OpenedSub.Id));
+            }
+            if (info?.Announce.IsNotEmpty() == true)
+            {
+                rows.Add(new SideAnnounceRow(info.Announce!, info.AnnounceUrl));
+            }
+            // The order the person chose for this subscription, else the provider's, else fastest first.
+            var sort = V2pnSubDefaults.SortOf(info, V2pnLocks.Instance.Hides(OpenedSub.Id));
+            // V2pn: a partner that sorts its servers into groups gets a header per group, in its own order.
+            var groups = PartnerGroups(OpenedSub.Id, all);
+            if (groups != null)
+            {
+                for (var i = 0; i < groups.Count; i++)
+                {
+                    var (group, members) = groups[i];
+                    rows.Add(new SideHeaderRow(Counted(group ?? L.GroupOther, members.Count), i == 0 ? Ping : null));
+                    rows.AddRange(V2pnSubDefaults.Order(members, sort, m => m.Remarks, m => m.Delay).Select(m => new SideServerRow(m, false, false)));
+                }
+                return;
+            }
             if (all.Count > 0)
             {
                 rows.Add(new SideHeaderRow(L.TabServers, Ping)
@@ -934,7 +1072,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
             }
             var (series, rest) = ServerNames.SplitSeries(all);
             AddSeries(rows, series);
-            rows.AddRange(SortServers(rest, ServerSort).Select(m => new SideServerRow(m, false, false)));
+            // The order the person picked in the list's header wins; until then the subscription's own.
+            var order = Ui.V2pnServerSort != null ? SortServers(rest, ServerSort) : V2pnSubDefaults.Order(rest, sort, m => m.Remarks, m => m.Delay);
+            rows.AddRange(order.Select(m => new SideServerRow(m, false, false)));
             if (all.Count == 0)
             {
                 rows.Add(new SideHintRow(L.SubEmpty));
@@ -953,7 +1093,16 @@ public sealed partial class SidebarViewModel : ReactiveObject
             return;
         }
         rows.Add(new SideHeaderRow(Counted(L.TabSubscriptions, subs.Count), subsUpdate: SubsUpdate));
-        rows.AddRange(subs.Select(sub => new SideSubRow(sub, SubBusy(sub.Id), _failedSubs.Contains(sub.Id))));
+        var now = DateTimeOffset.Now;
+        foreach (var sub in subs)
+        {
+            rows.Add(new SideSubRow(sub, SubBusy(sub.Id), _failedSubs.Contains(sub.Id)));
+            // V2pn: the provider's banner, or the reminder that the subscription runs out, right under it.
+            if (V2pnSubDefaults.Banner(SubInfoManager.Instance.Get(sub.Id), now) is { } banner)
+            {
+                rows.Add(new SideBannerRow(banner, sub.Id));
+            }
+        }
     }
 }
 

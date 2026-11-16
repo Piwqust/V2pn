@@ -102,6 +102,14 @@ public static class V2pnConverters
     private static readonly ConcurrentDictionary<string, Bitmap?> _flags = new(StringComparer.OrdinalIgnoreCase);
 
     /// <summary>Two-letter country code → small flag bitmap (null when unknown).</summary>
+    /// <summary>"host:port", or "address hidden" for a server whose partner closed its settings (V2pnLocks).</summary>
+    public static readonly IValueConverter ServerAddress = new FuncValueConverter<ProfileItemModel?, string>(m =>
+        m == null ? string.Empty : V2pnLocks.Instance.Hides(m.Subid) ? L.AddressHidden : $"{m.Address}:{m.Port}");
+
+    /// <summary>A subscription's link, or "the link is hidden by …" when its partner hid it (hide-url with the lock grant).</summary>
+    public static readonly IValueConverter SubLink = new FuncValueConverter<SubItem?, string>(s =>
+        s == null ? string.Empty : V2pnLocks.Instance.ForSub(s.Id) is { HideUrl: true } locked ? string.Format(L.LockedUrl, locked.PartnerName) : s.Url);
+
     public static Bitmap? Flag(string? code)
     {
         if (code.IsNullOrEmpty() || code.Length != 2)

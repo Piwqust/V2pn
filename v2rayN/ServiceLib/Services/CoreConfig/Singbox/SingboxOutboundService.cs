@@ -39,6 +39,7 @@ public partial class CoreConfigSingboxService
         {
             context.CustomOutboundMap[outbound] = _node.IndexId;
         }
+        ApplyV2pnPartnerServer(outbound);
         return outbound;
     }
 
@@ -463,7 +464,7 @@ public partial class CoreConfigSingboxService
                 insecure = _node.GetAllowInsecure(),
                 alpn = _node.GetAlpn(),
             };
-            if (_config.CoreBasicItem.EnableFragment == true)
+            if (_config.CoreBasicItem.EnableFragment == true || V2pnPartnerFragment)
             {
                 tls.fragment = true;
                 tls.record_fragment = true;

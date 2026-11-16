@@ -25,10 +25,14 @@ param(
     [int]$Seconds = 20,
     [int]$Settle = 10,
     # Only the empty measurements: a quick A/B check of a change.
-    [switch]$EmptyOnly
+    [switch]$EmptyOnly,
+    # Start times are the median of this many starts: on a busy computer one start can take three times another.
+    [int]$Starts = 5
 )
 
 $ErrorActionPreference = 'Stop'
+# Every V2pn this script starts (and restarts) keeps its windows off the screen; see tools/sandbox.ps1.
+$env:V2PN_BACKGROUND = '1'
 Add-Type -AssemblyName UIAutomationClient, UIAutomationTypes
 Add-Type @"
 using System;
@@ -49,11 +53,16 @@ function Wait-Window([Diagnostics.Process]$p, [int]$seconds = 60) {
     $cond = New-Object Windows.Automation.PropertyCondition($AE::ProcessIdProperty, $p.Id)
     $deadline = (Get-Date).AddSeconds($seconds)
     while ((Get-Date) -lt $deadline) {
-        $win = $AE::RootElement.FindFirst([Windows.Automation.TreeScope]::Children, $cond)
-        if ($win) {
-            $buttons = $win.FindAll([Windows.Automation.TreeScope]::Descendants,
-                (New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [Windows.Automation.ControlType]::Button)))
-            if ($buttons.Count -ge 5) { return }
+        try {
+            $win = $AE::RootElement.FindFirst([Windows.Automation.TreeScope]::Children, $cond)
+            if ($win) {
+                $buttons = $win.FindAll([Windows.Automation.TreeScope]::Descendants,
+                    (New-Object Windows.Automation.PropertyCondition($AE::ControlTypeProperty, [Windows.Automation.ControlType]::Button)))
+                if ($buttons.Count -ge 5) { return }
+            }
+        }
+        catch {
+            # UI Automation fails now and then while the window is still being built; the next look succeeds.
         }
         Start-Sleep -Milliseconds 50
     }
@@ -91,6 +100,16 @@ function Minimize([Diagnostics.Process]$p) {
     [void][PerfWin]::ShowWindow($p.MainWindowHandle, 6)
 }
 
+function Measure-Starts {
+    $times = @()
+    for ($i = 0; $i -lt [math]::Max(1, $Starts); $i++) {
+        $times += (Start-App).StartMs
+        Stop-App
+    }
+    $sorted = $times | Sort-Object
+    return $sorted[[int][math]::Floor($sorted.Count / 2)]
+}
+
 function Stop-App { & (Join-Path $PSScriptRoot 'sandbox.ps1') -Dest $dir -Stop | Out-Null }
 
 function Invoke-Sql([string]$db, [string]$sql) {
@@ -110,9 +129,9 @@ Write-Host "== $Label ($exeName)"
 $run = Start-App
 Start-Sleep 3
 Stop-App
+$startEmpty = Measure-Starts
+Write-Host "  start, empty: $startEmpty ms (median of $Starts)"
 $run = Start-App
-$startEmpty = $run.StartMs
-Write-Host "  start, empty: $startEmpty ms"
 $rows += Measure-Rest $run.Process 'empty, window open'
 Minimize $run.Process
 $rows += Measure-Rest $run.Process 'empty, minimized'
@@ -147,10 +166,8 @@ try {
     $rows += Measure-Rest $p "$count servers, minimized"
     Stop-App
 
-    $run = Start-App
-    $startFull = $run.StartMs
-    Write-Host "  start, $count servers: $startFull ms"
-    Stop-App
+    $startFull = Measure-Starts
+    Write-Host "  start, $count servers: $startFull ms (median of $Starts)"
 }
 finally {
     if (-not $sub.HasExited) { $sub.Kill() }

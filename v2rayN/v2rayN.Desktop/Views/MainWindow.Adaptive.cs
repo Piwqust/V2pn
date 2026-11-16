@@ -162,6 +162,8 @@ public partial class MainWindow
         conTheme.IsVisible = !stacked;
         RefreshUpdateBadge();
         RefreshSnapButton();
+        // V2pn: the partner's logo, background and plan follow the layout too (MainWindow.Edition.cs).
+        ArrangeEdition();
         ApplyWindowLimits();
         UpdateStackedRows();
     }
@@ -307,7 +309,7 @@ public partial class MainWindow
 
         Width = width;
         Height = height;
-        Position = new PixelPoint((int)x, (int)y);
+        Position = Common.OffscreenMode.Place(new PixelPoint((int)x, (int)y));
         _normalSize = new Size(width, height);
         _normalPosition = Position;
     }

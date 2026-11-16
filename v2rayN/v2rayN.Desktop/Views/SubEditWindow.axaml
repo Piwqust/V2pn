@@ -40,6 +40,25 @@
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProvider}" />
                     <Border Classes="sgroupcard">
                         <StackPanel x:Name="panelProvider">
+                            <!--  V2pn: the partner closed the subscription's settings (V2pnLocks); what stays open is said too.  -->
+                            <Border x:Name="rowLock" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="Auto,*">
+                                    <PathIcon
+                                        Margin="0,2,12,0"
+                                        VerticalAlignment="Top"
+                                        Classes="i16"
+                                        Foreground="{DynamicResource V2Muted}"
+                                        Data="{StaticResource SemiIconLock}" />
+                                    <StackPanel Grid.Column="1" Classes="srowtext">
+                                        <TextBlock x:Name="txtLock" Classes="srowtitle" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="txtLockHint" Classes="srowhint" Text="{x:Static loc:L.LockedHint}" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <!--  V2pn: the provider's banner or the reminder that the subscription runs out (V2pnSubDefaults).  -->
+                            <Border x:Name="rowBanner" Classes="srow stack" IsVisible="False">
+                                <views:SubBannerView x:Name="viewBanner" />
+                            </Border>
                             <Border x:Name="rowTraffic" Classes="srow stack">
                                 <StackPanel Spacing="8">
                                     <Grid ColumnDefinitions="*,Auto">
@@ -62,6 +81,16 @@
                                 <StackPanel Spacing="6">
                                     <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubAnnounce}" />
                                     <SelectableTextBlock x:Name="txtAnnounce" Classes="announce" />
+                                    <Button
+                                        x:Name="btnAnnounceMore"
+                                        HorizontalAlignment="Left"
+                                        Classes="small"
+                                        Theme="{StaticResource V2Button}">
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <TextBlock Text="{x:Static loc:L.SubAnnounceMore}" />
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconExternalOpenStroked}" />
+                                        </StackPanel>
+                                    </Button>
                                 </StackPanel>
                             </Border>
                             <Border x:Name="rowLinks" Classes="srow">
@@ -79,6 +108,59 @@
                                         </StackPanel>
                                     </Button>
                                 </StackPanel>
+                            </Border>
+                            <!--  V2pn: what the provider advises for its subscription; the person can take it or decide (SubEditWindow.Provider.cs).  -->
+                            <Border x:Name="rowStartConnect" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubStartConnect}" />
+                                        <TextBlock x:Name="txtStartConnectHint" Classes="srowhint" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbStartConnect" Width="220" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border x:Name="rowOrder" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubOrder}" />
+                                        <TextBlock x:Name="txtOrderHint" Classes="srowhint" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ComboBox x:Name="cmbOrder" Width="220" />
+                                    </Panel>
+                                </Grid>
+                            </Border>
+                            <Border x:Name="rowOnStart" Classes="srow" IsVisible="False">
+                                <TextBlock x:Name="txtOnStart" Classes="srowhint" Margin="0" TextWrapping="Wrap" />
+                            </Border>
+                            <!--  V2pn: the provider's brand on V2pn, if its panel offers one (SubEditWindow.Provider.cs).  -->
+                            <Border x:Name="rowPartner" Classes="srow" IsVisible="False">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubPartnerTitle}" />
+                                    <TextBlock x:Name="txtPartner" Classes="srowhint" TextWrapping="Wrap" />
+                                    <!--  What the certificate lets the partner do, in plain words.  -->
+                                    <TextBlock x:Name="txtPartnerMay" Classes="srowhint" TextWrapping="Wrap" IsVisible="False" />
+                                </StackPanel>
+                            </Border>
+                            <!--  The partner's reviewed files (routing, connection settings, chains) and whether each is used.  -->
+                            <Border x:Name="rowReviewed" Classes="srow" IsVisible="False">
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubReviewedTitle}" />
+                                    <StackPanel x:Name="panelReviewed" Spacing="2" />
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="rowPartnerConn" Classes="srow" IsVisible="False">
+                                <Grid ColumnDefinitions="*,Auto">
+                                    <StackPanel Classes="srowtext">
+                                        <TextBlock x:Name="txtPartnerConn" Classes="srowtitle" />
+                                        <TextBlock x:Name="txtPartnerConnHint" Classes="srowhint" TextWrapping="Wrap" />
+                                    </StackPanel>
+                                    <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                        <ToggleSwitch x:Name="togPartnerConn" />
+                                    </Panel>
+                                </Grid>
                             </Border>
                         </StackPanel>
                     </Border>
@@ -106,6 +188,8 @@
                                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.SubLinkHint}" />
                                     </StackPanel>
                                     <TextBox x:Name="txtUrl" MinHeight="64" AcceptsReturn="False" TextWrapping="Wrap" PlaceholderText="https://…" />
+                                    <!--  V2pn: in place of the link when the partner hid it (hide-url with the lock grant).  -->
+                                    <TextBlock x:Name="txtUrlHidden" Classes="srowhint" Margin="0" IsVisible="False" TextWrapping="Wrap" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>

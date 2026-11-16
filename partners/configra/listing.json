@@ -1,0 +1,13 @@
+{
+  "id": "configra",
+  "name": "Configra",
+  "domains": [
+    "angleford.co",
+    "*.angleford.co"
+  ],
+  "grants": [
+    "edition",
+    "account"
+  ],
+  "until": "2027-11-16"
+}

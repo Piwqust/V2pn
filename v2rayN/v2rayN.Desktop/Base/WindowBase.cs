@@ -10,6 +10,7 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
             Classes.Add("dialog");
             Common.DialogChrome.Attach(this);
         }
+        Common.OffscreenMode.Attach(this); // V2pn
         Loaded += OnLoaded;
         Loaded += (s, e) =>
         {
@@ -84,7 +85,7 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
                 x = Math.Clamp(sx, workingArea.X, Math.Max(workingArea.X, workingArea.X + workingArea.Width - totalWidth));
                 y = Math.Clamp(sy, workingArea.Y, Math.Max(workingArea.Y, workingArea.Y + workingArea.Height - totalHeight));
             }
-            Position = new PixelPoint((int)x, (int)y);
+            Position = Common.OffscreenMode.Place(new PixelPoint((int)x, (int)y));
         }
         catch { }
     }

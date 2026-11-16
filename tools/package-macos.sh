@@ -113,6 +113,17 @@ cat > "$APP/Contents/Info.plist" <<EOF
   <string>${VERSION}</string>
   <key>CFBundleVersion</key>
   <string>${VERSION}</string>
+  <key>CFBundleURLTypes</key>
+  <array>
+    <dict>
+      <key>CFBundleURLName</key>
+      <string>io.github.piwqust.v2pn.add</string>
+      <key>CFBundleURLSchemes</key>
+      <array>
+        <string>v2pn</string>
+      </array>
+    </dict>
+  </array>
   <key>LSApplicationCategoryType</key>
   <string>public.app-category.utilities</string>
   <key>LSMinimumSystemVersion</key>

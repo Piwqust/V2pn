@@ -1,0 +1,37 @@
+{
+  "schema": 1,
+  "id": "kestrel",
+  "name": "Kestrel",
+  "brand": {
+    "accent": "#2F7BFF",
+    "logo": "logo-dark.png",
+    "logoOnLight": "logo-light.png",
+    "mark": "mark.png"
+  },
+  "theme": {
+    "palette": { "brand": ["#2F7BFF", "#00C2A8"] },
+    "background": { "type": "gradient", "colors": ["#1E3A8A", "#2F7BFF"] }
+  },
+  "links": {
+    "cabinet": "http://127.0.0.1:18998/cabinet",
+    "support": "http://127.0.0.1:18998/support"
+  },
+  "api": "http://127.0.0.1:18998/v2pn/api/",
+  "login": true,
+  "servers": [
+    { "name": "🇩🇪 Германия 1", "group": "Основные", "country": "DE", "city": "Франкфурт", "purpose": ["youtube", "ai"], "priority": 10 },
+    { "name": "🇩🇪 Германия 2", "group": "Основные", "country": "DE", "city": "Берлин", "purpose": ["youtube"], "priority": 5, "note": "Быстрый канал до Европы" },
+    { "name": "🇳🇱 Нидерланды", "group": "Основные", "country": "NL", "city": "Амстердам", "purpose": ["youtube", "streaming"] },
+    { "name": "🇫🇮 Финляндия", "group": "Для игр", "country": "FI", "city": "Хельсинки", "purpose": ["games"] },
+    { "name": "🇹🇷 Турция", "group": "Для игр", "country": "TR", "city": "Стамбул", "purpose": ["games"], "note": "Низкий пинг до игровых серверов" },
+    { "name": "🇸🇪 Швеция", "group": "Белые списки", "country": "SE", "city": "Стокгольм", "purpose": ["whitelist", "mobile"], "note": "Работает при белых списках" },
+    { "name": "Резерв", "group": "Основные", "hidden": true }
+  ],
+  "actions": [
+    { "id": "fast", "label": "Самый быстрый", "icon": "bolt", "do": "connect.best", "strategy": "ping" },
+    { "id": "stable", "label": "Самый стабильный", "icon": "shield", "do": "connect.best", "strategy": "stable", "scope": { "group": "Основные" } },
+    { "id": "yt", "label": "Для YouTube", "icon": "play", "do": "connect.recommend", "purpose": "youtube" },
+    { "id": "renew", "label": "Продлить", "icon": "card", "do": "open.renew" }
+  ],
+  "assets": []
+}

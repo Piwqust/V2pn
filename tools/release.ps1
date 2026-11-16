@@ -25,6 +25,8 @@
   tools/release.ps1 -Version 1.0.1 -ManifestOnly    # re-list and re-sign what is in the folder
   tools/release.ps1 -Version 1.0.1-local.202611141320 -Arch x64 -UpdateOnly -NoManifest -OutDir <dir>
                                                     # what the app's developer mode runs
+  tools/release.ps1 -Version 1.1.1 -NoManifest -OutDir dist/special/x -Preset https://host/s/abc
+                                                    # a special build that adds that subscription at first start
 #>
 param(
     [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$')][string]$Version,
@@ -37,22 +39,27 @@ param(
     # Packages only. CI uses it: the manifest is made once, after the macOS packages have joined.
     [switch]$NoManifest,
     [switch]$ManifestOnly,
-    # Precompiles the app. Measured on 13.11.2026: the window appears in 0.8 s instead of 1.6 s,
-    # and every package and update grows by about 30 MB. Off by default.
-    [switch]$ReadyToRun,
+    # Leaves the app to be compiled at every start (JIT) instead of precompiled (ReadyToRun). Measured
+    # on 16.11.2026, medians of five starts: the window appears in 1.6-1.8 s precompiled, 2.4-2.6 s without; the
+    # x64 update zip grows from 64 to 76 MB (v2rayN.Desktop.csproj keeps what a start never loads as IL).
+    [switch]$NoReadyToRun,
     [switch]$Tag,
     # Release notes for -Tag; by default the CHANGELOG.md section, else the commits since the last tag.
     [string]$Notes,
     # For tools/update-e2e.ps1 only: packages that look for updates somewhere else and trust a test key.
     [string]$UpdateSources,
     [string]$UpdateKeys,
-    [string]$SigningKey
+    [string]$SigningKey,
+    # A special build that adds these subscriptions at its first start (v2pn-preset.txt next to V2pn.exe,
+    # ServiceLib/V2pn/V2pnPreset.cs). Only the full zip carries it, never the update zip everyone downloads.
+    [string[]]$Preset
 )
 
 $ErrorActionPreference = 'Stop'
 $ProgressPreference = 'SilentlyContinue'
 $repo = Split-Path -Parent $PSScriptRoot
 $src = Join-Path $repo 'v2rayN'
+if ($Preset -and ($Tag -or $UpdateOnly)) { throw '-Preset makes a special build: not with -Tag or -UpdateOnly' }
 if (-not $OutDir) { $OutDir = Join-Path $repo "dist/release/$Version" }
 # Relative to where the script was called from, which .NET's own current directory may not be.
 $OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)
@@ -161,7 +168,8 @@ if ($commit) {
 # A developer-mode build remembers its source folder, so the next build needs no folder chosen.
 # Published versions never carry it: it is a path on the building computer.
 if ($Version.Contains('-local.')) { $properties += "-p:V2pnSourceDir=$repo" }
-if ($ReadyToRun) { $properties += '-p:PublishReadyToRun=true' }
+# Only V2pn itself: AmazTool runs for a few seconds during an update.
+$appProperties = if ($NoReadyToRun) { @() } else { @('-p:PublishReadyToRun=true') }
 if ($UpdateSources) { $properties += "-p:V2pnUpdateSources=$UpdateSources" }
 if ($UpdateKeys) { $properties += "-p:V2pnUpdateKeys=$UpdateKeys" }
 
@@ -179,7 +187,7 @@ foreach ($a in $Arch) {
 
     Write-Host "== ${rid}: V2pn $Version"
     Invoke-Checked $dotnet (@('publish', (Join-Path $src 'v2rayN.Desktop/v2rayN.Desktop.csproj'), '-c', 'Release', '-r', $rid,
-        '-v', 'q', '-nologo', '-o', $stage) + $properties)
+        '-v', 'q', '-nologo', '-o', $stage) + $properties + $appProperties)
 
     Get-ChildItem $stage -Recurse -Include '*.pdb', '*.dbg' | Remove-Item -Force
 
@@ -203,6 +211,10 @@ foreach ($a in $Arch) {
         # The bundle has a single top folder (v2rayN-windows-64/bin/...); its content goes next to V2pn.exe.
         $inner = Get-ChildItem $coreDir -Directory | Select-Object -First 1
         Copy-Item -Recurse -Force (Join-Path $inner.FullName '*') $stage
+    }
+
+    if ($Preset) {
+        [IO.File]::WriteAllLines((Join-Path $stage 'v2pn-preset.txt'), [string[]]$Preset)
     }
 
     $zipName = "V2pn-windows-$a.zip"

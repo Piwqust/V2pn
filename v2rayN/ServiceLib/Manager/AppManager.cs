@@ -190,7 +190,13 @@ public sealed class AppManager
 
     public async Task<SubItem?> GetSubItem(string? subid)
     {
-        return await SQLiteHelper.Instance.TableAsync<SubItem>().FirstOrDefaultAsync(t => t.Id == subid);
+        // V2pn: plain SQL. The LINQ form translated its expression on every call, and a config is built with one
+        // call per server (1000 for a ping of 1000 servers).
+        if (subid == null)
+        {
+            return null;
+        }
+        return (await SQLiteHelper.Instance.QueryAsync<SubItem>("select * from SubItem where Id = ? limit 1", subid)).FirstOrDefault();
     }
 
     public async Task<List<ProfileItem>?> ProfileItems(string subid)

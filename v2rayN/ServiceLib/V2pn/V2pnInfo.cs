@@ -53,6 +53,12 @@ public static class V2pnInfo
     public static IReadOnlyList<string> UpdateKeys { get; } = Split(Metadata("V2pnUpdateKeys"));
 
     /// <summary>
+    /// Public root keys that sign the partner index (partners.json, V2pnPartners): the owner of V2pn vouches for providers
+    /// with them. Separate from the release keys, so the partner key can never sign an update. Set at build time.
+    /// </summary>
+    public static IReadOnlyList<string> PartnerKeys { get; } = Split(Metadata("V2pnPartnerKeys"));
+
+    /// <summary>
     /// V2pn replaces itself only where it ships a portable package (Windows, macOS) and only in a
     /// release build. Where a package manager owns the install it does not offer to.
     /// </summary>

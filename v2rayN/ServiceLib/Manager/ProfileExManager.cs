@@ -163,6 +163,8 @@ public class ProfileExManager
         profileEx.Delay = delay;
         IndexIdEnqueue(indexId);
         ServerUsageManager.Instance.RecordTest(indexId, delay);
+        // V2pn: the last few results per server, for a partner's "most stable server" button.
+        V2pnDelayHistory.Instance.Record(indexId, delay);
     }
 
     public void SetTestSpeed(string indexId, decimal speed)

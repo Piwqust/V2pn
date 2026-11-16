@@ -167,8 +167,19 @@ public partial class BackupAndRestoreViewModel : MyReactiveObject
         var configDirTemp = Path.Combine(configDirZipTemp, _guiConfigs);
 
         FileUtils.CopyDirectory(configDir, configDirTemp, false, true, "");
+        // V2pn: servers whose settings a partner closed do not leave in a backup.
+        try
+        {
+            await V2pnLocks.Instance.StripFromBackupAsync(Path.Combine(configDirTemp, "guiNDB.db"));
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn backup", ex);
+            Directory.Delete(configDirZipTemp, true);
+            return false;
+        }
         var ret = FileUtils.CreateFromDirectory(configDirZipTemp, fileName);
         Directory.Delete(configDirZipTemp, true);
-        return await Task.FromResult(ret);
+        return ret;
     }
 }

@@ -51,6 +51,7 @@ public sealed class SubUsage
             HasExpiry = true;
             var left = at - now;
             var days = (int)left.TotalDays;
+            DaysLeft = Math.Max(0, days);
             string relative;
             if (left <= TimeSpan.Zero)
             {
@@ -117,6 +118,9 @@ public sealed class SubUsage
     public bool TrafficBad { get; }
 
     public bool HasExpiry { get; }
+
+    /// <summary>Whole days left until the end (0 on the last day and after it); null without an end.</summary>
+    public int? DaysLeft { get; }
 
     /// <summary>Short: "until 12 Dec", "3 days left", "Expired".</summary>
     public string ExpiryText { get; } = string.Empty;

@@ -12,7 +12,7 @@ namespace v2rayN.Desktop.Views;
 /// <summary>
 /// The Appearance page: light or dark, palette, accent, corners, fonts, text size and the layout
 /// of the main window. Every change is applied and saved at once, so the window behind the dialog
-/// is the preview.
+/// is the preview. A partner's brand (Editions) lays only its accent over these and never changes them.
 /// </summary>
 public sealed class AppearanceView : UserControl
 {
@@ -24,6 +24,8 @@ public sealed class AppearanceView : UserControl
     private readonly List<(ListBox Box, Func<AppearanceSettings, int> Read)> _segments = [];
     private readonly List<(ToggleSwitch Switch, Func<AppearanceSettings, bool> Read)> _switches = [];
     private bool _refreshing;
+    // While a partner's server is selected, why Connect is not in the accent picked here.
+    private readonly TextBlock _partnerNote = new() { Classes = { "spagehint" }, TextWrapping = TextWrapping.Wrap, IsVisible = false };
 
     private static readonly string[] CornerIds = ["sharp", "normal", "round"];
     private static readonly string[] WidthIds = ["narrow", "normal", "wide"];
@@ -67,7 +69,8 @@ public sealed class AppearanceView : UserControl
             Children =
             {
                 new TextBlock { Classes = { "spagetitle" }, Text = L.ApTitle },
-                new TextBlock { Classes = { "spagehint" }, Text = L.ApHint },
+                new TextBlock { Classes = { "spagehint" }, TextWrapping = TextWrapping.Wrap, Text = L.ApHint },
+                _partnerNote,
             },
         });
         Grid.SetColumn(close, 1);
@@ -122,16 +125,14 @@ public sealed class AppearanceView : UserControl
             },
         };
 
-        var scroll = new ScrollViewer
-        {
-            Content = body,
-            HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled,
-        };
         var root = new DockPanel { MaxHeight = 720 };
         DockPanel.SetDock(header, Dock.Top);
         root.Children.Add(header);
-        root.Children.Add(scroll);
+        root.Children.Add(new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = body });
         Content = root;
+        AttachedToVisualTree += (_, _) => Editions.Changed += ShowPartnerNote;
+        DetachedFromVisualTree += (_, _) => Editions.Changed -= ShowPartnerNote;
+        ShowPartnerNote();
 
         _customAccent.LostFocus += (_, _) => ApplyCustomAccent();
         _customAccent.KeyDown += (_, e) =>
@@ -143,6 +144,12 @@ public sealed class AppearanceView : UserControl
         };
         ActualThemeVariantChanged += (_, _) => Refresh();
         Refresh();
+    }
+
+    private void ShowPartnerNote()
+    {
+        _partnerNote.IsVisible = Editions.Partner != null;
+        _partnerNote.Text = Editions.Partner is { } partner ? string.Format(L.ApPartnerNote, partner.Name) : string.Empty;
     }
 
     private static int Index(string[] ids, string value, int fallback)

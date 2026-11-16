@@ -325,8 +325,11 @@ public partial class MainWindowViewModel : MyReactiveObject
             .ObserveOn(RxSchedulers.MainThreadScheduler)
             .SubscribeAsync(async blProxy => await UpdateSubscriptionProcess("", blProxy));
 
-        _ = Init();
+        Initialized = Init();
     }
+
+    /// <summary>V2pn: the start is done (lists loaded, the core started or left off as it was); the provider's start defaults wait for it.</summary>
+    public Task Initialized { get; } = Task.CompletedTask;
 
     private async Task Init()
     {
@@ -503,6 +506,13 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await Reload();
             }
         }
+    }
+
+    /// <summary>V2pn: the lists catch up with servers and subscriptions added behind their back (a move from another app).</summary>
+    public async Task RefreshAfterImportAsync()
+    {
+        await RefreshSubscriptions();
+        await RefreshServersDispatcherAsync();
     }
 
     /// <returns>How many servers were added; V2pn passes notifyFailure false and words the failure itself.</returns>

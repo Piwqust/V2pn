@@ -1,0 +1,49 @@
+{
+  "schema": 1,
+  "id": "aurora",
+  "name": "Aurora",
+  "brand": {
+    "accent": "#6D5DFC"
+  },
+  "edition": {
+    "variants": [
+      "neon",
+      "pass"
+    ],
+    "default": "neon"
+  },
+  "theme": {
+    "palette": {
+      "brand": [
+        "#6D5DFC",
+        "#22D3EE"
+      ]
+    },
+    "background": {
+      "type": "gradient",
+      "colors": [
+        "#3B2FD9",
+        "#6D28D9",
+        "#C026D3"
+      ]
+    },
+    "connect": "round",
+    "window": "mini"
+  },
+  "actions": [
+    {
+      "id": "fast",
+      "label": "Самый быстрый",
+      "icon": "bolt",
+      "do": "connect.best",
+      "strategy": "ping"
+    },
+    {
+      "id": "stable",
+      "label": "Самый стабильный",
+      "icon": "shield",
+      "do": "connect.best",
+      "strategy": "stable"
+    }
+  ]
+}

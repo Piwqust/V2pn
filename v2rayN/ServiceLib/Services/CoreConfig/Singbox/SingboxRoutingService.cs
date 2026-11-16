@@ -262,6 +262,17 @@ public partial class CoreConfigSingboxService
             }
 
             var ipRules = new List<RulesItem>();
+            // V2pn: the connected partner's core.json rules go after the person's own rules (pinned programs
+            // included), right before the routing's catch-all default, so the person's choices always win.
+            var partnerRules = BuildV2pnPartnerRules();
+            void AddPartnerRules()
+            {
+                foreach (var rule in partnerRules)
+                {
+                    GenRoutingUserRule(rule);
+                }
+                partnerRules = [];
+            }
             if (routing != null)
             {
                 var rules = JsonUtils.Deserialize<List<RulesItem>>(routing.RuleSet);
@@ -270,6 +281,10 @@ public partial class CoreConfigSingboxService
                     if (!item1.Enabled)
                     {
                         continue;
+                    }
+                    if (V2pnPartnerRoutes.IsCatchAll(item1))
+                    {
+                        AddPartnerRules();
                     }
 
                     if (item1.RuleType == ERuleType.DNS)
@@ -285,6 +300,7 @@ public partial class CoreConfigSingboxService
                     }
                 }
             }
+            AddPartnerRules();
             if (strategy == Global.IPIfNonMatch)
             {
                 _coreConfig.route.rules.Add(resolveRule);
@@ -589,7 +605,7 @@ public partial class CoreConfigSingboxService
 
     private string GenRoutingUserRuleOutbound(string outboundTag)
     {
-        if (Global.OutboundTags.Contains(outboundTag))
+        if (Global.OutboundTags.Contains(outboundTag) || IsV2pnPartnerTag(outboundTag))
         {
             return outboundTag;
         }

@@ -11,6 +11,7 @@
 
 <p align="center">
   <a href="https://github.com/Piwqust/V2pn/releases/latest"><img src="https://img.shields.io/github/v/release/Piwqust/V2pn?label=release&color=ef3518" alt="Последняя версия"></a>
+  <a href="https://github.com/Piwqust/V2pn/releases"><img src="https://img.shields.io/github/downloads/Piwqust/V2pn/total?label=downloads&color=ef3518" alt="Скачивания на GitHub"></a>
   <a href="https://github.com/Piwqust/V2pn/actions/workflows/v2pn-ci.yml"><img src="https://img.shields.io/github/actions/workflow/status/Piwqust/V2pn/v2pn-ci.yml?branch=v2pn&label=build" alt="Сборка"></a>
   <a href="LICENSE"><img src="https://img.shields.io/github/license/Piwqust/V2pn?label=license" alt="Лицензия GPL-3.0"></a>
 </p>

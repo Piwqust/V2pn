@@ -158,16 +158,21 @@ public static class CountryResolver
     /// The name to show for a server: its remark without flag emoji, or, when a link came with no
     /// name at all, its address, so a row or the header is never blank.
     /// </summary>
-    public static string ServerName(ProfileItem item) => ServerName(item.Remarks, item.Address, item.ConfigType);
+    public static string ServerName(ProfileItem item) => ServerName(item.Remarks, item.Address, item.ConfigType, item.Subid);
 
-    public static string ServerName(ProfileItemModel item) => ServerName(item.Remarks, item.Address, item.ConfigType);
+    public static string ServerName(ProfileItemModel item) => ServerName(item.Remarks, item.Address, item.ConfigType, item.Subid);
 
-    private static string ServerName(string? remarks, string? address, EConfigType type)
+    private static string ServerName(string? remarks, string? address, EConfigType type, string? subId)
     {
         var name = StripFlag(remarks);
         if (name.IsNotEmpty())
         {
             return name;
+        }
+        // V2pn: a partner that closed its settings keeps its addresses out of sight, names included.
+        if (V2pnLocks.Instance.Hides(subId))
+        {
+            return L.ServerUnnamed;
         }
         return address.IsNotEmpty() ? address! : type.ToString();
     }

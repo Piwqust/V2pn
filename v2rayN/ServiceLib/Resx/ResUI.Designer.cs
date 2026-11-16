@@ -5489,5 +5489,194 @@ namespace ServiceLib.Resx {
                 return ResourceManager.GetString("MsgV2pnLocalPortBusy", resourceCulture);
             }
         }
+
+        /// <summary>
+        ///   Looks up a localized string similar to V2pn took out of the subscription's config what a subscription may not set: {0}..
+        /// </summary>
+        public static string MsgV2pnSubConfigFiltered {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubConfigFiltered", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to V2pn does not run a {0} config that came with a subscription: it cannot check one. Ask the provider for server links instead..
+        /// </summary>
+        public static string MsgV2pnSubConfigRefused {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubConfigRefused", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to V2pn does not run the server “{0}” from the subscription: its settings read files or run programs on this computer..
+        /// </summary>
+        public static string MsgV2pnSubOutboundRefused {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubOutboundRefused", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription has ended.
+        /// </summary>
+        public static string V2pnSubEnded {
+            get {
+                return ResourceManager.GetString("V2pnSubEnded", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription ends within a day.
+        /// </summary>
+        public static string V2pnSubEndsWithinDay {
+            get {
+                return ResourceManager.GetString("V2pnSubEndsWithinDay", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription ends in {0} days.
+        /// </summary>
+        public static string V2pnSubEndsInDays {
+            get {
+                return ResourceManager.GetString("V2pnSubEndsInDays", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Renew.
+        /// </summary>
+        public static string V2pnSubRenew {
+            get {
+                return ResourceManager.GetString("V2pnSubRenew", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to More.
+        /// </summary>
+        public static string V2pnSubMore {
+            get {
+                return ResourceManager.GetString("V2pnSubMore", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The provider moved the subscription to {0}. V2pn lists this address as the partner's, so it will update from it from now on..
+        /// </summary>
+        public static string MsgV2pnSubMoved {
+            get {
+                return ResourceManager.GetString("MsgV2pnSubMoved", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Your subscription ends in 1 day.
+        /// </summary>
+        public static string V2pnSubEndsInOneDay {
+            get {
+                return ResourceManager.GetString("V2pnSubEndsInOneDay", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to YouTube.
+        /// </summary>
+        public static string V2pnPurposeYouTube {
+            get {
+                return ResourceManager.GetString("V2pnPurposeYouTube", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Games.
+        /// </summary>
+        public static string V2pnPurposeGames {
+            get {
+                return ResourceManager.GetString("V2pnPurposeGames", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Mobile internet.
+        /// </summary>
+        public static string V2pnPurposeMobile {
+            get {
+                return ResourceManager.GetString("V2pnPurposeMobile", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Whitelists.
+        /// </summary>
+        public static string V2pnPurposeWhitelist {
+            get {
+                return ResourceManager.GetString("V2pnPurposeWhitelist", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Streaming.
+        /// </summary>
+        public static string V2pnPurposeStreaming {
+            get {
+                return ResourceManager.GetString("V2pnPurposeStreaming", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to AI.
+        /// </summary>
+        public static string V2pnPurposeAi {
+            get {
+                return ResourceManager.GetString("V2pnPurposeAi", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to Torrents.
+        /// </summary>
+        public static string V2pnPurposeTorrents {
+            get {
+                return ResourceManager.GetString("V2pnPurposeTorrents", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} closed this server's settings: it cannot be edited, shared or exported..
+        /// </summary>
+        public static string V2pnLockedServer {
+            get {
+                return ResourceManager.GetString("V2pnLockedServer", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to The provider closed this server's settings: it cannot be edited, shared or exported..
+        /// </summary>
+        public static string V2pnLockedServerNoName {
+            get {
+                return ResourceManager.GetString("V2pnLockedServerNoName", resourceCulture);
+            }
+        }
+
+        /// <summary>
+        ///   Looks up a localized string similar to {0} closed this subscription's settings: its link cannot be shared..
+        /// </summary>
+        public static string V2pnLockedSub {
+            get {
+                return ResourceManager.GetString("V2pnLockedSub", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to {0} routes.
+        /// </summary>
+        public static string V2pnPartnerRoutesName {
+            get {
+                return ResourceManager.GetString("V2pnPartnerRoutesName", resourceCulture);
+            }
+        }
     }
 }

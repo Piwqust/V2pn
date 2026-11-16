@@ -32,4 +32,15 @@ public record CoreConfigContext
 
     // Generation Context
     public Dictionary<object, string> CustomOutboundMap { get; init; } = new();
+
+    // V2pn: what partners' reviewed transport.json and core.json add to the connection to their own servers, by
+    // subscription id (V2pnPartnerTraffics.SnapshotAsync).
+    public IReadOnlyDictionary<string, V2pnPartnerTraffic> V2pnPartnerSubs { get; init; } = new Dictionary<string, V2pnPartnerTraffic>();
+
+    // V2pn: the partners whose servers the generated config reaches; their core.json outbounds are added once.
+    // Shared by every copy of the context made while one config is generated.
+    public HashSet<string> V2pnPartnersUsed { get; init; } = [];
+
+    public V2pnPartnerTraffic? V2pnTrafficFor(ProfileItem? node) =>
+        node?.Subid is { Length: > 0 } subId && V2pnPartnerSubs.TryGetValue(subId, out var traffic) ? traffic : null;
 }

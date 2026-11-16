@@ -1929,4 +1929,67 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
   <data name="MsgV2pnLocalPortBusy" xml:space="preserve">
     <value>Port {0} is already taken by another program, probably another VPN client. Close it or change the local port in Settings, otherwise V2pn cannot connect.</value>
   </data>
+  <data name="MsgV2pnSubConfigFiltered" xml:space="preserve">
+    <value>V2pn took out of the subscription's config what a subscription may not set: {0}.</value>
+  </data>
+  <data name="MsgV2pnSubConfigRefused" xml:space="preserve">
+    <value>V2pn does not run a {0} config that came with a subscription: it cannot check one. Ask the provider for server links instead.</value>
+  </data>
+  <data name="MsgV2pnSubOutboundRefused" xml:space="preserve">
+    <value>V2pn does not run the server “{0}” from the subscription: its settings read files or run programs on this computer.</value>
+  </data>
+  <data name="V2pnSubEnded" xml:space="preserve">
+    <value>Your subscription has ended</value>
+  </data>
+  <data name="V2pnSubEndsWithinDay" xml:space="preserve">
+    <value>Your subscription ends within a day</value>
+  </data>
+  <data name="V2pnSubEndsInDays" xml:space="preserve">
+    <value>Your subscription ends in {0} days</value>
+  </data>
+  <data name="V2pnSubRenew" xml:space="preserve">
+    <value>Renew</value>
+  </data>
+  <data name="V2pnSubMore" xml:space="preserve">
+    <value>More</value>
+  </data>
+  <data name="MsgV2pnSubMoved" xml:space="preserve">
+    <value>The provider moved the subscription to {0}. V2pn lists this address as the partner's, so it will update from it from now on.</value>
+  </data>
+  <data name="V2pnSubEndsInOneDay" xml:space="preserve">
+    <value>Your subscription ends in 1 day</value>
+  </data>
+  <data name="V2pnPurposeYouTube" xml:space="preserve">
+    <value>YouTube</value>
+  </data>
+  <data name="V2pnPurposeGames" xml:space="preserve">
+    <value>Games</value>
+  </data>
+  <data name="V2pnPurposeMobile" xml:space="preserve">
+    <value>Mobile internet</value>
+  </data>
+  <data name="V2pnPurposeWhitelist" xml:space="preserve">
+    <value>Whitelists</value>
+  </data>
+  <data name="V2pnPurposeStreaming" xml:space="preserve">
+    <value>Streaming</value>
+  </data>
+  <data name="V2pnPurposeAi" xml:space="preserve">
+    <value>AI</value>
+  </data>
+  <data name="V2pnPurposeTorrents" xml:space="preserve">
+    <value>Torrents</value>
+  </data>
+  <data name="V2pnLockedServer" xml:space="preserve">
+    <value>{0} closed this server's settings: it cannot be edited, shared or exported.</value>
+  </data>
+  <data name="V2pnLockedServerNoName" xml:space="preserve">
+    <value>The provider closed this server's settings: it cannot be edited, shared or exported.</value>
+  </data>
+  <data name="V2pnLockedSub" xml:space="preserve">
+    <value>{0} closed this subscription's settings: its link cannot be shared.</value>
+  </data>
+  <data name="V2pnPartnerRoutesName" xml:space="preserve">
+    <value>{0} routes</value>
+  </data>
 </root>

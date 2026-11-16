@@ -10,7 +10,23 @@
 		<AssemblyTitle>V2pn</AssemblyTitle>
 		<AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 		<CETCompat>false</CETCompat>
+		<!--
+			V2pn: with ReadyToRun on (tools/release.ps1 does it for Windows), a self-contained single file is built as one
+			composite image by default, which recompiles the whole .NET runtime: about +30 MB per package for about 1.3 s to the
+			window instead of 1.6 s. Per-assembly images keep the runtime as Microsoft ships it.
+		-->
+		<PublishReadyToRunComposite>false</PublishReadyToRunComposite>
 	</PropertyGroup>
+
+	<!--
+		V2pn: on Windows, what a start does not run stays IL: other systems' platform code, and what only the secondary
+		windows use (tables, the log editor, QR codes, Clash YAML): about 5 MB less per x64 package.
+	-->
+	<ItemGroup Condition="$(RuntimeIdentifier.StartsWith('win'))">
+		<PublishReadyToRunExclude Include="Avalonia.Controls.DataGrid.dll;ProDataGrid.FormulaEngine.dll;ProDataGrid.FormulaEngine.Excel.dll" />
+		<PublishReadyToRunExclude Include="Avalonia.FreeDesktop.dll;Avalonia.FreeDesktop.AtSpi.dll;Avalonia.X11.dll;Avalonia.Native.dll;Tmds.DBus.Protocol.dll" />
+		<PublishReadyToRunExclude Include="AvaloniaEdit.dll;System.Drawing.Common.dll;zxing.dll;QRCoder.dll;YamlDotNet.dll" />
+	</ItemGroup>
 
     <ItemGroup Condition="'$(RuntimeIdentifier)' == 'osx-x64' Or '$(RuntimeIdentifier)' == 'osx-arm64'">
         <RuntimeHostConfigurationOption Include="System.Net.Security.UseNetworkFramework" Value="true" />

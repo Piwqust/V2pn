@@ -434,6 +434,8 @@ public partial class ProfilesViewModel : MyReactiveObject
     public async Task RefreshServersBiz()
     {
         var lstModel = await GetProfileItemsEx(_config.SubIndexId, _serverFilter);
+        // V2pn: servers a partner hides are not offered (its own recommendation can still connect to one).
+        lstModel = lstModel?.Where(m => !V2pnPartnerLive.Instance.Hidden(m.Subid, m.Remarks, m.Address)).ToList();
 
         ProfileItems.ReplaceRange(lstModel ?? []);
         if (lstModel?.Count > 0)
@@ -464,7 +466,9 @@ public partial class ProfilesViewModel : MyReactiveObject
 
         AllServersCount = all.Count;
 
-        var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
+        // V2pn: a server its partner hides is not counted either.
+        var counts = all.Where(t => !V2pnPartnerLive.Instance.Hidden(t.Subid, t.Remarks, t.Address))
+            .GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
         // An update writes UpdateTime to the database; the cached items need it too for "updated 5 min ago".
         var stored = (await AppManager.Instance.SubItems() ?? []).ToDictionary(t => t.Id ?? string.Empty, t => t.UpdateTime);
         foreach (var sub in SubNavItems)
@@ -477,7 +481,7 @@ public partial class ProfilesViewModel : MyReactiveObject
         }
 
         var favorites = (from t in all
-                         where favoriteIds.Contains(t.IndexId)
+                         where favoriteIds.Contains(t.IndexId) && !V2pnPartnerLive.Instance.Hidden(t.Subid, t.Remarks, t.Address)
                          join t3 in lstProfileExs on t.IndexId equals t3.IndexId into t3b
                          from t33 in t3b.DefaultIfEmpty()
                          orderby t33?.Sort ?? 0
@@ -674,6 +678,22 @@ public partial class ProfilesViewModel : MyReactiveObject
         return lstSelected;
     }
 
+    /// <summary>
+    /// V2pn: true (and the person is told why) when a partner closed the settings of any of <paramref name="items"/>
+    /// (V2pnLocks): its servers are not edited, copied, shared, exported or moved out of its subscription.
+    /// </summary>
+    private static async Task<bool> ClosedByPartnerAsync(IEnumerable<ProfileItem> items)
+    {
+        var list = items.ToList();
+        if (!await V2pnLocks.Instance.AnyClosedAsync(list))
+        {
+            return false;
+        }
+        var name = list.Select(i => V2pnLocks.Instance.ForSub(i.Subid).PartnerName).FirstOrDefault(n => n != null);
+        NoticeManager.Instance.Enqueue(name != null ? string.Format(ResUI.V2pnLockedServer, name) : ResUI.V2pnLockedServerNoName);
+        return true;
+    }
+
     public async Task EditServerAsync()
     {
         if (string.IsNullOrEmpty(SelectedProfile?.IndexId))
@@ -684,6 +704,10 @@ public partial class ProfilesViewModel : MyReactiveObject
         if (item is null)
         {
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);
+            return;
+        }
+        if (await ClosedByPartnerAsync([item]))
+        {
             return;
         }
         var eConfigType = item.ConfigType;
@@ -759,7 +783,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     private async Task CopyServer()
     {
         var lstSelected = await GetProfileItems(false);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }
@@ -809,6 +833,10 @@ public partial class ProfilesViewModel : MyReactiveObject
         if (item is null)
         {
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);
+            return;
+        }
+        if (await ClosedByPartnerAsync([item]))
+        {
             return;
         }
         var url = FmtHandler.GetShareUri(item);
@@ -873,7 +901,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     private async Task MoveToGroup()
     {
         var lstSelected = await GetProfileItems(true);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }
@@ -977,7 +1005,11 @@ public partial class ProfilesViewModel : MyReactiveObject
             });
             await Task.CompletedTask;
         });
-        _speedtestService?.RunLoop(actionType, lstSelected);
+        // V2pn: on the thread pool. Started from here, every await of the run came back to the UI thread, which built
+        // the test config for all the servers (about a second for 1000) while the window stood still. Results reach
+        // the UI through the callback above.
+        var service = _speedtestService;
+        _ = Task.Run(() => service?.RunLoop(actionType, lstSelected) ?? Task.CompletedTask);
         await Task.CompletedTask;
     }
 
@@ -992,6 +1024,10 @@ public partial class ProfilesViewModel : MyReactiveObject
         if (item is null)
         {
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);
+            return;
+        }
+        if (await ClosedByPartnerAsync([item]))
+        {
             return;
         }
 
@@ -1022,7 +1058,7 @@ public partial class ProfilesViewModel : MyReactiveObject
 
     public async Task Export2ClientConfigResult(string fileName, ProfileItem item)
     {
-        if (fileName.IsNullOrEmpty())
+        if (fileName.IsNullOrEmpty() || await ClosedByPartnerAsync([item]))
         {
             return;
         }
@@ -1045,7 +1081,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     public async Task Export2ShareUrlAsync(bool blEncode)
     {
         var lstSelected = await GetProfileItems(true);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }
@@ -1078,7 +1114,7 @@ public partial class ProfilesViewModel : MyReactiveObject
     public async Task Export2InnerUrlAsync()
     {
         var lstSelected = await GetProfileItems(true);
-        if (lstSelected == null)
+        if (lstSelected == null || await ClosedByPartnerAsync(lstSelected))
         {
             return;
         }

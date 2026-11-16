@@ -8,6 +8,11 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        if (!OperatingSystem.IsWindows())
+        {
+            // V2pn: on Windows the system fonts cover Chinese, Japanese and Korean (see AppBuilderExtension).
+            Resources["AppFontFamily"] = new FontFamily($"avares://V2pn/Assets/Fonts#Inter, {Common.AppBuilderExtension.CjkFontFamilyName}");
+        }
         Common.SemiRounding.Apply(this);
         Common.Motion.Install(this);
         Common.Appearance.Install(this); // V2pn
@@ -60,6 +65,17 @@ public partial class App : Application
 
     private void OnMacOSActivated(object? sender, ActivatedEventArgs args)
     {
+        // V2pn: a click on a v2pn:// link (Info.plist claims the scheme). macOS hands it to the running app, also
+        // the one it starts for the click, instead of passing it as an argument.
+        if (args.Kind == ActivationKind.OpenUri && args is ProtocolActivatedEventArgs protocol)
+        {
+            if (V2pnDeepLink.Parse(protocol.Uri.OriginalString) is { } link
+                && (ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow is MainWindow window)
+            {
+                Dispatcher.UIThread.Post(() => window.QueueAddLink(link));
+            }
+            return;
+        }
         if (args.Kind != ActivationKind.Reopen)
         {
             return;

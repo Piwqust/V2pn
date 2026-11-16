@@ -6,7 +6,7 @@
     The release script and CI pass -p:V2pnVersion=x.y.z; this default is for local builds.
   -->
   <PropertyGroup>
-    <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.0.3</V2pnVersion>
+    <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.1.1</V2pnVersion>
 
     <!--
       "release" only in packages made by tools/release.ps1. Everything else (dotnet build, the IDE)
@@ -32,6 +32,14 @@
       one be retired without stranding installed copies.
     -->
     <V2pnUpdateKeys Condition="'$(V2pnUpdateKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig==</V2pnUpdateKeys>
+
+    <!--
+      Public root keys (ECDSA P-256, SubjectPublicKeyInfo in base64, "|" between several) that sign
+      the partner index, partners.json: which subscription domains are whose, with which grants and
+      which pack (tools/partner.cs publish). Not the release key: the partner key must never be able
+      to sign an update. The private half stays in ~/.v2pn/partner-root-key.pem.
+    -->
+    <V2pnPartnerKeys Condition="'$(V2pnPartnerKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4LVjtb8RY7TUlzR32OpH1Tn5FPKp5B+m2Zb72/cQzjOSuBvYnBWdHnZ7PnPoFhmNKSeCj5shwtmJD1JIVtCGCg==</V2pnPartnerKeys>
   </PropertyGroup>
 
   <!--
@@ -72,5 +80,6 @@
     <AssemblyMetadata Include="V2pnSourceDir" Value="$(V2pnSourceDir)" Condition="'$(V2pnSourceDir)' != ''" />
     <AssemblyMetadata Include="V2pnUpdateSources" Value="$(V2pnUpdateSources)" />
     <AssemblyMetadata Include="V2pnUpdateKeys" Value="$(V2pnUpdateKeys)" />
+    <AssemblyMetadata Include="V2pnPartnerKeys" Value="$(V2pnPartnerKeys)" />
   </ItemGroup>
 </Project>

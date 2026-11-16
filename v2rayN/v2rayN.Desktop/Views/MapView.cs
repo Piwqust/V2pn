@@ -98,7 +98,14 @@ public sealed class MapView : UserControl
         Content = _root;
 
         SizeChanged += (_, _) => Apply(animate: false);
-        ActualThemeVariantChanged += (_, _) => Paint();
+        // A map taken out of the window (a partner look rebuilt) has no theme to paint in.
+        ActualThemeVariantChanged += (_, _) =>
+        {
+            if (ActualThemeVariant != null)
+            {
+                Paint();
+            }
+        };
         AttachedToVisualTree += (_, _) => Dispatcher.UIThread.Post(Build, DispatcherPriority.Background);
     }
 
@@ -373,7 +380,7 @@ public sealed class MapView : UserControl
     }
 
     private bool IsDark() =>
-        ActualThemeVariant == ThemeVariant.Dark || ActualThemeVariant.InheritVariant == ThemeVariant.Dark;
+        ActualThemeVariant is { } variant && (variant == ThemeVariant.Dark || variant.InheritVariant == ThemeVariant.Dark);
 
     // Colours come from the theme dictionaries, so the lookup needs the variant this view renders in.
     private IBrush Brush(string key) =>

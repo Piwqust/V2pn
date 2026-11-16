@@ -375,9 +375,17 @@ public partial class DownloadService
         // SOCKS5 client greeting: VER=5, NMETHODS=1, METHOD=0x00 (no auth)
         ReadOnlyMemory<byte> greeting = new byte[] { 0x05, 0x01, 0x00 };
         var buf = new byte[2];
+        // V2pn: with the core stopped nothing will open the port; waiting the full timeout only delayed every
+        // update check and subscription fetch "through the proxy" by 5 s of polling every 50 ms.
+        var maxAttempts = V2pnCoreWatch.State is EV2pnCoreState.Stopped or EV2pnCoreState.Failed ? 1 : int.MaxValue;
+        var attempts = 0;
 
         while (!rootToken.IsCancellationRequested)
         {
+            if (attempts++ >= maxAttempts)
+            {
+                return false;
+            }
             using var tcp = new TcpClient();
             using var attemptCts = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(rootToken, attemptCts.Token);

@@ -70,7 +70,7 @@ public partial class MainWindow
 
         // A hidden map is also a cheaper one: nothing under the header has to be redrawn. The one-column
         // layout shows only a strip of it, with the pin under the mode bar, so it goes there too.
-        mapView.IsVisible = a.ShowMap && _tier != BodyTier.Stacked;
+        ApplyMapVisibility();
         // The map reads its colours once per paint, not through resource bindings.
         mapView.Repaint();
         // The welcome card replaces the statistics while there are no servers.

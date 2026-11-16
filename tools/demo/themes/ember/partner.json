@@ -1,0 +1,45 @@
+{
+  "schema": 1,
+  "id": "ember",
+  "name": "Ember",
+  "brand": {
+    "accent": "#E11D48"
+  },
+  "edition": {
+    "variants": [
+      "pass",
+      "neon"
+    ],
+    "default": "pass"
+  },
+  "theme": {
+    "palette": {
+      "brand": [
+        "#E11D48",
+        "#FB7185"
+      ]
+    },
+    "background": {
+      "type": "image",
+      "art": "dunes.jpg"
+    },
+    "connect": "round",
+    "window": "full"
+  },
+  "actions": [
+    {
+      "id": "fast",
+      "label": "Самый быстрый",
+      "icon": "bolt",
+      "do": "connect.best",
+      "strategy": "ping"
+    },
+    {
+      "id": "renew",
+      "label": "Продлить",
+      "icon": "card",
+      "do": "open.link",
+      "url": "https://t.me/example_renew"
+    }
+  ]
+}

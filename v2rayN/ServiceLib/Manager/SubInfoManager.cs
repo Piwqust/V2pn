@@ -61,8 +61,9 @@ public sealed class SubInfoManager
     /// Stores what the panel sent with a download of <paramref name="item"/>. When the servers were
     /// imported, also takes the name and the update interval from the panel where the user has not set
     /// their own, and saves <paramref name="item"/>. No headers (a failed or non-HTTP download): no change.
+    /// The "#key: value" lines at the top of <paramref name="body"/> fill in what the headers did not say.
     /// </summary>
-    public async Task ApplyAsync(Config config, SubItem item, IReadOnlyDictionary<string, string>? headers, bool imported)
+    public async Task ApplyAsync(Config config, SubItem item, IReadOnlyDictionary<string, string>? headers, bool imported, string? body = null)
     {
         if (headers == null || item.Id.IsNullOrEmpty())
         {
@@ -71,7 +72,7 @@ public sealed class SubInfoManager
         try
         {
             await LoadAsync();
-            var panel = SubPanelHeaders.Parse(headers);
+            var panel = SubPanelHeaders.Parse(SubPanelHeaders.WithBody(headers, body));
             var info = Get(item.Id) ?? new SubInfoItem { Id = item.Id };
 
             info.HasUserInfo = panel.HasUserInfo;
@@ -83,6 +84,9 @@ public sealed class SubInfoManager
             info.SupportUrl = panel.SupportUrl;
             info.WebPageUrl = panel.WebPageUrl;
             info.Announce = panel.Announce;
+            info.PartnerUrl = null;
+            info.AccountToken = panel.AccountToken;
+            CopyCompat(panel, info);
             info.ReceivedTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (imported && ApplyToSubscription(item, info, panel))
@@ -93,11 +97,84 @@ public sealed class SubInfoManager
             await SQLiteHelper.Instance.ReplaceAsync(info);
             _items[item.Id] = info;
             Changed?.Invoke(item.Id);
+
+            // A subscription new here may belong to a partner whose pack is not here yet. In the background: a slow
+            // release page never holds up the update.
+            _ = Task.Run(() => V2pnPartners.Instance.RefreshAsync());
         }
         catch (Exception ex)
         {
             Logging.SaveLog(_tag, ex);
         }
+    }
+
+    /// <summary>
+    /// The person's own choices for a subscription whose provider set defaults: deciding about connecting at start
+    /// themselves, and the order of its servers (null follows the provider). Updates never overwrite them.
+    /// </summary>
+    public async Task SetOwnChoicesAsync(string subId, bool ownAutoconnect, string? ownSort)
+    {
+        try
+        {
+            await LoadAsync();
+            if (Get(subId) is not { } info || (info.OwnAutoconnect == ownAutoconnect && info.OwnSort == ownSort))
+            {
+                return;
+            }
+            info.OwnAutoconnect = ownAutoconnect;
+            info.OwnSort = SubPanelHeaders.ParseSortType(ownSort);
+            await SQLiteHelper.Instance.ReplaceAsync(info);
+            Changed?.Invoke(subId);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+        }
+    }
+
+    /// <summary>The person's switch for the partner's connection settings of a subscription; true when it changed.</summary>
+    public async Task<bool> SetPartnerConnectionOffAsync(string subId, bool off)
+    {
+        try
+        {
+            await LoadAsync();
+            if (Get(subId) is not { } info || info.PartnerConnectionOff == off)
+            {
+                return false;
+            }
+            info.PartnerConnectionOff = off;
+            await SQLiteHelper.Instance.ReplaceAsync(info);
+            Changed?.Invoke(subId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+            return false;
+        }
+    }
+
+    /// <summary>The Happ, INCY and v2RayTun values of a response; the person's own choices on <paramref name="info"/> stay.</summary>
+    public static void CopyCompat(SubPanelInfo panel, SubInfoItem info)
+    {
+        info.AnnounceUrl = panel.AnnounceUrl;
+        info.InfoText = panel.InfoText;
+        info.InfoTone = panel.InfoTone;
+        info.InfoButtonText = panel.InfoButtonText;
+        info.InfoButtonUrl = panel.InfoButtonUrl;
+        info.ExpiryNotice = panel.ExpiryNotice switch { true => 1, false => -1, null => 0 };
+        info.ExpiryText = panel.ExpiryText;
+        info.ExpiryButtonText = panel.ExpiryButtonText;
+        info.ExpiryButtonUrl = panel.ExpiryButtonUrl;
+        info.Autoconnect = panel.Autoconnect;
+        info.AutoconnectType = panel.AutoconnectType;
+        info.SortType = panel.SortType;
+        info.PingOnOpen = panel.PingOnOpen;
+        info.PingType = panel.PingType;
+        info.CheckUrl = panel.CheckUrl;
+        info.UpdateOnOpen = panel.UpdateOnOpen;
+        info.HideSettings = panel.HideSettings;
+        info.HideUrl = panel.HideUrl;
     }
 
     /// <summary>Name and interval from the panel; true when <paramref name="item"/> changed.</summary>

@@ -92,7 +92,7 @@ public static class Appearance
 
     private static readonly string[] RadiusKeys =
     [
-        "V2RadiusPanel", "V2RadiusPanelInner", "V2RadiusFloating", "V2RadiusFloatingInner", "V2RadiusCard", "V2RadiusTile", "V2RadiusRow", "V2RadiusControl",
+        "V2RadiusPanel", "V2RadiusPanelInner", "V2RadiusDialog", "V2RadiusFloating", "V2RadiusFloatingInner", "V2RadiusCard", "V2RadiusTile", "V2RadiusRow", "V2RadiusControl",
         "V2RadiusBar", "V2RadiusBarInner", "V2RadiusSegment", "V2RadiusIconTile",
         "TextBoxDefaultCornerRadius", "ComboBoxSelectorCornerRadius", "ComboBoxPopupBoxCornerRadius",
         "MenuFlyoutCornerRadius", "MenuItemCornerRadius", "NotificationCardCornerRadius",
@@ -109,17 +109,36 @@ public static class Appearance
     /// <summary>Raised after a change was applied; the main window rearranges itself on it.</summary>
     public static event Action? Changed;
 
-    public static AppearancePalette Palette => Palettes.FirstOrDefault(p => p.Id == Current.Palette) ?? Palettes[0];
+    private static Func<AppearanceSettings, AppearanceSettings>? _edition;
 
-    public static Color AccentColor => Accents.FirstOrDefault(a => a.Id == Current.Accent) is { Id: not null } preset
+    /// <summary>
+    /// The settings in effect: the person's own, with a partner's brand laid over them (Editions). Only
+    /// <see cref="Current"/> is stored; the brand never changes what the Appearance page shows or saves.
+    /// </summary>
+    public static AppearanceSettings Effective => _edition?.Invoke(Current.Clone()) ?? Current;
+
+    /// <summary>Lays a partner's brand over the person's appearance, or takes it off (null). Applied live.</summary>
+    public static void SetEdition(Func<AppearanceSettings, AppearanceSettings>? edition)
+    {
+        _edition = edition;
+        if (Application.Current is { } app)
+        {
+            Apply(app, Effective);
+        }
+        Changed?.Invoke();
+    }
+
+    public static AppearancePalette Palette => Palettes.FirstOrDefault(p => p.Id == Effective.Palette) ?? Palettes[0];
+
+    public static Color AccentColor => Accents.FirstOrDefault(a => a.Id == Effective.Accent) is { Id: not null } preset
         ? preset.Color
-        : Color.TryParse(Current.Accent, out var custom) ? custom : Accents[0].Color;
+        : Color.TryParse(Effective.Accent, out var custom) ? custom : Accents[0].Color;
 
     /// <summary>Applies the stored appearance; called once while the app starts.</summary>
     public static void Install(Application app)
     {
         Capture(app);
-        Apply(app, Current);
+        Apply(app, Effective);
     }
 
     /// <summary>Applies and stores a new appearance. The window updates live.</summary>
@@ -128,7 +147,7 @@ public static class Appearance
         _current = settings;
         if (Application.Current is { } app)
         {
-            Apply(app, settings);
+            Apply(app, Effective);
         }
         Save(settings);
         Changed?.Invoke();
@@ -342,6 +361,34 @@ public static class Appearance
     }
 
     /// <summary>True when a coloured accent sits within <paramref name="degrees"/> of one of the given hues.</summary>
+    /// <summary>The hues of "protected" green and "attention" amber: an accent near them reads as a state.</summary>
+    internal static readonly Color[] StatusHues = [Color.Parse("#3DD68C"), Color.Parse("#F2B84B")];
+
+    /// <summary>
+    /// A partner's accent turned just far enough from the state hues that a button in it never reads as
+    /// "protected" or "attention"; an accent already clear of them comes back as it is.
+    /// </summary>
+    internal static Color AwayFromStatus(Color accent)
+    {
+        if (!NearHue(accent, StatusHues))
+        {
+            return accent;
+        }
+        var hsl = accent.ToHsl();
+        for (var step = 5; step <= 90; step += 5)
+        {
+            foreach (var sign in new[] { -1, 1 })
+            {
+                var turned = HslColor.ToRgb((hsl.H + (sign * step) + 360) % 360, hsl.S, hsl.L, 1);
+                if (!NearHue(turned, StatusHues, 25))
+                {
+                    return turned;
+                }
+            }
+        }
+        return accent;
+    }
+
     internal static bool NearHue(Color accent, IEnumerable<Color> others, double degrees = 20)
     {
         var (chroma, hue) = Oklch(accent);

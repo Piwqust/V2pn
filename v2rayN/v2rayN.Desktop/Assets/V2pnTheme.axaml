@@ -142,6 +142,10 @@
             <SolidColorBrush x:Key="MenuFlyoutBackground" Color="#1F1F27" />
             <SolidColorBrush x:Key="MenuFlyoutBorderBrush" Color="#34343F" />
             <BoxShadows x:Key="MenuFlyoutBorderBoxShadow">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 14 30 -8 #8C000000</BoxShadows>
+            <!--  Plain flyouts (the route menu, the pickers) wear the menu surface, not Semi's lighter grey.  -->
+            <SolidColorBrush x:Key="FlyoutBackground" Color="#1F1F27" />
+            <SolidColorBrush x:Key="FlyoutBorderBrush" Color="#34343F" />
+            <BoxShadows x:Key="FlyoutBorderBoxShadow">inset 0 1 0 0 #12FFFFFF, 0 2 4 0 #4D000000, 0 14 30 -8 #8C000000</BoxShadows>
             <SolidColorBrush x:Key="MenuItemPointeroverBackground" Color="#14FFFFFF" />
             <SolidColorBrush x:Key="MenuItemPressedBackground" Color="#21FFFFFF" />
             <SolidColorBrush x:Key="MenuItemSeparatorBackground" Color="#2C2C36" />
@@ -323,6 +327,10 @@
             <SolidColorBrush x:Key="MenuFlyoutBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="MenuFlyoutBorderBrush" Color="#1416161B" />
             <BoxShadows x:Key="MenuFlyoutBorderBoxShadow">0 2 4 0 #1416161B, 0 14 30 -8 #2E16161B</BoxShadows>
+            <!--  Plain flyouts (the route menu, the pickers) wear the menu surface, not Semi's lighter grey.  -->
+            <SolidColorBrush x:Key="FlyoutBackground" Color="#FFFFFF" />
+            <SolidColorBrush x:Key="FlyoutBorderBrush" Color="#1416161B" />
+            <BoxShadows x:Key="FlyoutBorderBoxShadow">0 2 4 0 #1416161B, 0 14 30 -8 #2E16161B</BoxShadows>
             <SolidColorBrush x:Key="MenuItemPointeroverBackground" Color="#0D16161B" />
             <SolidColorBrush x:Key="MenuItemPressedBackground" Color="#1716161B" />
             <SolidColorBrush x:Key="MenuItemSeparatorBackground" Color="#1416161B" />
@@ -410,6 +418,8 @@
     <Thickness x:Key="NotificationCardIconMargin">0</Thickness>
     <!--  Floating cards sit 16 px inside the stage (17 px clip), so they are no rounder than its corner.  -->
     <CornerRadius x:Key="V2RadiusFloating">16</CornerRadius>
+    <!--  In-window dialogs (DialogHost); partner looks scale it with the rest.  -->
+    <CornerRadius x:Key="V2RadiusDialog">20</CornerRadius>
     <!--  The feature rail's tiles inside a floating card with 6 px padding (16 - 6).  -->
     <CornerRadius x:Key="V2RadiusFloatingInner">10</CornerRadius>
     <CornerRadius x:Key="V2RadiusCard">18</CornerRadius>

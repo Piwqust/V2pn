@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Оформление партнёра V2pn</title>
+<meta name="description" content="Соберите оформление V2pn для своей подписки и посмотрите его в окне V2pn.">
+<link rel="stylesheet" href="builder.css">
+</head>
+<body>
+<header class="top">
+  <a class="brand" href="../README.ru.md" data-href-ru="../README.ru.md" data-href-en="../README.md">
+    <svg viewBox="0 0 17 18" aria-hidden="true"><path fill="#FF3D1F" d="M0 0h5.2l3.3 6.4L11.8 0H17L10.9 11.2V18H6.1v-6.8z"/></svg>
+    <span>V2pn</span><span class="sub" data-l="forProviders">для провайдеров</span>
+  </a>
+  <div class="sp"></div>
+  <div class="seg small" role="group" aria-label="Язык" data-l-label="language">
+    <button type="button" data-lang="ru" aria-pressed="true">RU</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
+  </div>
+</header>
+
+<div class="layout">
+  <form class="form" id="form" autocomplete="off" novalidate>
+    <h1 data-l="title">Собрать оформление</h1>
+    <p class="lead" data-l="lead">Заполните поля, и справа появится окно V2pn в вашем оформлении. Когда всё готово, скачайте файлы и отправьте их владельцу V2pn.</p>
+
+    <fieldset>
+      <legend data-l="secProvider">Провайдер</legend>
+      <label class="field"><span data-l="name">Название</span>
+        <input id="f-name" maxlength="60" placeholder="Kestrel">
+        <small data-l="nameHint">Так его увидят люди. До 40 знаков, без «V2pn».</small></label>
+      <label class="field"><span data-l="id">Код</span>
+        <input id="f-id" maxlength="32" placeholder="kestrel" spellcheck="false">
+        <small data-l="idHint">Латиница, цифры и дефис, 2–32 знака. Имя папки у владельца.</small></label>
+      <label class="field"><span data-l="domains">Домены подписок</span>
+        <textarea id="f-domains" rows="3" placeholder="kestrel.example&#10;*.kestrel.example" spellcheck="false"></textarea>
+        <small data-l="domainsHint">По одному в строке. example.com — сам этот адрес, *.example.com — всё под ним.</small></label>
+      <label class="field"><span data-l="contact">Как с вами связаться</span>
+        <input id="f-contact" maxlength="120" placeholder="@kestrel_admin">
+        <small data-l="contactHint">Только для владельца V2pn, людям не показывается.</small></label>
+    </fieldset>
+
+    <fieldset>
+      <legend data-l="secPictures">Картинки</legend>
+      <div class="pic" data-slot="logo" data-key="logo">
+        <div class="pic-head"><span data-l="logoDark">Логотип для тёмного фона</span><label class="file"><input type="file" accept="image/png,image/jpeg,image/webp"><span data-l="choose">Выбрать</span></label></div>
+        <div class="pic-body dark"><span class="pic-empty" data-l="logoDarkHint">Светлый широкий логотип: от 2:1 до 8:1, высотой 32–256 px, PNG с прозрачностью. Подойдёт 340×96.</span></div>
+        <div class="pic-note"></div>
+      </div>
+      <div class="pic" data-slot="logo" data-key="logoOnLight">
+        <div class="pic-head"><span data-l="logoLight">Логотип для светлого фона</span><label class="file"><input type="file" accept="image/png,image/jpeg,image/webp"><span data-l="choose">Выбрать</span></label></div>
+        <div class="pic-body light"><span class="pic-empty" data-l="logoLightHint">Тот же логотип в тёмном цвете, тех же размеров.</span></div>
+        <div class="pic-note"></div>
+      </div>
+      <div class="pic" data-slot="mark" data-key="mark">
+        <div class="pic-head"><span data-l="mark">Квадратный знак</span><label class="file"><input type="file" accept="image/png,image/jpeg,image/webp"><span data-l="choose">Выбрать</span></label></div>
+        <div class="pic-body checker"><span class="pic-empty" data-l="markHint">Для карточки подписки и списка: 64–512 px, на прозрачном фоне. Подойдёт 128×128.</span></div>
+        <div class="pic-note"></div>
+      </div>
+    </fieldset>
+
+    <fieldset>
+      <legend data-l="secColours">Цвета</legend>
+      <p class="hint" data-l="coloursHint">1–3 цвета бренда. Первый — главный: кнопка «Подключиться», ссылки, карточка. Цвета состояния («Защищено», «Не защищено») у V2pn свои.</p>
+      <div id="colours" class="colours"></div>
+      <button type="button" class="ghost" id="add-colour" data-l="addColour">Добавить цвет</button>
+    </fieldset>
+
+    <fieldset>
+      <legend data-l="secBackground">Фон «Сцены»</legend>
+      <div class="radios" role="radiogroup" aria-label="Фон" data-l-label="secBackground">
+        <label><input type="radio" name="bg" value="none" checked> <span data-l="bgNone">Без фона: только «Акцент», с картой мира</span></label>
+        <label><input type="radio" name="bg" value="gradient"> <span data-l="bgGradient">Градиент из цветов бренда</span></label>
+        <label><input type="radio" name="bg" value="image"> <span data-l="bgImage">Картинка</span></label>
+      </div>
+      <div class="pic" data-slot="backdrop" data-key="backdrop" id="backdrop-pic" hidden>
+        <div class="pic-head"><span data-l="backdrop">Картинка фона</span><label class="file"><input type="file" accept="image/png,image/jpeg,image/webp"><span data-l="choose">Выбрать</span></label></div>
+        <div class="pic-body checker"><span class="pic-empty" data-l="backdropHint">640–3200 px по стороне, не вытянутее 3:1, до 1 МБ. V2pn положит поверх неё затемнение, чтобы текст читался.</span></div>
+        <div class="pic-note"></div>
+      </div>
+      <p class="hint" id="gradient-hint" hidden></p>
+    </fieldset>
+
+    <fieldset>
+      <legend data-l="secButtons">Кнопки</legend>
+      <p class="hint" data-l="buttonsHint">До четырёх кнопок под панелью подключения. Нужна отдельная договорённость с владельцем V2pn (право actions).</p>
+      <div id="actions" class="actions"></div>
+      <button type="button" class="ghost" id="add-action" data-l="addAction">Добавить кнопку</button>
+    </fieldset>
+
+    <fieldset>
+      <legend data-l="secLinks">Ссылки и вход</legend>
+      <label class="field"><span data-l="cabinet">Кабинет</span><input id="f-cabinet" placeholder="https://kestrel.example/cabinet" spellcheck="false"></label>
+      <label class="field"><span data-l="support">Поддержка</span><input id="f-support" placeholder="https://t.me/kestrel_support" spellcheck="false"></label>
+      <label class="check"><input type="checkbox" id="f-login"> <span data-l="login">Вход по коду из бота</span></label>
+      <small class="hint" data-l="loginHint">Человек подтверждает вход в вашем боте, и V2pn сам добавляет подписку. Нужен API: login/start и login/poll (раздел 9 руководства).</small>
+      <label class="field" id="api-field"><span data-l="api">Адрес API</span><input id="f-api" placeholder="https://kestrel.example/v2pn/api/" spellcheck="false"></label>
+    </fieldset>
+
+    <fieldset class="export">
+      <legend data-l="secExport">Файлы</legend>
+      <div class="problems" id="problems" role="status" aria-live="polite"></div>
+      <div class="row">
+        <button type="button" class="primary" id="dl-partner" data-l="dlPartner">Скачать partner.json</button>
+        <button type="button" class="ghost" id="dl-listing" data-l="dlListing">Скачать listing.json</button>
+      </div>
+      <h2 data-l="sendTitle">Что прислать владельцу V2pn</h2>
+      <ol id="send" class="send"></ol>
+    </fieldset>
+  </form>
+
+  <section class="preview" aria-label="Предпросмотр" data-l-label="preview">
+    <div class="pv-bar">
+      <div class="seg" role="group" data-k="look">
+        <button type="button" data-v="accent" aria-pressed="true" data-l="lookAccent">Акцент</button>
+        <button type="button" data-v="scene" aria-pressed="false" data-l="lookScene">Сцена</button>
+      </div>
+      <div class="seg" role="group" data-k="dark">
+        <button type="button" data-v="0" aria-pressed="false" data-l="light">Светлый</button>
+        <button type="button" data-v="1" aria-pressed="true" data-l="dark">Тёмный</button>
+      </div>
+      <div class="seg" role="group" data-k="size">
+        <button type="button" data-v="mini" aria-pressed="true"><span data-l="mini">Мини</span> <span class="dim">380×640</span></button>
+        <button type="button" data-v="mid" aria-pressed="false"><span data-l="mid">Среднее</span> <span class="dim">820×700</span></button>
+        <button type="button" data-v="wide" aria-pressed="false"><span data-l="wide">Широкое</span> <span class="dim">1280×800</span></button>
+      </div>
+      <label class="check small"><input type="checkbox" id="pv-plan" checked> <span data-l="withPlan">С тарифом</span></label>
+    </div>
+    <div class="pv-stage" id="pv-stage"><div id="pv-frame"></div></div>
+    <div class="pv-notes" id="pv-notes"></div>
+  </section>
+</div>
+
+<script src="v2pn-colors.js"></script>
+<script src="builder.js"></script>
+</body>
+</html>

@@ -226,8 +226,14 @@
     const bytes = new Uint8Array(await file.arrayBuffer());
     const check = C.checkSlot(SLOT_OF[key], bytes);
     const ext = bytes[0] === 0x89 ? 'png' : bytes[0] === 0xFF ? 'jpg' : bytes[0] === 0x52 ? 'webp' : 'png';
-    if (S.pics[key]) URL.revokeObjectURL(S.pics[key].url);
-    S.pics[key] = { file, bytes, check, ext, url: URL.createObjectURL(new Blob([bytes], { type: file.type || 'image/' + ext })) };
+    // A data: URL, not a blob: one, so the page works under a strict Content-Security-Policy (img-src 'self' data:).
+    const url = await new Promise((done, fail) => {
+      const r = new FileReader();
+      r.onload = () => done(r.result);
+      r.onerror = () => fail(r.error);
+      r.readAsDataURL(new Blob([bytes], { type: file.type || 'image/' + ext }));
+    });
+    S.pics[key] = { file, bytes, check, ext, url };
     if (key === 'mark' && check.problem === 'none') S.pics[key].tile = await markTile(S.pics[key].url);
   }
   // PartnerParts.Mark: a cut-out mark (see-through corners) gets a tile that sets it off: dark under a light glyph,

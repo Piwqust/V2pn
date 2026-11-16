@@ -493,7 +493,7 @@ V2pn draws two looks for every partner, in its colours:
 
 | Look | What it is |
 | --- | --- |
-| `neon` (Neon) | one column, like a VPN app on a phone. At the top the provider's name or logo and the Proxy/VPN switch. Then the connect button, under it the state pill and the route ("What goes through the VPN"), your buttons and the cabinet and support links. At the bottom the subscription card (plan, devices, term, traffic bar, banner) over the server list |
+| `neon` (Neon) | one column, like a VPN app on a phone. At the top the provider's name or logo and the Proxy/VPN switch. In the middle one connect button, under it the server, the state and the route ("What goes through the VPN"). At the bottom a sheet: the plan and the days left (a click opens the cabinet), the traffic bar, one offer from the banner with its button, then one list: your buttons first, your servers after them. Support is an icon over the list |
 | `pass` (the Pass) | plain V2pn (the sidebar, the map, the glass connect panel, the status card) with your card over the status card, like a bank card in Wallet: the logo, the plan, devices and term, the days left in big type, the traffic bar, "Renew" and "Cabinet" links, the banner's text as a tag |
 
 `edition.variants` sets which looks the pack offers, `edition.default` the one that opens first. After that the person picks on the Appearance page.

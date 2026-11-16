@@ -63,7 +63,7 @@ public class V2pnPartnerBuildsTests
     }
 
     [Test]
-    public async Task MacPackage_IsRenamed_KeepsModesAndLinks_AndGetsTheMarkerInsideTheBundle()
+    public async Task MacPackage_KeepsItsName_ModesAndLinks_AndGetsTheMarkerInsideTheBundle()
     {
         const int Exec = 0x81ED; // regular file, rwxr-xr-x
         const int Link = 0xA1FF; // symbolic link
@@ -77,10 +77,11 @@ public class V2pnPartnerBuildsTests
         V2pnPartnerBuilds.Repack(source, target, "configra");
 
         var entries = Read(target);
-        await entries.Keys.All(k => k.StartsWith("V2pn-configra.app/", StringComparison.Ordinal)).Should().BeTrue();
-        await entries["V2pn-configra.app/Contents/MacOS/V2pn"].Mode.Should().BeEqualTo(Exec);
-        await entries["V2pn-configra.app/Contents/MacOS/libcore.dylib"].Should().BeEqualTo(("libcore.1.dylib", Link));
-        var marker = entries["V2pn-configra.app/Contents/MacOS/" + V2pnEdition.FileName];
+        // The same V2pn.app as everyone's: one program, with the marker that gives it Configra's tab.
+        await entries.Keys.All(k => k.StartsWith("V2pn.app/", StringComparison.Ordinal)).Should().BeTrue();
+        await entries["V2pn.app/Contents/MacOS/V2pn"].Mode.Should().BeEqualTo(Exec);
+        await entries["V2pn.app/Contents/MacOS/libcore.dylib"].Should().BeEqualTo(("libcore.1.dylib", Link));
+        var marker = entries["V2pn.app/Contents/MacOS/" + V2pnEdition.FileName];
         await V2pnEdition.Parse(marker.Content).Should().BeEqualTo("configra");
         await marker.Mode.Should().BeEqualTo(0x81A4);
     }

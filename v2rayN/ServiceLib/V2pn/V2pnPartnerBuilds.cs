@@ -3,12 +3,13 @@ using System.IO.Compression;
 namespace ServiceLib;
 
 /// <summary>
-/// The packages of a partner's build of V2pn (V2pnEdition), made from the standard packages of a release after they are
-/// signed (tools/partner-packages.cs, run by tools/sign-release.ps1): the same files with v2pn-partner.txt added, so the
-/// program is byte for byte V2pn's and updates from the same signed release. V2pn-windows-x64.zip becomes
-/// V2pn-&lt;id&gt;-windows-x64.zip with V2pn/v2pn-partner.txt; V2pn-macos-arm64.zip becomes V2pn-&lt;id&gt;-macos-arm64.zip whose
-/// V2pn.app is V2pn-&lt;id&gt;.app (so it sits beside V2pn.app in Applications) with Contents/MacOS/v2pn-partner.txt.
-/// They are not in release.json: an installed copy updates from the standard update package and keeps its marker.
+/// A partner's packages of V2pn, made from the standard packages of a release after they are signed
+/// (tools/partner-packages.cs, run by tools/sign-release.ps1): the same files with v2pn-partner.txt added, so the program
+/// is byte for byte V2pn's, installs where V2pn installs and updates from the same signed release. The marker says the
+/// person came from that partner (V2pnEdition): V2pn gets that partner's tab. V2pn-windows-x64.zip becomes
+/// V2pn-&lt;id&gt;-windows-x64.zip with V2pn/v2pn-partner.txt; V2pn-macos-arm64.zip becomes V2pn-&lt;id&gt;-macos-arm64.zip with
+/// V2pn.app/Contents/MacOS/v2pn-partner.txt. They are not in release.json: an installed copy updates from the standard
+/// update package and keeps its marker.
 /// </summary>
 public static class V2pnPartnerBuilds
 {
@@ -22,9 +23,6 @@ public static class V2pnPartnerBuilds
     /// <summary>"V2pn-windows-x64.zip" of partner configra: "V2pn-configra-windows-x64.zip".</summary>
     public static string PackageName(string partnerId, string source) =>
         source.StartsWith("V2pn-", StringComparison.Ordinal) ? $"V2pn-{partnerId}-{source["V2pn-".Length..]}" : throw new ArgumentException($"{source} is not a V2pn package");
-
-    /// <summary>The app of a partner's build on macOS.</summary>
-    public static string BundleName(string partnerId) => $"V2pn-{partnerId}.app";
 
     /// <summary>A partner's package (or its .sha256): never listed in release.json.</summary>
     public static bool IsPartnerPackage(string? name) => name != null && PartnerPackage.IsMatch(name);
@@ -50,7 +48,7 @@ public static class V2pnPartnerBuilds
             throw new InvalidDataException($"{Path.GetFileName(source)} is not a V2pn package (one top folder V2pn/ or V2pn.app/).");
         }
         var mac = tops[0] == "V2pn.app";
-        var top = mac ? BundleName(partnerId) : "V2pn";
+        var top = tops[0];
         var marker = mac ? $"{top}/Contents/MacOS/{V2pnEdition.FileName}" : $"{top}/{V2pnEdition.FileName}";
         if (input.Entries.Any(e => e.Name == V2pnEdition.FileName))
         {

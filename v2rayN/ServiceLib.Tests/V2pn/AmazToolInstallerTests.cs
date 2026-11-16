@@ -211,4 +211,49 @@ public class AmazToolInstallerTests
         installer.DeleteWork();
         await Directory.GetFileSystemEntries(Path.Combine(_dir, "Applications")).Length.Should().BeEqualTo(1);
     }
+
+    [Test]
+    public async Task PartnerBuild_StaysOne_ThroughAFolderUpdate()
+    {
+        InstallOld();
+        Write(Path.Combine(App, V2pnEdition.FileName), "configra");
+        var installer = new Installer(App, _log.Add);
+        installer.Stage(NewPackage());
+        installer.Swap();
+        installer.Commit();
+
+        await Read(Exe).Should().BeEqualTo("new app");
+        await Read(V2pnEdition.FileName).Should().BeEqualTo("configra");
+    }
+
+    [Test]
+    public async Task PartnerBuild_StaysOne_ThroughABundleUpdate_UnderItsOwnName()
+    {
+        // The partner's macOS package is V2pn.app renamed; updates still come as V2pn.app.
+        var bundle = Path.Combine(_dir, "Applications", "V2pn-configra.app");
+        var macos = Path.Combine(bundle, "Contents", "MacOS");
+        Write(Path.Combine(macos, "V2pn"), "old app");
+        Write(Path.Combine(macos, V2pnEdition.FileName), "configra");
+        var installer = new Installer(bundle, _log.Add);
+        installer.Stage(Package("V2pn.app", ("Contents/MacOS/V2pn", "new app")));
+        installer.Swap();
+        installer.Commit();
+
+        await File.ReadAllText(Path.Combine(macos, "V2pn")).Should().BeEqualTo("new app");
+        await File.ReadAllText(Path.Combine(macos, V2pnEdition.FileName)).Should().BeEqualTo("configra");
+        await Directory.Exists(Path.Combine(_dir, "Applications", "V2pn.app")).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task PlainBundle_GainsNoMarker()
+    {
+        var bundle = Path.Combine(_dir, "Applications", "V2pn.app");
+        Write(Path.Combine(bundle, "Contents", "MacOS", "V2pn"), "old app");
+        var installer = new Installer(bundle, _log.Add);
+        installer.Stage(Package("V2pn.app", ("Contents/MacOS/V2pn", "new app")));
+        installer.Swap();
+        installer.Commit();
+
+        await File.Exists(Path.Combine(bundle, "Contents", "MacOS", V2pnEdition.FileName)).Should().BeFalse();
+    }
 }

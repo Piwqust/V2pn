@@ -17,6 +17,9 @@ internal sealed class Installer
 {
     private const string WorkFolder = ".v2pn-update";
 
+    // What makes a copy a partner's build (ServiceLib's V2pnEdition): only its own package has it, never an update.
+    private const string PartnerMarker = "v2pn-partner.txt";
+
     private readonly string _root;
     private readonly bool _bundle;
     private readonly string _stage;
@@ -131,6 +134,7 @@ internal sealed class Installer
         {
             if (_bundle)
             {
+                KeepPartnerMarker();
                 Directory.CreateDirectory(_backup);
                 Directory.Move(_root, Path.Combine(_backup, Path.GetFileName(_root)));
                 _bundleSwapped = true;
@@ -163,6 +167,21 @@ internal sealed class Installer
             _log($"Replacing files failed: {ex.Message}");
             Rollback();
             throw;
+        }
+    }
+
+    /// <summary>
+    /// A partner's build stays one: the bundle is swapped whole, so its marker is copied into the staged bundle first.
+    /// A folder install needs nothing, as files the package does not carry are left where they are.
+    /// </summary>
+    private void KeepPartnerMarker()
+    {
+        var kept = Path.Combine(_root, "Contents", "MacOS", PartnerMarker);
+        var staged = Path.Combine(_stagedRoot!, "Contents", "MacOS", PartnerMarker);
+        if (File.Exists(kept) && !File.Exists(staged))
+        {
+            File.Copy(kept, staged);
+            _log($"Kept {PartnerMarker}");
         }
     }
 

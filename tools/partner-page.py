@@ -1,17 +1,19 @@
-"""A partner's download page: one static page from partners/<id>/ that sends the partner's people to its own build of V2pn.
+"""A partner's download page: one static page from partners/<id>/ that sends the partner's people to V2pn with its tab.
 
     python tools/partner-page.py partners/configra             # into partners/out/site/configra/
     python tools/partner-page.py partners/configra --out D:/x  # somewhere else
     python tools/partner-page.py partners/configra --bot https://t.me/example_bot
 
 The page carries the partner's logo and colours (its Scene background as the hero when the pack has one), one line on
-what V2pn is, "Download for Windows" and "Download for macOS" pointing at the partner's own build in the newest release
-(V2pn-<id>-windows-x64.zip, V2pn-<id>-macos-arm64.zip and so on, made by tools/partner-packages.cs; the release is the
-first of V2pnUpdateSources, as V2pn itself updates from), the one-command installers for that build
-(install.ps1 / install.sh with V2PN_PARTNER=<id>), the three steps to get the partner's subscription into it and, when
-the pack or --bot gives one, a link to the partner's bot. Plain V2pn shows nothing of a partner, so the page never sends
-anyone to it. Russian first, English with ?lang=en or the switch. A phone gets "V2pn is for computers" and a button
-that sends the page's link to the person instead of a download.
+what V2pn is, "Download for Windows" and "Download for macOS" pointing at the partner's package in the newest release
+(V2pn-<id>-windows-x64.zip, V2pn-<id>-macos-arm64.zip and so on, made by tools/partner-packages.cs: V2pn's own signed
+package with v2pn-partner.txt added, so V2pn opens with the partner's tab beside its own; the release is the first of
+V2pnUpdateSources, as V2pn itself updates from), the one-command installers (install.ps1 / install.sh with
+V2PN_PARTNER=<id>: the ordinary V2pn with the marker, or only the marker when V2pn is installed already), the three
+steps to get the partner's subscription into it and, when the pack or --bot gives one, a link to the partner's bot. A
+plain download of V2pn has no partner's tab, so the page never sends anyone to it. Russian first, English with ?lang=en
+or the switch. A phone gets "V2pn is for computers" and a button that sends the page's link to the person instead of a
+download.
 
 Colours follow V2pn's own rules (ServiceLib/V2pn/V2pnThemePalette.cs, Editions.PartnerAccent): the brand turned away
 from the state colours, the Scene's stage with its ink, scrim and buttons, the brand as text moved in lightness until it
@@ -424,16 +426,15 @@ DARK = {"bg": "#0E0E11", "card": "#1A1A21", "muted_bg": "#26262F", "line": "#2A2
 V2MARK = '<svg class="v2" viewBox="0 0 17 18" aria-hidden="true"><path fill="#FF3D1F" d="M0 0h5.2l3.3 6.4L11.8 0H17L10.9 11.2V18H6.1v-6.8z"/></svg>'
 
 
-def strings(name, pid, login, has_bot, cabinet):
+def strings(name, login, has_bot, cabinet):
     n = html.escape(name)
-    app = html.escape(f"V2pn-{pid}")
     href = html.escape(cabinet)
     cab_ru = f'в <a href="{href}">кабинете</a> ' if cabinet else "у "
     cab_en = f'in the <a href="{href}">{n} cabinet</a>' if cabinet else f"from {n}"
     ru = {
         "title": f"V2pn для {n}",
         "h1": f"{n} на компьютере",
-        "lead": f"Сборка V2pn для {n}: простой VPN-клиент для Windows и macOS в цветах {n}. "
+        "lead": f"V2pn — простой VPN-клиент для Windows и macOS. Отсюда он ставится с вкладкой {n}: в ней ваш тариф, серверы и цвета {n}. "
                 + (f"Подписка {n} входит в него по коду из бота, без ссылок." if login else f"Подписка {n} подключается в нём в один клик."),
         "win": "Скачать для Windows",
         "mac": "Скачать для macOS",
@@ -447,18 +448,18 @@ def strings(name, pid, login, has_bot, cabinet):
         "phoneFiles": 'Файлы для компьютера: <a href="{win}">Windows</a> · <a href="{mac}">macOS</a>',
         "stepsTitle": "Три шага",
         "s1": "Установите V2pn",
-        "s1win": f"Распакуйте архив в свою папку и запустите V2pn.exe. Обычный V2pn, если он есть, остаётся отдельно. Если Windows скажет, что защитила компьютер, нажмите «Подробнее» → «Выполнить в любом случае».",
-        "s1mac": f"Распакуйте архив и перетащите {app} в «Программы», рядом с V2pn, если он есть. В первый раз разрешите запуск: «Системные настройки» → «Конфиденциальность и безопасность» → «Всё равно открыть».",
-        "cmdWin": "Или одной командой в PowerShell:",
-        "cmdMac": "Или одной командой в Терминале:",
-        "s2": f"Выберите {n}" if login else "Вставьте ссылку на подписку",
-        "s2t": (f"При первом запуске нажмите «У меня подписка от провайдера» и выберите {n}. Если V2pn уже настроен: «+» → «Войти через провайдера»."
+        "s1win": "Распакуйте архив в свою папку и запустите V2pn.exe. Если Windows скажет, что защитила компьютер, нажмите «Подробнее» → «Выполнить в любом случае».",
+        "s1mac": "Распакуйте архив и перетащите V2pn в «Программы». В первый раз разрешите запуск: «Системные настройки» → «Конфиденциальность и безопасность» → «Всё равно открыть».",
+        "cmdWin": f"Или одной командой в PowerShell. Если V2pn уже установлен, команда только добавит вкладку {n}, серверы и настройки останутся:",
+        "cmdMac": f"Или одной командой в Терминале. Если V2pn уже установлен, команда только добавит вкладку {n}, серверы и настройки останутся:",
+        "s2": f"Войдите в {n}" if login else "Вставьте ссылку на подписку",
+        "s2t": (f"При первом запуске нажмите «У меня подписка от провайдера». Если V2pn уже настроен: «+» → «Войти через провайдера»."
                 if login else
                 f"Скопируйте ссылку на подписку {cab_ru}{n} и нажмите в V2pn «Вставить из буфера»."),
         "s3": "Подтвердите в боте" if login else "Подключитесь",
         "s3t": (f"V2pn покажет код. Подтвердите его в боте {n}, и V2pn сам добавит подписку: останется нажать «Подключиться»."
                 if login else
-                f"Нажмите «Подключиться». Эта сборка всегда в цветах {n}."),
+                f"Нажмите «Подключиться». Серверы {n} — во вкладке {n} вверху окна."),
         "bot": "Открыть бота",
         "foot": 'V2pn — открытый код, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn на GitHub</a>',
         "lang": "Язык",
@@ -466,7 +467,7 @@ def strings(name, pid, login, has_bot, cabinet):
     en = {
         "title": f"V2pn for {n}",
         "h1": f"{n} on your computer",
-        "lead": f"V2pn for {n}: a simple VPN client for Windows and macOS in {n}'s colours. "
+        "lead": f"V2pn is a simple VPN client for Windows and macOS. From here it comes with a {n} tab: your plan, servers and {n}'s colours. "
                 + (f"Your {n} subscription gets into it by a code from the bot, no links to copy." if login else f"Your {n} subscription connects in one click."),
         "win": "Download for Windows",
         "mac": "Download for macOS",
@@ -480,18 +481,18 @@ def strings(name, pid, login, has_bot, cabinet):
         "phoneFiles": 'Files for a computer: <a href="{win}">Windows</a> · <a href="{mac}">macOS</a>',
         "stepsTitle": "Three steps",
         "s1": "Install V2pn",
-        "s1win": "Unpack the archive into a folder of yours and run V2pn.exe. Plain V2pn, if you have it, stays separate. If Windows says it protected your PC, press “More info”, then “Run anyway”.",
-        "s1mac": f"Unpack the archive and drag {app} to Applications, next to V2pn if you have it. The first time, allow it: System Settings → Privacy & Security → “Open Anyway”.",
-        "cmdWin": "Or in one command in PowerShell:",
-        "cmdMac": "Or in one command in Terminal:",
-        "s2": f"Pick {n}" if login else "Paste your subscription link",
-        "s2t": (f"At first start press “I have a subscription from a provider” and pick {n}. If V2pn is set up already: “+” → “Sign in with a provider”."
+        "s1win": "Unpack the archive into a folder of yours and run V2pn.exe. If Windows says it protected your PC, press “More info”, then “Run anyway”.",
+        "s1mac": "Unpack the archive and drag V2pn to Applications. The first time, allow it: System Settings → Privacy & Security → “Open Anyway”.",
+        "cmdWin": f"Or in one command in PowerShell. If V2pn is installed already, it only adds the {n} tab; your servers and settings stay:",
+        "cmdMac": f"Or in one command in Terminal. If V2pn is installed already, it only adds the {n} tab; your servers and settings stay:",
+        "s2": f"Sign in to {n}" if login else "Paste your subscription link",
+        "s2t": (f"At first start press “I have a subscription from a provider”. If V2pn is set up already: “+” → “Sign in with a provider”."
                 if login else
                 f"Copy your subscription link {cab_en} and press “Paste from clipboard” in V2pn."),
         "s3": "Confirm in the bot" if login else "Connect",
         "s3t": (f"V2pn shows a code. Confirm it in {n}'s bot and V2pn adds the subscription itself: then press “Connect”."
                 if login else
-                f"Press “Connect”. This build always wears {n}'s colours."),
+                f"Press “Connect”. {n}'s servers are in the {n} tab at the top of the window."),
         "bot": "Open the bot",
         "foot": 'V2pn is open source, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn on GitHub</a>',
         "lang": "Language",
@@ -602,7 +603,7 @@ def build(folder, out, source, bot_override=None):
         "win": f"$env:V2PN_PARTNER='{pid}'; irm {source}/latest/download/install.ps1 | iex",
         "mac": f"curl -fsSL {source}/latest/download/install.sh | V2PN_PARTNER={pid} bash",
     }
-    ru, en = strings(name, pid, login, bool(bot), cabinet)
+    ru, en = strings(name, login, bool(bot), cabinet)
     for d in (ru, en):
         for k in d:
             for key, url in urls.items():

@@ -216,7 +216,7 @@ A field over its limit is not shown (there is no cut-off line), and `partner-che
 | `check.services` | checks whether YouTube, Telegram and ChatGPT open through the current connection and shows the result |
 | `info.card` | shows the card from `GET <api>card?id=<button id>` in a frame with your name. Needs the API |
 
-Where the buttons are: in plain V2pn and in the Pass under the connect button while a server of your subscription is chosen, and in Neon under the state and the route, at any window width. At most four are on screen: V2pn takes the first four it can run and leaves out an unknown action, a button missing a field it needs, or one that needs the API when there is none. After connecting, V2pn says where and why: "Germany 2: the fastest", "Netherlands: by <provider>'s check". Pressing the same button again within 3 seconds does nothing.
+Where the buttons are: in plain V2pn and in the Pass under the connect button while a server of your subscription is chosen, and in Neon as the first rows of the server list, at any window width. At most four are on screen: V2pn takes the first four it can run and leaves out an unknown action, a button missing a field it needs, or one that needs the API when there is none. After connecting, V2pn says where and why: "Germany 2: the fastest", "Netherlands: by <provider>'s check". Pressing the same button again within 3 seconds does nothing.
 
 ## 4. Closed settings
 

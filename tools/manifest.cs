@@ -64,8 +64,11 @@ if (!Regex.IsMatch(version, @"^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$"))
     return 2;
 }
 
+// A partner's build (V2pn-<id>-windows-x64.zip, tools/partner-packages.cs) is never listed: installed copies update
+// from the standard packages, and a partner's build keeps its marker through that update.
+var partnerPackage = new Regex("^V2pn-(?!(windows|macos|linux)-)[a-z0-9][a-z0-9-]{1,31}-(windows|macos)-", RegexOptions.CultureInvariant);
 var packages = Directory.GetFiles(folder, "V2pn-*")
-    .Where(f => !f.EndsWith(".sha256", StringComparison.OrdinalIgnoreCase))
+    .Where(f => !f.EndsWith(".sha256", StringComparison.OrdinalIgnoreCase) && !partnerPackage.IsMatch(Path.GetFileName(f)))
     .OrderBy(f => Path.GetFileName(f), StringComparer.Ordinal)
     .ToList();
 if (packages.Count == 0)

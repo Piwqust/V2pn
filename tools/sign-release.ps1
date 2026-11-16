@@ -6,8 +6,12 @@
 .DESCRIPTION
   .github/workflows/v2pn-release.yml builds the Windows and macOS packages for a pushed tag and
   attaches them to its run. This script downloads them, writes and signs release.json with the
-  key in ~/.v2pn/release-signing-key.pem (tools/manifest.cs), and creates the DRAFT release
-  with every file. Nothing becomes visible to installed copies until you press Publish.
+  key in ~/.v2pn/release-signing-key.pem (tools/manifest.cs), publishes the partners
+  (tools/partner.cs: partner-index.json for partner builds, an empty partners.json for 1.2.1 and
+  older), makes each partner's own build from the signed standard packages
+  (tools/partner-packages.cs: V2pn-<id>-windows-x64.zip and so on, with .sha256, not in
+  release.json), and creates the DRAFT release with every file. Nothing becomes visible to
+  installed copies until you press Publish.
 
   Use it when the key is not stored in the repository's "release" environment. If it is, the
   workflow signs by itself and this script is not needed.
@@ -65,19 +69,26 @@ $dotnet = Find-Dotnet
 Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $dir, $Version, '--repo', $repo)
 # The one-command installers go with every release: .../releases/latest/download/install.ps1 (Windows), install.sh (macOS)
 Copy-Item (Join-Path $PSScriptRoot 'install.ps1'), (Join-Path $PSScriptRoot 'install.sh') $dir
-# The partners (partners/<id>): partners.json signed with ~/.v2pn/partner-root-key.pem and partner-<id>.zip each.
-# V2pn reads them from the latest release. The summary says what changed since the index of the release before.
+# The partners (partners/<id>), signed with ~/.v2pn/partner-root-key.pem: partner-index.json and partner-<id>.zip each,
+# which partner builds read from the latest release, and partners.json with no partner in it, which V2pn 1.2.1 and
+# older read: they then drop the partner they kept and stay plain V2pn. The summary says what changed since the index
+# of the release before.
 $previous = Join-Path ([IO.Path]::GetTempPath()) "v2pn-partners-before-$Version"
 if (Test-Path $previous) { Remove-Item -Recurse -Force $previous }
 New-Item -ItemType Directory -Force $previous | Out-Null
-Get-Output 'gh' @('release', 'download', '--repo', $Repository, '--pattern', 'partners.json', '--dir', $previous) | Out-Null
+Get-Output 'gh' @('release', 'download', '--repo', $Repository, '--pattern', 'partner-index.json', '--dir', $previous) | Out-Null
 $partnersOut = Join-Path $dir 'partners'
-$publish = @('run', (Join-Path $PSScriptRoot 'partner.cs'), '--', 'publish', '--out', $partnersOut)
-if (Test-Path (Join-Path $previous 'partners.json')) { $publish += @('--previous', (Join-Path $previous 'partners.json')) }
+$publish = @('run', (Join-Path $PSScriptRoot 'partner.cs'), '--', 'publish', '--partners', (Join-Path $repo 'partners'), '--out', $partnersOut)
+if (Test-Path (Join-Path $previous 'partner-index.json')) { $publish += @('--previous', (Join-Path $previous 'partner-index.json')) }
 # A non-zero exit means a partner has a problem or the app's built-in keys would refuse the signature.
 Invoke-Checked $dotnet $publish
+foreach ($required in 'partner-index.json', 'partner-index.json.sig', 'partners.json', 'partners.json.sig') {
+    if (-not (Test-Path (Join-Path $partnersOut $required))) { throw "tools/partner.cs did not write $required." }
+}
 Get-ChildItem $partnersOut -File | Move-Item -Destination $dir
 Remove-Item -Recurse -Force $partnersOut, $previous
+# Each partner's own build: the signed standard packages with v2pn-partner.txt. After release.json, which never lists them.
+Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'partner-packages.cs'), '--', $dir, '--partners', (Join-Path $repo 'partners'))
 
 $notesFile = Join-Path $dir 'notes.md'
 [IO.File]::WriteAllText($notesFile, $notes)

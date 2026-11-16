@@ -435,3 +435,4 @@ site/shots/
 site/.taste-skill/*
 !site/.taste-skill/*history.json
 !site/.taste-skill/names.json
+site/*/.taste-skill/

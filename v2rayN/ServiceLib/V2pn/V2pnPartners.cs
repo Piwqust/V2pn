@@ -191,7 +191,17 @@ public sealed class V2pnPartners
     public async Task RefreshAsync(bool forceIndex = false, CancellationToken cancellationToken = default)
     {
         await LoadAsync();
-        var urls = await SubscriptionUrls();
+        IReadOnlyList<string?> urls;
+        try
+        {
+            urls = await SubscriptionUrls();
+        }
+        catch (Exception ex)
+        {
+            // Callers start this and forget it: a failure here is logged, never left unobserved.
+            Logging.SaveLog(Tag, ex);
+            return;
+        }
         await _gate.WaitAsync(cancellationToken);
         try
         {

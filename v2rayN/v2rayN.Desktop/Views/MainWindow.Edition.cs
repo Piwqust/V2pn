@@ -131,7 +131,28 @@ public partial class MainWindow
     private void ArrangeEdition()
     {
         UpdateLockup();
+        PlacePartnerCard();
         QueuePlace();
+    }
+
+    /// <summary>
+    /// In the mini window the sidebar is the strip under the stage, and the card under search and tabs would sit at the
+    /// window's bottom edge, cut off: there it goes first, right under the stage. Wider, it stays under the tabs.
+    /// </summary>
+    private void PlacePartnerCard()
+    {
+        if (partnerCardHost.Parent is not DockPanel dock)
+        {
+            return;
+        }
+        var stacked = _tier == BodyTier.Stacked;
+        var first = dock.Children.IndexOf(partnerCardHost) == 0;
+        if (stacked != first)
+        {
+            dock.Children.Remove(partnerCardHost);
+            dock.Children.Insert(stacked ? 0 : dock.Children.IndexOf(lstTabs) + 1, partnerCardHost);
+        }
+        partnerCardHost.Margin = stacked ? new Thickness(10, 10, 10, 0) : new Thickness(10, 0, 10, 6);
     }
 
     /// <summary>

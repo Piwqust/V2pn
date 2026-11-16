@@ -5,7 +5,7 @@ using v2rayN.Desktop.Views.EditionLooks;
 
 namespace v2rayN.Desktop.Views;
 
-// The brand of the partner whose server is selected (Common/Editions.cs), on V2pn's own layout:
+// The brand of the partner whose build this is (Common/Editions.cs, V2pnEdition), on V2pn's own layout; plain V2pn has none:
 // "Accent": its logo beside V2pn's in the title bar, Connect in its colour, its card at the top of the sidebar.
 // "Scene", when its theme has a background: the same, with the background where the map is and its plan on it.
 public partial class MainWindow
@@ -46,7 +46,7 @@ public partial class MainWindow
         Editions.Start();
     }
 
-    /// <summary>"V2pn × Configra" while a partner's server is selected; else V2pn.</summary>
+    /// <summary>"V2pn × Configra" in Configra's build; else V2pn.</summary>
     private static string EditionTitle() => Editions.Partner is { } partner ? $"{L.AppName} × {partner.Name}" : L.AppName;
 
     private void RefreshEdition()

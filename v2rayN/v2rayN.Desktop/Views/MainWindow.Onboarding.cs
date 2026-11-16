@@ -360,6 +360,19 @@ public partial class MainWindow
 
         _obImportRows.Clear();
         _obMove = null;
+        // A provider's subscription without copying its link: the code confirmed in its bot (MainWindow.ProviderLogin.cs).
+        // Only a partner's build offers it, with its own partner, and there it comes first: that is why the person has it.
+        var login = _loginOffers.Count > 0;
+        if (!login && V2pnEdition.IsPartner)
+        {
+            // The list of partners may not have come yet on a first start (or came while offline): asked again; the
+            // step redraws itself when the partner offers the sign-in.
+            _ = RefreshLoginOffersAsync();
+        }
+        if (login)
+        {
+            panel.Children.Add(new Border { Classes = { "routegroup" }, Margin = new Thickness(-4, 18, -4, sources.Count > 0 ? 0 : 10), Child = ProviderLoginRow() });
+        }
         if (_importSearch is { IsCompleted: false })
         {
             // The search takes a few seconds on a first start; the step redraws itself when it ends.
@@ -436,19 +449,6 @@ public partial class MainWindow
             panel.Children.Add(Divider(L.ImportOrByHand));
         }
 
-        // A provider's subscription without copying its link: the code confirmed in its bot (MainWindow.ProviderLogin.cs).
-        var login = _loginOffers.Count > 0;
-        if (!login)
-        {
-            // The list of partners may not have come yet on a first start (or came while offline): asked again; the
-            // step redraws itself when a partner offers the sign-in.
-            _ = RefreshLoginOffersAsync();
-        }
-        if (login)
-        {
-            var row = ProviderLoginRow();
-            panel.Children.Add(new Border { Classes = { "routegroup" }, Margin = new Thickness(-4, sources.Count > 0 ? 0 : 18, -4, 10), Child = row });
-        }
         var qr = Utils.IsWindows();
         var tiles = new Grid { ColumnDefinitions = new(qr ? "*,*,*" : "*,*"), ColumnSpacing = 8, Margin = new Thickness(0, sources.Count > 0 || login ? 0 : 20, 0, 0) };
         var paste = HandTile("SemiIconCopy", L.HandPaste, L.ObPasteHint);

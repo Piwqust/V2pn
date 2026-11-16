@@ -3,11 +3,11 @@ using Avalonia.Threading;
 namespace v2rayN.Desktop.Common;
 
 /// <summary>
-/// A partner's brand on V2pn's own window: while the selected server comes from the subscription of a verified partner
-/// whose certificate grants an edition, the window wears that partner's colour (Connect and every accent), its logo
-/// beside V2pn's and its card; with a background in its theme, its stage too (MainWindow.Edition.cs). Nobody picks it:
-/// selecting a server of another subscription takes it off again. The layout, the state colours and the person's own
-/// appearance settings stay V2pn's.
+/// A partner's brand on its own build of V2pn (V2pnEdition): the window always wears that partner's colour (Connect and
+/// every accent), its logo beside V2pn's and its card; with a background in its theme, its stage too
+/// (MainWindow.Edition.cs), whatever server is selected. Plain V2pn never wears a brand, whatever subscription is there.
+/// Nobody picks it: the build is fixed at install. The layout, the state colours and the person's own appearance
+/// settings stay V2pn's.
 /// </summary>
 public static class Editions
 {
@@ -17,14 +17,14 @@ public static class Editions
     /// <summary>Raised on the UI thread when the partner in the window went away (with the partner and why).</summary>
     public static event Action<V2pnPartner, V2pnPartnerGone>? Closed;
 
-    // The subscription of the selected server, as the window last said.
-    private static string? _subId;
-    // Debug only (DebugWindow): a partner shown whatever is selected, or "" for plain V2pn; null follows the server.
+    // Debug only (DebugWindow): "" shows the window as before the partner's pack came, the build's partner id shows it,
+    // null is the build's own state.
     private static string? _forced;
     private static string? _key;
 
-    /// <summary>Partners whose certificate grants an edition.</summary>
-    public static IReadOnlyList<V2pnPartner> Available => V2pnPartners.Instance.All.Where(p => p.HasEdition).ToList();
+    /// <summary>This build's partner when its certificate grants an edition; empty in plain V2pn.</summary>
+    public static IReadOnlyList<V2pnPartner> Available =>
+        V2pnEdition.PartnerId is { } own ? V2pnPartners.Instance.All.Where(p => p.Id == own && p.HasEdition).ToList() : [];
 
     /// <summary>The partner whose brand the window wears now; null for plain V2pn.</summary>
     public static V2pnPartner? Partner { get; private set; }
@@ -38,7 +38,7 @@ public static class Editions
     public static V2pnPartnerStage? Stage(bool dark) =>
         Theme is { } theme && !DebugOverrides.NoStage ? V2pnThemePalette.Stage(theme, dark) : null;
 
-    /// <summary>True while the debug window shows a partner (or plain V2pn) whatever server is selected.</summary>
+    /// <summary>True while the debug window overrides the build's own state.</summary>
     public static bool IsForced => _forced != null;
 
     /// <summary>
@@ -66,7 +66,7 @@ public static class Editions
     private static bool _started;
     private static DispatcherTimer? _pruneTimer;
 
-    /// <summary>Loads the kept partners and follows their changes; the window calls it once.</summary>
+    /// <summary>Loads the kept partner and follows its changes; the window calls it once. Plain V2pn has nothing to follow.</summary>
     public static void Start()
     {
         if (_started)
@@ -74,24 +74,22 @@ public static class Editions
             return;
         }
         _started = true;
+        if (V2pnEdition.PartnerId == null)
+        {
+            // Plain V2pn: what an older version kept of a partner goes (V2pnPartners), nothing is asked for.
+            _ = V2pnPartners.Instance.LoadAsync();
+            return;
+        }
         V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(Update);
         V2pnPartners.Instance.Removed += (partner, why) => Dispatcher.UIThread.Post(() => OnRemoved(partner, why));
-        // The partner of a subscription is known once V2pnLocks has read it again.
-        V2pnLocks.Instance.Changed += () => Dispatcher.UIThread.Post(Update);
-        // The index of partners now (then at most every six hours: RefreshAsync keeps to it); partners of subscriptions
-        // deleted while V2pn was closed go now, terms that run out while it is open are caught by the hourly check.
+        // The index of partners now (then at most every six hours: RefreshAsync keeps to it); a term that runs out while
+        // V2pn is open is caught by the hourly check.
         _ = V2pnPartners.Instance.RefreshAsync();
         _pruneTimer = new DispatcherTimer(TimeSpan.FromHours(1), DispatcherPriority.Background, (_, _) => _ = V2pnPartners.Instance.RefreshAsync());
         _pruneTimer.Start();
         Update();
     }
 
-    /// <summary>The window's selected server is now one of <paramref name="subId"/> (null: none, or a server of no subscription).</summary>
-    public static void Follow(string? subId)
-    {
-        _subId = subId;
-        Update();
-    }
 
     private static void OnRemoved(V2pnPartner partner, V2pnPartnerGone why)
     {
@@ -103,7 +101,7 @@ public static class Editions
         }
     }
 
-    /// <summary>Debug: shows <paramref name="partnerId"/> whatever server is selected; "" shows plain V2pn, null follows the server again.</summary>
+    /// <summary>Debug: shows the build's partner (<paramref name="partnerId"/>); "" shows the window without it, null the build's own state.</summary>
     public static void DebugShow(string? partnerId)
     {
         _forced = partnerId;
@@ -118,12 +116,12 @@ public static class Editions
         Closed?.Invoke(partner, why);
     }
 
-    /// <summary>Takes the brand again from the partners and the selected server; also after a debug override changed.</summary>
+    /// <summary>Takes the brand again from the build's partner; also after a debug override changed.</summary>
     public static void Update()
     {
-        var next = _forced != null
-            ? Available.FirstOrDefault(p => p.Id == _forced)
-            : V2pnLocks.Instance.PartnerOf(_subId) is { HasEdition: true } partner ? partner : null;
+        // Available is empty in plain V2pn, so nothing here can dress it; a partner's build wears its own partner only.
+        var own = Available.FirstOrDefault();
+        var next = _forced != null ? (own?.Id == _forced ? own : null) : own;
         // The folder and the theme too: a pack updated in place brings new pictures and colours.
         var key = next == null ? null : $"{next.Id}|{next.Folder}|{next.Pack.Accent}|{ThemeOf(next).Key}|{DebugOverrides.NoStage}";
         if (key == _key)

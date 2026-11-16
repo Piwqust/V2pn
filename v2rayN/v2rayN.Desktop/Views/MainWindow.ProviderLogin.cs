@@ -7,9 +7,10 @@ using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
 
-// V2pn: sign-in with a provider by code (PartnerLoginView, V2pnPartnerLogin). Offered in the walkthrough's servers step and
-// in the add menu while at least one listed partner offers it; a confirmed sign-in adds the subscription as a confirmed
-// v2pn://add does, updates it and selects its first server without connecting.
+// V2pn: sign-in with a provider by code (PartnerLoginView, V2pnPartnerLogin). Only a partner's build has it (V2pnEdition),
+// with its own partner: first in the walkthrough's servers step, and in the add menu while the partner offers it. A
+// confirmed sign-in adds the subscription as a confirmed v2pn://add does, updates it and selects its first server
+// without connecting. Plain V2pn has neither the row nor the menu item.
 public partial class MainWindow
 {
     private IReadOnlyList<V2pnPartner> _loginOffers = [];
@@ -18,6 +19,10 @@ public partial class MainWindow
 
     private void InitProviderLogin()
     {
+        if (!V2pnEdition.IsPartner)
+        {
+            return;
+        }
         if (btnAdd.Flyout is MenuFlyout flyout)
         {
             _menuProviderLogin = new MenuItem
@@ -67,7 +72,7 @@ public partial class MainWindow
     /// <summary>The sign-in: straight to the code with one provider, a short list first with several.</summary>
     internal async void OpenProviderLogin()
     {
-        if (_loginOpen)
+        if (_loginOpen || !V2pnEdition.IsPartner)
         {
             return;
         }

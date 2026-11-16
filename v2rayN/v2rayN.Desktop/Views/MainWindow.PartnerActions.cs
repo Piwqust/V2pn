@@ -68,8 +68,6 @@ public partial class MainWindow
     private void RefreshPartnerActionBar(string? subId)
     {
         _barSubId = subId;
-        // The window wears the brand of the partner whose server this is (MainWindow.Edition.cs).
-        Editions.Follow(subId);
         RefreshPartnerActionBar();
         // The partner's routing mode shows while its subscription is in use (once the menu has its routes).
         if (_routeShown)

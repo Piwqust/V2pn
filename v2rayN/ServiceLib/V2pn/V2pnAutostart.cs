@@ -7,14 +7,15 @@ namespace ServiceLib;
 /// copy with autostart on in its settings (an old install, a test build with a copied config) adds its own
 /// entry and nothing ever removes one. They then start together and fight over the local port and the
 /// system proxy. V2pn uses one fixed name, removes entries that point nowhere or at throwaway copies,
-/// and never registers a build-output or temp-folder copy.
+/// and never registers a build-output or temp-folder copy. A partner's build (V2pnEdition) has its own name, which
+/// plain V2pn's never begins with and which never begins with plain V2pn's, so each tidies only its own entries.
 /// </summary>
 public static class V2pnAutostart
 {
     private static readonly string _tag = nameof(V2pnAutostart);
 
     /// <summary>The name v2rayN's scheme gave this copy's entry.</summary>
-    public static string LegacyName(string startupPath) => $"{Global.AutoRunName}_{Utils.GetMd5(startupPath)}";
+    public static string LegacyName(string startupPath) => $"{V2pnEdition.AutoRunName}_{Utils.GetMd5(startupPath)}";
 
     /// <summary>A copy that must never start with Windows: a build output folder or anything under temp.</summary>
     public static bool IsThrowawayCopy(string? exePath, string? tempPath = null)
@@ -61,7 +62,7 @@ public static class V2pnAutostart
         {
             return true;
         }
-        return SamePath(exe, thisExe) && name != Global.AutoRunName;
+        return SamePath(exe, thisExe) && name != V2pnEdition.AutoRunName;
     }
 
     /// <summary>
@@ -98,19 +99,19 @@ public static class V2pnAutostart
             bool carriesArg;
             if (admin)
             {
-                if (ownTask != Global.AutoRunName || !TaskXml(ownTask).Contains(Global.AutostartArg))
+                if (ownTask != V2pnEdition.AutoRunName || !TaskXml(ownTask).Contains(Global.AutostartArg))
                 {
-                    AutoStartupHandler.AutoStartTaskService(Global.AutoRunName, exe, "", Global.AutostartArg);
+                    AutoStartupHandler.AutoStartTaskService(V2pnEdition.AutoRunName, exe, "", Global.AutostartArg);
                 }
                 // The old entries go only once the new task is really there: a failed create must not
                 // leave V2pn with no sign-in entry at all.
-                if (!TaskNames().Contains(Global.AutoRunName))
+                if (!TaskNames().Contains(V2pnEdition.AutoRunName))
                 {
                     Logging.SaveLog("V2pn: the sign-in task could not be created; older entries are kept");
                     return;
                 }
                 RemoveRunEntries((_, _) => true);
-                foreach (var task in tasks.Where(t => t != Global.AutoRunName))
+                foreach (var task in tasks.Where(t => t != V2pnEdition.AutoRunName))
                 {
                     AutoStartupHandler.AutoStartTaskService(task, "", "");
                 }
@@ -124,10 +125,10 @@ public static class V2pnAutostart
             else
             {
                 var good = AutoStartupHandler.AutostartCommand(exe);
-                RemoveRunEntries((name, command) => name != Global.AutoRunName || command != good);
-                if (WindowsUtils.RegReadValue(Global.AutoRunRegPath, Global.AutoRunName, "") != good)
+                RemoveRunEntries((name, command) => name != V2pnEdition.AutoRunName || command != good);
+                if (WindowsUtils.RegReadValue(Global.AutoRunRegPath, V2pnEdition.AutoRunName, "") != good)
                 {
-                    WindowsUtils.RegWriteValue(Global.AutoRunRegPath, Global.AutoRunName, good);
+                    WindowsUtils.RegWriteValue(Global.AutoRunRegPath, V2pnEdition.AutoRunName, good);
                 }
                 carriesArg = true;
             }
@@ -155,8 +156,8 @@ public static class V2pnAutostart
         {
             return legacy;
         }
-        return tasks.Contains(Global.AutoRunName) && TaskXml(Global.AutoRunName).Contains(exe, StringComparison.OrdinalIgnoreCase)
-            ? Global.AutoRunName
+        return tasks.Contains(V2pnEdition.AutoRunName) && TaskXml(V2pnEdition.AutoRunName).Contains(exe, StringComparison.OrdinalIgnoreCase)
+            ? V2pnEdition.AutoRunName
             : null;
     }
 
@@ -169,7 +170,7 @@ public static class V2pnAutostart
             using var key = Registry.CurrentUser.OpenSubKey(Global.AutoRunRegPath, false);
             foreach (var name in key?.GetValueNames() ?? [])
             {
-                if (name.StartsWith(Global.AutoRunName, StringComparison.OrdinalIgnoreCase))
+                if (name.StartsWith(V2pnEdition.AutoRunName, StringComparison.OrdinalIgnoreCase))
                 {
                     result.Add((name, key!.GetValue(name) as string ?? string.Empty));
                 }
@@ -208,7 +209,7 @@ public static class V2pnAutostart
             .Select(line => line.Trim().TrimStart('"'))
             .Select(line => line.Contains('"') ? line[..line.IndexOf('"')] : line)
             .Select(name => name.TrimStart('\\'))
-            .Where(name => name.StartsWith(Global.AutoRunName, StringComparison.OrdinalIgnoreCase))
+            .Where(name => name.StartsWith(V2pnEdition.AutoRunName, StringComparison.OrdinalIgnoreCase))
             .Distinct()
             .ToList();
     }

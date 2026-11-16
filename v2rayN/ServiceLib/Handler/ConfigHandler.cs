@@ -2528,7 +2528,7 @@ public static class ConfigHandler
             config.SubIndexId = subs.LastOrDefault()?.Id;
         }
 
-        // V2pn: a partner's look goes with the last subscription that came from it.
+        // V2pn: a partner signed in with by code loses its tab with its last subscription (V2pnEdition).
         _ = Task.Run(V2pnPartners.Instance.PruneAsync);
         return 0;
     }

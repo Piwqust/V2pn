@@ -149,6 +149,12 @@ public class UIItem
 
     // The walkthrough step to come back to after a restart it caused (a language switch, a move from v2rayN).
     public int V2pnOnboardingStep { get; set; }
+
+    // The partners the person signed in with by code ("came from"); each gets a tab in the title bar (V2pnEdition).
+    public List<string>? V2pnCameFrom { get; set; }
+
+    // The title bar's tab chosen last: null never chosen, "" V2pn's, a partner id that partner's (V2pnEdition).
+    public string? V2pnTab { get; set; }
 }
 
 public class ConstItem

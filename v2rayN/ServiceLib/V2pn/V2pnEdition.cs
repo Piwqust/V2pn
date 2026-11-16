@@ -1,48 +1,251 @@
 namespace ServiceLib;
 
 /// <summary>
-/// Which V2pn this is, fixed at install. Plain V2pn (no marker) knows nothing of partners: it asks for no partner index,
-/// downloads no pack, and a partner's subscription is just a subscription there. A partner's own build has
-/// v2pn-partner.txt beside the program (on macOS in V2pn.app/Contents/MacOS, where v2pn-preset.txt goes too) holding
-/// that partner's id; it always wears that partner's look and takes that partner's features for its subscriptions,
-/// and ignores every other partner. Read once at start; every partner feature asks <see cref="PartnerId"/>
-/// (V2pnPartners, Editions), so plain V2pn has no path to one.
-/// The file comes only with the partner's package (tools/partner-packages.ps1); an update package never carries it
-/// and the updater keeps it (AmazTool's Installer), so a build stays what it was installed as.
+/// The partners a person came from, and which tab of the main window is open. V2pn is one program for everyone; a
+/// partner gets a tab in its title bar beside V2pn's only when the person came from it:
+/// <list type="bullet">
+/// <item>the build says so: v2pn-partner.txt beside the program (on macOS in V2pn.app/Contents/MacOS) holds that
+/// partner's id. It comes with the partner's package from its download page, or install.ps1/install.sh with
+/// V2PN_PARTNER; updates keep it (AmazTool's Installer). It never goes away by itself.</item>
+/// <item>the person signed in by code with that partner (V2pnPartnerLogin): recorded in V2pn's settings
+/// (UIItem.V2pnCameFrom). This record goes when the last subscription from that partner is deleted
+/// (V2pnPartners.PruneAsync), and with it the tab.</item>
+/// </list>
+/// A pasted subscription link of a partner makes nobody "come from" it: it is just a subscription. A person who came
+/// from nobody gets no tab, and V2pn asks for no partner index and no pack for them (V2pnPartners).
+/// <para>
+/// The open tab is V2pn's (null) or one partner's. Every partner feature asks <see cref="IsOpen"/>: a partner's look,
+/// card, buttons, lock, routes, API and connection settings apply only in its own tab and only to its subscriptions;
+/// the V2pn tab is plain V2pn. The tab chosen last is kept in UIItem.V2pnTab ("" for V2pn's); before any choice a
+/// build with a marker opens its partner's tab.
+/// </para>
 /// </summary>
-public static class V2pnEdition
+public sealed class V2pnEdition
 {
     public const string FileName = "v2pn-partner.txt";
     private const int MaxBytes = 1024;
 
-    private static readonly Lazy<string?> _partnerId = new(() => Read(Utils.GetBaseDirectory()));
+    private static readonly Lazy<V2pnEdition> _instance = new(FromConfig);
 
-    /// <summary>The partner whose build this is; null for plain V2pn.</summary>
-    public static string? PartnerId => _partnerId.Value;
+    /// <summary>The program's own: its marker, and the person's record and tab from the config.</summary>
+    public static V2pnEdition Instance => _instance.Value;
 
-    /// <summary>True in a partner's build.</summary>
-    public static bool IsPartner => PartnerId != null;
+    private readonly object _lock = new();
+    private readonly Action<V2pnEdition>? _save;
+    private readonly List<string> _signedIn;
+    // Debug only (V2pnPartners.AddDebugPartner): counted as came-from until V2pn closes, never saved.
+    private readonly List<string> _debug = [];
+    // Null: never chosen; "": V2pn's tab; an id: that partner's.
+    private string? _tab;
+
+    /// <param name="marker">The partner id of v2pn-partner.txt; null without one.</param>
+    /// <param name="signedIn">The partners the person signed in with, as saved.</param>
+    /// <param name="tab">The tab as saved: null never chosen, "" V2pn's, an id a partner's.</param>
+    /// <param name="save">Writes <see cref="SignedIn"/> and <see cref="SavedTab"/> where they are kept.</param>
+    public V2pnEdition(string? marker, IEnumerable<string>? signedIn = null, string? tab = null, Action<V2pnEdition>? save = null)
+    {
+        Marker = marker != null && V2pnPartnerTrust.ValidId(marker) ? marker : null;
+        _signedIn = (signedIn ?? []).Where(V2pnPartnerTrust.ValidId).Distinct(StringComparer.Ordinal).ToList();
+        _tab = tab == null || tab.Length == 0 || V2pnPartnerTrust.ValidId(tab) ? tab : null;
+        _save = save;
+    }
+
+    /// <summary>Raised after the partners came from or the open tab changed. May come from any thread.</summary>
+    public event Action? Changed;
+
+    /// <summary>The partner of this build's v2pn-partner.txt; null for none.</summary>
+    public string? Marker { get; }
+
+    /// <summary>The partners the person signed in with by code, oldest first (the marker's partner may be among them).</summary>
+    public IReadOnlyList<string> SignedIn
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _signedIn.ToList();
+            }
+        }
+    }
+
+    /// <summary>Every partner the person came from: the marker's first, then the sign-ins in their order. The tabs' order.</summary>
+    public IReadOnlyList<string> CameFrom
+    {
+        get
+        {
+            lock (_lock)
+            {
+                var all = new List<string>();
+                if (Marker != null)
+                {
+                    all.Add(Marker);
+                }
+                foreach (var id in _signedIn.Concat(_debug))
+                {
+                    if (!all.Contains(id))
+                    {
+                        all.Add(id);
+                    }
+                }
+                return all;
+            }
+        }
+    }
+
+    /// <summary>True when the person came from at least one partner: only then does V2pn ask for the partner index.</summary>
+    public bool Any => CameFrom.Count > 0;
+
+    public bool IsFrom(string? partnerId) => partnerId != null && CameFrom.Contains(partnerId);
+
+    /// <summary>The tab as kept: null never chosen, "" V2pn's, an id a partner's.</summary>
+    public string? SavedTab
+    {
+        get
+        {
+            lock (_lock)
+            {
+                return _tab;
+            }
+        }
+    }
 
     /// <summary>
-    /// The name this build keeps apart from the other on the same computer: "V2pn" for plain V2pn, "V2pn-&lt;id&gt;" for a
-    /// partner's build (its data folder where data does not live beside the program, its single-instance lock, its
-    /// sign-in entry on macOS and Linux).
+    /// The partner whose tab is open; null for V2pn's. Before any choice, the marker's partner. A partner the person
+    /// no longer comes from is never open.
     /// </summary>
-    public static string InstallName => NameFor(PartnerId);
+    public string? Tab
+    {
+        get
+        {
+            var tab = SavedTab ?? Marker;
+            return tab is { Length: > 0 } && IsFrom(tab) ? tab : null;
+        }
+    }
+
+    /// <summary>True when <paramref name="partnerId"/>'s tab is open: the one question every partner feature asks.</summary>
+    public bool IsOpen(string? partnerId) => partnerId != null && Tab == partnerId;
+
+    /// <summary>Opens a partner's tab (<paramref name="partnerId"/>), or V2pn's (null); a partner the person did not come from is refused.</summary>
+    public bool Open(string? partnerId)
+    {
+        if (partnerId != null && !IsFrom(partnerId))
+        {
+            return false;
+        }
+        lock (_lock)
+        {
+            var next = partnerId ?? string.Empty;
+            if (_tab == next)
+            {
+                return true;
+            }
+            _tab = next;
+        }
+        Save();
+        Changed?.Invoke();
+        return true;
+    }
+
+    /// <summary>The person signed in by code with <paramref name="partnerId"/>: from now on they came from it. False when they already had.</summary>
+    public bool RecordSignIn(string partnerId)
+    {
+        if (!V2pnPartnerTrust.ValidId(partnerId))
+        {
+            return false;
+        }
+        lock (_lock)
+        {
+            if (_signedIn.Contains(partnerId))
+            {
+                return false;
+            }
+            _signedIn.Add(partnerId);
+        }
+        Save();
+        Changed?.Invoke();
+        return true;
+    }
 
     /// <summary>
-    /// The Windows sign-in entry (scheduled task or Run value). A partner's starts with "V2pn-", plain V2pn's with
-    /// "V2pnAutoRun": neither name begins with the other, so neither build ever removes the other's entry.
+    /// Drops the record of a sign-in (its last subscription was deleted). The marker's partner stays: the build came
+    /// from it. A tab that was open on a partner the person no longer comes from goes back to V2pn's. False when there
+    /// was no record.
     /// </summary>
-    public static string AutoRunName => AutoRunNameFor(PartnerId);
+    public bool ForgetSignIn(string partnerId)
+    {
+        lock (_lock)
+        {
+            if (!_signedIn.Remove(partnerId))
+            {
+                return false;
+            }
+            if (_tab == partnerId && partnerId != Marker && !_debug.Contains(partnerId))
+            {
+                _tab = string.Empty;
+            }
+        }
+        Save();
+        Changed?.Invoke();
+        return true;
+    }
 
-    public static string NameFor(string? partnerId) => partnerId == null ? Global.AppName : $"{Global.AppName}-{partnerId}";
+    /// <summary>Debug only: counts <paramref name="partnerId"/> as came-from until V2pn closes (the debug window's test partner).</summary>
+    public void AddDebug(string partnerId)
+    {
+        lock (_lock)
+        {
+            if (_debug.Contains(partnerId))
+            {
+                return;
+            }
+            _debug.Add(partnerId);
+        }
+        Changed?.Invoke();
+    }
 
-    public static string AutoRunNameFor(string? partnerId) => partnerId == null ? Global.AutoRunName : $"{Global.AppName}-{partnerId}-AutoRun";
+    public void RemoveDebug(string partnerId)
+    {
+        bool removed;
+        lock (_lock)
+        {
+            removed = _debug.Remove(partnerId);
+        }
+        if (removed)
+        {
+            Changed?.Invoke();
+        }
+    }
+
+    private void Save()
+    {
+        try
+        {
+            _save?.Invoke(this);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(V2pnEdition), ex);
+        }
+    }
+
+    private static V2pnEdition FromConfig()
+    {
+        var ui = AppManager.Instance.Config?.UiItem;
+        return new V2pnEdition(Read(Utils.GetBaseDirectory()), ui?.V2pnCameFrom, ui?.V2pnTab, edition =>
+        {
+            if (AppManager.Instance.Config is not { } config)
+            {
+                return;
+            }
+            config.UiItem.V2pnCameFrom = edition.SignedIn.ToList();
+            config.UiItem.V2pnTab = edition.SavedTab;
+            _ = ConfigHandler.SaveConfig(config);
+        });
+    }
 
     /// <summary>
     /// The partner id in the text of a marker: its first line that is not empty or a # comment, which must be a partner
-    /// id (2 to 32 lowercase letters, digits and dashes). Anything else is not a partner build: null.
+    /// id (2 to 32 lowercase letters, digits and dashes). Anything else marks no partner: null.
     /// </summary>
     public static string? Parse(string? text)
     {
@@ -58,10 +261,7 @@ public static class V2pnEdition
         return null;
     }
 
-    /// <summary>
-    /// The partner id of the marker in <paramref name="appDir"/>; null when there is none or it does not read (larger
-    /// than 1 KB, no id in it). Logs nothing: the log folder itself depends on <see cref="InstallName"/>.
-    /// </summary>
+    /// <summary>The partner id of the marker in <paramref name="appDir"/>; null when there is none or it does not read (larger than 1 KB, no id in it).</summary>
     public static string? Read(string appDir)
     {
         try

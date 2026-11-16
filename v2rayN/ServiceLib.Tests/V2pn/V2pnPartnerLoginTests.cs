@@ -328,42 +328,54 @@ public class V2pnPartnerLoginTests
     #region Offers
 
     [Test]
-    public async Task Offers_InAPartnerBuild_AreItsPartnerOnly_BeforeAnySubscriptionHere()
+    public async Task Offers_AreEveryPartnerWithSignIn_TheMarkersFirst_AndGiveNoTabBeforeTheSignIn()
     {
         var p = new TestPartner();
         var site = new TestSite();
         var withLogin = TestPartner.Zip(LoginPack);
-        var other = TestPartner.Zip(TestPartner.Pack(id: "kestrel", name: "Kestrel", more: pack => pack["login"] = true));
+        var other = TestPartner.Zip(TestPartner.Pack(id: "kestrel", name: "Kestrel", api: "https://kestrel.example.com/v2pn/api/", more: pack => pack["login"] = true));
         p.Publish(site, DateTimeOffset.UtcNow,
             (TestPartner.Listing(zip: withLogin), withLogin),
             (TestPartner.Listing(partner: "kestrel", domains: ["kestrel.example.com"], zip: other), other));
         var root = Path.Combine(Path.GetTempPath(), "v2pn-login-offers-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            var manager = p.Manager(site, root, [], edition: "configra");
+            // A copy with Kestrel's marker: Kestrel first (its walkthrough leads with it), Configra too.
+            var manager = p.Manager(site, root, [], edition: "kestrel");
             var offers = await manager.LoginOffersAsync();
+            await offers.Select(o => o.Id).ToList().Should().BeEquivalentTo(["kestrel", "configra"]);
+            await offers[0].Id.Should().BeEqualTo("kestrel");
+            // Their pictures are on disk for the sign-in to show.
+            await File.Exists(Path.Combine(offers[1].Folder, "logo.png")).Should().BeTrue();
 
-            // Kestrel offers sign-in too, but this is Configra's build.
-            await offers.Select(o => o.Id).ToList().Should().BeEquivalentTo(["configra"]);
-            // Its pictures are on disk for the sign-in to show: the build keeps its partner's pack from the first start.
-            await File.Exists(Path.Combine(offers[0].Folder, "logo.png")).Should().BeTrue();
-            await Directory.Exists(Path.Combine(root, "configra")).Should().BeTrue();
-            await site.Asked.Any(a => a.EndsWith("partner-kestrel.zip", StringComparison.Ordinal)).Should().BeFalse();
-
-            // Asked again: the same pack, not downloaded twice.
+            // Asked again: the same packs, not downloaded twice.
             var zips = site.Asked.Count(a => a.EndsWith(".zip", StringComparison.Ordinal));
-            await (await manager.LoginOffersAsync()).Count.Should().BeEqualTo(1);
+            await (await manager.LoginOffersAsync()).Count.Should().BeEqualTo(2);
             await site.Asked.Count(a => a.EndsWith(".zip", StringComparison.Ordinal)).Should().BeEqualTo(zips);
 
-            // Plain V2pn offers no sign-in at all.
-            var plain = p.Manager(site, root + "-plain", [], edition: null);
-            await (await plain.LoginOffersAsync()).Count.Should().BeEqualTo(0);
+            // A person who came from no partner gets the same list when they open the sign-in, by name, and no tab with it.
+            var plainSite = new TestSite();
+            p.Publish(plainSite, DateTimeOffset.UtcNow,
+                (TestPartner.Listing(zip: withLogin), withLogin),
+                (TestPartner.Listing(partner: "kestrel", domains: ["kestrel.example.com"], zip: other), other));
+            var plain = p.Manager(plainSite, root + "-plain", [], edition: (string?)null);
+            await plain.RefreshAsync();
+            await plainSite.Asked.Count.Should().BeEqualTo(0);
+            var plainOffers = await plain.LoginOffersAsync();
+            await plainOffers.Select(o => o.Id).ToList().Should().BeEquivalentTo(["configra", "kestrel"]);
+            await plainOffers[0].Id.Should().BeEqualTo("configra");
+            await plain.Edition.Any.Should().BeFalse();
+            await plain.All.Count.Should().BeEqualTo(0);
+            await (plain.ForSubscription(new SubItem { Id = "c", Url = "https://config.example.com/s/1" }) == null).Should().BeTrue();
         }
         finally
         {
-            if (Directory.Exists(root))
+            foreach (var dir in new[] { root, root + "-plain" })
             {
-                Directory.Delete(root, true);
+                if (Directory.Exists(dir))
+                {
+                    Directory.Delete(dir, true);
+                }
             }
         }
     }

@@ -2,16 +2,35 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
+## 1.1.1
 
-### Faster and lighter
+A release about speed. On Windows V2pn opens twice as fast and stays quiet after it starts; everywhere it updates big subscriptions in a fraction of the time. Nothing in the window changes, and your servers, settings and look stay as they are.
 
-- V2pn starts about twice as fast: with a thousand servers the window appears in about 1.6 s instead of 3. The Windows download is 12 MB larger for it.
-- V2pn no longer searches the disk for other VPN apps at every start. It looks only when it can offer to move your servers: on the first-run card, in the walkthrough and in "Move from another app". The search itself is about five times faster.
-- Updating a subscription takes about a fifth of the processor time it did.
-- Testing the ping of all servers no longer makes the window stop responding for a moment.
-- With the VPN off, update checks no longer wait five seconds for a proxy that isn't running.
-- V2pn uses about 15–30 MB less memory. On Windows, Chinese, Japanese and Korean server names are drawn with Windows' own fonts instead of a 10 MB font that was loaded at every start.
+<p align="center"><img src="docs/images/changelog/1.1.1-speed.svg" width="800" alt="V2pn 1.1.1 against 1.1.0: the window appears after 1.6 s instead of 3.0 s; processor time in the first 90 s falls from 9.1 s to 2.2 s; updating a subscription of 1000 servers takes 1.3 s of processor time instead of 6.2 s"></p>
+
+### Opens twice as fast on Windows
+
+With a thousand servers the window now appears after about 1.6 s instead of 3. The Windows app comes precompiled, so the interface no longer has to be compiled every time it starts, and the log, the server table and the Clash pages are built the first time you open them instead of at every start.
+
+### Quiet after it starts
+
+On Windows, V2pn used to look through your Downloads, Desktop, Documents, Program Files and home folder for other VPN apps every time it started, even when you had moved your servers long ago. On a computer with many folders that took up to ten seconds of processor time in the background. Now it looks only when it can offer you something: on the first-run card, in the walkthrough and in "Move from another app". The search itself is about five times faster and finds the same apps.
+
+In the first minute and a half after start, V2pn now keeps the processor busy for 2.2 s instead of 9.1 s.
+
+### Big subscriptions update faster
+
+Updating a subscription wrote every server that stayed in it to disk on its own: two thousand writes for a thousand servers. It is one write now, and an update takes about a fifth of the processor time it did. Every server keeps its ping, star and place in "Recent", as before.
+
+### Smaller things
+
+- Testing the ping of all servers no longer makes the window stop responding for a moment while the test starts.
+- With V2pn switched off, update checks no longer wait five seconds for a proxy that isn't running before they go direct.
+- V2pn uses 15–30 MB less memory. On Windows, Chinese, Japanese and Korean server names are drawn with Windows' own fonts instead of a 10 MB font V2pn loaded at every start.
+
+### The price
+
+The Windows download is 12 MB larger (72 MB instead of 60 for x64): precompiled code takes more room. If you already use V2pn, it updates itself as usual.
 
 ## 1.1.0
 

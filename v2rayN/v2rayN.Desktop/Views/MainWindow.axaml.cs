@@ -30,6 +30,22 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private ClashConnectionsView? _clashConnectionsView;
     private ClashProxiesView? _clashProxiesView;
 
+    // The log, the server table and the Clash pages are built the first time they open: they bind to their
+    // view models only while shown, and building all four at start cost about a third of a second.
+    private MsgView? MsgPage => ViewModel is { } vm ? _msgView ??= new MsgView { DataContext = vm.MsgViewModel } : null;
+
+    private ProfilesView? TablePage => ViewModel is { } vm
+        ? _profilesView ??= new ProfilesView { DataContext = vm.ProfilesViewModel, MainViewModel = vm }
+        : null;
+
+    private ClashProxiesView? ClashProxiesPage => ViewModel is { } vm
+        ? _clashProxiesView ??= new ClashProxiesView { DataContext = vm.ClashProxiesViewModel }
+        : null;
+
+    private ClashConnectionsView? ClashConnectionsPage => ViewModel is { } vm
+        ? _clashConnectionsView ??= new ClashConnectionsView { DataContext = vm.ClashConnectionsViewModel }
+        : null;
+
     private string? _activeIndexId;
     private bool _hasServer;
 
@@ -102,10 +118,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnCloseWindow.Click += (_, _) => Close();
         btnPageBack.Click += (_, _) => ClosePage();
         menuPingAll.Click += async (_, _) => await PingAllAsync();
-        menuPageLog.Click += (_, _) => ShowPage(L.MenuLog, _msgView);
-        menuPageTable.Click += (_, _) => ShowPage(L.MenuTable, _profilesView);
-        menuPageProxies.Click += (_, _) => ShowPage(L.MenuClashProxies, _clashProxiesView);
-        menuPageConnections.Click += (_, _) => ShowPage(L.MenuClashConnections, _clashConnectionsView);
+        menuPageLog.Click += (_, _) => ShowPage(L.MenuLog, MsgPage);
+        menuPageTable.Click += (_, _) => ShowPage(L.MenuTable, TablePage);
+        menuPageProxies.Click += (_, _) => ShowPage(L.MenuClashProxies, ClashProxiesPage);
+        menuPageConnections.Click += (_, _) => ShowPage(L.MenuClashConnections, ClashConnectionsPage);
         lstTabs.SelectionChanged += LstTabs_SelectionChanged;
         lstRows.KeyDown += LstRows_KeyDown;
         lstRows.SelectionChanged += (_, _) =>
@@ -144,7 +160,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (_pillOpensLog)
             {
                 e.Handled = true;
-                ShowPage(L.MenuLog, _msgView);
+                ShowPage(L.MenuLog, MsgPage);
             }
         };
 
@@ -391,12 +407,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         contentStatusBarView.Content = _statusView;
         ApplyLayout();
-
-        _msgView ??= new MsgView { DataContext = vm.MsgViewModel };
-        _profilesView ??= new ProfilesView { DataContext = vm.ProfilesViewModel };
-        _profilesView.MainViewModel = vm;
-        _clashProxiesView ??= new ClashProxiesView { DataContext = vm.ClashProxiesViewModel };
-        _clashConnectionsView ??= new ClashConnectionsView { DataContext = vm.ClashConnectionsViewModel };
 
         if (_sidebar == null)
         {

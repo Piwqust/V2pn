@@ -35,7 +35,11 @@ param(
     # login/poll never says "done", for pictures of the code.
     [switch]$LoginNever,
     # Off screen with the debug window (V2PN_DEBUG=1), for scripted checks with UI Automation and tools/shot.ps1.
-    [switch]$Background
+    [switch]$Background,
+    # Other ports when another pretend provider already runs (both would take 18998 and only one would answer).
+    [int]$Port = 18998,
+    [int]$ServerPort = 24444,
+    [int]$SocksPort = 20808
 )
 # Native tools write notes to stderr (partner.cs warns that the test root is not the real one); each step is
 # checked by its result instead.
@@ -87,7 +91,7 @@ function Get-Key([string]$name) {
 
 Write-Host '1/5 test root key'
 $rootPub = Get-Key 'root'
-$releases = 'http://127.0.0.1:18998/releases'
+$releases = "http://127.0.0.1:$Port/releases"
 
 if (-not $NoBuild -or -not (Test-Path (Join-Path $Dir 'build\V2pn.exe'))) {
     Write-Host '2/5 building V2pn that trusts the test root and asks the pretend provider for releases (a few minutes the first time)'
@@ -104,6 +108,10 @@ $published = Join-Path $Dir 'published'
 if (Test-Path $partners) { Remove-Item -Recurse -Force $partners }
 New-Item -ItemType Directory -Force $pack | Out-Null
 Copy-Item (Join-Path $demo 'partner\*') $pack
+if ($Port -ne 18998) {
+    $packJson = Join-Path $pack 'partner.json'
+    [IO.File]::WriteAllText($packJson, [IO.File]::ReadAllText($packJson).Replace('127.0.0.1:18998', "127.0.0.1:$Port"), (New-Object Text.UTF8Encoding $false))
+}
 # The reviewed files' grants put their hashes into the index; lock only when asked for.
 $grants = @('edition', 'account', 'actions', 'routing', 'transport', 'core') + $(if ($Lock -or $HideUrl) { @('lock') } else { @() })
 $listing = [ordered]@{ id = 'kestrel'; name = 'Kestrel'; domains = @('127.0.0.1'); grants = $grants; until = (Get-Date).AddDays(30).ToString('yyyy-MM-dd') }
@@ -114,16 +122,21 @@ if ($LASTEXITCODE -ne 0) { throw 'pack failed' }
 # 3: the app's real keys do not take the test root, as expected.
 if ($LASTEXITCODE -notin 0, 3 -or -not (Test-Path (Join-Path $published 'partners.json'))) { throw 'publish failed' }
 
-Write-Host '4/5 starting the pretend provider on http://127.0.0.1:18998/ (hidden)'
+Write-Host "4/5 starting the pretend provider on http://127.0.0.1:$Port/ (hidden)"
 Stop-Provider
 & $sandbox -Dest $app -Stop | Out-Null
+# Windows lets a second server listen on a port already taken, and then only one of them answers.
+$probe = New-Object Net.Sockets.TcpClient
+$taken = $true
+try { $probe.Connect('127.0.0.1', $Port) } catch [Net.Sockets.SocketException] { $taken = $false } finally { $probe.Dispose() }
+if ($taken) { throw "Something already listens on 127.0.0.1:$Port (another pretend provider?): pass -Port, -ServerPort and -SocksPort" }
 $xrayDir = Join-Path $Dir 'xray'
 $liveBin = Join-Path $env:LOCALAPPDATA 'Programs\V2pn\bin'
 if (-not (Test-Path (Join-Path $xrayDir 'xray.exe'))) {
     New-Item -ItemType Directory -Force $xrayDir | Out-Null
     Copy-Item (Join-Path $liveBin 'xray\*') $xrayDir -Recurse
 }
-$providerArgs = @('-I', (Join-Path $demo 'demo_partner.py'), $pack, '--published', $published, '--xray', (Join-Path $xrayDir 'xray.exe'))
+$providerArgs = @('-I', (Join-Path $demo 'demo_partner.py'), $pack, '--published', $published, '--xray', (Join-Path $xrayDir 'xray.exe'), '--port', $Port, '--server-port', $ServerPort)
 if ($Lock -or $HideUrl) { $providerArgs += '--lock' }
 if ($HideUrl) { $providerArgs += '--hide-url' }
 if ($LoginNever) { $providerArgs += '--login-never' }
@@ -135,14 +148,14 @@ Write-Host '5/5 opening the test V2pn'
 # The cores come from the installed V2pn, read only; the test copy keeps its own data between runs, except for a
 # sign-in, which starts from a fresh install.
 if ($SignIn) {
-    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) | Out-Null
+    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -Port $SocksPort | Out-Null
 }
 else {
-    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData | Out-Null
+    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData -Port $SocksPort | Out-Null
 }
 $launch = @{ Dest = $app; Launch = $true }
 if (-not $Background) { $launch.Visible = $true }
-if (-not $SignIn) { $launch.AppArgs = 'v2pn://add?url=http%3A%2F%2F127.0.0.1%3A18998%2Fsub&name=Kestrel' }
+if (-not $SignIn) { $launch.AppArgs = "v2pn://add?url=http%3A%2F%2F127.0.0.1%3A$Port%2Fsub&name=Kestrel" }
 if ($Background) { $env:V2PN_DEBUG = '1' }
 try { & $sandbox @launch | Out-Null } finally { if ($Background) { Remove-Item Env:V2PN_DEBUG } }
 Write-Host ''

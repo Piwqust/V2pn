@@ -16,7 +16,8 @@ Serves at http://127.0.0.1:<port>/:
   /v2pn/api/...    the API: account, status, servers, recommend?purpose=, card?id= (bearer token for all but status),
                    and the sign-in by code: POST login/start gives six digits and a token, GET login/poll?token= says
                    "waiting" until --login-after polls have passed (as if the person confirmed in the bot), then "done"
-                   with /sub once, then 404. --login-never keeps it waiting (for pictures of the code).
+                   with /sub once, then 404. --login-never keeps it waiting (for pictures of the code);
+                   --login-expires sets the code's term in seconds (60 shows the countdown and the expiry soon).
 
 The index must be published with a test root key and --local (listing.json naming 127.0.0.1), and the V2pn build must
 trust that key and ask this page for releases; tools/demo/try-partner.ps1 does all of it:
@@ -82,6 +83,7 @@ class Handler(BaseHTTPRequestHandler):
     tls_server = False
     names = []
     login_after = 5
+    login_expires = 600
     logins = {}
 
     def log_message(self, format, *args):  # noqa: A002 - the base class names it so
@@ -161,7 +163,7 @@ class Handler(BaseHTTPRequestHandler):
         Handler.logins[token] = {"code": code, "polls": 0, "device": str(body.get("device", ""))[:60]}
         print("login/start: code %s for %s" % (code, Handler.logins[token]["device"]), flush=True)
         return self.send_json({"code": code, "token": token, "url": "https://t.me/kestrel_demo_bot?start=v2pn-" + code,
-                               "expires": 600})
+                               "expires": Handler.login_expires})
 
     def login_poll(self, query):
         token = (query.get("token") or [""])[0]
@@ -208,6 +210,7 @@ def main():
     parser.add_argument("--tls-server", action="store_true")
     parser.add_argument("--login-after", type=int, default=5, help="polls of login/poll before it says done")
     parser.add_argument("--login-never", action="store_true", help="login/poll keeps saying waiting")
+    parser.add_argument("--login-expires", type=int, default=600, help="seconds a code lives (V2pn takes 60 to 1800)")
     args = parser.parse_args()
 
     server = None
@@ -228,6 +231,7 @@ def main():
     Handler.hide_url = args.hide_url
     Handler.tls_server = args.tls_server
     Handler.login_after = -1 if args.login_never else args.login_after
+    Handler.login_expires = args.login_expires
     Handler.names = server_names(Handler.pack)
     httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     print("Subscription: http://127.0.0.1:%d/sub" % args.port, flush=True)

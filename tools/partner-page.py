@@ -1,14 +1,17 @@
-"""A partner's download page: one static page from partners/<id>/ that sends the partner's people to V2pn.
+"""A partner's download page: one static page from partners/<id>/ that sends the partner's people to its own build of V2pn.
 
     python tools/partner-page.py partners/configra             # into partners/out/site/configra/
     python tools/partner-page.py partners/configra --out D:/x  # somewhere else
     python tools/partner-page.py partners/configra --bot https://t.me/example_bot
 
 The page carries the partner's logo and colours (its Scene background as the hero when the pack has one), one line on
-what V2pn is, "Download for Windows" and "Download for macOS" pointing at the newest release (the first of
-V2pnUpdateSources, as V2pn itself updates from), the three steps to get the partner's subscription into V2pn and, when
-the pack or --bot gives one, a link to the partner's bot. Russian first, English with ?lang=en or the switch. A phone
-gets "V2pn is for computers" and a button that sends the page's link to the person instead of a download.
+what V2pn is, "Download for Windows" and "Download for macOS" pointing at the partner's own build in the newest release
+(V2pn-<id>-windows-x64.zip, V2pn-<id>-macos-arm64.zip and so on, made by tools/partner-packages.cs; the release is the
+first of V2pnUpdateSources, as V2pn itself updates from), the one-command installers for that build
+(install.ps1 / install.sh with V2PN_PARTNER=<id>), the three steps to get the partner's subscription into it and, when
+the pack or --bot gives one, a link to the partner's bot. Plain V2pn shows nothing of a partner, so the page never sends
+anyone to it. Russian first, English with ?lang=en or the switch. A phone gets "V2pn is for computers" and a button
+that sends the page's link to the person instead of a download.
 
 Colours follow V2pn's own rules (ServiceLib/V2pn/V2pnThemePalette.cs, Editions.PartnerAccent): the brand turned away
 from the state colours, the Scene's stage with its ink, scrim and buttons, the brand as text moved in lightness until it
@@ -30,11 +33,15 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONTS = os.path.join(REPO, "v2rayN", "v2rayN.Desktop", "Assets", "Fonts")
 TARGETS = os.path.join(REPO, "v2rayN", "Directory.Build.targets")
 
-# The packages the release scripts publish (tools/release.ps1, tools/package-macos.sh, tools/sign-release.ps1).
-WINDOWS = "V2pn-windows-x64.zip"
-WINDOWS_ARM = "V2pn-windows-arm64.zip"
-MAC = "V2pn-macos-arm64.dmg"
-MAC_INTEL = "V2pn-macos-x64.dmg"
+# The partner's own build as tools/partner-packages.cs names it (ServiceLib/V2pn/V2pnPartnerBuilds.cs): V2pn's signed
+# standard packages with v2pn-partner.txt. macOS has a zip only: a .dmg is not made on the computer that signs.
+def packages(pid):
+    return {
+        "win": f"V2pn-{pid}-windows-x64.zip",
+        "winArm": f"V2pn-{pid}-windows-arm64.zip",
+        "mac": f"V2pn-{pid}-macos-arm64.zip",
+        "macIntel": f"V2pn-{pid}-macos-x64.zip",
+    }
 
 # ---------------------------------------------------------------- colour: a port of V2pnColor and V2pnThemePalette
 
@@ -417,15 +424,16 @@ DARK = {"bg": "#0E0E11", "card": "#1A1A21", "muted_bg": "#26262F", "line": "#2A2
 V2MARK = '<svg class="v2" viewBox="0 0 17 18" aria-hidden="true"><path fill="#FF3D1F" d="M0 0h5.2l3.3 6.4L11.8 0H17L10.9 11.2V18H6.1v-6.8z"/></svg>'
 
 
-def strings(name, login, has_bot, cabinet):
+def strings(name, pid, login, has_bot, cabinet):
     n = html.escape(name)
+    app = html.escape(f"V2pn-{pid}")
     href = html.escape(cabinet)
     cab_ru = f'в <a href="{href}">кабинете</a> ' if cabinet else "у "
     cab_en = f'in the <a href="{href}">{n} cabinet</a>' if cabinet else f"from {n}"
     ru = {
         "title": f"V2pn для {n}",
         "h1": f"{n} на компьютере",
-        "lead": "V2pn — простой VPN-клиент для Windows и macOS. "
+        "lead": f"Сборка V2pn для {n}: простой VPN-клиент для Windows и macOS в цветах {n}. "
                 + (f"Подписка {n} входит в него по коду из бота, без ссылок." if login else f"Подписка {n} подключается в нём в один клик."),
         "win": "Скачать для Windows",
         "mac": "Скачать для macOS",
@@ -439,8 +447,10 @@ def strings(name, login, has_bot, cabinet):
         "phoneFiles": 'Файлы для компьютера: <a href="{win}">Windows</a> · <a href="{mac}">macOS</a>',
         "stepsTitle": "Три шага",
         "s1": "Установите V2pn",
-        "s1win": "Распакуйте архив в свою папку и запустите V2pn.exe. Если Windows скажет, что защитила компьютер, нажмите «Подробнее» → «Выполнить в любом случае».",
-        "s1mac": "Откройте .dmg и перетащите V2pn в «Программы». В первый раз разрешите запуск: «Системные настройки» → «Конфиденциальность и безопасность» → «Всё равно открыть».",
+        "s1win": f"Распакуйте архив в свою папку и запустите V2pn.exe. Обычный V2pn, если он есть, остаётся отдельно. Если Windows скажет, что защитила компьютер, нажмите «Подробнее» → «Выполнить в любом случае».",
+        "s1mac": f"Распакуйте архив и перетащите {app} в «Программы», рядом с V2pn, если он есть. В первый раз разрешите запуск: «Системные настройки» → «Конфиденциальность и безопасность» → «Всё равно открыть».",
+        "cmdWin": "Или одной командой в PowerShell:",
+        "cmdMac": "Или одной командой в Терминале:",
         "s2": f"Выберите {n}" if login else "Вставьте ссылку на подписку",
         "s2t": (f"При первом запуске нажмите «У меня подписка от провайдера» и выберите {n}. Если V2pn уже настроен: «+» → «Войти через провайдера»."
                 if login else
@@ -448,7 +458,7 @@ def strings(name, login, has_bot, cabinet):
         "s3": "Подтвердите в боте" if login else "Подключитесь",
         "s3t": (f"V2pn покажет код. Подтвердите его в боте {n}, и V2pn сам добавит подписку: останется нажать «Подключиться»."
                 if login else
-                f"Нажмите «Подключиться». Пока выбран сервер {n}, V2pn в его цветах."),
+                f"Нажмите «Подключиться». Эта сборка всегда в цветах {n}."),
         "bot": "Открыть бота",
         "foot": 'V2pn — открытый код, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn на GitHub</a>',
         "lang": "Язык",
@@ -456,7 +466,7 @@ def strings(name, login, has_bot, cabinet):
     en = {
         "title": f"V2pn for {n}",
         "h1": f"{n} on your computer",
-        "lead": "V2pn is a simple VPN client for Windows and macOS. "
+        "lead": f"V2pn for {n}: a simple VPN client for Windows and macOS in {n}'s colours. "
                 + (f"Your {n} subscription gets into it by a code from the bot, no links to copy." if login else f"Your {n} subscription connects in one click."),
         "win": "Download for Windows",
         "mac": "Download for macOS",
@@ -470,8 +480,10 @@ def strings(name, login, has_bot, cabinet):
         "phoneFiles": 'Files for a computer: <a href="{win}">Windows</a> · <a href="{mac}">macOS</a>',
         "stepsTitle": "Three steps",
         "s1": "Install V2pn",
-        "s1win": "Unpack the archive into a folder of yours and run V2pn.exe. If Windows says it protected your PC, press “More info”, then “Run anyway”.",
-        "s1mac": "Open the .dmg and drag V2pn to Applications. The first time, allow it: System Settings → Privacy & Security → “Open Anyway”.",
+        "s1win": "Unpack the archive into a folder of yours and run V2pn.exe. Plain V2pn, if you have it, stays separate. If Windows says it protected your PC, press “More info”, then “Run anyway”.",
+        "s1mac": f"Unpack the archive and drag {app} to Applications, next to V2pn if you have it. The first time, allow it: System Settings → Privacy & Security → “Open Anyway”.",
+        "cmdWin": "Or in one command in PowerShell:",
+        "cmdMac": "Or in one command in Terminal:",
         "s2": f"Pick {n}" if login else "Paste your subscription link",
         "s2t": (f"At first start press “I have a subscription from a provider” and pick {n}. If V2pn is set up already: “+” → “Sign in with a provider”."
                 if login else
@@ -479,7 +491,7 @@ def strings(name, login, has_bot, cabinet):
         "s3": "Confirm in the bot" if login else "Connect",
         "s3t": (f"V2pn shows a code. Confirm it in {n}'s bot and V2pn adds the subscription itself: then press “Connect”."
                 if login else
-                f"Press “Connect”. While a {n} server is selected, V2pn wears its colours."),
+                f"Press “Connect”. This build always wears {n}'s colours."),
         "bot": "Open the bot",
         "foot": 'V2pn is open source, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn on GitHub</a>',
         "lang": "Language",
@@ -584,13 +596,13 @@ def build(folder, out, source, bot_override=None):
     hero_logo = {m: logo_for(css_modes[m]["heroLight"]) for m in ("light", "dark")}
     bar_logo = {"light": logo_light or logo, "dark": logo or logo_light}
 
-    urls = {
-        "win": f"{source}/latest/download/{WINDOWS}",
-        "winArm": f"{source}/latest/download/{WINDOWS_ARM}",
-        "mac": f"{source}/latest/download/{MAC}",
-        "macIntel": f"{source}/latest/download/{MAC_INTEL}",
+    urls = {key: f"{source}/latest/download/{file}" for key, file in packages(pid).items()}
+    # The installers take the same signed package as V2pn and add the partner's marker (tools/install.ps1, install.sh).
+    commands = {
+        "win": f"$env:V2PN_PARTNER='{pid}'; irm {source}/latest/download/install.ps1 | iex",
+        "mac": f"curl -fsSL {source}/latest/download/install.sh | V2PN_PARTNER={pid} bash",
     }
-    ru, en = strings(name, login, bool(bot), cabinet)
+    ru, en = strings(name, pid, login, bool(bot), cabinet)
     for d in (ru, en):
         for k in d:
             for key, url in urls.items():
@@ -624,6 +636,7 @@ def build(folder, out, source, bot_override=None):
         win_url=urls["win"], mac_url=urls["mac"], win_note=t("winNote"), mac_note=t("macNote"),
         phone_title=t("phoneTitle"), phone_text=t("phoneText"), share=t("share"), phone_files=t("phoneFiles"),
         steps_title=t("stepsTitle"), s1=t("s1"), s1win=t("s1win"), s1mac=t("s1mac"), s2=t("s2"), s2t=t("s2t"),
+        cmd_win=t("cmdWin"), cmd_mac=t("cmdMac"), win_cmd=html.escape(commands["win"]), mac_cmd=html.escape(commands["mac"]),
         s3=t("s3"), s3t=t("s3t"), bot=bot_html, foot=t("foot"),
         data=json.dumps({"text": {"ru": ru, "en": en}, "urls": urls}, ensure_ascii=False).replace("</", "<\\/"),
     )
@@ -644,7 +657,9 @@ def build(folder, out, source, bot_override=None):
         fh.write(PAGE_JS)
 
     print(f"{name} ({pid}): {out}")
-    print(f"  downloads from {source}/latest/download/")
+    print(f"  downloads from {source}/latest/download/: {', '.join(packages(pid).values())}")
+    print(f"  one command: {commands['win']}")
+    print(f"               {commands['mac']}")
     look = f"Scene ({theme['background']['type']})" if stage(theme, False) else "Accent"
     print(f"  look: {look}; "
           f"sign-in by code: {'yes' if login else 'no'}; bot link: {bot or 'none'}")
@@ -723,6 +738,9 @@ li p {{ margin: 0; color: var(--soft); font-size: 15px; }}
 li p b {{ color: var(--ink); font-weight: 600; }}
 li a {{ color: var(--link); }}
 li .btn.quiet {{ background: var(--accent); color: var(--onAccent); justify-self: start; margin-top: 4px; }}
+li .cmd {{ font-size: 13.5px; color: var(--muted); }}
+li code {{ display: block; margin-top: 4px; padding: 8px 10px; border-radius: 10px; background: var(--mutedBg); color: var(--ink);
+  font: 12.5px/1.45 ui-monospace, "Cascadia Mono", Consolas, Menlo, monospace; overflow-wrap: anywhere; user-select: all; }}
 body.os-win [data-os=mac], body.os-mac [data-os=win] {{ display: none; }}
 .osl {{ display: none; }}
 body.os-any .osl, body.os-phone .osl {{ display: inline; }}
@@ -785,7 +803,7 @@ footer a {{ color: var(--muted); }}
     <section class="steps">
       <h2 data-t="stepsTitle">{steps_title}</h2>
       <ol>
-        <li><span class="num">1</span><h3 data-t="s1">{s1}</h3><p data-os="win"><b class="osl">Windows. </b><span data-t="s1win">{s1win}</span></p><p data-os="mac"><b class="osl">macOS. </b><span data-t="s1mac">{s1mac}</span></p></li>
+        <li><span class="num">1</span><h3 data-t="s1">{s1}</h3><p data-os="win"><b class="osl">Windows. </b><span data-t="s1win">{s1win}</span></p><p class="cmd" data-os="win"><span data-t="cmdWin">{cmd_win}</span><code>{win_cmd}</code></p><p data-os="mac"><b class="osl">macOS. </b><span data-t="s1mac">{s1mac}</span></p><p class="cmd" data-os="mac"><span data-t="cmdMac">{cmd_mac}</span><code>{mac_cmd}</code></p></li>
         <li><span class="num">2</span><h3 data-t="s2">{s2}</h3><p data-t="s2t">{s2t}</p></li>
         <li><span class="num">3</span><h3 data-t="s3">{s3}</h3><p data-t="s3t">{s3t}</p>{bot}</li>
       </ol>

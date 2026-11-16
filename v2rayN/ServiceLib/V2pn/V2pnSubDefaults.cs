@@ -153,11 +153,11 @@ public static class V2pnSubDefaults
 
     /// <summary>
     /// Where a subscription moves when its panel sends new-url or new-domain, or null to stay. Honoured only for a
-    /// verified partner (<paramref name="partner"/> is the certificate the subscription has now) and only to a host the
-    /// certificate names; otherwise anyone answering on the old address could take the subscription away. new-url wins
+    /// verified partner (<paramref name="partner"/> is the listing the subscription belongs to now) and only to a host the
+    /// listing names; otherwise anyone answering on the old address could take the subscription away. new-url wins
     /// over new-domain, and a new-url that is not usable does not fall back to it. A move to the same host is refused.
     /// </summary>
-    public static string? MovedUrl(string? currentUrl, string? newUrl, string? newDomain, V2pnPartnerCert? partner)
+    public static string? MovedUrl(string? currentUrl, string? newUrl, string? newDomain, V2pnPartnerListing? partner)
     {
         var current = Utils.TryUri(currentUrl?.Trim() ?? string.Empty);
         if (partner == null || current == null || current.Scheme != Uri.UriSchemeHttps)

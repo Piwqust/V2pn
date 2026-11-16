@@ -84,7 +84,7 @@ public sealed class SubInfoManager
             info.SupportUrl = panel.SupportUrl;
             info.WebPageUrl = panel.WebPageUrl;
             info.Announce = panel.Announce;
-            info.PartnerUrl = panel.PartnerUrl;
+            info.PartnerUrl = null;
             info.AccountToken = panel.AccountToken;
             CopyCompat(panel, info);
             info.ReceivedTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
@@ -98,18 +98,9 @@ public sealed class SubInfoManager
             _items[item.Id] = info;
             Changed?.Invoke(item.Id);
 
-            if (info.PartnerUrl.IsNotEmpty() && item.Url.IsNotEmpty())
-            {
-                // The pack is checked in the background; a slow or broken partner site never holds up the update.
-                var partnerUrl = info.PartnerUrl;
-                var subscriptionUrl = item.Url;
-                _ = Task.Run(() => V2pnPartners.Instance.RefreshAsync(subscriptionUrl, partnerUrl));
-            }
-            else
-            {
-                // A panel that answered without v2pn-partner no longer offers its look on this subscription.
-                _ = Task.Run(V2pnPartners.Instance.PruneAsync);
-            }
+            // A subscription new here may belong to a partner whose pack is not here yet. In the background: a slow
+            // release page never holds up the update.
+            _ = Task.Run(() => V2pnPartners.Instance.RefreshAsync());
         }
         catch (Exception ex)
         {

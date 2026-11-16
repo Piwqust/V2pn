@@ -1936,7 +1936,7 @@
     <value>Подробнее</value>
   </data>
   <data name="MsgV2pnSubMoved" xml:space="preserve">
-    <value>Провайдер перенёс подписку на {0}. Этот адрес есть в его сертификате партнёра, дальше V2pn обновляет подписку оттуда.</value>
+    <value>Провайдер перенёс подписку на {0}. Этот адрес есть в списке партнёров V2pn, дальше V2pn обновляет подписку оттуда.</value>
   </data>
   <data name="V2pnSubEndsInOneDay" xml:space="preserve">
     <value>Подписка закончится через 1 день</value>

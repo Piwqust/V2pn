@@ -236,9 +236,9 @@ public static class V2pnPartnerCatalog
 
     /// <summary>
     /// The buttons of a pack: the first <see cref="MaxActions"/> usable ones. An action V2pn does not know, one that
-    /// needs the API without it, one with a link off the certificate's domains or with a malformed field is left out.
+    /// needs the API without it, one with a link off the listing's domains or with a malformed field is left out.
     /// </summary>
-    public static IReadOnlyList<V2pnPartnerAction> ParseActions(JsonNode? node, V2pnPartnerCert cert, bool hasApi)
+    public static IReadOnlyList<V2pnPartnerAction> ParseActions(JsonNode? node, V2pnPartnerListing listing, bool hasApi)
     {
         if (node is not JsonArray array)
         {
@@ -251,7 +251,7 @@ public static class V2pnPartnerCatalog
             {
                 break;
             }
-            if (ParseAction(item, cert, hasApi) is { } action && actions.All(a => a.Id != action.Id))
+            if (ParseAction(item, listing, hasApi) is { } action && actions.All(a => a.Id != action.Id))
             {
                 actions.Add(action);
             }
@@ -260,9 +260,9 @@ public static class V2pnPartnerCatalog
     }
 
     /// <summary>
-    /// A link an open.link button may open: https on a domain of the certificate or on t.me, or a tg: link. Null otherwise.
+    /// A link an open.link button may open: https on a domain of the listing or on t.me, or a tg: link. Null otherwise.
     /// </summary>
-    public static string? ActionLink(V2pnPartnerCert cert, string? url)
+    public static string? ActionLink(V2pnPartnerListing listing, string? url)
     {
         var uri = Utils.TryUri(url?.Trim() ?? string.Empty);
         if (uri == null || uri.UserInfo.Length > 0)
@@ -279,7 +279,7 @@ public static class V2pnPartnerCatalog
             return null;
         }
         var host = uri.IdnHost.TrimEnd('.').ToLowerInvariant();
-        return host == "t.me" || V2pnPartnerTrust.DomainAllowed(cert, uri.ToString()) ? uri.ToString() : null;
+        return host == "t.me" || V2pnPartnerTrust.DomainAllowed(listing, uri.ToString()) ? uri.ToString() : null;
     }
 
     private static V2pnServerNote? ParseServer(JsonObject item, bool live)
@@ -306,7 +306,7 @@ public static class V2pnPartnerCatalog
             live ? Bool(item["healthy"]) : null);
     }
 
-    private static V2pnPartnerAction? ParseAction(JsonObject item, V2pnPartnerCert cert, bool hasApi)
+    private static V2pnPartnerAction? ParseAction(JsonObject item, V2pnPartnerListing listing, bool hasApi)
     {
         var id = Plain(item["id"], 32);
         var label = Plain(item["label"], MaxLabel);
@@ -343,7 +343,7 @@ public static class V2pnPartnerCatalog
                 return Plain(item["group"], MaxGroup) is { } group ? action with { Group = group } : null;
 
             case V2pnActionKinds.OpenLink:
-                return ActionLink(cert, Plain(item["url"], 2048)) is { } url ? action with { Url = url } : null;
+                return ActionLink(listing, Plain(item["url"], 2048)) is { } url ? action with { Url = url } : null;
 
             case V2pnActionKinds.InfoCard:
                 return hasApi ? action : null;

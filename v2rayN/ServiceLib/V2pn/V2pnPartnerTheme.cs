@@ -1,29 +1,5 @@
 namespace ServiceLib;
 
-/// <summary>How the Neon look draws Connect: INCY's two styles.</summary>
-public static class V2pnThemeConnect
-{
-    /// <summary>A big round button with a ring and the timer in it.</summary>
-    public const string Round = "round";
-
-    /// <summary>One row with the flag, the server and a switch; the list takes the rest of the window.</summary>
-    public const string Toggle = "toggle";
-
-    public static readonly IReadOnlyList<string> All = [Round, Toggle];
-}
-
-/// <summary>The window the Neon look opens in the first time.</summary>
-public static class V2pnThemeWindow
-{
-    /// <summary>The narrow window (380×640), like a phone at the edge of the screen; the person can widen it.</summary>
-    public const string Mini = "mini";
-
-    /// <summary>The window as the person last had it.</summary>
-    public const string Full = "full";
-
-    public static readonly IReadOnlyList<string> All = [Mini, Full];
-}
-
 public static class V2pnThemeBackgroundKinds
 {
     public const string Solid = "solid";
@@ -36,11 +12,11 @@ public static class V2pnThemeBackgroundKinds
 /// <summary>The picture slot of a theme.</summary>
 public static class V2pnThemeArt
 {
-    /// <summary>background.art: the picture of the brand area (the Pass card), 640-3200 px a side, at most 3:1.</summary>
+    /// <summary>background.art: the picture behind the Scene, 640-3200 px a side, at most 3:1.</summary>
     public const string Backdrop = "backdrop";
 }
 
-/// <summary>theme.background: the brand area of the Pass card. A colour, a gradient or a picture (with a scrim V2pn sets).</summary>
+/// <summary>theme.background: what the Scene look stands on. A gradient or a picture (with a scrim V2pn sets); solid means no Scene.</summary>
 /// <param name="Kind">solid, gradient or image.</param>
 /// <param name="Colors">The gradient's 2 to 4 stops, "#RRGGBB"; empty otherwise.</param>
 /// <param name="Art">The picture (a pack asset) for an image background.</param>
@@ -50,17 +26,14 @@ public sealed record V2pnThemeBackground(string Kind, IReadOnlyList<string> Colo
 }
 
 /// <summary>
-/// A provider's theme (partner.json "theme", with the edition grant). V2pn draws two looks, Neon and Pass, and lays them
-/// out itself; the theme gives them the provider's colours, the brand area of the Pass card, Neon's Connect and the
-/// window Neon opens in. Every field has a safe value: whatever a pack gets wrong falls back to it, and
-/// <see cref="Notes"/> says what and why.
+/// A provider's theme (partner.json "theme", with the edition grant). V2pn lays its window out itself; the theme gives it
+/// the provider's colours (Accent) and, with a background, the stage it stands on (Scene). Every field has a safe value:
+/// whatever a pack gets wrong falls back to it, and <see cref="Notes"/> says what and why.
 /// </summary>
-/// <param name="Brand">1 to 3 brand colours: the accent first, then the colours of Neon's ring.</param>
+/// <param name="Brand">1 to 3 brand colours: the accent first, then the colours of the background's gradient.</param>
 public sealed record V2pnTheme(
     IReadOnlyList<string> Brand,
-    V2pnThemeBackground Background,
-    string Connect,
-    string Window)
+    V2pnThemeBackground Background)
 {
     /// <summary>What V2pn did not take from the pack and what it used instead, one line each (tools/partner-check.cs).</summary>
     public IReadOnlyList<string> Notes { get; init; } = [];
@@ -68,13 +41,11 @@ public sealed record V2pnTheme(
     /// <summary>A theme of V2pn's defaults in <paramref name="brand"/> (or no brand colour, which V2pn fills in).</summary>
     public static V2pnTheme Default(string? brand) => new(
         V2pnColor.TryParse(brand) is { } c ? [c.Hex] : [],
-        V2pnThemeBackground.Solid,
-        V2pnThemeConnect.Round,
-        V2pnThemeWindow.Mini);
+        V2pnThemeBackground.Solid);
 
     /// <summary>One string that changes whenever anything that is drawn changes (for rebuilding a look).</summary>
     public string Key => string.Join("|", string.Join(",", Brand), Background.Kind, string.Join(",", Background.Colors),
-        Background.Art, Connect, Window);
+        Background.Art);
 }
 
 /// <summary>Reads partner.json's "theme" strictly: known values only, within limits; anything else falls back.</summary>
@@ -85,10 +56,10 @@ public static class V2pnThemeReader
     public const int MaxStops = 4;
     private const int MaxText = 40;
 
-    private static readonly HashSet<string> Keys = ["palette", "background", "connect", "window"];
+    private static readonly HashSet<string> Keys = ["palette", "background"];
 
-    // Fields of the six-template themes V2pn drew before Neon and Pass: read without error, used no more.
-    private static readonly HashSet<string> Retired = ["template", "font", "corners", "density", "blocks", "art"];
+    // Fields of the looks V2pn drew before (the six templates, then Neon's Connect and window): read without error, used no more.
+    private static readonly HashSet<string> Retired = ["template", "font", "corners", "density", "blocks", "art", "connect", "window"];
 
     /// <summary>
     /// The theme of <paramref name="node"/>; null node gives V2pn's default theme. <paramref name="accent"/> (brand.accent)
@@ -109,7 +80,7 @@ public static class V2pnThemeReader
         {
             if (Retired.Contains(key))
             {
-                notes.Add($"theme.{key} is no longer used: V2pn lays out its two looks (neon, pass) itself; ignored");
+                notes.Add($"theme.{key} is no longer used: V2pn lays its window out itself; ignored");
             }
             else if (!Keys.Contains(key))
             {
@@ -132,10 +103,8 @@ public static class V2pnThemeReader
             brand.Add(fallback.Hex);
         }
         var background = Background(root["background"], isPicture, notes);
-        var connect = Pick(root["connect"], V2pnThemeConnect.All, V2pnThemeConnect.Round, "theme.connect", notes);
-        var window = Pick(root["window"], V2pnThemeWindow.All, V2pnThemeWindow.Mini, "theme.window", notes);
 
-        return new V2pnTheme(brand, background, connect, window) { Notes = notes };
+        return new V2pnTheme(brand, background) { Notes = notes };
     }
 
     private static string Pick(JsonNode? node, IReadOnlyList<string> allowed, string fallback, string field, List<string> notes)

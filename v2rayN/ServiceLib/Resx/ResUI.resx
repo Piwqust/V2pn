@@ -1954,7 +1954,7 @@ The "Get Certificate" action may fail if a self-signed certificate is used or if
     <value>More</value>
   </data>
   <data name="MsgV2pnSubMoved" xml:space="preserve">
-    <value>The provider moved the subscription to {0}. Its partner certificate names this address, so V2pn will update from it from now on.</value>
+    <value>The provider moved the subscription to {0}. V2pn lists this address as the partner's, so it will update from it from now on.</value>
   </data>
   <data name="V2pnSubEndsInOneDay" xml:space="preserve">
     <value>Your subscription ends in 1 day</value>

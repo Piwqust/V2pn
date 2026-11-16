@@ -3,7 +3,7 @@ using ServiceLib.Tests.CoreConfig;
 
 namespace ServiceLib.Tests.V2pn;
 
-/// <summary>Reviewed files of a partner: routing.json, transport.json, core.json, bound to the certificate by hash.</summary>
+/// <summary>Reviewed files of a partner: routing.json, transport.json, core.json, bound to the signed index by hash.</summary>
 public class V2pnPartnerReviewTests
 {
     internal static readonly byte[] RoutingJson = Encoding.UTF8.GetBytes("""
@@ -62,39 +62,46 @@ public class V2pnPartnerReviewTests
         return reviewed;
     }
 
-    /// <summary>A partner as V2pnPartners would build it, from a signed certificate and pack holding <paramref name="files"/>.</summary>
+    /// <summary>A partner as V2pnPartners would build it, from a listing and a pack holding <paramref name="files"/>.</summary>
     private static V2pnPartner Partner((string Name, byte[] Content)[] files, string[] grants, JsonObject? reviewed, string id = "kestrel")
     {
-        var p = new TestPartner();
-        var certJson = p.Cert(partner: id, grants: grants, reviewed: reviewed);
-        var cert = p.ReadCert(certJson);
+        var cert = TestPartner.Listing(partner: id, grants: grants, reviewed: reviewed);
         var assets = files.Append(("logo.png", TestPartner.Logo)).ToArray();
         var packJson = TestPartner.Pack(id: id, name: "Kestrel", assets: assets);
-        var pack = V2pnPartnerTrust.ReadPack(packJson, TestPartner.Sign(p.Key, packJson), cert, out var error)!;
+        var pack = V2pnPartnerTrust.ReadPack(packJson, cert, out var error)!;
         if (pack == null)
         {
             throw new InvalidOperationException(error);
         }
         var content = files.ToDictionary(f => f.Name, f => f.Content);
         var features = V2pnPartnerFeatures.Read(cert, pack, name => content.GetValueOrDefault(name));
-        return new V2pnPartner(cert, pack, Path.GetTempPath(), "https://config.example.com/v2pn/", features);
+        return new V2pnPartner(cert, pack, Path.GetTempPath(), features);
     }
 
     private static readonly string[] AllGrants = ["edition", "routing", "transport", "core"];
 
-    #region Certificate and pack
+    #region Listing and pack
 
-    [Test]
-    public async Task Cert_ReadsReviewedHashes_AndLeavesOutWhatItDoesNotKnow()
+    /// <summary>The listing as V2pn reads it from a signed index whose entry has <paramref name="reviewed"/> as written.</summary>
+    private static V2pnPartnerListing FromIndex(string[] grants, JsonObject? reviewed)
     {
         var p = new TestPartner();
+        var root = (JsonObject)JsonNode.Parse(V2pnPartnerPublisher.IndexBytes([TestPartner.Listing(grants: grants)], DateTimeOffset.UnixEpoch))!;
+        root["partners"]![0]!["reviewed"] = reviewed;
+        var json = Encoding.UTF8.GetBytes(root.ToJsonString());
+        return V2pnPartnerTrust.ReadIndex(json, TestPartner.Sign(p.Root, json), [p.RootPublic], out _)!.Partners[0];
+    }
+
+    [Test]
+    public async Task Listing_ReadsReviewedHashes_AndLeavesOutWhatItDoesNotKnow()
+    {
         var reviewed = new JsonObject
         {
             ["routing.json"] = new string('A', 64),
             ["transport.json"] = "not-a-hash",
             ["theme.json"] = new string('b', 64),
         };
-        var cert = p.ReadCert(p.Cert(grants: ["edition", "routing", "transport", "core"], reviewed: reviewed));
+        var cert = FromIndex(["edition", "routing", "transport", "core"], reviewed);
 
         await cert.Grants.Should().BeEquivalentTo(new[] { "edition", "routing", "transport", "core" });
         await cert.ReviewedFiles.Count.Should().BeEqualTo(1);
@@ -102,10 +109,9 @@ public class V2pnPartnerReviewTests
     }
 
     [Test]
-    public async Task Cert_WithoutReviewed_ReadsAsBefore()
+    public async Task Listing_WithoutReviewed_ReadsAsBefore()
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert(p.Cert(grants: ["edition", "routing"]));
+        var cert = FromIndex(["edition", "routing"], null);
 
         await cert.ReviewedFiles.Count.Should().BeEqualTo(0);
         await cert.Allows(V2pnPartnerGrants.Routing).Should().BeTrue();
@@ -114,12 +120,11 @@ public class V2pnPartnerReviewTests
     [Test]
     public async Task Pack_TakesTheThreeReviewedFiles_ButNoOtherJson()
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert();
+        var cert = TestPartner.Listing();
         V2pnPartnerPack? Read(params (string, byte[])[] assets)
         {
             var json = TestPartner.Pack(assets: assets.Append(("logo.png", TestPartner.Logo)).ToArray());
-            return V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _);
+            return V2pnPartnerTrust.ReadPack(json, cert, out _);
         }
 
         var pack = Read(("routing.json", RoutingJson), ("transport.json", TransportJson), ("core.json", CoreXrayJson));
@@ -132,17 +137,16 @@ public class V2pnPartnerReviewTests
     [Test]
     public async Task Pack_NeverUsesAReviewedFileAsAPicture()
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert();
+        var cert = TestPartner.Listing();
         var json = TestPartner.Pack(assets: [("routing.json", RoutingJson), ("logo.png", TestPartner.Logo)],
             more: pack => pack["brand"]!["logo"] = "routing.json");
 
-        var pack = V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)!;
+        var pack = V2pnPartnerTrust.ReadPack(json, cert, out _)!;
 
         await (pack.Logo == null).Should().BeTrue();
     }
 
-    #endregion Certificate and pack
+    #endregion Listing and pack
 
     #region Hash binding
 
@@ -194,40 +198,57 @@ public class V2pnPartnerReviewTests
     public async Task Partner_DownloadedWithReviewedFiles_KeepsThemOnDisk_AndChecksThemAgain()
     {
         var p = new TestPartner();
+        var site = new TestSite();
         var root = Path.Combine(Path.GetTempPath(), "v2pn-review-test-" + Guid.NewGuid().ToString("N")[..8]);
-        var cert = p.Cert(grants: ["edition", "routing"], reviewed: Reviewed(("routing.json", RoutingJson)));
         var pack = TestPartner.Pack(assets: [("logo.png", TestPartner.Logo), ("routing.json", RoutingJson)]);
-        var files = new Dictionary<string, byte[]>
-        {
-            ["cert.json"] = cert,
-            ["cert.json.sig"] = Encoding.UTF8.GetBytes(TestPartner.Sign(p.Root, cert)),
-            ["partner.json"] = pack,
-            ["partner.json.sig"] = Encoding.UTF8.GetBytes(TestPartner.Sign(p.Key, pack)),
-            ["logo.png"] = TestPartner.Logo,
-            ["routing.json"] = RoutingJson,
-        };
-        var manager = new V2pnPartners([p.RootPublic], () => root)
-        {
-            Today = () => TestPartner.Today,
-            Fetch = (url, _) =>
-            {
-                var name = Uri.UnescapeDataString(url[(url.LastIndexOf('/') + 1)..]);
-                return Task.FromResult(files.TryGetValue(name, out var body) ? new V2pnHttp.Result(HttpStatusCode.OK, body, null) : new V2pnHttp.Result(HttpStatusCode.NotFound, null, "HTTP 404"));
-            },
-        };
+        var zip = TestPartner.Zip(pack, ("logo.png", TestPartner.Logo), ("routing.json", RoutingJson));
+        // The index names the reviewed hash; the pack's own copy of the file must have it.
+        p.Publish(site, DateTimeOffset.UnixEpoch, (TestPartner.Listing(grants: ["edition", "routing"], reviewed: Reviewed(("routing.json", RoutingJson)), zip: zip), zip));
+        var manager = p.Manager(site, root, ["https://config.example.com/s/token"]);
         try
         {
-            var partner = await manager.RefreshAsync("https://config.example.com/s/token", "https://config.example.com/v2pn/");
-            await (partner?.Features.Routing != null).Should().BeTrue();
+            await manager.RefreshAsync();
+            await (manager.Get("configra")?.Features.Routing != null).Should().BeTrue();
             await File.Exists(Path.Combine(root, "configra", "routing.json")).Should().BeTrue();
 
-            var kept = manager.ReadFolder(Path.Combine(root, "configra"), out _);
+            var listing = manager.Index!.Get("configra")!;
+            var kept = manager.ReadFolder(Path.Combine(root, "configra"), listing, out _);
             await (kept?.Features.Routing != null).Should().BeTrue();
 
-            // A routing.json changed on disk no longer matches the signed pack: the partner is not trusted at all.
+            // A routing.json changed on disk no longer matches the kept pack: the partner is not trusted at all.
             await File.WriteAllTextAsync(Path.Combine(root, "configra", "routing.json"), "{}");
-            await (manager.ReadFolder(Path.Combine(root, "configra"), out var error) == null).Should().BeTrue();
+            await (manager.ReadFolder(Path.Combine(root, "configra"), listing, out var error) == null).Should().BeTrue();
             await error.Contains("routing.json").Should().BeTrue();
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+            {
+                Directory.Delete(root, true);
+            }
+        }
+    }
+
+    [Test]
+    public async Task ReviewedFile_IsUsedOnlyOnceTheIndexNamesItsHash()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        var root = Path.Combine(Path.GetTempPath(), "v2pn-review-test-" + Guid.NewGuid().ToString("N")[..8]);
+        var pack = TestPartner.Pack(assets: [("logo.png", TestPartner.Logo), ("routing.json", RoutingJson)]);
+        var zip = TestPartner.Zip(pack, ("logo.png", TestPartner.Logo), ("routing.json", RoutingJson));
+        p.Publish(site, DateTimeOffset.UnixEpoch, (TestPartner.Listing(grants: ["edition", "routing"], zip: zip), zip));
+        var manager = p.Manager(site, root, ["https://config.example.com/s/token"]);
+        try
+        {
+            await manager.RefreshAsync();
+            await manager.Get("configra")!.Features.File("routing.json")!.State.Should().BeEqualTo(V2pnReviewState.NotReviewed);
+
+            // The owner read it and published its hash: the same zip, a new listing.
+            p.Publish(site, DateTimeOffset.UnixEpoch.AddDays(1),
+                (TestPartner.Listing(grants: ["edition", "routing"], reviewed: Reviewed(("routing.json", RoutingJson)), zip: zip), zip));
+            await manager.RefreshAsync(forceIndex: true);
+            await manager.Get("configra")!.Features.File("routing.json")!.State.Should().BeEqualTo(V2pnReviewState.Ready);
         }
         finally
         {

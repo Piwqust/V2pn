@@ -17,16 +17,12 @@ public static class V2pnPartnerSlots
     public static readonly Slot Mark = new("mark", "a square mark, 64-512 px",
         (w, h) => w is >= 64 and <= 512 && Math.Abs(w - h) <= w / 20);
 
-    /// <summary>The studio look's picture: 200 to 1600 px on each side, no wider than 2:1 either way.</summary>
-    public static readonly Slot Art = new("art", "a picture, 200-1600 px a side, at most 2:1",
-        (w, h) => w is >= 200 and <= 1600 && h is >= 200 and <= 1600 && w <= h * 2 && h <= w * 2);
-
-    /// <summary>The picture of the Pass card's brand area (theme.background.art): 640 to 3200 px a side, at most 3:1 either way.</summary>
+    /// <summary>The picture behind the Scene (theme.background.art): 640 to 3200 px a side, at most 3:1 either way.</summary>
     public static readonly Slot Backdrop = new("backdrop", "a background picture, 640-3200 px a side, at most 3:1",
         (w, h) => w is >= 640 and <= 3200 && h is >= 640 and <= 3200 && w <= h * 3 && h <= w * 3);
 
-    /// <summary>Every slot a pack has, by the name the theme builder and partner-check use.</summary>
-    public static readonly IReadOnlyList<Slot> All = [Logo, Mark, Art, Backdrop];
+    /// <summary>Every slot a pack has, by the name partner-check uses.</summary>
+    public static readonly IReadOnlyList<Slot> All = [Logo, Mark, Backdrop];
 
     public static Slot? ByName(string name) => All.FirstOrDefault(s => s.Name == name);
 
@@ -87,14 +83,6 @@ public static class V2pnPartnerSlots
             return file;
         }
 
-        var art = new Dictionary<string, string>(StringComparer.Ordinal);
-        foreach (var (key, file) in pack.Art)
-        {
-            if (Check(file, Art, $"edition.art.{key}") is { } kept)
-            {
-                art[key] = kept;
-            }
-        }
         var theme = pack.Theme;
         if (theme != null)
         {
@@ -112,7 +100,6 @@ public static class V2pnPartnerSlots
             Logo = Check(pack.Logo, Logo, "brand.logo"),
             LogoOnLight = Check(pack.LogoOnLight, Logo, "brand.logoOnLight"),
             Mark = Check(pack.Mark, Mark, "brand.mark"),
-            Art = art,
             Theme = theme,
         };
     }

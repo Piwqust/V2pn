@@ -11,8 +11,8 @@ public class V2pnSubDefaultsTests
         Expire = expiresIn is { } left ? (Now + left).ToUnixTimeSeconds() : 0,
     };
 
-    private static V2pnPartnerCert Cert(params string[] domains) =>
-        new("kestrel", "Kestrel", domains, "key", [], new DateOnly(2026, 1, 1), new DateOnly(2027, 1, 1));
+    private static V2pnPartnerListing Cert(params string[] domains) =>
+        new("kestrel", "Kestrel", domains, [], new DateOnly(2027, 1, 1), new V2pnPartnerZip("partner-kestrel.zip", 1, new string('0', 64)));
 
     [Test]
     public async Task ExpiryBanner_ShouldShowWithinThreeDaysAndAfterTheEnd()

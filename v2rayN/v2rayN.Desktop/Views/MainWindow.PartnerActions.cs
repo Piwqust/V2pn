@@ -276,7 +276,7 @@ public partial class MainWindow
                 break;
 
             case V2pnActionKinds.OpenLink:
-                OpenPartnerLink(partner, V2pnPartnerCatalog.ActionLink(partner.Cert, action.Url));
+                OpenPartnerLink(partner, V2pnPartnerCatalog.ActionLink(partner.Listing, action.Url));
                 break;
 
             case V2pnActionKinds.SubscriptionUpdate:

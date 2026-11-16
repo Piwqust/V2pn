@@ -166,17 +166,18 @@ public partial class SubEditWindow
     /// </summary>
     private void ShowPartner(SubItem? source, SubInfoItem? info)
     {
-        rowPartner.IsVisible = info?.PartnerUrl.IsNotEmpty() == true;
-        if (!rowPartner.IsVisible || source == null)
+        var listing = V2pnPartners.Instance.ListingFor(source?.Url);
+        rowPartner.IsVisible = listing != null;
+        if (listing == null || source == null)
         {
             return;
         }
-        var partner = V2pnPartners.Instance.ForSource(info!.PartnerUrl, source.Url);
-        var error = V2pnPartners.Instance.ErrorFor(info.PartnerUrl);
+        var partner = V2pnPartners.Instance.ForSubscription(source);
+        var error = V2pnPartners.Instance.ErrorFor(listing.Id);
         ToolTip.SetTip(txtPartner, error);
         txtPartner.Text = partner != null
-            ? string.Format(L.SubPartnerConfirmed, partner.Name, partner.Cert.Expires.ToDateTime(TimeOnly.MinValue).ToString("d MMMM yyyy", CultureInfo.CurrentUICulture))
-            : error != null ? L.SubPartnerRefused : L.SubPartnerChecking;
+            ? string.Format(L.SubPartnerConfirmed, partner.Name, partner.Listing.Until.ToDateTime(TimeOnly.MinValue).ToString("d MMMM yyyy", CultureInfo.CurrentUICulture))
+            : string.Format(error != null ? L.SubPartnerRefused : L.SubPartnerChecking, listing.Name);
         txtPartner.Classes.Set("bad", partner == null && error != null);
         txtPartnerMay.IsVisible = partner != null;
         if (partner != null)
@@ -240,23 +241,23 @@ public partial class SubEditWindow
         }
     }
 
-    /// <summary>"Kestrel may: its look, plan details, its own buttons, closed settings." from the certificate's grants.</summary>
+    /// <summary>"Kestrel may: its look, plan details, its own buttons, closed settings." from the listing's grants.</summary>
     private static string PartnerMay(V2pnPartner partner)
     {
         var may = new List<string>();
-        if (partner.Cert.Allows(V2pnPartnerGrants.Edition))
+        if (partner.Listing.Allows(V2pnPartnerGrants.Edition))
         {
             may.Add(L.GrantEdition);
         }
-        if (partner.Cert.Allows(V2pnPartnerGrants.Account))
+        if (partner.Listing.Allows(V2pnPartnerGrants.Account))
         {
             may.Add(L.GrantAccount);
         }
-        if (partner.Cert.Allows(V2pnPartnerGrants.Actions))
+        if (partner.Listing.Allows(V2pnPartnerGrants.Actions))
         {
             may.Add(L.GrantActions);
         }
-        if (partner.Cert.Allows(V2pnPartnerGrants.Lock))
+        if (partner.Listing.Allows(V2pnPartnerGrants.Lock))
         {
             may.Add(L.GrantLock);
         }

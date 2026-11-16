@@ -43,15 +43,15 @@ public class V2pnPartnerSlotsTests
     [Test]
     public async Task Fit_KeepsWhatFits_AndSaysWhyTheRestIsNotShown()
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert();
+        var cert = TestPartner.Listing();
         var json = TestPartner.Pack();
-        var pack = V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)! with
+        var read = V2pnPartnerTrust.ReadPack(json, cert, out _)!;
+        var pack = read with
         {
             Logo = "logo.png",
             LogoOnLight = "tall.png",
             Mark = "mark.png",
-            Art = new Dictionary<string, string> { ["lamp"] = "lamp.webp" },
+            Theme = read.Theme! with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Image, [], "lamp.webp") },
         };
         var files = new Dictionary<string, byte[]>
         {
@@ -66,7 +66,7 @@ public class V2pnPartnerSlotsTests
         await fitted.Logo.Should().BeEqualTo("logo.png");
         await fitted.Mark.Should().BeEqualTo("mark.png");
         await (fitted.LogoOnLight == null).Should().BeTrue();
-        await fitted.Art.ContainsKey("lamp").Should().BeFalse();
+        await fitted.Theme!.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Solid);
         await problems.Count.Should().BeEqualTo(2);
         await problems.Any(p => p.Contains("96×337")).Should().BeTrue();
     }

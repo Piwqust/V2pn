@@ -78,10 +78,10 @@ public static class Editions
         V2pnPartners.Instance.Removed += (partner, why) => Dispatcher.UIThread.Post(() => OnRemoved(partner, why));
         // The partner of a subscription is known once V2pnLocks has read it again.
         V2pnLocks.Instance.Changed += () => Dispatcher.UIThread.Post(Update);
-        // Partners of subscriptions deleted while V2pn was closed go now; certificates that run out while it is
-        // open are caught by the hourly check.
-        _ = V2pnPartners.Instance.PruneAsync();
-        _pruneTimer = new DispatcherTimer(TimeSpan.FromHours(1), DispatcherPriority.Background, (_, _) => _ = V2pnPartners.Instance.PruneAsync());
+        // The index of partners now (then at most every six hours: RefreshAsync keeps to it); partners of subscriptions
+        // deleted while V2pn was closed go now, terms that run out while it is open are caught by the hourly check.
+        _ = V2pnPartners.Instance.RefreshAsync();
+        _pruneTimer = new DispatcherTimer(TimeSpan.FromHours(1), DispatcherPriority.Background, (_, _) => _ = V2pnPartners.Instance.RefreshAsync());
         _pruneTimer.Start();
         Update();
     }

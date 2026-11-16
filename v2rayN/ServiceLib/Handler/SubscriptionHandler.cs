@@ -84,7 +84,7 @@ public static class SubscriptionHandler
 
     /// <summary>
     /// V2pn: new-url or new-domain from the panel (HTTP headers only), honoured for a subscription whose verified
-    /// partner certificate names the new host (V2pnSubDefaults.MovedUrl). The subscription keeps its id, name and
+    /// partner's listing names the new host (V2pnSubDefaults.MovedUrl). The subscription keeps its id, name and
     /// settings; only its address changes, and the log says so.
     /// </summary>
     private static async Task MoveIfAskedAsync(Config config, SubItem item, IReadOnlyDictionary<string, string>? headers, string hashCode, Func<bool, string, Task> updateFunc)
@@ -97,10 +97,10 @@ public static class SubscriptionHandler
             return;
         }
         var partner = V2pnPartners.Instance.ForSubscription(item);
-        var target = V2pnSubDefaults.MovedUrl(item.Url, newUrl, newDomain, partner?.Cert);
+        var target = V2pnSubDefaults.MovedUrl(item.Url, newUrl, newDomain, partner?.Listing);
         if (target == null)
         {
-            Logging.SaveLog($"V2pn: {Utils.TryUri(item.Url)?.Host} asked to move the subscription; ignored (no verified partner certificate for the new address)");
+            Logging.SaveLog($"V2pn: {Utils.TryUri(item.Url)?.Host} asked to move the subscription; ignored (the new address is not a domain of a verified partner)");
             return;
         }
         var subs = await AppManager.Instance.SubItems() ?? [];

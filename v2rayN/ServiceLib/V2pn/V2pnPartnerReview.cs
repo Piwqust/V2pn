@@ -2,8 +2,8 @@ namespace ServiceLib;
 
 /// <summary>
 /// The files of a pack that change traffic and are used only after the owner of V2pn read them by hand: the
-/// certificate grants the right and names each file's SHA-256 in "reviewed", so a file changed afterwards is not used
-/// until a new certificate is issued for it.
+/// listing grants the right and names each file's SHA-256 in "reviewed", so a file changed afterwards is not used
+/// until the owner reviews it again and publishes its new hash.
 /// </summary>
 public static class V2pnReviewedFiles
 {
@@ -27,7 +27,7 @@ public static class V2pnReviewedFiles
 
 public enum V2pnReviewState
 {
-    /// <summary>The certificate has no grant or no reviewed hash for the file: V2pn never read it.</summary>
+    /// <summary>The listing has no grant or no reviewed hash for the file: V2pn never read it.</summary>
     NotReviewed,
 
     /// <summary>The file differs from the one V2pn reviewed.</summary>
@@ -69,11 +69,11 @@ public sealed class V2pnPartnerFeatures
     public V2pnReviewedFile? File(string name) => Files.FirstOrDefault(f => f.Name == name);
 
     /// <summary>
-    /// Reads the reviewed files of <paramref name="pack"/>: each is used only when the certificate grants it and names
+    /// Reads the reviewed files of <paramref name="pack"/>: each is used only when the listing grants it and names
     /// the very hash the pack pins (and the bytes have it), and it passes its format's checks.
     /// </summary>
     /// <param name="content">The bytes of a pack file, already checked against the pack's size and hash; null when missing.</param>
-    public static V2pnPartnerFeatures Read(V2pnPartnerCert cert, V2pnPartnerPack pack, Func<string, byte[]?> content)
+    public static V2pnPartnerFeatures Read(V2pnPartnerListing listing, V2pnPartnerPack pack, Func<string, byte[]?> content)
     {
         var files = new List<V2pnReviewedFile>();
         V2pnRoutingPreset? routing = null;
@@ -83,9 +83,9 @@ public sealed class V2pnPartnerFeatures
         foreach (var asset in V2pnReviewedFiles.All.Select(pack.Asset).OfType<V2pnPartnerAsset>())
         {
             var grant = V2pnReviewedFiles.GrantOf(asset.Name);
-            if (!cert.Allows(grant) || !cert.ReviewedFiles.TryGetValue(asset.Name, out var reviewed))
+            if (!listing.Allows(grant) || !listing.ReviewedFiles.TryGetValue(asset.Name, out var reviewed))
             {
-                files.Add(new(asset.Name, grant, V2pnReviewState.NotReviewed, $"the certificate has no {grant} grant with a reviewed hash for {asset.Name}"));
+                files.Add(new(asset.Name, grant, V2pnReviewState.NotReviewed, $"the listing has no {grant} grant with a reviewed hash for {asset.Name}"));
                 continue;
             }
             var bytes = content(asset.Name);

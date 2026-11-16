@@ -23,10 +23,10 @@ public static partial class L
     // The subscription window: the provider's own look of V2pn.
     public static string SubPartnerTitle => T("Provider's look", "Оформление провайдера");
     public static string SubPartnerConfirmed => T("{0}, confirmed by V2pn until {1}.", "{0}, подтверждено V2pn до {1}.");
-    public static string SubPartnerChecking => T("The provider offers its look; V2pn is checking its signature.", "Провайдер предлагает своё оформление, V2pn проверяет подпись.");
+    public static string SubPartnerChecking => T("{0} is a V2pn partner; V2pn is getting its look.", "{0} — партнёр V2pn, V2pn загружает его оформление.");
     public static string SubPartnerRefused => T(
-        "The provider offers its look, but it did not pass V2pn's check, so V2pn keeps its own. The servers work as usual.",
-        "Провайдер предлагает своё оформление, но оно не прошло проверку V2pn, поэтому V2pn остаётся обычным. Серверы работают как обычно.");
+        "{0} is a V2pn partner, but its look did not download or pass V2pn's check, so V2pn keeps its own for now. The servers work as usual.",
+        "{0} — партнёр V2pn, но его оформление не загрузилось или не прошло проверку V2pn, поэтому пока V2pn обычный. Серверы работают как обычно.");
 
     // The partner whose colours V2pn wore went away; plain V2pn is back.
     public static string EditionGoneUnlinked => T(

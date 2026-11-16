@@ -58,11 +58,10 @@ public class V2pnPartnerApiTests
     [Test]
     public async Task Account_GoesOnlyToTheCertifiedApi_WithTheToken()
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert();
+        var cert = TestPartner.Listing();
         var json = TestPartner.Pack();
-        var pack = V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)!;
-        var partner = new V2pnPartner(cert, pack, Path.GetTempPath(), "https://config.example.com/v2pn/");
+        var pack = V2pnPartnerTrust.ReadPack(json, cert, out _)!;
+        var partner = new V2pnPartner(cert, pack, Path.GetTempPath());
         var asked = new List<(string Url, string? Bearer)>();
         var saved = V2pnPartnerApi.Fetch;
         V2pnPartnerApi.Fetch = (url, bearer, _) =>

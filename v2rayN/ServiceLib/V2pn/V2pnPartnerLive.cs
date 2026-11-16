@@ -43,7 +43,7 @@ public sealed class V2pnPartnerLive
     /// </summary>
     public async Task<bool> RefreshAsync(V2pnPartner partner, string? token, DateTime now, bool force = false, CancellationToken cancellationToken = default)
     {
-        if (partner.Pack.ApiUrl == null || !partner.Cert.Allows(V2pnPartnerGrants.Actions))
+        if (partner.Pack.ApiUrl == null || !partner.Listing.Allows(V2pnPartnerGrants.Actions))
         {
             return false;
         }

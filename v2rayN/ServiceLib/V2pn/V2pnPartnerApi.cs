@@ -20,7 +20,7 @@ public sealed record V2pnPartnerAccount(
 public sealed record V2pnPartnerIncident(string Title, string? Text, bool Severe);
 
 /// <summary>
-/// A partner's optional API (pack field "api", only with the "account" grant and on the certificate's domains):
+/// A partner's optional API (pack field "api", only with the "account" grant and on the listing's domains):
 /// <c>GET account</c> with the subscription's v2pn-account-token as a bearer token, <c>GET status</c> without one, and
 /// for the partner's buttons <c>GET servers</c>, <c>GET recommend?purpose=</c> and <c>GET card?id=</c> with the token
 /// when the subscription has one.
@@ -95,7 +95,7 @@ public static class V2pnPartnerApi
     private static string? Base(V2pnPartner partner)
     {
         var api = partner.Pack.ApiUrl;
-        if (api.IsNullOrEmpty() || !partner.Cert.Allows(V2pnPartnerGrants.Account) || !V2pnPartnerTrust.DomainAllowed(partner.Cert, api))
+        if (api.IsNullOrEmpty() || !partner.Listing.Allows(V2pnPartnerGrants.Account) || !V2pnPartnerTrust.DomainAllowed(partner.Listing, api))
         {
             return null;
         }

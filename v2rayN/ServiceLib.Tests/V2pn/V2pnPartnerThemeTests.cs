@@ -9,10 +9,9 @@ public class V2pnPartnerThemeTests
 
     private static V2pnPartnerPack? ReadPack(string partner, string[]? variants, Action<JsonObject>? more = null, string? first = null)
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert(p.Cert(partner: partner));
+        var cert = TestPartner.Listing(partner: partner);
         var json = TestPartner.Pack(id: partner, variants: variants, first: first, more: more);
-        return V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _);
+        return V2pnPartnerTrust.ReadPack(json, cert, out _);
     }
 
     [Test]
@@ -21,28 +20,22 @@ public class V2pnPartnerThemeTests
         var theme = Read("""
             {
               "palette": { "brand": ["#0a7cff", "#ff2d87", "#ffd600"] },
-              "background": { "type": "gradient", "colors": ["#0A7CFF", "#5B2DFF", "#141A33"] },
-              "connect": "Toggle",
-              "window": "full"
+              "background": { "type": "gradient", "colors": ["#0A7CFF", "#5B2DFF", "#141A33"] }
             }
             """);
 
         await string.Join(",", theme.Brand).Should().BeEqualTo("#0A7CFF,#FF2D87,#FFD600");
         await theme.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Gradient);
         await theme.Background.Colors.Count.Should().BeEqualTo(3);
-        await theme.Connect.Should().BeEqualTo(V2pnThemeConnect.Toggle);
-        await theme.Window.Should().BeEqualTo(V2pnThemeWindow.Full);
         await theme.Notes.Count.Should().BeEqualTo(0);
     }
 
     [Test]
-    public async Task Theme_Missing_IsTheDefaultInTheBrandColour_NeonInTheMiniWindow()
+    public async Task Theme_Missing_IsTheDefaultInTheBrandColour_WithoutABackground()
     {
         var theme = V2pnThemeReader.Parse(null, "#2f7bff", _ => false);
 
         await theme.Brand[0].Should().BeEqualTo("#2F7BFF");
-        await theme.Connect.Should().BeEqualTo(V2pnThemeConnect.Round);
-        await theme.Window.Should().BeEqualTo(V2pnThemeWindow.Mini);
         await theme.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Solid);
         await theme.Notes.Count.Should().BeEqualTo(0);
     }
@@ -52,37 +45,34 @@ public class V2pnPartnerThemeTests
     {
         var theme = Read("""
             {
-              "connect": "capsule", "window": "huge",
               "palette": { "brand": ["red", "#12345", "#112233", "#445566", "#778899", "#AABBCC"] },
               "background": { "type": "gradient", "colors": ["#000000"] },
               "script": "alert(1)"
             }
             """);
 
-        await theme.Connect.Should().BeEqualTo(V2pnThemeConnect.Round);
-        await theme.Window.Should().BeEqualTo(V2pnThemeWindow.Mini);
         await string.Join(",", theme.Brand).Should().BeEqualTo("#112233,#445566,#778899");
         await theme.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Solid);
-        foreach (var field in new[] { "connect", "window", "brand", "background", "script" })
+        foreach (var field in new[] { "brand", "background", "script" })
         {
             await theme.Notes.Any(n => n.Contains(field)).Should().BeTrue();
         }
     }
 
     [Test]
-    public async Task Theme_OfTheSixTemplates_IsReadWithoutError_ItsOldFieldsNoted()
+    public async Task Theme_OfOlderLooks_IsReadWithoutError_ItsOldFieldsNoted()
     {
         var theme = Read("""
             {
               "template": "split", "connect": "toggle", "font": "Manrope", "corners": "round", "density": "compact",
               "palette": { "brand": ["#6D5DFC"], "tone": "cool" },
-              "blocks": ["plan", "servers"], "art": { "hero": "orb.png" }
+              "blocks": ["plan", "servers"], "art": { "hero": "orb.png" }, "window": "full"
             }
             """, pictures: ["orb.png"]);
 
         await theme.Brand[0].Should().BeEqualTo("#6D5DFC");
-        await theme.Connect.Should().BeEqualTo(V2pnThemeConnect.Toggle);
-        foreach (var field in new[] { "template", "font", "corners", "density", "blocks", "art", "tone" })
+        await theme.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Solid);
+        foreach (var field in new[] { "template", "connect", "window", "font", "corners", "density", "blocks", "art", "tone" })
         {
             await theme.Notes.Any(n => n.Contains($"theme.{field}") || n.Contains($"palette.{field}")).Should().BeTrue();
         }
@@ -95,7 +85,6 @@ public class V2pnPartnerThemeTests
         {
             var theme = Read(json);
             await theme.Brand[0].Should().BeEqualTo("#2F7BFF");
-            await theme.Connect.Should().BeEqualTo(V2pnThemeConnect.Round);
             await (theme.Notes.Count > 0).Should().BeTrue();
         }
     }
@@ -240,61 +229,48 @@ public class V2pnPartnerThemeTests
     }
 
     [Test]
-    public async Task Variants_OlderNames_ComeToNeonOrPass()
-    {
-        await V2pnPartnerVariants.Normalize("signature").Should().BeEqualTo(V2pnPartnerVariants.Pass);
-        await V2pnPartnerVariants.Normalize("warm").Should().BeEqualTo(V2pnPartnerVariants.Pass);
-        foreach (var name in new[] { "theme", "cabinet", "studio", "ascii", " NEON " })
-        {
-            await V2pnPartnerVariants.Normalize(name).Should().BeEqualTo(V2pnPartnerVariants.Neon);
-        }
-        await (V2pnPartnerVariants.Normalize("bogus") == null).Should().BeTrue();
-        await string.Join(",", V2pnPartnerVariants.For(["pass", "signature", "bogus"], hasTheme: true)).Should().BeEqualTo("pass");
-        await string.Join(",", V2pnPartnerVariants.For([], hasTheme: true)).Should().BeEqualTo("neon,pass");
-        await string.Join(",", V2pnPartnerVariants.For([], hasTheme: false)).Should().BeEqualTo("pass,neon");
-    }
-
-    [Test]
-    public async Task Pack_OfConfigra_ListingItsOldLooks_GetsNeonAndPass()
+    public async Task Pack_OfConfigra_ListingItsOldLooks_IsReadInItsBrandColour_TheLooksNoted()
     {
         var pack = ReadPack("configra", null, first: "cabinet")!;
 
-        await string.Join(",", pack.Variants).Should().BeEqualTo("pass,neon");
-        await pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Neon);
         await pack.Theme!.Brand[0].Should().BeEqualTo("#FF7A2F");
+        await pack.Theme.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Solid);
+        await pack.Notes.Any(n => n.StartsWith("edition.variants", StringComparison.Ordinal)).Should().BeTrue();
+        await pack.Notes.Any(n => n.StartsWith("edition.default", StringComparison.Ordinal)).Should().BeTrue();
     }
 
     [Test]
-    public async Task Pack_WithAThemeAndNoLooks_OpensNeon_InItsBrandColour()
+    public async Task Pack_WithAGradient_HasTheBackgroundOfTheScene()
     {
         var pack = ReadPack("kestrel", [], more: p =>
         {
-            ((JsonObject)p["edition"]!).Remove("variants");
-            p["theme"] = new JsonObject { ["connect"] = "toggle", ["window"] = "full" };
+            p.Remove("edition");
+            p["theme"] = new JsonObject
+            {
+                ["background"] = new JsonObject { ["type"] = "gradient", ["colors"] = new JsonArray("#FF7A2F", "#EDAA80") },
+                ["connect"] = "toggle",
+            };
         })!;
 
-        await string.Join(",", pack.Variants).Should().BeEqualTo("neon,pass");
-        await pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Neon);
         await pack.Theme!.Brand[0].Should().BeEqualTo("#FF7A2F");
-        await pack.Theme.Connect.Should().BeEqualTo(V2pnThemeConnect.Toggle);
-        await pack.Theme.Window.Should().BeEqualTo(V2pnThemeWindow.Full);
+        await pack.Theme.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Gradient);
+        await pack.Notes.Count.Should().BeEqualTo(0);
+        await pack.Theme.Notes.Single().Contains("theme.connect is no longer used").Should().BeTrue();
     }
 
     [Test]
     public async Task Pack_ThemeWithoutTheEditionGrant_IsNotUsed()
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert(p.Cert(partner: "kestrel", grants: ["account"]));
+        var cert = TestPartner.Listing(partner: "kestrel", grants: ["account"]);
         var json = TestPartner.Pack(id: "kestrel", variants: ["neon"], more: x => x["theme"] = new JsonObject());
 
-        var pack = V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)!;
+        var pack = V2pnPartnerTrust.ReadPack(json, cert, out _)!;
 
-        await pack.Variants.Count.Should().BeEqualTo(0);
         await (pack.Theme == null).Should().BeTrue();
     }
 
     [Test]
-    public async Task Slots_ACardPictureThatDoesNotFit_IsTakenOut_TheThemeStays()
+    public async Task Slots_ABackgroundPictureThatDoesNotFit_IsTakenOut_TheThemeStays()
     {
         static byte[] Png(int w, int h)
         {
@@ -305,7 +281,7 @@ public class V2pnPartnerThemeTests
             return b;
         }
         var files = new Dictionary<string, byte[]> { ["sky.png"] = Png(1600, 1000), ["strip.png"] = Png(3000, 200) };
-        V2pnPartnerPack Pack(string picture) => new("kestrel", "Kestrel", "#2F7BFF", null, null, ["neon"], "neon", new Dictionary<string, string>(),
+        V2pnPartnerPack Pack(string picture) => new("kestrel", "Kestrel", "#2F7BFF", null, null,
             null, null, null, [], Theme: V2pnTheme.Default("#2F7BFF") with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Image, [], picture) });
 
         var lost = V2pnPartnerSlots.Fit(Pack("strip.png"), files.GetValueOrDefault, out var problems);

@@ -5563,7 +5563,7 @@ namespace ServiceLib.Resx {
         }
 
         /// <summary>
-        ///   Looks up a localized string similar to The provider moved the subscription to {0}. Its partner certificate names this address, so V2pn will update from it from now on..
+        ///   Looks up a localized string similar to The provider moved the subscription to {0}. V2pn lists this address as the partner's, so it will update from it from now on..
         /// </summary>
         public static string MsgV2pnSubMoved {
             get {

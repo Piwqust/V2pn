@@ -23,9 +23,6 @@ public sealed record SubPanelInfo
     public string? WebPageUrl { get; init; }
     public string? Announce { get; init; }
 
-    /// <summary>v2pn-partner: the https folder of the provider's signed partner pack (V2pnPartner); null when absent.</summary>
-    public string? PartnerUrl { get; init; }
-
     /// <summary>v2pn-account-token: the holder's token for the partner's live-data API; null when absent.</summary>
     public string? AccountToken { get; init; }
 
@@ -100,6 +97,7 @@ public static class SubPanelHeaders
     public const string SupportUrl = "support-url";
     public const string WebPageUrl = "profile-web-page-url";
     public const string Announce = "announce";
+    /// <summary>The header that once named a partner's own pack folder. Ignored: a subscription's partner is the one whose domains hold its link.</summary>
     public const string Partner = "v2pn-partner";
     public const string AccountToken = "v2pn-account-token";
 
@@ -158,7 +156,7 @@ public static class SubPanelHeaders
 
     private static readonly string[] Known =
     [
-        ProfileTitle, ContentDisposition, UserInfo, UpdateInterval, SupportUrl, WebPageUrl, Announce, Partner, AccountToken,
+        ProfileTitle, ContentDisposition, UserInfo, UpdateInterval, SupportUrl, WebPageUrl, Announce, AccountToken,
         AnnounceUrl, SubInfoText, SubInfoColor, SubInfoButtonText, SubInfoButtonLink, BannerText, BannerButtonText,
         BannerButtonUrl, BannerUrl, PremiumUrl, SubExpire, SubExpireButtonLink, ExpiryBannerText, ExpiryBannerButtonText,
         ExpiryBannerButtonUrl, ExpiryBannerUrl, Autoconnect, AutoconnectType, SortType, SortOrder, PingOnOpen, PingType,
@@ -246,7 +244,6 @@ public static class SubPanelHeaders
             SupportUrl = ParseLink(Get(SupportUrl)),
             WebPageUrl = ParseLink(Get(WebPageUrl)),
             Announce = Clip(DecodeText(Get(Announce)), MaxAnnounce),
-            PartnerUrl = ParsePartnerUrl(Get(Partner)),
             AccountToken = ParseToken(Get(AccountToken)),
             AnnounceUrl = ParseSecureLink(Get(AnnounceUrl)),
             InfoText = happInfo ?? incyInfo,
@@ -566,19 +563,6 @@ public static class SubPanelHeaders
             return null;
         }
         return uri.Scheme is "http" or "https" or "tg" ? text : null;
-    }
-
-    /// <summary>An https folder URL with no user info, ending in "/"; null for anything else.</summary>
-    public static string? ParsePartnerUrl(string? value)
-    {
-        var text = value?.Trim();
-        if (text.IsNullOrEmpty() || text.Any(char.IsWhiteSpace) || !Uri.TryCreate(text, UriKind.Absolute, out var uri)
-            || !(uri.Scheme == Uri.UriSchemeHttps || V2pnPartnerTrust.DevLoopback(uri)) || uri.UserInfo.Length > 0 || uri.Query.Length > 0 || uri.Fragment.Length > 0)
-        {
-            return null;
-        }
-        var url = uri.GetLeftPart(UriPartial.Path);
-        return url.EndsWith('/') ? url : url + "/";
     }
 
     public static string? ParseToken(string? value)

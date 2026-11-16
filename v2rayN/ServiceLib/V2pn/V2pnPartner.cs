@@ -1,18 +1,20 @@
 namespace ServiceLib;
 
+/// <summary>partner-&lt;id&gt;.zip of the published index: its pack, pinned by size and SHA-256.</summary>
+public sealed record V2pnPartnerZip(string File, long Size, string Sha256);
+
 /// <summary>
-/// cert.json of a partner: the owner of V2pn's partner root key says which provider may dress V2pn,
-/// from which domains, with which key, until when. Signed (cert.json.sig) with a root key whose public
-/// half is built into the app (<see cref="V2pnInfo.PartnerKeys"/>).
+/// A partner as the owner of V2pn lists it in partners.json, the index V2pn publishes with its releases and signs with the
+/// partner root key (<see cref="V2pnInfo.PartnerKeys"/>): which subscription domains are the partner's, what it may do,
+/// until when, and which pack it wears.
 /// </summary>
-public sealed record V2pnPartnerCert(
-    string Partner,
+public sealed record V2pnPartnerListing(
+    string Id,
     string Name,
     IReadOnlyList<string> Domains,
-    string Key,
     IReadOnlyList<string> Grants,
-    DateOnly Issued,
-    DateOnly Expires,
+    DateOnly Until,
+    V2pnPartnerZip Zip,
     IReadOnlyDictionary<string, string>? Reviewed = null)
 {
     public bool Allows(string grant) => Grants.Contains(grant);
@@ -26,22 +28,26 @@ public sealed record V2pnPartnerCert(
     private static readonly IReadOnlyDictionary<string, string> EmptyReviewed = new Dictionary<string, string>();
 }
 
-/// <summary>A file of the pack (logo, artwork), pinned by size and SHA-256 in the signed partner.json.</summary>
+/// <summary>partners.json: every partner V2pn knows, as the owner of V2pn signed it.</summary>
+/// <param name="Problems">Entries left out and why (a newer format, a mistake); the rest of the index stands.</param>
+public sealed record V2pnPartnerIndex(IReadOnlyList<V2pnPartnerListing> Partners, IReadOnlyList<string> Problems)
+{
+    public V2pnPartnerListing? Get(string? id) => Partners.FirstOrDefault(p => p.Id == id);
+
+    /// <summary>The partner whose domains hold the host of <paramref name="subscriptionUrl"/>; the first one listed when several do.</summary>
+    public V2pnPartnerListing? ForUrl(string? subscriptionUrl) => Partners.FirstOrDefault(p => V2pnPartnerTrust.DomainAllowed(p, subscriptionUrl));
+}
+
+/// <summary>A file of the pack (logo, artwork, reviewed file), pinned by size and SHA-256 in partner.json.</summary>
 public sealed record V2pnPartnerAsset(string Name, long Size, string Sha256);
 
-/// <summary>
-/// partner.json: what the provider wants V2pn to look like. Signed (partner.json.sig) with the key its
-/// certificate names, so the provider changes it without the owner of V2pn, but only within the grants.
-/// </summary>
+/// <summary>partner.json: what the partner wants V2pn to look like, taken only within its listing's grants.</summary>
 public sealed record V2pnPartnerPack(
     string Id,
     string Name,
     string? Accent,
     string? Logo,
     string? LogoOnLight,
-    IReadOnlyList<string> Variants,
-    string DefaultVariant,
-    IReadOnlyDictionary<string, string> Art,
     string? CabinetUrl,
     string? SupportUrl,
     string? ApiUrl,
@@ -58,54 +64,21 @@ public sealed record V2pnPartnerPack(
     /// <summary>The partner's buttons, at most four (needs the actions grant).</summary>
     public IReadOnlyList<V2pnPartnerAction> ActionList => Actions ?? [];
 
+    /// <summary>Fields of older pack formats that were read without error and are not used, one line each (tools/partner-check.cs).</summary>
+    public IReadOnlyList<string> Notes { get; init; } = [];
+
     public V2pnPartnerAsset? Asset(string? name) => Assets.FirstOrDefault(a => a.Name == name);
-}
-
-/// <summary>
-/// The two looks V2pn draws for a partner. A pack picks which of them it allows and which comes first and gives them
-/// its colours (<see cref="V2pnTheme"/>); it never ships layout or code.
-/// </summary>
-public static class V2pnPartnerVariants
-{
-    /// <summary>V2pn as it is with the partner's pass: a card in its brand with the plan, the days left and the traffic.</summary>
-    public const string Pass = "pass";
-
-    /// <summary>One column like a phone app (INCY, Happ): a round button with a glowing ring or a switch, the subscription card, the servers.</summary>
-    public const string Neon = "neon";
-
-    public static readonly IReadOnlyList<string> All = [Pass, Neon];
-
-    /// <summary>
-    /// The look a name means, older names included: V2pn with the logo ("signature") and Configra's "warm" are the Pass;
-    /// the six-template "theme" and Configra's own screens are Neon. Null for a name V2pn never had.
-    /// </summary>
-    public static string? Normalize(string? name) => name?.Trim().ToLowerInvariant() switch
-    {
-        Pass or "signature" or "warm" => Pass,
-        Neon or "theme" or "cabinet" or "studio" or "ascii" => Neon,
-        _ => null,
-    };
-
-    /// <summary>
-    /// What a pack's list of looks comes to: known looks only, once each, in its order. A pack that lists none gets
-    /// both, Neon first when it has a theme.
-    /// </summary>
-    public static List<string> For(IEnumerable<string> listed, bool hasTheme)
-    {
-        var looks = listed.Select(Normalize).OfType<string>().Distinct().ToList();
-        return looks.Count > 0 ? looks : hasTheme ? [Neon, Pass] : [Pass, Neon];
-    }
 }
 
 public static class V2pnPartnerGrants
 {
-    /// <summary>The partner may dress the window (its logo, colours and the variants of its pack).</summary>
+    /// <summary>The partner may dress the window: Accent (its logo and colour), and Scene when its theme has a background.</summary>
     public const string Edition = "edition";
 
     /// <summary>V2pn may ask the partner's API for the holder's plan and server state.</summary>
     public const string Account = "account";
 
-    /// <summary>The partner's buttons and its description of its servers (groups, countries, purposes). Every partner gets it.</summary>
+    /// <summary>The partner's buttons and its description of its servers (groups, countries, purposes).</summary>
     public const string Actions = "actions";
 
     /// <summary>
@@ -126,81 +99,206 @@ public static class V2pnPartnerGrants
     public static readonly IReadOnlyList<string> All = [Edition, Account, Actions, Lock, Routing, Transport, Core];
 }
 
-/// <summary>Reads and checks a partner's certificate and pack. Pure: no network, no files, no clock but the one passed in.</summary>
+/// <summary>Reads and checks the partner index and the packs it pins. Pure: no network, no files, no clock but the one passed in.</summary>
 public static class V2pnPartnerTrust
 {
-    public const int MaxCertBytes = 16 * 1024;
+    public const string IndexFile = "partners.json";
+    public const string PackFile = "partner.json";
+    public const int MaxIndexBytes = 256 * 1024;
     public const int MaxPackBytes = 64 * 1024;
     public const int MaxAssetBytes = 1024 * 1024;
     public const int MaxAssets = 8;
 
+    /// <summary>A pack's zip at most: partner.json, eight pictures and the three reviewed files, with room for the zip's own headers.</summary>
+    public const int MaxZipBytes = MaxPackBytes + MaxAssets * MaxAssetBytes + 3 * V2pnReviewedFiles.MaxBytes + 64 * 1024;
+
     private static readonly string[] AssetExtensions = [".png", ".webp", ".jpg", ".jpeg"];
     private static readonly Regex PartnerId = new("^[a-z0-9][a-z0-9-]{1,31}$", RegexOptions.CultureInvariant);
     private static readonly Regex Colour = new("^#[0-9A-Fa-f]{6}$", RegexOptions.CultureInvariant);
+
+    // File names that become names on disk: plain ASCII, no folders, no leading dot, nothing Windows reserves.
+    private static readonly Regex FileName = new("^[A-Za-z0-9][A-Za-z0-9_-]{0,47}(\\.[A-Za-z0-9]{1,8})$", RegexOptions.CultureInvariant);
+    private static readonly HashSet<string> ReservedNames = new(StringComparer.OrdinalIgnoreCase)
+    {
+        "con", "prn", "aux", "nul", "com1", "com2", "com3", "com4", "com5", "com6", "com7", "com8", "com9",
+        "lpt1", "lpt2", "lpt3", "lpt4", "lpt5", "lpt6", "lpt7", "lpt8", "lpt9",
+    };
     private const int MaxName = 40;
 
-    /// <summary>The certificate when its signature is one of <paramref name="rootKeys"/>, it is well formed and <paramref name="today"/> is inside its term.</summary>
-    public static V2pnPartnerCert? ReadCert(byte[]? json, string? signature, IEnumerable<string> rootKeys, DateOnly today, out string error)
+    /// <summary>The name the zip of partner <paramref name="id"/> has in a release.</summary>
+    public static string ZipName(string id) => $"partner-{id}.zip";
+
+    /// <summary>
+    /// The index when its signature is one of <paramref name="rootKeys"/> over these exact bytes and it parses. An entry
+    /// that does not parse is left out and named in <see cref="V2pnPartnerIndex.Problems"/>; one partner twice refuses the whole index.
+    /// </summary>
+    public static V2pnPartnerIndex? ReadIndex(byte[]? json, string? signature, IEnumerable<string> rootKeys, out string error)
     {
-        if (json is not { Length: > 0 and <= MaxCertBytes })
+        if (json is not { Length: > 0 and <= MaxIndexBytes })
         {
-            error = "The partner certificate is missing.";
+            error = "The partner index is missing or larger than 256 KB.";
             return null;
         }
         if (!V2pnManifest.VerifySignature(json, signature, rootKeys))
         {
-            error = "The partner certificate is not signed by V2pn.";
+            error = "The partner index is not signed by V2pn.";
             return null;
         }
-        var cert = ParseCert(json);
-        if (cert == null)
+        try
         {
-            error = "The partner certificate is malformed.";
-            return null;
+            if (JsonNode.Parse(json) is not JsonObject root || root["schema"]?.GetValue<int>() != 1 || root["partners"] is not JsonArray array)
+            {
+                error = "The partner index is malformed.";
+                return null;
+            }
+            var partners = new List<V2pnPartnerListing>();
+            var problems = new List<string>();
+            foreach (var (node, i) in array.Select((n, i) => (n, i)))
+            {
+                var problem = "not an object";
+                var listing = node is JsonObject item ? ParseListing(item, out problem) : null;
+                if (listing == null)
+                {
+                    problems.Add($"partners[{i}]: {problem}; left out");
+                    continue;
+                }
+                if (partners.Any(p => p.Id == listing.Id))
+                {
+                    error = $"The partner index lists {listing.Id} twice.";
+                    return null;
+                }
+                partners.Add(listing);
+            }
+            error = string.Empty;
+            return new V2pnPartnerIndex(partners, problems);
         }
-        if (today < cert.Issued || today > cert.Expires)
+        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
-            error = $"The partner certificate is valid from {cert.Issued:yyyy-MM-dd} to {cert.Expires:yyyy-MM-dd}.";
+            error = "The partner index is malformed.";
             return null;
         }
-        error = string.Empty;
-        return cert;
     }
 
-    /// <summary>The pack when the key of <paramref name="cert"/> signed it and it stays inside the certificate's partner, domains and grants.</summary>
-    public static V2pnPartnerPack? ReadPack(byte[]? json, string? signature, V2pnPartnerCert cert, out string error)
+    /// <summary>
+    /// Opens partner-&lt;id&gt;.zip of <paramref name="listing"/>: its size and SHA-256 must be the index's, every entry a
+    /// plain file name of an allowed kind within the size limits, partner.json must read under the listing, and every
+    /// other entry must be one of its assets with its size and hash. Null with the reason otherwise.
+    /// </summary>
+    public static V2pnPartnerPack? Unpack(byte[]? zip, V2pnPartnerListing listing, out Dictionary<string, byte[]> files, out string error)
     {
-        if (json is not { Length: > 0 and <= MaxPackBytes })
+        files = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        if (zip == null || zip.LongLength != listing.Zip.Size || zip.Length > MaxZipBytes || Convert.ToHexStringLower(SHA256.HashData(zip)) != listing.Zip.Sha256)
         {
-            error = "The partner pack is missing.";
+            error = $"{listing.Zip.File} is not the one the partner index names.";
             return null;
         }
-        if (!V2pnManifest.VerifySignature(json, signature, [cert.Key]))
+        if (ReadZip(zip, out var entries, out error) == false)
         {
-            error = "The partner pack is not signed by the partner's key.";
             return null;
         }
-        var pack = ParsePack(json, cert, out error);
+        if (!entries.TryGetValue(PackFile, out var packJson))
+        {
+            error = $"{listing.Zip.File} has no {PackFile}.";
+            return null;
+        }
+        var pack = ReadPack(packJson, listing, out error);
         if (pack == null)
         {
             return null;
         }
+        foreach (var asset in pack.Assets)
+        {
+            if (!entries.TryGetValue(asset.Name, out var content) || !AssetMatches(asset, content))
+            {
+                error = $"The file {asset.Name} does not match partner.json.";
+                return null;
+            }
+        }
+        if (entries.Keys.FirstOrDefault(name => name != PackFile && pack.Asset(name) == null) is { } stray)
+        {
+            error = $"{listing.Zip.File} has {stray}, which partner.json does not list.";
+            return null;
+        }
+        files = entries;
         error = string.Empty;
         return pack;
     }
 
-    /// <summary>
-    /// A pack read without its signature, under <paramref name="cert"/>, with every check a signed one gets (fields, grants,
-    /// theme). For the theme builder's preview only: nothing read this way is ever kept or trusted as a partner.
-    /// </summary>
-    public static V2pnPartnerPack? ReadUnsignedPack(byte[]? json, V2pnPartnerCert cert, out string error)
+    /// <summary>The entries of a pack's zip by name, read within the limits; false with the reason when any entry breaks a rule.</summary>
+    private static bool ReadZip(byte[] zip, out Dictionary<string, byte[]> entries, out string error)
+    {
+        entries = new Dictionary<string, byte[]>(StringComparer.Ordinal);
+        try
+        {
+            using var archive = new System.IO.Compression.ZipArchive(new MemoryStream(zip, writable: false), System.IO.Compression.ZipArchiveMode.Read);
+            if (archive.Entries.Count > MaxAssets + 1 + V2pnReviewedFiles.All.Count)
+            {
+                error = "The pack has more files than a pack may.";
+                return false;
+            }
+            long total = 0;
+            foreach (var entry in archive.Entries)
+            {
+                var name = entry.FullName;
+                if (!SafeFileName(name) || !(name == PackFile || V2pnReviewedFiles.All.Contains(name) || IsPictureName(name)))
+                {
+                    error = $"The pack has an entry V2pn does not take: \"{Clip(name)}\".";
+                    return false;
+                }
+                // Two names Windows sees as one would overwrite each other on disk.
+                if (entries.Keys.Any(k => string.Equals(k, name, StringComparison.OrdinalIgnoreCase)))
+                {
+                    error = $"The pack has {name} twice.";
+                    return false;
+                }
+                var limit = name == PackFile ? MaxPackBytes : V2pnReviewedFiles.All.Contains(name) ? V2pnReviewedFiles.MaxBytes : MaxAssetBytes;
+                // The declared size can lie; the read stops one byte past the limit whatever it says.
+                using var stream = entry.Open();
+                var content = ReadAtMost(stream, limit + 1);
+                if (content.Length > limit)
+                {
+                    error = $"{name} in the pack is larger than {limit / 1024} KB.";
+                    return false;
+                }
+                total += content.Length;
+                if (total > MaxZipBytes)
+                {
+                    error = "The pack unpacks to more than a pack may hold.";
+                    return false;
+                }
+                entries[name] = content;
+            }
+            error = string.Empty;
+            return true;
+        }
+        catch (Exception ex) when (ex is InvalidDataException or IOException or NotSupportedException or ArgumentException)
+        {
+            error = $"The pack is not a zip V2pn can read: {ex.Message}";
+            return false;
+        }
+    }
+
+    private static byte[] ReadAtMost(Stream stream, int max)
+    {
+        using var buffer = new MemoryStream();
+        var chunk = new byte[16 * 1024];
+        int read;
+        while (buffer.Length < max && (read = stream.Read(chunk, 0, (int)Math.Min(chunk.Length, max - buffer.Length))) > 0)
+        {
+            buffer.Write(chunk, 0, read);
+        }
+        return buffer.ToArray();
+    }
+
+    /// <summary>partner.json read under <paramref name="listing"/>: its id must be the listing's; what the grants do not allow is left out.</summary>
+    public static V2pnPartnerPack? ReadPack(byte[]? json, V2pnPartnerListing listing, out string error)
     {
         if (json is not { Length: > 0 and <= MaxPackBytes })
         {
             error = "partner.json is missing or larger than 64 KB.";
             return null;
         }
-        var pack = ParsePack(json, cert, out error);
+        var pack = ParsePack(json, listing, out error);
         if (pack != null)
         {
             error = string.Empty;
@@ -208,8 +306,8 @@ public static class V2pnPartnerTrust
         return pack;
     }
 
-    /// <summary>True when the host of <paramref name="url"/> is one of the certificate's domains or under a "*." one.</summary>
-    public static bool DomainAllowed(V2pnPartnerCert cert, string? url)
+    /// <summary>True when the host of <paramref name="url"/> is one of the listing's domains or under a "*." one.</summary>
+    public static bool DomainAllowed(V2pnPartnerListing listing, string? url)
     {
         var uri = Utils.TryUri(url ?? string.Empty);
         var host = uri?.IdnHost.TrimEnd('.').ToLowerInvariant();
@@ -217,7 +315,7 @@ public static class V2pnPartnerTrust
         {
             return false;
         }
-        foreach (var domain in cert.Domains)
+        foreach (var domain in listing.Domains)
         {
             if (domain.StartsWith("*.", StringComparison.Ordinal))
             {
@@ -238,105 +336,95 @@ public static class V2pnPartnerTrust
     public static bool AssetMatches(V2pnPartnerAsset asset, byte[] content) =>
         content.LongLength == asset.Size && Convert.ToHexStringLower(SHA256.HashData(content)) == asset.Sha256;
 
-    /// <summary>
-    /// partners-revoked.json: certificates the owner withdrew before their term, as "partner@issued" lines in
-    /// a signed list. Null when the list is not signed by a root key or does not parse.
-    /// </summary>
-    public static HashSet<string>? ReadRevoked(byte[]? json, string? signature, IEnumerable<string> rootKeys)
-    {
-        if (json is not { Length: > 0 and <= MaxCertBytes } || !V2pnManifest.VerifySignature(json, signature, rootKeys))
-        {
-            return null;
-        }
-        try
-        {
-            if (JsonNode.Parse(json)?["revoked"] is not JsonArray array)
-            {
-                return null;
-            }
-            return array.Select(n => n?.GetValue<string>()).Where(s => s.IsNotEmpty()).Select(s => s!).ToHashSet(StringComparer.Ordinal);
-        }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
-        {
-            return null;
-        }
-    }
-
-    public static string RevocationKey(V2pnPartnerCert cert) => $"{cert.Partner}@{cert.Issued:yyyy-MM-dd}";
-
-    /// <summary>A partner id a certificate may carry: lowercase letters, digits and dashes, 2 to 32 characters.</summary>
+    /// <summary>A partner id: lowercase letters, digits and dashes, 2 to 32 characters.</summary>
     public static bool ValidId(string? id) => id != null && PartnerId.IsMatch(id);
 
-    /// <summary>The name people see, trimmed, when a certificate or pack may carry it: up to 40 characters, no control characters, no "V2pn".</summary>
+    /// <summary>The name people see, trimmed, when a listing or pack may carry it: up to 40 characters, no control characters, no "V2pn".</summary>
     public static string? ValidName(string? name) => Name(name);
 
-    /// <summary>A domain a certificate may name ("example.com", "*.example.com"; 127.0.0.1 and localhost in a development build).</summary>
+    /// <summary>A subscription domain a listing may name ("example.com", "*.example.com"; 127.0.0.1 and localhost in a development build).</summary>
     public static bool ValidDomain(string? domain) => domain != null && IsDomain(domain);
 
-    /// <summary>An ECDSA P-256 public key as base64 SubjectPublicKeyInfo.</summary>
-    public static bool ValidKey(string? key) => key.IsNotEmpty() && IsP256Key(key!);
+    /// <summary>A file name a pack may carry: plain ASCII letters, digits, "-" and "_", one extension, no folder, nothing Windows reserves.</summary>
+    public static bool SafeFileName(string? name) =>
+        name != null && FileName.IsMatch(name) && !ReservedNames.Contains(Path.GetFileNameWithoutExtension(name));
 
-    private static V2pnPartnerCert? ParseCert(byte[] json)
+    public static bool IsPictureName(string name) => AssetExtensions.Contains(Path.GetExtension(name).ToLowerInvariant());
+
+    /// <summary>One entry of the index; null with the reason when it breaks a rule.</summary>
+    private static V2pnPartnerListing? ParseListing(JsonObject item, out string problem)
     {
-        try
+        var id = Text(item["id"]);
+        if (!ValidId(id))
         {
-            if (JsonNode.Parse(json) is not JsonObject root || root["schema"]?.GetValue<int>() != 1)
-            {
-                return null;
-            }
-            var partner = root["partner"]?.GetValue<string>();
-            var name = Name(root["name"]?.GetValue<string>());
-            var key = root["key"]?.GetValue<string>();
-            var domains = Strings(root["domains"]).Select(d => d.Trim().TrimEnd('.').ToLowerInvariant()).ToList();
-            // A grant this V2pn does not know yet is left out, so a newer certificate still works here.
-            var grants = Strings(root["grants"]).Where(V2pnPartnerGrants.All.Contains).Distinct().ToList();
-            // A file name this V2pn does not know, or a value that is not a SHA-256, is left out the same way.
-            var reviewed = new Dictionary<string, string>(StringComparer.Ordinal);
-            if (root["reviewed"] is JsonObject reviewedObject)
-            {
-                foreach (var (file, value) in reviewedObject)
-                {
-                    if (V2pnReviewedFiles.All.Contains(file) && value is JsonValue hashValue && hashValue.TryGetValue<string>(out var hash)
-                        && hash is { Length: 64 } && hash.All(Uri.IsHexDigit))
-                    {
-                        reviewed[file] = hash.ToLowerInvariant();
-                    }
-                }
-            }
-            if (partner == null || !PartnerId.IsMatch(partner) || name == null || key.IsNullOrEmpty() || !IsP256Key(key)
-                || domains.Count == 0 || !domains.All(IsDomain)
-                || !DateOnly.TryParseExact(root["issued"]?.GetValue<string>(), "yyyy-MM-dd", out var issued)
-                || !DateOnly.TryParseExact(root["expires"]?.GetValue<string>(), "yyyy-MM-dd", out var expires)
-                || expires < issued)
-            {
-                return null;
-            }
-            return new V2pnPartnerCert(partner, name, domains, key, grants, issued, expires, reviewed);
-        }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
-        {
+            problem = "id is not 2 to 32 lowercase letters, digits and dashes";
             return null;
         }
+        var name = Name(Text(item["name"]));
+        var domains = Strings(item["domains"]).Select(d => d.Trim().TrimEnd('.').ToLowerInvariant()).ToList();
+        // A grant this V2pn does not know yet is left out, so a newer index still works here.
+        var grants = Strings(item["grants"]).Where(V2pnPartnerGrants.All.Contains).Distinct().ToList();
+        // A file name this V2pn does not know, or a value that is not a SHA-256, is left out the same way.
+        var reviewed = new Dictionary<string, string>(StringComparer.Ordinal);
+        if (item["reviewed"] is JsonObject reviewedObject)
+        {
+            foreach (var (file, value) in reviewedObject)
+            {
+                if (V2pnReviewedFiles.All.Contains(file) && Text(value) is { Length: 64 } hash && hash.All(Uri.IsHexDigit))
+                {
+                    reviewed[file] = hash.ToLowerInvariant();
+                }
+            }
+        }
+        var zip = item["pack"] as JsonObject;
+        var zipHash = Text(zip?["sha256"])?.ToLowerInvariant();
+        long zipSize = zip?["size"] is JsonValue sizeValue && sizeValue.TryGetValue<long>(out var size) ? size : -1;
+        if (name == null)
+        {
+            problem = $"{id}: name is missing, too long or passes for V2pn";
+        }
+        else if (domains.Count == 0 || !domains.All(IsDomain))
+        {
+            problem = $"{id}: domains has none or one that is not a domain";
+        }
+        else if (!DateOnly.TryParseExact(Text(item["until"]), "yyyy-MM-dd", out var until))
+        {
+            problem = $"{id}: until is not a yyyy-MM-dd date";
+        }
+        else if (Text(zip?["file"]) != ZipName(id!) || zipSize is <= 0 or > MaxZipBytes || zipHash is not { Length: 64 } || !zipHash.All(Uri.IsHexDigit))
+        {
+            problem = $"{id}: pack is not {ZipName(id!)} with its size and sha256";
+        }
+        else
+        {
+            problem = string.Empty;
+            return new V2pnPartnerListing(id!, name, domains, grants, until, new V2pnPartnerZip(ZipName(id!), zipSize, zipHash), reviewed);
+        }
+        return null;
     }
 
-    private static V2pnPartnerPack? ParsePack(byte[] json, V2pnPartnerCert cert, out string error)
+    // Fields of the pack formats before the Accent and Scene look: read without error, used no more.
+    private static readonly string[] RetiredEdition = ["variants", "default", "art"];
+
+    private static V2pnPartnerPack? ParsePack(byte[] json, V2pnPartnerListing listing, out string error)
     {
-        error = "The partner pack is malformed.";
+        error = "partner.json is malformed.";
         try
         {
             if (JsonNode.Parse(json) is not JsonObject root || root["schema"]?.GetValue<int>() != 1)
             {
                 return null;
             }
-            var id = root["id"]?.GetValue<string>();
-            if (id != cert.Partner)
+            var id = Text(root["id"]);
+            if (id != listing.Id)
             {
-                error = "The partner pack belongs to another partner than its certificate.";
+                error = "partner.json belongs to another partner than its listing.";
                 return null;
             }
-            var name = Name(root["name"]?.GetValue<string>());
+            var name = Name(Text(root["name"]));
             if (name == null)
             {
+                error = "partner.json: name is missing, longer than 40 characters or passes for V2pn.";
                 return null;
             }
 
@@ -345,82 +433,69 @@ public static class V2pnPartnerTrust
             {
                 foreach (var node in assetArray)
                 {
-                    var file = node?["name"]?.GetValue<string>();
-                    var size = node?["size"]?.GetValue<long>() ?? -1;
-                    var hash = node?["sha256"]?.GetValue<string>()?.ToLowerInvariant();
+                    var file = Text(node?["name"]);
+                    var size = node?["size"] is JsonValue sizeValue && sizeValue.TryGetValue<long>(out var s) ? s : -1;
+                    var hash = Text(node?["sha256"])?.ToLowerInvariant();
                     // Names become file names on disk: a plain picture file, or one of the reviewed JSON files, and nothing else.
                     var reviewedFile = V2pnReviewedFiles.All.Contains(file ?? string.Empty);
-                    if (file.IsNullOrEmpty() || file != Path.GetFileName(file) || file.Contains("..")
-                        || !(reviewedFile || AssetExtensions.Contains(Path.GetExtension(file).ToLowerInvariant()))
+                    if (!SafeFileName(file) || !(reviewedFile || IsPictureName(file!))
                         || size <= 0 || size > (reviewedFile ? V2pnReviewedFiles.MaxBytes : MaxAssetBytes)
                         || hash is not { Length: 64 } || !hash.All(Uri.IsHexDigit)
-                        || assets.Any(a => a.Name == file))
+                        || assets.Any(a => string.Equals(a.Name, file, StringComparison.OrdinalIgnoreCase)))
                     {
+                        error = $"partner.json: the asset \"{Clip(file ?? "")}\" is not a picture or reviewed file with its size and sha256.";
                         return null;
                     }
-                    assets.Add(new V2pnPartnerAsset(file, size, hash));
+                    assets.Add(new V2pnPartnerAsset(file!, size, hash));
                 }
             }
             if (assets.Count(a => !V2pnReviewedFiles.All.Contains(a.Name)) > MaxAssets)
             {
+                error = $"partner.json lists more than {MaxAssets} pictures.";
                 return null;
             }
             string? AssetRef(JsonNode? node)
             {
-                var file = node?.GetValue<string>();
+                var file = Text(node);
                 return file != null && !V2pnReviewedFiles.All.Contains(file) && assets.Any(a => a.Name == file) ? file : null;
             }
 
             var brand = root["brand"] as JsonObject;
-            var accent = brand?["accent"]?.GetValue<string>();
+            var accent = Text(brand?["accent"]);
             if (accent != null && !Colour.IsMatch(accent))
             {
+                error = "partner.json: brand.accent is not a #RRGGBB colour.";
                 return null;
             }
 
-            var edition = root["edition"] as JsonObject;
-            var listed = Strings(edition?["variants"]).ToList();
-            var variants = V2pnPartnerVariants.For(listed, root["theme"] != null);
-            var first = V2pnPartnerVariants.Normalize(edition?["default"]?.GetValue<string>());
-            if (!cert.Allows(V2pnPartnerGrants.Edition))
+            var notes = new List<string>();
+            if (root["edition"] is JsonObject edition)
             {
-                // Without the grant the partner keeps its name and links only; V2pn stays as it is.
-                variants = [];
-            }
-            if (variants.Count > 0 && (first == null || !variants.Contains(first)))
-            {
-                first = variants[0];
-            }
-
-            // Both looks wear the theme; one that gets anything wrong falls back field by field.
-            var theme = variants.Count > 0
-                ? V2pnThemeReader.Parse(root["theme"], accent, file => AssetRef(JsonValue.Create(file)) != null)
-                : null;
-
-            var art = new Dictionary<string, string>(StringComparer.Ordinal);
-            if (edition?["art"] is JsonObject artObject)
-            {
-                foreach (var (key, value) in artObject)
+                foreach (var (key, _) in edition)
                 {
-                    if (AssetRef(value) is { } file)
-                    {
-                        art[key] = file;
-                    }
+                    notes.Add(RetiredEdition.Contains(key)
+                        ? $"edition.{Clip(key)} is no longer used: V2pn has one look (Accent, and Scene with a background); ignored"
+                        : $"edition.{Clip(key)} is not a field V2pn knows; ignored");
                 }
             }
 
+            // Without the edition grant the partner keeps its name and links only; V2pn stays as it is.
+            var theme = listing.Allows(V2pnPartnerGrants.Edition)
+                ? V2pnThemeReader.Parse(root["theme"], accent, file => AssetRef(JsonValue.Create(file)) != null)
+                : null;
+
             var links = root["links"] as JsonObject;
-            var api = Https(root["api"]?.GetValue<string>());
-            if (api != null && (!cert.Allows(V2pnPartnerGrants.Account) || !DomainAllowed(cert, api)))
+            var api = Https(Text(root["api"]));
+            if (api != null && (!listing.Allows(V2pnPartnerGrants.Account) || !DomainAllowed(listing, api)))
             {
                 api = null;
             }
 
             // Buttons and server notes come with the actions grant; closed settings only with the lock grant.
-            var catalog = cert.Allows(V2pnPartnerGrants.Actions);
+            var catalog = listing.Allows(V2pnPartnerGrants.Actions);
             var servers = catalog ? V2pnPartnerCatalog.ParseServers(root["servers"], live: false) : [];
-            var actions = catalog ? V2pnPartnerCatalog.ParseActions(root["actions"], cert, api != null) : [];
-            var locked = cert.Allows(V2pnPartnerGrants.Lock) && root["lock"] is JsonValue lockValue && lockValue.TryGetValue<bool>(out var lockOn) && lockOn;
+            var actions = catalog ? V2pnPartnerCatalog.ParseActions(root["actions"], listing, api != null) : [];
+            var locked = listing.Allows(V2pnPartnerGrants.Lock) && root["lock"] is JsonValue lockValue && lockValue.TryGetValue<bool>(out var lockOn) && lockOn;
 
             return new V2pnPartnerPack(
                 id,
@@ -428,18 +503,18 @@ public static class V2pnPartnerTrust
                 accent?.ToUpperInvariant(),
                 AssetRef(brand?["logo"]),
                 AssetRef(brand?["logoOnLight"]),
-                variants,
-                first ?? string.Empty,
-                art,
-                Https(links?["cabinet"]?.GetValue<string>()),
-                Https(links?["support"]?.GetValue<string>()),
+                Https(Text(links?["cabinet"])),
+                Https(Text(links?["support"])),
                 api,
                 assets,
                 AssetRef(brand?["mark"]),
                 servers,
                 actions,
                 locked,
-                theme);
+                theme)
+            {
+                Notes = notes,
+            };
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
@@ -457,8 +532,13 @@ public static class V2pnPartnerTrust
             : null;
     }
 
+    private static string? Text(JsonNode? node) =>
+        node is JsonValue value && value.TryGetValue<string>(out var text) ? text : null;
+
     private static IEnumerable<string> Strings(JsonNode? node) =>
-        node is JsonArray array ? array.Select(n => n?.GetValue<string>()).Where(s => s.IsNotEmpty()).Select(s => s!) : [];
+        node is JsonArray array ? array.Select(Text).Where(s => s.IsNotEmpty()).Select(s => s!) : [];
+
+    private static string Clip(string text) => text.Length <= 40 ? text : text[..40] + "…";
 
     private static string? Https(string? url)
     {
@@ -467,9 +547,8 @@ public static class V2pnPartnerTrust
     }
 
     /// <summary>
-    /// A development build, and a release with developer mode on (About → updates), also takes a partner served
-    /// over plain http from this computer (127.0.0.1, localhost): a provider previews its pack on its own machine
-    /// before publishing. The certificate must still be V2pn's and name that address.
+    /// A development build, and a release with developer mode on (About → updates), also takes a partner's links and API
+    /// over plain http from this computer (127.0.0.1, localhost), for previews with tools/demo.
     /// </summary>
     public static bool DevLoopback(Uri uri) =>
         uri.Scheme == Uri.UriSchemeHttp && uri.IsLoopback && DebugAllowed;
@@ -498,19 +577,5 @@ public static class V2pnPartnerTrust
         var host = domain.StartsWith("*.", StringComparison.Ordinal) ? domain[2..] : domain;
         // At least a name and a zone, so "*.com" can never be granted.
         return host.Contains('.') && Uri.CheckHostName(host) == UriHostNameType.Dns && !host.Contains('*');
-    }
-
-    private static bool IsP256Key(string key)
-    {
-        try
-        {
-            using var ecdsa = ECDsa.Create();
-            ecdsa.ImportSubjectPublicKeyInfo(Convert.FromBase64String(key), out _);
-            return ecdsa.KeySize == 256;
-        }
-        catch (Exception ex) when (ex is CryptographicException or FormatException)
-        {
-            return false;
-        }
     }
 }

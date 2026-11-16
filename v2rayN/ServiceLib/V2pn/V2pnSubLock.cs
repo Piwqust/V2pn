@@ -20,21 +20,21 @@ public sealed record V2pnLockState(bool Settings, bool HideUrl, string? PartnerN
     public bool UrlLocked => Settings || HideUrl;
 
     /// <summary>
-    /// The flags count only for a verified partner whose certificate has the lock grant; from anyone else they do
+    /// The flags count only for a verified partner whose listing has the lock grant; from anyone else they do
     /// nothing, or any subscription could hide where the person's traffic goes.
     /// </summary>
     public static V2pnLockState For(V2pnPartner? partner, SubInfoItem? info) =>
-        For(partner?.Cert, partner?.Pack, info, partner?.Name);
+        For(partner?.Listing, partner?.Pack, info, partner?.Name);
 
-    public static V2pnLockState For(V2pnPartnerCert? cert, V2pnPartnerPack? pack, SubInfoItem? info, string? name)
+    public static V2pnLockState For(V2pnPartnerListing? listing, V2pnPartnerPack? pack, SubInfoItem? info, string? name)
     {
-        if (cert?.Allows(V2pnPartnerGrants.Lock) != true)
+        if (listing?.Allows(V2pnPartnerGrants.Lock) != true)
         {
             return None;
         }
         var settings = info?.HideSettings == true || pack?.Lock == true;
         var url = info?.HideUrl == true;
-        return settings || url ? new V2pnLockState(settings, url, name ?? cert.Name) : None;
+        return settings || url ? new V2pnLockState(settings, url, name ?? listing.Name) : None;
     }
 }
 

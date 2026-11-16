@@ -1,9 +1,8 @@
 namespace ServiceLib;
 
 /// <summary>
-/// Keys and signatures of the partner platform, shared by tools/partner.cs and V2pn's theme builder, so a pack signed in
-/// the app and one signed by the script are the same bytes with the same kind of signature.
-/// Signatures are DER ECDSA P-256 / SHA-256 in base64, the same as release.json.sig.
+/// Keys and signatures of the partner index (tools/partner.cs publish). Signatures are DER ECDSA P-256 / SHA-256 in
+/// base64, the same as release.json.sig.
 /// </summary>
 public static class V2pnPartnerSigning
 {
@@ -12,10 +11,10 @@ public static class V2pnPartnerSigning
 
     public static bool Verify(string publicKey, byte[] data, string? signature) => V2pnManifest.VerifySignature(data, signature, [publicKey]);
 
-    /// <summary>The public half as base64 SubjectPublicKeyInfo: what a certificate names as "key".</summary>
+    /// <summary>The public half as base64 SubjectPublicKeyInfo: what V2pnPartnerKeys in v2rayN/Directory.Build.targets holds.</summary>
     public static string PublicKey(ECDsa key) => Convert.ToBase64String(key.ExportSubjectPublicKeyInfo());
 
-    /// <summary>A new P-256 key: the private half as PKCS#8 PEM (to keep secret) and the public half.</summary>
+    /// <summary>A new P-256 key: the private half as PKCS#8 PEM (to keep secret) and the public half. For test roots.</summary>
     public static (string Pem, string PublicKey) NewKey()
     {
         using var key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
@@ -49,7 +48,7 @@ public static class V2pnPartnerSigning
         }
     }
 
-    /// <summary>A JSON document as tools/partner.cs has always written it: indented, Cyrillic as is, a newline at the end.</summary>
+    /// <summary>A JSON document as the partner tools write it: indented, Cyrillic as is, a newline at the end.</summary>
     public static byte[] Json(JsonNode node)
     {
         using var stream = new MemoryStream();
@@ -60,31 +59,17 @@ public static class V2pnPartnerSigning
         stream.Write("\n"u8);
         return stream.ToArray();
     }
-
-    /// <summary>One line of compact JSON: what a request's signature covers.</summary>
-    public static byte[] Compact(JsonNode node)
-    {
-        using var stream = new MemoryStream();
-        using (var writer = new Utf8JsonWriter(stream, new JsonWriterOptions { Indented = false, Encoder = JavaScriptEncoder.UnsafeRelaxedJsonEscaping }))
-        {
-            node.WriteTo(writer);
-        }
-        return stream.ToArray();
-    }
 }
 
 /// <summary>
-/// The pack folder a provider serves: partner.json with every picture and reviewed file of the folder in "assets" (size and
-/// SHA-256), and partner.json.sig. tools/partner.cs pack and the theme builder write it through here.
+/// partner.json of a pack folder (partners/&lt;id&gt; in the repository) with every picture and reviewed file of the folder
+/// in "assets" (size and SHA-256). tools/partner.cs pack writes it through here.
 /// </summary>
 public static class V2pnPackWriter
 {
-    public const string PackFile = "partner.json";
-    public const string SignatureFile = "partner.json.sig";
+    public const string PackFile = V2pnPartnerTrust.PackFile;
 
-    private static readonly string[] PictureExtensions = [".png", ".webp", ".jpg", ".jpeg"];
-
-    public static bool IsPicture(string name) => PictureExtensions.Contains(Path.GetExtension(name).ToLowerInvariant());
+    public static bool IsPicture(string name) => V2pnPartnerTrust.IsPictureName(name);
 
     /// <summary>The files of <paramref name="folder"/> that go into "assets": the pictures and the reviewed files, by name.</summary>
     public static IReadOnlyList<string> Files(string folder) =>
@@ -119,25 +104,12 @@ public static class V2pnPackWriter
         return V2pnPartnerSigning.Json(pack);
     }
 
-    /// <summary>
-    /// Writes partner.json of <paramref name="pack"/> into <paramref name="folder"/>, with "assets" filled in, and signs it
-    /// into partner.json.sig with <paramref name="key"/>. Without a key an old partner.json.sig is removed: it would not match.
-    /// </summary>
-    public static (byte[] Bytes, string? Signature) Write(string folder, JsonObject pack, ECDsa? key)
+    /// <summary>Writes partner.json of <paramref name="pack"/> into <paramref name="folder"/>, with "assets" filled in.</summary>
+    public static byte[] Write(string folder, JsonObject pack)
     {
         var bytes = Bytes(pack, folder);
-        var signature = key == null ? null : V2pnPartnerSigning.Sign(key, bytes);
         File.WriteAllBytes(Path.Combine(folder, PackFile), bytes);
-        var sigFile = Path.Combine(folder, SignatureFile);
-        if (signature != null)
-        {
-            File.WriteAllText(sigFile, signature + "\n");
-        }
-        else if (File.Exists(sigFile))
-        {
-            File.Delete(sigFile);
-        }
-        return (bytes, signature);
+        return bytes;
     }
 
     /// <summary>partner.json of <paramref name="folder"/> as an object; null with the reason when it is missing or is not one.</summary>
@@ -151,9 +123,9 @@ public static class V2pnPackWriter
                 error = $"There is no {PackFile} in {folder}.";
                 return null;
             }
-            if (new FileInfo(file).Length > V2pnPartnerTrust.MaxPackBytes * 4L)
+            if (new FileInfo(file).Length > V2pnPartnerTrust.MaxPackBytes)
             {
-                error = $"{PackFile} is far larger than 64 KB.";
+                error = $"{PackFile} is larger than 64 KB.";
                 return null;
             }
             if (JsonNode.Parse(File.ReadAllBytes(file)) is JsonObject pack)
@@ -172,229 +144,281 @@ public static class V2pnPackWriter
     }
 }
 
-/// <summary>cert.json as the owner of V2pn issues it (tools/partner.cs cert).</summary>
-public static class V2pnPartnerIssuer
-{
-    /// <summary>
-    /// The grants of a certificate: the ones asked for, actions (every partner has its buttons and server notes) and the
-    /// grant of each reviewed file, once each, in V2pn's order. Null with the unknown grant when one is not V2pn's.
-    /// </summary>
-    public static IReadOnlyList<string>? Grants(IEnumerable<string> asked, IEnumerable<string> reviewedFiles, out string unknown)
-    {
-        var all = asked.Append(V2pnPartnerGrants.Actions).Concat(reviewedFiles.Select(V2pnReviewedFiles.GrantOf)).Distinct().ToList();
-        unknown = all.FirstOrDefault(g => !V2pnPartnerGrants.All.Contains(g)) ?? string.Empty;
-        return unknown.Length > 0 ? null : all.OrderBy(g => V2pnPartnerGrants.All.ToList().IndexOf(g)).ToList();
-    }
+/// <summary>listing.json of partners/&lt;id&gt;, as the owner of V2pn writes it.</summary>
+/// <param name="Contact">How the owner reaches the provider; never published.</param>
+public sealed record V2pnPartnerSource(string Id, string Name, IReadOnlyList<string> Domains, IReadOnlyList<string> Grants, DateOnly Until, string? Contact);
 
-    /// <summary>The bytes of cert.json, ready to be signed with the root key.</summary>
-    public static byte[] Cert(string partner, string name, IEnumerable<string> domains, string key, IEnumerable<string> grants,
-        IReadOnlyDictionary<string, string>? reviewed, DateOnly issued, int days)
-    {
-        var cert = new JsonObject
-        {
-            ["schema"] = 1,
-            ["partner"] = partner,
-            ["name"] = name,
-            ["domains"] = new JsonArray(domains.Select(d => (JsonNode)JsonValue.Create(d.ToLowerInvariant())).ToArray()),
-            ["key"] = key,
-            ["grants"] = new JsonArray(grants.Select(g => (JsonNode)JsonValue.Create(g)).ToArray()),
-            ["issued"] = issued.ToString("yyyy-MM-dd"),
-            ["expires"] = issued.AddDays(days).ToString("yyyy-MM-dd"),
-        };
-        if (reviewed is { Count: > 0 })
-        {
-            var files = new JsonObject();
-            foreach (var (file, hash) in reviewed)
-            {
-                files[file] = hash;
-            }
-            cert["reviewed"] = files;
-        }
-        return V2pnPartnerSigning.Json(cert);
-    }
+/// <summary>One partner ready to publish: its listing as the index will carry it, its zip, and what the owner should know.</summary>
+public sealed record V2pnPublishedPartner(V2pnPartnerListing Listing, byte[] Zip, IReadOnlyList<string> Notes, string? Contact);
+
+/// <summary>Everything a publication writes: partners.json (to be signed as these bytes) and one zip per partner.</summary>
+public sealed record V2pnPublication(byte[] Index, IReadOnlyList<V2pnPublishedPartner> Partners, IReadOnlyList<string> Problems)
+{
+    public bool Ok => Problems.Count == 0;
 }
 
 /// <summary>
-/// request.json: what a provider asks the owner of V2pn to certify, signed with the provider's own key. The signature proves
-/// the provider holds the private half of the key the certificate will name, and that nobody changed the request on the way.
+/// Builds the published form of partners/ (tools/partner.cs publish): each partners/&lt;id&gt; folder (listing.json,
+/// partner.json and its files) is checked with the reader the app uses, packed into partner-&lt;id&gt;.zip, and listed in
+/// partners.json with its domains, grants, term, reviewed hashes and the zip's size and SHA-256.
 /// </summary>
-public sealed record V2pnCertRequest(
-    string Partner,
-    string Name,
-    IReadOnlyList<string> Domains,
-    string Key,
-    IReadOnlyList<string> Grants,
-    IReadOnlyDictionary<string, string> Reviewed,
-    string? Contact,
-    DateOnly Created);
-
-/// <summary>
-/// Writes and checks certificate requests. The signature ("signature") covers the request without that field, as one line
-/// of compact JSON in UTF-8 (<see cref="V2pnPartnerSigning.Compact"/>), so the file may be reformatted on the way.
-/// </summary>
-public static class V2pnCertRequests
+public static class V2pnPartnerPublisher
 {
-    public const string Kind = "v2pn-partner-request";
-    public const int MaxBytes = 16 * 1024;
+    public const string ListingFile = "listing.json";
     public const int MaxContact = 200;
 
-    /// <summary>The grants a provider may ask for (actions comes with every certificate; routing, transport and core with a reviewed file).</summary>
-    public static readonly IReadOnlyList<string> Askable = [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account, V2pnPartnerGrants.Lock];
+    // The same date in every zip, so a pack whose files did not change keeps its hash and nobody downloads it again.
+    private static readonly DateTimeOffset ZipTime = new(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-    /// <summary>Why <paramref name="request"/> cannot be certified, or null when it can. Checks the same rules as a certificate.</summary>
-    public static string? Problem(V2pnCertRequest request)
+    /// <summary>listing.json of <paramref name="folder"/>; null with the reason when it breaks a rule.</summary>
+    public static V2pnPartnerSource? ReadListing(string folder, out string error)
     {
-        if (!V2pnPartnerTrust.ValidId(request.Partner))
-        {
-            return "id: lowercase letters, digits and dashes, 2 to 32 characters.";
-        }
-        if (V2pnPartnerTrust.ValidName(request.Name) != request.Name)
-        {
-            return "name: 1 to 40 characters, no control characters, no \"V2pn\".";
-        }
-        if (request.Domains.Count == 0)
-        {
-            return "domains: at least one.";
-        }
-        if (request.Domains.FirstOrDefault(d => !V2pnPartnerTrust.ValidDomain(d)) is { } domain)
-        {
-            return $"domains: \"{domain}\" is not a domain (example.com or *.example.com).";
-        }
-        if (!V2pnPartnerTrust.ValidKey(request.Key))
-        {
-            return "key: not an ECDSA P-256 public key.";
-        }
-        if (request.Grants.FirstOrDefault(g => !V2pnPartnerGrants.All.Contains(g)) is { } grant)
-        {
-            return $"grants: \"{grant}\" is not a grant; known: {string.Join(", ", V2pnPartnerGrants.All)}.";
-        }
-        foreach (var (file, hash) in request.Reviewed)
-        {
-            if (!V2pnReviewedFiles.All.Contains(file))
-            {
-                return $"reviewed: \"{file}\" is not one of {string.Join(", ", V2pnReviewedFiles.All)}.";
-            }
-            if (hash is not { Length: 64 } || !hash.All(Uri.IsHexDigit))
-            {
-                return $"reviewed: the hash of {file} is not a SHA-256.";
-            }
-        }
-        if (request.Contact is { } contact && (contact.Length > MaxContact || contact.Any(char.IsControl)))
-        {
-            return $"contact: up to {MaxContact} characters on one line.";
-        }
-        return null;
-    }
-
-    /// <summary>
-    /// request.json for the provider whose private key is <paramref name="key"/>: its public half goes into the request and the
-    /// request is signed with it. The grants get actions and the grant of each reviewed file. Throws when the request breaks a rule.
-    /// </summary>
-    public static byte[] Create(string partner, string name, IEnumerable<string> domains, IEnumerable<string> grants,
-        IReadOnlyDictionary<string, string> reviewed, string? contact, ECDsa key, DateOnly created)
-    {
-        var all = V2pnPartnerIssuer.Grants(grants, reviewed.Keys, out var unknown)
-            ?? throw new ArgumentException($"grants: \"{unknown}\" is not a grant.");
-        var request = new V2pnCertRequest(partner, name.Trim(), domains.Select(d => d.Trim().ToLowerInvariant()).Where(d => d.Length > 0).Distinct().ToList(),
-            V2pnPartnerSigning.PublicKey(key), all, reviewed, contact.IsNullOrEmpty() ? null : contact.Trim(), created);
-        if (Problem(request) is { } problem)
-        {
-            throw new ArgumentException(problem);
-        }
-        var root = Body(request);
-        root["signature"] = V2pnPartnerSigning.Sign(key, V2pnPartnerSigning.Compact(root));
-        return V2pnPartnerSigning.Json(root);
-    }
-
-    /// <summary>The request in <paramref name="json"/> when it is well formed and signed by the key it names; null with the reason otherwise.</summary>
-    public static V2pnCertRequest? Read(byte[]? json, out string error)
-    {
-        if (json is not { Length: > 0 and <= MaxBytes })
-        {
-            error = "The request is empty or larger than 16 KB.";
-            return null;
-        }
+        var file = Path.Combine(folder, ListingFile);
         try
         {
-            if (JsonNode.Parse(json) is not JsonObject root || root["schema"]?.GetValue<int>() != 1 || root["kind"]?.GetValue<string>() != Kind)
+            if (!File.Exists(file) || new FileInfo(file).Length > 16 * 1024)
             {
-                error = "This is not a V2pn partner certificate request.";
+                error = $"{ListingFile} is missing or larger than 16 KB.";
                 return null;
             }
-            var signature = root["signature"]?.GetValue<string>();
-            root.Remove("signature");
-            var key = root["key"]?.GetValue<string>();
-            if (!V2pnPartnerTrust.ValidKey(key) || !V2pnPartnerSigning.Verify(key!, V2pnPartnerSigning.Compact(root), signature))
+            if (JsonNode.Parse(File.ReadAllBytes(file)) is not JsonObject root)
             {
-                error = "The request is not signed by the key it names: it was changed, or signed with another key.";
+                error = $"{ListingFile} is not a JSON object.";
                 return null;
             }
-            var reviewed = new Dictionary<string, string>(StringComparer.Ordinal);
-            if (root["reviewed"] is JsonObject files)
+            string? Text(string key) => root[key] is JsonValue v && v.TryGetValue<string>(out var t) ? t.Trim() : null;
+            List<string> List(string key) => root[key] is JsonArray a
+                ? a.Select(n => n is JsonValue v && v.TryGetValue<string>(out var t) ? t.Trim() : null).OfType<string>().Where(t => t.Length > 0).ToList()
+                : [];
+
+            var id = Text("id");
+            var name = Text("name");
+            var domains = List("domains").Select(d => d.TrimEnd('.').ToLowerInvariant()).Distinct().ToList();
+            var grants = List("grants").Distinct().ToList();
+            var contact = Text("contact");
+            if (!V2pnPartnerTrust.ValidId(id) || id != Path.GetFileName(Path.GetFullPath(folder).TrimEnd(Path.DirectorySeparatorChar)))
             {
-                foreach (var (file, value) in files)
-                {
-                    reviewed[file] = value?.GetValue<string>()?.ToLowerInvariant() ?? string.Empty;
-                }
-            }
-            if (!DateOnly.TryParseExact(root["created"]?.GetValue<string>(), "yyyy-MM-dd", out var created))
-            {
-                error = "The request has no date.";
+                error = $"{ListingFile}: id must be the folder's name, 2 to 32 lowercase letters, digits and dashes.";
                 return null;
             }
-            var request = new V2pnCertRequest(
-                root["partner"]?.GetValue<string>() ?? string.Empty,
-                root["name"]?.GetValue<string>() ?? string.Empty,
-                Strings(root["domains"]),
-                key!,
-                Strings(root["grants"]),
-                reviewed,
-                root["contact"]?.GetValue<string>(),
-                created);
-            if (Problem(request) is { } problem)
+            if (V2pnPartnerTrust.ValidName(name) != name)
             {
-                error = "The request breaks a rule: " + problem;
+                error = $"{ListingFile}: name needs 1 to 40 characters, no control characters, no \"V2pn\".";
+                return null;
+            }
+            // A published partner is never served from this computer, whatever build the tool runs in.
+            if (domains.Count == 0)
+            {
+                error = $"{ListingFile}: domains needs at least one subscription domain.";
+                return null;
+            }
+            if (domains.FirstOrDefault(d => d is "127.0.0.1" or "localhost" || !V2pnPartnerTrust.ValidDomain(d)) is { } badDomain)
+            {
+                error = $"{ListingFile}: \"{badDomain}\" is not a domain (example.com or *.example.com).";
+                return null;
+            }
+            if (grants.FirstOrDefault(g => !V2pnPartnerGrants.All.Contains(g)) is { } badGrant)
+            {
+                error = $"{ListingFile}: \"{badGrant}\" is not a grant; known: {string.Join(", ", V2pnPartnerGrants.All)}.";
+                return null;
+            }
+            if (!DateOnly.TryParseExact(Text("until"), "yyyy-MM-dd", out var until))
+            {
+                error = $"{ListingFile}: until is not a yyyy-MM-dd date.";
+                return null;
+            }
+            if (contact != null && (contact.Length > MaxContact || contact.Any(char.IsControl)))
+            {
+                error = $"{ListingFile}: contact takes up to {MaxContact} characters on one line.";
                 return null;
             }
             error = string.Empty;
-            return request;
+            return new V2pnPartnerSource(id!, name!, domains, grants, until, contact);
         }
-        catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException or ArgumentException)
+        catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException)
         {
-            error = "The request is malformed.";
+            error = $"{ListingFile}: {ex.Message}";
             return null;
         }
     }
 
-    private static JsonObject Body(V2pnCertRequest request)
+    /// <summary>
+    /// Everything under <paramref name="partnersDir"/> (each folder with a listing.json is a partner), checked and packed.
+    /// Any problem stops the whole publication: an index is never half right.
+    /// </summary>
+    public static V2pnPublication Publish(string partnersDir, DateOnly today, DateTimeOffset published)
     {
-        var root = new JsonObject
+        var partners = new List<V2pnPublishedPartner>();
+        var problems = new List<string>();
+        foreach (var folder in Directory.EnumerateDirectories(partnersDir).Where(d => File.Exists(Path.Combine(d, ListingFile))).Order(StringComparer.Ordinal))
         {
-            ["schema"] = 1,
-            ["kind"] = Kind,
-            ["partner"] = request.Partner,
-            ["name"] = request.Name,
-            ["domains"] = new JsonArray(request.Domains.Select(d => (JsonNode)JsonValue.Create(d)).ToArray()),
-            ["key"] = request.Key,
-            ["grants"] = new JsonArray(request.Grants.Select(g => (JsonNode)JsonValue.Create(g)).ToArray()),
-        };
-        if (request.Reviewed.Count > 0)
-        {
-            var files = new JsonObject();
-            foreach (var (file, hash) in request.Reviewed.OrderBy(r => V2pnReviewedFiles.All.ToList().IndexOf(r.Key)))
+            if (Build(folder, today, out var error) is { } partner)
             {
-                files[file] = hash;
+                partners.Add(partner);
             }
-            root["reviewed"] = files;
+            else
+            {
+                problems.Add($"{Path.GetFileName(folder)}: {error}");
+            }
         }
-        if (request.Contact != null)
+        foreach (var domain in partners.SelectMany(p => p.Listing.Domains.Select(d => (d, p.Listing.Id))).GroupBy(x => x.d).Where(g => g.Count() > 1))
         {
-            root["contact"] = request.Contact;
+            problems.Add($"{domain.Key} is listed by {string.Join(" and ", domain.Select(x => x.Id))}: a subscription would belong to both.");
         }
-        root["created"] = request.Created.ToString("yyyy-MM-dd");
-        return root;
+        return new V2pnPublication(IndexBytes(partners.Select(p => p.Listing), published), partners, problems);
     }
 
-    private static List<string> Strings(JsonNode? node) =>
-        node is JsonArray array ? array.Select(n => n?.GetValue<string>()).OfType<string>().ToList() : [];
+    /// <summary>One partners/&lt;id&gt; folder checked and packed; null with the reason when the app would refuse any of it.</summary>
+    public static V2pnPublishedPartner? Build(string folder, DateOnly today, out string error)
+    {
+        var source = ReadListing(folder, out error);
+        if (source == null)
+        {
+            return null;
+        }
+        if (source.Until <= today)
+        {
+            error = $"{ListingFile}: until {source.Until:yyyy-MM-dd} is not after today.";
+            return null;
+        }
+        if (V2pnPackWriter.Read(folder, out error) is not { } packJson)
+        {
+            return null;
+        }
+        var stray = Directory.EnumerateFiles(folder).Select(Path.GetFileName).OfType<string>()
+            .FirstOrDefault(n => n != ListingFile && n != V2pnPartnerTrust.PackFile && (!V2pnPartnerTrust.SafeFileName(n)
+                || !(V2pnPackWriter.IsPicture(n) || V2pnReviewedFiles.All.Contains(n))));
+        if (stray != null)
+        {
+            error = $"{stray} is not a picture (png, webp, jpg) or a reviewed file with a plain name; take it out of the folder.";
+            return null;
+        }
+        // The pack must list exactly the folder's files: what the owner looked at is what goes out.
+        var expected = V2pnPackWriter.Assets(folder).ToJsonString();
+        if ((packJson["assets"] ?? new JsonArray()).ToJsonString() != expected)
+        {
+            error = $"partner.json's assets are not the folder's files; run: dotnet run tools/partner.cs -- pack {folder}";
+            return null;
+        }
+
+        var notes = new List<string>();
+        // Every partner dresses the window; the rest is granted one by one.
+        var grants = source.Grants.Append(V2pnPartnerGrants.Edition).Distinct().OrderBy(g => V2pnPartnerGrants.All.ToList().IndexOf(g)).ToList();
+        var reviewed = new Dictionary<string, string>(StringComparer.Ordinal);
+        foreach (var file in V2pnReviewedFiles.All)
+        {
+            var grant = V2pnReviewedFiles.GrantOf(file);
+            var path = Path.Combine(folder, file);
+            if (!File.Exists(path))
+            {
+                if (grants.Contains(grant))
+                {
+                    notes.Add($"the {grant} grant does nothing: there is no {file}");
+                }
+                continue;
+            }
+            if (!grants.Contains(grant))
+            {
+                notes.Add($"{file} is not used: {ListingFile} has no {grant} grant (add it once you have read the file: partner.cs review)");
+                continue;
+            }
+            var content = File.ReadAllBytes(path);
+            if (ReviewProblem(file, content) is { } problem)
+            {
+                error = $"{file} does not pass V2pn's checks: {problem}";
+                return null;
+            }
+            reviewed[file] = V2pnReviewedFiles.Hash(content);
+        }
+
+        var files = new List<(string Name, byte[] Content)> { (V2pnPartnerTrust.PackFile, File.ReadAllBytes(Path.Combine(folder, V2pnPartnerTrust.PackFile))) };
+        files.AddRange(V2pnPackWriter.Files(folder).Select(n => (n, File.ReadAllBytes(Path.Combine(folder, n)))));
+        var zip = Zip(files);
+        var listing = new V2pnPartnerListing(source.Id, source.Name, source.Domains, grants, source.Until,
+            new V2pnPartnerZip(V2pnPartnerTrust.ZipName(source.Id), zip.LongLength, Convert.ToHexStringLower(SHA256.HashData(zip))), reviewed);
+
+        // The app's own reader, on the very bytes that go out.
+        var pack = V2pnPartnerTrust.Unpack(zip, listing, out var unpacked, out error);
+        if (pack == null)
+        {
+            return null;
+        }
+        V2pnPartnerSlots.Fit(pack, name => unpacked.GetValueOrDefault(name), out var slotNotes);
+        notes.AddRange(slotNotes.Select(n => $"picture not shown: {n}"));
+        notes.AddRange(pack.Notes);
+        notes.AddRange((pack.Theme?.Notes ?? []).Select(n => $"theme: {n}"));
+        var features = V2pnPartnerFeatures.Read(listing, pack, name => unpacked.GetValueOrDefault(name));
+        notes.AddRange(features.Files.Where(f => f.State != V2pnReviewState.Ready).Select(f => $"{f.Name} is not used: {f.Problem}"));
+        error = string.Empty;
+        return new V2pnPublishedPartner(listing, zip, notes, source.Contact);
+    }
+
+    /// <summary>partners.json for <paramref name="listings"/>, by id; the bytes the root key signs.</summary>
+    public static byte[] IndexBytes(IEnumerable<V2pnPartnerListing> listings, DateTimeOffset published)
+    {
+        var partners = new JsonArray();
+        foreach (var listing in listings.OrderBy(l => l.Id, StringComparer.Ordinal))
+        {
+            var item = new JsonObject
+            {
+                ["id"] = listing.Id,
+                ["name"] = listing.Name,
+                ["domains"] = new JsonArray(listing.Domains.Select(d => (JsonNode)JsonValue.Create(d)).ToArray()),
+                ["grants"] = new JsonArray(listing.Grants.Select(g => (JsonNode)JsonValue.Create(g)).ToArray()),
+            };
+            if (listing.ReviewedFiles.Count > 0)
+            {
+                var reviewed = new JsonObject();
+                foreach (var file in V2pnReviewedFiles.All.Where(listing.ReviewedFiles.ContainsKey))
+                {
+                    reviewed[file] = listing.ReviewedFiles[file];
+                }
+                item["reviewed"] = reviewed;
+            }
+            item["until"] = listing.Until.ToString("yyyy-MM-dd");
+            item["pack"] = new JsonObject
+            {
+                ["file"] = listing.Zip.File,
+                ["size"] = listing.Zip.Size,
+                ["sha256"] = listing.Zip.Sha256,
+            };
+            partners.Add((JsonNode)item);
+        }
+        return V2pnPartnerSigning.Json(new JsonObject
+        {
+            ["schema"] = 1,
+            ["published"] = published.ToUniversalTime().ToString("yyyy-MM-ddTHH:mm:ssZ", System.Globalization.CultureInfo.InvariantCulture),
+            ["partners"] = partners,
+        });
+    }
+
+    /// <summary>A flat zip of <paramref name="files"/>, by name, with one fixed date: the same files always give the same bytes.</summary>
+    public static byte[] Zip(IEnumerable<(string Name, byte[] Content)> files)
+    {
+        using var stream = new MemoryStream();
+        using (var archive = new System.IO.Compression.ZipArchive(stream, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        {
+            foreach (var (name, content) in files.OrderBy(f => f.Name, StringComparer.Ordinal))
+            {
+                var entry = archive.CreateEntry(name, System.IO.Compression.CompressionLevel.Optimal);
+                entry.LastWriteTime = ZipTime;
+                using var write = entry.Open();
+                write.Write(content);
+            }
+        }
+        return stream.ToArray();
+    }
+
+    /// <summary>Why V2pn would not use a reviewed file, or null when it passes its checks.</summary>
+    public static string? ReviewProblem(string name, byte[] content)
+    {
+        string problem;
+        var ok = name switch
+        {
+            V2pnReviewedFiles.Routing => V2pnRoutingPreset.Parse(content, out problem) != null,
+            V2pnReviewedFiles.Transport => V2pnTransport.Parse(content, out problem) != null,
+            _ => V2pnCoreFragment.Parse(content, out problem) != null,
+        };
+        return ok ? null : problem;
+    }
 }

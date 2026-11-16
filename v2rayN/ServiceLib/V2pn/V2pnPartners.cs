@@ -1,21 +1,19 @@
 namespace ServiceLib;
 
-/// <summary>A partner whose certificate and pack passed every check, with its files on disk.</summary>
-public sealed class V2pnPartner(V2pnPartnerCert cert, V2pnPartnerPack pack, string folder, string sourceUrl, V2pnPartnerFeatures? features = null)
+/// <summary>A partner whose listing and pack passed every check, with its files on disk.</summary>
+public sealed class V2pnPartner(V2pnPartnerListing listing, V2pnPartnerPack pack, string folder, V2pnPartnerFeatures? features = null)
 {
-    public V2pnPartnerCert Cert { get; } = cert;
+    /// <summary>What the owner of V2pn allows it: domains, grants, term, reviewed files (the signed index).</summary>
+    public V2pnPartnerListing Listing { get; } = listing;
     public V2pnPartnerPack Pack { get; } = pack;
 
     /// <summary>Its reviewed files (routing.json, transport.json, core.json) and what of them V2pn may use.</summary>
     public V2pnPartnerFeatures Features { get; } = features ?? V2pnPartnerFeatures.None;
-    public string Id => Cert.Partner;
+    public string Id => Listing.Id;
     public string Name => Pack.Name;
 
-    /// <summary>The v2pn-partner folder it came from.</summary>
-    public string SourceUrl { get; } = sourceUrl;
-
-    /// <summary>Its own edition with the variants of its pack; false when its certificate grants only its name and links.</summary>
-    public bool HasEdition => Pack.Variants.Count > 0;
+    /// <summary>It dresses the window (Accent, and Scene with a background); false when its listing grants only its name and links.</summary>
+    public bool HasEdition => Listing.Allows(V2pnPartnerGrants.Edition);
 
     /// <summary>The local file of a pack asset, or null when the pack has no such asset.</summary>
     public string? AssetPath(string? name) => Pack.Asset(name) == null ? null : Path.Combine(Folder, name!);
@@ -27,29 +25,33 @@ public sealed class V2pnPartner(V2pnPartnerCert cert, V2pnPartnerPack pack, stri
 /// <summary>Why a partner was dropped.</summary>
 public enum V2pnPartnerGone
 {
-    /// <summary>No subscription points to it any more: deleted, or its panel stopped naming the pack.</summary>
+    /// <summary>No subscription on this computer is from its domains any more.</summary>
     Unlinked,
 
-    /// <summary>Its certificate ran out.</summary>
+    /// <summary>Its term in the index ran out.</summary>
     Expired,
 
-    /// <summary>The owner of V2pn withdrew its certificate.</summary>
+    /// <summary>The owner of V2pn took it out of the index.</summary>
     Revoked,
 }
 
 /// <summary>
-/// The partners of the subscriptions on this computer. A subscription whose panel sends v2pn-partner gets
-/// its partner's signed pack downloaded, checked (V2pnPartnerTrust) and kept in guiConfigs/partners/&lt;id&gt;;
-/// every start checks the kept files again, so a pack changed on disk is not trusted either.
+/// The partners of the subscriptions on this computer. V2pn publishes partners.json with its releases, signed with the
+/// partner root key: every partner with its subscription domains, grants, term and the hash of its pack's zip. A
+/// subscription from a partner's domains gets that zip downloaded, checked (V2pnPartnerTrust) and kept in
+/// guiConfigs/partners/&lt;id&gt; with the index it was checked against; every start checks the kept files again, so a pack
+/// changed on disk is not trusted either.
 /// </summary>
 public sealed class V2pnPartners
 {
     private static readonly Lazy<V2pnPartners> _instance = new(() => new(V2pnInfo.PartnerKeys, () => Utils.GetConfigPath("partners")));
     public static V2pnPartners Instance => _instance.Value;
 
+    /// <summary>How often the index is asked for at most, unless a caller forces it.</summary>
+    public static readonly TimeSpan IndexInterval = TimeSpan.FromHours(6);
+
     private const string Tag = nameof(V2pnPartners);
-    private const string SourceFile = "source.url";
-    private const string RevokedFile = "partners-revoked.json";
+    private const string KeptZip = "pack.zip";
 
     private readonly IReadOnlyList<string> _rootKeys;
     private readonly Func<string> _root;
@@ -57,12 +59,13 @@ public sealed class V2pnPartners
     private readonly ConcurrentDictionary<string, V2pnPartner> _partners = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _errors = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, IReadOnlyList<string>> _slotNotes = new(StringComparer.Ordinal);
-    private HashSet<string> _revoked = [];
     // The debug window's made-up partners and the subscriptions it counts as theirs; never on disk, never pruned.
     private readonly ConcurrentDictionary<string, byte> _debugIds = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _debugSubs = new(StringComparer.Ordinal);
+    private V2pnPartnerIndex? _index;
+    private DateTimeOffset _indexPublished = DateTimeOffset.MinValue;
+    private DateTime _indexAsked = DateTime.MinValue;
     private Task? _load;
-    private bool _revocationsChecked;
 
     /// <summary>Raised after the set of partners or one of them changed. May come from any thread.</summary>
     public event Action? Changed;
@@ -79,41 +82,51 @@ public sealed class V2pnPartners
     /// <summary>Overridable for tests: the network.</summary>
     public Func<string, CancellationToken, Task<V2pnHttp.Result>> Fetch { get; set; } = DefaultFetchAsync;
 
-    /// <summary>Overridable for tests: the date certificates are checked against.</summary>
+    /// <summary>Overridable for tests: where the index and the zips are published (a releases page: &lt;source&gt;/latest/download/...).</summary>
+    public IReadOnlyList<string> Sources { get; set; } = V2pnInfo.UpdateSources;
+
+    /// <summary>Overridable for tests: the links of every subscription on this computer.</summary>
+    public Func<Task<IReadOnlyList<string?>>> SubscriptionUrls { get; set; } = DefaultSubscriptionUrlsAsync;
+
+    /// <summary>Overridable for tests: the date terms are checked against.</summary>
     public Func<DateOnly> Today { get; set; } = () => DateOnly.FromDateTime(DateTime.UtcNow);
+
+    /// <summary>Overridable for tests: the clock of <see cref="IndexInterval"/>.</summary>
+    public Func<DateTime> Now { get; set; } = () => DateTime.UtcNow;
 
     public IReadOnlyList<V2pnPartner> All => _partners.Values.OrderBy(p => p.Name, StringComparer.CurrentCulture).ToList();
 
     public V2pnPartner? Get(string? id) => id != null && _partners.TryGetValue(id, out var partner) ? partner : null;
 
-    /// <summary>The partner of a subscription: the one its panel's v2pn-partner folder belongs to, if verified.</summary>
+    /// <summary>The last index that passed its checks; null before the first one.</summary>
+    public V2pnPartnerIndex? Index => _index;
+
+    /// <summary>Why the index could not be taken the last time it was asked for; null after a success.</summary>
+    public string? IndexError { get; private set; }
+
+    /// <summary>The partner of a subscription: the kept partner whose domains hold its link.</summary>
     public V2pnPartner? ForSubscription(SubItem? item)
     {
         if (item?.Id is { } id && _debugSubs.TryGetValue(id, out var debugPartner) && Get(debugPartner) is { } linked)
         {
             return linked;
         }
-        var info = SubInfoManager.Instance.Get(item?.Id);
-        return ForSource(info?.PartnerUrl, item?.Url);
+        return ForUrl(item?.Url);
     }
 
-    public V2pnPartner? ForSource(string? partnerUrl, string? subscriptionUrl)
-    {
-        if (partnerUrl.IsNullOrEmpty())
-        {
-            return null;
-        }
-        var partner = _partners.Values.FirstOrDefault(p => p.SourceUrl == partnerUrl);
-        // A pack only dresses subscriptions from its certificate's domains, however the link reached the app.
-        return partner != null && V2pnPartnerTrust.DomainAllowed(partner.Cert, subscriptionUrl) ? partner : null;
-    }
+    /// <summary>The partner a subscription link belongs to, by its host; the one listed first when several match.</summary>
+    public V2pnPartner? ForUrl(string? subscriptionUrl) =>
+        _index?.ForUrl(subscriptionUrl) is { } listing && Get(listing.Id) is { } partner && !_debugIds.ContainsKey(partner.Id) ? partner : null;
+
+    /// <summary>The listing a subscription link belongs to, whether or not its pack is here yet.</summary>
+    public V2pnPartnerListing? ListingFor(string? subscriptionUrl) => _index?.ForUrl(subscriptionUrl);
 
     /// <summary>Pictures of a partner's pack that did not fit their slot and are not shown (V2pnPartnerSlots).</summary>
     public IReadOnlyList<string> SlotNotesFor(string? partnerId) =>
         partnerId != null && _slotNotes.TryGetValue(partnerId, out var notes) ? notes : [];
 
-    /// <summary>Why the last check of a v2pn-partner folder failed; null after a success or before any check.</summary>
-    public string? ErrorFor(string? partnerUrl) => partnerUrl != null && _errors.TryGetValue(partnerUrl, out var error) ? error : null;
+    /// <summary>Why the last download of a partner's pack failed; null after a success or before any.</summary>
+    public string? ErrorFor(string? partnerId) => partnerId != null && _errors.TryGetValue(partnerId, out var error) ? error : null;
 
     public Task LoadAsync()
     {
@@ -132,18 +145,31 @@ public sealed class V2pnPartners
             {
                 return;
             }
-            _revoked = ReadKeptRevocations(root) ?? [];
+            var index = V2pnPartnerTrust.ReadIndex(ReadOrNull(root, V2pnPartnerTrust.IndexFile, V2pnPartnerTrust.MaxIndexBytes),
+                ReadTextOrNull(root, V2pnPartnerTrust.IndexFile + ".sig"), _rootKeys, out var indexError);
+            if (index == null && File.Exists(Path.Combine(root, V2pnPartnerTrust.IndexFile)))
+            {
+                Logging.SaveLog($"{Tag}: the kept partner index is not trusted: {indexError}");
+            }
+            if (index != null)
+            {
+                _index = index;
+                _indexPublished = ReadPublished(root);
+            }
             foreach (var dir in Directory.EnumerateDirectories(root))
             {
-                if (Path.GetFileName(dir).StartsWith('.'))
+                var id = Path.GetFileName(dir);
+                var listing = index?.Get(id);
+                if (id.StartsWith('.') || listing == null || listing.Until < Today())
                 {
+                    // A staging folder left behind, or a partner the index no longer lists or whose term ran out.
                     DeleteQuietly(dir);
                     continue;
                 }
-                var partner = ReadFolder(dir, out var error);
+                var partner = ReadFolder(dir, listing, out var error);
                 if (partner == null)
                 {
-                    Logging.SaveLog($"{Tag}: {Path.GetFileName(dir)} is no longer trusted: {error}");
+                    Logging.SaveLog($"{Tag}: {id} is no longer trusted: {error}");
                     continue;
                 }
                 _partners[partner.Id] = partner;
@@ -157,28 +183,43 @@ public sealed class V2pnPartners
     }
 
     /// <summary>
-    /// Downloads and checks the pack a subscription's panel points to, and keeps it when it passes. Runs one at
-    /// a time; a failure keeps the partner already on disk (a provider's site being down changes nothing).
+    /// Asks for the index (at start, then at most every <see cref="IndexInterval"/> unless <paramref name="forceIndex"/>),
+    /// downloads the pack of every partner a subscription here belongs to whose zip is not the one kept, and drops the
+    /// partners that left the index, ran out or have no subscription here. Runs one at a time; a failure keeps what is
+    /// kept (a release page being down changes nothing).
     /// </summary>
-    public async Task<V2pnPartner?> RefreshAsync(string subscriptionUrl, string partnerUrl, CancellationToken cancellationToken = default)
+    public async Task RefreshAsync(bool forceIndex = false, CancellationToken cancellationToken = default)
     {
         await LoadAsync();
+        var urls = await SubscriptionUrls();
         await _gate.WaitAsync(cancellationToken);
         try
         {
-            if (!_revocationsChecked)
+            if (forceIndex || Now() - _indexAsked >= IndexInterval)
             {
-                _revocationsChecked = true;
-                await RefreshRevocationsAsync(cancellationToken);
+                _indexAsked = Now();
+                await RefreshIndexAsync(cancellationToken);
             }
-            var partner = await DownloadAsync(subscriptionUrl, partnerUrl, cancellationToken);
-            if (partner != null)
+            PruneCore(urls);
+            if (_index is not { } index)
             {
-                _errors.TryRemove(partnerUrl, out _);
-                _partners[partner.Id] = partner;
-                Changed?.Invoke();
+                return;
             }
-            return partner;
+            foreach (var listing in index.Partners.Where(l => l.Until >= Today() && urls.Any(u => V2pnPartnerTrust.DomainAllowed(l, u))))
+            {
+                var kept = Get(listing.Id);
+                if (kept != null && kept.Listing.Zip.Sha256 == listing.Zip.Sha256)
+                {
+                    continue;
+                }
+                var partner = await DownloadAsync(listing, cancellationToken);
+                if (partner != null)
+                {
+                    _errors.TryRemove(listing.Id, out _);
+                    _partners[partner.Id] = partner;
+                    Changed?.Invoke();
+                }
+            }
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -187,8 +228,6 @@ public sealed class V2pnPartners
         catch (Exception ex)
         {
             Logging.SaveLog(Tag, ex);
-            _errors[partnerUrl] = ex.Message;
-            return null;
         }
         finally
         {
@@ -196,123 +235,140 @@ public sealed class V2pnPartners
         }
     }
 
-    private async Task<V2pnPartner?> DownloadAsync(string subscriptionUrl, string partnerUrl, CancellationToken cancellationToken)
+    /// <summary>Takes the index from the first source that serves one signed by a root key and not older than the kept one.</summary>
+    private async Task RefreshIndexAsync(CancellationToken cancellationToken)
     {
-        string? Fail(string error)
+        var errors = new List<string>();
+        foreach (var source in Sources)
         {
-            _errors[partnerUrl] = error;
-            Logging.SaveLog($"{Tag}: {Utils.TryUri(partnerUrl)?.Host}: {error}");
-            return null;
-        }
-
-        var certJson = await GetBytesAsync(partnerUrl + "cert.json", V2pnPartnerTrust.MaxCertBytes, cancellationToken);
-        var certSig = await GetTextAsync(partnerUrl + "cert.json.sig", cancellationToken);
-        var cert = V2pnPartnerTrust.ReadCert(certJson, certSig, _rootKeys, Today(), out var error);
-        if (cert == null)
-        {
-            Fail(error);
-            return null;
-        }
-        if (_revoked.Contains(V2pnPartnerTrust.RevocationKey(cert)))
-        {
-            Fail("The partner certificate was withdrawn.");
-            return null;
-        }
-        if (!V2pnPartnerTrust.DomainAllowed(cert, partnerUrl) || !V2pnPartnerTrust.DomainAllowed(cert, subscriptionUrl))
-        {
-            Fail("The subscription or the pack comes from a domain the partner certificate does not name.");
-            return null;
-        }
-
-        var packJson = await GetBytesAsync(partnerUrl + "partner.json", V2pnPartnerTrust.MaxPackBytes, cancellationToken);
-        var packSig = await GetTextAsync(partnerUrl + "partner.json.sig", cancellationToken);
-        var pack = V2pnPartnerTrust.ReadPack(packJson, packSig, cert, out error);
-        if (pack == null)
-        {
-            Fail(error);
-            return null;
-        }
-
-        var root = _root();
-        Directory.CreateDirectory(root);
-        var staging = Path.Combine(root, "." + cert.Partner + "-" + Guid.NewGuid().ToString("N")[..8]);
-        Directory.CreateDirectory(staging);
-        try
-        {
-            var pictures = new Dictionary<string, byte[]>(StringComparer.Ordinal);
-            foreach (var asset in pack.Assets)
+            var json = await GetBytesAsync($"{source}/latest/download/{V2pnPartnerTrust.IndexFile}", V2pnPartnerTrust.MaxIndexBytes, cancellationToken);
+            var sig = await GetTextAsync($"{source}/latest/download/{V2pnPartnerTrust.IndexFile}.sig", cancellationToken);
+            if (V2pnPartnerTrust.ReadIndex(json, sig, _rootKeys, out var error) is not { } index)
             {
-                var content = await GetBytesAsync(partnerUrl + Uri.EscapeDataString(asset.Name), V2pnPartnerTrust.MaxAssetBytes, cancellationToken);
-                if (content == null || !V2pnPartnerTrust.AssetMatches(asset, content))
-                {
-                    Fail($"The file {asset.Name} does not match the signed pack.");
-                    return null;
-                }
-                pictures[asset.Name] = content;
-                await File.WriteAllBytesAsync(Path.Combine(staging, asset.Name), content, cancellationToken);
+                errors.Add($"{Utils.TryUri(source)?.Host}: {error}");
+                continue;
             }
-            pack = V2pnPartnerSlots.Fit(pack, name => pictures.GetValueOrDefault(name), out var notes);
-            _slotNotes[cert.Partner] = notes;
-            var features = ReadFeatures(cert, pack, name => pictures.GetValueOrDefault(name));
-            await File.WriteAllBytesAsync(Path.Combine(staging, "cert.json"), certJson!, cancellationToken);
-            await File.WriteAllTextAsync(Path.Combine(staging, "cert.json.sig"), certSig!, cancellationToken);
-            await File.WriteAllBytesAsync(Path.Combine(staging, "partner.json"), packJson!, cancellationToken);
-            await File.WriteAllTextAsync(Path.Combine(staging, "partner.json.sig"), packSig!, cancellationToken);
-            await File.WriteAllTextAsync(Path.Combine(staging, SourceFile), partnerUrl, cancellationToken);
-
-            var target = Path.Combine(root, cert.Partner);
-            // A virus scanner opens files just written; Windows then refuses the delete or the move for a moment.
-            await RetryAsync(() =>
+            var published = Published(json!);
+            // An older index signed earlier would bring back a partner taken out since; a mirror that lags is skipped.
+            if (published < _indexPublished)
             {
-                if (Directory.Exists(target))
+                errors.Add($"{Utils.TryUri(source)?.Host}: the partner index is older than the one kept");
+                continue;
+            }
+            foreach (var problem in index.Problems)
+            {
+                Logging.SaveLog($"{Tag}: index: {problem}");
+            }
+            var root = _root();
+            Directory.CreateDirectory(root);
+            await File.WriteAllBytesAsync(Path.Combine(root, V2pnPartnerTrust.IndexFile), json!, cancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(root, V2pnPartnerTrust.IndexFile + ".sig"), sig!, cancellationToken);
+            _index = index;
+            _indexPublished = published;
+            IndexError = null;
+            // The listings may have changed (grants, term, reviewed files): the kept packs are read again under them.
+            foreach (var kept in _partners.Values.Where(p => !_debugIds.ContainsKey(p.Id)).ToList())
+            {
+                if (index.Get(kept.Id) is { } listing && ReadFolder(kept.Folder, listing, out _) is { } again)
                 {
-                    Directory.Delete(target, true);
+                    _partners[kept.Id] = again;
                 }
-                Directory.Move(staging, target);
-            }, cancellationToken);
-            return new V2pnPartner(cert, pack, target, partnerUrl, features);
+            }
+            Changed?.Invoke();
+            return;
         }
-        finally
-        {
-            DeleteQuietly(staging);
-        }
+        IndexError = errors.Count == 0 ? "No source to ask for the partner index." : string.Join("; ", errors);
+        Logging.SaveLog($"{Tag}: {IndexError}");
     }
 
-    /// <summary>The partner kept in <paramref name="dir"/>, checked again from its files; null when anything fails.</summary>
-    public V2pnPartner? ReadFolder(string dir, out string error)
+    private async Task<V2pnPartner?> DownloadAsync(V2pnPartnerListing listing, CancellationToken cancellationToken)
+    {
+        var error = "No source serves the pack.";
+        foreach (var source in Sources)
+        {
+            var zip = await GetBytesAsync($"{source}/latest/download/{listing.Zip.File}", V2pnPartnerTrust.MaxZipBytes, cancellationToken);
+            var pack = V2pnPartnerTrust.Unpack(zip, listing, out var files, out error);
+            if (pack == null)
+            {
+                continue;
+            }
+            var root = _root();
+            Directory.CreateDirectory(root);
+            var staging = Path.Combine(root, "." + listing.Id + "-" + Guid.NewGuid().ToString("N")[..8]);
+            Directory.CreateDirectory(staging);
+            try
+            {
+                foreach (var (name, content) in files)
+                {
+                    await File.WriteAllBytesAsync(Path.Combine(staging, name), content, cancellationToken);
+                }
+                await File.WriteAllBytesAsync(Path.Combine(staging, KeptZip), zip!, cancellationToken);
+                pack = V2pnPartnerSlots.Fit(pack, name => files.GetValueOrDefault(name), out var notes);
+                _slotNotes[listing.Id] = notes;
+                var features = ReadFeatures(listing, pack, name => files.GetValueOrDefault(name));
+
+                var target = Path.Combine(root, listing.Id);
+                // A virus scanner opens files just written; Windows then refuses the delete or the move for a moment.
+                await RetryAsync(() =>
+                {
+                    if (Directory.Exists(target))
+                    {
+                        Directory.Delete(target, true);
+                    }
+                    Directory.Move(staging, target);
+                }, cancellationToken);
+                Logging.SaveLog($"{Tag}: {listing.Id}: pack {listing.Zip.Sha256[..12]} taken");
+                return new V2pnPartner(listing, pack, target, features);
+            }
+            finally
+            {
+                DeleteQuietly(staging);
+            }
+        }
+        _errors[listing.Id] = error;
+        Logging.SaveLog($"{Tag}: {listing.Id}: {error}");
+        return null;
+    }
+
+    /// <summary>
+    /// The partner kept in <paramref name="dir"/>, checked again from its files under <paramref name="listing"/>: the kept zip
+    /// must unpack as a downloaded one does and every file beside it must be the zip's. A zip older than the listing's (its
+    /// download failed so far) still counts: the owner approved it when it was taken. Null with the reason when anything fails.
+    /// </summary>
+    public V2pnPartner? ReadFolder(string dir, V2pnPartnerListing listing, out string error)
     {
         try
         {
-            var cert = V2pnPartnerTrust.ReadCert(ReadOrNull(dir, "cert.json"), ReadTextOrNull(dir, "cert.json.sig"), _rootKeys, Today(), out error);
-            if (cert == null)
+            if (Path.GetFileName(dir) != listing.Id)
+            {
+                error = "The kept partner was renamed.";
+                return null;
+            }
+            var zip = ReadOrNull(dir, KeptZip, V2pnPartnerTrust.MaxZipBytes);
+            if (zip == null)
+            {
+                error = "The kept pack is missing.";
+                return null;
+            }
+            var kept = listing with { Zip = listing.Zip with { Size = zip.LongLength, Sha256 = Convert.ToHexStringLower(SHA256.HashData(zip)) } };
+            var pack = V2pnPartnerTrust.Unpack(zip, kept, out var files, out error);
+            if (pack == null)
             {
                 return null;
             }
-            if (cert.Partner != Path.GetFileName(dir) || _revoked.Contains(V2pnPartnerTrust.RevocationKey(cert)))
+            foreach (var (name, content) in files)
             {
-                error = "The kept partner was withdrawn or renamed.";
-                return null;
-            }
-            var pack = V2pnPartnerTrust.ReadPack(ReadOrNull(dir, "partner.json"), ReadTextOrNull(dir, "partner.json.sig"), cert, out error);
-            var source = ReadTextOrNull(dir, SourceFile)?.Trim();
-            if (pack == null || source.IsNullOrEmpty() || !V2pnPartnerTrust.DomainAllowed(cert, source))
-            {
-                error = error.IsNullOrEmpty() ? "The kept partner has no source." : error;
-                return null;
-            }
-            foreach (var asset in pack.Assets)
-            {
-                var content = ReadOrNull(dir, asset.Name);
-                if (content == null || !V2pnPartnerTrust.AssetMatches(asset, content))
+                var onDisk = ReadOrNull(dir, name, V2pnPartnerTrust.MaxAssetBytes);
+                if (onDisk == null || !onDisk.AsSpan().SequenceEqual(content))
                 {
-                    error = $"The kept file {asset.Name} changed.";
+                    error = $"The kept file {name} changed.";
                     return null;
                 }
             }
-            pack = V2pnPartnerSlots.Fit(pack, name => ReadOrNull(dir, name), out var notes);
-            _slotNotes[cert.Partner] = notes;
+            pack = V2pnPartnerSlots.Fit(pack, name => files.GetValueOrDefault(name), out var notes);
+            _slotNotes[listing.Id] = notes;
             error = string.Empty;
-            return new V2pnPartner(cert, pack, dir, source, ReadFeatures(cert, pack, name => ReadOrNull(dir, name)));
+            return new V2pnPartner(kept, pack, dir, ReadFeatures(listing, pack, name => files.GetValueOrDefault(name)));
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         {
@@ -322,24 +378,37 @@ public sealed class V2pnPartners
     }
 
     /// <summary>
-    /// Drops partners no subscription points to any more (the subscription was deleted, its panel stopped naming the
-    /// pack, or its link moved to a domain the certificate does not name) and partners whose certificate ran out
-    /// while the app was open. Their kept files go too, so nothing of a former partner stays on the computer.
+    /// Drops partners the index no longer lists, whose term ran out, or from whose domains no subscription here is (the
+    /// subscription was deleted or moved). Their kept files go too, so nothing of a former partner stays on the computer.
     /// </summary>
-    /// <param name="links">Every subscription as (the v2pn-partner folder its panel named last, its link).</param>
-    public IReadOnlyList<V2pnPartner> Prune(IEnumerable<(string? PartnerUrl, string? SubscriptionUrl)> links)
+    /// <param name="subscriptionUrls">The link of every subscription here.</param>
+    public IReadOnlyList<V2pnPartner> Prune(IEnumerable<string?> subscriptionUrls)
     {
-        var linked = links.ToList();
+        _gate.Wait();
+        try
+        {
+            return PruneCore(subscriptionUrls.ToList());
+        }
+        finally
+        {
+            _gate.Release();
+        }
+    }
+
+    private List<V2pnPartner> PruneCore(IReadOnlyList<string?> urls)
+    {
         var gone = new List<(V2pnPartner Partner, V2pnPartnerGone Reason)>();
         foreach (var partner in _partners.Values.Where(p => !_debugIds.ContainsKey(p.Id)).ToList())
         {
-            V2pnPartnerGone? reason = partner.Cert.Expires < Today() ? V2pnPartnerGone.Expired
-                : linked.Any(l => l.PartnerUrl == partner.SourceUrl && V2pnPartnerTrust.DomainAllowed(partner.Cert, l.SubscriptionUrl)) ? null
+            var listing = _index?.Get(partner.Id);
+            V2pnPartnerGone? reason = listing == null ? V2pnPartnerGone.Revoked
+                : listing.Until < Today() ? V2pnPartnerGone.Expired
+                : urls.Any(u => V2pnPartnerTrust.DomainAllowed(listing, u)) ? null
                 : V2pnPartnerGone.Unlinked;
             if (reason is { } why && _partners.TryRemove(partner.Id, out _))
             {
                 DeleteQuietly(partner.Folder);
-                _errors.TryRemove(partner.SourceUrl, out _);
+                _errors.TryRemove(partner.Id, out _);
                 gone.Add((partner, why));
                 Logging.SaveLog($"{Tag}: dropped {partner.Id} ({why})");
             }
@@ -355,11 +424,34 @@ public sealed class V2pnPartners
         return gone.Select(g => g.Partner).ToList();
     }
 
+    /// <summary><see cref="Prune"/> against the subscriptions in the database, once the kept partners are loaded.</summary>
+    public async Task<IReadOnlyList<V2pnPartner>> PruneAsync()
+    {
+        try
+        {
+            await LoadAsync();
+            var urls = await SubscriptionUrls();
+            await _gate.WaitAsync();
+            try
+            {
+                return PruneCore(urls);
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(Tag, ex);
+            return [];
+        }
+    }
+
     /// <summary>
-    /// Debug only (V2pnPartnerTrust.DebugAllowed): a partner made up in memory with every look and grant, no API, so every
-    /// look and every scenario can be tried without a provider's site. With <paramref name="themeFolder"/> (a folder with a
-    /// partner.json and its pictures, unsigned) it takes that pack's brand, theme and pictures, checked as a real pack's
-    /// are. Null in a plain release.
+    /// Debug only (V2pnPartnerTrust.DebugAllowed): a partner made up in memory with the edition, account and actions grants,
+    /// no API, so the look can be tried without a published index. With <paramref name="themeFolder"/> (a folder with a
+    /// partner.json and its pictures) it takes that pack's brand, theme and pictures. Null in a plain release.
     /// </summary>
     public V2pnPartner? AddDebugPartner(string id, string name, string? accent, string? themeFolder = null)
     {
@@ -367,16 +459,16 @@ public sealed class V2pnPartners
         {
             return null;
         }
-        var today = Today();
-        var cert = new V2pnPartnerCert(id, name, ["localhost"], string.Empty, [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account, V2pnPartnerGrants.Actions], today, today.AddYears(1));
+        var listing = new V2pnPartnerListing(id, name, ["localhost"], [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account, V2pnPartnerGrants.Actions],
+            Today().AddYears(1), new V2pnPartnerZip(V2pnPartnerTrust.ZipName(id), 1, new string('0', 64)));
         var folder = Path.Combine(Path.GetTempPath(), "v2pn-debug-partner-" + id);
         var assets = new List<V2pnPartnerAsset>();
         JsonObject? root = null;
-        if (themeFolder != null && File.Exists(Path.Combine(themeFolder, "partner.json")))
+        if (themeFolder != null && File.Exists(Path.Combine(themeFolder, V2pnPartnerTrust.PackFile)))
         {
             try
             {
-                root = JsonNode.Parse(File.ReadAllBytes(Path.Combine(themeFolder, "partner.json"))) as JsonObject;
+                root = JsonNode.Parse(File.ReadAllBytes(Path.Combine(themeFolder, V2pnPartnerTrust.PackFile))) as JsonObject;
                 Directory.CreateDirectory(folder);
                 foreach (var file in Directory.GetFiles(themeFolder).Where(f => V2pnPartnerSlots.ImageSize(File.ReadAllBytes(f)) != null).Take(V2pnPartnerTrust.MaxAssets))
                 {
@@ -396,11 +488,10 @@ public sealed class V2pnPartners
         accent = V2pnColor.TryParse(brand?["accent"]?.GetValue<string>())?.Hex ?? accent;
         var theme = V2pnThemeReader.Parse(root?["theme"], accent, f => Picture(f) != null);
         var pack = new V2pnPartnerPack(id, name, accent, Picture(brand?["logo"]?.GetValue<string>()), Picture(brand?["logoOnLight"]?.GetValue<string>()),
-            V2pnPartnerVariants.All.ToList(), V2pnPartnerVariants.Neon,
-            new Dictionary<string, string>(), null, null, null, assets, Picture(brand?["mark"]?.GetValue<string>()),
-            Actions: V2pnPartnerCatalog.ParseActions(root?["actions"], cert, hasApi: false), Theme: theme);
+            null, null, null, assets, Picture(brand?["mark"]?.GetValue<string>()),
+            Actions: V2pnPartnerCatalog.ParseActions(root?["actions"], listing, hasApi: false), Theme: theme);
         pack = V2pnPartnerSlots.Fit(pack, file => File.Exists(Path.Combine(folder, file)) ? File.ReadAllBytes(Path.Combine(folder, file)) : null, out _);
-        var partner = new V2pnPartner(cert, pack, folder, "debug://" + id + "/");
+        var partner = new V2pnPartner(listing, pack, folder);
         _debugIds[id] = 0;
         _partners[id] = partner;
         Changed?.Invoke();
@@ -408,57 +499,6 @@ public sealed class V2pnPartners
     }
 
     public bool IsDebug(string? id) => id != null && _debugIds.ContainsKey(id);
-
-    /// <summary>
-    /// The id an unsigned pack is read under to be drawn (ReadUnsigned). A certificate's id never has a dot, so no real
-    /// partner can be it.
-    /// </summary>
-    public const string PreviewId = "builder.preview";
-
-    /// <summary>
-    /// The unsigned pack in <paramref name="folder"/> as partner <paramref name="partnerId"/> under a made-up certificate with the
-    /// edition, account and actions grants for the domains its links name: what the theme builder draws and previews. Its
-    /// "assets" are taken from the folder as tools/partner.cs pack would write them; pictures are fitted to their slots.
-    /// </summary>
-    public static V2pnPartner? ReadUnsigned(string folder, string partnerId, DateOnly today, out IReadOnlyList<string> slotNotes, out string error)
-    {
-        slotNotes = [];
-        if (V2pnPackWriter.Read(folder, out error) is not { } root)
-        {
-            return null;
-        }
-        try
-        {
-            root["id"] = partnerId;
-            // A name still being typed draws as "Provider" rather than taking the preview away.
-            var name = V2pnPartnerTrust.ValidName(root["name"] is JsonValue v && v.TryGetValue<string>(out var text) ? text : null) ?? "Provider";
-            root["name"] = name;
-            var json = V2pnPackWriter.Bytes(root, folder);
-            var domains = new List<string> { "localhost" };
-            foreach (var url in new[] { root["links"]?["cabinet"], root["links"]?["support"], root["api"] }
-                         .Concat((root["actions"] as JsonArray)?.Select(a => a?["url"]) ?? []))
-            {
-                if (url is JsonValue value && value.TryGetValue<string>(out var link) && Utils.TryUri(link) is { } uri && uri.IdnHost.Length > 0)
-                {
-                    domains.Add(uri.IdnHost.TrimEnd('.').ToLowerInvariant());
-                }
-            }
-            var cert = new V2pnPartnerCert(partnerId, name, domains.Distinct().ToList(), string.Empty,
-                [V2pnPartnerGrants.Edition, V2pnPartnerGrants.Account, V2pnPartnerGrants.Actions], today, today.AddYears(1));
-            var pack = V2pnPartnerTrust.ReadUnsignedPack(json, cert, out error);
-            if (pack == null)
-            {
-                return null;
-            }
-            pack = V2pnPartnerSlots.Fit(pack, file => ReadOrNull(folder, file), out slotNotes);
-            return new V2pnPartner(cert, pack, folder, "preview://" + partnerId + "/");
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException)
-        {
-            error = ex.Message;
-            return null;
-        }
-    }
 
     /// <summary>Debug only: drops a made-up partner, as if <paramref name="why"/> happened (the look closes with its note).</summary>
     public void RemoveDebugPartner(string id, V2pnPartnerGone why)
@@ -495,73 +535,35 @@ public sealed class V2pnPartners
     public string? DebugPartnerOf(string? subscriptionId) =>
         subscriptionId != null && _debugSubs.TryGetValue(subscriptionId, out var id) ? id : null;
 
-    /// <summary><see cref="Prune"/> against the subscriptions in the database, once the kept partners are loaded.</summary>
-    public async Task<IReadOnlyList<V2pnPartner>> PruneAsync()
-    {
-        try
-        {
-            await LoadAsync();
-            await SubInfoManager.Instance.LoadAsync();
-            var subs = await AppManager.Instance.SubItems() ?? [];
-            await _gate.WaitAsync();
-            try
-            {
-                return Prune(subs.Select(s => (SubInfoManager.Instance.Get(s.Id)?.PartnerUrl, (string?)s.Url)));
-            }
-            finally
-            {
-                _gate.Release();
-            }
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog(Tag, ex);
-            return [];
-        }
-    }
-
-    /// <summary>Fetches the signed list of withdrawn certificates from where releases come from; keeps the last good one.</summary>
-    private async Task RefreshRevocationsAsync(CancellationToken cancellationToken)
-    {
-        foreach (var source in V2pnInfo.UpdateSources)
-        {
-            var json = await GetBytesAsync($"{source}/latest/download/{RevokedFile}", V2pnPartnerTrust.MaxCertBytes, cancellationToken);
-            var sig = await GetTextAsync($"{source}/latest/download/{RevokedFile}.sig", cancellationToken);
-            if (V2pnPartnerTrust.ReadRevoked(json, sig, _rootKeys) is not { } revoked)
-            {
-                continue;
-            }
-            var root = _root();
-            Directory.CreateDirectory(root);
-            await File.WriteAllBytesAsync(Path.Combine(root, RevokedFile), json!, cancellationToken);
-            await File.WriteAllTextAsync(Path.Combine(root, RevokedFile + ".sig"), sig!, cancellationToken);
-            _revoked = revoked;
-            foreach (var partner in _partners.Values.Where(p => revoked.Contains(V2pnPartnerTrust.RevocationKey(p.Cert))).ToList())
-            {
-                if (_partners.TryRemove(partner.Id, out _))
-                {
-                    DeleteQuietly(partner.Folder);
-                    Removed?.Invoke(partner, V2pnPartnerGone.Revoked);
-                    Changed?.Invoke();
-                }
-            }
-            return;
-        }
-    }
-
     /// <summary>The reviewed files; a file that is not used is logged with why, the rest of the partner works as before.</summary>
-    private static V2pnPartnerFeatures ReadFeatures(V2pnPartnerCert cert, V2pnPartnerPack pack, Func<string, byte[]?> content)
+    private static V2pnPartnerFeatures ReadFeatures(V2pnPartnerListing listing, V2pnPartnerPack pack, Func<string, byte[]?> content)
     {
-        var features = V2pnPartnerFeatures.Read(cert, pack, content);
+        var features = V2pnPartnerFeatures.Read(listing, pack, content);
         foreach (var file in features.Files.Where(f => f.State != V2pnReviewState.Ready))
         {
-            Logging.SaveLog($"{Tag}: {cert.Partner}: {file.Name} is not used: {file.Problem}");
+            Logging.SaveLog($"{Tag}: {listing.Id}: {file.Name} is not used: {file.Problem}");
         }
         return features;
     }
 
-    private HashSet<string>? ReadKeptRevocations(string root) =>
-        V2pnPartnerTrust.ReadRevoked(ReadOrNull(root, RevokedFile), ReadTextOrNull(root, RevokedFile + ".sig"), _rootKeys);
+    /// <summary>"published" of an index already checked; the oldest time when it has none V2pn reads.</summary>
+    private static DateTimeOffset Published(byte[] json)
+    {
+        try
+        {
+            return JsonNode.Parse(json)?["published"] is JsonValue value && value.TryGetValue<string>(out var text)
+                   && DateTimeOffset.TryParse(text, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var time)
+                ? time
+                : DateTimeOffset.MinValue;
+        }
+        catch (JsonException)
+        {
+            return DateTimeOffset.MinValue;
+        }
+    }
+
+    private static DateTimeOffset ReadPublished(string root) =>
+        ReadOrNull(root, V2pnPartnerTrust.IndexFile, V2pnPartnerTrust.MaxIndexBytes) is { } json ? Published(json) : DateTimeOffset.MinValue;
 
     private async Task<byte[]?> GetBytesAsync(string url, int maxBytes, CancellationToken cancellationToken)
     {
@@ -575,15 +577,21 @@ public sealed class V2pnPartners
         return body == null ? null : Encoding.UTF8.GetString(body).Trim();
     }
 
-    /// <summary>Direct first; through the VPN when the provider's site does not answer directly, as subscriptions do.</summary>
+    /// <summary>Direct first; through the VPN when the release page does not answer directly, as updates do.</summary>
     private static async Task<V2pnHttp.Result> DefaultFetchAsync(string url, CancellationToken cancellationToken)
     {
-        var result = await V2pnHttp.GetAsync(url, null, V2pnPartnerTrust.MaxAssetBytes, cancellationToken);
+        var result = await V2pnHttp.GetAsync(url, null, V2pnPartnerTrust.MaxZipBytes, cancellationToken);
         if (result.Status == null && await V2pnHttp.LocalProxyAsync(cancellationToken) is { } proxy)
         {
-            result = await V2pnHttp.GetAsync(url, proxy, V2pnPartnerTrust.MaxAssetBytes, cancellationToken);
+            result = await V2pnHttp.GetAsync(url, proxy, V2pnPartnerTrust.MaxZipBytes, cancellationToken);
         }
         return result;
+    }
+
+    private static async Task<IReadOnlyList<string?>> DefaultSubscriptionUrlsAsync()
+    {
+        var subs = await AppManager.Instance.SubItems() ?? [];
+        return subs.Select(s => (string?)s.Url).ToList();
     }
 
     private static async Task RetryAsync(Action act, CancellationToken cancellationToken)
@@ -617,11 +625,11 @@ public sealed class V2pnPartners
         }
     }
 
-    private static byte[]? ReadOrNull(string dir, string name)
+    private static byte[]? ReadOrNull(string dir, string name, int maxBytes)
     {
         var path = Path.Combine(dir, name);
-        return File.Exists(path) && new FileInfo(path).Length <= V2pnPartnerTrust.MaxAssetBytes ? File.ReadAllBytes(path) : null;
+        return File.Exists(path) && new FileInfo(path).Length <= maxBytes ? File.ReadAllBytes(path) : null;
     }
 
-    private static string? ReadTextOrNull(string dir, string name) => ReadOrNull(dir, name) is { } bytes ? Encoding.UTF8.GetString(bytes).Trim() : null;
+    private static string? ReadTextOrNull(string dir, string name) => ReadOrNull(dir, name, 4096) is { } bytes ? Encoding.UTF8.GetString(bytes).Trim() : null;
 }

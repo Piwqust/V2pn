@@ -6,10 +6,9 @@ public class V2pnPartnerCatalogTests
 
     private static V2pnPartnerPack ReadPack(Action<JsonObject> more, string[]? grants = null, string? api = "https://config.example.com/v2pn/api/")
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert(p.Cert(grants: grants ?? AllGrants));
+        var cert = TestPartner.Listing(grants: grants ?? AllGrants);
         var json = TestPartner.Pack(api: api, more: more);
-        return V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)!;
+        return V2pnPartnerTrust.ReadPack(json, cert, out _)!;
     }
 
     private static JsonArray Array(params JsonNode[] items) => new(items);
@@ -138,7 +137,7 @@ public class V2pnPartnerCatalogTests
     [Test]
     public async Task ActionLinks_AreHttpsOnTheCertificatesDomainsOrTelegram()
     {
-        var cert = new TestPartner().ReadCert();
+        var cert = TestPartner.Listing();
 
         await V2pnPartnerCatalog.ActionLink(cert, "https://a.sub.example.com/x").Should().BeEqualTo("https://a.sub.example.com/x");
         await V2pnPartnerCatalog.ActionLink(cert, "tg://resolve?domain=config_bot").Should().BeEqualTo("tg://resolve?domain=config_bot");
@@ -318,13 +317,12 @@ public class V2pnPartnerCatalogTests
     [Test]
     public async Task Lock_NeedsTheLockGrant()
     {
-        var p = new TestPartner();
         var hidden = new SubInfoItem { HideSettings = true };
         var hiddenUrl = new SubInfoItem { HideUrl = true };
-        var withLock = p.ReadCert(p.Cert(grants: AllGrants));
-        var withoutLock = p.ReadCert(p.Cert(grants: ["edition", "account", "actions"]));
+        var withLock = TestPartner.Listing(grants: AllGrants);
+        var withoutLock = TestPartner.Listing(grants: ["edition", "account", "actions"]);
         var json = TestPartner.Pack();
-        var pack = V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), withLock, out _)!;
+        var pack = V2pnPartnerTrust.ReadPack(json, withLock, out _)!;
 
         var locked = V2pnLockState.For(withLock, pack, hidden, "Configra");
         await locked.Settings.Should().BeTrue();
@@ -417,10 +415,9 @@ public class V2pnPartnerCatalogTests
     [Test]
     public async Task Live_AsksNoMoreOftenThanTheAccountCall()
     {
-        var p = new TestPartner();
-        var cert = p.ReadCert(p.Cert(grants: AllGrants));
+        var cert = TestPartner.Listing(grants: AllGrants);
         var json = TestPartner.Pack();
-        var partner = new V2pnPartner(cert, V2pnPartnerTrust.ReadPack(json, TestPartner.Sign(p.Key, json), cert, out _)!, "x", "https://config.example.com/v2pn/");
+        var partner = new V2pnPartner(cert, V2pnPartnerTrust.ReadPack(json, cert, out _)!, "x");
         var live = new V2pnPartnerLive();
         var asked = 0;
         live.FetchServers = (_, token, _) =>

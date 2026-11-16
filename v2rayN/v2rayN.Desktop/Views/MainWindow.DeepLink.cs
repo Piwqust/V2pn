@@ -62,7 +62,7 @@ public partial class MainWindow
             }
             var host = Utils.TryUri(link.SubscriptionUrl)?.Host ?? link.SubscriptionUrl;
             // A provider V2pn already vouches for says so; an unknown one gets the general words.
-            var partner = V2pnPartners.Instance.All.FirstOrDefault(p => V2pnPartnerTrust.DomainAllowed(p.Cert, link.SubscriptionUrl));
+            var partner = V2pnPartners.Instance.ListingFor(link.SubscriptionUrl);
             var body = partner != null
                 ? string.Format(L.LinkAddBodyPartner, link.Name ?? host, host, partner.Name)
                 : string.Format(L.LinkAddBody, link.Name ?? host, host);

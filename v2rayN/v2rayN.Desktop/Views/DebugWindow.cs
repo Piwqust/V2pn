@@ -122,7 +122,7 @@ public sealed class DebugWindow : Window
                 Action("срок истёк", () => Gone(V2pnPartnerGone.Expired)),
                 Action("отозван", () => Gone(V2pnPartnerGone.Revoked))),
             Row("Проверки",
-                Action("Перепроверить партнёров", () => _ = V2pnPartners.Instance.PruneAsync()),
+                Action("Спросить список партнёров", () => _ = V2pnPartners.Instance.RefreshAsync(forceIndex: true)),
                 Action("Обновить подписки (и пакеты)", _main.DebugUpdateSubscriptions),
                 Action("Спросить API сейчас", _main.DebugRefreshApi)));
     }
@@ -278,12 +278,16 @@ public sealed class DebugWindow : Window
         foreach (var partner in partners)
         {
             var linked = subs.Where(s => V2pnPartners.Instance.ForSubscription(s)?.Id == partner.Id).Select(s => ViewModels.SideSubRow.NameOf(s));
-            lines.Add($"партнёр {partner.Id}{(V2pnPartners.Instance.IsDebug(partner.Id) ? " (тестовый)" : "")}: до {partner.Cert.Expires:yyyy-MM-dd}, права {string.Join(",", partner.Cert.Grants)}, API {(partner.Pack.ApiUrl ?? "нет")}, подписки: {string.Join(", ", linked).IfEmpty("нет")}");
+            lines.Add($"партнёр {partner.Id}{(V2pnPartners.Instance.IsDebug(partner.Id) ? " (тестовый)" : "")}: до {partner.Listing.Until:yyyy-MM-dd}, права {string.Join(",", partner.Listing.Grants)}, API {(partner.Pack.ApiUrl ?? "нет")}, подписки: {string.Join(", ", linked).IfEmpty("нет")}");
         }
         if (partners.Count == 0)
         {
-            lines.Add("партнёров нет: добавьте тестового или подписку с v2pn-partner (демо Configra)");
+            lines.Add("партнёров нет: добавьте тестового или подписку с домена партнёра из партнёрского списка");
         }
+        var index = V2pnPartners.Instance.Index;
+        lines.Add(index == null
+            ? $"список партнёров: нет{(V2pnPartners.Instance.IndexError is { } why ? $" ({why})" : string.Empty)}"
+            : $"список партнёров: {string.Join(", ", index.Partners.Select(p => p.Id)).IfEmpty("пустой")}{(V2pnPartners.Instance.IndexError is { } err ? $" · последний запрос не удался: {err}" : string.Empty)}");
         lines.Add(_main.DebugPlanState());
         lines.Add(_main.DebugApiState());
         lines.Add(DebugOverrides.Any ? "поверх данных: включено (раздел ниже)" : "поверх данных: ничего");

@@ -24,6 +24,7 @@
     }
   },
   "api": "https://angleford.co/v2pn/api/",
+  "login": true,
   "links": {
     "cabinet": "https://angleford.co/cabinet"
   },

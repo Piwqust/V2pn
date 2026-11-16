@@ -17,6 +17,7 @@
     "support": "http://127.0.0.1:18998/support"
   },
   "api": "http://127.0.0.1:18998/v2pn/api/",
+  "login": true,
   "servers": [
     { "name": "🇩🇪 Германия 1", "group": "Основные", "country": "DE", "city": "Франкфурт", "purpose": ["youtube", "ai"], "priority": 10 },
     { "name": "🇩🇪 Германия 2", "group": "Основные", "country": "DE", "city": "Берлин", "purpose": ["youtube"], "priority": 5, "note": "Быстрый канал до Европы" },

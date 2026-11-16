@@ -1,0 +1,47 @@
+{
+  "schema": 1,
+  "id": "configra",
+  "name": "Configra",
+  "brand": {
+    "accent": "#FF7A2F",
+    "logo": "logo-light.png",
+    "logoOnLight": "logo-dark.png",
+    "mark": "mark.png"
+  },
+  "theme": {
+    "palette": {
+      "brand": [
+        "#FF7A2F",
+        "#EDAA80"
+      ]
+    },
+    "background": {
+      "type": "gradient",
+      "colors": [
+        "#FF7A2F",
+        "#EDAA80"
+      ]
+    }
+  },
+  "api": "https://angleford.co/v2pn/api/",
+  "links": {
+    "cabinet": "https://angleford.co/cabinet"
+  },
+  "assets": [
+    {
+      "name": "logo-dark.png",
+      "size": 10527,
+      "sha256": "99f020db3d17728ed357b3964caadb222d10627acddfa0032ee0dd0e8b8c6ce9"
+    },
+    {
+      "name": "logo-light.png",
+      "size": 10913,
+      "sha256": "f602459093603aa4d2206c45b8b071387d6a957345f8ebdebb3e27889c4ecf08"
+    },
+    {
+      "name": "mark.png",
+      "size": 9163,
+      "sha256": "4580dbcde9ed14927fffe0553f43dbd6089d201734d89d575b2f991b21273723"
+    }
+  ]
+}

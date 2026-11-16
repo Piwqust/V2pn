@@ -13,7 +13,10 @@ Serves at http://127.0.0.1:<port>/:
   /releases/latest/download/<file>
                    a releases page with what tools/partner.cs publish wrote into --published: partners.json, its
                    .sig and partner-kestrel.zip. V2pn takes the partner from there.
-  /v2pn/api/...    the API: account, status, servers, recommend?purpose=, card?id= (bearer token for all but status).
+  /v2pn/api/...    the API: account, status, servers, recommend?purpose=, card?id= (bearer token for all but status),
+                   and the sign-in by code: POST login/start gives six digits and a token, GET login/poll?token= says
+                   "waiting" until --login-after polls have passed (as if the person confirmed in the bot), then "done"
+                   with /sub once, then 404. --login-never keeps it waiting (for pictures of the code).
 
 The index must be published with a test root key and --local (listing.json naming 127.0.0.1), and the V2pn build must
 trust that key and ask this page for releases; tools/demo/try-partner.ps1 does all of it:
@@ -29,6 +32,7 @@ import argparse
 import base64
 import json
 import os
+import secrets
 import subprocess
 import sys
 import tempfile
@@ -77,6 +81,8 @@ class Handler(BaseHTTPRequestHandler):
     hide_url = False
     tls_server = False
     names = []
+    login_after = 5
+    logins = {}
 
     def log_message(self, format, *args):  # noqa: A002 - the base class names it so
         del format, args
@@ -141,7 +147,37 @@ class Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    def do_POST(self):
+        path = unquote(urlparse(self.path).path)
+        if path != "/v2pn/api/login/start":
+            return self.send_json({"error": "unknown"}, 404)
+        length = min(int(self.headers.get("Content-Length") or 0), 4096)
+        try:
+            body = json.loads(self.rfile.read(length) or b"{}")
+        except ValueError:
+            body = {}
+        code = "%06d" % secrets.randbelow(1000000)
+        token = secrets.token_urlsafe(32)
+        Handler.logins[token] = {"code": code, "polls": 0, "device": str(body.get("device", ""))[:60]}
+        print("login/start: code %s for %s" % (code, Handler.logins[token]["device"]), flush=True)
+        return self.send_json({"code": code, "token": token, "url": "https://t.me/kestrel_demo_bot?start=v2pn-" + code,
+                               "expires": 600})
+
+    def login_poll(self, query):
+        token = (query.get("token") or [""])[0]
+        login = Handler.logins.get(token)
+        if login is None:
+            return self.send_json({"error": "unknown"}, 404)
+        login["polls"] += 1
+        if Handler.login_after < 0 or login["polls"] < Handler.login_after:
+            return self.send_json({"state": "waiting"})
+        # Confirmed in the pretend bot: the link goes out once and the token is gone.
+        del Handler.logins[token]
+        return self.send_json({"state": "done", "subscription": "http://127.0.0.1:%d/sub" % self.port, "name": "Kestrel"})
+
     def api(self, name, query):
+        if name == "login/poll":
+            return self.login_poll(query)
         if name == "status":
             return self.send_json({"incidents": []})
         if not self.authorized():
@@ -170,6 +206,8 @@ def main():
     parser.add_argument("--lock", action="store_true")
     parser.add_argument("--hide-url", action="store_true")
     parser.add_argument("--tls-server", action="store_true")
+    parser.add_argument("--login-after", type=int, default=5, help="polls of login/poll before it says done")
+    parser.add_argument("--login-never", action="store_true", help="login/poll keeps saying waiting")
     args = parser.parse_args()
 
     server = None
@@ -189,6 +227,7 @@ def main():
     Handler.lock = args.lock
     Handler.hide_url = args.hide_url
     Handler.tls_server = args.tls_server
+    Handler.login_after = -1 if args.login_never else args.login_after
     Handler.names = server_names(Handler.pack)
     httpd = ThreadingHTTPServer(("127.0.0.1", args.port), Handler)
     print("Subscription: http://127.0.0.1:%d/sub" % args.port, flush=True)

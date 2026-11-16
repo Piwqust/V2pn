@@ -20,13 +20,22 @@
   tools/demo/try-partner.ps1 -Lock      # the same with closed settings
   tools/demo/try-partner.ps1 -NoBuild   # restart quickly with the last build
   tools/demo/try-partner.ps1 -Stop      # close the test V2pn and the pretend provider
+  tools/demo/try-partner.ps1 -SignIn    # a fresh test V2pn without the link: sign in with Kestrel by code instead
+  tools/demo/try-partner.ps1 -SignIn -Background -LoginNever   # off screen with the debug window, the code never confirmed
 #>
 param(
     [string]$Dir = (Join-Path $env:TEMP 'v2pn-try'),
     [switch]$Lock,
     [switch]$HideUrl,
     [switch]$NoBuild,
-    [switch]$Stop
+    [switch]$Stop,
+    # A fresh test copy (the walkthrough opens) and no v2pn://add link: Kestrel is added by 'Sign in with a provider',
+    # which the pretend provider confirms after a few polls of login/poll.
+    [switch]$SignIn,
+    # login/poll never says "done", for pictures of the code.
+    [switch]$LoginNever,
+    # Off screen with the debug window (V2PN_DEBUG=1), for scripted checks with UI Automation and tools/shot.ps1.
+    [switch]$Background
 )
 # Native tools write notes to stderr (partner.cs warns that the test root is not the real one); each step is
 # checked by its result instead.
@@ -117,14 +126,30 @@ if (-not (Test-Path (Join-Path $xrayDir 'xray.exe'))) {
 $providerArgs = @('-I', (Join-Path $demo 'demo_partner.py'), $pack, '--published', $published, '--xray', (Join-Path $xrayDir 'xray.exe'))
 if ($Lock -or $HideUrl) { $providerArgs += '--lock' }
 if ($HideUrl) { $providerArgs += '--hide-url' }
+if ($LoginNever) { $providerArgs += '--login-never' }
 $provider = Start-Process python -ArgumentList $providerArgs -WindowStyle Hidden -PassThru `
     -RedirectStandardOutput (Join-Path $Dir 'provider.log') -RedirectStandardError (Join-Path $Dir 'provider.err')
 $provider.Id | Set-Content $pidFile
 
 Write-Host '5/5 opening the test V2pn'
-# The cores come from the installed V2pn, read only; the test copy keeps its own data between runs.
-& $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData | Out-Null
-& $sandbox -Dest $app -Launch -Visible -AppArgs 'v2pn://add?url=http%3A%2F%2F127.0.0.1%3A18998%2Fsub&name=Kestrel' | Out-Null
+# The cores come from the installed V2pn, read only; the test copy keeps its own data between runs, except for a
+# sign-in, which starts from a fresh install.
+if ($SignIn) {
+    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) | Out-Null
+}
+else {
+    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData | Out-Null
+}
+$launch = @{ Dest = $app; Launch = $true }
+if (-not $Background) { $launch.Visible = $true }
+if (-not $SignIn) { $launch.AppArgs = 'v2pn://add?url=http%3A%2F%2F127.0.0.1%3A18998%2Fsub&name=Kestrel' }
+if ($Background) { $env:V2PN_DEBUG = '1' }
+try { & $sandbox @launch | Out-Null } finally { if ($Background) { Remove-Item Env:V2PN_DEBUG } }
 Write-Host ''
-Write-Host "Test V2pn is open (folder $app). Add the Kestrel subscription it offers."
+if ($SignIn) {
+    Write-Host "Test V2pn is $(if ($Background) { 'running off screen' } else { 'open' }) (folder $app). Sign in with Kestrel: the walkthrough's 'I have a subscription from a provider', or + then 'Sign in with a provider'."
+}
+else {
+    Write-Host "Test V2pn is open (folder $app). Add the Kestrel subscription it offers."
+}
 Write-Host 'Stop everything: tools/demo/try-partner.ps1 -Stop'

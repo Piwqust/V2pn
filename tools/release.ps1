@@ -39,7 +39,7 @@ param(
     [switch]$ManifestOnly,
     # Leaves the app to be compiled at every start (JIT) instead of precompiled (ReadyToRun). Measured
     # on 16.11.2026, medians of five starts: the window appears in 1.6-1.8 s precompiled, 2.4-2.6 s without; the
-    # x64 update zip grows from 64 to 74 MB (v2rayN.Desktop.csproj keeps what a start never loads as IL).
+    # x64 update zip grows from 64 to 76 MB (v2rayN.Desktop.csproj keeps what a start never loads as IL).
     [switch]$NoReadyToRun,
     [switch]$Tag,
     # Release notes for -Tag; by default the CHANGELOG.md section, else the commits since the last tag.

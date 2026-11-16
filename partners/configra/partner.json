@@ -23,10 +23,10 @@
       ]
     }
   },
-  "api": "https://angleford.co/v2pn/api/",
+  "api": "https://configra.angleford.co/v2pn/api/",
   "login": true,
   "links": {
-    "cabinet": "https://angleford.co/cabinet"
+    "cabinet": "https://configra.angleford.co/cabinet"
   },
   "assets": [
     {

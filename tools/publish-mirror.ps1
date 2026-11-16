@@ -10,6 +10,7 @@
     <root>/download/v<version>/<every file of the release>
     <root>/latest/download/release.json
     <root>/latest/download/release.json.sig
+    <root>/latest/download/partners.json, partners.json.sig, partner-<id>.zip (the partners)
 
   The mirror does not have to be trusted: V2pn installs a package only when it matches
   release.json and release.json carries the release key's signature. A mirror that serves
@@ -77,10 +78,9 @@ if ($LocalRoot) {
     New-Item -ItemType Directory -Force $versionDir, $latestDir | Out-Null
     Copy-Item -Force $files.FullName $versionDir
     Copy-Item -Force (Join-Path $From 'release.json'), (Join-Path $From 'release.json.sig') $latestDir
-    # Withdrawn partner certificates are read from "latest" too.
-    foreach ($name in 'partners-revoked.json', 'partners-revoked.json.sig') {
-        if (Test-Path (Join-Path $From $name)) { Copy-Item -Force (Join-Path $From $name) $latestDir }
-    }
+    # The partners are read from "latest" too.
+    $partnerFiles = @($files | Where-Object { $_.Name -match '^(partners\.json(\.sig)?|partner-[a-z0-9-]+\.zip)$' })
+    if ($partnerFiles) { Copy-Item -Force $partnerFiles.FullName $latestDir }
     Write-Host "Laid out in $LocalRoot"
 }
 
@@ -96,8 +96,12 @@ if ($Target) {
     # and a signature that do not belong together is two renames long; it would refuse that pair
     # and ask again later.
     Invoke-Checked 'ssh' @($login, "cp '$root/download/v$Version/release.json.sig' '$root/latest/download/release.json.sig.new' && cp '$root/download/v$Version/release.json' '$root/latest/download/release.json.new' && mv '$root/latest/download/release.json.sig.new' '$root/latest/download/release.json.sig' && mv '$root/latest/download/release.json.new' '$root/latest/download/release.json'")
-    if ($files.Name -contains 'partners-revoked.json') {
-        Invoke-Checked 'ssh' @($login, "cp '$root/download/v$Version/partners-revoked.json' '$root/download/v$Version/partners-revoked.json.sig' '$root/latest/download/'")
+    if ($files.Name -contains 'partners.json') {
+        # The packs first, then the index that names them, renamed into place as release.json is: a V2pn never reads
+        # an index whose zips are not there yet, or an index with another index's signature for more than a moment.
+        $zips = @($files.Name | Where-Object { $_ -match '^partner-[a-z0-9-]+\.zip$' } | ForEach-Object { "'$root/download/v$Version/$_'" })
+        if ($zips) { Invoke-Checked 'ssh' @($login, "cp $($zips -join ' ') '$root/latest/download/'") }
+        Invoke-Checked 'ssh' @($login, "cp '$root/download/v$Version/partners.json.sig' '$root/latest/download/partners.json.sig.new' && cp '$root/download/v$Version/partners.json' '$root/latest/download/partners.json.new' && mv '$root/latest/download/partners.json.sig.new' '$root/latest/download/partners.json.sig' && mv '$root/latest/download/partners.json.new' '$root/latest/download/partners.json'")
     }
     Write-Host "Done. The mirror now serves V2pn $Version."
 }

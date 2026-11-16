@@ -65,10 +65,19 @@ $dotnet = Find-Dotnet
 Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $dir, $Version, '--repo', $repo)
 # The one-command installers go with every release: .../releases/latest/download/install.ps1 (Windows), install.sh (macOS)
 Copy-Item (Join-Path $PSScriptRoot 'install.ps1'), (Join-Path $PSScriptRoot 'install.sh') $dir
-# The partner certificates withdrawn so far (tools/partner.cs revoke); V2pn reads them from the latest release.
-$revoked = Join-Path $repo 'partners/partners-revoked.json'
-if (-not (Test-Path $revoked) -or -not (Test-Path "$revoked.sig")) { throw 'partners/partners-revoked.json(.sig) is missing. Make it with: dotnet run tools/partner.cs -- revoke' }
-Copy-Item $revoked, "$revoked.sig" $dir
+# The partners (partners/<id>): partners.json signed with ~/.v2pn/partner-root-key.pem and partner-<id>.zip each.
+# V2pn reads them from the latest release. The summary says what changed since the index of the release before.
+$previous = Join-Path ([IO.Path]::GetTempPath()) "v2pn-partners-before-$Version"
+if (Test-Path $previous) { Remove-Item -Recurse -Force $previous }
+New-Item -ItemType Directory -Force $previous | Out-Null
+Get-Output 'gh' @('release', 'download', '--repo', $Repository, '--pattern', 'partners.json', '--dir', $previous) | Out-Null
+$partnersOut = Join-Path $dir 'partners'
+$publish = @('run', (Join-Path $PSScriptRoot 'partner.cs'), '--', 'publish', '--out', $partnersOut)
+if (Test-Path (Join-Path $previous 'partners.json')) { $publish += @('--previous', (Join-Path $previous 'partners.json')) }
+# A non-zero exit means a partner has a problem or the app's built-in keys would refuse the signature.
+Invoke-Checked $dotnet $publish
+Get-ChildItem $partnersOut -File | Move-Item -Destination $dir
+Remove-Item -Recurse -Force $partnersOut, $previous
 
 $notesFile = Join-Path $dir 'notes.md'
 [IO.File]::WriteAllText($notesFile, $notes)

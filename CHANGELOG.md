@@ -2,6 +2,25 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### A provider's look, simpler
+
+A provider's look is now one look, Accent, and it follows the server you pick: while one of the provider's servers is selected, V2pn wears its brand; pick another server and plain V2pn is back. Neon, the Pass, the look switcher (the title bar, the tray, Ctrl+1…9, the Appearance page), the circle reveal and the intro are gone.
+
+- Accent keeps V2pn's own window: the provider's logo beside V2pn's in the title bar, Connect in its colour, its subscription card first in the sidebar with your plan, the days left, devices, traffic, its offer and "Renew" and "Support" links, and its buttons under the connect panel.
+- When the provider has a background, the look becomes Scene: the background takes the world map's place, and your plan stands on it. Text on it always reads, in light and dark.
+- What says whether you are protected keeps V2pn's own colours, whatever the provider's.
+
+### Partners come from V2pn
+
+V2pn's owner now keeps every partner's look in V2pn's repository and publishes it with V2pn's releases, signed with V2pn's partner key. A provider no longer needs keys, certificates or its own hosting; it sends its logos and colours to the owner.
+
+- A subscription belongs to a partner when its address is on the partner's domains. The provider's site no longer has to send anything for it.
+- V2pn checks the list of partners when it starts and every few hours, and downloads a partner's look only when you have its subscription. Everything is checked before use; anything that does not check out is not used, and the last good look stays.
+- A partner taken off the list, or whose term ends, loses its look at your next check, with a note. Your servers work as before either way.
+- The theme builder is gone; a web page where a provider puts its look together will come later. The provider guide describes the new way.
+
 ## 1.1.0
 
 ### Provider looks

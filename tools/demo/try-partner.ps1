@@ -82,10 +82,10 @@ $releases = 'http://127.0.0.1:18998/releases'
 
 if (-not $NoBuild -or -not (Test-Path (Join-Path $Dir 'build\V2pn.exe'))) {
     Write-Host '2/5 building V2pn that trusts the test root and asks the pretend provider for releases (a few minutes the first time)'
-    & $dotnet build (Join-Path $repo 'v2rayN2rayN.Desktop2rayN.Desktop.csproj') -c Debug -nologo -v q "-p:V2pnPartnerKeys=$rootPub" "-p:V2pnUpdateSources=$releases" -o (Join-Path $Dir 'build')
+    & $dotnet build (Join-Path $repo 'v2rayN\v2rayN.Desktop\v2rayN.Desktop.csproj') -c Debug -nologo -v q "-p:V2pnPartnerKeys=$rootPub" "-p:V2pnUpdateSources=$releases" -o (Join-Path $Dir 'build')
     if ($LASTEXITCODE -ne 0) { throw 'build failed' }
     # The shared obj folder now holds the test key and source; build once more so the normal Debug build has the real ones.
-    & $dotnet build (Join-Path $repo 'v2rayN2rayN.Desktop2rayN.Desktop.csproj') -c Debug -nologo -v q | Out-Null
+    & $dotnet build (Join-Path $repo 'v2rayN\v2rayN.Desktop\v2rayN.Desktop.csproj') -c Debug -nologo -v q | Out-Null
 }
 
 Write-Host '3/5 publishing Kestrel for 127.0.0.1 with the test root'

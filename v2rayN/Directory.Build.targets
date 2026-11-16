@@ -35,9 +35,9 @@
 
     <!--
       Public root keys (ECDSA P-256, SubjectPublicKeyInfo in base64, "|" between several) that sign
-      partner certificates: a provider's cert.json says which domains and which key of its own may
-      dress V2pn. Not the release key: a partner key must never be able to sign an update. The private
-      half stays in ~/.v2pn/partner-root-key.pem (tools/partner.cs).
+      the partner index, partners.json: which subscription domains are whose, with which grants and
+      which pack (tools/partner.cs publish). Not the release key: the partner key must never be able
+      to sign an update. The private half stays in ~/.v2pn/partner-root-key.pem.
     -->
     <V2pnPartnerKeys Condition="'$(V2pnPartnerKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4LVjtb8RY7TUlzR32OpH1Tn5FPKp5B+m2Zb72/cQzjOSuBvYnBWdHnZ7PnPoFhmNKSeCj5shwtmJD1JIVtCGCg==</V2pnPartnerKeys>
   </PropertyGroup>

@@ -5,19 +5,24 @@ public static class AppBuilderExtension
     private static readonly string DefaultFontFamilyName =
         Path.Combine(Global.AvaAssets, "Fonts#Inter");
 
-    private static readonly string CjkFontFamilyName =
-        Path.Combine(Global.AvaAssets, "Fonts#Noto Sans SC");
+    // V2pn: in a folder of its own. Avalonia loads every font of an embedded folder the first time one of
+    // them is used, so beside Inter this 10 MB font was read into memory at every start.
+    public static readonly string CjkFontFamilyName =
+        Path.Combine(Global.AvaAssets, "Cjk#Noto Sans SC");
 
     public static AppBuilder WithFontByDefault(this AppBuilder appBuilder)
     {
         var fallbacks = new List<FontFallback>();
 
-        var notoSansSc = new FontFamily(CjkFontFamilyName);
-
-        fallbacks.Add(new FontFallback
+        // V2pn: Windows draws Chinese, Japanese and Korean with its own fonts (Microsoft YaHei and others), which the
+        // system fallback finds; other systems may have none.
+        if (!OperatingSystem.IsWindows())
         {
-            FontFamily = notoSansSc
-        });
+            fallbacks.Add(new FontFallback
+            {
+                FontFamily = new FontFamily(CjkFontFamilyName)
+            });
+        }
 
         if (OperatingSystem.IsWindows())
         {

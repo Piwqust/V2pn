@@ -2,22 +2,31 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## 1.2.2
+## Unreleased
 
-V2pn no longer changes its look for any provider. A provider gets its own build of V2pn instead.
+V2pn no longer changes its look by the server you pick. If you came to V2pn from a partner provider, the provider gets a tab in V2pn's title bar; everyone else sees V2pn as it is.
 
-### Plain V2pn stays plain
+### Tabs in the title bar
 
-- V2pn keeps its own look whatever server you pick, a partner provider's included: no provider's colour, logo, card or background.
-- A provider's subscription is an ordinary subscription here. Its name, traffic, term, announcement, support and cabinet links, and the Happ, INCY and v2RayTun headers work as for any provider; sign-in by code, provider buttons, hidden servers and closed settings do not.
-- V2pn no longer downloads anything about providers, and removes the provider files 1.2.1 kept.
+- If you came from a partner provider, the title bar has tabs, as in a browser: **V2pn** and the provider's, with its mark and name. With no provider there are no tabs, and the title bar is as before.
+- The provider's tab puts the whole window into its space: its colour (and its background, if it has one), your plan with the days left, devices and traffic, its buttons, and only its servers in the list. Its sign-in, hidden servers and closed settings, its routes and its connection settings work in its tab and for its subscriptions only.
+- The V2pn tab is plain V2pn: all your servers, the provider's included, with nothing of the provider.
+- A click switches at once, and V2pn opens on the tab you left. Ctrl+Tab and Ctrl+Shift+Tab go through the tabs (on a Mac also ⌘⇧] and ⌘⇧[). In the mini window the provider's tab shows only its mark.
+- Switching tabs does not touch your connection; a provider's connection settings apply from the next connect. Leaving a provider's tab takes its routing mode out of the menu; if it was on, "Everything through VPN" takes its place.
+
+### Who gets a provider's tab
+
+- You downloaded V2pn from the provider's page, or installed it with the provider's command. That tab stays.
+- Or you signed in with the provider by code: "Sign in with a provider" in the + menu, or "I have a subscription from a provider" at first start. Both are there for everyone. That tab goes when you delete your last subscription from that provider.
+- Pasting a provider's subscription link adds no tab: it is an ordinary subscription.
+- If a provider leaves V2pn's list of partners or its term ends, its tab closes with a note and the V2pn tab opens. Your servers work as before.
+- V2pn downloads the list of partners and a provider's look only if you came from a provider, or when you open "Sign in with a provider". Otherwise it downloads nothing about providers, and it removes the provider files 1.2.1 kept.
 - 1.2.1 and older stop wearing a provider's look at their next check.
 
-### A provider's own build
+### A provider's page and command
 
-- A provider's build is the same V2pn with the provider's look always on, sign-in by code with that provider, and its buttons and server descriptions. It comes from the provider's download page (`V2pn-<provider>-windows-x64.zip` and the others, or one command with `V2PN_PARTNER=<provider>`).
-- It installs beside V2pn, in its own folder (`V2pn-<provider>`) with its own settings and its own start with the system, so both can be on one computer.
-- It updates itself from the same release as V2pn and stays the provider's build after every update.
+- A provider's page gives V2pn itself with the provider's tab (`V2pn-<provider>-windows-x64.zip` and the others), or one command with `V2PN_PARTNER=<provider>`. It installs where V2pn always goes, with V2pn's settings and its start with the system. If V2pn is installed already, the command only adds the provider's tab; your servers and settings stay.
+- Updates keep the tab.
 
 ## 1.2.1
 

@@ -4,11 +4,11 @@ using v2rayN.Desktop.Common;
 namespace v2rayN.Desktop.Views;
 
 /// <summary>
-/// Every scenario of V2pn's partner looks (and a few of the app's own) at a click, for trying them without a provider,
-/// a broken site or a week of waiting: a made-up partner, any subscription counted as a partner's, the intro, a
-/// partner leaving, every look, mode and window size, the data of the look laid over (state, servers, subscription,
-/// another provider's server, no servers), links, the walkthrough and the notices. Development builds and developer
-/// mode only. Stays open beside the window; the window shows the result at once.
+/// Every scenario of a partner's brand on V2pn (and a few of the app's own) at a click, for trying them without a
+/// provider, a broken site or a week of waiting: a made-up partner, any subscription counted as a partner's, a partner
+/// shown without its server selected, with or without its background, a partner leaving, light and dark, every window
+/// size, what its panel says laid over, links, the walkthrough and the notices. Development builds and developer mode
+/// only. Stays open beside the window; the window shows the result at once.
 /// </summary>
 public sealed class DebugWindow : Window
 {
@@ -25,6 +25,8 @@ public sealed class DebugWindow : Window
     private readonly TextBox _link = new() { Watermark = "v2pn://add?url=…", MinWidth = 360 };
     private readonly DispatcherTimer _timer;
     private string _partnersKey = string.Empty;
+    // The partner the list selects at its next refresh (the test partner, once added).
+    private string? _pick;
 
     public DebugWindow(MainWindow main)
     {
@@ -66,13 +68,32 @@ public sealed class DebugWindow : Window
         var add = Action("Добавить тестового", () =>
         {
             var accent = Color.TryParse(_testAccent.Text?.Trim(), out _) ? _testAccent.Text!.Trim().ToUpperInvariant() : null;
-            // Its intro waits for the "Показать" button below instead of covering the window.
-            Editions.MarkIntroduced(TestPartnerId);
             var folder = _themeFolder.Text?.Trim();
-            if (V2pnPartners.Instance.AddDebugPartner(TestPartnerId, (_testName.Text ?? "Тест-провайдер").Trim(), accent, Directory.Exists(folder) ? folder : null) == null)
+            var name = (_testName.Text ?? "Тест-провайдер").Trim();
+            // A theme folder's own name, so the shots show the provider they are of.
+            if (Directory.Exists(folder) && File.Exists(Path.Combine(folder, "partner.json")))
+            {
+                try
+                {
+                    if (System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(folder, "partner.json")))?["name"]?.GetValue<string>() is { Length: > 0 } own)
+                    {
+                        name = own;
+                    }
+                }
+                catch (Exception ex) when (ex is System.Text.Json.JsonException or InvalidOperationException or IOException)
+                {
+                    Logging.SaveLog("V2pn debug theme", ex);
+                }
+            }
+            if (V2pnPartners.Instance.AddDebugPartner(TestPartnerId, name, accent, Directory.Exists(folder) ? folder : null) == null)
             {
                 _main.DebugToast(ToastKind.Warning, "Тестовый партнёр есть только в сборке разработчика или в режиме разработчика.");
+                return;
             }
+            // The buttons below act on it next.
+            _pick = TestPartnerId;
+            _partnersKey = string.Empty;
+            Refresh();
         });
         var link = Action("Считать подпиской партнёра", () =>
         {
@@ -92,22 +113,14 @@ public sealed class DebugWindow : Window
         _partners.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<V2pnPartner>((p, _) => new TextBlock { Text = p == null ? "" : $"{p.Name} ({p.Id}{(V2pnPartners.Instance.IsDebug(p.Id) ? ", тестовый" : "")})" });
 
         return Card("Партнёры",
-            Row("Тестовый партнёр (все виды, без API, только в памяти)", _testName, _testAccent, add),
+            Row("Тестовый партнёр (без API, только в памяти)", _testName, _testAccent, add),
             Row("Тема тестового партнёра (необязательно)", _themeFolder),
             Row("Партнёр для действий ниже", _partners),
             Row("Подписка", _subs, link, unlink),
-            Row("Интро",
-                Action("Показать", () => Selected()?.Let(_main.DebugShowIntro)),
-                Action("Сбросить «уже показано»", () =>
-                {
-                    Editions.DebugResetIntroduced();
-                    _main.DebugToast(ToastKind.Info, "Интро покажется снова для всех партнёров.");
-                })),
             Row("Партнёр ушёл",
                 Action("подписки нет", () => Gone(V2pnPartnerGone.Unlinked)),
                 Action("срок истёк", () => Gone(V2pnPartnerGone.Expired)),
                 Action("отозван", () => Gone(V2pnPartnerGone.Revoked))),
-            Row("Тема провайдера с нуля, без сертификата", Action(L.BuilderMenu, () => _main.OpenThemeBuilder(Directory.Exists(_themeFolder.Text?.Trim()) ? _themeFolder.Text!.Trim() : null))),
             Row("Проверки",
                 Action("Перепроверить партнёров", () => _ = V2pnPartners.Instance.PruneAsync()),
                 Action("Обновить подписки (и пакеты)", _main.DebugUpdateSubscriptions),
@@ -116,17 +129,18 @@ public sealed class DebugWindow : Window
 
     private Control LookSection()
     {
-        var editions = new List<Control> { Mark(Action("V2pn", () => Editions.Select(null)), () => Editions.Partner == null) };
         // The debug window speaks Russian whatever the app's language, so tools/edition-matrix.ps1 finds its buttons.
-        var looks = V2pnPartnerVariants.All.Select(v => (Control)Mark(Action(v == V2pnPartnerVariants.Pass ? "Пропуск" : "Неон", () => OpenLook(v)), () => Editions.Variant == v)).ToArray();
         return Card("Вид",
-            Row("Оформление", [.. editions, Action("партнёр из списка выше", () => Selected()?.Let(p => Editions.Select(p.Id)))]),
-            Row("Вид партнёра", looks),
-            Row("Кнопка «Неона»", V2pnThemeConnect.All.Select(c => (Control)Mark(Action("кнопка " + c, () => SetConnect(c)), () => Editions.Theme?.Connect == c)).ToArray()),
-            Row("Режим вида",
-                Mark(Action("Светлый", () => Editions.Tune(p => p.Mode = "light")), () => Editions.IsTuned && Editions.Mode == "light"),
-                Mark(Action("Тёмный", () => Editions.Tune(p => p.Mode = "dark")), () => Editions.IsTuned && Editions.Mode == "dark"),
-                Action("Как у партнёра", Editions.ResetTuning),
+            Row("Партнёр в окне",
+                Mark(Action("по серверу", () => Editions.DebugShow(null)), () => !Editions.IsForced),
+                Mark(Action("показать партнёра", ShowSelected), () => Editions.IsForced && Editions.Partner != null),
+                Mark(Action("обычный V2pn", () => Editions.DebugShow(string.Empty)), () => Editions.IsForced && Editions.Partner == null)),
+            Row("Фон партнёра (Сцена, если он есть в теме)",
+                Mark(Action("как в теме", () => DebugOverrides.SetNoStage(false)), () => !DebugOverrides.NoStage),
+                Mark(Action("без фона", () => DebugOverrides.SetNoStage(true)), () => DebugOverrides.NoStage)),
+            Row("Режим V2pn",
+                Mark(Action("Светлый", () => _main.DebugSetMode(light: true)), () => _main.ActualThemeVariant == ThemeVariant.Light),
+                Mark(Action("Тёмный", () => _main.DebugSetMode(light: false)), () => _main.ActualThemeVariant == ThemeVariant.Dark),
                 Action("Страница «Оформление»", _main.DebugOpenAppearance)),
             Row("Окно",
                 Action("Мини 380×640", () => _main.DebugResize(380, 640)),
@@ -135,7 +149,6 @@ public sealed class DebugWindow : Window
                 Action("Широкое 1280×800", () => _main.DebugResize(1280, 800)),
                 Action("Низкое 1100×560", () => _main.DebugResize(1100, 560))),
             Row("Анимация",
-                Action("Повторить переход", _main.DebugReplayReveal),
                 Mark(Action("Системная", () => SetMotion("system")), () => Appearance.Current.Motion == "system"),
                 Mark(Action("Вкл", () => SetMotion("on")), () => Appearance.Current.Motion == "on"),
                 Mark(Action("Выкл (затухание)", () => SetMotion("off")), () => Appearance.Current.Motion == "off")));
@@ -146,22 +159,15 @@ public sealed class DebugWindow : Window
         Control[] Options(Func<string> current, Action<string> set, params (string Id, string Label)[] options) =>
             options.Select(o => (Control)Mark(Action(o.Label, () => set(o.Id)), () => current() == o.Id)).ToArray();
 
-        return Card("Данные в оформлении (поверх настоящих, до перезапуска)",
-            Row("Состояние", Options(() => DebugOverrides.StateKind ?? "real", k => DebugOverrides.SetState(k == "real" ? null : k),
-                ("real", "как есть"), ("safe", "защищено"), ("warn", "внимание"), ("checking", "проверка"), ("unsafe", "не защищено"))),
-            Row("Серверы", Options(() => DebugOverrides.Nodes, DebugOverrides.SetNodes,
-                ("real", "как есть"), ("partner", "11 из 14 по партнёру"), ("allok", "все отвечают"), ("alldown", "никто"), ("none", "пинг не проверялся"))),
+        return Card("Данные партнёра (поверх настоящих, до перезапуска)",
             Row("Подписка", Options(() => DebugOverrides.Account, DebugOverrides.SetAccount,
                 ("real", "как есть"), ("panel", "только панель"), ("full", "всё (API)"), ("warn", "заканчивается"), ("bad", "закончилась"),
                 ("incident", "сбой"), ("major", "серьёзный сбой"), ("empty", "ничего"))),
-            Row("Сервер не от партнёра",
-                Mark(Action("как есть", () => DebugOverrides.SetForeign(null)), () => DebugOverrides.Foreign == null),
-                Mark(Action("да", () => DebugOverrides.SetForeign(true)), () => DebugOverrides.Foreign == true),
-                Mark(Action("нет", () => DebugOverrides.SetForeign(false)), () => DebugOverrides.Foreign == false)),
-            Row("Серверов нет совсем",
-                Mark(Action("нет", () => DebugOverrides.SetEmpty(false)), () => !DebugOverrides.ForceEmpty),
-                Mark(Action("да (пустой экран)", () => DebugOverrides.SetEmpty(true)), () => DebugOverrides.ForceEmpty)),
-            Row(null, Action("Сбросить всё", DebugOverrides.Reset)));
+            Row(null, Action("Сбросить всё", () =>
+            {
+                DebugOverrides.Reset();
+                Editions.DebugShow(null);
+            })));
     }
 
     private Control LinksSection()
@@ -193,31 +199,14 @@ public sealed class DebugWindow : Window
 
     private V2pnPartner? Selected() => _partners.SelectedItem as V2pnPartner ?? Editions.Partner ?? Editions.Available.FirstOrDefault();
 
-    private void OpenLook(string variant)
+    private void ShowSelected()
     {
-        if (Editions.Partner == null && Selected() is { } partner)
+        if (Selected() is not { } partner)
         {
-            Editions.Select(partner.Id);
-        }
-        if (Editions.Partner is { } open && !open.Pack.Variants.Contains(variant))
-        {
-            _main.DebugToast(ToastKind.Warning, $"{open.Name} не разрешает вид «{L.EditionVariantShort(variant)}».");
+            _main.DebugToast(ToastKind.Warning, "Нет партнёра: добавьте тестового или подключите подписку партнёра.");
             return;
         }
-        Editions.SetVariant(variant);
-    }
-
-    /// <summary>The test partner's Neon with the other Connect (round or the switch).</summary>
-    private void SetConnect(string connect)
-    {
-        if (!V2pnPartners.Instance.IsDebug(TestPartnerId))
-        {
-            _main.DebugToast(ToastKind.Warning, "Кнопка меняется у тестового партнёра: добавьте его.");
-            return;
-        }
-        V2pnPartners.Instance.EditDebugTheme(TestPartnerId, theme => theme with { Connect = connect });
-        Editions.Select(TestPartnerId);
-        OpenLook(V2pnPartnerVariants.Neon);
+        Editions.DebugShow(partner.Id);
     }
 
     private void Gone(V2pnPartnerGone why)
@@ -230,12 +219,12 @@ public sealed class DebugWindow : Window
         if (V2pnPartners.Instance.IsDebug(partner.Id))
         {
             // A made-up partner goes for real; it is added again with one click.
-            Editions.Select(partner.Id);
+            Editions.DebugShow(partner.Id);
             V2pnPartners.Instance.RemoveDebugPartner(partner.Id, why);
         }
         else
         {
-            // A real one only closes its look as it would; its files stay, so the next start brings it back.
+            // A real one only leaves the window as it would; its files stay, so the next start brings it back.
             Editions.DebugClose(partner, why);
         }
     }
@@ -260,7 +249,8 @@ public sealed class DebugWindow : Window
             _partnersKey = key;
             var keep = (_partners.SelectedItem as V2pnPartner)?.Id;
             _partners.ItemsSource = partners;
-            _partners.SelectedItem = partners.FirstOrDefault(p => p.Id == keep) ?? Editions.Partner ?? partners.FirstOrDefault();
+            _partners.SelectedItem = partners.FirstOrDefault(p => p.Id == (_pick ?? keep)) ?? Editions.Partner ?? partners.FirstOrDefault();
+            _pick = null;
         }
         var subs = _main.DebugSubscriptions();
         var keepSub = (_subs.SelectedItem as SubItem)?.Id;
@@ -273,18 +263,16 @@ public sealed class DebugWindow : Window
         var lines = new List<string>
         {
             $"сборка: {(V2pnInfo.IsRelease ? "релиз, режим разработчика" : "разработчика")} · V2pn {V2pnInfo.Version}",
-            $"оформление: {(Editions.Partner is { } open ? $"{open.Name} · {L.EditionVariantShort(Editions.Variant)}" : "обычный V2pn")}",
+            $"в окне: {(Editions.Partner is { } open ? $"{open.Name}{(Editions.IsForced ? " (показан из отладки)" : " (по выбранному серверу)")}" : Editions.IsForced ? "обычный V2pn (из отладки)" : "обычный V2pn")}",
         };
-        if (Editions.IsTuned)
+        if (Editions.Partner != null && Editions.Theme is { } theme)
         {
-            lines.Add($"вид: {Editions.Mode} · акцент {Editions.AccentHex} · углы {Editions.Corners} · шрифт {Editions.Font}");
-            if (Editions.Theme is { } theme)
+            var stage = Editions.Stage(_main.ActualThemeVariant != ThemeVariant.Light);
+            lines.Add($"вид: {(stage == null ? "Акцент" : "Сцена")} · акцент {Editions.PartnerAccent} · бренд {string.Join(" ", theme.Brand)} · фон {theme.Background.Kind}"
+                + (stage == null ? string.Empty : $" · текст {stage.Ink}{(stage.Scrim != null ? $" · затемнение {stage.Scrim}" : string.Empty)}"));
+            foreach (var note in theme.Notes)
             {
-                lines.Add($"тема: {string.Join(" ", theme.Brand)} · кнопка {theme.Connect} · окно {theme.Window} · карта {theme.Background.Kind}");
-                foreach (var note in theme.Notes)
-                {
-                    lines.Add("  " + note);
-                }
+                lines.Add("  " + note);
             }
         }
         foreach (var partner in partners)
@@ -296,6 +284,7 @@ public sealed class DebugWindow : Window
         {
             lines.Add("партнёров нет: добавьте тестового или подписку с v2pn-partner (демо Configra)");
         }
+        lines.Add(_main.DebugPlanState());
         lines.Add(_main.DebugApiState());
         lines.Add(DebugOverrides.Any ? "поверх данных: включено (раздел ниже)" : "поверх данных: ничего");
         _status.Text = string.Join("\n", lines);
@@ -370,7 +359,5 @@ public sealed class DebugWindow : Window
 
 internal static class DebugExtensions
 {
-    public static void Let<T>(this T value, Action<T> act) => act(value);
-
     public static string IfEmpty(this string text, string fallback) => text.Length == 0 ? fallback : text;
 }

@@ -88,18 +88,14 @@
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
-                <!--  The name is also the edition switcher (MainWindow.Edition.cs): plain V2pn and each partner's look.
-                      Not clickable until a verified partner exists, so the title bar still drags the window there.  -->
-                <Button
-                    x:Name="btnEdition"
+                <!--  V2pn's name, with the logo of the partner whose server is selected beside it (MainWindow.Edition.cs).
+                      Not clickable, so the title bar drags the window there too.  -->
+                <Border
+                    x:Name="borderBrand"
                     Grid.Column="1"
-                    Margin="0,0,0,0"
                     Padding="6,0"
                     VerticalAlignment="Center"
-                    chrome:WindowDecorationProperties.ElementRole="User"
-                    Classes="ghost"
-                    IsHitTestVisible="False"
-                    Theme="{StaticResource V2Button}">
+                    IsHitTestVisible="False">
                     <StackPanel
                         x:Name="panelBrand"
                         Orientation="Horizontal"
@@ -120,23 +116,8 @@
                             Foreground="{DynamicResource V2InkSoft}"
                             Text="{x:Static loc:L.AppName}" />
                     </StackPanel>
-                </Button>
+                </Border>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
-                <!--  The theme builder's preview (ThemeBuilderWindow): marked while it dresses the window, and taken away here.  -->
-                <Button
-                    x:Name="btnPreview"
-                    chrome:WindowDecorationProperties.ElementRole="User"
-                    Margin="10,0,0,0"
-                    VerticalAlignment="Center"
-                    Classes="subtle small"
-                    IsVisible="False"
-                    Theme="{StaticResource V2Button}">
-                    <StackPanel Orientation="Horizontal" Spacing="6">
-                        <Ellipse Width="7" Height="7" Fill="#F2B84B" VerticalAlignment="Center" />
-                        <TextBlock x:Name="txtPreview" Text="{x:Static loc:L.BuilderPreviewMark}" />
-                        <TextBlock Text="✕" Opacity="0.6" />
-                    </StackPanel>
-                </Button>
                 <Button
                     x:Name="btnNewUpdate"
                     chrome:WindowDecorationProperties.ElementRole="User"
@@ -306,6 +287,13 @@
                                 </StackPanel>
                             </ListBoxItem>
                         </ListBox>
+
+                        <!--  The card of the partner whose server is selected (MainWindow.Edition.cs).  -->
+                        <ContentControl
+                            x:Name="partnerCardHost"
+                            Margin="10,0,10,6"
+                            DockPanel.Dock="Top"
+                            IsVisible="False" />
 
                         <ListBox
                             x:Name="lstRows"
@@ -902,6 +890,8 @@
                     <!--  The ocean colour behind the map is also the plain stage when the map is turned off.  -->
                     <Panel Background="{DynamicResource V2MapOcean}">
                         <views:MapView x:Name="mapView" />
+                        <!--  A partner's background in place of the map ("Scene", MainWindow.Edition.cs).  -->
+                        <ContentControl x:Name="stageBackdrop" IsHitTestVisible="False" IsVisible="False" />
 
                         <!--  One tint per verdict, crossfaded by opacity: gradients can't be interpolated.  -->
                         <Border
@@ -929,6 +919,7 @@
                             IsHitTestVisible="False"
                             Opacity="0" />
                         <Border
+                            x:Name="borderStageFade"
                             Height="260"
                             VerticalAlignment="Bottom"
                             Background="{DynamicResource V2StageFade}"
@@ -937,6 +928,19 @@
                         <!--  Everything a secondary page covers. Hidden while a page is open, so Tab and screen readers
                               cannot reach the controls under it (the header, welcome card, rail and status card).  -->
                         <Panel x:Name="panelStage">
+                        <!--  On a partner's background the header sits on glass, so its text reads whatever the background
+                              holds; placed over the header's parts by MainWindow.Edition.cs.  -->
+                        <Border
+                            x:Name="headerGlass"
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Top"
+                            Background="{DynamicResource V2FloatingFill}"
+                            BorderBrush="{DynamicResource V2PanelBorder}"
+                            BorderThickness="1"
+                            BoxShadow="{DynamicResource V2CardShadow}"
+                            CornerRadius="{DynamicResource V2RadiusPanel}"
+                            IsHitTestVisible="False"
+                            IsVisible="False" />
                         <!--  Connection header. Hidden until the first refresh has filled it, so launch never
                               shows an empty pill or a blank Connect button.  -->
                         <StackPanel
@@ -1512,11 +1516,13 @@
                             </Border>
                         </Panel>
 
-                        <!--  A partner's Pass card, over the status card (MainWindow.Edition.cs)  -->
+                        <!--  The partner's plan on its background, at the bottom left over the status card (MainWindow.Edition.cs)  -->
                         <ContentControl
                             x:Name="passHost"
                             Margin="16"
-                            VerticalAlignment="Bottom" />
+                            HorizontalAlignment="Left"
+                            VerticalAlignment="Bottom"
+                            IsVisible="False" />
 
                         <!--  Bottom statistics  -->
                         <ContentControl
@@ -1560,14 +1566,6 @@
                     </Panel>
                     </Border>
                 </Border>
-
-                <!--  A partner look with a layout of its own (cabinet, studio, ASCII) covers the sidebar and the
-                      stage; MainWindow.Edition.cs fills it and keeps it in step with the window.  -->
-                <ContentControl
-                    x:Name="editionHost"
-                    Grid.RowSpan="2"
-                    Grid.ColumnSpan="2"
-                    IsVisible="False" />
             </Grid>
 
             <!--  V2pn: the first-start walkthrough, over everything under the title bar (MainWindow.Onboarding.cs).  -->
@@ -1575,16 +1573,6 @@
                 x:Name="onboardingHost"
                 Grid.Row="1"
                 IsVisible="False" />
-
-            <!--  V2pn: the old look over the new one while a change of look opens (MainWindow.Edition.cs).  -->
-            <Image
-                x:Name="imgEditionShot"
-                Grid.RowSpan="2"
-                HorizontalAlignment="Left"
-                VerticalAlignment="Top"
-                IsHitTestVisible="False"
-                IsVisible="False"
-                Stretch="Fill" />
         </Grid>
     </dialogHost:DialogHost>
 </Window>

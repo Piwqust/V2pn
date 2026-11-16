@@ -10,32 +10,18 @@ public partial class MainWindow
 {
     private DebugWindow? _debugWindow;
     private MenuItem? _menuDebug;
-    private ThemeBuilderWindow? _builderWindow;
-    private MenuItem? _menuBuilder;
 
     private void InitDebug()
     {
-        DebugOverrides.Changed += () => Dispatcher.UIThread.Post(PushEditionSnapshot);
         var modifiers = (OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control) | KeyModifiers.Shift;
         if (btnAppMenu.Flyout is MenuFlyout menu)
         {
             _menuDebug = new MenuItem { Header = "Отладка…", InputGesture = new KeyGesture(Key.D, modifiers), IsVisible = false };
             _menuDebug.Click += (_, _) => OpenDebugWindow();
-            _menuBuilder = new MenuItem { Header = L.BuilderMenu, IsVisible = false };
-            _menuBuilder.Click += (_, _) => OpenThemeBuilder();
             var at = menu.Items.IndexOf(menuClose);
             menu.Items.Insert(Math.Max(0, at - 1), _menuDebug);
-            menu.Items.Insert(Math.Max(0, at - 1), _menuBuilder);
             // Developer mode can be switched on while V2pn runs (About → updates).
-            menu.Opening += (_, _) => _menuDebug.IsVisible = _menuBuilder.IsVisible = V2pnPartnerTrust.DebugAllowed;
-        }
-        btnPreview.Click += (_, _) => Editions.ClosePreview();
-        ToolTip.SetTip(btnPreview, L.BuilderPreviewHint + " " + L.BuilderRemovePreview + ".");
-        AutomationProperties.SetName(btnPreview, L.BuilderRemovePreview);
-        // V2PN_BUILDER opens the theme builder with the window, with that pack folder when it names one (scripted checks).
-        if (Environment.GetEnvironmentVariable("V2PN_BUILDER") is { Length: > 0 } builder)
-        {
-            Opened += (_, _) => Dispatcher.UIThread.Post(() => OpenThemeBuilder(Directory.Exists(builder) ? builder : null), DispatcherPriority.Background);
+            menu.Opening += (_, _) => _menuDebug.IsVisible = V2pnPartnerTrust.DebugAllowed;
         }
         // V2PN_DEBUG=1 opens it with the window, for scripted checks (tools/sandbox.ps1 passes the environment on).
         if (Environment.GetEnvironmentVariable("V2PN_DEBUG") == "1")
@@ -69,36 +55,9 @@ public partial class MainWindow
         _debugWindow.Show(this);
     }
 
-    /// <summary>The theme builder (developer mode only): a provider's theme from nothing to a signed pack and a certificate request.</summary>
-    internal void OpenThemeBuilder(string? folder = null)
-    {
-        if (!V2pnPartnerTrust.DebugAllowed)
-        {
-            return;
-        }
-        if (_builderWindow is { IsVisible: true })
-        {
-            // Asked for by the person: bringing it forward is the point.
-            _builderWindow.Activate();
-            return;
-        }
-        _builderWindow = new ThemeBuilderWindow(this, folder);
-        _builderWindow.Closed += (_, _) => _builderWindow = null;
-        _builderWindow.Show();
-    }
-
     internal void DebugToast(ToastKind kind, string text) => ShowToast(kind, text);
 
     internal void DebugStartOnboarding() => ShowOnboarding((ObStep)0);
-
-    internal void DebugShowIntro(V2pnPartner partner)
-    {
-        if (DialogHost.IsDialogOpen(null))
-        {
-            DialogHost.Close(null);
-        }
-        _ = DialogHost.Show(new PartnerIntroView(partner));
-    }
 
     internal void DebugOpenLink(string text)
     {
@@ -122,10 +81,13 @@ public partial class MainWindow
         PlaceWindow(new Size(width, height), null);
     }
 
-    internal void DebugReplayReveal()
+    /// <summary>Plain V2pn's light or dark, as the Appearance page sets it (saved, as there).</summary>
+    internal void DebugSetMode(bool light)
     {
-        CaptureEditionShot();
-        Dispatcher.UIThread.Post(PlayEditionReveal, DispatcherPriority.Background);
+        if (_themeSettings != null)
+        {
+            _themeSettings.CurrentTheme = light ? nameof(ETheme.Light) : nameof(ETheme.Dark);
+        }
     }
 
     internal void DebugOpenIp() => _ = ShowRoomyDialog(new IpInfoView());
@@ -145,14 +107,14 @@ public partial class MainWindow
     {
         _accountAsked = default;
         _statusAsked = default;
-        PushEditionSnapshot();
+        RefreshPartnerAccount();
     }
 
     internal string DebugApiState()
     {
         if (_apiPartner == null)
         {
-            return "API: не спрашивали (нет открытого оформления партнёра с API)";
+            return "API: не спрашивали (в окне нет партнёра с API)";
         }
         var a = _partnerAccount;
         var account = a == null
@@ -162,6 +124,8 @@ public partial class MainWindow
         var asked = _accountAsked == default ? "ещё не спрашивали" : $"спрошено {(DateTime.UtcNow - _accountAsked).TotalMinutes:0} мин назад";
         return $"API {_apiPartner}: {account}; {status}; {asked}";
     }
+
+    internal string DebugPlanState() => $"план на сцене: {(passHost.IsVisible ? "да" : "нет")} · {_planFit}";
 
     internal IReadOnlyList<SubItem> DebugSubscriptions() => ViewModel?.ProfilesViewModel.SubItems.Where(s => s.Id.IsNotEmpty()).ToList() ?? [];
 }

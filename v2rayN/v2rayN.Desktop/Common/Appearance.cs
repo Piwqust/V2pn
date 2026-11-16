@@ -109,38 +109,18 @@ public static class Appearance
     /// <summary>Raised after a change was applied; the main window rearranges itself on it.</summary>
     public static event Action? Changed;
 
-    /// <summary>
-    /// Palettes only partner editions use (EditionLook): never offered on the Appearance page, so a person's own
-    /// choice is never one of them.
-    /// </summary>
-    public static readonly AppearancePalette[] EditionPalettes =
-    [
-        // Configra's warm near-black: a cabinet of ink and paper, not V2pn's blue-grey.
-        new("warm", 40, 0.07, 0.82, 1.00, Color.Parse("#171716"), Color.Parse("#F3F2EE")),
-        // The studio look's paper grey (light) and the ASCII look's terminal black (dark).
-        new("studio", 45, 0.04, 0.90, 1.00, Color.Parse("#1A1918"), Color.Parse("#E2E2E0")),
-        new("ink", 40, 0.04, 0.55, 1.00, Color.Parse("#121211"), Color.Parse("#F3F2EE")),
-    ];
-
     private static Func<AppearanceSettings, AppearanceSettings>? _edition;
-    private static IReadOnlyDictionary<string, string>? _editionTokens;
-    private static IReadOnlyDictionary<string, string>? _editionLightTokens;
 
     /// <summary>
-    /// The settings in effect: the person's own, with a partner edition laid over them. Only <see cref="Current"/>
-    /// is stored; the edition never changes what the Appearance page shows or saves.
+    /// The settings in effect: the person's own, with a partner's brand laid over them (Editions). Only
+    /// <see cref="Current"/> is stored; the brand never changes what the Appearance page shows or saves.
     /// </summary>
     public static AppearanceSettings Effective => _edition?.Invoke(Current.Clone()) ?? Current;
 
-    /// <summary>Lays a partner edition over the person's appearance, or takes it off (null). Applied live.</summary>
-    public static void SetEdition(
-        Func<AppearanceSettings, AppearanceSettings>? edition,
-        IReadOnlyDictionary<string, string>? darkTokens = null,
-        IReadOnlyDictionary<string, string>? lightTokens = null)
+    /// <summary>Lays a partner's brand over the person's appearance, or takes it off (null). Applied live.</summary>
+    public static void SetEdition(Func<AppearanceSettings, AppearanceSettings>? edition)
     {
         _edition = edition;
-        _editionTokens = darkTokens;
-        _editionLightTokens = lightTokens;
         if (Application.Current is { } app)
         {
             Apply(app, Effective);
@@ -148,12 +128,7 @@ public static class Appearance
         Changed?.Invoke();
     }
 
-    /// <summary>The neutrals of the open provider theme (palette "theme"), set by the edition before it is applied.</summary>
-    public static AppearancePalette? ThemePalette { get; set; }
-
-    public static AppearancePalette Palette => Effective.Palette == "theme" && ThemePalette != null
-        ? ThemePalette
-        : Palettes.Concat(EditionPalettes).FirstOrDefault(p => p.Id == Effective.Palette) ?? Palettes[0];
+    public static AppearancePalette Palette => Palettes.FirstOrDefault(p => p.Id == Effective.Palette) ?? Palettes[0];
 
     public static Color AccentColor => Accents.FirstOrDefault(a => a.Id == Effective.Accent) is { Id: not null } preset
         ? preset.Color
@@ -215,27 +190,9 @@ public static class Appearance
             }
         }
 
-        // A partner look's own colours for single tokens (its ground, its dialogs, its map), over the palette. Each
-        // set is for one theme only, so a look made for dark never paints a light window.
-        foreach (var (variant, tokens) in new[] { (ThemeVariant.Dark, _editionTokens), (ThemeVariant.Light, _editionLightTokens) })
-        {
-            if (tokens == null)
-            {
-                continue;
-            }
-            var themed = dict.ThemeDictionaries.TryGetValue(variant, out var existing) && existing is ResourceDictionary rd ? rd : new ResourceDictionary();
-            foreach (var (key, hex) in tokens)
-            {
-                themed[key] = new SolidColorBrush(Color.Parse(hex));
-            }
-            dict.ThemeDictionaries[variant] = themed;
-        }
-
         var scale = settings.Corners switch
         {
             "sharp" => 0.35,
-            // The ASCII look's terminal: nearly square, never a pill.
-            "square" => 0.12,
             "round" => 1.45,
             _ => 1.0,
         };
@@ -252,24 +209,13 @@ public static class Appearance
         var ui = settings.Font switch
         {
             "segoe" => new FontFamily("Segoe UI Variable Text, Segoe UI, avares://V2pn/Assets/Fonts#Inter"),
-            // Partner editions only (Configra's type); falls back to Inter for anything Geist lacks.
-            "geist" => new FontFamily("avares://V2pn/Assets/Fonts#Geist, avares://V2pn/Assets/Fonts#Inter"),
-            "geistmono" => new FontFamily("avares://V2pn/Assets/Fonts#Geist Mono, avares://V2pn/Assets/Fonts#Inter"),
             _ => null,
         };
         if (ui != null)
         {
             dict["V2UiFont"] = ui;
         }
-        if (settings.Headings == "geistmono")
-        {
-            dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Geist Mono, avares://V2pn/Assets/Fonts#Inter");
-        }
-        else if (settings.Headings == "geist")
-        {
-            dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Geist, avares://V2pn/Assets/Fonts#Inter");
-        }
-        else if (settings.Headings == "serif")
+        if (settings.Headings == "serif")
         {
             dict["V2DisplayFont"] = new FontFamily("avares://V2pn/Assets/Fonts#Spectral");
         }

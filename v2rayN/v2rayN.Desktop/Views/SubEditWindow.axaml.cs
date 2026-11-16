@@ -33,12 +33,6 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
                 ProcUtils.ProcessStart(url);
             }
         };
-        // V2pn: opens the provider's look behind the window; the window stays.
-        btnPartner.Click += (s, e) =>
-        {
-            Common.Editions.Select(btnPartner.Tag as string);
-            ShowProviderInfo();
-        };
         Closed += (s, e) => AnnounceIfAdded();
         SettingsKit.InstallMoreFields(this, btnMoreFields, HasExtras);
 

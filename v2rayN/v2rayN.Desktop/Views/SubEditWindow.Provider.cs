@@ -173,14 +173,11 @@ public partial class SubEditWindow
         }
         var partner = V2pnPartners.Instance.ForSource(info!.PartnerUrl, source.Url);
         var error = V2pnPartners.Instance.ErrorFor(info.PartnerUrl);
-        btnPartner.IsVisible = partner?.HasEdition == true && Editions.Partner?.Id != partner.Id;
         ToolTip.SetTip(txtPartner, error);
         txtPartner.Text = partner != null
             ? string.Format(L.SubPartnerConfirmed, partner.Name, partner.Cert.Expires.ToDateTime(TimeOnly.MinValue).ToString("d MMMM yyyy", CultureInfo.CurrentUICulture))
-              + (Editions.Partner?.Id == partner.Id ? L.SubPartnerIsOpen : string.Empty)
             : error != null ? L.SubPartnerRefused : L.SubPartnerChecking;
         txtPartner.Classes.Set("bad", partner == null && error != null);
-        btnPartner.Tag = partner?.Id;
         txtPartnerMay.IsVisible = partner != null;
         if (partner != null)
         {

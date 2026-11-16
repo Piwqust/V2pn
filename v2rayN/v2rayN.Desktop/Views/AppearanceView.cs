@@ -12,9 +12,9 @@ namespace v2rayN.Desktop.Views;
 /// <summary>
 /// The Appearance page: light or dark, palette, accent, corners, fonts, text size and the layout
 /// of the main window. Every change is applied and saved at once, so the window behind the dialog
-/// is the preview. In a partner's look it tunes that look instead (AppearanceView.Edition.cs).
+/// is the preview. A partner's brand (Editions) lays only its accent over these and never changes them.
 /// </summary>
-public sealed partial class AppearanceView : UserControl
+public sealed class AppearanceView : UserControl
 {
     private readonly ThemeSettingViewModel _theme;
     private readonly WrapPanel _palettes = new() { Orientation = Orientation.Horizontal };
@@ -24,6 +24,8 @@ public sealed partial class AppearanceView : UserControl
     private readonly List<(ListBox Box, Func<AppearanceSettings, int> Read)> _segments = [];
     private readonly List<(ToggleSwitch Switch, Func<AppearanceSettings, bool> Read)> _switches = [];
     private bool _refreshing;
+    // While a partner's server is selected, why Connect is not in the accent picked here.
+    private readonly TextBlock _partnerNote = new() { Classes = { "spagehint" }, TextWrapping = TextWrapping.Wrap, IsVisible = false };
 
     private static readonly string[] CornerIds = ["sharp", "normal", "round"];
     private static readonly string[] WidthIds = ["narrow", "normal", "wide"];
@@ -67,7 +69,8 @@ public sealed partial class AppearanceView : UserControl
             Children =
             {
                 new TextBlock { Classes = { "spagetitle" }, Text = L.ApTitle },
-                _hint,
+                new TextBlock { Classes = { "spagehint" }, TextWrapping = TextWrapping.Wrap, Text = L.ApHint },
+                _partnerNote,
             },
         });
         Grid.SetColumn(close, 1);
@@ -82,12 +85,11 @@ public sealed partial class AppearanceView : UserControl
             Refresh();
         };
 
-        _normalBody = new StackPanel
+        var body = new StackPanel
         {
             Margin = new Thickness(28, 6, 28, 24),
             Children =
             {
-                _looksHost,
                 Group(L.ApGrpTheme,
                     Row(L.ApMode, null, ModeSegment()),
                     Stacked(L.ApPalette, _palettes),
@@ -123,18 +125,14 @@ public sealed partial class AppearanceView : UserControl
             },
         };
 
-        // Rows above these counts belong to plain V2pn's page; a partner look's page adds its own and drops them again.
-        _baseSegments = _segments.Count;
-        _baseSwitches = _switches.Count;
-
         var root = new DockPanel { MaxHeight = 720 };
         DockPanel.SetDock(header, Dock.Top);
         root.Children.Add(header);
-        root.Children.Add(_scroll);
+        root.Children.Add(new ScrollViewer { HorizontalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Disabled, Content = body });
         Content = root;
-        ShowBody();
-        AttachedToVisualTree += (_, _) => Editions.Changed += OnEditionChanged;
-        DetachedFromVisualTree += (_, _) => Editions.Changed -= OnEditionChanged;
+        AttachedToVisualTree += (_, _) => Editions.Changed += ShowPartnerNote;
+        DetachedFromVisualTree += (_, _) => Editions.Changed -= ShowPartnerNote;
+        ShowPartnerNote();
 
         _customAccent.LostFocus += (_, _) => ApplyCustomAccent();
         _customAccent.KeyDown += (_, e) =>
@@ -144,18 +142,14 @@ public sealed partial class AppearanceView : UserControl
                 ApplyCustomAccent();
             }
         };
-        ActualThemeVariantChanged += (_, _) =>
-        {
-            if (Editions.IsTuned)
-            {
-                ShowBody();
-            }
-            else
-            {
-                Refresh();
-            }
-        };
+        ActualThemeVariantChanged += (_, _) => Refresh();
         Refresh();
+    }
+
+    private void ShowPartnerNote()
+    {
+        _partnerNote.IsVisible = Editions.Partner != null;
+        _partnerNote.Text = Editions.Partner is { } partner ? string.Format(L.ApPartnerNote, partner.Name) : string.Empty;
     }
 
     private static int Index(string[] ids, string value, int fallback)

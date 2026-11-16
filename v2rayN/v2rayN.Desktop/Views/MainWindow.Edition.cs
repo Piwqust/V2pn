@@ -1,496 +1,246 @@
-using Avalonia.Controls.Primitives;
 using Avalonia.Automation;
 using Avalonia.Layout;
-using DialogHostAvalonia;
 using v2rayN.Desktop.Common;
 using v2rayN.Desktop.Views.EditionLooks;
 
 namespace v2rayN.Desktop.Views;
 
-// Partner editions (Common/Editions.cs): the switcher behind the name in the title bar, the partner's logo
-// beside V2pn's, and the looks with a layout of their own, which read the window's state and act through it.
-public partial class MainWindow : IEditionActions
+// The brand of the partner whose server is selected (Common/Editions.cs), on V2pn's own layout:
+// "Accent": its logo beside V2pn's in the title bar, Connect in its colour, its card at the top of the sidebar.
+// "Scene", when its theme has a background: the same, with the background where the map is and its plan on it.
+public partial class MainWindow
 {
-    private EditionScene? _scene;
-    private PassCard? _passCard;
-    private string? _passKey;
-    private string? _sceneKey;
-    private DispatcherTimer? _sceneTimer;
-    private IReadOnlyList<SceneServer> _catalog = [];
-    private IReadOnlyList<SceneSub> _catalogSubs = [];
-    private bool _catalogBusy;
-    private int _sceneTicks;
+    private PartnerCard? _partnerCard;
+    private PlanBlock? _planBlock;
+    private V2pnPartnerStage? _stage;
+    private string? _lookKey;
+    private DispatcherTimer? _accountTimer;
+    private bool _placeQueued;
+    // How the plan last fitted the stage, for the debug window.
+    private string _planFit = "—";
+    // The last state the tray and the title showed; a partner coming or going renames both without waiting for the next one.
+    private (ProtectionState State, string? Problem)? _trayState;
 
     private void InitEdition()
     {
-        btnEdition.Click += (_, _) => ShowEditionMenu();
-        KeyDown += OnEditionKey;
-        // A secondary page (log, Clash) opens inside the stage; the scene steps aside while it is up.
-        pageOverlay.PropertyChanged += (_, e) =>
-        {
-            if (e.Property == IsVisibleProperty)
-            {
-                RefreshSceneVisibility();
-            }
-        };
-        Editions.Changing += CaptureEditionShot;
-        // Where the circle of a change of look starts: the last place the pointer was.
-        AddHandler(PointerMovedEvent, (_, e) => _lastPointer = e.GetPosition(this), Avalonia.Interactivity.RoutingStrategies.Tunnel, true);
         Editions.Changed += RefreshEdition;
-        Editions.Changed += () => Dispatcher.UIThread.Post(MaybeShowPartnerIntro, DispatcherPriority.Background);
-        // A look verified while the window was in the tray is offered when it comes back.
-        Activated += (_, _) => Dispatcher.UIThread.Post(MaybeShowPartnerIntro, DispatcherPriority.Background);
         Editions.Closed += (partner, why) => ShowToast(why == V2pnPartnerGone.Unlinked ? ToastKind.Info : ToastKind.Warning, why switch
         {
             V2pnPartnerGone.Expired => string.Format(L.EditionGoneExpired, partner.Name),
             V2pnPartnerGone.Revoked => string.Format(L.EditionGoneRevoked, partner.Name),
             _ => string.Format(L.EditionGoneUnlinked, partner.Name),
         });
-        ActualThemeVariantChanged += (_, _) => UpdateLockup(Editions.Partner, Editions.Variant);
+        ActualThemeVariantChanged += (_, _) => RefreshEdition();
+        DebugOverrides.Changed += () => Dispatcher.UIThread.Post(() =>
+        {
+            // Taking the background away rebuilds the look; the account is laid over by RefreshPartnerAccount.
+            Editions.Update();
+            RefreshPartnerAccount();
+        });
+        // The glass follows the header's parts and the plan block the room left under them.
+        foreach (var part in new Control[] { panelHeader, panelHeadline, barConnection, btnConnect, contentStatusBarView, borderStage })
+        {
+            part.SizeChanged += (_, _) => QueuePlace();
+        }
+        pageOverlay.GetObservable(IsVisibleProperty).Subscribe(_ => QueuePlace());
         Editions.Start();
     }
 
-    // The last state the tray and the title showed; a change of look renames both without waiting for the next one.
-    private (ProtectionState State, string? Problem)? _trayState;
-    private NativeMenuItem? _trayEditions;
-
-    private Point? _lastPointer;
-    private RenderTargetBitmap? _editionShot;
-    private DispatcherTimer? _revealTimer;
-
-    /// <summary>A picture of the window as it is, laid over it until the new look has opened.</summary>
-    private void CaptureEditionShot()
-    {
-        StopEditionReveal();
-        if (!IsVisible || imgEditionShot.Parent is not Visual body || body.Bounds.Width < 1 || body.Bounds.Height < 1)
-        {
-            return;
-        }
-        try
-        {
-            var scaling = RenderScaling;
-            var pixels = new PixelSize((int)Math.Ceiling(body.Bounds.Width * scaling), (int)Math.Ceiling(body.Bounds.Height * scaling));
-            var shot = new RenderTargetBitmap(pixels, new Vector(96 * scaling, 96 * scaling));
-            shot.Render(body);
-            _editionShot = shot;
-            imgEditionShot.Source = shot;
-            imgEditionShot.Width = body.Bounds.Width;
-            imgEditionShot.Height = body.Bounds.Height;
-            imgEditionShot.Clip = null;
-            imgEditionShot.Opacity = 1;
-            imgEditionShot.IsVisible = true;
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog("V2pn edition shot", ex);
-            StopEditionReveal();
-        }
-    }
-
-    /// <summary>
-    /// The new look opens as a circle from where the pointer was, in about 0.55 s; with animations off in Windows, a
-    /// short fade instead. The old picture is gone at the end either way.
-    /// </summary>
-    private void PlayEditionReveal()
-    {
-        if (_editionShot == null || _revealTimer != null)
-        {
-            return;
-        }
-        var size = new Size(imgEditionShot.Width, imgEditionShot.Height);
-        var origin = _lastPointer is { } p && p.X >= 0 && p.Y >= 0 && p.X <= size.Width && p.Y <= size.Height
-            ? p
-            : new Point(size.Width / 2, size.Height / 2);
-        var reach = new[] { new Point(0, 0), new Point(size.Width, 0), new Point(0, size.Height), new Point(size.Width, size.Height) }
-            .Max(c => Math.Sqrt(Math.Pow(c.X - origin.X, 2) + Math.Pow(c.Y - origin.Y, 2)));
-        var circle = Motion.Enabled;
-        var duration = circle ? 560.0 : 160.0;
-        var started = DateTime.UtcNow;
-        _revealTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(15), DispatcherPriority.Render, (_, _) =>
-        {
-            var t = Math.Clamp((DateTime.UtcNow - started).TotalMilliseconds / duration, 0, 1);
-            if (t >= 1)
-            {
-                StopEditionReveal();
-                return;
-            }
-            var eased = Motion.InOut.Ease(t);
-            if (circle)
-            {
-                var r = reach * eased;
-                imgEditionShot.Clip = new CombinedGeometry(GeometryCombineMode.Exclude,
-                    new RectangleGeometry(new Rect(size)),
-                    new EllipseGeometry(new Rect(origin.X - r, origin.Y - r, r * 2, r * 2)));
-            }
-            else
-            {
-                imgEditionShot.Opacity = 1 - eased;
-            }
-        });
-        _revealTimer.Start();
-    }
-
-    private void StopEditionReveal()
-    {
-        _revealTimer?.Stop();
-        _revealTimer = null;
-        imgEditionShot.IsVisible = false;
-        imgEditionShot.Source = null;
-        imgEditionShot.Clip = null;
-        _editionShot?.Dispose();
-        _editionShot = null;
-    }
-
-    /// <summary>"V2pn × Configra" for the looks on V2pn's layout, "Configra на V2pn" for the partner's own; else V2pn.</summary>
-    private static string EditionTitle() => Editions.Partner is not { } partner
-        ? L.AppName
-        : Editions.Variant == V2pnPartnerVariants.Pass
-            ? $"{L.AppName} × {partner.Name}"
-            : string.Format(L.EditionTitleOn, partner.Name, L.AppName);
-
-    /// <summary>The tray menu's "Look" submenu: plain V2pn and each partner, the open one ticked. Absent without partners.</summary>
-    private void RefreshTrayEditions()
-    {
-        if (Application.Current is not { } app || TrayIcon.GetIcons(app) is not { Count: > 0 } icons || icons[0].Menu is not { } menu)
-        {
-            return;
-        }
-        var available = Editions.Available;
-        if (available.Count == 0)
-        {
-            if (_trayEditions != null)
-            {
-                menu.Items.Remove(_trayEditions);
-                _trayEditions = null;
-            }
-            return;
-        }
-        var looks = new NativeMenu();
-        void Add(string? id, string name)
-        {
-            var item = new NativeMenuItem(name) { ToggleType = MenuItemToggleType.Radio, IsChecked = Editions.Partner?.Id == id };
-            item.Click += (_, _) => Editions.Select(id);
-            looks.Items.Add(item);
-        }
-        Add(null, L.AppName);
-        foreach (var partner in available)
-        {
-            Add(partner.Id, V2pnPartners.IsPreview(partner.Id) ? string.Format(L.BuilderPreviewName, partner.Name) : partner.Name);
-        }
-        if (_trayEditions == null)
-        {
-            _trayEditions = new NativeMenuItem(L.TrayEditions);
-            // Under Connect, with the everyday actions.
-            var connect = menu.Items.OfType<NativeMenuItem>().FirstOrDefault(i => i.Header == L.Connect || i.Header == L.Disconnect);
-            var at = connect != null ? menu.Items.IndexOf(connect) + 1 : Math.Min(4, menu.Items.Count);
-            menu.Items.Insert(at, _trayEditions);
-        }
-        _trayEditions.Menu = looks;
-    }
+    /// <summary>"V2pn × Configra" while a partner's server is selected; else V2pn.</summary>
+    private static string EditionTitle() => Editions.Partner is { } partner ? $"{L.AppName} × {partner.Name}" : L.AppName;
 
     private void RefreshEdition()
     {
         var partner = Editions.Partner;
-        var variant = Editions.Variant;
-        RefreshTrayEditions();
         if (_trayState is { } tray)
         {
             RefreshTray(tray.State, tray.Problem);
         }
-        // With no verified partner the name is plain text and the title bar drags the window there too.
-        btnEdition.IsHitTestVisible = Editions.Available.Count > 0;
-        btnPreview.IsVisible = Editions.IsPreview;
-        UpdateLockup(partner, variant);
+        UpdateLockup();
 
-        // The look as the person tuned it on the Appearance page; any change there builds the scene again.
-        var theme = Editions.Theme;
-        var look = new SceneLook(Editions.Mode != "light", Editions.AccentHex, Editions.Corners, "normal", Editions.Font);
-        // The folder too: the theme builder's preview comes back from another folder whenever it changes.
-        var key = partner != null && Editions.IsScene ? $"{partner.Id}:{variant}:{look}:{theme?.Key}:{partner.Folder}" : null;
-        if (key != _sceneKey)
+        var dark = ActualThemeVariant != ThemeVariant.Light;
+        var stage = Editions.Stage(dark);
+        var key = partner == null ? null
+            : $"{partner.Id}|{partner.Folder}|{Editions.ThemeOf(partner).Key}|{dark}|{(stage == null ? "map" : $"{string.Join(",", stage.Stops)}|{stage.Scrim}|{stage.Art}")}";
+        if (key != _lookKey)
         {
-            _sceneKey = key;
-            Scene.Current = look;
-            _scene = key == null ? null : new NeonScene(partner!, this, look, theme!, Editions.ThemeColors(look.Dark)!);
-            editionHost.Content = _scene;
+            _lookKey = key;
+            _stage = stage;
+            BuildLook(partner, dark);
         }
-        RefreshPassCard(partner, variant);
-        RefreshSceneVisibility();
-        // A partner's Neon made for the mini window opens in it the first time; the person may widen it after.
-        if (_tier != BodyTier.Stacked && Editions.TakeMiniStart())
-        {
-            Dispatcher.UIThread.Post(() => _ = SnapAsync(), DispatcherPriority.Background);
-        }
-        PushEditionSnapshot();
-        PlayEditionReveal();
+        ArrangeEdition();
+        // A partner shown from the debug window brings its buttons too.
+        RefreshPartnerActionBar();
+        RefreshPartnerAccount();
 
-        if (_scene != null || _passCard != null)
+        if (partner != null)
         {
-            _sceneTimer ??= new DispatcherTimer(TimeSpan.FromSeconds(1), DispatcherPriority.Background, (_, _) =>
+            // The plan and the days change rarely: the panel's answer after an update, the partner's API, a new day.
+            _accountTimer ??= new DispatcherTimer(TimeSpan.FromSeconds(15), DispatcherPriority.Background, (_, _) =>
             {
-                if (!IsVisible)
+                if (IsVisible)
                 {
-                    return;
+                    RefreshPartnerAccount();
                 }
-                // The list (every server, with its last ping) is read from the database every few seconds.
-                if (++_sceneTicks % 3 == 0)
-                {
-                    _ = RefreshEditionCatalogAsync();
-                }
-                PushEditionSnapshot();
             });
-            _sceneTimer.Start();
-            _ = RefreshEditionCatalogAsync();
+            _accountTimer.Start();
         }
         else
         {
-            _sceneTimer?.Stop();
+            _accountTimer?.Stop();
         }
     }
 
-    private void RefreshSceneVisibility()
+    private void BuildLook(V2pnPartner? partner, bool dark)
     {
-        var show = _scene != null && !pageOverlay.IsVisible;
-        editionHost.IsVisible = show;
-        // Covered, not hidden: the adaptive layout keeps deciding what the sidebar shows. Disabled so Tab never
-        // lands on a control nobody can see.
-        borderSidebar.IsEnabled = !show;
-        panelStage.IsEnabled = !show;
+        void Open(string url) => ProcUtils.ProcessStart(url);
+        if (partner == null)
+        {
+            _partnerCard = null;
+            _planBlock = null;
+        }
+        else
+        {
+            var accent = Editions.PartnerAccent;
+            var onAccent = Appearance.OnAccent(Color.Parse(accent));
+            // The links are text on the card: the brand moved in lightness until it reads there.
+            var card = this.TryFindResource("V2CardMutedBackground", ActualThemeVariant, out var found) && found is ISolidColorBrush brush
+                ? brush.Color
+                : Color.Parse(dark ? "#26262F" : "#F0F1F5");
+            var link = V2pnThemePalette.ReadableOn(V2pnColor.Parse(accent), new V2pnColor(card.R, card.G, card.B)).Hex;
+            _partnerCard = new PartnerCard(partner, accent, $"#{onAccent.R:X2}{onAccent.G:X2}{onAccent.B:X2}", link, Open);
+            _planBlock = _stage == null ? null : new PlanBlock(partner, _stage, Open);
+        }
+        partnerCardHost.Content = _partnerCard;
+        passHost.Content = _planBlock;
+        stageBackdrop.Content = partner != null && _stage != null ? PartnerStage.Build(partner, _stage) : null;
+        stageBackdrop.IsVisible = stageBackdrop.Content != null;
+        // The map's own fade only suits the map.
+        borderStageFade.IsVisible = _stage == null;
+        headerGlass.IsVisible = _stage != null;
+        ApplyMapVisibility();
+    }
+
+    /// <summary>The map shows unless it is turned off, the window is one column, or a partner's background takes its place.</summary>
+    private void ApplyMapVisibility()
+    {
+        mapView.IsVisible = Appearance.Current.ShowMap && _tier != BodyTier.Stacked && _stage == null;
+    }
+
+    /// <summary>What a change of layout (mini, medium, wide) changes in the partner's look; called by ArrangeForWidth too.</summary>
+    private void ArrangeEdition()
+    {
+        UpdateLockup();
+        QueuePlace();
     }
 
     /// <summary>
-    /// V2pn's fork and name, with the partner beside it: "V2pn × Configra" for the looks built on V2pn's layout,
-    /// "Configra · на V2pn" for the looks of the partner's own. V2pn's mark is never recoloured.
+    /// V2pn's fork and name, and the partner's logo beside it: "V2pn × Configra". V2pn's mark is never recoloured. In a
+    /// mini window the title bar has room for one name: V2pn's word goes, the marks stay.
     /// </summary>
-    private void UpdateLockup(V2pnPartner? partner, string variant)
+    private void UpdateLockup()
     {
         while (panelBrand.Children.Count > 2)
         {
             panelBrand.Children.RemoveAt(2);
         }
-        // In a mini window the title bar has room for one name: the words go, the marks stay (with the full name as tip).
-        var compact = partner != null && _tier == BodyTier.Stacked;
-        pathBrand.IsVisible = true;
-        txtBrand.IsVisible = !compact;
-        AutomationProperties.SetName(btnEdition, partner == null ? L.AppName : $"{L.AppName} × {partner.Name}");
-        ToolTip.SetTip(btnEdition, Editions.Available.Count > 0 ? L.EditionSwitchTip : null);
+        var partner = Editions.Partner;
+        txtBrand.IsVisible = partner == null || _tier != BodyTier.Stacked;
+        AutomationProperties.SetName(borderBrand, EditionTitle());
         if (partner == null)
         {
-            if (Editions.Available.Count > 0)
-            {
-                panelBrand.Children.Add(Chevron());
-            }
             return;
         }
+        Control logo = Scene.Logo(partner, onLight: ActualThemeVariant == ThemeVariant.Light) is { } bitmap
+            ? new Image { Source = bitmap, Height = 15, MaxWidth = 140, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center }
+            : new TextBlock { Text = partner.Name, FontSize = 13, FontWeight = FontWeight.SemiBold, MaxWidth = 140, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
+        ToolTip.SetTip(borderBrand, EditionTitle());
+        panelBrand.Children.Add(new TextBlock { Text = "×", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
+        panelBrand.Children.Add(logo);
+    }
 
-        // The partner's logo for a light title bar where the look (or plain V2pn's mode) is light.
-        var light = Editions.IsTuned ? Editions.Mode == "light" : ActualThemeVariant == ThemeVariant.Light;
-        var bitmap = Scene.Picture(partner, light ? partner.Pack.LogoOnLight ?? partner.Pack.Logo : partner.Pack.Logo);
-        Control logo = bitmap == null
-            ? new TextBlock { Text = partner.Name, FontSize = 13, FontWeight = FontWeight.SemiBold, VerticalAlignment = VerticalAlignment.Center }
-            : new Image { Source = bitmap, Height = 16, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center };
+    private void QueuePlace()
+    {
+        if (_placeQueued)
+        {
+            return;
+        }
+        _placeQueued = true;
+        // After the layout pass: the parts' bounds are final then.
+        Dispatcher.UIThread.Post(() =>
+        {
+            _placeQueued = false;
+            UpdateHeaderGlass();
+            UpdatePassPlace();
+        }, DispatcherPriority.Background);
+    }
 
-        if (logo is TextBlock && compact)
+    /// <summary>The glass under the header's parts (the pill, the server, Connect, mode and route); the partner's buttons stay outside it.</summary>
+    private void UpdateHeaderGlass()
+    {
+        if (_stage == null)
         {
-            logo.MaxWidth = 90;
-            ((TextBlock)logo).TextTrimming = TextTrimming.CharacterEllipsis;
+            return;
         }
-        if (variant == V2pnPartnerVariants.Pass)
+        Rect? box = null;
+        foreach (var part in new Control[] { pillState, txtHeaderTitle, txtHeaderSubtitle, btnConnect, barConnection })
         {
-            panelBrand.Children.Add(new TextBlock { Text = "×", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
-            panelBrand.Children.Add(logo);
-        }
-        else if (compact)
-        {
-            // The partner's logo, then V2pn's fork alone: still "on V2pn", in a tenth of the room.
-            pathBrand.IsVisible = false;
-            txtBrand.IsVisible = false;
-            panelBrand.Children.Add(logo);
-            var fork = new Avalonia.Controls.Shapes.Path
+            if (!part.IsEffectivelyVisible || part.Bounds.Width <= 0 || part.TranslatePoint(default, panelStage) is not { } at)
             {
-                Width = 9,
-                Height = 10,
-                Stretch = Stretch.Uniform,
-                Data = this.FindResource("V2BrandFork") as Geometry,
-                Fill = new SolidColorBrush(Color.Parse("#FF3D1F")),
-                VerticalAlignment = VerticalAlignment.Center,
-            };
-            ToolTip.SetTip(fork, $"{L.EditionOn} {L.AppName}");
-            panelBrand.Children.Add(fork);
+                continue;
+            }
+            var rect = new Rect(at, part.Bounds.Size);
+            box = box is { } b ? b.Union(rect) : rect;
         }
-        else
+        if (box is not { } r)
         {
-            pathBrand.IsVisible = false;
-            txtBrand.IsVisible = false;
-            panelBrand.Children.Add(logo);
-            panelBrand.Children.Add(new Border
-            {
-                BorderBrush = new SolidColorBrush(Color.FromArgb(0x59, 0x80, 0x80, 0x80)),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(999),
-                Padding = new Thickness(7, 3, 8, 3),
-                VerticalAlignment = VerticalAlignment.Center,
-                Child = new StackPanel
-                {
-                    Orientation = Orientation.Horizontal,
-                    Spacing = 5,
-                    Children =
-                    {
-                        new TextBlock { Text = L.EditionOn, FontSize = 10.5, Opacity = 0.75, VerticalAlignment = VerticalAlignment.Center },
-                        new Avalonia.Controls.Shapes.Path
-                        {
-                            Width = 9,
-                            Height = 10,
-                            Stretch = Stretch.Uniform,
-                            Data = this.FindResource("V2BrandFork") as Geometry,
-                            Fill = new SolidColorBrush(Color.Parse("#FF3D1F")),
-                            VerticalAlignment = VerticalAlignment.Center,
-                        },
-                        new TextBlock { Text = L.AppName, FontSize = 10.5, Opacity = 0.75, VerticalAlignment = VerticalAlignment.Center },
-                    },
-                },
-            });
+            headerGlass.IsVisible = false;
+            return;
         }
-        panelBrand.Children.Add(Chevron());
+        // At least as wide as the bar under Connect gets, so a short server name does not make a narrow glass.
+        const double padX = 20;
+        const double padY = 16;
+        var left = Math.Max(4, r.X - padX);
+        var right = Math.Min(panelStage.Bounds.Width - 4, r.Right + padX);
+        headerGlass.Margin = new Thickness(left, Math.Max(4, r.Y - padY), 0, 0);
+        headerGlass.Width = Math.Max(0, right - left);
+        headerGlass.Height = r.Height + (padY * 2);
+        headerGlass.IsVisible = true;
     }
 
     /// <summary>
-    /// Offers a partner's look once, the first time it is available: after a subscription from a partner was added and
-    /// its pack checked out. Waits for the window to be on screen with nothing else open (walkthrough, a dialog).
+    /// The plan on the stage, over the status card, when there is room for it between the header and the card: roomy in
+    /// the wide window, compact in a narrower or lower one. Without room, and in the mini window, the plan goes back to
+    /// the partner's card in the sidebar.
     /// </summary>
-    private void MaybeShowPartnerIntro()
+    private void UpdatePassPlace()
     {
-        if (Editions.DueIntro() is not { } partner)
+        var onStage = false;
+        if (_planBlock != null && _tier != BodyTier.Stacked && !pageOverlay.IsVisible && borderStage.Bounds.Height > 0)
         {
-            return;
-        }
-        if (!IsVisible || WindowState == WindowState.Minimized || OnboardingShown || DialogHost.IsDialogOpen(null))
-        {
-            // Something is in the way (the walkthrough, a dialog, the tray): look again in a few seconds.
-            _introRetry ??= new DispatcherTimer(TimeSpan.FromSeconds(3), DispatcherPriority.Background, (_, _) =>
+            var status = contentStatusBarView.IsVisible && contentStatusBarView.Bounds.Height > 0 ? contentStatusBarView.Bounds.Height + 12 : 0;
+            var big = _tier == BodyTier.Full;
+            var inset = big ? 28 : 20;
+            // Under the glass and under the partner's buttons, which sit below it.
+            var top = Math.Max(headerGlass.IsVisible ? headerGlass.Margin.Top + headerGlass.Height : 0, panelHeader.Bounds.Bottom) + 16;
+            var room = borderStage.Bounds.Height - inset - status - top;
+            var width = Math.Min(big ? 340 : 420, Math.Max(0, borderStage.Bounds.Width - (inset * 2)));
+            for (var level = big ? PlanBlock.Big : PlanBlock.Compact; level <= PlanBlock.Bare && !onStage; level++)
             {
-                _introRetry?.Stop();
-                _introRetry = null;
-                MaybeShowPartnerIntro();
-            });
-            _introRetry.Start();
-            return;
-        }
-        // Once, however the dialog is closed (a button, Esc or a click outside).
-        Editions.MarkIntroduced(partner.Id);
-        _ = DialogHost.Show(new PartnerIntroView(partner));
-    }
-
-    private DispatcherTimer? _introRetry;
-
-    private static TextBlock Chevron() => new() { Text = "▾", FontSize = 11, Opacity = 0.55, VerticalAlignment = VerticalAlignment.Center };
-
-    private void ShowEditionMenu()
-    {
-        var menu = new MenuFlyout { Placement = PlacementMode.BottomEdgeAlignedLeft };
-        var entries = new List<(string? Id, string Name)> { (null, L.AppName) };
-        entries.AddRange(Editions.Available.Select(p => ((string?)p.Id, V2pnPartners.IsPreview(p.Id) ? string.Format(L.BuilderPreviewName, p.Name) : p.Name)));
-        for (var i = 0; i < entries.Count; i++)
-        {
-            var (id, name) = entries[i];
-            var item = new MenuItem
-            {
-                Header = name,
-                ToggleType = MenuItemToggleType.Radio,
-                IsChecked = Editions.Partner?.Id == id,
-                InputGesture = i < 9 ? new KeyGesture(Key.D1 + i, OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control) : null,
-            };
-            item.Click += (_, _) => Editions.Select(id);
-            menu.Items.Add(item);
-        }
-        if (Editions.Partner is { } partner && partner.Pack.Variants.Count > 1)
-        {
-            menu.Items.Add(new Separator());
-            var looks = new MenuItem { Header = string.Format(L.EditionLook, partner.Name) };
-            foreach (var variant in partner.Pack.Variants)
-            {
-                var look = new MenuItem
-                {
-                    Header = L.EditionVariant(variant),
-                    ToggleType = MenuItemToggleType.Radio,
-                    IsChecked = variant == Editions.Variant,
-                };
-                look.Click += (_, _) => Editions.SetVariant(variant);
-                looks.Items.Add(look);
+                _planBlock.Arrange(level);
+                var need = _planBlock.HeightAt(width);
+                onStage = need <= room;
+                _planFit = $"место {room:0}, нужно {need:0} (уровень {level})";
             }
-            menu.Items.Add(looks);
+            passHost.Margin = new Thickness(inset, 0, inset, inset + status);
         }
-        menu.ShowAt(btnEdition);
+        passHost.IsVisible = onStage;
+        // In Accent, and wherever the plan is not on the stage, the partner's card in the sidebar says it.
+        partnerCardHost.IsVisible = _partnerCard != null && !onStage;
     }
 
-    private void OnEditionKey(object? sender, KeyEventArgs e)
-    {
-        var modifier = OperatingSystem.IsMacOS() ? KeyModifiers.Meta : KeyModifiers.Control;
-        if (e.KeyModifiers != modifier || e.Key < Key.D1 || e.Key > Key.D9 || Editions.Available.Count == 0)
-        {
-            return;
-        }
-        var index = e.Key - Key.D1;
-        if (index == 0)
-        {
-            Editions.Select(null);
-            e.Handled = true;
-        }
-        else if (index - 1 < Editions.Available.Count)
-        {
-            Editions.Select(Editions.Available[index - 1].Id);
-            e.Handled = true;
-        }
-    }
-
-    /// <summary>Every server V2pn has, in the plain list's order, with its last ping and favourite mark.</summary>
-    private async Task RefreshEditionCatalogAsync()
-    {
-        if (_catalogBusy || (_scene == null && _passCard == null))
-        {
-            return;
-        }
-        _catalogBusy = true;
-        try
-        {
-            var all = await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? [];
-            var extra = (await ProfileExManager.Instance.GetProfileExs())
-                .GroupBy(t => t.IndexId)
-                .ToDictionary(g => g.Key, g => g.First());
-            var subs = await AppManager.Instance.SubItems() ?? [];
-            // V2pn: a partner's hidden servers are not offered; its own country for a server wins over a guess from the name.
-            _catalog = all.Select(t =>
-            {
-                extra.TryGetValue(t.IndexId, out var ex);
-                var note = V2pnPartnerLive.Instance.Describe(t.Subid, t.Remarks, t.Address);
-                return note?.IsHidden == true ? null
-                    : new SceneServer(t.IndexId, CountryResolver.ServerName(t), note?.Country ?? CountryResolver.Resolve(t.Remarks), ex?.Delay ?? 0, false, t.Subid, t.SubRemarks, ex?.IsFavorite == true,
-                        note?.Group, note == null ? null : NonEmpty(string.Join(" · ", new[] { note.City, note.Note }.Concat(note.Purposes.Select(V2pnPurposes.Label)).Where(x => x.IsNotEmpty()))));
-            }).OfType<SceneServer>().ToList();
-            var counts = all.GroupBy(t => t.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
-            _catalogSubs = subs
-                .Where(t => t.Id.IsNotEmpty() && counts.GetValueOrDefault(t.Id) > 0)
-                .Select(t => new SceneSub(t.Id, t.Remarks.IsNotEmpty() ? t.Remarks : t.Url, counts[t.Id]))
-                .ToList();
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog("V2pn edition list", ex);
-        }
-        finally
-        {
-            _catalogBusy = false;
-        }
-        PushEditionSnapshot();
-    }
-
-    /// <summary>
-    /// What the plain header shows right now, for the scene to show the same, plus the partner's side: its
-    /// subscriptions (the list starts with their servers), whether the server in use is someone else's, and what its
-    /// panel says about the subscription.
-    /// </summary>
-    // The partner's API, if it has one: asked when its look opens, then every 30 min (account) and 15 min (status)
-    // while the window shows the look.
+    // The partner's API, if it has one: asked when its server is first selected, then every 30 min (account) and
+    // 15 min (status) while the window shows its brand.
     private V2pnPartnerAccount? _partnerAccount;
     private IReadOnlyList<V2pnPartnerIncident>? _partnerIncidents;
     private string? _apiPartner;
@@ -512,6 +262,7 @@ public partial class MainWindow : IEditionActions
             return;
         }
         _apiBusy = true;
+        var changed = false;
         try
         {
             if (wantAccount)
@@ -521,10 +272,8 @@ public partial class MainWindow : IEditionActions
                 if (token != null && await Task.Run(() => V2pnPartnerApi.GetAccountAsync(partner, token)) is { } account && _apiPartner == partner.Id)
                 {
                     _partnerAccount = account;
+                    changed = true;
                 }
-            }
-            if (wantAccount)
-            {
                 // The partner's live word about its servers, on the account's schedule (V2pnPartnerLive keeps its own clock).
                 await RefreshPartnerLiveAsync(partner, force: false);
             }
@@ -534,6 +283,7 @@ public partial class MainWindow : IEditionActions
                 if (await Task.Run(() => V2pnPartnerApi.GetStatusAsync(partner)) is { } incidents && _apiPartner == partner.Id)
                 {
                     _partnerIncidents = incidents;
+                    changed = true;
                 }
             }
         }
@@ -545,165 +295,58 @@ public partial class MainWindow : IEditionActions
         {
             _apiBusy = false;
         }
-    }
-
-    private void PushEditionSnapshot()
-    {
-        if (_scene == null && _passCard == null)
+        if (changed)
         {
-            return;
+            RefreshPartnerAccount();
         }
-        var kind = new[] { "safe", "warn", "checking", "unsafe" }.FirstOrDefault(c => pillState.Classes.Contains(c)) ?? "unsafe";
-        var profiles = ViewModel?.ProfilesViewModel;
-        var listed = profiles?.ProfileItems.FirstOrDefault(t => t.IndexId == _config.IndexId);
-        // The catalog knows every server; the sidebar's list only the ones its filter shows.
-        var current = _catalog.FirstOrDefault(t => t.IndexId == _config.IndexId);
-        var currentSub = current?.SubId ?? listed?.Subid;
-
-        var partner = Editions.Partner;
-        var partnerSubs = partner == null || profiles == null
-            ? []
-            : profiles.SubItems.Where(t => t.Id.IsNotEmpty() && V2pnPartners.Instance.ForSubscription(t)?.Id == partner.Id).ToList();
-        var partnerSubIds = partnerSubs.Select(t => t.Id).ToList();
-        var partnerServers = _catalog.Where(t => t.SubId != null && partnerSubIds.Contains(t.SubId)).ToList();
-
-        // The node squares count the partner's servers in its look, else the subscription of the server in use.
-        var counted = partnerServers.Count > 0 ? partnerServers : _catalog.Where(t => t.SubId == currentSub).ToList();
-        var sameSub = _catalog.Where(t => t.SubId == currentSub).Take(40).ToList();
-        var best = partnerServers.Where(t => t.Delay > 0).OrderBy(t => t.Delay).FirstOrDefault() ?? partnerServers.FirstOrDefault();
-
-        SceneAccount? account = null;
-        var api = partner != null && _apiPartner == partner.Id ? _partnerAccount : null;
-        if (partner != null)
-        {
-            if (IsVisible && partnerSubs.Count > 0)
-            {
-                _ = RefreshPartnerApiAsync(partner, partnerSubs);
-            }
-            var info = partnerSubs.Select(t => SubInfoManager.Instance.Get(t.Id)).FirstOrDefault(t => t != null);
-            var usage = SubUsage.From(info);
-            var incident = _apiPartner == partner.Id ? _partnerIncidents?.FirstOrDefault() : null;
-            account = new SceneAccount(
-                usage?.HasTraffic == true ? usage.TrafficText : null,
-                usage?.Fraction ?? 0,
-                usage?.ShowBar == true,
-                usage?.HasExpiry == true ? usage.ExpiryLong : api?.Until is { } until ? string.Format(L.PartnerUntil, until.ToDateTime(TimeOnly.MinValue).ToString("d MMMM yyyy", CultureInfo.CurrentUICulture)) : null,
-                usage?.TrafficWarn == true || usage?.ExpiryWarn == true,
-                usage?.TrafficBad == true || usage?.ExpiryBad == true,
-                NonEmpty(api?.Note) ?? (info?.Announce.IsNotEmpty() == true ? info.Announce : null),
-                NonEmpty(info?.WebPageUrl) ?? NonEmpty(partner.Pack.CabinetUrl),
-                NonEmpty(info?.SupportUrl) ?? NonEmpty(partner.Pack.SupportUrl),
-                NonEmpty(api?.Plan),
-                api?.Devices is { } count ? api.DeviceLimit is { } limit ? string.Format(L.PartnerDevicesOf, count, limit) : string.Format(L.PartnerDevices, count) : null,
-                incident == null ? null : incident.Text.IsNullOrEmpty() ? incident.Title : $"{incident.Title}. {incident.Text}",
-                incident?.Severe == true,
-                // The announce-url belongs to the panel's announcement, not to the API's note.
-                NonEmpty(api?.Note) == null ? NonEmpty(info?.AnnounceUrl) : null,
-                V2pnSubDefaults.Banner(info, DateTimeOffset.Now),
-                usage?.DaysLeft ?? (api?.Until is { } end ? Math.Max(0, end.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber) : null));
-        }
-        // The partner's own checks of its servers say more than V2pn's pings from one computer.
-        var byPartner = api is { Healthy: { } partnerOk, Total: { } partnerTotal } && partnerTotal > 0;
-
-        var state = CurrentState();
-        var snapshot = DebugOverrides.Apply(new EditionSnapshot
-        {
-            StateKind = kind,
-            StateLabel = AutomationProperties.GetName(txtStatePill) ?? txtStatePill.Text ?? string.Empty,
-            Protected = kind == "safe",
-            HasServer = _hasServer,
-            Title = txtHeaderTitle.Text ?? string.Empty,
-            Subtitle = txtHeaderSubtitle.Text ?? string.Empty,
-            CountryCode = _mapCode,
-            Subscription = current?.Sub ?? listed?.SubRemarks,
-            Ping = current?.Delay > 0 ? current.Delay : listed?.Delay > 0 ? listed.Delay : 0,
-            Vpn = lstMode.SelectedItem == itemModeVpn,
-            Route = txtRoute.Text ?? string.Empty,
-            NodesOk = byPartner ? api!.Healthy!.Value : counted.Count(t => t.Delay > 0),
-            NodesTotal = byPartner ? api!.Total!.Value : counted.Count(t => t.Delay != 0),
-            NodesByPartner = byPartner,
-            ConnectLabel = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect,
-            Servers = sameSub.Select(t => t with { Selected = t.IndexId == _config.IndexId }).ToList(),
-            Catalog = _catalog,
-            Subs = _catalogSubs,
-            SelectedId = _config.IndexId,
-            AnyServers = _catalog.Count > 0 || (profiles?.AllServersCount ?? 0) > 0,
-            CanImport = btnWelcomeImport.IsVisible && panelWelcomeImport.IsVisible,
-            PartnerName = partner?.Name,
-            PartnerSubIds = partnerSubIds,
-            ForeignServer = partnerServers.Count > 0 && _hasServer && currentSub != null && !partnerSubIds.Contains(currentSub),
-            BestPartnerServer = best?.IndexId,
-            Account = account is { IsEmpty: false } ? account : null,
-            Actions = partner?.Pack.ActionList ?? [],
-            ActionRunning = RunningAction(partner),
-        });
-        _scene?.Update(snapshot);
-        _passCard?.Update(snapshot.Account, partner?.Name ?? string.Empty);
-        UpdatePassPlace();
     }
 
     /// <summary>
-    /// The Pass: the partner's card on V2pn's own stage, over the status card. Built again when the partner, its
-    /// theme or light and dark change; gone in plain V2pn and in Neon.
+    /// What the partner's panel and API say about the subscription (plan, term, traffic, devices, offer, links), for its
+    /// card and its plan on the stage.
     /// </summary>
-    private void RefreshPassCard(V2pnPartner? partner, string variant)
+    private void RefreshPartnerAccount()
     {
-        var light = ActualThemeVariant == ThemeVariant.Light;
-        var key = partner != null && variant == V2pnPartnerVariants.Pass ? $"{partner.Id}:{Editions.Theme?.Key}:{light}:{partner.Folder}" : null;
-        if (key == _passKey)
+        if (Editions.Partner is not { } partner || (_partnerCard == null && _planBlock == null))
         {
             return;
         }
-        _passKey = key;
-        _passCard = key == null || Editions.ThemeColors(!light) is not { } colours
-            ? null
-            : new PassCard(partner!, colours, url => ((IEditionActions)this).OpenUrl(url));
-        passHost.Content = _passCard;
-        if (_passCard != null)
+        var profiles = ViewModel?.ProfilesViewModel;
+        var partnerSubs = profiles == null
+            ? []
+            : profiles.SubItems.Where(t => t.Id.IsNotEmpty() && V2pnPartners.Instance.ForSubscription(t)?.Id == partner.Id).ToList();
+        if (IsVisible && partnerSubs.Count > 0)
         {
-            PushEditionSnapshot();
+            _ = RefreshPartnerApiAsync(partner, partnerSubs);
         }
-    }
-
-    /// <summary>The card sits just over the status card (or at the stage's bottom without it), wide or stacked as the stage allows.</summary>
-    private void UpdatePassPlace()
-    {
-        if (_passCard == null)
-        {
-            return;
-        }
-        // The mini window has no room under Connect for the card (its status card goes too).
-        passHost.IsVisible = _tier != BodyTier.Stacked;
-        var status = contentStatusBarView.IsVisible && contentStatusBarView.Bounds.Height > 0 ? contentStatusBarView.Bounds.Height + 12 : 0;
-        passHost.Margin = new Thickness(16, 0, 16, 16 + status);
-        _passCard.Arrange(wide: passHost.Bounds.Width >= 540 || (passHost.Bounds.Width == 0 && _tier != BodyTier.Stacked));
+        var api = _apiPartner == partner.Id ? _partnerAccount : null;
+        // The subscription of the selected server first: its panel speaks for the plan in use.
+        var info = partnerSubs.OrderByDescending(t => t.Id == _barSubId).Select(t => SubInfoManager.Instance.Get(t.Id)).FirstOrDefault(t => t != null);
+        var usage = SubUsage.From(info);
+        var incident = _apiPartner == partner.Id ? _partnerIncidents?.FirstOrDefault() : null;
+        var account = new SceneAccount(
+            usage?.HasTraffic == true ? usage.TrafficText : null,
+            usage?.Fraction ?? 0,
+            usage?.ShowBar == true,
+            usage?.HasExpiry == true ? usage.ExpiryLong : api?.Until is { } until ? string.Format(L.PartnerUntil, until.ToDateTime(TimeOnly.MinValue).ToString("d MMMM yyyy", CultureInfo.CurrentUICulture)) : null,
+            usage?.TrafficWarn == true || usage?.ExpiryWarn == true,
+            usage?.TrafficBad == true || usage?.ExpiryBad == true,
+            NonEmpty(api?.Note) ?? (info?.Announce.IsNotEmpty() == true ? info.Announce : null),
+            NonEmpty(info?.WebPageUrl) ?? NonEmpty(partner.Pack.CabinetUrl),
+            NonEmpty(info?.SupportUrl) ?? NonEmpty(partner.Pack.SupportUrl),
+            NonEmpty(api?.Plan),
+            api?.Devices is { } count ? api.DeviceLimit is { } limit ? string.Format(L.PartnerDevicesOf, count, limit) : string.Format(L.PartnerDevices, count) : null,
+            incident == null ? null : incident.Text.IsNullOrEmpty() ? incident.Title : $"{incident.Title}. {incident.Text}",
+            incident?.Severe == true,
+            // The announce-url belongs to the panel's announcement, not to the API's note.
+            NonEmpty(api?.Note) == null ? NonEmpty(info?.AnnounceUrl) : null,
+            V2pnSubDefaults.Banner(info, DateTimeOffset.Now),
+            usage?.DaysLeft ?? (api?.Until is { } end ? Math.Max(0, end.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber) : null));
+        var shown = DebugOverrides.Apply(account.IsEmpty ? null : account);
+        _partnerCard?.Update(shown, partner.Name);
+        _planBlock?.Update(shown, partner.Name);
+        QueuePlace();
     }
 
     private static string? NonEmpty(string? text) => text.IsNullOrEmpty() ? null : text;
-
-    void IEditionActions.ToggleConnect() => btnConnect.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-
-    void IEditionActions.SetVpn(bool vpn) => lstMode.SelectedItem = vpn ? itemModeVpn : itemModeProxy;
-
-    void IEditionActions.OpenRoute(Control anchor) => btnRoute.Flyout?.ShowAt(anchor);
-
-    void IEditionActions.Select(string indexId) => _ = ConnectToAsync(indexId);
-
-    void IEditionActions.PingAll() => _ = PingAllAsync();
-
-    void IEditionActions.UpdateSubscriptions() => ViewModel?.SubUpdateCmd.Execute().Subscribe();
-
-    void IEditionActions.Add(Control anchor) => btnAdd.Flyout?.ShowAt(anchor);
-
-    void IEditionActions.Paste() => _ = AddServerViaClipboardAsync();
-
-    void IEditionActions.AddSubscription() => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
-
-    void IEditionActions.Import() => btnWelcomeImport.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
-
-    void IEditionActions.OpenSettings() => ViewModel?.OptionSettingCmd.Execute().Subscribe();
-
-    void IEditionActions.OpenIp() => _ = ShowRoomyDialog(new IpInfoView());
-
-    void IEditionActions.OpenUrl(string url) => ProcUtils.ProcessStart(url);
 }

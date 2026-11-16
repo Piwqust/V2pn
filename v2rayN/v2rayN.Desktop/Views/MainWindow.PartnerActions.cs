@@ -1,12 +1,11 @@
 using Avalonia.Layout;
 using DialogHostAvalonia;
 using v2rayN.Desktop.Common;
-using v2rayN.Desktop.Views.EditionLooks;
 
 namespace v2rayN.Desktop.Views;
 
-// A partner's buttons (pack "actions", V2pnPartnerCatalog): under Connect in plain V2pn while a server of the partner's
-// subscription is in use, and in the subscription block of every partner look. Each button only names an action of
+// A partner's buttons (pack "actions", V2pnPartnerCatalog): under Connect while a server of the partner's subscription
+// is in use. Each button only names an action of
 // V2pn; this file runs them. Server choices come from V2pn's own checks or the partner's API (V2pnPartnerChoice), and
 // after a connect the window says where it went and why.
 public partial class MainWindow
@@ -62,13 +61,15 @@ public partial class MainWindow
             _ = profiles.RefreshServersBiz();
         }
         RefreshPartnerActionBar();
-        PushEditionSnapshot();
+        RefreshPartnerAccount();
     }
 
     /// <summary>Called with the subscription of the server in use whenever the header changes.</summary>
     private void RefreshPartnerActionBar(string? subId)
     {
         _barSubId = subId;
+        // The window wears the brand of the partner whose server this is (MainWindow.Edition.cs).
+        Editions.Follow(subId);
         RefreshPartnerActionBar();
         // The partner's routing mode shows while its subscription is in use (once the menu has its routes).
         if (_routeShown)
@@ -79,7 +80,7 @@ public partial class MainWindow
 
     private void RefreshPartnerActionBar()
     {
-        var partner = V2pnLocks.Instance.PartnerOf(_barSubId);
+        var partner = Editions.IsForced ? Editions.Partner : V2pnLocks.Instance.PartnerOf(_barSubId);
         _barPartner = partner;
         _actionsBar?.Show(partner, RunningAction(partner));
         if (partner != null && IsVisible)
@@ -151,7 +152,7 @@ public partial class MainWindow
         }
         _actionRunning = (partner.Id, action.Id);
         RefreshPartnerActionBar();
-        PushEditionSnapshot();
+        RefreshPartnerAccount();
         try
         {
             Logging.SaveLog($"V2pn: {partner.Id} button {action.Id} ({action.Do})");
@@ -172,7 +173,7 @@ public partial class MainWindow
         {
             _actionRunning = null;
             RefreshPartnerActionBar();
-            PushEditionSnapshot();
+            RefreshPartnerAccount();
         }
     }
 
@@ -361,13 +362,5 @@ public partial class MainWindow
             DialogHost.Close(null);
         }
         await DialogHost.Show(view);
-    }
-
-    void IEditionActions.RunAction(string id, Control anchor)
-    {
-        if (Editions.Partner is { } partner && partner.Pack.ActionList.FirstOrDefault(a => a.Id == id) is { } action)
-        {
-            _ = RunPartnerActionAsync(partner, action, anchor);
-        }
     }
 }

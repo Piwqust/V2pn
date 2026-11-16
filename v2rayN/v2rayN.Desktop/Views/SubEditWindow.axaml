@@ -135,23 +135,14 @@
                             <Border x:Name="rowOnStart" Classes="srow" IsVisible="False">
                                 <TextBlock x:Name="txtOnStart" Classes="srowhint" Margin="0" TextWrapping="Wrap" />
                             </Border>
-                            <!--  V2pn: the provider's own look of V2pn, if its panel offers one (SubEditWindow.Provider.cs).  -->
+                            <!--  V2pn: the provider's brand on V2pn, if its panel offers one (SubEditWindow.Provider.cs).  -->
                             <Border x:Name="rowPartner" Classes="srow" IsVisible="False">
-                                <Grid ColumnDefinitions="*,Auto">
-                                    <StackPanel Classes="srowtext">
-                                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubPartnerTitle}" />
-                                        <TextBlock x:Name="txtPartner" Classes="srowhint" TextWrapping="Wrap" />
-                                        <!--  What the certificate lets the partner do, in plain words.  -->
-                                        <TextBlock x:Name="txtPartnerMay" Classes="srowhint" TextWrapping="Wrap" IsVisible="False" />
-                                    </StackPanel>
-                                    <Button
-                                        x:Name="btnPartner"
-                                        Grid.Column="1"
-                                        Margin="16,0,0,0"
-                                        VerticalAlignment="Center"
-                                        Content="{x:Static loc:L.SubPartnerOpen}"
-                                        Theme="{StaticResource V2Button}" />
-                                </Grid>
+                                <StackPanel Classes="srowtext">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubPartnerTitle}" />
+                                    <TextBlock x:Name="txtPartner" Classes="srowhint" TextWrapping="Wrap" />
+                                    <!--  What the certificate lets the partner do, in plain words.  -->
+                                    <TextBlock x:Name="txtPartnerMay" Classes="srowhint" TextWrapping="Wrap" IsVisible="False" />
+                                </StackPanel>
                             </Border>
                             <!--  The partner's reviewed files (routing, connection settings, chains) and whether each is used.  -->
                             <Border x:Name="rowReviewed" Classes="srow" IsVisible="False">

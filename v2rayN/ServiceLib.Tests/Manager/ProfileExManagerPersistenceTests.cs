@@ -1,5 +1,8 @@
 namespace ServiceLib.Tests.Manager;
 
+// The rows these tests save have no ProfileItem, and a subscription update running beside them prunes such rows
+// (ProfileExManager.Prune) before they are read back.
+[NotInParallel]
 public class ProfileExManagerPersistenceTests
 {
     [Test]

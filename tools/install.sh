@@ -9,16 +9,18 @@
 # with servers found on this Mac: servers, subscriptions, routing and settings. v2rayN is closed
 # and stops starting at login; its own files are left as they are.
 #
-# A provider's own build of V2pn (it wears the provider's look and signs in with its code) installs
-# beside V2pn as V2pn-<provider>.app, with its data in ~/Library/Application Support/V2pn-<provider>:
+# From a provider's page, the command names the provider, and V2pn gets that provider's tab beside
+# its own (the provider's look, plan and sign-in):
 #
 #   curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh | V2PN_PARTNER=configra bash
 #
-# It is the same package as V2pn's, checked against the same list, with v2pn-partner.txt added inside
-# the app; the provider must be in the release's partner-index.json. Nothing is moved from v2rayN into it.
+# It is the same V2pn.app, with v2pn-partner.txt inside it (Contents/MacOS) holding the provider's
+# id; updates keep it. When V2pn is already installed, only that file is added: servers,
+# subscriptions and settings stay as they are. The provider must be in the release's
+# partner-index.json.
 #
 # Options, as environment variables in front of "bash":
-#   V2PN_PARTNER=configra  a provider's own build (above)
+#   V2PN_PARTNER=configra  the provider's tab (above)
 #   V2PN_DIR=~/Apps        install somewhere else
 #   V2PN_NO_IMPORT=1       do not move anything from v2rayN
 #   V2PN_NO_START=1        do not open V2pn
@@ -44,8 +46,8 @@ main() {
     local repo=https://github.com/Piwqust/V2pn
     local source="${V2PN_SOURCE:-$repo/releases}"
     source="${source%/}"
-    # A provider's build: its id as V2pn's partner list has it (V2pnEdition).
-    local partner="${V2PN_PARTNER:-}" appname=V2pn title=V2pn
+    # The provider whose tab V2pn gets: its id as V2pn's list of partners has it (V2pnEdition).
+    local partner="${V2PN_PARTNER:-}" partner_name=''
     partner="$(printf '%s' "$partner" | tr '[:upper:]' '[:lower:]' | tr -d '[:space:]')"
 
     # ---- The screen ---------------------------------------------------------------------------
@@ -201,7 +203,6 @@ main() {
     [ "$(uname -s)" = Darwin ] || fail "this script is for macOS. On Windows: irm $source/latest/download/install.ps1 | iex"
     if [ -n "$partner" ]; then
         printf '%s' "$partner" | grep -Eq '^[a-z0-9][a-z0-9-]{1,31}$' || fail "V2PN_PARTNER '$partner' is not a provider id."
-        appname="V2pn-$partner"
     fi
 
     local dir
@@ -212,19 +213,51 @@ main() {
     else
         dir="$HOME/Applications"
     fi
-    local app="$dir/$appname.app"
-    # Where V2pn keeps its settings on a Mac (LocalApplicationData/V2pn; a provider's build: V2pn-<provider>).
-    local data="$HOME/Library/Application Support/$appname"
+    local app="$dir/V2pn.app"
+    # Where V2pn keeps its settings on a Mac (LocalApplicationData/V2pn).
+    local data="$HOME/Library/Application Support/V2pn"
 
     start() {
         [ -z "${V2PN_NO_START:-}" ] || return 0
         open "$app"
     }
 
+    # Only a provider V2pn lists gets a tab; its name, for the screen.
+    find_partner() {
+        local index error why
+        error="$(mktemp -t v2pn-partner)"
+        if ! index="$(curl -fsSL --retry 3 "$source/latest/download/partner-index.json" 2>"$error")"; then
+            why="$(sed 's/^curl: ([0-9]*) //' "$error" | tail -n 1)"
+            rm -f "$error"
+            fail "could not read V2pn's list of providers: $why"
+        fi
+        rm -f "$error"
+        partner_name="$(osascript -l JavaScript -e '
+            function run(argv) {
+                var p = (JSON.parse(argv[0]).partners || []).filter(function (x) { return x.id === argv[1]; })[0];
+                return p ? String(p.name || argv[1]) : "";
+            }' "$index" "$partner")" || partner_name=''
+        [ -n "$partner_name" ] || fail "V2pn has no provider '$partner'. Take the command from your provider's page."
+    }
+
+    # v2pn-partner.txt inside the app, where V2pn looks for it: the provider's tab from V2pn's next start.
+    add_marker() { printf '%s\n' "$partner" >"$1/Contents/MacOS/v2pn-partner.txt"; }
+
     if [ -d "$app" ]; then
         local have
         have="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$app/Contents/Info.plist" 2>/dev/null)" || have=''
-        ok Installed "$appname${have:+ $have} is already in ${BOLD}$app${OFF}"
+        ok Installed "V2pn${have:+ $have} is already in ${BOLD}$app${OFF}"
+        if [ -n "$partner" ]; then
+            # The same V2pn: only the marker is added; servers and settings stay.
+            step=Provider
+            find_partner
+            add_marker "$app" || fail "could not write v2pn-partner.txt into $app."
+            if pgrep -f "$app/Contents/MacOS/" >/dev/null 2>&1; then
+                ok Provider "$partner_name's tab added   ${DIM}it shows once V2pn is restarted${OFF}"
+            else
+                ok Provider "$partner_name's tab added   ${DIM}servers and settings stay as they are${OFF}"
+            fi
+        fi
         if [ -n "${V2PN_NO_START:-}" ]; then say "     ${DIM}It keeps itself up to date.${OFF}"; else say "     ${DIM}It keeps itself up to date; opening it.${OFF}"; fi
         say
         start
@@ -259,25 +292,16 @@ main() {
             return [m.version, f.size, f.sha256, when].join(" ");
         }' "$manifest" "$name")" || found=''
     [ -n "$found" ] || fail "the newest release has no package for this Mac ($name)."
+    if [ -n "$partner" ]; then
+        step=Provider
+        find_partner
+    fi
     local version size sha256 published
     read -r version size sha256 published <<<"$found"
-    if [ -n "$partner" ]; then
-        # Only a provider V2pn lists gets a build.
-        local index listed
-        index="$(curl -fsSL --retry 3 "$source/latest/download/partner-index.json" 2>"$work/error")" ||
-            fail "could not read V2pn's list of providers: $(sed 's/^curl: ([0-9]*) //' "$work/error" | tail -n 1)"
-        listed="$(osascript -l JavaScript -e '
-            function run(argv) {
-                var p = (JSON.parse(argv[0]).partners || []).filter(function (x) { return x.id === argv[1]; })[0];
-                return p ? String(p.name || argv[1]) : "";
-            }' "$index" "$partner")" || listed=''
-        [ -n "$listed" ] || fail "V2pn has no provider '$partner'. Take the command from your provider's page."
-        title="V2pn $listed"
-    fi
 
     fact Version "${BOLD}$version${OFF}${published:+   ${DIM}published $published${OFF}}"
-    if [ -n "$partner" ]; then fact Build "${BOLD}$title${OFF}   ${DIM}the provider's own build, beside V2pn${OFF}"; fi
     fact Package "$name   ${DIM}$(mb "$size"), $kind${OFF}"
+    if [ -n "$partner" ]; then fact Provider "${BOLD}$partner_name${OFF}   ${DIM}its tab in V2pn${OFF}"; fi
     fact From "${source#https://}"
     fact Into "$app"
     fact macOS "the download flag is taken off, so it opens without a warning"
@@ -336,12 +360,9 @@ main() {
     }
     follow install_frame || fail "could not unpack the package."
     [ -d "$work/unpacked/V2pn.app" ] || fail "the package has no V2pn.app."
-    if [ -n "$partner" ]; then
-        # Inside the app, where V2pn looks for it; the updater carries it over to every new version.
-        printf '%s\n' "$partner" >"$work/unpacked/V2pn.app/Contents/MacOS/v2pn-partner.txt"
-    fi
+    if [ -n "$partner" ]; then add_marker "$work/unpacked/V2pn.app" || fail "could not write v2pn-partner.txt."; fi
     mkdir -p "$dir"
-    mv "$work/unpacked/V2pn.app" "$app" || fail "could not put $appname.app into $dir."
+    mv "$work/unpacked/V2pn.app" "$app" || fail "could not put V2pn.app into $dir."
     installed=1
     # V2pn has no Apple Developer ID, and macOS would refuse a quarantined copy of it.
     xattr -dr com.apple.quarantine "$app" 2>/dev/null || true
@@ -351,11 +372,10 @@ main() {
         if [ -d "$app/Contents/MacOS/bin/${core%%:*}" ]; then cores="${cores:+$cores, }${core#*:}"; fi
     done
     case "$cores" in *,*) cores="${cores%, *} and ${cores##*, }" ;; esac
-    ok Install "$title${cores:+ with $cores}   ${DIM}$files files, $(mb "$unpacked_total")${OFF}"
+    ok Install "V2pn${cores:+ with $cores}   ${DIM}$files files, $(mb "$unpacked_total")${OFF}"
+    if [ -n "$partner" ]; then ok Provider "$partner_name's tab   ${DIM}v2pn-partner.txt inside V2pn.app${OFF}"; fi
 
-    if [ -n "$partner" ]; then
-        say "   ${DIM}-${OFF} $(pad v2rayN)${DIM}left alone (a provider's build)${OFF}"
-    elif [ -n "${V2PN_NO_IMPORT:-}" ]; then
+    if [ -n "${V2PN_NO_IMPORT:-}" ]; then
         say "   ${DIM}-${OFF} $(pad v2rayN)${DIM}left alone (V2PN_NO_IMPORT)${OFF}"
     else
         step=v2rayN
@@ -366,7 +386,7 @@ main() {
     fi
 
     say
-    if [ -n "${V2PN_NO_START:-}" ]; then say "   ${BOLD}$title $version${OFF} is ready."; else say "   ${BOLD}$title $version${OFF} is ready. Opening it now."; fi
+    if [ -n "${V2PN_NO_START:-}" ]; then say "   ${BOLD}V2pn $version${OFF} is ready."; else say "   ${BOLD}V2pn $version${OFF} is ready. Opening it now."; fi
     say "   ${DIM}It keeps itself up to date. Questions and problems:${OFF} ${LINK}$repo/issues${OFF}"
     say
     start

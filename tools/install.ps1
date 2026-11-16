@@ -8,16 +8,18 @@
 # servers, subscriptions, routing and settings. v2rayN is closed and stops starting with Windows;
 # its own files are left as they are.
 #
-# A provider's own build of V2pn (it wears the provider's look and signs in with its code) installs
-# beside V2pn, into %LOCALAPPDATA%\Programs\V2pn-<provider>, with its own data and shortcuts:
+# From a provider's page, the command names the provider, and V2pn gets that provider's tab beside
+# its own (the provider's look, plan and sign-in):
 #
 #   $env:V2PN_PARTNER = 'configra'; irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex
 #
-# It is the same package as V2pn's, checked against the same list, with v2pn-partner.txt added; the
-# provider must be in the release's partner-index.json. Nothing is moved from v2rayN into it.
+# It is the same V2pn in the same folder, with v2pn-partner.txt beside V2pn.exe holding the
+# provider's id; updates keep it. When V2pn is already installed, only that file is added: servers,
+# subscriptions and settings stay as they are. The provider must be in the release's
+# partner-index.json.
 #
 # Options, as environment variables set before the command:
-#   $env:V2PN_PARTNER = 'configra'    a provider's own build (above)
+#   $env:V2PN_PARTNER = 'configra'    the provider's tab (above)
 #   $env:V2PN_DIR = 'D:\Apps\V2pn'    install somewhere else
 #   $env:V2PN_NO_IMPORT = 1           do not move anything from v2rayN
 #   $env:V2PN_NO_SHORTCUTS = 1        no shortcuts
@@ -37,14 +39,12 @@
 
     $repo = 'https://github.com/Piwqust/V2pn'
     $source = if ($env:V2PN_SOURCE) { $env:V2PN_SOURCE.TrimEnd('/') } else { "$repo/releases" }
-    # A provider's build: its id as V2pn's partner list has it (V2pnEdition).
+    $dir = if ($env:V2PN_DIR) { $env:V2PN_DIR } else { Join-Path $env:LOCALAPPDATA 'Programs\V2pn' }
+    $exe = Join-Path $dir 'V2pn.exe'
+    $inv = [Globalization.CultureInfo]::InvariantCulture
+    # The provider whose tab V2pn gets: its id as V2pn's list of partners has it (V2pnEdition).
     $partner = if ($env:V2PN_PARTNER) { $env:V2PN_PARTNER.Trim().ToLowerInvariant() } else { $null }
     if ($partner -and $partner -notmatch '^[a-z0-9][a-z0-9-]{1,31}$') { throw "V2PN_PARTNER '$partner' is not a provider id." }
-    $appFolder = if ($partner) { "V2pn-$partner" } else { 'V2pn' }
-    $dir = if ($env:V2PN_DIR) { $env:V2PN_DIR } else { Join-Path $env:LOCALAPPDATA "Programs\$appFolder" }
-    $exe = Join-Path $dir 'V2pn.exe'
-    $title = 'V2pn'
-    $inv = [Globalization.CultureInfo]::InvariantCulture
 
     # ---- The screen ---------------------------------------------------------------------------
     # live: a console the installer can redraw, so progress stays on one line; anywhere else (a log,
@@ -187,6 +187,21 @@
         return $content
     }
 
+    # Only a provider V2pn lists gets a tab; its name, for the screen.
+    function Get-PartnerName {
+        $listed = $null
+        try { $listed = ((Get-Text "$source/latest/download/partner-index.json") | ConvertFrom-Json).partners | Where-Object { $_.id -eq $partner } | Select-Object -First 1 }
+        catch { throw "Could not read V2pn's list of providers: $($_.Exception.Message)" }
+        if (-not $listed) { throw "V2pn has no provider '$partner'. Take the command from your provider's page." }
+        return [string]$listed.name
+    }
+
+    # v2pn-partner.txt beside V2pn.exe: V2pn shows the provider's tab from its next start.
+    function Add-PartnerMarker {
+        New-Item -ItemType Directory -Force $dir | Out-Null
+        [IO.File]::WriteAllText((Join-Path $dir 'v2pn-partner.txt'), "$partner`n")
+    }
+
     # Downloads with a live bar and hashes on the way, so the check needs no second read of the file.
     function Receive-Package([string]$url, [string]$path, [long]$total) {
         $request = [Net.WebRequest]::Create($url)
@@ -294,7 +309,15 @@
         if (Test-Path $exe) {
             $have = ''
             try { $have = ' ' + ([string]((Get-Item $exe).VersionInfo.ProductVersion) -split '\+')[0] } catch { }
-            Step 'Installed' @("$appFolder$have is already in ", '', $dir, 'bold')
+            Step 'Installed' @("V2pn$have is already in ", '', $dir, 'bold')
+            if ($partner) {
+                # The same V2pn: only the marker is added; servers and settings stay.
+                $ui.step = 'Provider'
+                $partnerName = Get-PartnerName
+                Add-PartnerMarker
+                $running = @(Get-Process -Name V2pn -ErrorAction SilentlyContinue | Where-Object { try { $_.Path -eq $exe } catch { $false } }).Count -gt 0
+                Step 'Provider' @("$partnerName's tab added", '', $(if ($running) { '   it shows once V2pn is restarted' } else { '   servers and settings stay as they are' }), 'dim')
+            }
             Say @("     It keeps itself up to date$(if ($env:V2PN_NO_START) { '.' } else { '; opening it.' })", 'dim')
             Say
             Start-V2pn
@@ -310,21 +333,14 @@
         $manifest = (Get-Text "$source/latest/download/release.json") | ConvertFrom-Json
         $file = $manifest.files | Where-Object { $_.name -eq $name } | Select-Object -First 1
         if (-not $file) { throw "V2pn $($manifest.version) has no package for this computer ($name)." }
-        if ($partner) {
-            # Only a provider V2pn lists gets a build; its name goes on the shortcuts.
-            $listed = $null
-            try { $listed = ((Get-Text "$source/latest/download/partner-index.json") | ConvertFrom-Json).partners | Where-Object { $_.id -eq $partner } | Select-Object -First 1 }
-            catch { throw "Could not read V2pn's list of providers: $($_.Exception.Message)" }
-            if (-not $listed) { throw "V2pn has no provider '$partner'. Take the command from your provider's page." }
-            $title = "V2pn $(($listed.name -replace '[\\/:*?""<>|]', '').Trim())"
-        }
+        $partnerName = if ($partner) { Get-PartnerName } else { $null }
         $version = [string]$manifest.version
         $published = ''
         try { $published = ([datetime]$manifest.published).ToUniversalTime().ToString('d MMM yyyy', $inv) } catch { }
 
         Fact 'Version' @($version, 'bold', $(if ($published) { "   published $published" } else { '' }), 'dim')
-        if ($partner) { Fact 'Build' @($title, 'bold', "   the provider's own build, beside V2pn", 'dim') }
         Fact 'Package' @($name, '', "   $(MB $file.size), Windows $(if ($arch -eq 'arm64') { 'on ARM' } else { 'x64' })", 'dim')
+        if ($partner) { Fact 'Provider' @($partnerName, 'bold', "   its tab in V2pn", 'dim') }
         Fact 'From' @(($source -replace '^https?://', ''), '')
         Fact 'Into' @($dir, '')
         Fact 'Rights' @('this Windows user only, no administrator needed', '')
@@ -346,22 +362,22 @@
         Step 'Check' @('size and SHA-256 match the release', '', "   $($got.sha256.Substring(0, 8))$($g.ell)$($got.sha256.Substring(56))", 'dim')
 
         $ui.step = 'Install'
-        if ($partner) {
-            # Before the program: a copy cut short here is never taken for plain V2pn by the next run.
-            New-Item -ItemType Directory -Force $dir | Out-Null
-            [IO.File]::WriteAllText((Join-Path $dir 'v2pn-partner.txt'), "$partner`n")
-        }
         $put = Install-Package $zip $dir
         $ui.installed = $true
         $what = if ($put.cores.Count) { 'V2pn with ' + (Words $put.cores) } else { 'V2pn' }
         Step 'Install' @($what, '', "   $($put.count) files, $(MB $put.size)", 'dim')
+        if ($partner) {
+            $ui.step = 'Provider'
+            Add-PartnerMarker
+            Step 'Provider' @("$partnerName's tab", '', '   v2pn-partner.txt beside V2pn.exe', 'dim')
+        }
 
         if ($env:V2PN_NO_SHORTCUTS) { Skip 'Shortcuts' 'none (V2PN_NO_SHORTCUTS)' }
         else {
             $ui.step = 'Shortcuts'
             $shell = New-Object -ComObject WScript.Shell
             foreach ($folder in [Environment]::GetFolderPath('Programs'), [Environment]::GetFolderPath('Desktop')) {
-                $link = $shell.CreateShortcut((Join-Path $folder "$title.lnk"))
+                $link = $shell.CreateShortcut((Join-Path $folder 'V2pn.lnk'))
                 $link.TargetPath = $exe
                 $link.WorkingDirectory = $dir
                 $link.Save()
@@ -369,8 +385,7 @@
             Step 'Shortcuts' @('Start menu and desktop', '')
         }
 
-        if ($partner) { Skip 'v2rayN' "left alone (a provider's build)" }
-        elseif ($env:V2PN_NO_IMPORT) { Skip 'v2rayN' 'left alone (V2PN_NO_IMPORT)' }
+        if ($env:V2PN_NO_IMPORT) { Skip 'v2rayN' 'left alone (V2PN_NO_IMPORT)' }
         else {
             $ui.step = 'v2rayN'
             # Read by V2pn at its first start (V2pnImport.AutoMarker); Explorer passes it no arguments.
@@ -381,7 +396,7 @@
         }
 
         Say
-        Say @('   ', '', "$title $version", 'bold', " is ready.$(if ($env:V2PN_NO_START) { '' } else { ' Opening it now.' })", '')
+        Say @('   ', '', "V2pn $version", 'bold', " is ready.$(if ($env:V2PN_NO_START) { '' } else { ' Opening it now.' })", '')
         Say @('   It keeps itself up to date. Questions and problems: ', 'dim', "$repo/issues", 'link')
         Say
         Start-V2pn

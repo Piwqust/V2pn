@@ -291,17 +291,27 @@ public sealed class V2pnPartners
         Logging.SaveLog($"{Tag}: {IndexError}");
     }
 
-    private async Task<V2pnPartner?> DownloadAsync(V2pnPartnerListing listing, CancellationToken cancellationToken)
+    /// <summary>The zip of <paramref name="listing"/> from the first source that serves the one the index names, unpacked and checked.</summary>
+    private async Task<(byte[] Zip, V2pnPartnerPack Pack, Dictionary<string, byte[]> Files)?> FetchPackAsync(V2pnPartnerListing listing, CancellationToken cancellationToken)
     {
         var error = "No source serves the pack.";
         foreach (var source in Sources)
         {
             var zip = await GetBytesAsync($"{source}/latest/download/{listing.Zip.File}", V2pnPartnerTrust.MaxZipBytes, cancellationToken);
-            var pack = V2pnPartnerTrust.Unpack(zip, listing, out var files, out error);
-            if (pack == null)
+            if (V2pnPartnerTrust.Unpack(zip, listing, out var files, out error) is { } pack)
             {
-                continue;
+                return (zip!, pack, files);
             }
+        }
+        _errors[listing.Id] = error;
+        Logging.SaveLog($"{Tag}: {listing.Id}: {error}");
+        return null;
+    }
+
+    private async Task<V2pnPartner?> DownloadAsync(V2pnPartnerListing listing, CancellationToken cancellationToken)
+    {
+        if (await FetchPackAsync(listing, cancellationToken) is (var zip, var pack, var files))
+        {
             var root = _root();
             Directory.CreateDirectory(root);
             var staging = Path.Combine(root, "." + listing.Id + "-" + Guid.NewGuid().ToString("N")[..8]);
@@ -312,7 +322,7 @@ public sealed class V2pnPartners
                 {
                     await File.WriteAllBytesAsync(Path.Combine(staging, name), content, cancellationToken);
                 }
-                await File.WriteAllBytesAsync(Path.Combine(staging, KeptZip), zip!, cancellationToken);
+                await File.WriteAllBytesAsync(Path.Combine(staging, KeptZip), zip, cancellationToken);
                 pack = V2pnPartnerSlots.Fit(pack, name => files.GetValueOrDefault(name), out var notes);
                 _slotNotes[listing.Id] = notes;
                 var features = ReadFeatures(listing, pack, name => files.GetValueOrDefault(name));
@@ -335,9 +345,76 @@ public sealed class V2pnPartners
                 DeleteQuietly(staging);
             }
         }
-        _errors[listing.Id] = error;
-        Logging.SaveLog($"{Tag}: {listing.Id}: {error}");
         return null;
+    }
+
+    /// <summary>
+    /// The partners a person can sign in with (V2pnPartnerLogin): every listed partner whose pack says "login" and has an
+    /// API under the account grant. A partner kept for a subscription here is read from its folder; any other one's pack
+    /// is downloaded and checked like a kept one, but only shown: it does not dress the window, is not kept for a
+    /// subscription and goes with the next start (guiConfigs/partners/.offers). Asks for the index first when there is none.
+    /// </summary>
+    public async Task<IReadOnlyList<V2pnPartner>> LoginOffersAsync(CancellationToken cancellationToken = default)
+    {
+        await LoadAsync();
+        if (_index == null)
+        {
+            await RefreshAsync(forceIndex: true, cancellationToken);
+        }
+        if (_index is not { } index)
+        {
+            return [];
+        }
+        var offers = new List<V2pnPartner>();
+        foreach (var listing in index.Partners.Where(l => l.Until >= Today() && l.Allows(V2pnPartnerGrants.Account)))
+        {
+            var partner = Get(listing.Id) is { } kept && !IsDebug(kept.Id) ? kept : await OfferAsync(listing, cancellationToken);
+            if (partner != null && V2pnPartnerLogin.Offers(partner))
+            {
+                offers.Add(partner);
+            }
+        }
+        return offers.OrderBy(p => p.Name, StringComparer.CurrentCulture).ToList();
+    }
+
+    private readonly ConcurrentDictionary<string, V2pnPartner> _offers = new(StringComparer.Ordinal);
+    private readonly SemaphoreSlim _offerGate = new(1, 1);
+
+    private async Task<V2pnPartner?> OfferAsync(V2pnPartnerListing listing, CancellationToken cancellationToken)
+    {
+        await _offerGate.WaitAsync(cancellationToken);
+        try
+        {
+            if (_offers.TryGetValue(listing.Id, out var known) && known.Listing.Zip.Sha256 == listing.Zip.Sha256 && Directory.Exists(known.Folder))
+            {
+                return known;
+            }
+            if (await FetchPackAsync(listing, cancellationToken) is not (_, var pack, var files))
+            {
+                return null;
+            }
+            // Its pictures (the mark the sign-in shows) on disk, as a kept pack's are; nothing else of it is used.
+            var folder = Path.Combine(_root(), ".offers", listing.Id);
+            DeleteQuietly(folder);
+            Directory.CreateDirectory(folder);
+            foreach (var (name, content) in files)
+            {
+                await File.WriteAllBytesAsync(Path.Combine(folder, name), content, cancellationToken);
+            }
+            pack = V2pnPartnerSlots.Fit(pack, name => files.GetValueOrDefault(name), out _);
+            var offer = new V2pnPartner(listing, pack, folder);
+            _offers[listing.Id] = offer;
+            return offer;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+        {
+            Logging.SaveLog($"{Tag}: {listing.Id} offer", ex);
+            return null;
+        }
+        finally
+        {
+            _offerGate.Release();
+        }
     }
 
     /// <summary>

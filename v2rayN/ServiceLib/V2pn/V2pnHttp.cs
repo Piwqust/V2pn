@@ -36,7 +36,16 @@ public static class V2pnHttp
     }
 
     /// <param name="bearer">Sent as "Authorization: Bearer"; with it redirects are not followed, so the token reaches only <paramref name="url"/>.</param>
-    public static async Task<Result> GetAsync(string url, IWebProxy? proxy, int maxBytes, CancellationToken cancellationToken = default, string? bearer = null)
+    /// <param name="redirects">False when the address itself carries a secret (a sign-in token): it must not travel on to another host.</param>
+    public static Task<Result> GetAsync(string url, IWebProxy? proxy, int maxBytes, CancellationToken cancellationToken = default, string? bearer = null, bool redirects = true) =>
+        SendAsync(() => new HttpRequestMessage(HttpMethod.Get, url), proxy, maxBytes, bearer, redirects && bearer == null, cancellationToken);
+
+    /// <summary>POST of a JSON body; redirects are not followed (a POST that is redirected turns into a GET elsewhere).</summary>
+    public static Task<Result> PostJsonAsync(string url, string json, IWebProxy? proxy, int maxBytes, CancellationToken cancellationToken = default) =>
+        SendAsync(() => new HttpRequestMessage(HttpMethod.Post, url) { Content = new StringContent(json, Encoding.UTF8, "application/json") },
+            proxy, maxBytes, null, false, cancellationToken);
+
+    private static async Task<Result> SendAsync(Func<HttpRequestMessage> request, IWebProxy? proxy, int maxBytes, string? bearer, bool redirects, CancellationToken cancellationToken)
     {
         try
         {
@@ -46,7 +55,7 @@ public static class V2pnHttp
                 UseProxy = proxy != null,
                 ConnectTimeout = ConnectTimeout,
                 AutomaticDecompression = DecompressionMethods.All,
-                AllowAutoRedirect = bearer == null,
+                AllowAutoRedirect = redirects,
             };
             using var client = new HttpClient(handler) { Timeout = Timeout.InfiniteTimeSpan };
             client.DefaultRequestHeaders.UserAgent.TryParseAdd($"{Global.AppName}/{V2pnInfo.Version}");
@@ -57,7 +66,8 @@ public static class V2pnHttp
 
             using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
             timeout.CancelAfter(TotalTimeout);
-            using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
+            using var message = request();
+            using var response = await client.SendAsync(message, HttpCompletionOption.ResponseHeadersRead, timeout.Token);
             if (response.StatusCode != HttpStatusCode.OK)
             {
                 return new Result(response.StatusCode, null, $"HTTP {(int)response.StatusCode}");

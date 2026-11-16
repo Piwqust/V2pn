@@ -56,8 +56,15 @@ public sealed record V2pnPartnerPack(
     IReadOnlyList<V2pnServerNote>? Servers = null,
     IReadOnlyList<V2pnPartnerAction>? Actions = null,
     bool Lock = false,
-    V2pnTheme? Theme = null)
+    V2pnTheme? Theme = null,
+    bool Login = false)
 {
+    /// <summary>
+    /// "login": true with an API under the account grant: V2pn offers to sign in with this partner by a code the person
+    /// confirms in the partner's bot (V2pnPartnerLogin), instead of copying a link.
+    /// </summary>
+    public bool OffersLogin => Login && ApiUrl != null;
+
     /// <summary>What the pack says about its servers (needs the actions grant).</summary>
     public IReadOnlyList<V2pnServerNote> ServerNotes => Servers ?? [];
 
@@ -496,6 +503,8 @@ public static class V2pnPartnerTrust
             var servers = catalog ? V2pnPartnerCatalog.ParseServers(root["servers"], live: false) : [];
             var actions = catalog ? V2pnPartnerCatalog.ParseActions(root["actions"], listing, api != null) : [];
             var locked = listing.Allows(V2pnPartnerGrants.Lock) && root["lock"] is JsonValue lockValue && lockValue.TryGetValue<bool>(out var lockOn) && lockOn;
+            // Sign-in by code talks to the API, so it comes with it (the account grant, on the listing's domains).
+            var login = api != null && root["login"] is JsonValue loginValue && loginValue.TryGetValue<bool>(out var loginOn) && loginOn;
 
             return new V2pnPartnerPack(
                 id,
@@ -511,7 +520,8 @@ public static class V2pnPartnerTrust
                 servers,
                 actions,
                 locked,
-                theme)
+                theme,
+                login)
             {
                 Notes = notes,
             };

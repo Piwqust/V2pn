@@ -14,7 +14,8 @@ Colours follow V2pn's own rules (ServiceLib/V2pn/V2pnThemePalette.cs, Editions.P
 from the state colours, the Scene's stage with its ink, scrim and buttons, the brand as text moved in lightness until it
 reads. Every pair of text and ground is checked at 4.5:1 before the page is written; the build fails otherwise.
 
-Standard library only; no external scripts or fonts: the page, V2pn's font and the partner's pictures sit side by side.
+Standard library only; no external scripts or fonts: the page, its script (page.js, so a strict Content-Security-Policy
+with script-src 'self' serves it), V2pn's font and the partner's pictures sit side by side.
 """
 import argparse
 import html
@@ -624,8 +625,7 @@ def build(folder, out, source, bot_override=None):
         phone_title=t("phoneTitle"), phone_text=t("phoneText"), share=t("share"), phone_files=t("phoneFiles"),
         steps_title=t("stepsTitle"), s1=t("s1"), s1win=t("s1win"), s1mac=t("s1mac"), s2=t("s2"), s2t=t("s2t"),
         s3=t("s3"), s3t=t("s3t"), bot=bot_html, foot=t("foot"),
-        i18n=json.dumps({"ru": ru, "en": en}, ensure_ascii=False).replace("</", "<\\/"),
-        urls=json.dumps(urls),
+        data=json.dumps({"text": {"ru": ru, "en": en}, "urls": urls}, ensure_ascii=False).replace("</", "<\\/"),
     )
 
     out = os.path.abspath(out)
@@ -640,6 +640,8 @@ def build(folder, out, source, bot_override=None):
         shutil.copy(os.path.join(folder, f), os.path.join(out, f))
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8", newline="\n") as fh:
         fh.write(page)
+    with open(os.path.join(out, "page.js"), "w", encoding="utf-8", newline="\n") as fh:
+        fh.write(PAGE_JS)
 
     print(f"{name} ({pid}): {out}")
     print(f"  downloads from {source}/latest/download/")
@@ -792,10 +794,17 @@ footer a {{ color: var(--muted); }}
   </main>
   <footer data-t="foot">{foot}</footer>
 </div>
-<script>
-(() => {{
-  const T = {i18n};
-  const U = {urls};
+<script type="application/json" id="page-data">{data}</script>
+<script src="page.js"></script>
+</body>
+</html>
+"""
+
+
+PAGE_JS = """(() => {
+  // The texts in both languages and the download links, from the page itself (a strict CSP allows no inline script).
+  const data = JSON.parse(document.getElementById("page-data").textContent);
+  const T = data.text, U = data.urls;
   const ua = navigator.userAgent || "";
   const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || "";
   // An iPad asks for the desktop site and says "Macintosh"; its touch screen gives it away.
@@ -808,54 +817,51 @@ footer a {{ color: var(--muted); }}
   if (phone) body.classList.add("is-phone");
   const win = document.getElementById("win"), mac = document.getElementById("mac");
   // The visitor's system first and as the strong button; elsewhere Windows leads, as it is the larger part.
-  if (os === "mac") {{
+  if (os === "mac") {
     win.classList.remove("primary"); mac.classList.add("primary");
     const dl = document.querySelector(".dl"); dl.insertBefore(dl.querySelector('[data-dl="mac"]'), dl.firstChild);
-  }}
+  }
   let lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "ru";
-  const apply = () => {{
+  const apply = () => {
     const s = T[lang];
     document.documentElement.lang = lang;
     document.title = s.title.replace(/&amp;/g, "&");
-    document.querySelectorAll("[data-t]").forEach(el => {{
+    document.querySelectorAll("[data-t]").forEach(el => {
       let key = el.dataset.t;
       if (key === "winNote" && arm) key = "winNoteArm";
       el.innerHTML = s[key];
-    }});
+    });
     document.querySelector(".switch").setAttribute("aria-label", s.lang);
     document.querySelectorAll(".switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
-  }};
-  document.querySelectorAll(".switch button").forEach(b => b.addEventListener("click", () => {{
+  };
+  document.querySelectorAll(".switch button").forEach(b => b.addEventListener("click", () => {
     lang = b.dataset.lang;
     const url = new URL(location.href);
     if (lang === "en") url.searchParams.set("lang", "en"); else url.searchParams.delete("lang");
     history.replaceState(null, "", url);
     apply();
-  }}));
-  if (os === "win" && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {{
-    navigator.userAgentData.getHighEntropyValues(["architecture"]).then(v => {{
-      if (v.architecture === "arm") {{ arm = true; win.href = U.winArm; apply(); }}
-    }}).catch(() => {{}});
-  }}
+  }));
+  if (os === "win" && navigator.userAgentData && navigator.userAgentData.getHighEntropyValues) {
+    navigator.userAgentData.getHighEntropyValues(["architecture"]).then(v => {
+      if (v.architecture === "arm") { arm = true; win.href = U.winArm; apply(); }
+    }).catch(() => {});
+  }
   const share = document.getElementById("share");
-  share.addEventListener("click", async () => {{
+  share.addEventListener("click", async () => {
     const url = location.href;
-    try {{
-      if (navigator.share) {{ await navigator.share({{ title: document.title, url }}); return; }}
-    }} catch (e) {{ if (e && e.name === "AbortError") return; }}
-    try {{ await navigator.clipboard.writeText(url); }} catch (e) {{
+    try {
+      if (navigator.share) { await navigator.share({ title: document.title, url }); return; }
+    } catch (e) { if (e && e.name === "AbortError") return; }
+    try { await navigator.clipboard.writeText(url); } catch (e) {
       const ta = document.createElement("textarea"); ta.value = url; document.body.appendChild(ta); ta.select();
-      try {{ document.execCommand("copy"); }} catch (_) {{}}
+      try { document.execCommand("copy"); } catch (_) {}
       ta.remove();
-    }}
+    }
     share.textContent = T[lang].copied;
-    setTimeout(() => {{ share.textContent = T[lang].share; }}, 2400);
-  }});
+    setTimeout(() => { share.textContent = T[lang].share; }, 2400);
+  });
   apply();
-}})();
-</script>
-</body>
-</html>
+})();
 """
 
 

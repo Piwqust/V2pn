@@ -4,7 +4,7 @@ namespace ServiceLib;
 public sealed record V2pnPartnerZip(string File, long Size, string Sha256);
 
 /// <summary>
-/// A partner as the owner of V2pn lists it in partners.json, the index V2pn publishes with its releases and signs with the
+/// A partner as the owner of V2pn lists it in partner-index.json, the index V2pn publishes with its releases and signs with the
 /// partner root key (<see cref="V2pnInfo.PartnerKeys"/>): which subscription domains are the partner's, what it may do,
 /// until when, and which pack it wears.
 /// </summary>
@@ -28,7 +28,7 @@ public sealed record V2pnPartnerListing(
     private static readonly IReadOnlyDictionary<string, string> EmptyReviewed = new Dictionary<string, string>();
 }
 
-/// <summary>partners.json: every partner V2pn knows, as the owner of V2pn signed it.</summary>
+/// <summary>partner-index.json: every partner V2pn knows, as the owner of V2pn signed it.</summary>
 /// <param name="Problems">Entries left out and why (a newer format, a mistake); the rest of the index stands.</param>
 public sealed record V2pnPartnerIndex(IReadOnlyList<V2pnPartnerListing> Partners, IReadOnlyList<string> Problems)
 {
@@ -109,7 +109,14 @@ public static class V2pnPartnerGrants
 /// <summary>Reads and checks the partner index and the packs it pins. Pure: no network, no files, no clock but the one passed in.</summary>
 public static class V2pnPartnerTrust
 {
-    public const string IndexFile = "partners.json";
+    /// <summary>
+    /// The index partner builds read (V2pnEdition). Its own name, so copies of 1.2.1 and older, which dressed plain V2pn
+    /// in a partner's look, never see a partner again: they read <see cref="LegacyIndexFile"/>.
+    /// </summary>
+    public const string IndexFile = "partner-index.json";
+
+    /// <summary>What V2pn 1.2.1 and older read; every release still publishes it, signed and empty, so they drop every partner.</summary>
+    public const string LegacyIndexFile = "partners.json";
     public const string PackFile = "partner.json";
     public const int MaxIndexBytes = 256 * 1024;
     public const int MaxPackBytes = 64 * 1024;

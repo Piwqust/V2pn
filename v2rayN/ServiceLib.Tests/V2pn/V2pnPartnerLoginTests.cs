@@ -328,33 +328,36 @@ public class V2pnPartnerLoginTests
     #region Offers
 
     [Test]
-    public async Task Offers_ListPartnersWithLogin_EvenWithoutTheirSubscriptionHere_WithoutKeepingThem()
+    public async Task Offers_InAPartnerBuild_AreItsPartnerOnly_BeforeAnySubscriptionHere()
     {
         var p = new TestPartner();
         var site = new TestSite();
         var withLogin = TestPartner.Zip(LoginPack);
-        var plain = TestPartner.Zip(TestPartner.Pack(id: "plain", name: "Plain"));
+        var other = TestPartner.Zip(TestPartner.Pack(id: "kestrel", name: "Kestrel", more: pack => pack["login"] = true));
         p.Publish(site, DateTimeOffset.UtcNow,
             (TestPartner.Listing(zip: withLogin), withLogin),
-            (TestPartner.Listing(partner: "plain", domains: ["plain.example.com"], zip: plain), plain));
+            (TestPartner.Listing(partner: "kestrel", domains: ["kestrel.example.com"], zip: other), other));
         var root = Path.Combine(Path.GetTempPath(), "v2pn-login-offers-" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            var manager = p.Manager(site, root, []);
+            var manager = p.Manager(site, root, [], edition: "configra");
             var offers = await manager.LoginOffersAsync();
 
-            await offers.Count.Should().BeEqualTo(1);
-            await offers[0].Id.Should().BeEqualTo("configra");
-            // Its pictures are on disk for the sign-in to show.
+            // Kestrel offers sign-in too, but this is Configra's build.
+            await offers.Select(o => o.Id).ToList().Should().BeEquivalentTo(["configra"]);
+            // Its pictures are on disk for the sign-in to show: the build keeps its partner's pack from the first start.
             await File.Exists(Path.Combine(offers[0].Folder, "logo.png")).Should().BeTrue();
-            // Shown only: not a partner of this computer, nothing kept for it.
-            await manager.All.Count.Should().BeEqualTo(0);
-            await Directory.Exists(Path.Combine(root, "configra")).Should().BeFalse();
+            await Directory.Exists(Path.Combine(root, "configra")).Should().BeTrue();
+            await site.Asked.Any(a => a.EndsWith("partner-kestrel.zip", StringComparison.Ordinal)).Should().BeFalse();
 
             // Asked again: the same pack, not downloaded twice.
             var zips = site.Asked.Count(a => a.EndsWith(".zip", StringComparison.Ordinal));
             await (await manager.LoginOffersAsync()).Count.Should().BeEqualTo(1);
             await site.Asked.Count(a => a.EndsWith(".zip", StringComparison.Ordinal)).Should().BeEqualTo(zips);
+
+            // Plain V2pn offers no sign-in at all.
+            var plain = p.Manager(site, root + "-plain", [], edition: null);
+            await (await plain.LoginOffersAsync()).Count.Should().BeEqualTo(0);
         }
         finally
         {

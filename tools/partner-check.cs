@@ -8,10 +8,11 @@
 //
 //   dotnet run tools/partner-check.cs -- <subscription link> [--index <folder or releases URL>] [--key <public key>]
 //       A live subscription against the published index: downloads the subscription as V2pn would and reads its
-//       headers, takes partners.json from where releases come from (or --index: partners/out, or a URL whose
+//       headers, takes partner-index.json from where releases come from (or --index: partners/out, or a URL whose
 //       latest/download/ has it), checks its signature against the built-in keys (or --key), finds the partner whose
-//       domains hold the link, downloads and checks its zip, then asks the partner API (account with the token,
-//       status, servers, and recommend and card for the buttons that use them) if the pack names one.
+//       domains hold the link, then downloads and checks its zip as that partner's own build of V2pn does (plain V2pn
+//       takes none), then asks the partner API (account with the token, status, servers, and recommend and card for
+//       the buttons that use them) if the pack names one.
 //
 // Every step prints OK, a note, or FAIL with what is wrong; the exit code is 0 only when the look will show and every
 // reviewed file is used.
@@ -161,41 +162,56 @@ async Task<V2pnPartner?> CheckPublished(string subscription)
 {
     Console.WriteLine("partner index");
     var index = Option("--index");
-    var manager = new V2pnPartners(rootKeys, () => root)
+    // As the build of <edition> reads it; plain V2pn reads no index at all.
+    V2pnPartners Manager(string edition)
     {
-        SubscriptionUrls = () => Task.FromResult<IReadOnlyList<string?>>([subscription]),
-    };
-    if (index != null && Directory.Exists(index))
-    {
-        // A local publish (partners/out) served as a releases page would serve it.
-        var local = Path.GetFullPath(index);
-        manager.Sources = ["local"];
-        manager.Fetch = (url, _) =>
+        var manager = new V2pnPartners(rootKeys, () => root, edition)
         {
-            var file = Path.Combine(local, url[(url.LastIndexOf('/') + 1)..]);
-            return Task.FromResult(File.Exists(file) ? new V2pnHttp.Result(HttpStatusCode.OK, File.ReadAllBytes(file), null) : new V2pnHttp.Result(HttpStatusCode.NotFound, null, "HTTP 404"));
+            SubscriptionUrls = () => Task.FromResult<IReadOnlyList<string?>>([subscription]),
         };
+        if (index != null && Directory.Exists(index))
+        {
+            // A local publish (partners/out) served as a releases page would serve it.
+            var local = Path.GetFullPath(index);
+            manager.Sources = ["local"];
+            manager.Fetch = (url, _) =>
+            {
+                var file = Path.Combine(local, url[(url.LastIndexOf('/') + 1)..]);
+                return Task.FromResult(File.Exists(file) ? new V2pnHttp.Result(HttpStatusCode.OK, File.ReadAllBytes(file), null) : new V2pnHttp.Result(HttpStatusCode.NotFound, null, "HTTP 404"));
+            };
+        }
+        else if (index != null)
+        {
+            manager.Sources = [index.TrimEnd('/')];
+        }
+        return manager;
     }
-    else if (index != null)
+    // The index first, as no partner's build (nothing is downloaded), to find whose domains hold the link.
+    var probe = Manager("index-probe");
+    Note($"from {string.Join(", ", probe.Sources)}");
+    await probe.RefreshAsync(forceIndex: true);
+    if (probe.Index == null)
     {
-        manager.Sources = [index.TrimEnd('/')];
-    }
-    Note($"from {string.Join(", ", manager.Sources)}");
-    await manager.RefreshAsync(forceIndex: true);
-    if (manager.Index == null)
-    {
-        Bad(manager.IndexError ?? "no index");
+        Bad(probe.IndexError ?? "no index");
         return null;
     }
-    Ok($"partners.json: signed by the root key, {manager.Index.Partners.Count} partner(s): {string.Join(", ", manager.Index.Partners.Select(p => p.Id))}");
-    foreach (var problem in manager.Index.Problems)
+    Ok($"{V2pnPartnerTrust.IndexFile}: signed by the root key, {probe.Index.Partners.Count} partner(s): {string.Join(", ", probe.Index.Partners.Select(p => p.Id))}");
+    foreach (var problem in probe.Index.Problems)
     {
         Bad($"index: {problem}");
     }
+    if (probe.Index.ForUrl(subscription) is not { } whose)
+    {
+        Bad($"no partner lists {Utils.TryUri(subscription)?.IdnHost ?? subscription}: no partner's build takes this subscription as its partner's");
+        return null;
+    }
+    Note($"checked as the build of {whose.Id} (V2pn-{whose.Id}); plain V2pn shows nothing of a partner");
+    var manager = Manager(whose.Id);
+    await manager.RefreshAsync(forceIndex: true);
     var listing = manager.ListingFor(subscription);
     if (listing == null)
     {
-        Bad($"no partner lists {Utils.TryUri(subscription)?.IdnHost ?? subscription}: V2pn stays plain for this subscription");
+        Bad(manager.IndexError ?? $"the build of {whose.Id} does not take {subscription}");
         return null;
     }
     Ok($"{listing.Name} ({listing.Id}): domains {string.Join(", ", listing.Domains)}, grants {string.Join(", ", listing.Grants)}, until {listing.Until:yyyy-MM-dd}");

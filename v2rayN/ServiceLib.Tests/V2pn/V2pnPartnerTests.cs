@@ -65,20 +65,27 @@ internal sealed class TestPartner
     public static string Sign(ECDsa key, byte[] data) =>
         Convert.ToBase64String(key.SignData(data, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence));
 
-    /// <summary>Puts partners.json(.sig) signed with the root and every zip on <paramref name="site"/>.</summary>
+    /// <summary>
+    /// Puts partner-index.json(.sig) signed with the root and every zip on <paramref name="site"/>, and partners.json(.sig)
+    /// signed and empty, as every release publishes it for older copies.
+    /// </summary>
     public void Publish(TestSite site, DateTimeOffset published, params (V2pnPartnerListing Listing, byte[] Zip)[] partners)
     {
         var index = V2pnPartnerPublisher.IndexBytes(partners.Select(p => p.Listing), published);
-        site.Put("partners.json", index);
-        site.Put("partners.json.sig", Encoding.UTF8.GetBytes(Sign(Root, index)));
+        site.Put(V2pnPartnerTrust.IndexFile, index);
+        site.Put(V2pnPartnerTrust.IndexFile + ".sig", Encoding.UTF8.GetBytes(Sign(Root, index)));
+        var legacy = V2pnPartnerPublisher.IndexBytes([], published);
+        site.Put(V2pnPartnerTrust.LegacyIndexFile, legacy);
+        site.Put(V2pnPartnerTrust.LegacyIndexFile + ".sig", Encoding.UTF8.GetBytes(Sign(Root, legacy)));
         foreach (var (listing, zip) in partners)
         {
             site.Put(listing.Zip.File, zip);
         }
     }
 
-    public V2pnPartners Manager(TestSite site, string root, List<string?> subscriptions) =>
-        new([RootPublic], () => root)
+    /// <summary>The partners of a build: <paramref name="edition"/> is the partner whose build it is, null for plain V2pn.</summary>
+    public V2pnPartners Manager(TestSite site, string root, List<string?> subscriptions, string? edition = "configra") =>
+        new([RootPublic], () => root, edition)
         {
             Fetch = site.FetchAsync,
             Sources = [TestSite.Source],
@@ -435,22 +442,160 @@ public class V2pnPartnerTests
         }
     }
 
+    /// <summary>Configra and Kestrel published side by side, each with its own domains.</summary>
+    private static void PublishTwo(TestPartner p, TestSite site)
+    {
+        var configra = TestPartner.Zip();
+        var kestrel = TestPartner.Zip(TestPartner.Pack(id: "kestrel", name: "Kestrel", more: pack => pack["login"] = true));
+        p.Publish(site, Published,
+            (TestPartner.Listing(zip: configra), configra),
+            (TestPartner.Listing(partner: "kestrel", domains: ["kestrel.example.net"], zip: kestrel), kestrel));
+    }
+
+    private const string KestrelSub = "https://kestrel.example.net/s/token";
+
     [Test]
-    public async Task Refresh_WithoutASubscriptionOfThePartner_DownloadsNoPack()
+    public async Task PartnerBuild_TakesItsOwnPackBeforeAnySubscription_AndNoOtherPartner()
     {
         var p = new TestPartner();
         var site = new TestSite();
-        var zip = TestPartner.Zip();
-        p.Publish(site, Published, (TestPartner.Listing(zip: zip), zip));
+        PublishTwo(p, site);
         var root = NewRoot();
         try
         {
-            var manager = p.Manager(site, root, ["https://other.example.org/s/1"]);
+            // A Kestrel subscription in Configra's build: Kestrel is ignored entirely.
+            var manager = p.Manager(site, root, [KestrelSub], edition: "configra");
+            await manager.RefreshAsync();
+
+            await manager.All.Select(x => x.Id).ToList().Should().BeEquivalentTo(["configra"]);
+            await site.Asked.Any(u => u.EndsWith("partner-kestrel.zip", StringComparison.Ordinal)).Should().BeFalse();
+            await (manager.ForSubscription(new SubItem { Id = "k", Url = KestrelSub }) == null).Should().BeTrue();
+            await (manager.ListingFor(KestrelSub) == null).Should().BeTrue();
+            await manager.ForSubscription(new SubItem { Id = "c", Url = Sub })!.Id.Should().BeEqualTo("configra");
+            await manager.ListingFor(Sub)!.Id.Should().BeEqualTo("configra");
+            // No subscription of its own yet, and it stays: the build wears that look from the first start.
+            await manager.Prune([KestrelSub]).Count.Should().BeEqualTo(0);
+            await (manager.Get("configra") != null).Should().BeTrue();
+
+            // Kestrel's own build sees Kestrel only.
+            var kestrel = p.Manager(site, NewRoot(), [Sub], edition: "kestrel");
+            await kestrel.RefreshAsync();
+            await kestrel.All.Select(x => x.Id).ToList().Should().BeEquivalentTo(["kestrel"]);
+            await (kestrel.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
+            await kestrel.ForSubscription(new SubItem { Id = "k", Url = KestrelSub })!.Id.Should().BeEqualTo("kestrel");
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task PlainV2pn_NeverAsksForAnIndexOrPack_AndKnowsNoPartner()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        PublishTwo(p, site);
+        var root = NewRoot();
+        try
+        {
+            var manager = p.Manager(site, root, [Sub, KestrelSub], edition: null);
+            await manager.RefreshAsync(forceIndex: true);
+            var offers = await manager.LoginOffersAsync();
+            await manager.PruneAsync();
+
+            await site.Asked.Count.Should().BeEqualTo(0);
+            await manager.All.Count.Should().BeEqualTo(0);
+            await offers.Count.Should().BeEqualTo(0);
+            await (manager.Index == null).Should().BeTrue();
+            await (manager.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
+            await (manager.ForSubscription(new SubItem { Id = "k", Url = KestrelSub }) == null).Should().BeTrue();
+            await (manager.ListingFor(Sub) == null).Should().BeTrue();
+            await Directory.Exists(root).Should().BeFalse();
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task PlainV2pn_RemovesThePartnerFilesAnOlderVersionKept_AndTakesNoDebugPartner()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        PublishTwo(p, site);
+        var root = NewRoot();
+        try
+        {
+            // What 1.2.1 left: an index and a kept pack.
+            var before = p.Manager(site, root, [Sub]);
+            await before.RefreshAsync();
+            await Directory.Exists(Path.Combine(root, "configra")).Should().BeTrue();
+
+            var plain = p.Manager(site, root, [Sub], edition: null);
+            await plain.LoadAsync();
+            await Directory.Exists(root).Should().BeFalse();
+            await plain.All.Count.Should().BeEqualTo(0);
+            await (plain.AddDebugPartner("configra", "Configra", "#FF7A2F") == null).Should().BeTrue();
+            plain.SetDebugSubscription("c", "configra");
+            await (plain.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task PartnerBuild_OfAnUnknownPartner_TakesNothing()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        PublishTwo(p, site);
+        var root = NewRoot();
+        try
+        {
+            var manager = p.Manager(site, root, [Sub, KestrelSub], edition: "nobody");
             await manager.RefreshAsync();
 
             await manager.All.Count.Should().BeEqualTo(0);
             await site.Asked.Any(u => u.EndsWith(".zip", StringComparison.Ordinal)).Should().BeFalse();
-            await (manager.Index!.Get("configra") != null).Should().BeTrue();
+            await (manager.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
+            await (await manager.LoginOffersAsync()).Count.Should().BeEqualTo(0);
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task PartnerBuild_ReadsTheNewIndexName_NeverTheOneOlderCopiesRead()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        PublishTwo(p, site);
+        var root = NewRoot();
+        try
+        {
+            var manager = p.Manager(site, root, [Sub]);
+            await manager.RefreshAsync();
+
+            await V2pnPartnerTrust.IndexFile.Should().BeEqualTo("partner-index.json");
+            await V2pnPartnerTrust.LegacyIndexFile.Should().BeEqualTo("partners.json");
+            await site.Asked.Should().Contain($"{TestSite.Source}/latest/download/partner-index.json");
+            await site.Asked.Any(u => u.EndsWith("/partners.json", StringComparison.Ordinal)).Should().BeFalse();
+            await File.Exists(Path.Combine(root, "partner-index.json")).Should().BeTrue();
+
+            // Only the empty legacy index on the release: a partner build finds no partner there.
+            var old = new TestSite();
+            p.Publish(old, Published);
+            old.Files.Remove($"{TestSite.Source}/latest/download/{V2pnPartnerTrust.IndexFile}");
+            old.Files.Remove($"{TestSite.Source}/latest/download/{V2pnPartnerTrust.IndexFile}.sig");
+            var fresh = p.Manager(old, NewRoot(), [Sub]);
+            await fresh.RefreshAsync();
+            await (fresh.Index == null).Should().BeTrue();
         }
         finally
         {
@@ -508,7 +653,7 @@ public class V2pnPartnerTests
             await manager.RefreshAsync();
 
             // Tampered: the partner stays.
-            site.Put("partners.json", V2pnPartnerPublisher.IndexBytes([], Published.AddDays(1)));
+            site.Put(V2pnPartnerTrust.IndexFile, V2pnPartnerPublisher.IndexBytes([], Published.AddDays(1)));
             await manager.RefreshAsync(forceIndex: true);
             await (manager.Get("configra") != null).Should().BeTrue();
             await manager.IndexError!.Contains("not signed").Should().BeTrue();
@@ -537,7 +682,7 @@ public class V2pnPartnerTests
             var now = new DateTime(2026, 11, 15, 10, 0, 0, DateTimeKind.Utc);
             var manager = p.Manager(site, root, [Sub]);
             manager.Now = () => now;
-            int Asks() => site.Asked.Count(u => u.EndsWith("/partners.json", StringComparison.Ordinal));
+            int Asks() => site.Asked.Count(u => u.EndsWith("/" + V2pnPartnerTrust.IndexFile, StringComparison.Ordinal));
 
             await manager.RefreshAsync();
             await Asks().Should().BeEqualTo(1);
@@ -586,7 +731,7 @@ public class V2pnPartnerTests
     }
 
     [Test]
-    public async Task APartnerPastItsTerm_Expires_AndOneWithoutASubscriptionIsUnlinked()
+    public async Task APartnerPastItsTerm_Expires_ButOneWithoutASubscriptionStays()
     {
         var p = new TestPartner();
         var site = new TestSite();
@@ -601,11 +746,9 @@ public class V2pnPartnerTests
             V2pnPartnerGone? why = null;
             manager.Removed += (_, reason) => why = reason;
 
-            // The subscription moved to a domain the listing does not name: as good as gone.
-            await manager.Prune(["https://other.example.org/s/token"]).Count.Should().BeEqualTo(1);
-            await why.Should().BeEqualTo(V2pnPartnerGone.Unlinked);
-
-            await manager.RefreshAsync();
+            // The subscription moved to a domain the listing does not name: the build keeps its partner.
+            await manager.Prune(["https://other.example.org/s/token"]).Count.Should().BeEqualTo(0);
+            await (why == null).Should().BeTrue();
             await (manager.Get("configra") != null).Should().BeTrue();
             manager.Today = () => new DateOnly(2026, 12, 2);
             await manager.Prune(subs).Count.Should().BeEqualTo(1);
@@ -667,7 +810,7 @@ public class V2pnPartnerTests
             await error.Contains("changed").Should().BeTrue();
 
             // The kept index changed on disk: nothing kept is trusted.
-            File.WriteAllText(Path.Combine(root, "partners.json"), "{}");
+            File.WriteAllText(Path.Combine(root, V2pnPartnerTrust.IndexFile), "{}");
             var third = p.Manager(site, root, [Sub]);
             await third.LoadAsync();
             await (third.Index == null).Should().BeTrue();

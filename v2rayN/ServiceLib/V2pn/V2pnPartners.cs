@@ -36,15 +36,18 @@ public enum V2pnPartnerGone
 }
 
 /// <summary>
-/// The partners of the subscriptions on this computer. V2pn publishes partners.json with its releases, signed with the
-/// partner root key: every partner with its subscription domains, grants, term and the hash of its pack's zip. A
-/// subscription from a partner's domains gets that zip downloaded, checked (V2pnPartnerTrust) and kept in
+/// The partner of a partner's build (V2pnEdition), and nothing at all in plain V2pn. V2pn publishes partner-index.json
+/// with its releases, signed with the partner root key: every partner with its subscription domains, grants, term and
+/// the hash of its pack's zip. A partner's build downloads its own partner's zip (from the first start, with or without
+/// a subscription: the build always wears that look), checks it (V2pnPartnerTrust) and keeps it in
 /// guiConfigs/partners/&lt;id&gt; with the index it was checked against; every start checks the kept files again, so a pack
-/// changed on disk is not trusted either.
+/// changed on disk is not trusted either. Only that partner's subscriptions are its; every other listing is ignored.
+/// Plain V2pn (no edition) never asks for the index, never downloads a pack, matches no subscription, offers no sign-in,
+/// and removes what an older V2pn kept of a partner.
 /// </summary>
 public sealed class V2pnPartners
 {
-    private static readonly Lazy<V2pnPartners> _instance = new(() => new(V2pnInfo.PartnerKeys, () => Utils.GetConfigPath("partners")));
+    private static readonly Lazy<V2pnPartners> _instance = new(() => new(V2pnInfo.PartnerKeys, () => Utils.GetConfigPath("partners"), V2pnEdition.PartnerId));
     public static V2pnPartners Instance => _instance.Value;
 
     /// <summary>How often the index is asked for at most, unless a caller forces it.</summary>
@@ -55,6 +58,7 @@ public sealed class V2pnPartners
 
     private readonly IReadOnlyList<string> _rootKeys;
     private readonly Func<string> _root;
+    private readonly string? _edition;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly ConcurrentDictionary<string, V2pnPartner> _partners = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _errors = new(StringComparer.Ordinal);
@@ -73,11 +77,19 @@ public sealed class V2pnPartners
     /// <summary>Raised for each partner dropped, with the reason, before <see cref="Changed"/>. May come from any thread.</summary>
     public event Action<V2pnPartner, V2pnPartnerGone>? Removed;
 
-    public V2pnPartners(IReadOnlyList<string> rootKeys, Func<string> root)
+    /// <param name="edition">The partner whose build this is (V2pnEdition.PartnerId); null for plain V2pn, which then has no partner at all.</param>
+    public V2pnPartners(IReadOnlyList<string> rootKeys, Func<string> root, string? edition)
     {
         _rootKeys = rootKeys;
         _root = root;
+        _edition = edition;
     }
+
+    /// <summary>The partner whose build this is; null for plain V2pn.</summary>
+    public string? Edition => _edition;
+
+    /// <summary>The listing of this build's partner in the last index; null in plain V2pn, before an index, or when it is not listed.</summary>
+    private V2pnPartnerListing? OwnListing => _edition == null ? null : _index?.Get(_edition);
 
     /// <summary>Overridable for tests: the network.</summary>
     public Func<string, CancellationToken, Task<V2pnHttp.Result>> Fetch { get; set; } = DefaultFetchAsync;
@@ -114,12 +126,13 @@ public sealed class V2pnPartners
         return ForUrl(item?.Url);
     }
 
-    /// <summary>The partner a subscription link belongs to, by its host; the one listed first when several match.</summary>
+    /// <summary>This build's partner when a subscription link is on its domains; null for any other link, and always in plain V2pn.</summary>
     public V2pnPartner? ForUrl(string? subscriptionUrl) =>
-        _index?.ForUrl(subscriptionUrl) is { } listing && Get(listing.Id) is { } partner && !_debugIds.ContainsKey(partner.Id) ? partner : null;
+        ListingFor(subscriptionUrl) is { } listing && Get(listing.Id) is { } partner && !_debugIds.ContainsKey(partner.Id) ? partner : null;
 
-    /// <summary>The listing a subscription link belongs to, whether or not its pack is here yet.</summary>
-    public V2pnPartnerListing? ListingFor(string? subscriptionUrl) => _index?.ForUrl(subscriptionUrl);
+    /// <summary>This build's partner's listing when a subscription link is on its domains, whether or not its pack is here yet.</summary>
+    public V2pnPartnerListing? ListingFor(string? subscriptionUrl) =>
+        OwnListing is { } listing && V2pnPartnerTrust.DomainAllowed(listing, subscriptionUrl) ? listing : null;
 
     /// <summary>Pictures of a partner's pack that did not fit their slot and are not shown (V2pnPartnerSlots).</summary>
     public IReadOnlyList<string> SlotNotesFor(string? partnerId) =>
@@ -145,6 +158,13 @@ public sealed class V2pnPartners
             {
                 return;
             }
+            if (_edition == null)
+            {
+                // Plain V2pn: what V2pn 1.2.1 kept of a partner (its index, pack, pictures) goes, unread.
+                Logging.SaveLog($"{Tag}: plain V2pn; removing the partner files an older version kept");
+                DeleteQuietly(root);
+                return;
+            }
             var index = V2pnPartnerTrust.ReadIndex(ReadOrNull(root, V2pnPartnerTrust.IndexFile, V2pnPartnerTrust.MaxIndexBytes),
                 ReadTextOrNull(root, V2pnPartnerTrust.IndexFile + ".sig"), _rootKeys, out var indexError);
             if (index == null && File.Exists(Path.Combine(root, V2pnPartnerTrust.IndexFile)))
@@ -159,10 +179,10 @@ public sealed class V2pnPartners
             foreach (var dir in Directory.EnumerateDirectories(root))
             {
                 var id = Path.GetFileName(dir);
-                var listing = index?.Get(id);
+                var listing = id == _edition ? index?.Get(id) : null;
                 if (id.StartsWith('.') || listing == null || listing.Until < Today())
                 {
-                    // A staging folder left behind, or a partner the index no longer lists or whose term ran out.
+                    // A staging folder left behind, another partner's folder, or this partner no longer listed or run out.
                     DeleteQuietly(dir);
                     continue;
                 }
@@ -184,13 +204,17 @@ public sealed class V2pnPartners
 
     /// <summary>
     /// Asks for the index (at start, then at most every <see cref="IndexInterval"/> unless <paramref name="forceIndex"/>),
-    /// downloads the pack of every partner a subscription here belongs to whose zip is not the one kept, and drops the
-    /// partners that left the index, ran out or have no subscription here. Runs one at a time; a failure keeps what is
-    /// kept (a release page being down changes nothing).
+    /// downloads this build's partner's pack when its zip is not the one kept, and drops it when it left the index or ran
+    /// out. Runs one at a time; a failure keeps what is kept (a release page being down changes nothing). Plain V2pn asks
+    /// for nothing.
     /// </summary>
     public async Task RefreshAsync(bool forceIndex = false, CancellationToken cancellationToken = default)
     {
         await LoadAsync();
+        if (_edition == null)
+        {
+            return;
+        }
         IReadOnlyList<string?> urls;
         try
         {
@@ -215,7 +239,8 @@ public sealed class V2pnPartners
             {
                 return;
             }
-            foreach (var listing in index.Partners.Where(l => l.Until >= Today() && urls.Any(u => V2pnPartnerTrust.DomainAllowed(l, u))))
+            // The build's own partner only, subscription or not: its look is there before the person signs in.
+            foreach (var listing in index.Partners.Where(l => l.Id == _edition && l.Until >= Today()))
             {
                 var kept = Get(listing.Id);
                 if (kept != null && kept.Listing.Zip.Sha256 == listing.Zip.Sha256)
@@ -357,6 +382,10 @@ public sealed class V2pnPartners
     public async Task<IReadOnlyList<V2pnPartner>> LoginOffersAsync(CancellationToken cancellationToken = default)
     {
         await LoadAsync();
+        if (_edition == null)
+        {
+            return [];
+        }
         if (_index == null)
         {
             await RefreshAsync(forceIndex: true, cancellationToken);
@@ -366,7 +395,7 @@ public sealed class V2pnPartners
             return [];
         }
         var offers = new List<V2pnPartner>();
-        foreach (var listing in index.Partners.Where(l => l.Until >= Today() && l.Allows(V2pnPartnerGrants.Account)))
+        foreach (var listing in index.Partners.Where(l => l.Id == _edition && l.Until >= Today() && l.Allows(V2pnPartnerGrants.Account)))
         {
             var partner = Get(listing.Id) is { } kept && !IsDebug(kept.Id) ? kept : await OfferAsync(listing, cancellationToken);
             if (partner != null && V2pnPartnerLogin.Offers(partner))
@@ -465,8 +494,9 @@ public sealed class V2pnPartners
     }
 
     /// <summary>
-    /// Drops partners the index no longer lists, whose term ran out, or from whose domains no subscription here is (the
-    /// subscription was deleted or moved). Their kept files go too, so nothing of a former partner stays on the computer.
+    /// Drops the partner when the index no longer lists it or its term ran out, and any partner that is not this build's.
+    /// Its kept files go too, so nothing of a former partner stays on the computer. A partner's build keeps its partner
+    /// without a subscription (it wears that look from the first start).
     /// </summary>
     /// <param name="subscriptionUrls">The link of every subscription here.</param>
     public IReadOnlyList<V2pnPartner> Prune(IEnumerable<string?> subscriptionUrls)
@@ -488,10 +518,9 @@ public sealed class V2pnPartners
         foreach (var partner in _partners.Values.Where(p => !_debugIds.ContainsKey(p.Id)).ToList())
         {
             var listing = _index?.Get(partner.Id);
-            V2pnPartnerGone? reason = listing == null ? V2pnPartnerGone.Revoked
+            V2pnPartnerGone? reason = listing == null || partner.Id != _edition ? V2pnPartnerGone.Revoked
                 : listing.Until < Today() ? V2pnPartnerGone.Expired
-                : urls.Any(u => V2pnPartnerTrust.DomainAllowed(listing, u)) ? null
-                : V2pnPartnerGone.Unlinked;
+                : null;
             if (reason is { } why && _partners.TryRemove(partner.Id, out _))
             {
                 DeleteQuietly(partner.Folder);
@@ -537,12 +566,13 @@ public sealed class V2pnPartners
 
     /// <summary>
     /// Debug only (V2pnPartnerTrust.DebugAllowed): a partner made up in memory with the edition, account and actions grants,
-    /// no API, so the look can be tried without a published index. With <paramref name="themeFolder"/> (a folder with a
-    /// partner.json and its pictures) it takes that pack's brand, theme and pictures. Null in a plain release.
+    /// no API, standing in for this build's partner (<paramref name="id"/> must be <see cref="Edition"/>), so the look can
+    /// be tried without a published index. With <paramref name="themeFolder"/> (a folder with a partner.json and its
+    /// pictures) it takes that pack's brand, theme and pictures. Null in a plain release, and always in plain V2pn.
     /// </summary>
     public V2pnPartner? AddDebugPartner(string id, string name, string? accent, string? themeFolder = null)
     {
-        if (!V2pnPartnerTrust.DebugAllowed)
+        if (!V2pnPartnerTrust.DebugAllowed || _edition == null || id != _edition)
         {
             return null;
         }
@@ -604,7 +634,7 @@ public sealed class V2pnPartners
     /// <summary>Debug only: counts a subscription as a partner's (null: as V2pn sees it).</summary>
     public void SetDebugSubscription(string subscriptionId, string? partnerId)
     {
-        if (!V2pnPartnerTrust.DebugAllowed)
+        if (!V2pnPartnerTrust.DebugAllowed || (partnerId != null && partnerId != _edition))
         {
             return;
         }

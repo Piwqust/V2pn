@@ -74,6 +74,7 @@ try
         CheckTheme(partner);
         CheckCatalog(partner, panel);
         CheckReviewed(partner);
+        CheckLoginFlag(partner);
     }
 }
 catch (Exception ex)
@@ -330,6 +331,31 @@ if (partner?.Pack.ApiUrl != null && !offline)
             Ok($"card?id={action.Id}: {card.Title ?? "(no title)"}, {card.Text.Length} characters");
         }
     }
+    // Sign-in by code: one code asked for and its shape checked. login/poll is never asked, so no sign-in is completed;
+    // the code simply runs out at the partner.
+    if (V2pnPartnerLogin.Offers(partner))
+    {
+        var (code, problem) = await V2pnPartnerLogin.StartAsync(partner);
+        if (code == null)
+        {
+            Bad(problem == V2pnLoginProblem.NoAnswer
+                ? $"login/start: {partner.Pack.ApiUrl}login/start gave no answer with status 200; V2pn says the provider does not answer"
+                : "login/start: the answer is not six digits in \"code\" and 32 to 256 url-safe characters in \"token\"");
+        }
+        else
+        {
+            Ok($"login/start: code of six digits, token of {code.Token.Length} characters, term {code.Expires.TotalMinutes:0} min");
+            if (code.Url == null)
+            {
+                Note("login/start: no url, or one V2pn does not open (it must be https on t.me or the listing's domains): V2pn shows the digits without a QR code");
+            }
+            else
+            {
+                Ok($"login/start: url {code.Url}");
+            }
+            Note("login/poll: not asked, so no sign-in is completed (the code runs out on its own)");
+        }
+    }
 }
 else if (partner?.Pack.ApiUrl != null)
 {
@@ -356,6 +382,42 @@ if (reviewFailed)
     Console.WriteLine("RESULT: some reviewed files are not used (see \"reviewed files\" above)");
 }
 return failed || reviewFailed || partner == null ? 1 : 0;
+
+// "login": the flag, and whether the pack has what the sign-in needs (an api under the account grant).
+void CheckLoginFlag(V2pnPartner p)
+{
+    JsonNode? flag = null;
+    try
+    {
+        flag = (JsonNode.Parse(File.ReadAllBytes(Path.Combine(p.Folder, "partner.json"))) as JsonObject)?["login"];
+    }
+    catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException)
+    {
+    }
+    Console.WriteLine("sign-in by code");
+    if (flag == null)
+    {
+        Note("no login (optional): V2pn does not offer to sign in with this partner by code");
+        return;
+    }
+    if (flag is not JsonValue value || !value.TryGetValue<bool>(out var on))
+    {
+        Bad("login is not true or false; V2pn reads it as false");
+        return;
+    }
+    if (!on)
+    {
+        Note("login is false: V2pn does not offer to sign in by code");
+    }
+    else if (V2pnPartnerLogin.Offers(p))
+    {
+        Ok($"login: V2pn offers to sign in with {p.Name} by code, through {p.Pack.ApiUrl}login/start and login/poll{(offline ? " (asked only in a live check)" : "")}");
+    }
+    else
+    {
+        Bad("login is true, but the pack has no api under the account grant on the listing's domains: V2pn does not offer the sign-in");
+    }
+}
 
 // routing.json, transport.json, core.json: V2pn's checks of each, and whether the index's reviewed hash matches.
 void CheckReviewed(V2pnPartner partner)

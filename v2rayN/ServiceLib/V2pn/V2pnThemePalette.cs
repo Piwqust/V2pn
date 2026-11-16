@@ -107,15 +107,63 @@ public readonly record struct V2pnColor(byte R, byte G, byte B)
     {
         get
         {
-            var (r, g, b) = (Linear(R), Linear(G), Linear(B));
-            var l = Math.Cbrt((0.4122214708 * r) + (0.5363325363 * g) + (0.0514459929 * b));
-            var m = Math.Cbrt((0.2119034982 * r) + (0.6806995451 * g) + (0.1073969566 * b));
-            var s = Math.Cbrt((0.0883024619 * r) + (0.2817188376 * g) + (0.6299787005 * b));
-            var a = (1.9779984951 * l) - (2.4285922050 * m) + (0.4505937099 * s);
-            var bb = (0.0259040371 * l) + (0.7827717662 * m) - (0.8086757660 * s);
+            var (_, a, bb) = OkLab();
             var hue = Math.Atan2(bb, a) * 180 / Math.PI;
             return (Math.Sqrt((a * a) + (bb * bb)), hue < 0 ? hue + 360 : hue);
         }
+    }
+
+    /// <summary>OKLCH lightness, 0 to 1: lightness as the eye sees it, the same step for every hue.</summary>
+    public double OkLightness => OkLab().L;
+
+    private (double L, double A, double B) OkLab()
+    {
+        var (r, g, b) = (Linear(R), Linear(G), Linear(B));
+        var l = Math.Cbrt((0.4122214708 * r) + (0.5363325363 * g) + (0.0514459929 * b));
+        var m = Math.Cbrt((0.2119034982 * r) + (0.6806995451 * g) + (0.1073969566 * b));
+        var s = Math.Cbrt((0.0883024619 * r) + (0.2817188376 * g) + (0.6299787005 * b));
+        return ((0.2104542553 * l) + (0.7936177850 * m) - (0.0040720468 * s),
+            (1.9779984951 * l) - (2.4285922050 * m) + (0.4505937099 * s),
+            (0.0259040371 * l) + (0.7827717662 * m) - (0.8086757660 * s));
+    }
+
+    /// <summary>
+    /// The colour of OKLCH <paramref name="lightness"/>, <paramref name="chroma"/> and <paramref name="hue"/> (degrees);
+    /// outside sRGB the chroma is lowered until it fits, so the lightness and the hue stay as asked.
+    /// </summary>
+    public static V2pnColor FromOklch(double lightness, double chroma, double hue)
+    {
+        var l = Math.Clamp(lightness, 0, 1);
+        var h = hue * Math.PI / 180;
+        for (var c = Math.Max(0, chroma); ; c *= 0.96)
+        {
+            var (a, b) = (c * Math.Cos(h), c * Math.Sin(h));
+            var l3 = Math.Pow(l + (0.3963377774 * a) + (0.2158037573 * b), 3);
+            var m3 = Math.Pow(l - (0.1055613458 * a) - (0.0638541728 * b), 3);
+            var s3 = Math.Pow(l - (0.0894841775 * a) - (1.2914855480 * b), 3);
+            var red = (4.0767416621 * l3) - (3.3077115913 * m3) + (0.2309699292 * s3);
+            var green = (-1.2684380046 * l3) + (2.6097574011 * m3) - (0.3413193965 * s3);
+            var blue = (-0.0041960863 * l3) - (0.7034186147 * m3) + (1.7076147010 * s3);
+            const double Slack = 0.0005;
+            if (c < 0.0005 || (red is >= -Slack and <= 1 + Slack && green is >= -Slack and <= 1 + Slack && blue is >= -Slack and <= 1 + Slack))
+            {
+                return new V2pnColor(Encode(red), Encode(green), Encode(blue));
+            }
+        }
+
+        static byte Encode(double linear)
+        {
+            var x = Math.Clamp(linear, 0, 1);
+            var v = x <= 0.0031308 ? x * 12.92 : (1.055 * Math.Pow(x, 1 / 2.4)) - 0.055;
+            return (byte)Math.Round(Math.Clamp(v, 0, 1) * 255);
+        }
+    }
+
+    /// <summary>This colour with its OKLCH lightness set to <paramref name="lightness"/>, chroma and hue kept where sRGB allows.</summary>
+    public V2pnColor WithOkLightness(double lightness)
+    {
+        var (chroma, hue) = Oklch;
+        return FromOklch(lightness, chroma, hue);
     }
 
     /// <summary>This colour moved <paramref name="t"/> (0 to 1) of the way to <paramref name="other"/>, channel by channel.</summary>
@@ -177,6 +225,21 @@ public sealed record V2pnThemeColors(
     string Bad,
     double NeutralHue,
     double NeutralSaturation);
+
+/// <summary>
+/// The stage of V2pn's window in a partner's background (V2pnThemePalette.Stage): where V2pn's map would be, and what
+/// reads on it. State colours are never part of it.
+/// </summary>
+/// <param name="Kind">gradient or image (V2pnThemeBackgroundKinds).</param>
+/// <param name="Stops">The gradient's stops, "#RRGGBB", drawn at 135°; for a picture the colour shown while it loads.</param>
+/// <param name="Art">The picture (a pack asset) for an image stage.</param>
+/// <param name="Scrim">"#AARRGGBB" over the whole stage so its text reads; null when none is needed.</param>
+/// <param name="Ink">Text on the stage, 4.5:1 at its worst point.</param>
+/// <param name="Soft">Secondary text, 4.5:1 too.</param>
+/// <param name="Ghost">"#AARRGGBB": the fill of a quiet chip or button with <paramref name="Ink"/> on it.</param>
+/// <param name="Solid">The fill of the one strong button ("Renew").</param>
+/// <param name="OnSolid">The label on <paramref name="Solid"/>.</param>
+public sealed record V2pnPartnerStage(string Kind, IReadOnlyList<string> Stops, string? Art, string? Scrim, string Ink, string Soft, string Ghost, string Solid, string OnSolid);
 
 public static class V2pnThemePalette
 {
@@ -261,6 +324,113 @@ public static class V2pnThemePalette
     }
 
     public static V2pnColor Readable(V2pnColor colour, V2pnColor ground, double min = TextContrast) => Readable(colour, [ground], min);
+
+    /// <summary>
+    /// <paramref name="colour"/> as text on <paramref name="ground"/>: only its OKLCH lightness moves, in steps of 0.01,
+    /// until it reaches <paramref name="min"/>; the hue and the chroma stay, so a brand's links still look like the brand.
+    /// </summary>
+    public static V2pnColor ReadableOn(V2pnColor colour, V2pnColor ground, double min = TextContrast)
+    {
+        if (V2pnColor.Contrast(colour, ground) >= min)
+        {
+            return colour;
+        }
+        var darker = V2pnColor.Contrast(V2pnColor.Black, ground) >= V2pnColor.Contrast(V2pnColor.White, ground);
+        var (chroma, hue) = colour.Oklch;
+        var start = colour.OkLightness;
+        for (var step = 1; step <= 100; step++)
+        {
+            var candidate = V2pnColor.FromOklch(start + ((darker ? -1 : 1) * step * 0.01), chroma, hue);
+            if (V2pnColor.Contrast(candidate, ground) >= min)
+            {
+                return candidate;
+            }
+        }
+        return darker ? V2pnColor.Black : V2pnColor.White;
+    }
+
+    private static readonly V2pnColor StageDarkInk = V2pnColor.Parse("#111114");
+
+    /// <summary>
+    /// The stage of a partner whose theme has a background (V2pn's "Scene"), in the light or dark mode; null for a solid
+    /// background, which keeps V2pn's map. A gradient runs at 135° through the background's colours (or the first two
+    /// brand colours), turned from the state colours; in the dark mode each stop is toned down (OKLCH lightness × 0.78,
+    /// at most 0.78 for the first and 0.72 for the rest) so a big area does not glare. The text is white or near-black,
+    /// whichever reads better at the worst point; where neither reaches 4.5:1 a scrim as light as possible is laid over.
+    /// A picture always gets the scrim that makes the text read over any pixel.
+    /// </summary>
+    public static V2pnPartnerStage? Stage(V2pnTheme theme, bool dark)
+    {
+        switch (theme.Background.Kind)
+        {
+            case V2pnThemeBackgroundKinds.Image when theme.Background.Art != null:
+            {
+                var ink = dark ? V2pnColor.White : StageDarkInk;
+                var scrim = dark ? V2pnColor.Black : V2pnColor.White;
+                var alpha = ScrimAlpha(scrim, [ink]);
+                return StageOf(V2pnThemeBackgroundKinds.Image, [scrim.Hex], theme.Background.Art, scrim.WithAlpha(alpha), ink);
+            }
+            case V2pnThemeBackgroundKinds.Gradient:
+            {
+                var source = theme.Background.Colors.Count >= 2 ? theme.Background.Colors : theme.Brand.Take(2).ToList();
+                var stops = source.Select(V2pnColor.TryParse).OfType<V2pnColor>().Select(AwayFromState).ToList();
+                if (stops.Count == 0)
+                {
+                    return null;
+                }
+                if (stops.Count == 1)
+                {
+                    stops.Add(stops[0]);
+                }
+                if (dark)
+                {
+                    stops = stops.Select((c, i) =>
+                    {
+                        var (chroma, hue) = c.Oklch;
+                        return V2pnColor.FromOklch(Math.Min(c.OkLightness * 0.78, i == 0 ? 0.78 : 0.72), i == 0 ? chroma : chroma * 0.95, hue);
+                    }).ToList();
+                }
+                var white = MinContrast(V2pnColor.White, stops);
+                var black = MinContrast(StageDarkInk, stops);
+                var ink = white >= black ? V2pnColor.White : StageDarkInk;
+                string? scrim = null;
+                var seen = stops;
+                if (Math.Max(white, black) < TextContrast)
+                {
+                    var veil = Opposite(ink);
+                    for (var step = 1; step <= 255; step++)
+                    {
+                        var alpha = step / 255.0;
+                        var under = stops.Select(s => veil.Over(s, alpha)).ToList();
+                        if (MinContrast(ink, under) >= TextContrast)
+                        {
+                            (scrim, seen) = (veil.WithAlpha(alpha), under);
+                            break;
+                        }
+                    }
+                }
+                return StageOf(V2pnThemeBackgroundKinds.Gradient, stops.Select(c => c.Hex).ToList(), null, scrim, ink, seen);
+            }
+            default:
+                return null;
+        }
+    }
+
+    private static V2pnColor Opposite(V2pnColor ink) => ink == V2pnColor.White ? V2pnColor.Black : V2pnColor.White;
+
+    /// <param name="seen">The ground the text really lies on (the stops under the scrim); null for a picture, whose pixels are unknown.</param>
+    private static V2pnPartnerStage StageOf(string kind, IReadOnlyList<string> stops, string? art, string? scrim, V2pnColor ink, IReadOnlyList<V2pnColor>? seen = null)
+    {
+        var light = ink == V2pnColor.White;
+        // A chip in the ink's own colour, as a glass on the brand, while the ink still reads on it everywhere; else a
+        // veil of the opposite colour, which only adds contrast.
+        var chip = light ? 0.16 : 0.08;
+        var ghost = seen != null && MinContrast(ink, seen.Select(s => ink.Over(s, chip)).ToList()) >= TextContrast
+            ? ink.WithAlpha(chip)
+            : Opposite(ink).WithAlpha(light ? 0.22 : 0.3);
+        var soft = seen == null ? ink : Softer(ink, seen);
+        return new V2pnPartnerStage(kind, stops, art, scrim, ink.Hex, soft.Hex, ghost, ink.Hex, light ? StageDarkInk.Hex : V2pnColor.White.Hex);
+    }
 
     /// <summary>
     /// The colours of <paramref name="theme"/> in the light or dark mode. <paramref name="accent"/> replaces the first

@@ -324,4 +324,91 @@ public class V2pnPartnerThemeTests
 
         await notes.Any(n => n.Contains("state colours")).Should().BeTrue();
     }
+
+    [Test]
+    public async Task Stage_OfAGradient_ReadsEverywhere_InBothModes()
+    {
+        var failures = new List<string>();
+        var themes = new[]
+        {
+            V2pnTheme.Default("#6D5DFC") with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Gradient, ["#3B2FD9", "#6D28D9", "#C026D3"], null) },
+            V2pnTheme.Default("#FF7A2F") with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Gradient, ["#FF7A2F", "#FFD9A8"], null) },
+            // The worst case of the prototype: a pale green brand next to "protected".
+            V2pnTheme.Default("#9BE15D") with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Gradient, ["#9BE15D", "#00A37A"], null) },
+            V2pnTheme.Default("#FFFFFF") with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Gradient, ["#FFFFFF", "#F4F4F4"], null) },
+            V2pnTheme.Default("#808080") with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Gradient, ["#7A7A7A", "#8A8A8A"], null) },
+        };
+        foreach (var theme in themes)
+        {
+            foreach (var dark in new[] { false, true })
+            {
+                var stage = V2pnThemePalette.Stage(theme, dark)!;
+                var name = $"{theme.Background.Colors[0]} {(dark ? "dark" : "light")}";
+                var stops = stage.Stops.Select(V2pnColor.Parse).ToList();
+                if (stage.Scrim is { } scrim)
+                {
+                    stops = stops.Select(s => V2pnColor.Parse("#" + scrim[3..]).Over(s, Convert.ToInt32(scrim[1..3], 16) / 255.0)).ToList();
+                }
+                var ink = V2pnColor.Parse(stage.Ink);
+                void Check(bool ok, string what)
+                {
+                    if (!ok)
+                    {
+                        failures.Add($"{name}: {what}");
+                    }
+                }
+                Check(V2pnThemePalette.MinContrast(ink, stops) >= V2pnThemePalette.TextContrast, "ink");
+                Check(V2pnThemePalette.MinContrast(V2pnColor.Parse(stage.Soft), stops) >= V2pnThemePalette.TextContrast, "soft");
+                var ghost = V2pnColor.Parse("#" + stage.Ghost[3..]);
+                var ghostAlpha = Convert.ToInt32(stage.Ghost[1..3], 16) / 255.0;
+                Check(V2pnThemePalette.MinContrast(ink, stops.Select(s => ghost.Over(s, ghostAlpha)).ToList()) >= V2pnThemePalette.TextContrast, "ink on a ghost chip");
+                Check(V2pnColor.Contrast(V2pnColor.Parse(stage.OnSolid), V2pnColor.Parse(stage.Solid)) >= V2pnThemePalette.TextContrast, "label on the solid button");
+                Check(!stage.Stops.Select(V2pnColor.Parse).Any(V2pnThemePalette.NearState), "a stop near a state colour");
+                if (dark)
+                {
+                    var lightness = stage.Stops.Select(h => V2pnColor.Parse(h).OkLightness).ToList();
+                    Check(lightness[0] <= 0.785 && lightness.Skip(1).All(l => l <= 0.725), "dark stops not toned down");
+                }
+            }
+        }
+        await string.Join("; ", failures).Should().BeEqualTo(string.Empty);
+    }
+
+    [Test]
+    public async Task Stage_OfAPicture_HasAScrim_AndASolidBackgroundHasNone()
+    {
+        var picture = V2pnTheme.Default("#E11D48") with { Background = new V2pnThemeBackground(V2pnThemeBackgroundKinds.Image, [], "dunes.jpg") };
+
+        foreach (var dark in new[] { false, true })
+        {
+            var stage = V2pnThemePalette.Stage(picture, dark)!;
+            var ink = V2pnColor.Parse(stage.Ink);
+            var scrim = V2pnColor.Parse("#" + stage.Scrim![3..]);
+            var alpha = Convert.ToInt32(stage.Scrim[1..3], 16) / 255.0;
+            await stage.Art.Should().BeEqualTo("dunes.jpg");
+            foreach (var pixel in new[] { V2pnColor.Black, V2pnColor.White, V2pnColor.Parse("#808080") })
+            {
+                await (V2pnColor.Contrast(ink, scrim.Over(pixel, alpha)) >= V2pnThemePalette.TextContrast).Should().BeTrue();
+            }
+        }
+        await (V2pnThemePalette.Stage(V2pnTheme.Default("#2F7BFF"), dark: true) == null).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task ReadableOn_MovesOnlyTheLightness()
+    {
+        foreach (var (hex, ground) in new[] { ("#FF7A2F", "#F0F1F5"), ("#FFD600", "#FFFFFF"), ("#3B2FD9", "#26262F"), ("#121211", "#1E1E25") })
+        {
+            var colour = V2pnColor.Parse(hex);
+            var readable = V2pnThemePalette.ReadableOn(colour, V2pnColor.Parse(ground));
+            await (V2pnColor.Contrast(readable, V2pnColor.Parse(ground)) >= V2pnThemePalette.TextContrast).Should().BeTrue();
+            if (colour.Oklch.Chroma > 0.08 && readable.Oklch.Chroma > 0.04)
+            {
+                var diff = Math.Abs(readable.Oklch.Hue - colour.Oklch.Hue) % 360;
+                await (Math.Min(diff, 360 - diff) < 8).Should().BeTrue();
+            }
+        }
+        var blue = V2pnColor.Parse("#2F7BFF");
+        await V2pnColor.FromOklch(blue.OkLightness, blue.Oklch.Chroma, blue.Oklch.Hue).Hex.Should().BeEqualTo("#2F7BFF");
+    }
 }

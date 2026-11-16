@@ -501,7 +501,8 @@ def build(folder, out, source, bot_override=None):
     brand_info = pack.get("brand") or {}
     logo = fit(folder, brand_info.get("logo"), "logo", "brand.logo", notes)
     logo_light = fit(folder, brand_info.get("logoOnLight"), "logo", "brand.logoOnLight", notes)
-    mark = fit(folder, brand_info.get("mark"), "mark", "brand.mark", notes)
+    # The page shows no mark; checked all the same, so the notes say what V2pn would leave out.
+    fit(folder, brand_info.get("mark"), "mark", "brand.mark", notes)
     theme = theme_of(pack)
     if theme["background"]["type"] == "image" and not fit(folder, theme["background"]["art"], "backdrop", "theme.background.art", notes):
         theme["background"] = {"type": "solid", "colors": [], "art": None}
@@ -618,7 +619,6 @@ def build(folder, out, source, bot_override=None):
         v2mark=V2MARK,
         bar_logo=pic("barlogo", bar_logo, html.escape(name)),
         hero_logo=pic("herologo", hero_logo, html.escape(name)),
-        mark=(f'<img class="mark" src="{mark}" alt="">' if mark else ""),
         name=html.escape(name),
         h1=t("h1"), lead=t("lead"), win=t("win"), mac=t("mac"),
         win_url=urls["win"], mac_url=urls["mac"], win_note=t("winNote"), mac_note=t("macNote"),
@@ -635,7 +635,7 @@ def build(folder, out, source, bot_override=None):
             os.remove(os.path.join(out, f))
     for f in ("Geist-Regular.ttf", "Geist-SemiBold.ttf"):
         shutil.copy(os.path.join(FONTS, f), os.path.join(out, "fonts", f))
-    used = {x for x in (logo, logo_light, mark, theme["background"]["art"]) if x}
+    used = {x for x in (logo, logo_light, theme["background"]["art"]) if x}
     for f in sorted(used):
         shutil.copy(os.path.join(folder, f), os.path.join(out, f))
     with open(os.path.join(out, "index.html"), "w", encoding="utf-8", newline="\n") as fh:
@@ -728,7 +728,6 @@ body.os-win [data-os=mac], body.os-mac [data-os=win] {{ display: none; }}
 body.os-any .osl, body.os-phone .osl {{ display: inline; }}
 footer {{ margin: 48px 0 40px; color: var(--muted); font-size: 13.5px; }}
 footer a {{ color: var(--muted); }}
-.mark {{ width: 28px; height: 28px; border-radius: 8px; flex: none; }}
 @media (max-width: 860px) {{
   ol {{ grid-template-columns: 1fr; }}
   .hero-in {{ padding: 40px 32px 36px; }}

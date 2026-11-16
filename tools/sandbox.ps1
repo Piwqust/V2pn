@@ -10,12 +10,16 @@
   The app keeps its data next to the exe, so each sandbox is fully separate. Only one
   sandbox can run at a time: V2pn allows a single instance per user session.
 
+  -Partner <id> makes the sandbox a partner's own build (v2pn-partner.txt beside V2pn.exe, as
+  tools/partner-packages.cs adds it); without it, -From leaves plain V2pn.
+
   -Launch starts the app in background mode (V2PN_BACKGROUND=1): its windows open off the screen,
   take no focus and get no taskbar button, so nothing flashes in front of the owner. tools/shot.ps1
   and UI Automation still see them. Pass -Visible to put the windows on the screen.
 
 .EXAMPLE
   tools/sandbox.ps1 -From v2rayN/v2rayN.Desktop/bin/Release/net10.0 -Dest $env:TEMP/v2pn-a -Launch
+  tools/sandbox.ps1 -From v2rayN/v2rayN.Desktop/bin/Debug/net10.0 -Dest $env:TEMP/v2pn-c -Partner configra -Launch
   tools/sandbox.ps1 -Dest $env:TEMP/v2pn-a -Stop
 #>
 param(
@@ -32,7 +36,9 @@ param(
     [string[]]$AppArgs,
     [switch]$Stop,
     # Keeps guiConfigs/ when -From refreshes the app files.
-    [switch]$KeepData
+    [switch]$KeepData,
+    # A partner's own build: writes v2pn-partner.txt with this id (ServiceLib/V2pn/V2pnEdition.cs).
+    [ValidatePattern('^[a-z0-9][a-z0-9-]{1,31}$')][string]$Partner
 )
 
 $ErrorActionPreference = 'Stop'
@@ -70,6 +76,13 @@ if ($From) {
     if ($CoresFrom) {
         Copy-Item -Recurse -Force (Join-Path $CoresFrom 'bin') $Dest
     }
+    # Plain V2pn unless asked: a marker left by an earlier partner sandbox (-KeepData) goes.
+    if (-not $Partner) { Remove-Item -Force (Join-Path $Dest 'v2pn-partner.txt') -ErrorAction SilentlyContinue }
+}
+if ($Partner) {
+    New-Item -ItemType Directory -Force $Dest | Out-Null
+    [IO.File]::WriteAllText((Join-Path $Dest 'v2pn-partner.txt'), "$Partner`n")
+    Write-Host "Sandbox is the build of partner $Partner"
 }
 
 $configDir = Join-Path $Dest 'guiConfigs'

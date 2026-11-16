@@ -133,7 +133,7 @@ $listing.until = (Get-Date).AddDays(30).ToString('yyyy-MM-dd')
 $download = Join-Path $Dir 'releases\latest\download'
 & $dotnet run $partnerTool -- publish --partners $partners --out $download --root-key $rootPem --local | Out-Null
 # 3: the app's real keys do not take the test root, as expected.
-if ($LASTEXITCODE -notin 0, 3 -or -not (Test-Path (Join-Path $download 'partners.json'))) { throw 'publish failed' }
+if ($LASTEXITCODE -notin 0, 3 -or -not (Test-Path (Join-Path $download 'partner-index.json'))) { throw 'publish failed' }
 
 Write-Host "4/5 starting Configra's demo on $origin/ and the releases page on $releases/ (hidden)"
 & $sandbox -Dest $app -Stop | Out-Null
@@ -151,14 +151,14 @@ $up = $false
 $web = New-Object Net.WebClient
 $web.Proxy = $null
 foreach ($i in 1..30) {
-    try { $web.DownloadString("$origin/") | Out-Null; $web.DownloadString("$releases/latest/download/partners.json") | Out-Null; $up = $true; break } catch { Start-Sleep -Milliseconds 500 }
+    try { $web.DownloadString("$origin/") | Out-Null; $web.DownloadString("$releases/latest/download/partner-index.json") | Out-Null; $up = $true; break } catch { Start-Sleep -Milliseconds 500 }
 }
 if (-not $up) { throw "the demo or the releases page did not start; see $Dir\demo.err and $Dir\releases.err" }
 
 Write-Host '5/5 opening the test V2pn'
 $liveBin = Join-Path $env:LOCALAPPDATA 'Programs\V2pn\bin'
 # The cores come from the installed V2pn, read only; the test copy keeps its own data between runs.
-& $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData | Out-Null
+& $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData -Partner configra | Out-Null
 $gui = Join-Path $app 'guiConfigs'
 if ($Fresh) {
     Remove-Item -Recurse -Force (Join-Path $gui 'partners') -ErrorAction SilentlyContinue

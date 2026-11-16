@@ -120,7 +120,7 @@ $listing = [ordered]@{ id = 'kestrel'; name = 'Kestrel'; domains = @('127.0.0.1'
 if ($LASTEXITCODE -ne 0) { throw 'pack failed' }
 & $dotnet run $partnerTool -- publish --partners $partners --out $published --root-key (Join-Path $keys 'root.pem') --local | Out-Null
 # 3: the app's real keys do not take the test root, as expected.
-if ($LASTEXITCODE -notin 0, 3 -or -not (Test-Path (Join-Path $published 'partners.json'))) { throw 'publish failed' }
+if ($LASTEXITCODE -notin 0, 3 -or -not (Test-Path (Join-Path $published 'partner-index.json'))) { throw 'publish failed' }
 
 Write-Host "4/5 starting the pretend provider on http://127.0.0.1:$Port/ (hidden)"
 Stop-Provider
@@ -148,10 +148,10 @@ Write-Host '5/5 opening the test V2pn'
 # The cores come from the installed V2pn, read only; the test copy keeps its own data between runs, except for a
 # sign-in, which starts from a fresh install.
 if ($SignIn) {
-    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -Port $SocksPort | Out-Null
+    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -Port $SocksPort -Partner kestrel | Out-Null
 }
 else {
-    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData -Port $SocksPort | Out-Null
+    & $sandbox -From (Join-Path $Dir 'build') -Dest $app -CoresFrom (Split-Path $liveBin) -KeepData -Port $SocksPort -Partner kestrel | Out-Null
 }
 $launch = @{ Dest = $app; Launch = $true }
 if (-not $Background) { $launch.Visible = $true }

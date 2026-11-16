@@ -11,7 +11,7 @@ Serves at http://127.0.0.1:<port>/:
                    that does not answer: its generated config shows the partner's transport (transport.json fragment),
                    which V2pn puts on TLS and REALITY servers only.
   /releases/latest/download/<file>
-                   a releases page with what tools/partner.cs publish wrote into --published: partners.json, its
+                   a releases page with what tools/partner.cs publish wrote into --published: partner-index.json, its
                    .sig and partner-kestrel.zip. V2pn takes the partner from there.
   /v2pn/api/...    the API: account, status, servers, recommend?purpose=, card?id= (bearer token for all but status),
                    and the sign-in by code: POST login/start gives six digits and a token, GET login/poll?token= says

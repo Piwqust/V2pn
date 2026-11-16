@@ -88,6 +88,8 @@ public partial class MainWindow
     {
         if (!OnboardingShown)
         {
+            // Its servers step offers to move from the apps found.
+            _ = SearchImportSourcesAsync();
             BuildOnboardingShell();
             // The first-run card would show through the scrim; it comes back if the walkthrough is skipped.
             scrollWelcome.Opacity = 0;

@@ -49,6 +49,12 @@ public sealed class SQLiteHelper
         return count;
     }
 
+    /// <summary>V2pn: several writes as one transaction, so the disk is synced once instead of once per row.</summary>
+    public async Task RunInTransactionAsync(Action<SQLiteConnection> action)
+    {
+        await _dbAsync.RunInTransactionAsync(action).ConfigureAwait(false);
+    }
+
     public async Task<int> InsertAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(T model)
     {
         return await _dbAsync.InsertAsync(model, typeof(T));
@@ -97,6 +103,11 @@ public sealed class SQLiteHelper
     public async Task<List<T>> QueryAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string sql) where T : new()
     {
         return await _dbAsync.QueryAsync<T>(sql);
+    }
+
+    public async Task<List<T>> QueryAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>(string sql, params object[] args) where T : new()
+    {
+        return await _dbAsync.QueryAsync<T>(sql, args);
     }
 
     public AsyncTableQuery<T> TableAsync<[DynamicallyAccessedMembers(DynamicallyAccessedMemberTypes.All)] T>() where T : new()

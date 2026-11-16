@@ -8,6 +8,11 @@ public partial class App : Application
     public override void Initialize()
     {
         AvaloniaXamlLoader.Load(this);
+        if (!OperatingSystem.IsWindows())
+        {
+            // V2pn: on Windows the system fonts cover Chinese, Japanese and Korean (see AppBuilderExtension).
+            Resources["AppFontFamily"] = new FontFamily($"avares://V2pn/Assets/Fonts#Inter, {Common.AppBuilderExtension.CjkFontFamilyName}");
+        }
         Common.SemiRounding.Apply(this);
         Common.Motion.Install(this);
         Common.Appearance.Install(this); // V2pn

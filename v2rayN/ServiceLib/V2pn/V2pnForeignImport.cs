@@ -340,44 +340,67 @@ public static partial class V2pnForeignImport
         Path.GetPathRoot(Home) ?? "C:\\",
     ];
 
-    /// <summary>Each of <paramref name="exeNames"/> within <paramref name="depth"/> levels of <paramref name="root"/>, with its folder.</summary>
-    private static List<(string Exe, string Folder)> SearchExe(string root, string[] exeNames, int depth)
+    /// <summary>
+    /// Each of <paramref name="exeNames"/> within <paramref name="depth"/> levels of <paramref name="root"/>, with its folder.
+    /// <paramref name="walked"/>, shared between roots, skips folders an earlier root already walked as deep: the home
+    /// folder holds Desktop, Downloads and Documents, which are roots of their own.
+    /// </summary>
+    private static List<(string Exe, string Folder)> SearchExe(string root, string[] exeNames, int depth, Dictionary<string, int>? walked = null)
     {
         var result = new List<(string, string)>();
+        var wanted = new HashSet<string>(exeNames, StringComparer.OrdinalIgnoreCase);
+        walked ??= new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
+        // One listing per folder. Nine File.Exists calls per folder, every folder of the home tree and the drive
+        // three levels down, took 7-12 s of CPU at every start on a developer's computer.
+        var options = new EnumerationOptions { IgnoreInaccessible = true, AttributesToSkip = 0, RecurseSubdirectories = false };
         void Walk(string dir, int level)
         {
+            if (walked.TryGetValue(dir, out var earlier) && earlier <= level)
+            {
+                return;
+            }
+            walked[dir] = level;
+            var subdirs = new List<string>();
             try
             {
-                foreach (var exe in exeNames)
+                var entries = new System.IO.Enumeration.FileSystemEnumerable<(string Name, bool IsDirectory)>(
+                    dir,
+                    (ref System.IO.Enumeration.FileSystemEntry e) => (e.FileName.ToString(), e.IsDirectory),
+                    options)
                 {
-                    if (File.Exists(Path.Combine(dir, exe)))
+                    ShouldIncludePredicate = (ref System.IO.Enumeration.FileSystemEntry e) =>
+                        e.IsDirectory ? level < depth : e.FileName.EndsWith(".exe", StringComparison.OrdinalIgnoreCase),
+                };
+                foreach (var (name, isDirectory) in entries)
+                {
+                    if (!isDirectory)
                     {
-                        result.Add((exe, dir));
+                        if (wanted.TryGetValue(name, out var exe))
+                        {
+                            result.Add((exe, dir));
+                        }
+                        continue;
                     }
-                }
-                if (level >= depth)
-                {
-                    return;
-                }
-                foreach (var sub in Directory.EnumerateDirectories(dir))
-                {
-                    var name = Path.GetFileName(sub);
                     // Large trees that never hold a portable app.
                     if (name.StartsWith('.') || name.StartsWith('$') || name is "node_modules" or "AppData" or "Windows" or "ProgramData" or "Program Files" or "Program Files (x86)" or "Users")
                     {
                         continue;
                     }
-                    Walk(sub, level + 1);
+                    subdirs.Add(Path.Combine(dir, name));
                 }
             }
             catch
             {
                 // Folders without access are skipped.
             }
+            foreach (var sub in subdirs)
+            {
+                Walk(sub, level + 1);
+            }
         }
         if (Directory.Exists(root))
         {
-            Walk(root, 0);
+            Walk(Path.TrimEndingDirectorySeparator(Path.GetFullPath(root)), 0);
         }
         return result;
     }

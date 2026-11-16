@@ -18,7 +18,7 @@
                 <ResourceInclude Source="Assets/V2pnTheme.axaml" />
                 <ResourceInclude Source="Assets/V2pnControls.axaml" />
             </ResourceDictionary.MergedDictionaries>
-            <FontFamily x:Key="AppFontFamily">avares://V2pn/Assets/Fonts#Inter, avares://V2pn/Assets/Fonts#Noto Sans SC</FontFamily>
+            <FontFamily x:Key="AppFontFamily">avares://V2pn/Assets/Fonts#Inter</FontFamily>
         </ResourceDictionary>
     </Application.Resources>
     <Application.Styles>

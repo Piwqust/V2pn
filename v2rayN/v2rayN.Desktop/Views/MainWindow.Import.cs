@@ -30,6 +30,21 @@ public partial class MainWindow
     {
         btnWelcomeImport.Click += async (_, _) => await MoveFromWelcomeAsync();
         menuImportV2rayN.SubmenuOpened += (_, _) => _ = FillImportMenuAsync();
+    }
+
+    private bool _welcomeImportStarted;
+
+    /// <summary>
+    /// The search walks a few thousand folders (1-2 s of CPU), so it runs when something can show what it finds: the
+    /// welcome card (no servers yet), the walkthrough, or the menu. It used to run at every start.
+    /// </summary>
+    private void ShowImportOnWelcomeOnce()
+    {
+        if (_welcomeImportStarted)
+        {
+            return;
+        }
+        _welcomeImportStarted = true;
         _ = ShowImportOnWelcomeAsync();
     }
 

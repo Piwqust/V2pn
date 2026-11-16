@@ -1,18 +1,21 @@
-# V2pn for providers: the partner look
+# V2pn for providers: your own build of V2pn
 
 [По-русски](README.ru.md)
 
-A VPN provider can have V2pn wear its brand for the people who use its subscription: its logo beside V2pn's in the title bar, its colour on the connect button, a card with its plan, its own buttons and, if it likes, its own background behind the connect panel. The connection, the servers, the settings and the state of protection stay V2pn's. The brand is on while a server of the provider's subscription is selected and off as soon as another one is.
+A VPN provider can have its own build of V2pn for its people. It is the same program, installed apart from V2pn, and it always wears the provider's brand: its logo beside V2pn's in the title bar, its colour on the connect button, a card with its plan, its own buttons and, if it likes, its own background behind the connect panel. The connection, the servers, the settings and the state of protection stay V2pn's.
 
-V2pn's owner keeps the partners: every partner's look lives in the V2pn repository, and the owner checks it and publishes it with V2pn's releases. A provider needs no keys, no certificates and no hosting of its own; it sends its logos and colours to the owner.
+Plain V2pn shows nothing of any provider. A provider's subscription is just a subscription there: the standard headers and those of Happ, INCY and v2RayTun work, and nothing else does (no look, no sign-in by code, no buttons, no closed settings, no reviewed files, no API calls). The two never share an install: a person can have both side by side, each with its own folder, settings and start with the system.
+
+V2pn's owner keeps the partners: every partner's look lives in the V2pn repository, and the owner checks it and publishes it with V2pn's releases, together with the partner's build (`V2pn-<id>-windows-x64.zip` and so on). A provider needs no keys, no certificates and no hosting of its own; it sends its logos and colours to the owner.
 
 ## What a provider gets
 
-| | Any panel | Partner |
+| | Any panel, in plain V2pn | Partner, in its own build |
 | --- | --- | --- |
 | Subscription name, traffic, term, announcement, support and cabinet buttons (standard headers) | yes | yes |
 | Banners, the renewal reminder, connecting at start, server order, updating and testing at start (Happ, INCY and v2RayTun headers, section 7) | yes | yes |
-| `v2pn://add` links from the provider's site or bot | yes | yes, and V2pn says the provider is a V2pn partner |
+| Your own build of V2pn and a download page for it (section 12) | no | yes |
+| `v2pn://add` links from the provider's site or bot | yes | yes, and the build says the provider is a V2pn partner |
 | Moving the subscription to another of your domains (`new-url`, `new-domain`) | no | yes |
 | The provider's mark on its subscription in V2pn's list | no | yes |
 | Accent: your logo, your colour, your subscription card (section 5) | no | yes, every partner |
@@ -26,11 +29,12 @@ V2pn's owner keeps the partners: every partner's look lives in the V2pn reposito
 ## How it works
 
 1. The owner of V2pn keeps every partner in `partners/<id>/` of the V2pn repository: `listing.json` (who the partner is, its subscription domains, its grants, until when) and the pack (`partner.json` with its pictures).
-2. With every release, or on its own between releases, the owner publishes them with `tools/partner.cs publish`: `partners.json`, the list of all partners signed with V2pn's partner root key, and `partner-<id>.zip` for each partner. They sit next to V2pn's installers, on the same release page V2pn takes its updates from.
-3. V2pn takes `partners.json` at start and then at most every six hours, and checks its signature against the keys built into the app.
-4. A subscription belongs to a partner when the host of its link is one of the partner's domains (`example.com`, or anything under `*.example.com`). No header is needed.
-5. For a partner of one of the person's subscriptions, V2pn downloads its zip, checks it against the size and SHA-256 in `partners.json`, unpacks only plain picture and JSON files within their limits, and checks every file against `partner.json`. A pack that fails a check is not used; V2pn keeps the last good one, or stays plain, and the servers work as usual either way.
-6. While a server of that subscription is selected, V2pn wears the partner's brand.
+2. With every release, or on its own between releases, the owner publishes them with `tools/partner.cs publish`: `partner-index.json`, the list of all partners signed with V2pn's partner root key, and `partner-<id>.zip` for each partner. With a release, `tools/partner-packages.cs` also makes each partner's build from V2pn's signed packages: `V2pn-<id>-windows-x64.zip`, `V2pn-<id>-windows-arm64.zip`, `V2pn-<id>-macos-arm64.zip` and `V2pn-<id>-macos-x64.zip`, the same files with `v2pn-partner.txt` holding your id (on macOS inside the app, which is named `V2pn-<id>.app`). They sit next to V2pn's installers, on the same release page V2pn takes its updates from.
+3. Your build takes `partner-index.json` at start and then at most every six hours, and checks its signature against the keys built into the app. Plain V2pn never asks for it.
+4. In your build, a subscription is yours when the host of its link is one of your domains (`example.com`, or anything under `*.example.com`). No header is needed. Other partners are not looked at: their subscriptions are plain subscriptions in your build.
+5. Your build downloads your zip at its first start, before any subscription of yours is there, checks it against the size and SHA-256 in `partner-index.json`, unpacks only plain picture and JSON files within their limits, and checks every file against `partner.json`. A pack that fails a check is not used; the build keeps the last good one, or looks like plain V2pn until a good one comes, and the servers work as usual either way.
+6. Your build always wears your brand, whatever server is selected. There is no switch: which build a person has is fixed when it is installed.
+7. Your build updates itself from the same signed release as V2pn and keeps `v2pn-partner.txt` through every update. It installs into its own place (`%LOCALAPPDATA%\Programs\V2pn-<id>` on Windows, `V2pn-<id>.app` with data in `~/Library/Application Support/V2pn-<id>` on macOS) and starts with the system under its own name, so it never touches an installed V2pn.
 
 ## How to become a partner
 
@@ -204,13 +208,13 @@ For the servers of that subscription V2pn then:
 
 `hide-url: 1` (also only with the `lock` grant) hides the subscription's link itself.
 
-What the person always keeps: connecting and disconnecting, any server of the subscription, deleting the subscription, plain V2pn, their own servers and routing next to yours, the kill switch and V2pn's updates.
+What the person always keeps: connecting and disconnecting, any server of the subscription, deleting the subscription, plain V2pn beside your build, their own servers and routing next to yours, the kill switch and V2pn's updates.
 
 The protection is not absolute: the core's config is on disk and an experienced person can read it. The aim is the same as Happ's: addresses cannot be passed on in two clicks.
 
 ## 5. The look: Accent and Scene
 
-V2pn has one look for every partner, in two forms:
+A partner's build has one look, in two forms. Plain V2pn wears neither:
 
 | Form | When | What it is |
 | --- | --- | --- |
@@ -246,13 +250,13 @@ Colours. You give the brand colour (and the background's); V2pn derives the rest
 
 A field of the theme V2pn cannot use (a colour in another format, a picture that does not fit its slot) falls back to its default, and the look keeps working; `tools/partner.cs pack` and `tools/partner-check.cs` say what and why. Unknown fields are ignored.
 
-`tools/edition-matrix.ps1 -Theme <folder>` shoots plain V2pn, Accent and Scene in light and dark at three window sizes. Example themes are in `tools/demo/themes/`.
+`tools/edition-matrix.ps1 -Partner <id>` shoots your build, Accent and Scene in light and dark at three window sizes (`-Theme <folder>` for another theme); without `-Partner` it shoots plain V2pn, which must show nothing of you. Example themes are in `tools/demo/themes/`.
 
 What a pack cannot change: the layout and the font, the state colours and the state pill, what the connect button does, V2pn's mark beside your logo, the settings and the routing. Your own routes are only a separate mode the person picks (section 6).
 
 ## 6. Reviewed files: routes, transport, core config
 
-Three files of the pack change how traffic goes, so V2pn uses them only after a manual review. The owner of V2pn reads the file and adds its grant to `listing.json`; `publish` then puts the file's SHA-256 into `partners.json` under `reviewed`. Change the file and V2pn stops using it until the owner reviews it again and publishes the new hash; the subscription window says "<provider> routes changed after the review and are not used". The rest of the pack works as before.
+Three files of the pack change how traffic goes, so V2pn uses them only after a manual review. The owner of V2pn reads the file and adds its grant to `listing.json`; `publish` then puts the file's SHA-256 into `partner-index.json` under `reviewed`. Change the file and V2pn stops using it until the owner reviews it again and publishes the new hash; the subscription window says "<provider> routes changed after the review and are not used". The rest of the pack works as before.
 
 | File | Grant | What it does |
 | --- | --- | --- |
@@ -294,7 +298,7 @@ The files sit in the pack folder next to the pictures and are listed in `assets`
 
 No regular expressions: the reviewer has to read every entry. V2pn puts "local network direct" first itself. `block` may not be broad: no `geoip:`, no whole zone (`domain:ru`), no network wider than /16, no local network. `geosite:` and `geoip:` lists come from the runetfreedom geo files, as for V2pn's own Russian modes, and are downloaded when the person picks your mode; a tag missing there stops the core.
 
-In V2pn it is one more mode of "What goes through the VPN", "<provider> routes", while a server of your subscription is selected. V2pn says once that the mode is there but never turns it on by itself: the person picks it. When the partnership ends (the subscription is deleted, the term runs out, the owner takes the partner out) or the file changes after the review, the mode goes away, and if it was selected, V2pn switches to "Everything through VPN".
+In V2pn it is one more mode of "What goes through the VPN", "<provider> routes", while a server of your subscription is selected. V2pn says once that the mode is there but never turns it on by itself: the person picks it. When the partnership ends (the term runs out, the owner takes the partner out) or the file changes after the review, the mode goes away, and if it was selected, V2pn switches to "Everything through VPN".
 
 ### Transport: transport.json
 
@@ -447,7 +451,7 @@ A header wins over the same key in the body. Only from headers: `new-url`, `new-
 
 ## 8. Links
 
-`v2pn://add?url=<subscription link, URL-encoded>&name=<name>` opens V2pn and asks before adding the subscription. V2pn also takes Happ (`happ://add/<link>`), v2RayTun (`v2raytun://import/<link>`) and Hiddify (`hiddify://import/<link>`) links. A link to a subscription V2pn already has only says so. On Windows the `v2pn` scheme is registered by the installed app; on macOS the app bundle claims it.
+`v2pn://add?url=<subscription link, URL-encoded>&name=<name>` opens V2pn and asks before adding the subscription. V2pn also takes Happ (`happ://add/<link>`), v2RayTun (`v2raytun://import/<link>`) and Hiddify (`hiddify://import/<link>`) links. A link to a subscription V2pn already has only says so. On Windows the `v2pn` scheme is registered by the installed app; on macOS the app bundle claims it. With both plain V2pn and your build installed, the one started last gets the links. Plain V2pn adds your subscription as it adds any other.
 
 ## 9. The API (optional)
 
@@ -496,7 +500,7 @@ Every field is optional; V2pn reads what it knows and ignores the rest. Answers 
 
 ### Sign-in by code
 
-With `"login": true` in the pack (and so an `api`), a person who has just installed V2pn adds your subscription without copying a link: «I have a subscription from a provider» in the first-start walkthrough, or «Sign in with a provider» in the add menu («+»). V2pn shows your mark and name, the QR code of your bot link, six digits and «Open the bot»; the person confirms in your bot, and V2pn adds the subscription, updates it and selects its first server (it does not connect). The person's own subscription link is all V2pn gets; it is added as a pasted link is, and your look follows as for any subscription of yours.
+With `"login": true` in the pack (and so an `api`), a person who has just installed your build adds your subscription without copying a link: «I have a subscription from a provider», the first choice of the first-start walkthrough, or «Sign in with a provider» in the add menu («+»). Only your build offers it, and only with you; plain V2pn has no sign-in by code. V2pn shows your mark and name, the QR code of your bot link, six digits and «Open the bot»; the person confirms in your bot, and V2pn adds the subscription, updates it and selects its first server (it does not connect). The person's own subscription link is all V2pn gets; it is added as a pasted link is.
 
 `POST <api>login/start`, when the sign-in opens and at «New code», with a JSON body:
 
@@ -529,10 +533,11 @@ In your bot: `/start v2pn-<code>` (from the QR code) or the six digits typed. Sa
 
 ## 10. How changes reach people
 
-- **A change of the look.** The owner changes `partners/<id>` and publishes. A running V2pn asks for `partners.json` at most every six hours, and at every start; when your zip's hash changed, it downloads the new zip once. A zip whose files did not change keeps its hash, so publishing again makes nobody download it.
-- **A new subscription.** When the person adds a subscription from your domains, V2pn downloads your pack after the subscription's first update.
-- **The term.** The partnership lasts until `until` in `listing.json`. V2pn checks it at start and every hour; when it has passed, your look closes with a note and plain V2pn opens. `tools/partner-check.cs` warns a month ahead; the owner extends it and publishes.
-- **Leaving.** When the owner takes a partner out of `partners/` and publishes, installed apps drop its look at their next look at the index, with a note. A person who deletes your subscription loses your look with it.
+- **A change of the look.** The owner changes `partners/<id>` and publishes. A running build of yours asks for `partner-index.json` at most every six hours, and at every start; when your zip's hash changed, it downloads the new zip once. A zip whose files did not change keeps its hash, so publishing again makes nobody download it.
+- **A new install.** Your build downloads your pack at its first start, before the person signs in or adds a subscription.
+- **The term.** The partnership lasts until `until` in `listing.json`. Your build checks it at start and every hour; when it has passed, your look closes with a note and the build looks like plain V2pn. `tools/partner-check.cs` warns a month ahead; the owner extends it and publishes.
+- **Leaving.** When the owner takes a partner out of `partners/` and publishes, its installed builds drop its look at their next look at the index, with a note, and no new builds of it are made.
+- **V2pn 1.2.1 and older.** These dressed plain V2pn in a partner's look while its server was selected. Every release now also publishes `partners.json`, signed and empty, which is what they read: they drop the partner they kept and stay plain. Only partner builds read `partner-index.json`.
 - **When something fails.** An index that is not signed with V2pn's key, or is older than the one V2pn has, is ignored; a zip that does not match is not used. V2pn keeps what it had and says why in its log.
 
 ## 11. Checking
@@ -544,7 +549,7 @@ dotnet run tools/partner-check.cs -- https://example.com/s/<a real subscription 
 
 The first checks a partner folder before it is published, offline: `listing.json`, the pack packed as `publish` packs it and read back with V2pn's own reader, the pictures and their slots, Accent or Scene and the colours V2pn derives, the old fields it ignores, the description of servers and the buttons (what V2pn leaves out and why), closed settings, the reviewed files (format, filter, grant).
 
-The second checks a live subscription against the published index: the subscription's headers, the signature of `partners.json`, which partner the link belongs to, the zip and every check above, and the API including `servers`, `recommend` and `card` for your buttons. With `login`, it asks `login/start` once and checks the answer's shape (six digits, the token, the link, the term); it never polls, so no sign-in is completed. `--index partners/out` takes a local publish instead of the release page; `--key <public key>` checks one signed with a test root key.
+The second checks a live subscription against the published index, as that partner's build sees it: the subscription's headers, the signature of `partner-index.json`, which partner the link belongs to, the zip and every check above, and the API including `servers`, `recommend` and `card` for your buttons. With `login`, it asks `login/start` once and checks the answer's shape (six digits, the token, the link, the term); it never polls, so no sign-in is completed. `--index partners/out` takes a local publish instead of the release page; `--key <public key>` checks one signed with a test root key.
 
 An example pack with servers, buttons and the three reviewed files, and a local server with a subscription, a releases page and the API for previews, are in `tools/demo/partner/`, `tools/demo/demo_partner.py` and `tools/demo/try-partner.ps1`.
 
@@ -554,8 +559,8 @@ An example pack with servers, buttons and the three reviewed files, and a local 
 python tools/partner-page.py partners/<id>
 ```
 
-Builds a page from the partner's folder that leads its people to V2pn, into `partners/out/site/<id>/` (`index.html`, `page.js`, the font and the pictures). It carries the partner's logo and colours (the Scene's background as its header), "Download for Windows" and "Download for macOS" from the newest release (the strong button for the visitor's system), three steps (sign-in by code with `login`) and "Open the bot" when `links.support` is on t.me or `--bot` is given. Russian and English (`?lang=en`), light and dark; a phone gets "Send the link to yourself" instead of a download. The colours follow V2pn's rules, and the build stops if any text would read below 4.5:1. The folder can go onto your site as it is: no external scripts or fonts, and the script is a file of its own, so a strict CSP (`script-src 'self'`) serves it. Configra serves it at `/v2pn/download/`.
+Builds a page from the partner's folder that leads its people to the partner's own build, into `partners/out/site/<id>/` (`index.html`, `page.js`, the font and the pictures). It carries the partner's logo and colours (the Scene's background as its header), "Download for Windows" and "Download for macOS" for the build in the newest release (`V2pn-<id>-windows-x64.zip`, `V2pn-<id>-macos-arm64.zip` and the ARM and Intel ones; macOS gets a zip, no .dmg), the strong button for the visitor's system, the one-command installers (`$env:V2PN_PARTNER='<id>'; irm …/install.ps1 | iex` on Windows, `curl -fsSL …/install.sh | V2PN_PARTNER=<id> bash` on macOS), three steps (sign-in by code with `login`) and "Open the bot" when `links.support` is on t.me or `--bot` is given. Russian and English (`?lang=en`), light and dark; a phone gets "Send the link to yourself" instead of a download. The colours follow V2pn's rules, and the build stops if any text would read below 4.5:1. The folder can go onto your site as it is: no external scripts or fonts, and the script is a file of its own, so a strict CSP (`script-src 'self'`) serves it. Configra serves it at `/v2pn/download/`.
 
 ## Privacy
 
-V2pn takes `partners.json` and the packs from V2pn's own release page, not from your site. Your site gets only what any subscription gets: the subscription request and, with an API, its calls with V2pn's user agent and, for `account`, `servers`, `recommend` and `card`, the token you issued. V2pn never sends the person's traffic, their other subscriptions, the device or anything it measures. The one exception is the sign-in by code, when the person opens it: `login/start` gets the operating system and the computer's name, so your bot can name what is asking.
+Your build takes `partner-index.json` and your pack from V2pn's own release page, not from your site; plain V2pn takes neither. Your site gets only what any subscription gets: the subscription request and, with an API, its calls with V2pn's user agent and, for `account`, `servers`, `recommend` and `card`, the token you issued. V2pn never sends the person's traffic, their other subscriptions, the device or anything it measures. The one exception is the sign-in by code, when the person opens it: `login/start` gets the operating system and the computer's name, so your bot can name what is asking.

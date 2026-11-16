@@ -2,6 +2,23 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+V2pn no longer changes its look for any provider. A provider gets its own build of V2pn instead.
+
+### Plain V2pn stays plain
+
+- V2pn keeps its own look whatever server you pick, a partner provider's included: no provider's colour, logo, card or background.
+- A provider's subscription is an ordinary subscription here. Its name, traffic, term, announcement, support and cabinet links, and the Happ, INCY and v2RayTun headers work as for any provider; sign-in by code, provider buttons, hidden servers and closed settings do not.
+- V2pn no longer downloads anything about providers, and removes the provider files 1.2.1 kept.
+- 1.2.1 and older stop wearing a provider's look at their next check.
+
+### A provider's own build
+
+- A provider's build is the same V2pn with the provider's look always on, sign-in by code with that provider, and its buttons and server descriptions. It comes from the provider's download page (`V2pn-<provider>-windows-x64.zip` and the others, or one command with `V2PN_PARTNER=<provider>`).
+- It installs beside V2pn, in its own folder (`V2pn-<provider>`) with its own settings and its own start with the system, so both can be on one computer.
+- It updates itself from the same release as V2pn and stays the provider's build after every update.
+
 ## 1.2.1
 
 A provider's look is now one look that follows the server you pick, a partner provider can sign you in with a code from its Telegram bot, and the server list gets a Home tab with the fastest server on top and statistics you can turn on.

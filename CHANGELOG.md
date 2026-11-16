@@ -2,6 +2,17 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### Faster and lighter
+
+- V2pn starts about twice as fast: with a thousand servers the window appears in about 1.6 s instead of 3. The Windows download is 12 MB larger for it.
+- V2pn no longer searches the disk for other VPN apps at every start. It looks only when it can offer to move your servers: on the first-run card, in the walkthrough and in "Move from another app". The search itself is about five times faster.
+- Updating a subscription takes about a fifth of the processor time it did.
+- Testing the ping of all servers no longer makes the window stop responding for a moment.
+- With the VPN off, update checks no longer wait five seconds for a proxy that isn't running.
+- V2pn uses about 15–30 MB less memory. On Windows, Chinese, Japanese and Korean server names are drawn with Windows' own fonts instead of a 10 MB font that was loaded at every start.
+
 ## 1.1.0
 
 ### Provider looks

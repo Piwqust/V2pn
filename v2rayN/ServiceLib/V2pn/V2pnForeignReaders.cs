@@ -625,9 +625,10 @@ public static partial class V2pnForeignImport
                 }
             }
         }
+        var walked = new Dictionary<string, int>(StringComparer.OrdinalIgnoreCase);
         foreach (var root in SearchRoots().Distinct(StringComparer.OrdinalIgnoreCase))
         {
-            foreach (var (exe, dir) in SearchExe(root, exeNames, 3))
+            foreach (var (exe, dir) in SearchExe(root, exeNames, 3, walked))
             {
                 result[exe].Add(dir);
             }

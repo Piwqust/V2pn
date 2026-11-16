@@ -729,6 +729,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (empty)
             {
                 RefreshWelcomeRoute();
+                ShowImportOnWelcomeOnce();
             }
             var unprotected = state == ProtectionState.Unprotected;
             SetConnectLabel(unprotected ? L.Connect : L.Disconnect);

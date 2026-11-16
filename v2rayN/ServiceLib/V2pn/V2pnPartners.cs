@@ -60,7 +60,6 @@ public sealed class V2pnPartners
     private HashSet<string> _revoked = [];
     // The debug window's made-up partners and the subscriptions it counts as theirs; never on disk, never pruned.
     private readonly ConcurrentDictionary<string, byte> _debugIds = new(StringComparer.Ordinal);
-    private readonly ConcurrentDictionary<string, V2pnTheme> _debugThemes = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _debugSubs = new(StringComparer.Ordinal);
     private Task? _load;
     private bool _revocationsChecked;
@@ -402,104 +401,19 @@ public sealed class V2pnPartners
             Actions: V2pnPartnerCatalog.ParseActions(root?["actions"], cert, hasApi: false), Theme: theme);
         pack = V2pnPartnerSlots.Fit(pack, file => File.Exists(Path.Combine(folder, file)) ? File.ReadAllBytes(Path.Combine(folder, file)) : null, out _);
         var partner = new V2pnPartner(cert, pack, folder, "debug://" + id + "/");
-        _debugThemes[id] = pack.Theme!;
         _debugIds[id] = 0;
         _partners[id] = partner;
         Changed?.Invoke();
         return partner;
     }
 
-    /// <summary>
-    /// Debug only: the made-up partner with its theme as it was added, changed by <paramref name="edit"/> (another
-    /// template, say); edits never pile up, so a template that drops a picture does not take it from the next one.
-    /// </summary>
-    public void EditDebugTheme(string id, Func<V2pnTheme, V2pnTheme> edit)
-    {
-        if (!_debugIds.ContainsKey(id) || !_partners.TryGetValue(id, out var partner))
-        {
-            return;
-        }
-        var theme = edit(_debugThemes.GetValueOrDefault(id) ?? partner.Pack.Theme ?? V2pnTheme.Default(partner.Pack.Accent));
-        _partners[id] = new V2pnPartner(partner.Cert, partner.Pack with { Theme = theme }, partner.Folder, partner.SourceUrl, partner.Features);
-        Changed?.Invoke();
-    }
-
     public bool IsDebug(string? id) => id != null && _debugIds.ContainsKey(id);
 
     /// <summary>
-    /// The id of the theme builder's preview. A certificate's id never has a dot, so no real partner can be it.
+    /// The id an unsigned pack is read under to be drawn (ReadUnsigned). A certificate's id never has a dot, so no real
+    /// partner can be it.
     /// </summary>
     public const string PreviewId = "builder.preview";
-
-    private string? _previewFolder;
-
-    public static bool IsPreview(string? id) => id == PreviewId;
-
-    /// <summary>
-    /// Developer mode only (V2pnPartnerTrust.DebugAllowed): the unsigned pack in <paramref name="folder"/> (partner.json and its
-    /// pictures, as the theme builder saves them) worn by this running V2pn as a preview. It is read with a real pack's checks
-    /// from a copy in the temp folder, never written to the partners' folder, never pruned, and gone when V2pn closes or
-    /// <see cref="RemovePreview"/> is called. Null with the reason when the pack cannot be read.
-    /// </summary>
-    public V2pnPartner? SetPreview(string folder, out string error)
-    {
-        if (!V2pnPartnerTrust.DebugAllowed)
-        {
-            error = "The preview is there in developer mode only.";
-            return null;
-        }
-        var copy = Path.Combine(Path.GetTempPath(), "v2pn-preview-" + Guid.NewGuid().ToString("N")[..8]);
-        try
-        {
-            Directory.CreateDirectory(copy);
-            foreach (var name in V2pnPackWriter.Files(folder).Append(V2pnPackWriter.PackFile))
-            {
-                File.Copy(Path.Combine(folder, name), Path.Combine(copy, name), true);
-            }
-        }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
-        {
-            DeleteQuietly(copy);
-            error = ex.Message;
-            return null;
-        }
-        var partner = ReadUnsigned(copy, PreviewId, Today(), out _, out error);
-        if (partner == null)
-        {
-            DeleteQuietly(copy);
-            return null;
-        }
-        var old = _previewFolder;
-        _previewFolder = copy;
-        _debugIds[PreviewId] = 0;
-        _partners[PreviewId] = partner;
-        if (old != null)
-        {
-            DeleteQuietly(old);
-        }
-        Changed?.Invoke();
-        return partner;
-    }
-
-    /// <summary>Takes the theme builder's preview away; nothing of it stays.</summary>
-    public void RemovePreview()
-    {
-        var had = _partners.TryRemove(PreviewId, out _);
-        _debugIds.TryRemove(PreviewId, out _);
-        foreach (var sub in _debugSubs.Where(s => s.Value == PreviewId).Select(s => s.Key).ToList())
-        {
-            _debugSubs.TryRemove(sub, out _);
-        }
-        if (_previewFolder != null)
-        {
-            DeleteQuietly(_previewFolder);
-            _previewFolder = null;
-        }
-        if (had)
-        {
-            Changed?.Invoke();
-        }
-    }
 
     /// <summary>
     /// The unsigned pack in <paramref name="folder"/> as partner <paramref name="partnerId"/> under a made-up certificate with the

@@ -361,55 +361,6 @@ public class V2pnPartnerBuilderTests
     #region Preview
 
     [Test]
-    public async Task Preview_IsWornButNeverKept()
-    {
-        var root = TempFolder();
-        var folder = TempFolder();
-        try
-        {
-            File.WriteAllBytes(Path.Combine(folder, "logo.png"), Png(340, 96));
-            var draft = V2pnPackDraft.New();
-            draft.Id = "kestrel";
-            draft.Name = "Kestrel";
-            draft.DefaultLook = V2pnPartnerVariants.Pass;
-            draft.SetPicture(V2pnPackDraft.Pictures.Logo, "logo.png");
-            V2pnPackWriter.Write(folder, draft.Root, null);
-            var manager = new V2pnPartners([], () => root) { Today = () => Today };
-
-            var preview = manager.SetPreview(folder, out var error);
-
-            await error.Should().BeEqualTo(string.Empty);
-            await preview!.Id.Should().BeEqualTo(V2pnPartners.PreviewId);
-            await preview.HasEdition.Should().BeTrue();
-            await preview.Pack.DefaultVariant.Should().BeEqualTo(V2pnPartnerVariants.Pass);
-            await preview.Pack.Logo.Should().BeEqualTo("logo.png");
-            await manager.Get(V2pnPartners.PreviewId).Should().BeEqualTo(preview);
-            // Drawn from a copy in the temp folder, never from the partners' folder, and no certificate id can be it.
-            await preview.Folder.StartsWith(Path.GetTempPath(), StringComparison.OrdinalIgnoreCase).Should().BeTrue();
-            await Directory.EnumerateFileSystemEntries(root).Any().Should().BeFalse();
-            await V2pnPartnerTrust.ValidId(V2pnPartners.PreviewId).Should().BeFalse();
-
-            // No subscription points to it, yet the hourly check leaves it alone.
-            manager.Prune([]);
-            await (manager.Get(V2pnPartners.PreviewId) != null).Should().BeTrue();
-
-            // Another V2pn start finds nothing of it.
-            var restarted = new V2pnPartners([], () => root) { Today = () => Today };
-            await restarted.LoadAsync();
-            await restarted.All.Count.Should().BeEqualTo(0);
-
-            manager.RemovePreview();
-            await (manager.Get(V2pnPartners.PreviewId) == null).Should().BeTrue();
-            await Directory.Exists(preview.Folder).Should().BeFalse();
-        }
-        finally
-        {
-            Delete(root);
-            Delete(folder);
-        }
-    }
-
-    [Test]
     public async Task Preview_OfAPackStillBeingTyped_DrawsWithoutAName()
     {
         var folder = TempFolder();

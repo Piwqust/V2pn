@@ -101,7 +101,7 @@ public static class DebugOverrides
         var full = new SceneAccount("12,4 ГБ из 50 ГБ", 0.25, true, "Оплачено до 31 января 2027 · 77 дней", false, false,
             "Плановые работы в воскресенье с 3:00 до 4:00.", cabinet, support, "Личный доступ", "Устройств: 2 из 5",
             AnnounceUrl: "https://example.com/news",
-            Banner: new SubBanner("Скидка 30% на год до пятницы.", SubPanelHeaders.ToneInfo, "Продлить", cabinet, false));
+            Banner: new SubBanner("Скидка 30% на год до пятницы.", SubPanelHeaders.ToneInfo, "Продлить", cabinet, false), DaysLeft: 77);
         return Account switch
         {
             "panel" => s with { Account = new SceneAccount(null, 0, false, null, false, false, "Объявление провайдера: всё работает.", cabinet, support) },

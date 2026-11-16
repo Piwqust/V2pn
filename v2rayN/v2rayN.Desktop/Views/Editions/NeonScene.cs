@@ -5,43 +5,54 @@ using v2rayN.Desktop.Converters;
 namespace v2rayN.Desktop.Views.EditionLooks;
 
 /// <summary>
-/// Neon: one column like a phone VPN app (INCY, Happ). At the top the provider and Proxy/VPN, then Connect (a big round
-/// button with a glowing ring in the provider's colours, or a row with a switch), the state and what goes through the
-/// VPN, the provider's buttons, and a card with the subscription (plan, traffic, banner) over the server list. The mini
-/// window (380×640) is the look as designed; a wider window puts the card beside the column. The provider gives the
-/// colours and the kind of Connect; V2pn derives every other colour (V2pnThemePalette) and keeps the state colours.
+/// Neon: one column like a phone VPN app (INCY, Happ), one idea per part. At the top the provider and Proxy/VPN; in the
+/// middle Connect alone (a round button in a glowing ring of the brand colours, or a row with a switch), the place and
+/// the state under it and what goes through the VPN; at the bottom a sheet with the plan, the traffic, the provider's
+/// offer and one list: the provider's buttons first, then its servers. The mini window (380×640) is the look as
+/// designed; a wider one puts the sheet beside Connect. Colours come from the theme (V2pnThemePalette); the state
+/// colours are V2pn's.
 /// </summary>
 public sealed class NeonScene : EditionScene
 {
     private readonly V2pnTheme _t;
     private readonly V2pnThemeColors _c;
-    private readonly FontFamily _font;
+    private readonly FontFamily _font = Scene.Geist;
 
     private readonly Control _brand;
     private readonly ThemeSegment _mode;
     private readonly NeonConnect _connect;
-    private readonly TextBlock _pillText = new();
-    private readonly Border _pill;
+    private readonly Image _flag = Scene.Flag(null, 24, 17);
+    private readonly Border _flagBox;
+    private readonly TextBlock _title;
+    private readonly Ellipse _stateDot = new() { Width = 7, Height = 7 };
+    private readonly TextBlock _stateText;
+    private readonly TextBlock _pingText;
     private readonly Button _route;
     private readonly TextBlock _routeText;
-    private readonly WrapPanel _buttons = new() { Orientation = Orientation.Horizontal, ItemSpacing = 18, LineSpacing = 4, HorizontalAlignment = HorizontalAlignment.Center };
-    private string _buttonsKey = string.Empty;
-    private readonly ForeignNote _foreign;
-    private readonly Border _foreignCard;
+    private readonly StackPanel _place;
 
-    private readonly TextBlock _subTitle;
-    private readonly TextBlock _subMeta;
-    private readonly Border _trafficTrack;
-    private readonly Border _trafficBar;
-    private readonly TextBlock _trafficText;
-    private readonly Grid _traffic;
+    private readonly Button _planRow;
+    private readonly TextBlock _plan;
+    private readonly TextBlock _days;
+    private readonly Border _track;
+    private readonly Border _bar;
+    private readonly TextBlock _traffic;
+    private readonly TextBlock _devices;
+    private readonly StackPanel _account;
     private double _fraction;
-    private readonly ThemeBlock _banner;
-    private readonly Border _bannerBox;
-    private readonly ServerBrowser _browser;
+    private readonly Border _offer;
+    private readonly TextBlock _offerText;
+    private readonly Button _offerButton;
+    private readonly TextBlock _offerButtonText;
+    private readonly ForeignNote _foreign;
+    private readonly TextBlock _listCount;
+    private readonly Button _support;
+    private readonly StackPanel _rows = new();
+    private readonly ContentControl _listBody = new();
+    private readonly ScrollViewer _list;
     private readonly EmptyState _empty;
-    private readonly ContentControl _serversBody = new();
-    private readonly Border _card;
+    private readonly Border _sheet;
+    private string _rowsKey = string.Empty;
 
     private readonly ContentControl _host = new();
     private EditionSnapshot? _last;
@@ -50,159 +61,213 @@ public sealed class NeonScene : EditionScene
     {
         _t = theme;
         _c = colours;
-        _font = Scene.Geist;
 
-        var logoOnDark = Scene.Picture(partner, partner.Pack.Logo);
-        var logoOnLight = Scene.Picture(partner, partner.Pack.LogoOnLight) ?? logoOnDark;
-        var logo = _c.Dark ? logoOnDark : logoOnLight;
+        var logo = Scene.Picture(partner, _c.Dark ? partner.Pack.Logo : partner.Pack.LogoOnLight ?? partner.Pack.Logo);
         _brand = logo != null
             ? new Image { Source = logo, Height = 22, Stretch = Stretch.Uniform, HorizontalAlignment = HorizontalAlignment.Left, VerticalAlignment = VerticalAlignment.Center }
             : new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 9,
+                Spacing = 10,
                 VerticalAlignment = VerticalAlignment.Center,
-                Children =
-                {
-                    new Border
-                    {
-                        Width = 24,
-                        Height = 24,
-                        CornerRadius = new CornerRadius(7),
-                        Background = Scene.B(_c.Accent),
-                        Child = Scene.Text(partner.Name[..1].ToUpperInvariant(), 12, _c.OnAccent, _font, FontWeight.Bold).Also(t =>
-                        {
-                            t.HorizontalAlignment = HorizontalAlignment.Center;
-                            t.VerticalAlignment = VerticalAlignment.Center;
-                        }),
-                    },
-                    Scene.Text(partner.Name, 14.5, _c.Ink, _font, FontWeight.SemiBold),
-                },
+                Children = { Mark(partner.Name, 26), Scene.Text(partner.Name, 15, _c.Ink, _font, FontWeight.SemiBold) },
             };
-
         _mode = new ThemeSegment(_c.Raised, _c.Accent, _c.OnAccent, _c.Soft, _font, _ => new CornerRadius(999), actions, 32);
         _connect = new NeonConnect(theme.Connect, _c, actions, _font);
         _connect.RowClicked += anchor => ShowServers(anchor, _last);
 
-        _pill = Scene.Pill(_pillText, light: !_c.Dark);
-        _routeText = Scene.Text("", 12.5, _c.Soft, _font, FontWeight.Medium);
+        // The place and the state under Connect: big name, then a coloured dot with the state and the ping.
+        _flagBox = new Border { CornerRadius = new CornerRadius(4), ClipToBounds = true, Width = 24, Height = 17, Child = _flag, VerticalAlignment = VerticalAlignment.Center };
+        _title = Scene.Text("", 21, _c.Ink, _font, FontWeight.SemiBold);
+        _title.TextTrimming = TextTrimming.CharacterEllipsis;
+        _title.MaxWidth = 280;
+        _stateText = Scene.Text("", 12.5, _c.Soft, _font, FontWeight.Medium);
+        _pingText = Scene.Text("", 12.5, _c.Muted, _font);
+        _stateDot.VerticalAlignment = VerticalAlignment.Center;
+        _routeText = Scene.Text("", 12.5, _c.Ink, _font, FontWeight.Medium);
         _routeText.TextTrimming = TextTrimming.CharacterEllipsis;
+        _routeText.MaxWidth = 230;
         _route = Scene.Button(
             new StackPanel
             {
                 Orientation = Orientation.Horizontal,
-                Spacing = 6,
-                Children = { Scene.Text("⇄", 12.5, _c.AccentText, _font), _routeText, Scene.Text("▾", 11, _c.Soft, _font) },
+                Spacing = 8,
+                Children = { Scene.Text("⇄", 13, _c.AccentText, _font, FontWeight.SemiBold), _routeText, Scene.Text("▾", 10, _c.Muted, _font) },
             },
-            null, _c.Soft, 8, new Thickness(4, 4));
-        _route.MaxWidth = 250;
+            _c.Raised, _c.Ink, 999, new Thickness(14, 0), height: 32);
+        _route.HorizontalAlignment = HorizontalAlignment.Center;
         _route.Click += (_, _) => Actions.OpenRoute(_route);
         ToolTip.SetTip(_route, L.SceneRouteHint);
-
-        var surface = Palette(_c.Surface, _c.Raised);
-        _foreign = new ForeignNote(surface, actions);
-        _foreignCard = new Border { Background = Scene.B(_c.Surface), CornerRadius = new CornerRadius(14), Padding = new Thickness(14, 10), Child = _foreign };
-
-        // The subscription card: who and what plan, the traffic as a bar with its numbers in it, the banner, the servers.
-        _subTitle = Scene.Text(partner.Name, 14, _c.Ink, _font, FontWeight.SemiBold);
-        _subTitle.TextTrimming = TextTrimming.CharacterEllipsis;
-        _subMeta = Scene.Text("", 11.5, _c.Muted, _font);
-        _subMeta.TextTrimming = TextTrimming.CharacterEllipsis;
-        _trafficBar = new Border { CornerRadius = new CornerRadius(999), Background = Scene.B(_c.Accent), HorizontalAlignment = HorizontalAlignment.Left };
-        _trafficText = Scene.Text("", 10.5, _c.Ink, _font, FontWeight.SemiBold);
-        _trafficText.HorizontalAlignment = HorizontalAlignment.Center;
-        _trafficText.VerticalAlignment = VerticalAlignment.Center;
-        _trafficTrack = new Border
+        _place = new StackPanel
         {
-            Height = 16,
-            CornerRadius = new CornerRadius(999),
-            Background = Scene.B(_c.Raised),
-            ClipToBounds = true,
-            Child = new Panel { Children = { _trafficBar, _trafficText } },
-        };
-        _trafficTrack.SizeChanged += (_, _) => SizeBar();
-        _traffic = new Grid { Margin = new Thickness(14, 0, 14, 10), Children = { _trafficTrack } };
-
-        _banner = new ThemeBlock(ThemeBlock.Banner, _c, _c.Surface, _c.Raised, _font, actions, _ => new CornerRadius(8));
-        _bannerBox = new Border
-        {
-            Background = Scene.B(V2pnColor.Parse(_c.Accent).WithAlpha(_c.Dark ? 0.12 : 0.08)),
-            Padding = new Thickness(14, 10),
-            Child = _banner,
+            Spacing = 6,
+            HorizontalAlignment = HorizontalAlignment.Center,
+            Children =
+            {
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 10, HorizontalAlignment = HorizontalAlignment.Center, Children = { _flagBox, _title } },
+                new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7, HorizontalAlignment = HorizontalAlignment.Center, Children = { _stateDot, _stateText, _pingText } },
+            },
         };
 
-        var listPalette = Palette(_c.Surface, _c.Raised);
-        _browser = new ServerBrowser(listPalette, actions);
-        _empty = new EmptyState(listPalette, actions, partner.Name);
-        _serversBody.Margin = new Thickness(10, 10, 10, 6);
+        // The sheet: the plan and its days, the traffic as a thin line, the provider's offer, one list.
+        _plan = Scene.Text(partner.Name, 15, _c.Ink, _font, FontWeight.SemiBold);
+        _plan.TextTrimming = TextTrimming.CharacterEllipsis;
+        _days = Scene.Text("", 15, _c.AccentText, _font, FontWeight.SemiBold);
+        var planGrid = new Grid { ColumnDefinitions = new("*,Auto"), ColumnSpacing = 10 };
+        planGrid.Children.Add(_plan);
+        planGrid.Children.Add(_days.Also(d => Grid.SetColumn(d, 1)));
+        _planRow = Scene.Button(planGrid, null, _c.Ink, 8, default);
+        _planRow.HorizontalAlignment = HorizontalAlignment.Stretch;
+        _planRow.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        _planRow.Click += (_, _) => Open(_last?.Account?.CabinetUrl);
+        _bar = new Border { CornerRadius = new CornerRadius(2), Background = Scene.B(_c.Accent), HorizontalAlignment = HorizontalAlignment.Left };
+        _track = new Border { Height = 4, CornerRadius = new CornerRadius(2), Background = Scene.B(_c.Raised), ClipToBounds = true, Child = _bar };
+        _track.SizeChanged += (_, _) => SizeBar();
+        _traffic = Scene.Text("", 11.5, _c.Muted, _font);
+        _devices = Scene.Text("", 11.5, _c.Muted, _font);
+        _devices.HorizontalAlignment = HorizontalAlignment.Right;
+        var under = new Grid { ColumnDefinitions = new("*,Auto") };
+        under.Children.Add(_traffic);
+        under.Children.Add(_devices.Also(d => Grid.SetColumn(d, 1)));
+        _account = new StackPanel { Spacing = 8, Children = { _planRow, _track, under } };
 
-        var head = new StackPanel { Spacing = 2, Margin = new Thickness(14, 12, 14, 8), Children = { _subTitle, _subMeta } };
-        var cardGrid = new Grid { RowDefinitions = new("Auto,Auto,Auto,*") };
-        ServerBrowser.Put(cardGrid, head, 0, 0);
-        ServerBrowser.Put(cardGrid, _traffic, 1, 0);
-        ServerBrowser.Put(cardGrid, _bannerBox, 2, 0);
-        ServerBrowser.Put(cardGrid, _serversBody, 3, 0);
-        _card = new Border { Background = Scene.B(_c.Surface), ClipToBounds = true, Child = cardGrid };
+        _offerText = Scene.Text("", 12.5, _c.Ink, _font, FontWeight.Medium);
+        _offerText.TextWrapping = TextWrapping.Wrap;
+        _offerText.VerticalAlignment = VerticalAlignment.Center;
+        _offerButtonText = Scene.Text("", 12, _c.OnAccent, _font, FontWeight.SemiBold);
+        _offerButton = Scene.Button(_offerButtonText, _c.Accent, _c.OnAccent, 999, new Thickness(12, 0), height: 28);
+        _offerButton.VerticalAlignment = VerticalAlignment.Center;
+        _offerButton.Click += (_, _) => Open(_last?.Account?.Banner?.ButtonUrl ?? _last?.Account?.AnnounceUrl);
+        var offerGrid = new Grid { ColumnDefinitions = new("*,Auto"), ColumnSpacing = 12 };
+        offerGrid.Children.Add(_offerText);
+        offerGrid.Children.Add(_offerButton.Also(b => Grid.SetColumn(b, 1)));
+        _offer = new Border
+        {
+            CornerRadius = new CornerRadius(14),
+            Padding = new Thickness(14, 10, 10, 10),
+            Background = Scene.B(V2pnColor.Parse(_c.Accent).Over(V2pnColor.Parse(_c.Surface), _c.Dark ? 0.16 : 0.10).Hex),
+            Child = offerGrid,
+        };
+
+        var palette = new ScenePalette(_c.Surface, _c.Raised, _c.Ink, _c.Soft, _c.Muted, _c.Accent, _c.OnAccent, 12, _font, Good: _c.Good, Warn: _c.Warn, Bad: _c.Bad);
+        _foreign = new ForeignNote(palette, actions);
+        _empty = new EmptyState(palette, actions, partner.Name);
+
+        _listCount = Scene.Text("", 12, _c.Muted, _font);
+        _support = IconButton(Icon("SemiIconHelpCircleStroked"), L.SceneSupport, b => Open(_last?.Account?.SupportUrl));
+        var listHead = new Grid { ColumnDefinitions = new("Auto,*,Auto"), ColumnSpacing = 8 };
+        listHead.Children.Add(new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8,
+            VerticalAlignment = VerticalAlignment.Center,
+            Children = { Scene.Text(L.SceneServersTitle, 12.5, _c.Soft, _font, FontWeight.SemiBold), _listCount },
+        });
+        var tools = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 2,
+            Children =
+            {
+                IconButton(Icon("SemiIconPulse"), L.TestPingAll, _ => Actions.PingAll()),
+                IconButton(Icon("SemiIconRefresh"), L.UpdateAll, _ => Actions.UpdateSubscriptions()),
+                IconButton(Icon("SemiIconPlus"), L.SceneAddTip, b => Actions.Add(b)),
+                _support,
+            },
+        };
+        Grid.SetColumn(tools, 2);
+        listHead.Children.Add(tools);
+
+        _list = new ScrollViewer { Content = _rows, VerticalScrollBarVisibility = Avalonia.Controls.Primitives.ScrollBarVisibility.Auto, Margin = new Thickness(-6, 0) };
+        _listBody.Content = _list;
+
+        var sheetGrid = new Grid { RowDefinitions = new("Auto,Auto,Auto,Auto,*"), RowSpacing = 12, Margin = new Thickness(18, 16, 18, 6) };
+        ServerBrowser.Put(sheetGrid, _account, 0, 0);
+        ServerBrowser.Put(sheetGrid, _offer, 1, 0);
+        ServerBrowser.Put(sheetGrid, _foreign, 2, 0);
+        ServerBrowser.Put(sheetGrid, listHead.Also(h => h.Margin = new Thickness(0, 0, -6, -6)), 3, 0);
+        ServerBrowser.Put(sheetGrid, _listBody, 4, 0);
+        _sheet = new Border { Background = Scene.B(_c.Surface), ClipToBounds = true, Child = sheetGrid };
 
         Content = new ThemeVariantScope { RequestedThemeVariant = _c.Dark ? ThemeVariant.Dark : ThemeVariant.Light, Child = _host };
         Reflow(Fit.Narrow);
     }
 
-    private ScenePalette Palette(string ground, string raised) =>
-        new(ground, raised, _c.Ink, _c.Soft, _c.Muted, _c.Accent, _c.OnAccent, 12, _font, Good: _c.Good, Warn: _c.Warn, Bad: _c.Bad);
-
-    /// <summary>The ground with the accent's glow behind Connect, as INCY draws it.</summary>
-    private IBrush Glow(double y) => new RadialGradientBrush
+    private Border Mark(string name, double size) => new()
     {
-        Center = new RelativePoint(0.5, y, RelativeUnit.Relative),
-        GradientOrigin = new RelativePoint(0.5, y, RelativeUnit.Relative),
-        RadiusX = new RelativeScalar(0.75, RelativeUnit.Relative),
-        RadiusY = new RelativeScalar(0.42, RelativeUnit.Relative),
+        Width = size,
+        Height = size,
+        CornerRadius = new CornerRadius(size * 0.3),
+        Background = Scene.B(_c.Accent),
+        Child = Scene.Text(name[..1].ToUpperInvariant(), size * 0.48, _c.OnAccent, _font, FontWeight.Bold).Also(t =>
+        {
+            t.HorizontalAlignment = HorizontalAlignment.Center;
+            t.VerticalAlignment = VerticalAlignment.Center;
+        }),
+    };
+
+    private static Geometry? Icon(string key) => Application.Current?.FindResource(key) as Geometry;
+
+    private Button IconButton(Geometry? glyph, string tip, Action<Button> click)
+    {
+        Control content = glyph != null
+            ? new PathIcon { Width = 15, Height = 15, Data = glyph, Foreground = Scene.B(_c.Soft) }
+            : Scene.Text("•", 14, _c.Soft, _font);
+        var button = Scene.Button(content, null, _c.Soft, 999, default, height: 32);
+        button.Width = 32;
+        button.HorizontalContentAlignment = HorizontalAlignment.Center;
+        ToolTip.SetTip(button, tip);
+        Avalonia.Automation.AutomationProperties.SetName(button, tip);
+        button.Click += (_, _) => click(button);
+        return button;
+    }
+
+    private void Open(string? url)
+    {
+        if (url.IsNotEmpty())
+        {
+            Actions.OpenUrl(url!);
+        }
+    }
+
+    private void SizeBar() => _bar.Width = Math.Max(_fraction > 0 ? 6 : 0, _track.Bounds.Width * _fraction);
+
+    /// <summary>The ground: opaque (the plain window lies under the scene), with the accent's glow where Connect is.</summary>
+    private IBrush Ground(double x, double y, double radius) => new RadialGradientBrush
+    {
+        Center = new RelativePoint(x, y, RelativeUnit.Relative),
+        GradientOrigin = new RelativePoint(x, y, RelativeUnit.Relative),
+        RadiusX = new RelativeScalar(radius, RelativeUnit.Relative),
+        RadiusY = new RelativeScalar(radius * 0.62, RelativeUnit.Relative),
         GradientStops =
         {
-            // Opaque: the plain window lies under the scene and must never show through.
-            new GradientStop(Color.Parse(V2pnColor.Parse(_c.Accent).Over(V2pnColor.Parse(_c.Ground), _c.Dark ? 0.22 : 0.14).Hex), 0),
+            new GradientStop(Color.Parse(V2pnColor.Parse(_c.Accent).Over(V2pnColor.Parse(_c.Ground), _c.Dark ? 0.30 : 0.18).Hex), 0),
+            new GradientStop(Color.Parse(V2pnColor.Parse(_c.Accent).Over(V2pnColor.Parse(_c.Ground), _c.Dark ? 0.08 : 0.05).Hex), 0.45),
             new GradientStop(Color.Parse(_c.Ground), 1),
         },
     };
 
-    private void SizeBar() => _trafficBar.Width = Math.Max(_fraction > 0 ? 16 : 0, _trafficTrack.Bounds.Width * _fraction);
-
-    private Grid Head()
+    private Grid Head(double side)
     {
-        var row = new Grid { ColumnDefinitions = new("*,Auto"), ColumnSpacing = 12, Margin = new Thickness(16, 6, 16, 0) };
+        var row = new Grid { ColumnDefinitions = new("*,Auto"), ColumnSpacing = 12, Margin = new Thickness(side, 10, side, 0) };
         Put(row, _brand, 0, 0);
         _mode.VerticalAlignment = VerticalAlignment.Center;
         Put(row, _mode, 0, 1);
         return row;
     }
 
-    /// <summary>The state and the route under Connect.</summary>
-    private Control Under() => new StackPanel
+    /// <summary>Connect with the place, the state and the route under it.</summary>
+    private StackPanel Hero(double scale, bool compact = false)
     {
-        Orientation = Orientation.Horizontal,
-        Spacing = 10,
-        HorizontalAlignment = HorizontalAlignment.Center,
-        Children = { Take(_pill).Also(p => p.VerticalAlignment = VerticalAlignment.Center), Take(_route) },
-    };
-
-    /// <summary>Connect with the state and the route under it, and the provider's buttons.</summary>
-    private Control Hero(double scale)
-    {
-        _connect.Resize(scale);
-        var stack = new StackPanel { Spacing = 12, HorizontalAlignment = HorizontalAlignment.Stretch };
-        if (_t.Connect == V2pnThemeConnect.Toggle)
+        _connect.Resize(scale, compact);
+        var hero = new StackPanel { Spacing = 14, HorizontalAlignment = HorizontalAlignment.Stretch };
+        hero.Children.Add(Take(_connect).Also(c => c.Margin = _t.Connect == V2pnThemeConnect.Toggle ? new Thickness(16, 0) : default));
+        if (_t.Connect == V2pnThemeConnect.Round)
         {
-            stack.Children.Add(Take(_connect).Also(c => c.Margin = new Thickness(12, 0)));
+            hero.Children.Add(Take(_place));
         }
-        else
-        {
-            stack.Children.Add(Take(_connect));
-        }
-        stack.Children.Add(Under());
-        stack.Children.Add(Take(_buttons));
-        stack.Children.Add(Take(_foreignCard).Also(f => f.Margin = new Thickness(12, 0)));
-        return stack;
+        hero.Children.Add(Take(_route));
+        return hero;
     }
 
     protected override void Reflow(Fit fit)
@@ -210,36 +275,33 @@ public sealed class NeonScene : EditionScene
         var round = _t.Connect == V2pnThemeConnect.Round;
         if (fit == Fit.Narrow)
         {
-            // The phone: the column from top to bottom, the card to the window's bottom edge.
-            _card.CornerRadius = new CornerRadius(18, 18, 0, 0);
-            _card.Margin = new Thickness(12, 0);
-            var page = new Grid
-            {
-                RowDefinitions = new("Auto,Auto,*"),
-                RowSpacing = 12,
-                Background = Glow(round ? 0.22 : 0.12),
-            };
-            ServerBrowser.Put(page, Head(), 0, 0);
-            var hero = Hero(round ? 0.82 : 1);
-            hero.Margin = new Thickness(0, round ? 6 : 2, 0, 0);
+            // The phone: Connect in the upper half, the sheet rising from the bottom edge.
+            _sheet.CornerRadius = new CornerRadius(26, 26, 0, 0);
+            _sheet.Margin = default;
+            var page = new Grid { RowDefinitions = new("Auto,Auto,*"), Background = Ground(0.5, round ? 0.24 : 0.15, 0.75) };
+            ServerBrowser.Put(page, Head(18), 0, 0);
+            var hero = Hero(0.72, compact: true);
+            hero.Spacing = 10;
+            hero.Margin = new Thickness(0, round ? 4 : 18, 0, 16);
             ServerBrowser.Put(page, hero, 1, 0);
-            Put(page, _card, 2, 0);
+            Put(page, _sheet, 2, 0);
             _host.Content = page;
         }
         else
         {
-            // Wider: the column on the left with Connect in its middle, the card beside it.
-            _card.CornerRadius = new CornerRadius(18);
-            _card.Margin = new Thickness(0, 6, 14, 14);
-            var left = new Grid { RowDefinitions = new("Auto,*"), Background = Glow(0.45) };
-            ServerBrowser.Put(left, Head(), 0, 0);
-            var hero = Hero(fit == Fit.Wide ? 1.05 : 0.95);
+            // Wider: Connect in the middle of its own half, the sheet as a panel beside it.
+            _sheet.CornerRadius = new CornerRadius(24);
+            _sheet.Margin = new Thickness(0, 12, 12, 12);
+            var left = new Grid { RowDefinitions = new("Auto,*") };
+            ServerBrowser.Put(left, Head(24), 0, 0);
+            var hero = Hero(fit == Fit.Wide ? 1.1 : 1.0);
             hero.VerticalAlignment = VerticalAlignment.Center;
-            hero.MaxWidth = 440;
+            hero.MaxWidth = 420;
+            hero.Margin = new Thickness(0, 0, 0, 40);
             ServerBrowser.Put(left, hero, 1, 0);
-            var grid = new Grid { ColumnDefinitions = new(fit == Fit.Wide ? "*,460" : "*,400"), Background = Scene.B(_c.Ground) };
+            var grid = new Grid { ColumnDefinitions = new(fit == Fit.Wide ? "*,440" : "*,390"), Background = Ground(fit == Fit.Wide ? 0.33 : 0.26, 0.45, 0.5) };
             ServerBrowser.Put(grid, left, 0, 0);
-            Put(grid, _card, 0, 1);
+            Put(grid, _sheet, 0, 1);
             _host.Content = grid;
         }
         if (_last != null)
@@ -251,77 +313,155 @@ public sealed class NeonScene : EditionScene
     public override void Update(EditionSnapshot s)
     {
         _last = s;
-        Scene.SetPill(_pill, _pillText, s.StateKind, s.StateLabel);
         _connect.Update(s);
         _mode.Update(s.Vpn);
+        _flag.Source = V2pnConverters.Flag(s.CountryCode);
+        _flagBox.IsVisible = _flag.Source != null;
+        _title.Text = s.Title;
+        var state = StateColour(s.StateKind);
+        _stateDot.Fill = Scene.B(state);
+        _stateText.Text = s.StateLabel;
+        _stateText.Foreground = Scene.B(s.StateKind == "safe" ? _c.Good : _c.Soft);
+        _pingText.Text = s.Ping > 0 ? "· " + string.Format(L.ThemePingValue, s.Ping) : string.Empty;
         _routeText.Text = s.Route;
-        UpdateButtons(s);
-        _foreign.Update(s);
-        _foreignCard.IsVisible = _foreign.IsVisible;
 
         var account = s.Account;
-        _subTitle.Text = account?.Plan is { } plan ? $"{Partner.Name} · {plan}" : Partner.Name;
-        var meta = new[] { account?.Devices, account?.Expiry }.Where(x => x.IsNotEmpty()).ToList();
-        _subMeta.Text = meta.Count > 0 ? string.Join(" · ", meta) : string.Format(L.ThemeServerCount, s.Catalog.Count(x => s.PartnerSubIds.Contains(x.SubId ?? string.Empty)));
-        _subMeta.Foreground = Scene.B(account?.Bad == true ? _c.Bad : account?.Warn == true ? _c.Warn : _c.Muted);
-        _traffic.IsVisible = account?.Traffic != null;
-        _trafficText.Text = account?.Traffic ?? string.Empty;
+        _account.IsVisible = account != null;
+        _plan.Text = account?.Plan ?? Partner.Name;
+        // The days left in a word or two; a long term goes under the bar instead, so the plan keeps its room.
+        _days.Text = account?.DaysLeft is { } days ? $"{days} {L.DaysWord(days)}" : string.Empty;
+        _days.Foreground = Scene.B(account?.Bad == true ? _c.Bad : account?.Warn == true ? _c.Warn : _c.AccentText);
+        ToolTip.SetTip(_planRow, account?.CabinetUrl != null ? L.SceneCabinet : null);
+        _track.IsVisible = account?.ShowBar == true;
         _fraction = account?.ShowBar == true ? Math.Clamp(account.Fraction, 0, 1) : 0;
-        _trafficBar.Background = Scene.B(account?.Bad == true ? _c.Bad : account?.Warn == true ? _c.Warn : _c.Accent);
+        _bar.Background = Scene.B(account?.Bad == true ? _c.Bad : account?.Warn == true ? _c.Warn : _c.Accent);
         SizeBar();
-        _banner.Update(s);
-        _bannerBox.IsVisible = _banner.IsVisible;
-        ShowListOrEmpty(_serversBody, _browser, _empty, s);
+        _traffic.Text = account?.Traffic ?? (account?.DaysLeft == null ? account?.Expiry : null) ?? string.Empty;
+        _devices.Text = account?.Devices ?? string.Empty;
+        ToolTip.SetTip(_days, account?.Expiry);
+
+        // One offer at a time: the provider's incident, else its banner, else the panel's announcement.
+        var offer = account?.Incident ?? account?.Banner?.Text ?? account?.Announce;
+        _offer.IsVisible = offer.IsNotEmpty();
+        _offerText.Text = offer ?? string.Empty;
+        _offerText.Foreground = Scene.B(account?.Incident != null ? (account.IncidentSevere ? _c.Bad : _c.Warn) : _c.Ink);
+        var buttonText = account?.Incident != null ? null
+            : account?.Banner?.ButtonUrl != null ? account.Banner.ButtonText ?? L.SceneRenew
+            : account?.AnnounceUrl != null ? L.SceneMore : null;
+        _offerButton.IsVisible = buttonText != null;
+        _offerButtonText.Text = buttonText ?? string.Empty;
+
+        _foreign.Update(s);
+        _support.IsVisible = account?.SupportUrl != null;
+        UpdateRows(s);
     }
 
-    /// <summary>The provider's buttons and its cabinet and support, as quiet links under Connect.</summary>
-    private void UpdateButtons(EditionSnapshot s)
+    private string StateColour(string kind) => kind switch
     {
-        var cabinet = s.Account?.CabinetUrl;
-        var support = s.Account?.SupportUrl;
-        var key = s.ActionRunning + "|" + cabinet + "|" + support + "|" + string.Join("|", s.Actions.Select(a => a.Id + a.Label + a.Icon));
-        if (key == _buttonsKey)
+        "safe" => _c.Good,
+        "warn" or "checking" => _c.Warn,
+        _ => _c.Bad,
+    };
+
+    private string PingColour(int delay) => delay <= 0 ? _c.Muted : delay < 150 ? _c.Good : delay < 400 ? _c.Warn : _c.Bad;
+
+    /// <summary>The provider's buttons as the first rows, then its servers (every server when it has none of its own).</summary>
+    private void UpdateRows(EditionSnapshot s)
+    {
+        if (!s.AnyServers)
+        {
+            _empty.Update(s);
+            _listBody.Content = _empty;
+            _listCount.Text = string.Empty;
+            return;
+        }
+        _listBody.Content = _list;
+        var own = s.Catalog.Where(x => x.SubId != null && s.PartnerSubIds.Contains(x.SubId)).ToList();
+        var servers = (own.Count > 0 ? own : s.Catalog).Take(120).ToList();
+        _listCount.Text = servers.Count.ToString(CultureInfo.CurrentCulture);
+        var key = s.SelectedId + "|" + s.ActionRunning + "|" + string.Join(",", s.Actions.Select(a => a.Id + a.Label))
+            + "|" + string.Join(",", servers.Select(x => x.IndexId + ":" + x.Delay));
+        if (key == _rowsKey)
         {
             return;
         }
-        _buttonsKey = key;
-        _buttons.Children.Clear();
-        Button Link(Geometry? glyph, string label, Action<Button> click)
-        {
-            var content = new StackPanel { Orientation = Orientation.Horizontal, Spacing = 6 };
-            if (glyph != null)
-            {
-                content.Children.Add(new PathIcon { Width = 13, Height = 13, Data = glyph, Foreground = Scene.B(_c.AccentText), VerticalAlignment = VerticalAlignment.Center });
-            }
-            content.Children.Add(Scene.Text(label, 12.5, _c.Soft, _font, FontWeight.Medium));
-            var button = Scene.Button(content, null, _c.Soft, 8, new Thickness(2, 4));
-            Avalonia.Automation.AutomationProperties.SetName(button, label);
-            button.Click += (_, _) => click(button);
-            return button;
-        }
+        _rowsKey = key;
+        _rows.Children.Clear();
         foreach (var action in s.Actions)
         {
             var id = action.Id;
-            var button = Link(PartnerActionIcons.Of(action.Icon), action.Id == s.ActionRunning ? action.Label + " …" : action.Label, b => Actions.RunAction(id, b));
-            button.IsEnabled = s.ActionRunning == null || action.Id == s.ActionRunning;
-            _buttons.Children.Add(button);
+            var glyph = PartnerActionIcons.Of(action.Icon);
+            Control icon = new Border
+            {
+                Width = 26,
+                Height = 26,
+                CornerRadius = new CornerRadius(8),
+                Background = Scene.B(V2pnColor.Parse(_c.Accent).Over(V2pnColor.Parse(_c.Surface), _c.Dark ? 0.2 : 0.12).Hex),
+                Child = glyph != null
+                    ? new PathIcon { Width = 13, Height = 13, Data = glyph, Foreground = Scene.B(_c.AccentText) }
+                    : Scene.Text("›", 14, _c.AccentText, _font),
+            };
+            var row = Row(icon, action.Id == s.ActionRunning ? action.Label + " …" : action.Label, null, null, false, b => Actions.RunAction(id, b));
+            row.IsEnabled = s.ActionRunning == null || action.Id == s.ActionRunning;
+            _rows.Children.Add(row);
         }
-        if (cabinet != null)
+        if (s.Actions.Count > 0)
         {
-            _buttons.Children.Add(Link(null, L.SceneCabinet + " ↗", _ => Actions.OpenUrl(cabinet)));
+            _rows.Children.Add(new Border { Height = 1, Background = Scene.B(_c.Line), Margin = new Thickness(12, 6) });
         }
-        if (support != null)
+        foreach (var server in servers)
         {
-            _buttons.Children.Add(Link(null, L.SceneSupport + " ↗", _ => Actions.OpenUrl(support)));
+            var id = server.IndexId;
+            Control flag = new Border
+            {
+                Width = 26,
+                Height = 26,
+                Child = new Border
+                {
+                    Width = 22,
+                    Height = 16,
+                    CornerRadius = new CornerRadius(3),
+                    ClipToBounds = true,
+                    HorizontalAlignment = HorizontalAlignment.Center,
+                    VerticalAlignment = VerticalAlignment.Center,
+                    Child = V2pnConverters.Flag(server.Code) != null ? Scene.Flag(server.Code, 22, 16) : Scene.Globe(_c.Muted, 16).Also(g => g.IsVisible = true),
+                },
+            };
+            var ping = server.Delay > 0 ? string.Format(L.ThemePingValue, server.Delay) : server.Delay < 0 ? L.ThemePingDown : "—";
+            _rows.Children.Add(Row(flag, server.Name, server.Detail ?? server.Group, (ping, PingColour(server.Delay)), server.IndexId == s.SelectedId, _ => Actions.Select(id)));
         }
-        _buttons.IsVisible = _buttons.Children.Count > 0;
+    }
+
+    private Button Row(Control icon, string title, string? detail, (string Text, string Colour)? end, bool selected, Action<Button> click)
+    {
+        var name = Scene.Text(title, 13.5, _c.Ink, _font, selected ? FontWeight.SemiBold : FontWeight.Medium);
+        name.TextTrimming = TextTrimming.CharacterEllipsis;
+        var text = new StackPanel { Spacing = 1, VerticalAlignment = VerticalAlignment.Center, Children = { name } };
+        if (detail.IsNotEmpty())
+        {
+            text.Children.Add(Scene.Text(detail!, 11, _c.Muted, _font).Also(t => t.TextTrimming = TextTrimming.CharacterEllipsis));
+        }
+        var grid = new Grid { ColumnDefinitions = new("Auto,*,Auto"), ColumnSpacing = 12, MinHeight = 32 };
+        grid.Children.Add(icon.Also(i => i.VerticalAlignment = VerticalAlignment.Center));
+        grid.Children.Add(text.Also(t => Grid.SetColumn(t, 1)));
+        var tail = end is { } e
+            ? Scene.Text(e.Text, 12, e.Colour, Scene.Mono, FontWeight.Medium)
+            : Scene.Text("›", 16, _c.Muted, _font);
+        tail.VerticalAlignment = VerticalAlignment.Center;
+        grid.Children.Add(tail.Also(t => Grid.SetColumn(t, 2)));
+        var fill = selected ? V2pnColor.Parse(_c.Accent).Over(V2pnColor.Parse(_c.Surface), _c.Dark ? 0.16 : 0.09).Hex : null;
+        var button = Scene.Button(grid, fill, _c.Ink, 12, new Thickness(8, 6, 12, 6));
+        button.HorizontalAlignment = HorizontalAlignment.Stretch;
+        button.HorizontalContentAlignment = HorizontalAlignment.Stretch;
+        Avalonia.Automation.AutomationProperties.SetName(button, title);
+        button.Click += (_, _) => click(button);
+        return button;
     }
 }
 
 /// <summary>
-/// Neon's Connect. Round: a button in the card colour inside a ring of the provider's colours, the accent's glow behind
-/// it, the power sign and the place in it. Toggle: a row with the flag, the place and a switch. What it does and the
-/// state colours (the switch turns V2pn's green) are V2pn's.
+/// Neon's Connect. Round: a disc in two rings, the inner one in the brand colours, a soft glow behind, the power sign and
+/// what a press does inside. Toggle: a row with the flag, the place, the state and a switch that turns V2pn's green.
 /// </summary>
 public sealed class NeonConnect : UserControl
 {
@@ -331,18 +471,17 @@ public sealed class NeonConnect : UserControl
     private readonly Button _button;
     private readonly Border _fill;
     private readonly Ellipse _ring = new() { StrokeThickness = 3, IsHitTestVisible = false };
-    private readonly Ellipse _glow = new() { IsHitTestVisible = false };
-    private readonly Panel _round;
+    private readonly Ellipse _halo = new() { StrokeThickness = 1, IsHitTestVisible = false };
+    private readonly Panel _round = new();
     private readonly Avalonia.Controls.Shapes.Path _power;
     private readonly TextBlock _caption;
-    private readonly TextBlock _place;
     private readonly Border _thumb = new();
     private readonly Image _flag = Scene.Flag(null, 34, 24);
     private readonly Border _flagBox;
     private readonly PathIcon _globe;
     private readonly TextBlock _title;
     private readonly TextBlock _subtitle;
-    private readonly Button? _row;
+    private readonly Ellipse _dot = new() { Width = 7, Height = 7, VerticalAlignment = VerticalAlignment.Center };
 
     /// <summary>The toggle row was clicked away from its switch: the scene shows the servers.</summary>
     public event Action<Control>? RowClicked;
@@ -352,103 +491,118 @@ public sealed class NeonConnect : UserControl
         _style = style;
         _c = c;
         _actions = actions;
+        var accent = V2pnColor.Parse(c.AccentText);
+        var second = V2pnColor.Parse(c.Secondary);
         _power = Scene.Power(c.AccentText, 34);
-        _caption = Scene.Text("", 11, c.Ink, font, FontWeight.SemiBold);
+        _power.HorizontalAlignment = HorizontalAlignment.Center;
+        _caption = Scene.Text("", 10.5, c.Soft, font, FontWeight.SemiBold);
         _caption.HorizontalAlignment = HorizontalAlignment.Center;
-        _caption.LetterSpacing = 1;
-        _place = Scene.Text("", 11.5, c.Soft, font);
-        _place.HorizontalAlignment = HorizontalAlignment.Center;
-        _place.TextTrimming = TextTrimming.CharacterEllipsis;
-        _globe = Scene.Globe(c.Soft, 20);
+        _caption.LetterSpacing = 1.6;
+        _globe = Scene.Globe(c.Soft, 22);
         _flagBox = new Border { CornerRadius = new CornerRadius(5), ClipToBounds = true, Width = 34, Height = 24, Child = _flag, VerticalAlignment = VerticalAlignment.Center };
-        _title = Scene.Text("", 16.5, c.Ink, font, FontWeight.SemiBold);
+        _title = Scene.Text("", 17, c.Ink, font, FontWeight.SemiBold);
         _title.TextTrimming = TextTrimming.CharacterEllipsis;
         _subtitle = Scene.Text("", 12, c.Soft, font);
         _subtitle.TextTrimming = TextTrimming.CharacterEllipsis;
 
-        var accent = V2pnColor.Parse(c.AccentText);
-        var second = V2pnColor.Parse(c.Secondary);
         if (style == V2pnThemeConnect.Toggle)
         {
             _button = Scene.Button(_thumb, c.Raised, c.Ink, 999, new Thickness(3));
             _fill = (Border)_button.Content!;
-            _button.Width = 58;
+            _button.Width = 60;
             _button.Height = 34;
+            _button.VerticalAlignment = VerticalAlignment.Center;
             _thumb.Width = _thumb.Height = 28;
             _thumb.CornerRadius = new CornerRadius(14);
             _thumb.VerticalAlignment = VerticalAlignment.Center;
-            _thumb.BoxShadow = BoxShadows.Parse("0 2 4 0 #40000000");
+            _thumb.Background = Brushes.White;
+            _thumb.BoxShadow = BoxShadows.Parse("0 2 5 0 #40000000");
             _button.Click += (_, _) => _actions.ToggleConnect();
-            var grid = new Grid { ColumnDefinitions = new("Auto,*,Auto"), ColumnSpacing = 14 };
+            var grid = new Grid { ColumnDefinitions = new("Auto,*"), ColumnSpacing = 14 };
             grid.Children.Add(new Panel { VerticalAlignment = VerticalAlignment.Center, Children = { _flagBox, _globe } });
-            var text = new StackPanel { Spacing = 2, VerticalAlignment = VerticalAlignment.Center, Children = { _title, _subtitle } };
-            Grid.SetColumn(text, 1);
-            grid.Children.Add(text);
+            var text = new StackPanel
+            {
+                Spacing = 3,
+                VerticalAlignment = VerticalAlignment.Center,
+                Children = { _title, new StackPanel { Orientation = Orientation.Horizontal, Spacing = 7, Children = { _dot, _subtitle } } },
+            };
+            grid.Children.Add(text.Also(t => Grid.SetColumn(t, 1)));
             var place = Scene.Button(grid, null, c.Ink, 12, default);
             place.HorizontalAlignment = HorizontalAlignment.Stretch;
             place.HorizontalContentAlignment = HorizontalAlignment.Stretch;
             place.Click += (_, _) => RowClicked?.Invoke(place);
-            _row = place;
+            ToolTip.SetTip(place, L.SceneChange);
             var row = new Grid { ColumnDefinitions = new("*,Auto"), ColumnSpacing = 12 };
             row.Children.Add(place);
-            Grid.SetColumn(_button, 1);
-            _button.VerticalAlignment = VerticalAlignment.Center;
-            row.Children.Add(_button);
-            _round = new Panel();
-            Content = new Border { Background = Scene.B(c.Surface), CornerRadius = new CornerRadius(18), Padding = new Thickness(16, 14), Child = row };
+            row.Children.Add(_button.Also(b => Grid.SetColumn(b, 1)));
+            Content = new Border
+            {
+                Background = Scene.B(c.Surface),
+                CornerRadius = new CornerRadius(20),
+                Padding = new Thickness(16, 16),
+                BoxShadow = BoxShadows.Parse(c.Dark ? "0 10 30 -12 #80000000" : "0 10 30 -14 #40202040"),
+                Child = row,
+            };
             return;
         }
 
-        var inner = new StackPanel { Spacing = 5, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Children = { _power, _caption, _place } };
-        _power.HorizontalAlignment = HorizontalAlignment.Center;
-        _button = Scene.Button(inner, c.Surface, c.Ink, 999, default, border: accent.WithAlpha(c.Dark ? 0.45 : 0.35));
+        var inner = new StackPanel { Spacing = 8, HorizontalAlignment = HorizontalAlignment.Center, VerticalAlignment = VerticalAlignment.Center, Children = { _power, _caption } };
+        var top = V2pnColor.Parse(c.Surface).Mix(V2pnColor.White, c.Dark ? 0.06 : 0.0);
+        var bottom = V2pnColor.Parse(c.Surface).Mix(V2pnColor.Black, c.Dark ? 0.12 : 0.05);
+        _button = Scene.Button(inner, c.Surface, c.Ink, 999, default, border: accent.WithAlpha(c.Dark ? 0.28 : 0.2));
         _fill = (Border)_button.Content!;
+        _fill.Background = new LinearGradientBrush
+        {
+            StartPoint = new RelativePoint(0.5, 0, RelativeUnit.Relative),
+            EndPoint = new RelativePoint(0.5, 1, RelativeUnit.Relative),
+            GradientStops = { new GradientStop(Color.Parse(top.Hex), 0), new GradientStop(Color.Parse(bottom.Hex), 1) },
+        };
+        _fill.BoxShadow = BoxShadows.Parse(c.Dark ? "0 18 40 -12 #A0000000" : "0 18 36 -16 #50202040");
         _button.Click += (_, _) => _actions.ToggleConnect();
         _ring.Stroke = new ConicGradientBrush
         {
             Center = new RelativePoint(0.5, 0.5, RelativeUnit.Relative),
-            Angle = 200,
+            Angle = 210,
             GradientStops =
             {
                 new GradientStop(Color.Parse(accent.Hex), 0),
-                new GradientStop(Color.Parse(second.Hex), 0.45),
-                new GradientStop(Color.Parse(accent.WithAlpha(0.25)), 0.75),
+                new GradientStop(Color.Parse(second.Hex), 0.5),
+                new GradientStop(Color.Parse(accent.WithAlpha(0.15)), 0.8),
                 new GradientStop(Color.Parse(accent.Hex), 1),
             },
         };
-        _glow.Fill = new RadialGradientBrush
+        _halo.Stroke = Scene.B(accent.WithAlpha(c.Dark ? 0.16 : 0.14));
+        // The glow is the scene's ground (NeonScene.Ground), so nothing here can clip it.
+        foreach (var part in new Control[] { _halo, _ring, _button })
         {
-            GradientStops =
-            {
-                new GradientStop(Color.Parse(accent.WithAlpha(c.Dark ? 0.42 : 0.26)), 0),
-                new GradientStop(Color.Parse(accent.WithAlpha(0)), 1),
-            },
-        };
-        _round = new Panel { HorizontalAlignment = HorizontalAlignment.Center, Children = { _glow, _ring, _button } };
-        _glow.HorizontalAlignment = _ring.HorizontalAlignment = _button.HorizontalAlignment = HorizontalAlignment.Center;
-        _glow.VerticalAlignment = _ring.VerticalAlignment = _button.VerticalAlignment = VerticalAlignment.Center;
+            part.HorizontalAlignment = HorizontalAlignment.Center;
+            part.VerticalAlignment = VerticalAlignment.Center;
+            _round.Children.Add(part);
+        }
+        _round.HorizontalAlignment = HorizontalAlignment.Center;
         Content = _round;
         Resize(1);
     }
 
-    /// <summary>Grows or shrinks the round button with the window (1 is 146 px); the toggle row keeps its size.</summary>
-    public void Resize(double scale)
+    /// <summary>
+    /// Grows or shrinks the round button with the window (1 is 150 px); <paramref name="compact"/> (the mini window)
+    /// drops the outer halo to give the list below its room. The toggle row keeps its size.
+    /// </summary>
+    public void Resize(double scale, bool compact = false)
     {
         if (_style == V2pnThemeConnect.Toggle)
         {
             return;
         }
-        var size = Math.Round(146 * scale);
+        var size = Math.Round(150 * scale);
         _button.Width = _button.Height = size;
         _button.CornerRadius = _fill.CornerRadius = new CornerRadius(size / 2);
-        _ring.Width = _ring.Height = size + 32;
-        _glow.Width = _glow.Height = size + 120;
-        // The glow spills over the parts around it without pushing them away.
-        _glow.Margin = new Thickness(-44);
-        _round.Width = _round.Height = size + 32;
-        _power.Width = _power.Height = Math.Round(size * 0.24);
-        _power.StrokeThickness = Math.Max(2.4, size / 50);
-        _place.MaxWidth = size - 24;
+        _ring.Width = _ring.Height = size + 24;
+        _halo.Width = _halo.Height = size + 54;
+        _halo.IsVisible = !compact;
+        _round.Width = _round.Height = compact ? size + 28 : size + 54;
+        _power.Width = _power.Height = Math.Round(size * 0.26);
+        _power.StrokeThickness = Math.Max(2.4, size / 48);
     }
 
     public void Update(EditionSnapshot s)
@@ -457,28 +611,22 @@ public sealed class NeonConnect : UserControl
         _button.IsEnabled = s.HasServer;
         Avalonia.Automation.AutomationProperties.SetName(_button, s.ConnectLabel);
         ToolTip.SetTip(_button, s.StateLabel);
-        var place = s.Ping > 0 ? $"{s.Title} · {string.Format(L.ThemePingValue, s.Ping)}" : s.Title;
+        var state = s.StateKind switch { "safe" => _c.Good, "warn" or "checking" => _c.Warn, _ => (string?)null };
         if (_style == V2pnThemeConnect.Toggle)
         {
             _flag.Source = V2pnConverters.Flag(s.CountryCode);
             _flagBox.IsVisible = _flag.Source != null;
             _globe.IsVisible = _flag.Source == null;
             _title.Text = s.Title;
-            _subtitle.Text = s.Ping > 0 ? $"{s.StateLabel} · {string.Format(L.ThemePingValue, s.Ping)}" : s.Subtitle;
-            // The switch is V2pn's green while it protects, its amber while it checks or protects only in part.
-            var state = s.StateKind switch { "safe" => _c.Good, "warn" => _c.Warn, "checking" => _c.Muted, _ => null };
+            _subtitle.Text = s.Ping > 0 ? $"{s.StateLabel} · {string.Format(L.ThemePingValue, s.Ping)}" : s.StateLabel;
+            _dot.Fill = Scene.B(state ?? _c.Bad);
             _fill.Background = Scene.B(on ? state ?? _c.Muted : _c.Line);
-            _thumb.Background = Brushes.White;
             _thumb.HorizontalAlignment = on ? HorizontalAlignment.Right : HorizontalAlignment.Left;
-            if (_row != null)
-            {
-                ToolTip.SetTip(_row, L.SceneChange);
-            }
             return;
         }
         _caption.Text = s.ConnectLabel.ToUpperInvariant();
-        _place.Text = place;
-        _place.IsVisible = s.HasServer;
+        // While it protects, the power sign takes V2pn's green: the brand ring stays, the state is V2pn's.
+        _power.Stroke = Scene.B(state == _c.Good ? _c.Good : _c.AccentText);
     }
 }
 

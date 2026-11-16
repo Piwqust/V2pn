@@ -3,10 +3,8 @@ namespace v2rayN.Desktop;
 // A provider's looks (Views/Editions/NeonScene.cs, the Pass card): their blocks and rows.
 public static partial class L
 {
-    public static string ThemeMore => T("More", "Подробнее");
     public static string ThemePingValue => T("{0} ms", "{0} мс");
 
-    public static string ThemeServerCount => T("{0} servers", "Серверов: {0}");
 
     /// <summary>"days" after a number on the Pass card, in the plural form the language needs.</summary>
     public static string DaysWord(int n)
@@ -20,4 +18,7 @@ public static partial class L
     }
 
     public static string PassTraffic => T("Traffic", "Трафик");
+    public static string SceneServersTitle => T("Servers", "Серверы");
+    public static string ThemePingDown => T("down", "нет связи");
+    public static string SceneMore => T("More", "Подробнее");
 }

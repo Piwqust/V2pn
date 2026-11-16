@@ -672,6 +672,8 @@ public partial class MainWindow : IEditionActions
         {
             return;
         }
+        // The mini window has no room under Connect for the card (its status card goes too).
+        passHost.IsVisible = _tier != BodyTier.Stacked;
         var status = contentStatusBarView.IsVisible && contentStatusBarView.Bounds.Height > 0 ? contentStatusBarView.Bounds.Height + 12 : 0;
         passHost.Margin = new Thickness(16, 0, 16, 16 + status);
         _passCard.Arrange(wide: passHost.Bounds.Width >= 540 || (passHost.Bounds.Width == 0 && _tier != BodyTier.Stacked));

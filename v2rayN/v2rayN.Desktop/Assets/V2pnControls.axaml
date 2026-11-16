@@ -548,6 +548,57 @@
         </Style>
     </ControlTheme>
 
+    <!--
+        The title bar's tabs, V2pn's and each partner's the person came from (MainWindow.Tabs.cs): pills on a soft track,
+        the open one lifted like the dialog tabs. No weight change when one opens, so the strip never shifts.
+    -->
+    <ControlTheme x:Key="V2TitleTab" TargetType="Button">
+        <Setter Property="Background" Value="Transparent" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="Medium" />
+        <Setter Property="Padding" Value="10,0" />
+        <Setter Property="Height" Value="28" />
+        <Setter Property="MinWidth" Value="28" />
+        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="VerticalContentAlignment" Value="Center" />
+        <Setter Property="Template">
+            <ControlTemplate>
+                <Border
+                    Name="PART_Chip"
+                    Background="{TemplateBinding Background}"
+                    CornerRadius="{TemplateBinding CornerRadius}">
+                    <ContentPresenter
+                        Name="PART_ContentPresenter"
+                        Padding="{TemplateBinding Padding}"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Center"
+                        Content="{TemplateBinding Content}"
+                        Foreground="{TemplateBinding Foreground}" />
+                </Border>
+            </ControlTemplate>
+        </Setter>
+        <Style Selector="^:pointerover">
+            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        </Style>
+        <Style Selector="^:pointerover /template/ Border#PART_Chip">
+            <Setter Property="Background" Value="{DynamicResource V2Hover}" />
+        </Style>
+        <Style Selector="^:pressed /template/ Border#PART_Chip">
+            <Setter Property="Background" Value="{DynamicResource V2Pressed}" />
+        </Style>
+        <Style Selector="^.open">
+            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        </Style>
+        <Style Selector="^.open /template/ Border#PART_Chip">
+            <Setter Property="Background" Value="{DynamicResource V2ChipFill}" />
+            <Setter Property="BoxShadow" Value="{DynamicResource V2ChipShadow}" />
+        </Style>
+        <Style Selector="^:focus-visible /template/ Border#PART_Chip">
+            <Setter Property="BoxShadow" Value="{DynamicResource V2FocusShadow}" />
+        </Style>
+    </ControlTheme>
+
     <ControlTheme x:Key="V2TabControl" TargetType="TabControl">
         <Setter Property="ItemContainerTheme" Value="{StaticResource V2TabItem}" />
         <Setter Property="ItemsPanel">

@@ -2,8 +2,9 @@ using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
-// A partner's reviewed routing.json as one more mode of "What goes through the VPN" (V2pnPartnerRoutes), and its
-// reviewed connection settings, which the core picks up on the next reload.
+// A partner's reviewed routing.json as one more mode of "What goes through the VPN" (V2pnPartnerRoutes) while its tab is
+// open, and its reviewed connection settings, which the core picks up on the next reload. V2pn's tab has no partner's
+// mode: leaving a partner's tab takes its mode out, and V2pn's "Everything through VPN" takes its place if it was on.
 public partial class MainWindow
 {
     private string? _partnerRouteId;
@@ -20,7 +21,7 @@ public partial class MainWindow
                 await SelectPartnerRouteAsync(id);
             }
         };
-        // A partner added, refreshed, unlinked, expired or revoked: its preset follows.
+        // A partner added, refreshed, unlinked, expired or revoked, or another tab opened: the presets follow.
         V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(() => _ = SyncPartnerRoutesAsync(refresh: true));
         V2pnPartnerTraffics.Changed += subId => Dispatcher.UIThread.Post(() => OnPartnerTrafficChanged(subId));
     }
@@ -37,7 +38,7 @@ public partial class MainWindow
         try
         {
             await V2pnPartners.Instance.LoadAsync();
-            var changes = await V2pnPartnerRoutes.SyncAsync(_config, V2pnPartners.Instance.All);
+            var changes = await V2pnPartnerRoutes.SyncAsync(_config, V2pnPartners.Instance.All.Where(p => V2pnPartners.Instance.Edition.IsOpen(p.Id)));
             if (changes.Any && refresh)
             {
                 await status.RefreshRoutingsMenu();

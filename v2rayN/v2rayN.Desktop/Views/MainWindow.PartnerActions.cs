@@ -78,7 +78,8 @@ public partial class MainWindow
 
     private void RefreshPartnerActionBar()
     {
-        var partner = Editions.IsForced ? Editions.Partner : V2pnLocks.Instance.PartnerOf(_barSubId);
+        // The partner's buttons belong to its tab, whatever server is selected there.
+        var partner = Editions.Partner;
         _barPartner = partner;
         _actionsBar?.Show(partner, RunningAction(partner));
         if (partner != null && IsVisible)

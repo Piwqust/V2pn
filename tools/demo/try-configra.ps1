@@ -1,23 +1,25 @@
 <#
 .SYNOPSIS
-  Configra in a test V2pn on this computer: the demo of Configra's site with its real pack, before Configra is deployed.
+  Configra in a test V2pn on this computer: the demo of Configra's site with its pack from partners/configra, before
+  Configra is deployed.
 
 .DESCRIPTION
   Starts Configra's demo site (branch claude/v2pn-partner, in a worktree under %TEMP%) on http://127.0.0.1:32620/,
   hidden, and opens a test V2pn on the screen with Configra's demo subscription offered through a v2pn://add link.
 
-  The pack is Configra's own (web/public/v2pn), with two changes for this computer: its API and cabinet point at the
-  demo, signed again with Configra's key (~/.configra/v2pn-partner-key.pem), and a certificate for 127.0.0.1 and
-  localhost for 30 days, issued with the partner root key (~/.v2pn/partner-root-key.pem). V2pn takes a partner over
-  plain http from this computer only in a development build, so the test V2pn is a Debug build of this tree.
+  The pack is partners/configra with two changes for this computer: its API and cabinet point at the demo, and its
+  listing names 127.0.0.1 and localhost for 30 days. It is published (tools/partner.cs publish --local) with a test
+  root key made here, never the real one, and served as a releases page on http://127.0.0.1:32621/ (hidden). The test
+  V2pn is a Debug build of this tree that trusts the test root and asks that page for releases: V2pn takes a partner
+  over plain http from this computer only in a development build.
 
-  The demo's servers are made up (example.com): the looks, the plan, the intro and the switcher work, connecting does not.
+  The demo's servers are made up (example.com): the look and the plan work, connecting does not.
   Nothing touches the V2pn you use: the test copy keeps its own data and other ports and leaves the system proxy alone.
 
 .EXAMPLE
-  tools/demo/try-configra.ps1            # build, sign, start everything
+  tools/demo/try-configra.ps1            # build, publish, start everything
   tools/demo/try-configra.ps1 -NoBuild   # restart quickly with the last builds
-  tools/demo/try-configra.ps1 -Fresh     # as a computer that has never seen Configra: the intro again
+  tools/demo/try-configra.ps1 -Fresh     # as a computer that has never seen Configra
   tools/demo/try-configra.ps1 -Stop      # close the test V2pn and the demo
 #>
 param(
@@ -38,15 +40,19 @@ $dotnet = Join-Path $env:USERPROFILE '.dotnet10\dotnet.exe'
 if (-not (Test-Path $dotnet)) { $dotnet = 'dotnet' }
 $app = Join-Path $Dir 'sandbox'
 $pidFile = Join-Path $Dir 'demo.pid'
+$releasesPidFile = Join-Path $Dir 'releases.pid'
 $port = 32620
 $origin = "http://127.0.0.1:$port"
+$releases = 'http://127.0.0.1:32621'
 $branch = 'claude/v2pn-partner'
 $worktree = Join-Path $env:TEMP 'configra-v2pn-wt'
 
 function Stop-Demo {
-    if (Test-Path $pidFile) {
-        Stop-Process -Id ([int](Get-Content $pidFile)) -Force -ErrorAction SilentlyContinue
-        Remove-Item $pidFile -Force
+    foreach ($file in $pidFile, $releasesPidFile) {
+        if (Test-Path $file) {
+            Stop-Process -Id ([int](Get-Content $file)) -Force -ErrorAction SilentlyContinue
+            Remove-Item $file -Force
+        }
     }
     # A demo left from an earlier run holds the port; Get-NetTCPConnection does not always see node's listener.
     Get-CimInstance Win32_Process -Filter "Name='node.exe'" -ErrorAction SilentlyContinue |
@@ -80,40 +86,61 @@ foreach ($sub in @('', 'web')) {
     }
 }
 
+# The test root: the private half signs the index, the public half goes into the build.
+$rootPem = Join-Path $Dir 'root.pem'
+$rootPubFile = Join-Path $Dir 'root.pub'
+if (-not (Test-Path $rootPem)) {
+    $gen = Join-Path $Dir 'new-key.cs'
+    Set-Content -Encoding utf8 $gen 'using System.Security.Cryptography; using var k = ECDsa.Create(ECCurve.NamedCurves.nistP256); System.IO.File.WriteAllText(args[0], k.ExportPkcs8PrivateKeyPem()); System.Console.WriteLine(System.Convert.ToBase64String(k.ExportSubjectPublicKeyInfo()));'
+    $out = & $dotnet run $gen -- $rootPem
+    if ($LASTEXITCODE -ne 0) { throw 'the test root key was not made' }
+    ($out | Where-Object { $_.Trim() } | Select-Object -Last 1).Trim() | Set-Content -Encoding ascii $rootPubFile
+}
+$rootPub = (Get-Content $rootPubFile -Raw).Trim()
+
 $dist = Join-Path $worktree 'web\dist'
-if (-not $NoBuild -or -not (Test-Path (Join-Path $dist 'index.html'))) {
+if (-not $NoBuild -or -not (Test-Path (Join-Path $dist 'index.html')) -or -not (Test-Path (Join-Path $Dir 'build\V2pn.exe'))) {
     Write-Host "2/5 building Configra's site and the test V2pn (a few minutes the first time)"
     Push-Location $worktree
     npm run build:web *> (Join-Path $Dir 'web-build.log')
     $webOk = $LASTEXITCODE -eq 0
     Pop-Location
     if (-not $webOk) { throw "Configra's site did not build; see $Dir\web-build.log" }
-    & $dotnet build (Join-Path $repo 'v2rayN\v2rayN.Desktop\v2rayN.Desktop.csproj') -c Debug -nologo -v q -o (Join-Path $Dir 'build')
+    $project = Join-Path $repo 'v2rayN\v2rayN.Desktop\v2rayN.Desktop.csproj'
+    & $dotnet build $project -c Debug -nologo -v q "-p:V2pnPartnerKeys=$rootPub" "-p:V2pnUpdateSources=$releases" -o (Join-Path $Dir 'build')
     if ($LASTEXITCODE -ne 0) { throw 'V2pn did not build' }
+    # The shared obj folder now holds the test key and source; build once more so the normal Debug build has the real ones.
+    & $dotnet build $project -c Debug -nologo -v q | Out-Null
 }
 
-Write-Host '3/5 the pack for 127.0.0.1'
+Write-Host '3/5 publishing partners/configra for 127.0.0.1 with the test root'
 $site = Join-Path $Dir 'site'
 if (Test-Path $site) { Remove-Item -Recurse -Force $site }
 Copy-Item -Recurse $dist $site
-$pack = Join-Path $site 'v2pn'
+$partners = Join-Path $Dir 'partners'
+$pack = Join-Path $partners 'configra'
+if (Test-Path $partners) { Remove-Item -Recurse -Force $partners }
+New-Item -ItemType Directory -Force $partners | Out-Null
+Copy-Item -Recurse (Join-Path $repo 'partners\configra') $pack
+$utf8 = New-Object Text.UTF8Encoding $false
 $packFile = Join-Path $pack 'partner.json'
-$json = Get-Content $packFile -Raw -Encoding utf8
-$json = $json -replace 'https://angleford\.co', $origin
-[IO.File]::WriteAllText($packFile, $json, (New-Object Text.UTF8Encoding $false))
-Push-Location $worktree
-node scripts/v2pn-pack.mjs --dir $pack
-$packOk = $LASTEXITCODE -eq 0
-Pop-Location
-if (-not $packOk) { throw "Configra's pack was not signed (needs ~/.configra/v2pn-partner-key.pem)" }
-$configraKey = (Get-Content (Join-Path $pack 'cert.json') -Raw | ConvertFrom-Json).key
-& $dotnet run $partnerTool -- cert --partner configra --name Configra --domains 127.0.0.1,localhost --key $configraKey `
-    --grants edition,account --days 30 --out $pack
-if ($LASTEXITCODE -ne 0) { throw 'the certificate for 127.0.0.1 was not issued (needs ~/.v2pn/partner-root-key.pem)' }
+[IO.File]::WriteAllText($packFile, ((Get-Content $packFile -Raw -Encoding utf8) -replace 'https://angleford\.co', $origin), $utf8)
+$listingFile = Join-Path $pack 'listing.json'
+$listing = Get-Content $listingFile -Raw -Encoding utf8 | ConvertFrom-Json
+$listing.domains = @('127.0.0.1', 'localhost')
+$listing.until = (Get-Date).AddDays(30).ToString('yyyy-MM-dd')
+[IO.File]::WriteAllText($listingFile, ($listing | ConvertTo-Json), $utf8)
+$download = Join-Path $Dir 'releases\latest\download'
+& $dotnet run $partnerTool -- publish --partners $partners --out $download --root-key $rootPem --local | Out-Null
+# 3: the app's real keys do not take the test root, as expected.
+if ($LASTEXITCODE -notin 0, 3 -or -not (Test-Path (Join-Path $download 'partners.json'))) { throw 'publish failed' }
 
-Write-Host "4/5 starting Configra's demo on $origin/ (hidden)"
+Write-Host "4/5 starting Configra's demo on $origin/ and the releases page on $releases/ (hidden)"
 & $sandbox -Dest $app -Stop | Out-Null
 Stop-Demo
+$page = Start-Process python -ArgumentList @('-I', '-m', 'http.server', '32621', '--bind', '127.0.0.1', '--directory', (Join-Path $Dir 'releases')) `
+    -WindowStyle Hidden -PassThru -RedirectStandardOutput (Join-Path $Dir 'releases.log') -RedirectStandardError (Join-Path $Dir 'releases.err')
+$page.Id | Set-Content $releasesPidFile
 $env:CONFIGRA_WEB_DIST = $site
 $demo = Start-Process node -ArgumentList 'scripts/demo-server.mjs' -WorkingDirectory $worktree -WindowStyle Hidden -PassThru `
     -RedirectStandardOutput (Join-Path $Dir 'demo.log') -RedirectStandardError (Join-Path $Dir 'demo.err')
@@ -124,9 +151,9 @@ $up = $false
 $web = New-Object Net.WebClient
 $web.Proxy = $null
 foreach ($i in 1..30) {
-    try { $web.DownloadString("$origin/v2pn/partner.json") | Out-Null; $up = $true; break } catch { Start-Sleep -Milliseconds 500 }
+    try { $web.DownloadString("$origin/") | Out-Null; $web.DownloadString("$releases/latest/download/partners.json") | Out-Null; $up = $true; break } catch { Start-Sleep -Milliseconds 500 }
 }
-if (-not $up) { throw "the demo did not start; see $Dir\demo.err" }
+if (-not $up) { throw "the demo or the releases page did not start; see $Dir\demo.err and $Dir\releases.err" }
 
 Write-Host '5/5 opening the test V2pn'
 $liveBin = Join-Path $env:LOCALAPPDATA 'Programs\V2pn\bin'
@@ -135,7 +162,6 @@ $liveBin = Join-Path $env:LOCALAPPDATA 'Programs\V2pn\bin'
 $gui = Join-Path $app 'guiConfigs'
 if ($Fresh) {
     Remove-Item -Recurse -Force (Join-Path $gui 'partners') -ErrorAction SilentlyContinue
-    Remove-Item -Force (Join-Path $gui 'V2pnEdition.json') -ErrorAction SilentlyContinue
 }
 $link = 'v2pn://add?url=' + [Uri]::EscapeDataString("$origin/s/demo-token") + '&name=Configra'
 if ($Hidden) { & $sandbox -Dest $app -Launch -AppArgs $link | Out-Null }

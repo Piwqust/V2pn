@@ -8,12 +8,9 @@
     "logoOnLight": "logo-light.png",
     "mark": "mark.png"
   },
-  "edition": { "variants": ["neon", "pass"], "default": "neon" },
   "theme": {
     "palette": { "brand": ["#2F7BFF", "#00C2A8"] },
-    "background": { "type": "gradient", "colors": ["#1E3A8A", "#2F7BFF"] },
-    "connect": "round",
-    "window": "mini"
+    "background": { "type": "gradient", "colors": ["#1E3A8A", "#2F7BFF"] }
   },
   "links": {
     "cabinet": "http://127.0.0.1:18998/cabinet",

@@ -1,34 +1,28 @@
-"""A V2pn partner on this computer, for previews and screenshots: subscription, pack and API.
+"""A V2pn partner on this computer, for previews and screenshots: subscription, published index and API.
 
-Usage: python tools/demo/demo_partner.py <signed pack folder> [--xray <xray.exe>] [--port 18998]
+Usage: python tools/demo/demo_partner.py <pack folder> --published <folder> [--xray <xray.exe>] [--port 18998]
                                          [--server-port 24444] [--lock] [--hide-url] [--tls-server]
 
 Serves at http://127.0.0.1:<port>/:
-  /sub             the subscription "Kestrel" (one VLESS link per server of tools/demo/partner/partner.json, all
-                   to one local server so V2pn connects and pings for real), with the headers a partner sends:
-                   profile-title, subscription-userinfo, v2pn-partner, v2pn-account-token, and with --lock
-                   hide-settings: 1 (--hide-url adds hide-url: 1). --tls-server adds "🇺🇸 Нью-Йорк (TLS)", a VLESS
-                   link with TLS to us.kestrel.example that does not answer: its generated config shows the
-                   partner's transport (transport.json fragment), which V2pn puts on TLS and REALITY servers only.
-  /v2pn/<file>     the pack folder as it is (cert.json, partner.json, their .sig, pictures, and routing.json,
-                   transport.json, core.json from tools/demo/partner, used once a certificate reviews them:
-                   partner.cs cert ... --review <pack>/routing.json --review <pack>/transport.json --review <pack>/core.json).
+  /sub             the subscription "Kestrel" (one VLESS link per server of the pack's partner.json, all to one local
+                   server so V2pn connects and pings for real), with the headers a partner sends: profile-title,
+                   subscription-userinfo, v2pn-account-token, and with --lock hide-settings: 1 (--hide-url adds
+                   hide-url: 1). --tls-server adds "🇺🇸 Нью-Йорк (TLS)", a VLESS link with TLS to us.kestrel.example
+                   that does not answer: its generated config shows the partner's transport (transport.json fragment),
+                   which V2pn puts on TLS and REALITY servers only.
+  /releases/latest/download/<file>
+                   a releases page with what tools/partner.cs publish wrote into --published: partners.json, its
+                   .sig and partner-kestrel.zip. V2pn takes the partner from there.
   /v2pn/api/...    the API: account, status, servers, recommend?purpose=, card?id= (bearer token for all but status).
 
-The pack must be signed for http://127.0.0.1:<port>/v2pn/ with a certificate for 127.0.0.1 from a root key the
-V2pn build trusts. A development build takes http on 127.0.0.1 (V2pnPartnerTrust.DevLoopback); build it with
--p:V2pnPartnerKeys=<your test root's public key> so it trusts your test root. Never sign with the real root key:
+The index must be published with a test root key and --local (listing.json naming 127.0.0.1), and the V2pn build must
+trust that key and ask this page for releases; tools/demo/try-partner.ps1 does all of it:
 
-  dotnet run tools/partner.cs -- new-key <scratch>/root.pem              # prints the public key for the build
-  dotnet run tools/partner.cs -- new-key <scratch>/kestrel.pem           # the partner's key
-  dotnet run tools/partner.cs -- cert --partner kestrel --name Kestrel --domains 127.0.0.1 \\
-      --key <kestrel public key> --grants edition,account,lock --root <scratch>/root.pem --out <scratch>/pack
-  copy tools/demo/partner/partner.json and its pictures (logo-dark.png, logo-light.png, mark.png) to <scratch>/pack,
-  then
-  dotnet run tools/partner.cs -- pack <scratch>/pack --key <scratch>/kestrel.pem
+  dotnet build ... -p:V2pnPartnerKeys=<test root public key> -p:V2pnUpdateSources=http://127.0.0.1:18998/releases
+  dotnet run tools/partner.cs -- publish --partners <scratch>/partners --out <scratch>/published --root-key <scratch>/root.pem --local
 
-With --xray the script starts a local VLESS server (127.0.0.1 only, freedom outbound) without a window; run xray from
-a folder outside the sandbox. Ctrl+C stops both.
+Never publish with the real root key for this. With --xray the script starts a local VLESS server (127.0.0.1 only,
+freedom outbound) without a window; run xray from a folder outside the sandbox. Ctrl+C stops both.
 """
 
 import argparse
@@ -76,6 +70,7 @@ def server_names(pack_folder):
 
 class Handler(BaseHTTPRequestHandler):
     pack = ""
+    published = ""
     port = 0
     server_port = 0
     lock = False
@@ -105,9 +100,9 @@ class Handler(BaseHTTPRequestHandler):
             return self.subscription()
         if path.startswith("/v2pn/api/"):
             return self.api(path[len("/v2pn/api/"):], query)
-        if path.startswith("/v2pn/"):
+        if path.startswith("/releases/latest/download/"):
             name = os.path.basename(path)
-            file = os.path.join(self.pack, name)
+            file = os.path.join(self.published, name)
             if name and os.path.isfile(file):
                 with open(file, "rb") as f:
                     data = f.read()
@@ -137,7 +132,6 @@ class Handler(BaseHTTPRequestHandler):
                          % (2 * gib, 27 * gib, 100 * gib, int(time.time()) + 40 * 86400))
         self.send_header("profile-update-interval", "12")
         self.send_header("profile-web-page-url", "http://127.0.0.1:%d/cabinet" % self.port)
-        self.send_header("v2pn-partner", "http://127.0.0.1:%d/v2pn/" % self.port)
         self.send_header("v2pn-account-token", TOKEN)
         if self.lock:
             self.send_header("hide-settings", "1")
@@ -169,6 +163,7 @@ class Handler(BaseHTTPRequestHandler):
 def main():
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("pack")
+    parser.add_argument("--published", required=True)
     parser.add_argument("--xray")
     parser.add_argument("--port", type=int, default=18998)
     parser.add_argument("--server-port", type=int, default=24444)
@@ -188,6 +183,7 @@ def main():
                                   stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
     Handler.pack = os.path.abspath(args.pack)
+    Handler.published = os.path.abspath(args.published)
     Handler.port = args.port
     Handler.server_port = args.server_port
     Handler.lock = args.lock

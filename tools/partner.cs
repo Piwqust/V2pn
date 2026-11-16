@@ -2,14 +2,15 @@
 // The partners of V2pn (providers whose subscriptions V2pn dresses in their brand), kept in partners/<id> in this
 // repository and published by the owner of V2pn with the releases.
 //
-//   dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partners.json>]
+//   dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partners.json>] [--local]
 //       Reads every partners/<id> folder (listing.json, partner.json and its files), checks each pack with the reader
 //       the app uses, and writes into --out (default partners/out, not in git): partners.json, partners.json.sig
 //       (signed with --root-key, default ~/.v2pn/partner-root-key.pem, over the exact bytes) and partner-<id>.zip for
 //       each partner. The hash of each reviewed file (routing.json, transport.json, core.json) goes into the index when
 //       listing.json grants it. Prints who, which domains, which grants, until when, and what changed since --previous
 //       (default: the partners.json already in --out). Nothing is written when any partner has a problem.
-//       tools/sign-release.ps1 and tools/publish-mirror.ps1 ship the result with a release.
+//       tools/sign-release.ps1 and tools/publish-mirror.ps1 ship the result with a release. --local lets listing.json
+//       name 127.0.0.1 and localhost, for tools/demo with a test root key; only development builds take those domains.
 //
 //   dotnet run tools/partner.cs -- pack <folder>
 //       Lists every picture (png, webp, jpg) and reviewed file of <folder> in its partner.json with size and SHA-256,
@@ -109,7 +110,7 @@ int Publish()
     }
 
     var today = DateOnly.FromDateTime(DateTime.UtcNow);
-    var publication = V2pnPartnerPublisher.Publish(partnersDir, today, DateTimeOffset.UtcNow);
+    var publication = V2pnPartnerPublisher.Publish(partnersDir, today, DateTimeOffset.UtcNow, args.Contains("--local"));
     if (!publication.Ok)
     {
         foreach (var problem in publication.Problems)
@@ -194,7 +195,7 @@ int Publish()
         }
     }
     Console.WriteLine();
-    Console.WriteLine("Signed with the key in " + keyFile + ".");
+    Console.WriteLine($"Signed with the key in {keyFile}, public half {V2pnPartnerSigning.PublicKey(root)}");
     Console.WriteLine("It goes out with the next release (tools/sign-release.ps1). To ship it now, add it to the latest release and the mirror:");
     Console.WriteLine($"  gh release upload <latest tag> --repo Piwqust/V2pn --clobber \"{outDir}\"/*");
     return CheckAgainstBuiltInKeys(publication.Index, signature);
@@ -459,7 +460,7 @@ static int Usage()
 {
     Console.Error.WriteLine("""
         usage:
-          dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partners.json>]
+          dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partners.json>] [--local]
           dotnet run tools/partner.cs -- pack <folder>
           dotnet run tools/partner.cs -- review <folder>
         """);

@@ -170,8 +170,11 @@ public static class V2pnPartnerPublisher
     // The same date in every zip, so a pack whose files did not change keeps its hash and nobody downloads it again.
     private static readonly DateTimeOffset ZipTime = new(2020, 1, 1, 0, 0, 0, TimeSpan.Zero);
 
-    /// <summary>listing.json of <paramref name="folder"/>; null with the reason when it breaks a rule.</summary>
-    public static V2pnPartnerSource? ReadListing(string folder, out string error)
+    /// <summary>
+    /// listing.json of <paramref name="folder"/>; null with the reason when it breaks a rule. 127.0.0.1 and localhost are
+    /// domains only with <paramref name="local"/>, for tools/demo: only a development build takes them anyway.
+    /// </summary>
+    public static V2pnPartnerSource? ReadListing(string folder, out string error, bool local = false)
     {
         var file = Path.Combine(folder, ListingFile);
         try
@@ -206,13 +209,13 @@ public static class V2pnPartnerPublisher
                 error = $"{ListingFile}: name needs 1 to 40 characters, no control characters, no \"V2pn\".";
                 return null;
             }
-            // A published partner is never served from this computer, whatever build the tool runs in.
             if (domains.Count == 0)
             {
                 error = $"{ListingFile}: domains needs at least one subscription domain.";
                 return null;
             }
-            if (domains.FirstOrDefault(d => d is "127.0.0.1" or "localhost" || !V2pnPartnerTrust.ValidDomain(d)) is { } badDomain)
+            // A published partner is never served from this computer, whatever build the tool runs in.
+            if (domains.FirstOrDefault(d => (!local && d is "127.0.0.1" or "localhost") || !V2pnPartnerTrust.ValidDomain(d)) is { } badDomain)
             {
                 error = $"{ListingFile}: \"{badDomain}\" is not a domain (example.com or *.example.com).";
                 return null;
@@ -246,13 +249,13 @@ public static class V2pnPartnerPublisher
     /// Everything under <paramref name="partnersDir"/> (each folder with a listing.json is a partner), checked and packed.
     /// Any problem stops the whole publication: an index is never half right.
     /// </summary>
-    public static V2pnPublication Publish(string partnersDir, DateOnly today, DateTimeOffset published)
+    public static V2pnPublication Publish(string partnersDir, DateOnly today, DateTimeOffset published, bool local = false)
     {
         var partners = new List<V2pnPublishedPartner>();
         var problems = new List<string>();
         foreach (var folder in Directory.EnumerateDirectories(partnersDir).Where(d => File.Exists(Path.Combine(d, ListingFile))).Order(StringComparer.Ordinal))
         {
-            if (Build(folder, today, out var error) is { } partner)
+            if (Build(folder, today, out var error, local) is { } partner)
             {
                 partners.Add(partner);
             }
@@ -269,9 +272,9 @@ public static class V2pnPartnerPublisher
     }
 
     /// <summary>One partners/&lt;id&gt; folder checked and packed; null with the reason when the app would refuse any of it.</summary>
-    public static V2pnPublishedPartner? Build(string folder, DateOnly today, out string error)
+    public static V2pnPublishedPartner? Build(string folder, DateOnly today, out string error, bool local = false)
     {
-        var source = ReadListing(folder, out error);
+        var source = ReadListing(folder, out error, local);
         if (source == null)
         {
             return null;

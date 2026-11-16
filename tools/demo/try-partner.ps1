@@ -3,18 +3,20 @@
   A V2pn test build with a pretend provider "Kestrel" that uses every provider feature, on this computer.
 
 .DESCRIPTION
-  Builds V2pn into a separate folder with a test partner root key (never the real one), signs a Kestrel pack
-  for 127.0.0.1 with that key, starts the pretend provider (subscription, pack, API and a local VLESS server
-  through Xray, all hidden) and opens the test V2pn on the screen with the Kestrel subscription offered.
+  Builds V2pn into a separate folder that trusts a test partner root key (never the real one) and asks the
+  pretend provider for releases, publishes a partner index with Kestrel for 127.0.0.1 signed with that key
+  (tools/partner.cs publish --local), starts the pretend provider (subscription, the index and the pack's zip,
+  API and a local VLESS server through Xray, all hidden) and opens the test V2pn on the screen with the
+  Kestrel subscription offered.
   Nothing here touches the V2pn you use: the test copy keeps its own data, other local ports and leaves the
   system proxy alone.
 
-  Kestrel has: its theme (template "split"), buttons (fastest, most stable, for YouTube, renew), server groups
+  Kestrel has: Scene on its gradient, buttons (fastest, most stable, for YouTube, renew), server groups
   with purposes and notes, the plan from its API, reviewed routes ("Маршруты Kestrel" in "Что идёт через VPN"),
   reviewed connection settings and core config. -Lock adds closed settings, -HideUrl hides the link as well.
 
 .EXAMPLE
-  tools/demo/try-partner.ps1            # build, sign, start everything
+  tools/demo/try-partner.ps1            # build, publish, start everything
   tools/demo/try-partner.ps1 -Lock      # the same with closed settings
   tools/demo/try-partner.ps1 -NoBuild   # restart quickly with the last build
   tools/demo/try-partner.ps1 -Stop      # close the test V2pn and the pretend provider
@@ -60,41 +62,48 @@ New-Item -ItemType Directory -Force $Dir | Out-Null
 $keys = Join-Path $Dir 'keys'
 New-Item -ItemType Directory -Force $keys | Out-Null
 
+# A P-256 key for the test root: the private half to sign with, the public half for the build.
 function Get-Key([string]$name) {
     $pem = Join-Path $keys "$name.pem"
     $pub = Join-Path $keys "$name.pub"
     if (-not (Test-Path $pem)) {
-        $out = & $dotnet run $partnerTool -- new-key $pem
-        if ($LASTEXITCODE -ne 0) { throw "new-key $name failed" }
+        $gen = Join-Path $keys 'new-key.cs'
+        Set-Content -Encoding utf8 $gen 'using System.Security.Cryptography; using var k = ECDsa.Create(ECCurve.NamedCurves.nistP256); System.IO.File.WriteAllText(args[0], k.ExportPkcs8PrivateKeyPem()); System.Console.WriteLine(System.Convert.ToBase64String(k.ExportSubjectPublicKeyInfo()));'
+        $out = & $dotnet run $gen -- $pem
+        if ($LASTEXITCODE -ne 0) { throw "the test key $name was not made" }
         ($out | Where-Object { $_.Trim() } | Select-Object -Last 1).Trim() | Set-Content -Encoding ascii $pub
     }
     (Get-Content $pub -Raw).Trim()
 }
 
-Write-Host '1/5 test keys'
+Write-Host '1/5 test root key'
 $rootPub = Get-Key 'root'
-$kestrelPub = Get-Key 'kestrel'
+$releases = 'http://127.0.0.1:18998/releases'
 
 if (-not $NoBuild -or -not (Test-Path (Join-Path $Dir 'build\V2pn.exe'))) {
-    Write-Host '2/5 building V2pn that trusts the test root (a few minutes the first time)'
-    & $dotnet build (Join-Path $repo 'v2rayN\v2rayN.Desktop\v2rayN.Desktop.csproj') -c Debug -nologo -v q "-p:V2pnPartnerKeys=$rootPub" -o (Join-Path $Dir 'build')
+    Write-Host '2/5 building V2pn that trusts the test root and asks the pretend provider for releases (a few minutes the first time)'
+    & $dotnet build (Join-Path $repo 'v2rayN2rayN.Desktop2rayN.Desktop.csproj') -c Debug -nologo -v q "-p:V2pnPartnerKeys=$rootPub" "-p:V2pnUpdateSources=$releases" -o (Join-Path $Dir 'build')
     if ($LASTEXITCODE -ne 0) { throw 'build failed' }
-    # The shared obj folder now holds the test key; build once more so the normal Debug build has the real key.
-    & $dotnet build (Join-Path $repo 'v2rayN\v2rayN.Desktop\v2rayN.Desktop.csproj') -c Debug -nologo -v q | Out-Null
+    # The shared obj folder now holds the test key and source; build once more so the normal Debug build has the real ones.
+    & $dotnet build (Join-Path $repo 'v2rayN2rayN.Desktop2rayN.Desktop.csproj') -c Debug -nologo -v q | Out-Null
 }
 
-Write-Host '3/5 signing the Kestrel pack for 127.0.0.1'
-$pack = Join-Path $Dir 'pack'
-if (Test-Path $pack) { Remove-Item -Recurse -Force $pack }
+Write-Host '3/5 publishing Kestrel for 127.0.0.1 with the test root'
+$partners = Join-Path $Dir 'partners'
+$pack = Join-Path $partners 'kestrel'
+$published = Join-Path $Dir 'published'
+if (Test-Path $partners) { Remove-Item -Recurse -Force $partners }
 New-Item -ItemType Directory -Force $pack | Out-Null
 Copy-Item (Join-Path $demo 'partner\*') $pack
-$grants = 'edition,account,actions' + $(if ($Lock -or $HideUrl) { ',lock' } else { '' })
-& $dotnet run $partnerTool -- cert --partner kestrel --name Kestrel --domains 127.0.0.1 --key $kestrelPub --grants $grants `
-    --review (Join-Path $pack 'routing.json') --review (Join-Path $pack 'transport.json') --review (Join-Path $pack 'core.json') `
-    --root (Join-Path $keys 'root.pem') --out $pack | Out-Null
-if (-not (Test-Path (Join-Path $pack 'cert.json'))) { throw 'cert failed' }
-& $dotnet run $partnerTool -- pack $pack --key (Join-Path $keys 'kestrel.pem') | Out-Null
-if (-not (Test-Path (Join-Path $pack 'partner.json.sig'))) { throw 'pack signing failed' }
+# The reviewed files' grants put their hashes into the index; lock only when asked for.
+$grants = @('edition', 'account', 'actions', 'routing', 'transport', 'core') + $(if ($Lock -or $HideUrl) { @('lock') } else { @() })
+$listing = [ordered]@{ id = 'kestrel'; name = 'Kestrel'; domains = @('127.0.0.1'); grants = $grants; until = (Get-Date).AddDays(30).ToString('yyyy-MM-dd') }
+[IO.File]::WriteAllText((Join-Path $pack 'listing.json'), ($listing | ConvertTo-Json), (New-Object Text.UTF8Encoding $false))
+& $dotnet run $partnerTool -- pack $pack | Out-Null
+if ($LASTEXITCODE -ne 0) { throw 'pack failed' }
+& $dotnet run $partnerTool -- publish --partners $partners --out $published --root-key (Join-Path $keys 'root.pem') --local | Out-Null
+# 3: the app's real keys do not take the test root, as expected.
+if ($LASTEXITCODE -notin 0, 3 -or -not (Test-Path (Join-Path $published 'partners.json'))) { throw 'publish failed' }
 
 Write-Host '4/5 starting the pretend provider on http://127.0.0.1:18998/ (hidden)'
 Stop-Provider
@@ -105,7 +114,7 @@ if (-not (Test-Path (Join-Path $xrayDir 'xray.exe'))) {
     New-Item -ItemType Directory -Force $xrayDir | Out-Null
     Copy-Item (Join-Path $liveBin 'xray\*') $xrayDir -Recurse
 }
-$providerArgs = @('-I', (Join-Path $demo 'demo_partner.py'), $pack, '--xray', (Join-Path $xrayDir 'xray.exe'))
+$providerArgs = @('-I', (Join-Path $demo 'demo_partner.py'), $pack, '--published', $published, '--xray', (Join-Path $xrayDir 'xray.exe'))
 if ($Lock -or $HideUrl) { $providerArgs += '--lock' }
 if ($HideUrl) { $providerArgs += '--hide-url' }
 $provider = Start-Process python -ArgumentList $providerArgs -WindowStyle Hidden -PassThru `

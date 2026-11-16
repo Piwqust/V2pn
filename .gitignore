@@ -426,3 +426,6 @@ v2rayN/TestResults/
 # V2pn: a signing key never belongs in the repository
 *.pem
 *-signing-key*
+
+# V2pn: what tools/partner.cs publish writes; it goes out with a release, not into git.
+partners/out/

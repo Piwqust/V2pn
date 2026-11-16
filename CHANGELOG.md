@@ -30,7 +30,7 @@ Updating a subscription wrote every server that stayed in it to disk on its own:
 
 ### The price
 
-The Windows download is 12 MB larger (72 MB instead of 60 for x64): precompiled code takes more room. If you already use V2pn, it updates itself as usual.
+On Windows the app is about 10 MB larger: precompiled code takes more room. The update V2pn downloads by itself is 74 MB instead of 64, the full x64 download about 154 MB instead of 144.
 
 ## 1.1.0
 

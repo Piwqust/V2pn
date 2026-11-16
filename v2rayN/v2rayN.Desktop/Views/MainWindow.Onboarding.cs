@@ -436,6 +436,12 @@ public partial class MainWindow
 
         // A provider's subscription without copying its link: the code confirmed in its bot (MainWindow.ProviderLogin.cs).
         var login = _loginOffers.Count > 0;
+        if (!login)
+        {
+            // The list of partners may not have come yet on a first start (or came while offline): asked again; the
+            // step redraws itself when a partner offers the sign-in.
+            _ = RefreshLoginOffersAsync();
+        }
         if (login)
         {
             var row = ProviderLoginRow();

@@ -1,22 +1,25 @@
 #:project ../v2rayN/ServiceLib/ServiceLib.csproj
-// Checks a provider's V2pn partnership the way the app does, with the app's own code and keys:
+// Checks a V2pn partner the way the app does, with the app's own code and keys:
 //
-//   dotnet run tools/partner-check.cs -- <subscription link>
-//       Downloads the subscription as V2pn would, reads its headers (v2pn-partner, v2pn-account-token, the
-//       panel's name, links and traffic), downloads and checks the pack (certificate, signatures, term,
-//       domains, pictures, the theme and what of it falls back), reads its server notes and buttons (servers, actions, lock), checks its reviewed files
-//       (routing.json, transport.json, core.json: format, filter, hash against the certificate), then asks the partner
-//       API (account with the token, status, servers, and recommend and card for the buttons that use them) if the
-//       pack names one.
+//   dotnet run tools/partner-check.cs -- partners/<id>
+//       Offline, before publishing: listing.json and partner.json with every check of the app (the pack packed as
+//       publish packs it, the pictures and their slots, the theme and what falls back, the old fields it ignores, the
+//       server notes and buttons, the reviewed files against the grants of listing.json).
 //
-//   dotnet run tools/partner-check.cs -- --folder <pack folder> --subscription <subscription link>
-//       The same checks for a pack on disk, before it is published.
+//   dotnet run tools/partner-check.cs -- <subscription link> [--index <folder or releases URL>] [--key <public key>]
+//       A live subscription against the published index: downloads the subscription as V2pn would and reads its
+//       headers, takes partners.json from where releases come from (or --index: partners/out, or a URL whose
+//       latest/download/ has it), checks its signature against the built-in keys (or --key), finds the partner whose
+//       domains hold the link, downloads and checks its zip, then asks the partner API (account with the token,
+//       status, servers, and recommend and card for the buttons that use them) if the pack names one.
 //
-// Every step prints OK or what is wrong; the exit code is 0 only when the look will show and every reviewed file is used.
+// Every step prints OK, a note, or FAIL with what is wrong; the exit code is 0 only when the look will show and every
+// reviewed file is used.
 
 using System.Net;
 using System.Text.Json.Nodes;
 using ServiceLib;
+using ServiceLib.Common;
 using ServiceLib.Handler;
 
 string? Option(string name)
@@ -25,12 +28,11 @@ string? Option(string name)
     return i >= 0 && i + 1 < args.Length ? args[i + 1] : null;
 }
 
-var folder = Option("--folder");
-var subscription = Option("--subscription") ?? args.FirstOrDefault(a => !a.StartsWith("--", StringComparison.Ordinal) && a != folder);
-if (subscription == null)
+var target = args.FirstOrDefault(a => !a.StartsWith("--", StringComparison.Ordinal) && a != Option("--index") && a != Option("--key"));
+if (target == null)
 {
-    Console.Error.WriteLine("usage: dotnet run tools/partner-check.cs -- <subscription link>");
-    Console.Error.WriteLine("       dotnet run tools/partner-check.cs -- --folder <pack folder> --subscription <subscription link>");
+    Console.Error.WriteLine("usage: dotnet run tools/partner-check.cs -- partners/<id>");
+    Console.Error.WriteLine("       dotnet run tools/partner-check.cs -- <subscription link> [--index <folder or releases URL>] [--key <public key>]");
     return 2;
 }
 
@@ -44,122 +46,31 @@ void Bad(string text)
 }
 void Note(string text) => Console.WriteLine($"  --   {text}");
 
-Console.WriteLine($"V2pn {V2pnInfo.Version}, {V2pnInfo.PartnerKeys.Count} partner root key(s) built in{(V2pnInfo.IsRelease ? "" : "; a development build also takes http on 127.0.0.1")}");
+var today = DateOnly.FromDateTime(DateTime.UtcNow);
+var offline = Directory.Exists(target);
+var rootKeys = Option("--key") is { } testKey ? [testKey] : V2pnInfo.PartnerKeys;
+Console.WriteLine($"V2pn {V2pnInfo.Version}, {rootKeys.Count} partner root key(s){(Option("--key") != null ? " (--key)" : " built in")}");
 
-// 1. The subscription and its headers.
-Console.WriteLine("subscription");
+V2pnPartner? partner = null;
 SubPanelInfo? panel = null;
+string? folder = null;
+var root = Path.Combine(Path.GetTempPath(), "v2pn-partner-check-" + Guid.NewGuid().ToString("N")[..8]);
+var notesOf = new List<string>();
 try
 {
-    using var http = new HttpClient(new HttpClientHandler { UseProxy = false });
-    http.DefaultRequestHeaders.UserAgent.ParseAdd("v2rayN/7.16");
-    using var response = await http.GetAsync(subscription);
-    if (response.StatusCode != HttpStatusCode.OK)
+    if (offline)
     {
-        Bad($"{subscription} answered HTTP {(int)response.StatusCode}");
+        folder = Path.GetFullPath(target);
+        partner = CheckFolder(folder);
     }
     else
     {
-        panel = SubPanelHeaders.Parse(SubPanelHeaders.Collect(response));
-        Ok($"answered; name: {panel.Title ?? "(none)"}, support: {panel.SupportUrl ?? "(none)"}, cabinet: {panel.WebPageUrl ?? "(none)"}");
-        if (panel.HasUserInfo)
-        {
-            Ok($"subscription-userinfo: {panel.Download + panel.Upload} of {panel.Total} bytes, expires {panel.Expire}");
-        }
-        else
-        {
-            Note("no subscription-userinfo: the look shows no traffic or term from headers");
-        }
-        if (panel.PartnerUrl == null)
-        {
-            Bad("no valid v2pn-partner header (https, no query, ending in /); V2pn stays plain");
-        }
-        else
-        {
-            Ok($"v2pn-partner: {panel.PartnerUrl}");
-        }
-        if (panel.AccountToken == null)
-        {
-            Note("no v2pn-account-token: the look cannot ask the account API");
-        }
-        else
-        {
-            Ok("v2pn-account-token present");
-        }
-    }
-}
-catch (Exception ex)
-{
-    Bad($"{subscription}: {ex.Message}");
-}
-
-// 2. The pack, from its address or from disk.
-Console.WriteLine("pack");
-var root = Path.Combine(Path.GetTempPath(), "v2pn-partner-check-" + Guid.NewGuid().ToString("N")[..8]);
-var partners = new V2pnPartners(V2pnInfo.PartnerKeys, () => root);
-V2pnPartner? partner = null;
-try
-{
-    if (folder != null)
-    {
-        var name = new DirectoryInfo(folder).Name;
-        var target = Path.Combine(root, "check");
-        Directory.CreateDirectory(target);
-        foreach (var file in Directory.GetFiles(folder))
-        {
-            File.Copy(file, Path.Combine(target, Path.GetFileName(file)));
-        }
-        var cert = V2pnPartnerTrust.ReadCert(File.ReadAllBytes(Path.Combine(target, "cert.json")), File.ReadAllText(Path.Combine(target, "cert.json.sig")).Trim(), V2pnInfo.PartnerKeys, DateOnly.FromDateTime(DateTime.UtcNow), out var certError);
-        if (cert == null)
-        {
-            Bad($"cert.json: {certError}");
-        }
-        else
-        {
-            File.WriteAllText(Path.Combine(target, "source.url"), panel?.PartnerUrl ?? subscription);
-            var renamed = Path.Combine(root, cert.Partner);
-            Directory.Move(target, renamed);
-            partner = partners.ReadFolder(renamed, out var error);
-            if (partner == null)
-            {
-                Bad($"{name}: {error}");
-            }
-        }
-    }
-    else if (panel?.PartnerUrl != null)
-    {
-        partner = await partners.RefreshAsync(subscription, panel.PartnerUrl);
-        if (partner == null)
-        {
-            Bad(partners.ErrorFor(panel.PartnerUrl) ?? "refused");
-        }
+        panel = await CheckSubscription(target);
+        partner = await CheckPublished(target);
     }
     if (partner != null)
     {
-        Ok($"certificate: {partner.Cert.Name} ({partner.Id}), domains {string.Join(", ", partner.Cert.Domains)}, grants {string.Join(", ", partner.Cert.Grants)}, until {partner.Cert.Expires:yyyy-MM-dd}");
-        if (!V2pnPartnerTrust.DomainAllowed(partner.Cert, subscription))
-        {
-            Bad($"the subscription's domain is not in the certificate: V2pn will not dress this subscription");
-        }
-        var days = partner.Cert.Expires.DayNumber - DateOnly.FromDateTime(DateTime.UtcNow).DayNumber;
-        if (days < 30)
-        {
-            Note($"the certificate runs out in {days} day(s): ask V2pn's owner for a new one");
-        }
-        Ok($"pack: {partner.Name}, accent {partner.Pack.Accent ?? "(none)"}, looks {string.Join(", ", partner.Pack.Variants)} (opens on {partner.Pack.DefaultVariant})");
-        Ok($"pictures: {string.Join(", ", partner.Pack.Assets.Where(a => !V2pnReviewedFiles.All.Contains(a.Name)).Select(a => $"{a.Name} {a.Size / 1024} KB"))}");
-        foreach (var note in partners.SlotNotesFor(partner.Id))
-        {
-            Bad($"picture not shown: {note}");
-        }
-        if (partner.Pack.Mark == null)
-        {
-            Note("no brand.mark: the subscription card in V2pn's list keeps a letter");
-        }
-        if (partner.Pack.Variants.Count == 0)
-        {
-            Note("no looks: the certificate lacks the edition grant, or the pack lists none V2pn knows");
-        }
+        CheckPack(partner);
         CheckTheme(partner);
         CheckCatalog(partner, panel);
         CheckReviewed(partner);
@@ -170,33 +81,179 @@ catch (Exception ex)
     Bad(ex.Message);
 }
 
-// The theme as V2pn will draw it: what it took, what fell back to V2pn's default and why, what it did to the colours.
-void CheckTheme(V2pnPartner p)
+// partners/<id>: what publish would put out for it, read back with the app's reader.
+V2pnPartner? CheckFolder(string dir)
 {
+    Console.WriteLine($"listing and pack ({dir})");
+    var published = V2pnPartnerPublisher.Build(dir, today, out var error);
+    if (published == null)
+    {
+        Bad(error);
+        return null;
+    }
+    var listing = published.Listing;
+    Ok($"listing.json: {listing.Name} ({listing.Id}), domains {string.Join(", ", listing.Domains)}, grants {string.Join(", ", listing.Grants)}, until {listing.Until:yyyy-MM-dd}");
+    if (published.Contact == null)
+    {
+        Note("no contact in listing.json: write how to reach the provider when its term runs out");
+    }
+    var pack = V2pnPartnerTrust.Unpack(published.Zip, listing, out var files, out error);
+    if (pack == null)
+    {
+        Bad(error);
+        return null;
+    }
+    Ok($"{listing.Zip.File}: {listing.Zip.Size / 1024.0:0.#} KB, {files.Count} file(s), unpacks as the app unpacks it");
+    pack = V2pnPartnerSlots.Fit(pack, name => files.GetValueOrDefault(name), out var slotNotes);
+    notesOf.AddRange(slotNotes);
+    return new V2pnPartner(listing, pack, dir, V2pnPartnerFeatures.Read(listing, pack, name => files.GetValueOrDefault(name)));
+}
+
+// The subscription and its headers, as V2pn downloads it.
+async Task<SubPanelInfo?> CheckSubscription(string subscription)
+{
+    Console.WriteLine("subscription");
     try
     {
-        var raw = JsonNode.Parse(File.ReadAllBytes(Path.Combine(p.Folder, "partner.json"))) as JsonObject;
-        var listed = (raw?["edition"]?["variants"] as JsonArray)?.Select(n => n?.GetValue<string>()).OfType<string>().ToList() ?? [];
-        var renamed = listed.Where(v => V2pnPartnerVariants.Normalize(v) is { } look && look != v).ToList();
-        if (renamed.Count > 0)
+        using var http = new HttpClient(new HttpClientHandler { UseProxy = false });
+        http.DefaultRequestHeaders.UserAgent.ParseAdd("v2rayN/7.16");
+        using var response = await http.GetAsync(subscription);
+        if (response.StatusCode != HttpStatusCode.OK)
         {
-            Note($"looks {string.Join(", ", renamed)} are older names; V2pn reads them as {string.Join(", ", renamed.Select(V2pnPartnerVariants.Normalize).Distinct())} (write neon and pass)");
+            Bad($"{subscription} answered HTTP {(int)response.StatusCode}");
+            return null;
         }
-        var unknown = listed.Where(v => V2pnPartnerVariants.Normalize(v) == null).ToList();
-        if (unknown.Count > 0)
+        var headers = SubPanelHeaders.Collect(response);
+        var info = SubPanelHeaders.Parse(headers);
+        Ok($"answered; name: {info.Title ?? "(none)"}, support: {info.SupportUrl ?? "(none)"}, cabinet: {info.WebPageUrl ?? "(none)"}");
+        if (info.HasUserInfo)
         {
-            Note($"looks {string.Join(", ", unknown)} are not looks V2pn draws (neon, pass); left out");
+            Ok($"subscription-userinfo: {info.Download + info.Upload} of {info.Total} bytes, expires {info.Expire}");
         }
+        else
+        {
+            Note("no subscription-userinfo: the look shows no traffic or term from headers");
+        }
+        if (headers.Keys.Any(k => string.Equals(k, SubPanelHeaders.Partner, StringComparison.OrdinalIgnoreCase)))
+        {
+            Note("v2pn-partner is sent but no longer read: the partner is the one whose domains hold the link (it can go)");
+        }
+        if (info.AccountToken == null)
+        {
+            Note("no v2pn-account-token: the look cannot ask the account API");
+        }
+        else
+        {
+            Ok("v2pn-account-token present");
+        }
+        return info;
     }
-    catch (Exception ex) when (ex is IOException or System.Text.Json.JsonException or InvalidOperationException)
+    catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException or UriFormatException or InvalidOperationException)
     {
+        Bad($"{subscription}: {ex.Message}");
+        return null;
     }
+}
+
+// The published index and the partner's zip, through the same code as the app.
+async Task<V2pnPartner?> CheckPublished(string subscription)
+{
+    Console.WriteLine("partner index");
+    var index = Option("--index");
+    var manager = new V2pnPartners(rootKeys, () => root)
+    {
+        SubscriptionUrls = () => Task.FromResult<IReadOnlyList<string?>>([subscription]),
+    };
+    if (index != null && Directory.Exists(index))
+    {
+        // A local publish (partners/out) served as a releases page would serve it.
+        var local = Path.GetFullPath(index);
+        manager.Sources = ["local"];
+        manager.Fetch = (url, _) =>
+        {
+            var file = Path.Combine(local, url[(url.LastIndexOf('/') + 1)..]);
+            return Task.FromResult(File.Exists(file) ? new V2pnHttp.Result(HttpStatusCode.OK, File.ReadAllBytes(file), null) : new V2pnHttp.Result(HttpStatusCode.NotFound, null, "HTTP 404"));
+        };
+    }
+    else if (index != null)
+    {
+        manager.Sources = [index.TrimEnd('/')];
+    }
+    Note($"from {string.Join(", ", manager.Sources)}");
+    await manager.RefreshAsync(forceIndex: true);
+    if (manager.Index == null)
+    {
+        Bad(manager.IndexError ?? "no index");
+        return null;
+    }
+    Ok($"partners.json: signed by the root key, {manager.Index.Partners.Count} partner(s): {string.Join(", ", manager.Index.Partners.Select(p => p.Id))}");
+    foreach (var problem in manager.Index.Problems)
+    {
+        Bad($"index: {problem}");
+    }
+    var listing = manager.ListingFor(subscription);
+    if (listing == null)
+    {
+        Bad($"no partner lists {Utils.TryUri(subscription)?.IdnHost ?? subscription}: V2pn stays plain for this subscription");
+        return null;
+    }
+    Ok($"{listing.Name} ({listing.Id}): domains {string.Join(", ", listing.Domains)}, grants {string.Join(", ", listing.Grants)}, until {listing.Until:yyyy-MM-dd}");
+    if (listing.Until < today)
+    {
+        Bad($"its term ran out on {listing.Until:yyyy-MM-dd}: V2pn drops it");
+        return null;
+    }
+    var found = manager.ForUrl(subscription);
+    if (found == null)
+    {
+        Bad($"{listing.Zip.File}: {manager.ErrorFor(listing.Id) ?? "not taken"}");
+        return null;
+    }
+    Ok($"{listing.Zip.File}: {listing.Zip.Size / 1024.0:0.#} KB, its hash is the index's, every file passed");
+    notesOf.AddRange(manager.SlotNotesFor(found.Id));
+    return found;
+}
+
+void CheckPack(V2pnPartner p)
+{
+    Console.WriteLine("pack");
+    var days = p.Listing.Until.DayNumber - today.DayNumber;
+    if (days < 30)
+    {
+        Note($"the term runs out in {days} day(s): extend until in listing.json and publish");
+    }
+    Ok($"pack: {p.Name}, accent {p.Pack.Accent ?? "(none)"}, logo {p.Pack.Logo ?? "(none)"}, on light {p.Pack.LogoOnLight ?? "(the logo)"}, mark {p.Pack.Mark ?? "(none)"}");
+    var pictures = p.Pack.Assets.Where(a => !V2pnReviewedFiles.All.Contains(a.Name)).Select(a => $"{a.Name} {a.Size / 1024} KB").ToList();
+    Ok($"pictures: {(pictures.Count == 0 ? "(none)" : string.Join(", ", pictures))}");
+    foreach (var note in notesOf)
+    {
+        Bad($"picture not shown: {note}");
+    }
+    if (p.Pack.Mark == null)
+    {
+        Note("no brand.mark: the subscription card in V2pn's list keeps a letter");
+    }
+    if (!p.HasEdition)
+    {
+        Note("no edition grant: V2pn keeps its own look; only the name and links are used");
+    }
+    foreach (var note in p.Pack.Notes)
+    {
+        Note(note);
+    }
+}
+
+// The look as V2pn will draw it: Accent or Scene, what it took, what fell back and why, what it did to the colours.
+void CheckTheme(V2pnPartner p)
+{
     if (p.Pack.Theme is not { } theme)
     {
         return;
     }
-    Ok($"looks: {string.Join(", ", p.Pack.Variants)}, opens in {p.Pack.DefaultVariant}");
-    Ok($"theme: brand {string.Join(" ", theme.Brand.DefaultIfEmpty("(the pack's accent)"))}, Neon's connect {theme.Connect}, window {theme.Window}, Pass card {theme.Background.Kind}{(theme.Background.Colors.Count > 0 ? " " + string.Join(" ", theme.Background.Colors) : "")}{(theme.Background.Art is { } art ? " " + art : "")}");
+    var look = theme.Background.Kind == V2pnThemeBackgroundKinds.Solid
+        ? "Accent (no background: the logo, the colour, the card)"
+        : $"Scene on its {theme.Background.Kind} background{(theme.Background.Colors.Count > 0 ? " " + string.Join(" ", theme.Background.Colors) : "")}{(theme.Background.Art is { } art ? " " + art : "")}";
+    Ok($"look: {look}; brand {string.Join(" ", theme.Brand.DefaultIfEmpty("(the pack's accent)"))}");
     foreach (var note in theme.Notes)
     {
         Note($"theme: {note}");
@@ -207,8 +264,8 @@ void CheckTheme(V2pnPartner p)
     }
 }
 
-// 3. The API, if the pack names one.
-if (partner?.Pack.ApiUrl != null)
+// The API, if the pack names one; a live check only.
+if (partner?.Pack.ApiUrl != null && !offline)
 {
     Console.WriteLine("api");
     var account = await V2pnPartnerApi.GetAccountAsync(partner, panel?.AccountToken);
@@ -233,7 +290,7 @@ if (partner?.Pack.ApiUrl != null)
     {
         Ok($"status: {incidents.Count} incident(s)");
     }
-    if (partner.Cert.Allows(V2pnPartnerGrants.Actions))
+    if (partner.Listing.Allows(V2pnPartnerGrants.Actions))
     {
         var live = await V2pnPartnerApi.GetServersAsync(partner, panel?.AccountToken);
         if (live == null)
@@ -274,38 +331,45 @@ if (partner?.Pack.ApiUrl != null)
         }
     }
 }
+else if (partner?.Pack.ApiUrl != null)
+{
+    Note($"api {partner.Pack.ApiUrl}: not asked offline; check it with a subscription link");
+}
 else if (partner != null)
 {
-    Note("no api in the pack (optional): the look shows the panel's headers only");
+    Note("no api in the pack, or no account grant (optional): the look shows the panel's headers only");
 }
 
 try
 {
-    Directory.Delete(root, true);
+    if (Directory.Exists(root))
+    {
+        Directory.Delete(root, true);
+    }
 }
 catch (IOException)
 {
 }
-Console.WriteLine(failed ? "RESULT: V2pn will not show this partner's look" : "RESULT: V2pn will show this partner's look");
+Console.WriteLine(failed || partner == null ? "RESULT: V2pn will not show this partner's look" : "RESULT: V2pn will show this partner's look");
 if (reviewFailed)
 {
     Console.WriteLine("RESULT: some reviewed files are not used (see \"reviewed files\" above)");
 }
-return failed || reviewFailed ? 1 : 0;
+return failed || reviewFailed || partner == null ? 1 : 0;
 
-// routing.json, transport.json, core.json: V2pn's checks of each, and whether the certificate's reviewed hash matches.
+// routing.json, transport.json, core.json: V2pn's checks of each, and whether the index's reviewed hash matches.
 void CheckReviewed(V2pnPartner partner)
 {
     var listed = partner.Pack.Assets.Where(a => V2pnReviewedFiles.All.Contains(a.Name)).ToList();
     var unlisted = folder == null ? new List<string>() : V2pnReviewedFiles.All.Where(n => File.Exists(Path.Combine(folder, n)) && listed.All(a => a.Name != n)).ToList();
-    if (listed.Count == 0 && unlisted.Count == 0 && partner.Cert.ReviewedFiles.Count == 0)
+    if (listed.Count == 0 && unlisted.Count == 0 && partner.Listing.ReviewedFiles.Count == 0)
     {
         return;
     }
     Console.WriteLine("reviewed files");
     foreach (var name in unlisted)
     {
-        Bad($"{name} is in the folder but not in partner.json's assets: sign the pack again (tools/partner.cs pack)");
+        Bad($"{name} is in the folder but not in partner.json's assets: run tools/partner.cs pack");
         reviewFailed = true;
     }
     foreach (var asset in listed)
@@ -332,14 +396,14 @@ void CheckReviewed(V2pnPartner partner)
         switch (state)
         {
             case V2pnReviewState.Ready:
-                Ok($"{asset.Name}: the certificate's {grant} grant names this very file; V2pn uses it");
+                Ok($"{asset.Name}: the {grant} grant and the index's hash name this very file; V2pn uses it");
                 break;
             case V2pnReviewState.Changed:
-                Bad($"{asset.Name}: changed after the review (certificate {partner.Cert.ReviewedFiles[asset.Name][..12]}..., pack {asset.Sha256[..12]}...); V2pn does not use it until a new certificate");
+                Bad($"{asset.Name}: changed after the review (index {partner.Listing.ReviewedFiles[asset.Name][..12]}..., pack {asset.Sha256[..12]}...); V2pn does not use it until it is reviewed and published again");
                 reviewFailed = true;
                 break;
             case V2pnReviewState.NotReviewed:
-                Note($"{asset.Name}: not reviewed yet (no {grant} grant with its hash); send it with a description to V2pn's owner");
+                Note($"{asset.Name}: not reviewed yet (no {grant} grant in listing.json); read it with tools/partner.cs review, then add the grant");
                 reviewFailed = true;
                 break;
             default:
@@ -348,9 +412,9 @@ void CheckReviewed(V2pnPartner partner)
                 break;
         }
     }
-    foreach (var (name, hash) in partner.Cert.ReviewedFiles.Where(r => listed.All(a => a.Name != r.Key)))
+    foreach (var (name, hash) in partner.Listing.ReviewedFiles.Where(r => listed.All(a => a.Name != r.Key)))
     {
-        Note($"the certificate names {name} ({hash[..12]}...), but the pack has no such file");
+        Note($"the index names {name} ({hash[..12]}...), but the pack has no such file");
     }
 }
 
@@ -368,11 +432,11 @@ void CheckCatalog(V2pnPartner partner, SubPanelInfo? panelInfo)
     }
     var rawServerList = (raw?["servers"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
     var rawActionList = (raw?["actions"] as JsonArray)?.OfType<JsonObject>().ToList() ?? [];
-    if (!partner.Cert.Allows(V2pnPartnerGrants.Actions))
+    if (!partner.Listing.Allows(V2pnPartnerGrants.Actions))
     {
         if (rawServerList.Count + rawActionList.Count > 0)
         {
-            Bad("the pack has servers or actions, but the certificate lacks the actions grant: V2pn shows none of them");
+            Bad("the pack has servers or actions, but the listing lacks the actions grant: V2pn shows none of them");
         }
         else
         {
@@ -433,7 +497,7 @@ void CheckCatalog(V2pnPartner partner, SubPanelInfo? panelInfo)
                 var why = kind == null || !V2pnActionKinds.All.Contains(kind) ? $"do {kind ?? "(none)"} is not one V2pn knows ({string.Join(", ", V2pnActionKinds.All)})"
                     : (item["label"]?.ToString()?.Trim().Length ?? 0) is 0 or > V2pnPartnerCatalog.MaxLabel ? $"the label needs 1 to {V2pnPartnerCatalog.MaxLabel} characters"
                     : kind is "connect.recommend" or "info.card" && partner.Pack.ApiUrl == null ? "it needs the API: the account grant and api in the pack"
-                    : kind == "open.link" ? "the link must be https on the certificate's domains or t.me, or tg:"
+                    : kind == "open.link" ? "the link must be https on the listing's domains or t.me, or tg:"
                     : "a field is missing or not allowed (id, strategy, purpose, scope, server or group)";
                 Bad($"action {id} left out: {why}");
             }
@@ -446,13 +510,13 @@ void CheckCatalog(V2pnPartner partner, SubPanelInfo? panelInfo)
     var lockAsked = raw?["lock"]?.ToString() == "true" || panelInfo?.HideSettings == true || panelInfo?.HideUrl == true;
     if (lockAsked)
     {
-        if (partner.Cert.Allows(V2pnPartnerGrants.Lock))
+        if (partner.Listing.Allows(V2pnPartnerGrants.Lock))
         {
             Ok($"lock: settings {(partner.Pack.Lock || panelInfo?.HideSettings == true ? "closed" : "open")}, link {(panelInfo?.HideUrl == true ? "hidden" : "shown")}");
         }
         else
         {
-            Bad("lock, hide-settings or hide-url asked for, but the certificate lacks the lock grant: V2pn keeps everything open");
+            Bad("lock, hide-settings or hide-url asked for, but the listing lacks the lock grant: V2pn keeps everything open");
         }
     }
 }

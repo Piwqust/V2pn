@@ -245,14 +245,14 @@ public sealed class V2pnPartners
             var sig = await GetTextAsync($"{source}/latest/download/{V2pnPartnerTrust.IndexFile}.sig", cancellationToken);
             if (V2pnPartnerTrust.ReadIndex(json, sig, _rootKeys, out var error) is not { } index)
             {
-                errors.Add($"{Utils.TryUri(source)?.Host}: {error}");
+                errors.Add($"{HostOf(source)}: {error}");
                 continue;
             }
             var published = Published(json!);
             // An older index signed earlier would bring back a partner taken out since; a mirror that lags is skipped.
             if (published < _indexPublished)
             {
-                errors.Add($"{Utils.TryUri(source)?.Host}: the partner index is older than the one kept");
+                errors.Add($"{HostOf(source)}: the partner index is older than the one kept");
                 continue;
             }
             foreach (var problem in index.Problems)
@@ -564,6 +564,8 @@ public sealed class V2pnPartners
 
     private static DateTimeOffset ReadPublished(string root) =>
         ReadOrNull(root, V2pnPartnerTrust.IndexFile, V2pnPartnerTrust.MaxIndexBytes) is { } json ? Published(json) : DateTimeOffset.MinValue;
+
+    private static string HostOf(string source) => Utils.TryUri(source)?.Host is { Length: > 0 } host ? host : source;
 
     private async Task<byte[]?> GetBytesAsync(string url, int maxBytes, CancellationToken cancellationToken)
     {

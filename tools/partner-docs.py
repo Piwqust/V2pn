@@ -2,7 +2,7 @@
 
     python tools/partner-docs.py                 # build into %TEMP%/v2pn-partner-docs and serve on 127.0.0.1:8765
     python tools/partner-docs.py --no-serve      # only build
-    python tools/partner-docs.py --shots <dir>   # pictures of the two looks from tools/edition-matrix.ps1 -Theme
+    python tools/partner-docs.py --shots <dir>   # pictures of Accent and Scene from tools/edition-matrix.ps1 -Theme
     python tools/partner-docs.py --theme aurora  # which theme's pictures, when --shots holds several
 
 Standard library only: a converter for the Markdown the guide uses (headings, paragraphs, lists, tables, code blocks,
@@ -22,12 +22,12 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 DOCS = os.path.join(REPO, "docs", "partners")
 FONTS = os.path.join(REPO, "v2rayN", "v2rayN.Desktop", "Assets", "Fonts")
 
-# The two looks, in the order the guide lists them, with the name tools/edition-matrix.ps1 -Theme gives their pictures:
-# "<theme>-Пропуск-<mode>-<size>.png" for the Pass (one mode: it keeps plain V2pn's) and "<theme>-кнопка-round-..." for
-# Neon with its round button, in --shots or a folder under it.
+# The two forms of the partner look, in the order the guide lists them, with the name tools/edition-matrix.ps1 -Theme
+# gives their pictures: "<theme>-Акцент-<mode>-<size>.png" and "<theme>-Сцена-<mode>-<size>.png", in --shots or a
+# folder under it.
 LOOKS = [
-    ("neon", "кнопка-round", "Неон", "Neon"),
-    ("pass", "Пропуск", "Пропуск", "Pass"),
+    ("accent", "Акцент", "Акцент", "Accent"),
+    ("scene", "Сцена", "Сцена", "Scene"),
 ]
 MODES = (("Тёмный", "dark", "тёмный"), ("Светлый", "light", "светлый"))
 SIZES = (("Мини", "mini", "мини"), ("Среднее", "medium", "среднее"), ("Широкое", "wide", "широкое"))
@@ -182,7 +182,7 @@ def gallery(lang, found):
         if not pics:
             continue
         imgs = "".join(f'<figure><a href="{src}" target="_blank"><img src="{src}" alt="{html.escape(name)}, {label}" loading="lazy"></a><figcaption>{label}</figcaption></figure>' for src, label in pics)
-        cards.append(f'<div class="look"><div class="look-name"><code>{key}</code> {html.escape(name)}</div><div class="look-pics">{imgs}</div></div>')
+        cards.append(f'<div class="look"><div class="look-name">{html.escape(name)}</div><div class="look-pics">{imgs}</div></div>')
     return '<div class="gallery">' + "".join(cards) + "</div>" if cards else ""
 
 
@@ -330,11 +330,11 @@ def build(out, shots, theme=None):
         body, toc = convert(md)
         # The first paragraph after the title is the lead.
         body = body.replace("<p>", '<p class="lead">', 1)
-        # Pictures of the looks under their table (section 9: "V2pn рисует для каждого партнёра два вида…" /
-        # "V2pn draws two looks for every partner…").
+        # Pictures of the look under its table (section 5: "У V2pn один вид для каждого партнёра…" /
+        # "V2pn has one look for every partner…").
         pics = gallery(lang, found)
         if pics:
-            m = re.search(r"<p>V2pn (рисует для каждого партнёра два вида|draws two looks for every partner)[^<]*</p>\s*<div class=\"table\">.*?</div>",
+            m = re.search(r"<p>(У V2pn один вид для каждого партнёра|V2pn has one look for every partner)[^<]*</p>\s*<div class=\"table\">.*?</div>",
                           body, flags=re.S)
             if m:
                 body = body[: m.end()] + pics + body[m.end():]
@@ -368,7 +368,7 @@ def main():
     args = ap.parse_args()
     shots = args.shots if os.path.isdir(args.shots) else None
     out = build(args.out, shots, args.theme)
-    print(f"built {out}" + ("" if look_shots(shots, args.theme) else " (no pictures of the looks: run tools/edition-matrix.ps1 -Theme <folder> first)"))
+    print(f"built {out}" + ("" if look_shots(shots, args.theme) else " (no pictures of the look: run tools/edition-matrix.ps1 -Theme <folder> first)"))
     if args.no_serve:
         return
     os.chdir(out)

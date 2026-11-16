@@ -2,12 +2,12 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Piwqust/V2pn/blob/v2pn/docs/partners/partner.schema.json",
   "title": "V2pn partner pack (partner.json)",
-  "description": "What a provider wants V2pn to look like for its subscriptions. Signed with the key its certificate names (partner.json.sig). V2pn ignores fields it does not know.",
+  "description": "What a provider wants V2pn to look like for its subscriptions: partner.json of partners/<id> in the V2pn repository. The owner of V2pn publishes it in partner-<id>.zip, pinned by the signed partners.json. V2pn ignores fields it does not know.",
   "type": "object",
   "required": ["schema", "id", "name", "assets"],
   "properties": {
     "schema": { "const": 1 },
-    "id": { "description": "The partner id; must equal the certificate's.", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,31}$" },
+    "id": { "description": "The partner id; must equal the folder's name and listing.json's id.", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,31}$" },
     "name": {
       "description": "The name people see. No control characters, and nothing that reads as V2pn.",
       "type": "string",
@@ -18,45 +18,26 @@
     "brand": {
       "type": "object",
       "properties": {
-        "accent": { "description": "The looks' accent.", "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "accent": { "description": "The brand colour when theme.palette.brand names none: Connect, the links and the card in it.", "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
         "logo": { "description": "The wide logo for a dark title bar; a file in assets.", "$ref": "#/$defs/assetName" },
         "logoOnLight": { "description": "The wide logo for a light title bar; a file in assets.", "$ref": "#/$defs/assetName" },
         "mark": { "description": "A square mark on a transparent ground for the subscription card; a file in assets.", "$ref": "#/$defs/assetName" }
       }
     },
     "edition": {
-      "description": "Needs the certificate's edition grant; without it V2pn keeps its own look.",
-      "type": "object",
-      "properties": {
-        "variants": {
-          "description": "The looks the pack offers, in the order the switcher lists them: neon (one column like a phone VPN app) and pass (plain V2pn with your card over the status card). Without variants, or with none V2pn knows, both: neon first when the pack has a theme, else pass. Older names are still read: signature and warm as pass; theme, cabinet, studio and ascii as neon.",
-          "type": "array",
-          "items": { "enum": ["neon", "pass", "signature", "theme", "warm", "cabinet", "studio", "ascii"] },
-          "uniqueItems": true
-        },
-        "default": {
-          "description": "The look that opens first; one of variants. Older names are read as in variants.",
-          "enum": ["neon", "pass", "signature", "theme", "warm", "cabinet", "studio", "ascii"]
-        },
-        "art": {
-          "description": "Pictures of Configra's former edition (lamp: the studio look). Read and checked as before; neither look draws them.",
-          "type": "object",
-          "properties": {
-            "lamp": { "$ref": "#/$defs/assetName" }
-          },
-          "additionalProperties": { "$ref": "#/$defs/assetName" }
-        }
-      }
+      "description": "Retired: the look switcher's fields (variants, default, art) of former packs. Read without error, listed as notes by tools/partner-check.cs and not used: every partner has one look, Accent, and Scene when the theme has a background.",
+      "deprecated": true,
+      "type": "object"
     },
     "theme": {
-      "description": "Your theme for the two looks; needs the edition grant. Every field is optional. A field V2pn cannot use falls back to its default (tools/partner-check.cs says which and why); the looks always work. The layout, the font (Geist) and the corners are V2pn's. The fields of the former template themes (template, font, corners, density, blocks, art, palette.tone) are read without error, noted and not used; the theme builder drops them on save. Unknown fields are ignored.",
+      "description": "Your theme; needs the edition grant, which every partner has. Every field is optional. A field V2pn cannot use falls back to its default (tools/partner-check.cs says which and why); the look always works. The layout, the font (Geist) and the corners are V2pn's. The fields of former looks (template, font, corners, density, blocks, art, palette.tone, connect, window) are read without error, noted and not used. Unknown fields are ignored.",
       "type": "object",
       "properties": {
         "palette": {
           "type": "object",
           "properties": {
             "brand": {
-              "description": "1 to 3 brand colours. The first is the accent: Connect, Neon's glow, and the Pass card when the background is solid; the others colour the ring of Neon's round button. V2pn derives every other colour for light and dark, keeps text at 4.5:1 and controls at 3:1, darkens or lightens a brand colour where it becomes text, and turns one that could pass for a state colour (protected green, attention amber, unprotected red) away from it. Default: brand.accent.",
+              "description": "1 to 3 brand colours. The first is the brand colour: Connect, the links and the subscription card; V2pn does not draw the others today. V2pn derives every other colour for light and dark, keeps text at 4.5:1 and controls at 3:1, darkens or lightens the brand colour where it becomes text, and turns one that could pass for a state colour (protected green, attention amber, unprotected red) away from it. Default: brand.accent.",
               "type": "array",
               "minItems": 1,
               "maxItems": 3,
@@ -65,7 +46,7 @@
           }
         },
         "background": {
-          "description": "The brand area of the Pass card. solid: the first brand colour. gradient: 2 to 4 colours corner to corner. image: a picture of the pack, 640-3200 px a side, at most 3:1, under a scrim V2pn works out so the text reads whatever the picture holds.",
+          "description": "What the Scene stands on, in place of the world map. solid (or no background): no Scene, the look is Accent. gradient: 2 to 4 colours corner to corner (135 degrees), deepened in dark mode. image: a picture of the pack, 640-3200 px a side, at most 3:1, under a scrim V2pn works out so the text reads whatever the picture holds; a picture that does not fit falls back to solid.",
           "type": "object",
           "required": ["type"],
           "properties": {
@@ -74,16 +55,8 @@
             "art": { "$ref": "#/$defs/assetName" }
           }
         },
-        "connect": {
-          "description": "Neon's connect control; what it does and the state colours are V2pn's. round: a big round button in a glowing ring of the brand colours. toggle: a row with the flag, the server and a switch. The older capsule and bar are read as round, with a note.",
-          "enum": ["round", "toggle"],
-          "default": "round"
-        },
-        "window": {
-          "description": "mini: Neon opens in the mini window (380x640) the first time; after that the window stays as the person leaves it. full: the window stays as it was.",
-          "enum": ["mini", "full"],
-          "default": "mini"
-        }
+        "connect": { "description": "Retired (Neon's connect control): read without error, noted, not used.", "deprecated": true },
+        "window": { "description": "Retired (Neon's first window): read without error, noted, not used.", "deprecated": true }
       }
     },
     "links": {
@@ -94,13 +67,13 @@
       }
     },
     "api": {
-      "description": "The partner API's base address; needs the account grant and a domain the certificate names.",
+      "description": "The partner API's base address; needs the account grant and a domain of the partner's listing.",
       "type": "string",
       "format": "uri",
       "pattern": "^https://"
     },
     "servers": {
-      "description": "Needs the certificate's actions grant. What V2pn shows about the servers of the partner's subscriptions: each entry matches a server by its exact name or its address. The API's GET servers may say the same with load and health; its values win.",
+      "description": "Needs the actions grant. What V2pn shows about the servers of the partner's subscriptions: each entry matches a server by its exact name or its address. The API's GET servers may say the same with load and health; its values win.",
       "type": "array",
       "maxItems": 300,
       "items": {
@@ -125,7 +98,7 @@
       }
     },
     "actions": {
-      "description": "Needs the certificate's actions grant. The partner's buttons: a label, one of V2pn's icons and one of V2pn's actions. V2pn shows the first 4 that it can run; an unknown do is left out.",
+      "description": "Needs the actions grant. The partner's buttons: a label, one of V2pn's icons and one of V2pn's actions. V2pn shows the first 4 that it can run; an unknown do is left out.",
       "type": "array",
       "items": {
         "type": "object",
@@ -160,7 +133,7 @@
           },
           "server": { "description": "connect.server: a name or address.", "type": "string", "maxLength": 253 },
           "group": { "description": "connect.group: the fastest server of this group.", "type": "string", "maxLength": 24 },
-          "url": { "description": "open.link: https on the certificate's domains or t.me, or tg:.", "type": "string" }
+          "url": { "description": "open.link: https on the domains of the partner's listing or t.me, or tg:.", "type": "string" }
         },
         "allOf": [
           {
@@ -199,11 +172,11 @@
       }
     },
     "lock": {
-      "description": "Needs the certificate's lock grant: closes the settings of the partner's subscriptions, as the hide-settings header does. Without the grant it does nothing.",
+      "description": "Needs the lock grant: closes the settings of the partner's subscriptions, as the hide-settings header does. Without the grant it does nothing.",
       "type": "boolean"
     },
     "assets": {
-      "description": "Every file of the pack, pinned by size and SHA-256: at most 8 pictures, and routing.json, transport.json, core.json when the pack has them (used only when the certificate's reviewed field names the same hash; see $defs).",
+      "description": "Every file of the pack, pinned by size and SHA-256: at most 8 pictures, and routing.json, transport.json, core.json when the pack has them (used only when the partner index names the same hash under its reviewed field; see $defs).",
       "type": "array",
       "maxItems": 11,
       "items": {
@@ -221,10 +194,10 @@
   },
   "$defs": {
     "colour": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
-    "assetName": { "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9._-]*\\.(png|webp|jpg|jpeg)$" },
+    "assetName": { "description": "A plain file name: ASCII letters, digits, - and _, one extension, no folder.", "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,47}\\.([Pp][Nn][Gg]|[Ww][Ee][Bb][Pp]|[Jj][Pp][Ee]?[Gg])$" },
     "reviewedName": { "enum": ["routing.json", "transport.json", "core.json"] },
-    "certReviewed": {
-      "description": "cert.json, written by V2pn's owner: \"reviewed\" maps each file read by hand to its SHA-256. A routing, transport or core grant counts only for the file with this hash.",
+    "indexReviewed": {
+      "description": "partners.json, written by tools/partner.cs publish: \"reviewed\" maps each file the owner read by hand (and granted in listing.json) to its SHA-256. A routing, transport or core grant counts only for the file with this hash.",
       "type": "object",
       "propertyNames": { "$ref": "#/$defs/reviewedName" },
       "additionalProperties": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }

@@ -20,6 +20,21 @@ public partial class MainWindow
         {
             await AskToAddLinkAsync(link);
         }
+        await AddPresetAsync();
+    }
+
+    /// <summary>The subscription a special build carries (V2pnPreset), added once without asking.</summary>
+    private async Task AddPresetAsync()
+    {
+        var links = V2pnPreset.Pending();
+        if (links.Count == 0)
+        {
+            return;
+        }
+        await AddSubscriptionLinksAsync(links);
+        // Only what made it in counts as done; a link that failed is tried again at the next start.
+        var subs = await AppManager.Instance.SubItems() ?? [];
+        V2pnPreset.MarkApplied(links.Where(l => subs.Any(s => string.Equals(s.Url?.Trim(), l, StringComparison.Ordinal))));
     }
 
     /// <summary>A link from the system (macOS's open-URL event): asked about now, or once the window is up.</summary>

@@ -24,7 +24,7 @@ On the first launch of a downloaded file, Windows and macOS warn that they do no
 <details>
 <summary>The other files in the list below</summary>
 
-They are for the app, not for people. The updater reads `-update.zip`, the macOS `.zip`, `release.json` and `release.json.sig`; `-update.zip` has no cores, so it does not work as a first install. `.sha256` files are checksums: `sha256sum -c V2pn-windows-x64.zip.sha256`. `install.ps1` and `install.sh` are the one-command installers above. `V2pn-<provider>-….zip` are providers' own builds of V2pn, linked from each provider's download page; `partner-index.json`, `partners.json` and `partner-<provider>.zip` are what those builds read.
+They are for the app, not for people. The updater reads `-update.zip`, the macOS `.zip`, `release.json` and `release.json.sig`; `-update.zip` has no cores, so it does not work as a first install. `.sha256` files are checksums: `sha256sum -c V2pn-windows-x64.zip.sha256`. `install.ps1` and `install.sh` are the one-command installers above. `V2pn-<provider>-….zip` are V2pn with a provider's tab, linked from each provider's download page; `partner-index.json` and `partner-<provider>.zip` are what V2pn reads for that tab, `partners.json` is for V2pn 1.2.1 and older.
 
 </details>
 

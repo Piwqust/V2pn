@@ -28,7 +28,7 @@
   tools/release.ps1 -Version 1.1.1 -NoManifest -OutDir dist/special/x -Preset https://host/s/abc
                                                     # a special build that adds that subscription at first start
   tools/release.ps1 -Version 1.1.1-local.1 -Arch x64 -NoCores -NoManifest -OutDir $env:TEMP/rel -Partner configra
-                                                    # a local partner's build (published ones come from tools/partner-packages.cs)
+                                                    # a local partner's package (published ones come from tools/partner-packages.cs)
 #>
 param(
     [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$')][string]$Version,
@@ -55,8 +55,9 @@ param(
     # A special build that adds these subscriptions at its first start (v2pn-preset.txt next to V2pn.exe,
     # ServiceLib/V2pn/V2pnPreset.cs). Only the full zip carries it, never the update zip everyone downloads.
     [string[]]$Preset,
-    # A partner's own build (v2pn-partner.txt next to V2pn.exe, ServiceLib/V2pn/V2pnEdition.cs), in the full zip only.
-    # Released partner builds are made from the signed standard packages by tools/partner-packages.cs instead.
+    # A partner's package: v2pn-partner.txt next to V2pn.exe (ServiceLib/V2pn/V2pnEdition.cs: V2pn shows that partner's
+    # tab), in the full zip only. Released partner packages are made from the signed standard packages by
+    # tools/partner-packages.cs instead.
     [ValidatePattern('^[a-z0-9][a-z0-9-]{1,31}$')][string]$Partner
 )
 
@@ -65,7 +66,7 @@ $ProgressPreference = 'SilentlyContinue'
 $repo = Split-Path -Parent $PSScriptRoot
 $src = Join-Path $repo 'v2rayN'
 if ($Preset -and ($Tag -or $UpdateOnly)) { throw '-Preset makes a special build: not with -Tag or -UpdateOnly' }
-if ($Partner -and ($Tag -or $UpdateOnly -or -not $NoManifest)) { throw "-Partner makes a local partner's build: with -NoManifest, not with -Tag or -UpdateOnly" }
+if ($Partner -and ($Tag -or $UpdateOnly -or -not $NoManifest)) { throw "-Partner makes a local partner's package: with -NoManifest, not with -Tag or -UpdateOnly" }
 if (-not $OutDir) { $OutDir = Join-Path $repo "dist/release/$Version" }
 # Relative to where the script was called from, which .NET's own current directory may not be.
 $OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)

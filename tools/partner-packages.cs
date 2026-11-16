@@ -1,14 +1,15 @@
 #:project ../v2rayN/ServiceLib/ServiceLib.csproj
-// The packages of each partner's own build of V2pn, made from a release's signed standard packages:
+// Each partner's packages of V2pn, made from a release's signed standard packages:
 //
 //   dotnet run tools/partner-packages.cs -- <release folder> [--partners <folder>]
 //
 // For every partners/<id> with a listing.json (every published partner has the edition grant: publish adds it) and
 // every standard package in <release folder> (V2pn-windows-x64.zip, V2pn-windows-arm64.zip, V2pn-macos-arm64.zip,
 // V2pn-macos-x64.zip), writes V2pn-<id>-<os>-<arch>.zip and its .sha256 beside it: the same files plus
-// v2pn-partner.txt holding the id (on macOS inside V2pn-<id>.app/Contents/MacOS; the app is renamed so it sits beside
-// V2pn.app). The program is V2pn's own, so a partner's build updates from the same signed release.json, which does not
-// list these packages; the updater keeps the marker. The .dmg and the update packages have no partner form.
+// v2pn-partner.txt holding the id (on macOS inside V2pn.app/Contents/MacOS). It is V2pn itself, installed where V2pn
+// goes; the marker says the person came from that partner, so V2pn shows its tab (ServiceLib/V2pn/V2pnEdition.cs). It
+// updates from the same signed release.json, which does not list these packages; the updater keeps the marker. The
+// .dmg and the update packages have no partner form.
 // tools/sign-release.ps1 runs this after release.json is signed. Exit code 1 when a package could not be made.
 
 using ServiceLib;

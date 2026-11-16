@@ -13,7 +13,7 @@ namespace ServiceLib;
 /// </summary>
 public static class V2pnPartnerBuilds
 {
-    /// <summary>The standard packages a partner's build is made from, when the release has them.</summary>
+    /// <summary>The standard packages a partner's packages are made from, when the release has them.</summary>
     public static readonly IReadOnlyList<string> Sources =
         ["V2pn-windows-x64.zip", "V2pn-windows-arm64.zip", "V2pn-macos-arm64.zip", "V2pn-macos-x64.zip"];
 

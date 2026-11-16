@@ -7,8 +7,8 @@
   .github/workflows/v2pn-release.yml builds the Windows and macOS packages for a pushed tag and
   attaches them to its run. This script downloads them, writes and signs release.json with the
   key in ~/.v2pn/release-signing-key.pem (tools/manifest.cs), publishes the partners
-  (tools/partner.cs: partner-index.json for partner builds, an empty partners.json for 1.2.1 and
-  older), makes each partner's own build from the signed standard packages
+  (tools/partner.cs: partner-index.json for partners' tabs, an empty partners.json for 1.2.1 and
+  older), makes each partner's packages from the signed standard packages
   (tools/partner-packages.cs: V2pn-<id>-windows-x64.zip and so on, with .sha256, not in
   release.json), and creates the DRAFT release with every file. Nothing becomes visible to
   installed copies until you press Publish.
@@ -70,7 +70,7 @@ Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $
 # The one-command installers go with every release: .../releases/latest/download/install.ps1 (Windows), install.sh (macOS)
 Copy-Item (Join-Path $PSScriptRoot 'install.ps1'), (Join-Path $PSScriptRoot 'install.sh') $dir
 # The partners (partners/<id>), signed with ~/.v2pn/partner-root-key.pem: partner-index.json and partner-<id>.zip each,
-# which partner builds read from the latest release, and partners.json with no partner in it, which V2pn 1.2.1 and
+# which V2pn reads from the latest release for partners' tabs, and partners.json with no partner in it, which V2pn 1.2.1 and
 # older read: they then drop the partner they kept and stay plain V2pn. The summary says what changed since the index
 # of the release before.
 $previous = Join-Path ([IO.Path]::GetTempPath()) "v2pn-partners-before-$Version"
@@ -87,7 +87,7 @@ foreach ($required in 'partner-index.json', 'partner-index.json.sig', 'partners.
 }
 Get-ChildItem $partnersOut -File | Move-Item -Destination $dir
 Remove-Item -Recurse -Force $partnersOut, $previous
-# Each partner's own build: the signed standard packages with v2pn-partner.txt. After release.json, which never lists them.
+# Each partner's packages: the signed standard packages with v2pn-partner.txt. After release.json, which never lists them.
 Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'partner-packages.cs'), '--', $dir, '--partners', (Join-Path $repo 'partners'))
 
 $notesFile = Join-Path $dir 'notes.md'

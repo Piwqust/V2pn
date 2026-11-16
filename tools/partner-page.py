@@ -35,7 +35,7 @@ REPO = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 FONTS = os.path.join(REPO, "v2rayN", "v2rayN.Desktop", "Assets", "Fonts")
 TARGETS = os.path.join(REPO, "v2rayN", "Directory.Build.targets")
 
-# The partner's own build as tools/partner-packages.cs names it (ServiceLib/V2pn/V2pnPartnerBuilds.cs): V2pn's signed
+# The partner's packages as tools/partner-packages.cs names them (ServiceLib/V2pn/V2pnPartnerBuilds.cs): V2pn's signed
 # standard packages with v2pn-partner.txt. macOS has a zip only: a .dmg is not made on the computer that signs.
 def packages(pid):
     return {

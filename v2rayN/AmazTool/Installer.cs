@@ -17,7 +17,7 @@ internal sealed class Installer
 {
     private const string WorkFolder = ".v2pn-update";
 
-    // What makes a copy a partner's build (ServiceLib's V2pnEdition): only its own package has it, never an update.
+    // What gives a copy a partner's tab (ServiceLib's V2pnEdition): only a partner's package has it, never an update.
     private const string PartnerMarker = "v2pn-partner.txt";
 
     private readonly string _root;
@@ -171,7 +171,7 @@ internal sealed class Installer
     }
 
     /// <summary>
-    /// A partner's build stays one: the bundle is swapped whole, so its marker is copied into the staged bundle first.
+    /// A copy with a partner's tab keeps it: the bundle is swapped whole, so its marker is copied into the staged bundle first.
     /// A folder install needs nothing, as files the package does not carry are left where they are.
     /// </summary>
     private void KeepPartnerMarker()

@@ -2,7 +2,7 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://github.com/Piwqust/V2pn/blob/v2pn/docs/partners/partner.schema.json",
   "title": "V2pn partner pack (partner.json)",
-  "description": "What a provider's own build of V2pn looks like and does for its subscriptions: partner.json of partners/<id> in the V2pn repository. The owner of V2pn publishes it in partner-<id>.zip, pinned by the signed partner-index.json; plain V2pn never reads it. V2pn ignores fields it does not know.",
+  "description": "What a provider's tab in V2pn looks like and does for its subscriptions: partner.json of partners/<id> in the V2pn repository. The owner of V2pn publishes it in partner-<id>.zip, pinned by the signed partner-index.json; V2pn reads it only for the people who came from that provider (its package or install command, or a sign-in by code). V2pn ignores fields it does not know.",
   "type": "object",
   "required": ["schema", "id", "name", "assets"],
   "properties": {

@@ -110,8 +110,9 @@ public static class V2pnPartnerGrants
 public static class V2pnPartnerTrust
 {
     /// <summary>
-    /// The index partner builds read (V2pnEdition). Its own name, so copies of 1.2.1 and older, which dressed plain V2pn
-    /// in a partner's look, never see a partner again: they read <see cref="LegacyIndexFile"/>.
+    /// The index V2pn reads for the partners a person came from (V2pnEdition). Its own name, so copies of 1.2.1 and older,
+    /// which dressed V2pn in a partner's look by the selected server, never see a partner again: they read
+    /// <see cref="LegacyIndexFile"/>.
     /// </summary>
     public const string IndexFile = "partner-index.json";
 

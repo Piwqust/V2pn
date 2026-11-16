@@ -762,7 +762,7 @@ public class V2pnPartnerTests
             await site.Asked.Any(u => u.EndsWith("/partners.json", StringComparison.Ordinal)).Should().BeFalse();
             await File.Exists(Path.Combine(root, "partner-index.json")).Should().BeTrue();
 
-            // Only the empty legacy index on the release: a partner build finds no partner there.
+            // Only the empty legacy index on the release: a person who came from a partner finds none there.
             var old = new TestSite();
             p.Publish(old, Published);
             old.Files.Remove($"{TestSite.Source}/latest/download/{V2pnPartnerTrust.IndexFile}");

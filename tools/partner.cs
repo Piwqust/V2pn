@@ -1,12 +1,12 @@
 #:project ../v2rayN/ServiceLib/ServiceLib.csproj
-// The partners of V2pn (providers with their own build of V2pn, which wears their brand), kept in partners/<id> in this
+// The partners of V2pn (providers with a tab in V2pn for the people who came from them), kept in partners/<id> in this
 // repository and published by the owner of V2pn with the releases.
 //
 //   dotnet run tools/partner.cs -- publish [--partners <folder>] [--out <folder>] [--root-key <pem>] [--previous <partner-index.json>] [--local]
 //       Reads every partners/<id> folder (listing.json, partner.json and its files), checks each pack with the reader
 //       the app uses, and writes into --out (default partners/out, not in git): partner-index.json, partner-index.json.sig
 //       (signed with --root-key, default ~/.v2pn/partner-root-key.pem, over the exact bytes) and partner-<id>.zip for
-//       each partner, which partner builds read; and partners.json(.sig), signed and empty, which V2pn 1.2.1 and older
+//       each partner, which V2pn reads for the people who came from a partner; and partners.json(.sig), signed and empty, which V2pn 1.2.1 and older
 //       read, so they never dress plain V2pn in a partner's look again. The hash of each reviewed file (routing.json,
 //       transport.json, core.json) goes into the index when listing.json grants it. Prints who, which domains, which
 //       grants, until when, and what changed since --previous (default: the partner-index.json already in --out).

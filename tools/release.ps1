@@ -37,9 +37,10 @@ param(
     # Packages only. CI uses it: the manifest is made once, after the macOS packages have joined.
     [switch]$NoManifest,
     [switch]$ManifestOnly,
-    # Precompiles the app. Measured on 13.11.2026: the window appears in 0.8 s instead of 1.6 s,
-    # and every package and update grows by about 30 MB. Off by default.
-    [switch]$ReadyToRun,
+    # Leaves the app to be compiled at every start (JIT) instead of precompiled (ReadyToRun). Measured
+    # on 16.11.2026, medians of five starts: the window appears in 1.6-1.8 s precompiled, 2.4-2.6 s without; the
+    # x64 zip grows from 60 to 72 MB (v2rayN.Desktop.csproj keeps what a start never loads as IL).
+    [switch]$NoReadyToRun,
     [switch]$Tag,
     # Release notes for -Tag; by default the CHANGELOG.md section, else the commits since the last tag.
     [string]$Notes,
@@ -161,7 +162,8 @@ if ($commit) {
 # A developer-mode build remembers its source folder, so the next build needs no folder chosen.
 # Published versions never carry it: it is a path on the building computer.
 if ($Version.Contains('-local.')) { $properties += "-p:V2pnSourceDir=$repo" }
-if ($ReadyToRun) { $properties += '-p:PublishReadyToRun=true' }
+# Only V2pn itself: AmazTool runs for a few seconds during an update.
+$appProperties = if ($NoReadyToRun) { @() } else { @('-p:PublishReadyToRun=true') }
 if ($UpdateSources) { $properties += "-p:V2pnUpdateSources=$UpdateSources" }
 if ($UpdateKeys) { $properties += "-p:V2pnUpdateKeys=$UpdateKeys" }
 
@@ -179,7 +181,7 @@ foreach ($a in $Arch) {
 
     Write-Host "== ${rid}: V2pn $Version"
     Invoke-Checked $dotnet (@('publish', (Join-Path $src 'v2rayN.Desktop/v2rayN.Desktop.csproj'), '-c', 'Release', '-r', $rid,
-        '-v', 'q', '-nologo', '-o', $stage) + $properties)
+        '-v', 'q', '-nologo', '-o', $stage) + $properties + $appProperties)
 
     Get-ChildItem $stage -Recurse -Include '*.pdb', '*.dbg' | Remove-Item -Force
 

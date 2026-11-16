@@ -1,7 +1,7 @@
 /* V2pn's font: beside the built guide (tools/partner-docs.py copies it to fonts/), else from the app's assets in the repo. */
-@font-face { font-family: Geist; font-weight: 400; src: url(../fonts/Geist-Regular.ttf), url(../../../v2rayN/v2rayN.Desktop/Assets/Fonts/Geist-Regular.ttf); }
-@font-face { font-family: Geist; font-weight: 500; src: url(../fonts/Geist-Medium.ttf), url(../../../v2rayN/v2rayN.Desktop/Assets/Fonts/Geist-Medium.ttf); }
-@font-face { font-family: Geist; font-weight: 600; src: url(../fonts/Geist-SemiBold.ttf), url(../../../v2rayN/v2rayN.Desktop/Assets/Fonts/Geist-SemiBold.ttf); }
+@font-face { font-family: Geist; font-weight: 400; src: url(../../assets/fonts/Geist-Regular.ttf); }
+@font-face { font-family: Geist; font-weight: 500; src: url(../../assets/fonts/Geist-Medium.ttf); }
+@font-face { font-family: Geist; font-weight: 600; src: url(../../assets/fonts/Geist-SemiBold.ttf); }
 
 :root {
   color-scheme: light dark;

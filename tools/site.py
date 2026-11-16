@@ -287,8 +287,13 @@ def build_builder():
     src = os.path.join(DOCS, "builder")
     out = os.path.join(SITE, "providers", "builder")
     os.makedirs(out, exist_ok=True)
-    for f in ("builder.js", "v2pn-colors.js", "builder.css"):
+    for f in ("builder.js", "v2pn-colors.js"):
         shutil.copy(os.path.join(src, f), os.path.join(out, f))
+    # Its stylesheet as it is, but for the font: the site's own copy of Geist (assets/fonts), one source per face.
+    with open(os.path.join(src, "builder.css"), encoding="utf-8") as fh:
+        css = fh.read()
+    css = re.sub(r"src: url\(\.\./fonts/([^)]+)\)(, url\([^)]*\))*;", r"src: url(../../assets/fonts/\1);", css)
+    write(os.path.join(out, "builder.css"), css)
     with open(os.path.join(src, "index.html"), encoding="utf-8") as fh:
         text = fh.read()
     m = re.search(r'<div class="layout">.*?</div>\s*(?=<script)', text, flags=re.S)
@@ -299,7 +304,7 @@ def build_builder():
     bar = """<div class="top builder-bar">
   <div class="wrap builder-bar__in">
     <a class="brand" href="../guide/" data-href-ru="../guide/" data-href-en="../guide/en/">
-      <span data-l="forProviders">для провайдеров</span>
+      <span>V2pn</span><span class="sub" data-l="forProviders">для провайдеров</span>
     </a>
     <div class="sp"></div>
     <div class="seg small" role="group" aria-label="Язык" data-l-label="language">

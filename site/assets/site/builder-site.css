@@ -1,0 +1,18 @@
+/* The look builder (docs/partners/builder) inside the site: its form, preview and scripts are its own; this file only
+   seats it under the site's fixed header and gives back what system.css's own .form and .field rules take from it. */
+.builder-main { padding-top: var(--nav, 72px); }
+.builder-main .top { position: sticky; top: var(--nav, 72px); z-index: 9; height: 52px; padding: 0; background: var(--bg); backdrop-filter: none; }
+.builder-bar__in { display: flex; align-items: center; gap: 12px; height: 100%; }
+.builder-main .brand { font-weight: 500; color: var(--muted); }
+.builder-main .brand:hover { color: var(--ink); }
+.builder-main .layout { min-height: calc(100vh - var(--nav, 72px) - 52px); border-top: 1px solid var(--line); }
+.builder-main .preview { top: calc(var(--nav, 72px) + 52px); height: calc(100vh - var(--nav, 72px) - 52px); }
+.builder-main .form { display: block; gap: 0; grid-template-columns: none; }
+.builder-main .field { display: grid; gap: 5px; font-size: inherit; font-weight: inherit; }
+.builder-main .field :is(input, select, textarea) { height: auto; min-height: 38px; padding: 8px 10px; border: 1px solid var(--line); border-radius: 9px; background: var(--field); color: inherit; font: inherit; }
+.builder-main .field textarea { min-height: 0; padding-block: 8px; }
+.builder-main .send { list-style: decimal; }
+.builder-main h1 { font-family: var(--font-display); }
+@media (max-width: 860px) {
+  .builder-main .preview { position: static; height: auto; }
+}

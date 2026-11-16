@@ -276,3 +276,13 @@ footer.site-foot { padding: var(--s-8) 0 var(--s-7); border-top: 1px solid var(-
 .v2-plan small { white-space: normal; }
 /* a terminal or code window in a frame on a phone: its lines wrap inside the window instead of running past it */
 @media (max-width: 639px) { .frame .term { width: auto !important; height: auto !important; } .frame .term__body { white-space: pre-wrap; font-size: 12px; } }
+
+/* the guide's running text: paragraphs, lists and blocks apart, lists with their markers */
+.doc__body :is(p, ul, ol, pre.code, .table) { margin: 0 0 var(--s-4); }
+.doc__body ul { list-style: disc; padding-left: 1.3em; }
+.doc__body ol { list-style: decimal; padding-left: 1.5em; }
+.doc__body li { margin-bottom: var(--s-2); }
+.doc__body li > ul { margin: var(--s-2) 0 0; }
+
+/* the hero's frame on a phone (342 x about 240): the window shows its head and its button; the rows under them wait */
+@container (max-width: 420px) { .hero__art .v2-modes, .hero__art .v2-status { display: none; } }

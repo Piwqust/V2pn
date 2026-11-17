@@ -140,8 +140,7 @@ main.app { padding: calc(var(--nav, 72px) + var(--s-7)) 0 var(--s-9); min-height
 .prefix { display: flex; align-items: stretch; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--bg); overflow: hidden; }
 .prefix > span { display: inline-flex; align-items: center; padding: 0 0 0 var(--s-3); color: var(--muted); font: 400 15px/1 var(--font-mono); white-space: nowrap; }
 .field .prefix > input { border: 0; border-radius: 0; padding-left: 2px; font-family: var(--font-mono); font-size: 15px; }
-.field .prefix:focus-within { outline: 2px solid var(--action); outline-offset: 1px; border-color: transparent; }
-.field .prefix > input:focus-visible { outline: 0; }
+.field .prefix > input:focus-visible { outline: 2px solid var(--action); outline-offset: -2px; border-radius: var(--r-sm); }
 .field .prefix:has(> input[aria-invalid="true"]) { border: 2px solid var(--error); }
 
 /* a choice of a few cards (the tier, the background): radio buttons drawn as cards */
@@ -356,7 +355,8 @@ pre.snippet .k { color: #ffb38a; }
 .chart svg { width: 100%; height: auto; overflow: visible; }
 .chart .grid-line { stroke: var(--line); stroke-width: 1; }
 .chart .axis-label { fill: var(--muted); font: 400 12px var(--font-text); font-variant-numeric: tabular-nums; }
-.chart .bar:hover, .chart .bar:focus-visible { opacity: .82; outline: none; }
+.chart .bar:hover { opacity: .82; }
+.chart .bar:focus-visible { outline: 2px solid var(--action); outline-offset: 0; }
 /* the first three slots of the dataviz reference palette: they pass every pair in both modes */
 :root { --dl-win: #2a78d6; --dl-mac: #eb6834; --dl-cmd: #1baf7a; }
 @media (prefers-color-scheme: dark) { :root { --dl-win: #3987e5; --dl-mac: #d95926; --dl-cmd: #199e70; } }

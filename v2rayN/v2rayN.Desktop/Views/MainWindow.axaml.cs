@@ -1,5 +1,6 @@
 using Avalonia.Controls.Notifications;
 using Avalonia.Controls.Primitives;
+using Avalonia.VisualTree;
 using DialogHostAvalonia;
 using v2rayN.Desktop.Base;
 using v2rayN.Desktop.Common;
@@ -129,6 +130,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuPageProxies.Click += (_, _) => ShowPage(L.MenuClashProxies, ClashProxiesPage);
         menuPageConnections.Click += (_, _) => ShowPage(L.MenuClashConnections, ClashConnectionsPage);
         lstTabs.SelectionChanged += LstTabs_SelectionChanged;
+        // Right-click and drag change the list in place (MainWindow.SidebarMenu.cs, MainWindow.SidebarDrag.cs).
+        InitSidebarMenus();
+        InitSidebarDrag();
         lstRows.KeyDown += LstRows_KeyDown;
         lstRows.SelectionChanged += (_, _) =>
         {
@@ -419,7 +423,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _sidebar = new SidebarViewModel(vm.ProfilesViewModel);
             _sidebar.Rebuilt += RestoreRowFocus;
             // Appearance → Opens on.
-            lstTabs.SelectedIndex = StartTabIndex();
+            SelectTab(StartTab());
         }
         lstRows.ItemsSource = _sidebar.Rows;
         mapView.LocationClicked -= MapView_LocationClicked;
@@ -460,7 +464,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return;
         }
         txtSearch.Text = string.Empty;
-        lstTabs.SelectedIndex = (int)SidebarTab.Countries;
+        SelectTab(SidebarTab.Countries);
         var row = _sidebar.RevealCountry(code);
         if (row != null)
         {
@@ -1544,12 +1548,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private void LstTabs_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
-        if (_sidebar == null || lstTabs.SelectedIndex < 0)
+        if (_sidebar == null || lstTabs.SelectedIndex < 0 || _arrangingTabs)
         {
             return;
         }
         _sidebar.OpenedSub = null;
-        _sidebar.Tab = (SidebarTab)lstTabs.SelectedIndex;
+        _sidebar.Tab = TabOf(lstTabs.SelectedItem);
     }
 
     private void SideServer_Click(object? sender, RoutedEventArgs e) => ActivateRow((sender as Control)?.DataContext as SideRow);
@@ -1780,22 +1784,34 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
     }
 
-    // The menu key or Shift+F10 on a focused row (the row buttons themselves are mouse targets).
+    // The menu key or Shift+F10 on a focused row (the row buttons themselves are mouse targets), and a
+    // right-click on a row without its own menu or on the empty list: the list's own menu (MainWindow.SidebarMenu.cs).
     private void LstRows_ContextRequested(object? sender, ContextRequestedEventArgs e)
     {
-        if (e.Handled || lstRows.SelectedItem is not SideRow row || lstRows.ContainerFromItem(row) is not Control container)
+        if (e.Handled)
         {
             return;
         }
-        e.Handled = true;
+        var row = (e.Source as Visual)?.GetSelfAndVisualAncestors().OfType<Control>()
+            .TakeWhile(c => c != lstRows)
+            .Select(c => c.DataContext)
+            .OfType<SideRow>()
+            .FirstOrDefault();
+        var container = row != null ? lstRows.ContainerFromItem(row) as Control : null;
         switch (row)
         {
-            case SideServerRow server:
+            case SideServerRow server when container != null:
+                e.Handled = true;
                 ShowServerMenu(container, server, PlacementMode.BottomEdgeAlignedLeft);
                 break;
 
-            case SideSubRow sub:
+            case SideSubRow sub when container != null:
+                e.Handled = true;
                 ShowSubMenu(container, sub, PlacementMode.BottomEdgeAlignedLeft);
+                break;
+
+            default:
+                ShowSidebarMenu(e, container ?? lstRows, row?.Section is { } section ? SectionMenuItems(section) : null);
                 break;
         }
     }
@@ -1888,7 +1904,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 break;
 
             case SideActionKind.BrowseCountries:
-                lstTabs.SelectedIndex = (int)SidebarTab.Countries;
+                SelectTab(SidebarTab.Countries);
                 break;
         }
     }
@@ -2324,6 +2340,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         flyout.Items.Add(new Separator());
         flyout.Items.Add(Item(L.MenuDelete, async () => { Select(); await profiles.RemoveServerAsync(); }, "SemiIconDeleteStroked", danger: true, gesture: new KeyGesture(Key.Delete)));
+        // On the home tab: the section the server is listed in (MainWindow.SidebarMenu.cs).
+        if (row.Section is { } section)
+        {
+            flyout.Items.Add(new Separator());
+            flyout.Items.Add(Sub(string.Format(L.SbSection, L.ApHomeSection(section)), SectionMenuItems(section)));
+        }
         flyout.ShowAt(target, placement == PlacementMode.Pointer);
     }
 
@@ -2797,7 +2819,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             _sidebar.OpenedSub = null;
         }
-        lstTabs.SelectedIndex = (int)SidebarTab.Subscriptions;
+        SelectTab(SidebarTab.Subscriptions);
         ShowToast(ToastKind.Info, added.Count > 0 ? L.SubAddedUpdating : L.SubAlreadyAdded);
 
         foreach (var id in added.Concat(existing))

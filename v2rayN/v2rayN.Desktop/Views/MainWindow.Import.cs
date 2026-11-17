@@ -427,7 +427,7 @@ public partial class MainWindow
                 {
                     _sidebar.OpenedSub = null;
                 }
-                lstTabs.SelectedIndex = (int)SidebarTab.Subscriptions;
+                SelectTab(SidebarTab.Subscriptions);
                 foreach (var id in newSubs)
                 {
                     await UpdateAddedSubscriptionAsync(id);

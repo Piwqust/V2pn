@@ -80,6 +80,19 @@ public static partial class L
     public static string ApMoveUp => T("Move up", "Выше");
     public static string ApMoveDown => T("Move down", "Ниже");
 
+    // Right-click menus of the server list (MainWindow.SidebarMenu.cs).
+    public static string SbSection => T("Section “{0}”", "Раздел «{0}»");
+    public static string SbHideSection => T("Hide section", "Скрыть раздел");
+    public static string SbShowSection => T("Show a section", "Вернуть раздел");
+    public static string SbCount => T("How many", "Сколько показывать");
+    public static string SbTabs => T("Tabs", "Вкладки");
+    public static string SbButtons => T("Buttons", "Кнопки");
+    public static string SbCompact => T("Compact rows", "Компактные строки");
+    public static string SbAllAppearance => T("All appearance settings…", "Все настройки оформления…");
+    public static string SbReset => T("Reset the list", "Вернуть список как был");
+    public static string SbDragHint => T("Drag buttons, tabs and section titles to move them",
+        "Кнопки, вкладки и заголовки разделов можно перетаскивать");
+
     // The same names the home tab's headers show.
     public static string ApHomeSection(string id) => id switch
     {

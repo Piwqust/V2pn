@@ -42,7 +42,11 @@ public enum SideActionKind
     DisableStats,
 }
 
-public abstract class SideRow : ReactiveObject;
+public abstract class SideRow : ReactiveObject
+{
+    /// <summary>The home tab's section this row belongs to (Appearance.HomeSectionIds); null elsewhere.</summary>
+    public string? Section { get; set; }
+}
 
 /// <summary>Progress of the ping run started from the sidebar, shared by every list header.</summary>
 public sealed partial class PingState : ReactiveObject
@@ -747,6 +751,8 @@ public sealed partial class SidebarViewModel : ReactiveObject
         // The sections in the order chosen on the Appearance page; one taken off it is not shown.
         foreach (var section in look.HomeSections.Distinct())
         {
+            // Its rows carry the section, so the window can move, resize or hide it from any of them.
+            var first = rows.Count;
             switch (section)
             {
                 case "fastest":
@@ -764,6 +770,10 @@ public sealed partial class SidebarViewModel : ReactiveObject
                 case "stats":
                     BuildStatsSummary(rows, byId);
                     break;
+            }
+            for (var i = first; i < rows.Count; i++)
+            {
+                rows[i].Section = section;
             }
         }
         if (rows.Count == 0)

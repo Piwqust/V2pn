@@ -197,7 +197,8 @@
                     BorderThickness="1"
                     BoxShadow="{DynamicResource V2PanelShadow}"
                     CornerRadius="{DynamicResource V2RadiusPanel}">
-                    <DockPanel>
+                    <Panel>
+                    <DockPanel x:Name="dockSidebar">
                         <Grid
                             x:Name="gridSearch"
                             Margin="12,12,12,8"
@@ -1074,6 +1075,29 @@
                             </ListBox.DataTemplates>
                         </ListBox>
                     </DockPanel>
+
+                    <!--  Dragging a button, a tab or a home section (MainWindow.SidebarDrag.cs): a picture of it under
+                          the pointer and a line where it will land. Never in the way of the pointer.  -->
+                    <Canvas x:Name="sidebarDragLayer" IsHitTestVisible="False">
+                        <Border
+                            x:Name="dragLine"
+                            Background="{DynamicResource V2Accent}"
+                            CornerRadius="2"
+                            IsVisible="False" />
+                        <Border
+                            x:Name="dragGhost"
+                            Background="{DynamicResource MenuFlyoutBackground}"
+                            BorderBrush="{DynamicResource MenuFlyoutBorderBrush}"
+                            BorderThickness="1"
+                            BoxShadow="{DynamicResource V2PanelShadow}"
+                            CornerRadius="{DynamicResource V2RadiusFloatingInner}"
+                            ClipToBounds="True"
+                            IsVisible="False"
+                            Opacity="0.92">
+                            <Image x:Name="dragGhostImage" Stretch="None" />
+                        </Border>
+                    </Canvas>
+                    </Panel>
                 </Border>
 
                 <!--  Stage: map, header, feature rail, stats. The outer border casts the shadow,

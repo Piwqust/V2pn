@@ -1,4 +1,5 @@
 using v2rayN.Desktop.Common;
+using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
 
@@ -9,13 +10,58 @@ namespace v2rayN.Desktop.Views;
 /// </summary>
 public partial class MainWindow
 {
-    private static readonly string[] StartTabIds = ["home", "countries", "subscriptions"];
+    // While the tabs are put in a new order: the selection goes and comes back, the tab stays the same.
+    private bool _arrangingTabs;
 
-    private static int StartTabIndex() => Math.Max(0, Array.IndexOf(StartTabIds, Appearance.Current.StartTab));
+    private static SidebarTab StartTab() => TabFromId(Appearance.Current.StartTab);
+
+    private static SidebarTab TabFromId(string id) => Math.Max(0, Array.IndexOf(Appearance.TabIds, id)) switch
+    {
+        1 => SidebarTab.Countries,
+        2 => SidebarTab.Subscriptions,
+        _ => SidebarTab.Home,
+    };
+
+    private static string TabId(SidebarTab tab) => Appearance.TabIds[(int)tab];
+
+    // The tabs can be dragged into any order, so a tab is known by its tag, not by its place.
+    private static SidebarTab TabOf(object? item) => item is ListBoxItem { Tag: SidebarTab tab } ? tab : SidebarTab.Home;
+
+    private List<ListBoxItem> TabItems()
+    {
+        var items = lstTabs.Items.OfType<ListBoxItem>().ToList();
+        // The XAML lists them in SidebarTab's order; the tag keeps that once they move.
+        if (items.Any(t => t.Tag is not SidebarTab))
+        {
+            for (var i = 0; i < items.Count; i++)
+            {
+                items[i].Tag = (SidebarTab)i;
+            }
+        }
+        return items;
+    }
+
+    private void SelectTab(SidebarTab tab) => lstTabs.SelectedItem = TabItems().FirstOrDefault(t => TabOf(t) == tab);
+
+    private Dictionary<string, Button> RailButtons() => new()
+    {
+        ["update"] = btnRailUpdate,
+        ["dns"] = btnRailDns,
+        ["settings"] = btnRailSettings,
+    };
 
     private void ArrangeSidebar()
     {
         var a = Appearance.Current;
+        ArrangeTabOrder(a);
+        // The rail's buttons in their dragged order.
+        var buttons = RailButtons();
+        var railOrder = Appearance.FullOrder(a.RailOrder, Appearance.RailIds).Select(id => buttons[id]).ToList();
+        if (!gridRail.Children.SequenceEqual(railOrder))
+        {
+            gridRail.Children.Clear();
+            gridRail.Children.AddRange(railOrder);
+        }
         Classes.Set("noflags", !a.ShowFlags);
         Classes.Set("nosubtitles", !a.ShowSubtitles);
         lstTabs.Classes.Set("icons", a.TabsStyle == "icons");
@@ -79,5 +125,32 @@ public partial class MainWindow
         railHost.IsVisible = _tier != BodyTier.Stacked
             && a.RailPosition != "hidden"
             && (btnRailUpdate.IsVisible || btnRailDns.IsVisible || btnRailSettings.IsVisible);
+    }
+
+    private void ArrangeTabOrder(AppearanceSettings a)
+    {
+        var items = TabItems();
+        var wanted = Appearance.FullOrder(a.TabOrder, Appearance.TabIds)
+            .Select(id => items.First(t => TabId(TabOf(t)) == id))
+            .ToList();
+        if (items.SequenceEqual(wanted))
+        {
+            return;
+        }
+        var selected = lstTabs.SelectedItem;
+        _arrangingTabs = true;
+        try
+        {
+            lstTabs.Items.Clear();
+            foreach (var tab in wanted)
+            {
+                lstTabs.Items.Add(tab);
+            }
+            lstTabs.SelectedItem = selected;
+        }
+        finally
+        {
+            _arrangingTabs = false;
+        }
     }
 }

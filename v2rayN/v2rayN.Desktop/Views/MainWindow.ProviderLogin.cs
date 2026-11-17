@@ -142,7 +142,7 @@ public partial class MainWindow
             {
                 _sidebar.OpenedSub = null;
             }
-            lstTabs.SelectedIndex = (int)SidebarTab.Subscriptions;
+            SelectTab(SidebarTab.Subscriptions);
             var saved = (await AppManager.Instance.SubItems() ?? []).FirstOrDefault(s => s.Id == item.Id) ?? item;
             var name = ViewModels.SideSubRow.NameOf(saved);
             if (name.IsNullOrEmpty())

@@ -10,6 +10,7 @@ What changes for the people who use the app. Each version's section becomes the 
 - Appearance has a section for the list: tabs with icons, names or both, on top or at the bottom; the tab the window opens on; flags and the second line under each server on or off.
 - The buttons can sit at the bottom, on top or nowhere, side by side, one under another or as icons, and each of them can be turned off.
 - The Home tab is yours to arrange: turn its sections on and off, put them in any order, and pick how many favorites, recent and fastest servers it shows.
+- All of it is also right in the list. Right-click the tabs, the buttons, a section's title or an empty spot for its settings. Drag the buttons or the tabs to change their order, or to the other end of the list to move them there; drag a section's title to move the section. "Reset the list" in the same menu puts it all back.
 
 ## 1.2.2
 

@@ -46,6 +46,12 @@ public sealed class AppearanceSettings
 
     public bool RailSettings { get; set; } = true;
 
+    /// <summary>The rail's buttons in the order shown (dragged in the window). Ids: <see cref="Appearance.RailIds"/>.</summary>
+    public List<string> RailOrder { get; set; } = [.. Appearance.RailIds];
+
+    /// <summary>The tabs in the order shown (dragged in the window). Ids: <see cref="Appearance.TabIds"/>.</summary>
+    public List<string> TabOrder { get; set; } = [.. Appearance.TabIds];
+
     /// <summary>The home tab's sections in the order shown; one left out is hidden. Ids: <see cref="Appearance.HomeSectionIds"/>.</summary>
     public List<string> HomeSections { get; set; } = [.. Appearance.HomeSectionIds];
 
@@ -60,7 +66,21 @@ public sealed class AppearanceSettings
     {
         var copy = (AppearanceSettings)MemberwiseClone();
         copy.HomeSections = [.. HomeSections];
+        copy.RailOrder = [.. RailOrder];
+        copy.TabOrder = [.. TabOrder];
         return copy;
+    }
+
+    /// <summary>Everything about the server list back to the default; the rest of the look stays.</summary>
+    public void ResetSidebar()
+    {
+        var d = new AppearanceSettings();
+        (SidebarSide, SidebarWidth, Density) = (d.SidebarSide, d.SidebarWidth, d.Density);
+        (TabsStyle, TabsPosition, StartTab, TabOrder) = (d.TabsStyle, d.TabsPosition, d.StartTab, d.TabOrder);
+        (ShowFlags, ShowSubtitles) = (d.ShowFlags, d.ShowSubtitles);
+        (RailPosition, RailLayout, RailOrder) = (d.RailPosition, d.RailLayout, d.RailOrder);
+        (RailUpdate, RailDns, RailSettings) = (d.RailUpdate, d.RailDns, d.RailSettings);
+        (HomeSections, HomeFavorites, HomeRecent, HomeQuick) = (d.HomeSections, d.HomeFavorites, d.HomeRecent, d.HomeQuick);
     }
 }
 
@@ -84,6 +104,21 @@ public static class Appearance
 
     /// <summary>The home tab's sections, in their default order.</summary>
     public static readonly string[] HomeSectionIds = ["fastest", "favorites", "recent", "quick", "stats"];
+
+    /// <summary>The feature rail's buttons and the list's tabs, in their default order.</summary>
+    public static readonly string[] RailIds = ["update", "dns", "settings"];
+    public static readonly string[] TabIds = ["home", "countries", "subscriptions"];
+
+    /// <summary>
+    /// <paramref name="stored"/> made whole: only known ids, each once, the missing ones appended. A file from an
+    /// older version, or edited by hand, still names every button and tab.
+    /// </summary>
+    public static List<string> FullOrder(IEnumerable<string> stored, string[] ids)
+    {
+        var order = stored.Where(ids.Contains).Distinct().ToList();
+        order.AddRange(ids.Except(order));
+        return order;
+    }
 
     public static readonly AppearancePalette[] Palettes =
     [

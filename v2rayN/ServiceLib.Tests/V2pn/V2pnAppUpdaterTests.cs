@@ -234,6 +234,55 @@ public class V2pnAppUpdaterTests
     }
 
     [Test]
+    public async Task ASourceThatRedirects_IsFollowed_ForTheManifestAndThePackage()
+    {
+        // V2pn's server answers every release file with a redirect to the GitHub release.
+        await using var github = Serve("99.0.0");
+        await using var hub = Redirector.Start(github.Source);
+        Trust(hub.Source, "http://127.0.0.1:9/releases");
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.Ready);
+        await (await File.ReadAllBytesAsync(Updater.FindPending()!.Value.File)).SequenceEqual(Package).Should().BeTrue();
+        await hub.Requests.Any(r => r.EndsWith($"/download/v99.0.0/{Name}", StringComparison.Ordinal)).Should().BeTrue();
+        await github.Requests.Any(r => r.EndsWith($"/download/v99.0.0/{Name}", StringComparison.Ordinal)).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task AFirstSourceThatNeverAnswers_IsLeftInSeconds_ForTheNext()
+    {
+        // Connects, then says nothing: what a server that hangs looks like. The last source gets the usual half minute.
+        using var silent = new TcpListener(IPAddress.Loopback, 0);
+        silent.Start();
+        var held = new List<TcpClient>();
+        _ = Task.Run(async () =>
+        {
+            try
+            {
+                while (true)
+                {
+                    held.Add(await silent.AcceptTcpClientAsync());
+                }
+            }
+            catch (Exception ex) when (ex is SocketException or ObjectDisposedException)
+            {
+                // Stopped with the test.
+            }
+        });
+        await using var github = Serve("99.0.0");
+        Trust($"http://127.0.0.1:{((IPEndPoint)silent.LocalEndpoint).Port}/releases", github.Source);
+
+        var watch = Stopwatch.StartNew();
+        await Updater.CheckAsync(download: false);
+
+        await Updater.LatestVersion.Should().BeEqualTo("99.0.0");
+        await (watch.Elapsed < V2pnHttp.TotalTimeout).Should().BeTrue();
+        silent.Stop();
+        held.ForEach(c => c.Dispose());
+    }
+
+    [Test]
     public async Task MirrorWithATamperedPackage_IsSkippedForTheNextSource()
     {
         await using var bad = Serve("99.0.0", served: "something else"u8.ToArray());
@@ -286,6 +335,57 @@ public class V2pnAppUpdaterTests
         await Updater.CheckAsync(download: true, retryFailed: true);
         await Updater.State.Should().BeEqualTo(EV2pnUpdateState.Ready);
         await Updater.InstallFailed.Should().BeFalse();
+    }
+
+    /// <summary>A server that answers every request with a 302 to the same path under <c>target</c>, as V2pn's server does with GitHub.</summary>
+    private sealed class Redirector : IAsyncDisposable
+    {
+        private readonly HttpListener _listener = new();
+        public ConcurrentQueue<string> Requests { get; } = new();
+        public string Source { get; private set; } = string.Empty;
+
+        public static Redirector Start(string target)
+        {
+            var server = new Redirector();
+            var port = ((Func<int>)(() =>
+            {
+                var l = new TcpListener(IPAddress.Loopback, 0);
+                l.Start();
+                var p = ((IPEndPoint)l.LocalEndpoint).Port;
+                l.Stop();
+                return p;
+            }))();
+            server._listener.Prefixes.Add($"http://127.0.0.1:{port}/");
+            server._listener.Start();
+            server.Source = $"http://127.0.0.1:{port}/releases";
+            _ = Task.Run(async () =>
+            {
+                while (server._listener.IsListening)
+                {
+                    try
+                    {
+                        var ctx = await server._listener.GetContextAsync();
+                        var path = ctx.Request.Url!.AbsolutePath;
+                        server.Requests.Enqueue(path);
+                        ctx.Response.StatusCode = 302;
+                        ctx.Response.RedirectLocation = target + path["/releases".Length..];
+                        ctx.Response.Close();
+                    }
+                    catch
+                    {
+                        return;
+                    }
+                }
+            });
+            return server;
+        }
+
+        public ValueTask DisposeAsync()
+        {
+            _listener.Stop();
+            _listener.Close();
+            return ValueTask.CompletedTask;
+        }
     }
 
     private sealed class FakeReleases : IAsyncDisposable

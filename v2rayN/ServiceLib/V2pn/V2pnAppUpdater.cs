@@ -301,14 +301,16 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         var proxy = await V2pnHttp.LocalProxyAsync(cancellationToken);
         var nothingPublished = false;
         string? error = null;
-        foreach (var source in Settings.Sources)
+        foreach (var (source, i) in Settings.Sources.Select((s, i) => (s, i)))
         {
             var host = Uri.TryCreate(source, UriKind.Absolute, out var uri) ? uri.Host : source;
+            // V2pn's server comes first and GitHub after it: a source with a fallback is not waited on for long.
+            var limits = i < Settings.Sources.Count - 1 ? V2pnHttp.Quick : null;
             foreach (var viaProxy in Routes(preferProxy, proxy != null))
             {
                 var route = viaProxy ? proxy : null;
                 var url = V2pnInfo.ManifestUrl(source);
-                var json = await V2pnHttp.GetAsync(url, route, V2pnManifest.MaxBytes, cancellationToken);
+                var json = await V2pnHttp.GetAsync(url, route, V2pnManifest.MaxBytes, cancellationToken, limits: limits);
                 if (json.NotFound)
                 {
                     nothingPublished = true;
@@ -319,7 +321,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                     error = $"{host}: {json.Error}";
                     continue;
                 }
-                var signature = await V2pnHttp.GetAsync(url + V2pnInfo.SignatureSuffix, route, 4096, cancellationToken);
+                var signature = await V2pnHttp.GetAsync(url + V2pnInfo.SignatureSuffix, route, 4096, cancellationToken, limits: limits);
                 var signatureText = signature.Ok ? Encoding.ASCII.GetString(signature.Body!) : null;
                 var manifest = V2pnManifest.ReadVerified(json.Body, signatureText, Settings.Keys, out var why);
                 if (manifest == null)

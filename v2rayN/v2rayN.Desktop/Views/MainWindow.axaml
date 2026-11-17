@@ -199,6 +199,7 @@
                     CornerRadius="{DynamicResource V2RadiusPanel}">
                     <DockPanel>
                         <Grid
+                            x:Name="gridSearch"
                             Margin="12,12,12,8"
                             ColumnDefinitions="*,Auto"
                             DockPanel.Dock="Top">
@@ -295,28 +296,27 @@
                             DockPanel.Dock="Top"
                             IsVisible="False" />
 
-                        <!--  Feature rail at the foot of the list: update, DNS, settings. Mode and routing live under
-                              the Connect button. The one-column window hides it (the actions are in the ☰ menu).  -->
+                        <!--  Feature rail: update, DNS, settings. Mode and routing live under the Connect button.
+                              Where it sits, how it is laid out and which buttons it has: Appearance → Buttons
+                              (MainWindow.Sidebar.cs). The one-column window hides it (the actions are in the ☰ menu).  -->
                         <Border
                             x:Name="railHost"
                             Padding="6"
                             BorderBrush="{DynamicResource V2PanelBorder}"
                             BorderThickness="0,1,0,0"
+                            Classes="railbar"
                             DockPanel.Dock="Bottom">
-                            <!--  UniformGrid shares the width among the visible tiles, so a hidden DNS leaves no gap.  -->
-                            <UniformGrid Rows="1">
+                            <!--  UniformGrid shares the room among the visible buttons, so a hidden one leaves no gap.  -->
+                            <UniformGrid x:Name="gridRail" Rows="1">
                                 <!--  The everyday action: fresh servers from every subscription. DNS is an expert's
-                                      setting; its tile shows only with advanced settings on, and it is always in the menu.  -->
+                                      setting; by default its tile shows only with advanced settings on, and it is always in the menu.  -->
                                 <Button
                                     x:Name="btnRailUpdate"
-                                    Width="NaN"
-                                    Margin="2,0"
-                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Static loc:L.UpdateAll}"
                                     Classes="rail"
                                     Theme="{StaticResource V2RailTile}"
                                     ToolTip.Tip="{x:Static loc:L.UpdateAll}">
-                                    <StackPanel Spacing="6">
+                                    <StackPanel Classes="railtile">
                                         <PathIcon
                                             HorizontalAlignment="Center"
                                             Classes="rail"
@@ -327,14 +327,11 @@
 
                                 <Button
                                     x:Name="btnRailDns"
-                                    Width="NaN"
-                                    Margin="2,0"
-                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Static loc:L.RailDns}"
                                     Classes="rail"
                                     Theme="{StaticResource V2RailTile}"
                                     ToolTip.Tip="{x:Static resx:ResUI.menuDNSSetting}">
-                                    <StackPanel Spacing="6">
+                                    <StackPanel Classes="railtile">
                                         <PathIcon
                                             HorizontalAlignment="Center"
                                             Classes="rail"
@@ -347,14 +344,11 @@
                                       hotkeys sit in that window under "More", the system and data tools in the app menu.  -->
                                 <Button
                                     x:Name="btnRailSettings"
-                                    Width="NaN"
-                                    Margin="2,0"
-                                    HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="{x:Static loc:L.RailSettings}"
                                     Classes="rail"
                                     Theme="{StaticResource V2RailTile}"
                                     ToolTip.Tip="{x:Static resx:ResUI.menuSetting}">
-                                    <StackPanel Spacing="6">
+                                    <StackPanel Classes="railtile">
                                         <PathIcon
                                             HorizontalAlignment="Center"
                                             Classes="rail"
@@ -515,10 +509,12 @@
                                         ToolTip.Tip="{x:Static loc:L.ClickToConnect}"
                                         ToolTip.ShowDelay="900">
                                         <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <!--  Appearance → Flags off takes this column away; the row in use keeps its fill.  -->
                                             <Panel
                                                 Width="26"
                                                 Height="20"
-                                                VerticalAlignment="Center">
+                                                VerticalAlignment="Center"
+                                                Classes="rowflag">
                                                 <Border
                                                     Width="24"
                                                     Height="18"
@@ -541,15 +537,16 @@
                                             </Panel>
                                             <StackPanel
                                                 Grid.Column="1"
-                                                Margin="12,0,8,0"
                                                 VerticalAlignment="Center"
+                                                Classes="rowtext"
                                                 Spacing="1">
                                                 <TextBlock
                                                     Classes="title"
                                                     Text="{Binding Title}"
                                                     TextTrimming="CharacterEllipsis"
                                                     ToolTip.Tip="{Binding Model.Remarks}" />
-                                                <DockPanel>
+                                                <!--  Appearance → Second line off hides it.  -->
+                                                <DockPanel Classes="rowsub">
                                                     <PathIcon
                                                         Margin="0,0,4,0"
                                                         Classes="i12"

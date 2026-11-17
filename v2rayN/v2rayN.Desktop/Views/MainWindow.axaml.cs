@@ -418,6 +418,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             _sidebar = new SidebarViewModel(vm.ProfilesViewModel);
             _sidebar.Rebuilt += RestoreRowFocus;
+            // Appearance → Opens on.
+            lstTabs.SelectedIndex = StartTabIndex();
         }
         lstRows.ItemsSource = _sidebar.Rows;
         mapView.LocationClicked -= MapView_LocationClicked;
@@ -970,7 +972,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void ApplySimpleMode()
     {
         var advanced = _config.UiItem.V2pnSettingsAdvanced;
-        btnRailDns.IsVisible = advanced;
+        // The DNS tile follows this switch unless the Appearance page says otherwise.
+        ArrangeSidebar();
         menuPageTable.IsVisible = advanced;
         menuRegion.IsVisible = advanced;
         // The Clash pages also need a core that has them; XAML binds that, this only takes them away.

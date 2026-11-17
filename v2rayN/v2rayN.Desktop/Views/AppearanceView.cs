@@ -30,6 +30,15 @@ public sealed class AppearanceView : UserControl
     private static readonly string[] CornerIds = ["sharp", "normal", "round"];
     private static readonly string[] WidthIds = ["narrow", "normal", "wide"];
     private static readonly string[] MotionIds = ["system", "on", "off"];
+    private static readonly string[] TabStyleIds = ["both", "icons", "labels"];
+    private static readonly string[] StartTabIds = ["home", "countries", "subscriptions"];
+    private static readonly string[] RailPositionIds = ["bottom", "top", "hidden"];
+    private static readonly string[] RailLayoutIds = ["row", "column", "icons"];
+    private static readonly int[] FavoriteCounts = [3, 5, 10, 0];
+    private static readonly int[] ListCounts = [3, 5, 10];
+
+    // The home tab's sections: a switch and up/down arrows for each, rebuilt on every change.
+    private readonly StackPanel _homeSections = new() { Spacing = 2 };
 
     // The hues of V2Safe and V2PingMid (dark theme values; the light ones are darker shades of the same
     // colours). An accent close to them makes the Connect button, shown only while unprotected, read as a state.
@@ -106,13 +115,38 @@ public sealed class AppearanceView : UserControl
                     Row(L.ApHeadings, null, Segment([L.ApHeadingsSans, L.ApHeadingsSerif],
                         s => s.Headings == "serif" ? 1 : 0, (s, i) => s.Headings = i == 1 ? "serif" : "inter")),
                     Row(L.ApTextSize, null, FontSizeBox())),
-                Group(L.ApGrpLayout,
+                Group(L.ApGrpSidebar,
                     Row(L.ApSidebar, null, Segment([L.ApSideLeft, L.ApSideRight],
                         s => s.SidebarSide == "right" ? 1 : 0, (s, i) => s.SidebarSide = i == 1 ? "right" : "left")),
                     Row(L.ApWidth, null, Segment([L.ApWidthNarrow, L.ApWidthNormal, L.ApWidthWide],
                         s => Index(WidthIds, s.SidebarWidth, 1), (s, i) => s.SidebarWidth = WidthIds[i])),
+                    Row(L.ApTabs, null, Segment([L.ApTabsBoth, L.ApTabsIcons, L.ApTabsLabels],
+                        s => Index(TabStyleIds, s.TabsStyle, 0), (s, i) => s.TabsStyle = TabStyleIds[i])),
+                    Row(L.ApTabsWhere, null, Segment([L.ApTop, L.ApBottom],
+                        s => s.TabsPosition == "bottom" ? 1 : 0, (s, i) => s.TabsPosition = i == 1 ? "bottom" : "top")),
+                    Row(L.ApStartTab, null, Segment([L.TabHome, L.TabCountries, L.TabSubscriptions],
+                        s => Index(StartTabIds, s.StartTab, 0), (s, i) => s.StartTab = StartTabIds[i])),
                     Row(L.ApDensity, null, Segment([L.ApDensityComfortable, L.ApDensityCompact],
                         s => s.Density == "compact" ? 1 : 0, (s, i) => s.Density = i == 1 ? "compact" : "comfortable")),
+                    Row(L.ApFlags, null, Switch(s => s.ShowFlags, (s, v) => s.ShowFlags = v)),
+                    Row(L.ApSubtitles, L.ApSubtitlesHint, Switch(s => s.ShowSubtitles, (s, v) => s.ShowSubtitles = v))),
+                Group(L.ApGrpButtons,
+                    Row(L.ApButtonsWhere, null, Segment([L.ApBottom, L.ApTop, L.ApHidden],
+                        s => Index(RailPositionIds, s.RailPosition, 0), (s, i) => s.RailPosition = RailPositionIds[i])),
+                    Row(L.ApButtonsLayout, null, Segment([L.ApButtonsRow, L.ApButtonsColumn, L.ApButtonsIcons],
+                        s => Index(RailLayoutIds, s.RailLayout, 0), (s, i) => s.RailLayout = RailLayoutIds[i])),
+                    Row(L.RailUpdate, null, Switch(s => s.RailUpdate, (s, v) => s.RailUpdate = v)),
+                    Row(L.RailDns, null, Switch(s => s.RailDns ?? AppManager.Instance.Config.UiItem.V2pnSettingsAdvanced, (s, v) => s.RailDns = v)),
+                    Row(L.RailSettings, null, Switch(s => s.RailSettings, (s, v) => s.RailSettings = v))),
+                Group(L.ApGrpHome,
+                    Stacked(L.ApHomeHint, _homeSections),
+                    Row(L.ApHomeFavorites, null, Segment(["3", "5", "10", L.ApAll],
+                        s => Index(FavoriteCounts, s.HomeFavorites, 1), (s, i) => s.HomeFavorites = FavoriteCounts[i])),
+                    Row(L.ApHomeRecent, null, Segment(["3", "5", "10"],
+                        s => Index(ListCounts, s.HomeRecent, 0), (s, i) => s.HomeRecent = ListCounts[i])),
+                    Row(L.ApHomeQuick, null, Segment(["3", "5", "10"],
+                        s => Index(ListCounts, s.HomeQuick, 1), (s, i) => s.HomeQuick = ListCounts[i]))),
+                Group(L.ApGrpLayout,
                     Row(L.ApMap, L.ApMapHint, Switch(s => s.ShowMap, (s, v) => s.ShowMap = v)),
                     Row(L.ApStatusCard, null, Switch(s => s.ShowStatusCard, (s, v) => s.ShowStatusCard = v)),
                     Row(L.ApSpeedChart, null, Switch(s => s.ShowSpeedChart, (s, v) => s.ShowSpeedChart = v))),
@@ -152,10 +186,87 @@ public sealed class AppearanceView : UserControl
         _partnerNote.Text = Editions.Partner is { } partner ? string.Format(L.ApPartnerNote, partner.Name) : string.Empty;
     }
 
-    private static int Index(string[] ids, string value, int fallback)
+    private static int Index<T>(T[] ids, T value, int fallback)
     {
         var i = Array.IndexOf(ids, value);
         return i < 0 ? fallback : i;
+    }
+
+    /// <summary>
+    /// Every section in one list: those shown first, in their order, then those turned off. A switch takes a
+    /// section off the home tab or puts it back at the end; the arrows move a shown one up or down.
+    /// </summary>
+    private void BuildHomeSections()
+    {
+        _homeSections.Children.Clear();
+        var shown = Appearance.Current.HomeSections.Where(Appearance.HomeSectionIds.Contains).Distinct().ToList();
+        var all = shown.Concat(Appearance.HomeSectionIds.Except(shown)).ToList();
+        foreach (var id in all)
+        {
+            var on = shown.Contains(id);
+            var at = shown.IndexOf(id);
+            var grid = new Grid { ColumnDefinitions = new("*,Auto,Auto,Auto"), MinHeight = 34 };
+            grid.Children.Add(new TextBlock
+            {
+                Text = L.ApHomeSection(id),
+                VerticalAlignment = VerticalAlignment.Center,
+                Classes = { on ? "srowtitle" : "muted" },
+            });
+            var up = ArrowButton("SemiIconChevronUp", L.ApMoveUp, on && at > 0, () => Move(id, -1));
+            var down = ArrowButton("SemiIconChevronDown", L.ApMoveDown, on && at < shown.Count - 1, () => Move(id, 1));
+            // A section that is off has no place in the order; it comes back at the end.
+            up.IsVisible = down.IsVisible = on;
+            Grid.SetColumn(up, 1);
+            Grid.SetColumn(down, 2);
+            grid.Children.Add(up);
+            grid.Children.Add(down);
+            var toggle = new ToggleSwitch { OnContent = string.Empty, OffContent = string.Empty, MinWidth = 0, IsChecked = on, Margin = new Thickness(12, 0, 0, 0), VerticalAlignment = VerticalAlignment.Center };
+            AutomationProperties.SetName(toggle, L.ApHomeSection(id));
+            toggle.IsCheckedChanged += (_, _) => Dispatcher.UIThread.Post(() =>
+            {
+                Change(s =>
+                {
+                    s.HomeSections.Remove(id);
+                    if (toggle.IsChecked == true)
+                    {
+                        s.HomeSections.Add(id);
+                    }
+                });
+                BuildHomeSections();
+            });
+            Grid.SetColumn(toggle, 3);
+            grid.Children.Add(toggle);
+            _homeSections.Children.Add(grid);
+        }
+    }
+
+    private void Move(string id, int step)
+    {
+        Change(s =>
+        {
+            var list = s.HomeSections.Where(Appearance.HomeSectionIds.Contains).Distinct().ToList();
+            var i = list.IndexOf(id);
+            var j = i + step;
+            if (i < 0 || j < 0 || j >= list.Count)
+            {
+                return;
+            }
+            (list[i], list[j]) = (list[j], list[i]);
+            s.HomeSections = list;
+        });
+        BuildHomeSections();
+    }
+
+    private static Button ArrowButton(string icon, string name, bool enabled, Action click)
+    {
+        var glyph = new PathIcon { Classes = { "i14" } };
+        glyph.Bind(PathIcon.DataProperty, glyph.GetResourceObservable(icon));
+        var button = new Button { Classes = { "ghost", "small", "icon" }, Content = glyph, IsEnabled = enabled, VerticalAlignment = VerticalAlignment.Center };
+        button.Bind(ThemeProperty, button.GetResourceObservable("V2Button"));
+        ToolTip.SetTip(button, name);
+        AutomationProperties.SetName(button, name);
+        button.Click += (_, _) => click();
+        return button;
     }
 
     private static void Change(Action<AppearanceSettings> edit)
@@ -179,6 +290,7 @@ public sealed class AppearanceView : UserControl
         }
         BuildPalettes();
         BuildAccents();
+        BuildHomeSections();
         _customAccent.Text = s.Accent.StartsWith('#') ? s.Accent : string.Empty;
         _accentNote.IsVisible = Appearance.NearHue(Appearance.AccentColor, StatusHues);
         _refreshing = false;

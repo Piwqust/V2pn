@@ -32,7 +32,7 @@ public static partial class L
     public static string ApTextSizeDefault => T("Standard", "Обычный");
 
     public static string ApGrpLayout => T("Main window", "Главное окно");
-    public static string ApSidebar => T("Server list", "Список серверов");
+    public static string ApSidebar => T("Side", "Сторона");
     public static string ApSideLeft => T("Left", "Слева");
     public static string ApSideRight => T("Right", "Справа");
     public static string ApWidth => T("List width", "Ширина списка");
@@ -47,7 +47,51 @@ public static partial class L
     public static string ApStatusCard => T("Connection card", "Карточка подключения");
     public static string ApSpeedChart => T("Speed graph", "График скорости");
 
-    public static string ApGrpMotion => T("Motion and language", "Движение и язык");
+    public static string ApGrpSidebar => T("Server list", "Список серверов");
+    public static string ApTabs => T("Tabs", "Вкладки");
+    public static string ApTabsBoth => T("Icon and name", "Значок и имя");
+    public static string ApTabsIcons => T("Icons", "Значки");
+    public static string ApTabsLabels => T("Names", "Имена");
+    public static string ApTabsWhere => T("Tabs sit", "Где вкладки");
+    public static string ApTop => T("Top", "Сверху");
+    public static string ApBottom => T("Bottom", "Снизу");
+    public static string ApHidden => T("Hidden", "Скрыть");
+    public static string ApStartTab => T("Opens on", "Открывать на");
+    public static string ApFlags => T("Flags", "Флаги");
+    public static string ApSubtitles => T("Second line", "Вторая строка");
+    public static string ApSubtitlesHint => T("Protocol and speed under the server's name.", "Протокол и скорость под именем сервера.");
+
+    public static string ApGrpButtons => T("Buttons", "Кнопки");
+    public static string ApButtonsWhere => T("Where", "Где");
+    public static string ApButtonsLayout => T("Layout", "Вид");
+    public static string ApButtonsRow => T("In a row", "В строку");
+    public static string ApButtonsColumn => T("In a column", "В столбик");
+    public static string ApButtonsIcons => T("Icons only", "Только значки");
+    public static string ApButtonsShown => T("Show", "Показывать");
+
+    public static string ApGrpHome => T("Home tab", "Главная");
+    public static string ApHomeHint => T("What the home tab shows and in what order.", "Что показывает «Главная» и в каком порядке.");
+    public static string HomeEmptyHint => T("Every section is turned off. Turn some on in Appearance (palette button above).",
+        "Все разделы выключены. Включите нужные в «Оформлении» (кнопка с палитрой вверху).");
+    public static string ApHomeFavorites =>T("Favorites shown", "Избранных сразу");
+    public static string ApHomeRecent => T("Recent shown", "Недавних");
+    public static string ApHomeQuick => T("Fastest shown", "Быстрых");
+    public static string ApAll => T("All", "Все");
+    public static string ApMoveUp => T("Move up", "Выше");
+    public static string ApMoveDown => T("Move down", "Ниже");
+
+    // The same names the home tab's headers show.
+    public static string ApHomeSection(string id) => id switch
+    {
+        "fastest" => Fastest,
+        "favorites" => TabFavorites,
+        "recent" => Recent,
+        "quick" => FastestList,
+        "stats" => Stats,
+        _ => id,
+    };
+
+    public static string ApGrpMotion =>T("Motion and language", "Движение и язык");
     public static string ApMotion => T("Animations", "Анимации");
     public static string ApMotionHint => T("Applies right away.", "Применяется сразу.");
     public static string ApMotionSystem => T("As in Windows", "Как в Windows");

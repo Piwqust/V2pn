@@ -25,7 +25,43 @@ public sealed class AppearanceSettings
     /// <summary>"system" follows Windows' animation setting; "on" and "off" override it. Applied live (Motion.Refresh).</summary>
     public string Motion { get; set; } = "system";
 
-    public AppearanceSettings Clone() => (AppearanceSettings)MemberwiseClone();
+    // The server list. Tabs: "both", "icons" or "labels"; "top" or "bottom".
+    public string TabsStyle { get; set; } = "both";
+    public string TabsPosition { get; set; } = "top";
+
+    /// <summary>The tab the window opens on: "home", "countries" or "subscriptions".</summary>
+    public string StartTab { get; set; } = "home";
+
+    public bool ShowFlags { get; set; } = true;
+    public bool ShowSubtitles { get; set; } = true;
+
+    // The buttons at the foot of the list (update, DNS, settings). Position "bottom", "top" or "hidden";
+    // layout "row" (tiles side by side), "column" (one under another) or "icons".
+    public string RailPosition { get; set; } = "bottom";
+    public string RailLayout { get; set; } = "row";
+    public bool RailUpdate { get; set; } = true;
+
+    /// <summary>Null: shown with advanced settings on, as before the setting existed.</summary>
+    public bool? RailDns { get; set; }
+
+    public bool RailSettings { get; set; } = true;
+
+    /// <summary>The home tab's sections in the order shown; one left out is hidden. Ids: <see cref="Appearance.HomeSectionIds"/>.</summary>
+    public List<string> HomeSections { get; set; } = [.. Appearance.HomeSectionIds];
+
+    /// <summary>Favorites shown before "show all"; 0 shows them all.</summary>
+    public int HomeFavorites { get; set; } = 5;
+
+    public int HomeRecent { get; set; } = 3;
+    public int HomeQuick { get; set; } = 5;
+
+    // The list is copied too: the Appearance page edits a clone, and the stored one must not change under it.
+    public AppearanceSettings Clone()
+    {
+        var copy = (AppearanceSettings)MemberwiseClone();
+        copy.HomeSections = [.. HomeSections];
+        return copy;
+    }
 }
 
 [JsonSerializable(typeof(AppearanceSettings))]
@@ -45,6 +81,9 @@ public sealed record AppearancePalette(string Id, double Hue, double Saturation,
 public static class Appearance
 {
     private const string FileName = "V2pnAppearance.json";
+
+    /// <summary>The home tab's sections, in their default order.</summary>
+    public static readonly string[] HomeSectionIds = ["fastest", "favorites", "recent", "quick", "stats"];
 
     public static readonly AppearancePalette[] Palettes =
     [

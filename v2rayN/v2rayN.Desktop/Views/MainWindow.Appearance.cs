@@ -55,6 +55,8 @@ public partial class MainWindow
     {
         var a = Appearance.Current;
         ArrangeForWidth();
+        // Tabs, rows and the feature rail (MainWindow.Sidebar.cs); the rail also hides in one column.
+        ArrangeSidebar();
         if (_tier != BodyTier.Stacked)
         {
             var width = SidebarPixels();

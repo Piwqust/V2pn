@@ -459,8 +459,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
     [Reactive]
     public partial bool StatsOpen { get; set; }
 
-    // Home shows the first few favorites; "show all" opens the rest until the user folds them again.
-    private const int FavoritesShown = 5;
+    // Home shows the first few favorites (Appearance → Home tab); "show all" opens the rest until the user folds them again.
     private bool _favoritesExpanded;
     private DateTime _statsRebuilt;
 
@@ -536,6 +535,8 @@ public sealed partial class SidebarViewModel : ReactiveObject
         });
         ServerUsageManager.Instance.LoadAsync().ContinueWith(_ => Dispatcher.UIThread.Post(QueueRebuild), TaskScheduler.Default);
 
+        // The home tab's sections and their sizes are set on the Appearance page.
+        Appearance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
         SubInfoManager.Instance.Changed += id => Dispatcher.UIThread.Post(async () => await OnSubInfoChangedAsync(id));
         SubInfoManager.Instance.LoadAsync().ContinueWith(_ => Dispatcher.UIThread.Post(QueueRebuild), TaskScheduler.Default);
     }
@@ -739,31 +740,67 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
         var everything = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).Select(g => g.First()).ToList();
         _pingScope = everything;
+        var byId = everything.ToDictionary(m => m.IndexId);
+        var favorites = _profiles.FavoriteItems.ToList();
+        var look = Appearance.Current;
+
+        // The sections in the order chosen on the Appearance page; one taken off it is not shown.
+        foreach (var section in look.HomeSections.Distinct())
+        {
+            switch (section)
+            {
+                case "fastest":
+                    AddFastest(rows, everything);
+                    break;
+                case "favorites":
+                    AddFavorites(rows, favorites, look.HomeFavorites);
+                    break;
+                case "recent":
+                    AddRecent(rows, favorites, byId, look.HomeRecent);
+                    break;
+                case "quick":
+                    AddQuick(rows, everything, look.HomeQuick);
+                    break;
+                case "stats":
+                    BuildStatsSummary(rows, byId);
+                    break;
+            }
+        }
+        if (rows.Count == 0)
+        {
+            rows.Add(new SideHeaderRow(L.TabHome));
+            rows.Add(new SideHintRow(L.HomeEmptyHint));
+        }
+    }
+
+    private void AddFastest(List<SideRow> rows, List<ProfileItemModel> everything)
+    {
         var fastest = PickFastest(everything);
         if (fastest == null)
         {
             rows.Add(new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone, ping: Ping));
+            return;
         }
-        else
-        {
-            // An old result is still shown, with a word that the click tests again first.
-            var age = LastPing is { } last ? Fmt.Ago(last) : null;
-            var subtitle = PingIsStale
-                ? $"{CountryResolver.ServerName(fastest)} · {string.Format(L.FastestRecheck, age ?? L.Ms(fastest.Delay))}"
-                : string.Format(L.FastestAge, CountryResolver.ServerName(fastest), L.Ms(fastest.Delay), age ?? L.JustNow);
-            rows.Add(new SideActionRow(SideActionKind.Fastest, L.Fastest, subtitle, fastest.IndexId, Ping));
-        }
+        // An old result is still shown, with a word that the click tests again first.
+        var age = LastPing is { } last ? Fmt.Ago(last) : null;
+        var subtitle = PingIsStale
+            ? $"{CountryResolver.ServerName(fastest)} · {string.Format(L.FastestRecheck, age ?? L.Ms(fastest.Delay))}"
+            : string.Format(L.FastestAge, CountryResolver.ServerName(fastest), L.Ms(fastest.Delay), age ?? L.JustNow);
+        rows.Add(new SideActionRow(SideActionKind.Fastest, L.Fastest, subtitle, fastest.IndexId, Ping));
+    }
 
-        // Favorites: the first few; the rest one click away, so the other sections stay in view.
-        var favorites = _profiles.FavoriteItems.ToList();
+    // Favorites: the first few; the rest one click away, so the other sections stay in view. 0 shows all.
+    private void AddFavorites(List<SideRow> rows, List<ProfileItemModel> favorites, int limit)
+    {
+        var first = limit > 0 ? limit : int.MaxValue;
         rows.Add(new SideHeaderRow(Counted(L.TabFavorites, favorites.Count), favorites.Count > 0 ? Ping : null) { PingScope = favorites });
-        var shown = _favoritesExpanded ? favorites : favorites.Take(FavoritesShown).ToList();
+        var shown = _favoritesExpanded ? favorites : favorites.Take(first).ToList();
         rows.AddRange(shown.Select(m => new SideServerRow(m, true, false)));
-        if (favorites.Count > FavoritesShown)
+        if (favorites.Count > first)
         {
             rows.Add(_favoritesExpanded
                 ? new SideActionRow(SideActionKind.ShowFewerFavorites, L.ShowFewer, string.Empty)
-                : new SideActionRow(SideActionKind.ShowAllFavorites, L.ShowAllFavorites, string.Format(L.MoreCount, favorites.Count - FavoritesShown)));
+                : new SideActionRow(SideActionKind.ShowAllFavorites, L.ShowAllFavorites, string.Format(L.MoreCount, favorites.Count - first)));
         }
         if (favorites.Count == 0)
         {
@@ -771,13 +808,15 @@ public sealed partial class SidebarViewModel : ReactiveObject
             // The home tab has no servers to star; Countries does.
             rows.Add(new SideActionRow(SideActionKind.BrowseCountries, L.BrowseCountries, string.Empty));
         }
+    }
 
-        // Recent connections, Proton-style: the last few servers, newest first, unless they are favorites already.
-        var byId = everything.ToDictionary(m => m.IndexId);
+    // Recent connections, Proton-style: the last few servers, newest first, unless they are favorites already.
+    private static void AddRecent(List<SideRow> rows, List<ProfileItemModel> favorites, Dictionary<string, ProfileItemModel> byId, int limit)
+    {
         var favoriteIds = favorites.Select(m => m.IndexId).ToHashSet();
         var recent = (Ui.V2pnRecent ?? [])
             .Where(id => !favoriteIds.Contains(id) && byId.ContainsKey(id))
-            .Take(3)
+            .Take(Math.Max(1, limit))
             .Select(id => byId[id])
             .ToList();
         if (recent.Count > 0)
@@ -785,9 +824,12 @@ public sealed partial class SidebarViewModel : ReactiveObject
             rows.Add(new SideHeaderRow(L.Recent));
             rows.AddRange(recent.Select(m => new SideServerRow(m, true, false)));
         }
+    }
 
-        // The quickest five right now: what to pick from when the very fastest is not the one wanted.
-        var quick = ServerNames.DistinctConnections(everything).Where(m => m.Delay > 0).OrderBy(m => m.Delay).Take(5).ToList();
+    // The quickest few right now: what to pick from when the very fastest is not the one wanted.
+    private void AddQuick(List<SideRow> rows, List<ProfileItemModel> everything, int limit)
+    {
+        var quick = ServerNames.DistinctConnections(everything).Where(m => m.Delay > 0).OrderBy(m => m.Delay).Take(Math.Max(1, limit)).ToList();
         rows.Add(new SideHeaderRow(L.FastestList, Ping) { PingScope = everything });
         if (quick.Count > 0)
         {
@@ -797,8 +839,6 @@ public sealed partial class SidebarViewModel : ReactiveObject
         {
             rows.Add(new SideHintRow(L.FastestListEmpty));
         }
-
-        BuildStatsSummary(rows, byId);
     }
 
     private static void BuildStatsSummary(List<SideRow> rows, Dictionary<string, ProfileItemModel> byId)

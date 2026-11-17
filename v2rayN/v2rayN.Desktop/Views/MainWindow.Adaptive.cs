@@ -145,9 +145,6 @@ public partial class MainWindow
             Grid.SetRow(borderSidebar, 0);
             borderSidebar.IsVisible = true;
         }
-        // The tiles sit at the foot of the server list, so only the one-column window, short on height,
-        // goes without them.
-        railHost.IsVisible = !stacked;
         panelHeadline.Margin = _tier == BodyTier.Full ? _headlineMargin : default;
         panelHeader.Margin = stacked ? new Thickness(12, 18, 12, 0) : _headerMargin;
         // Connect and the mode bar span the column instead of shrinking to the bar's own width.

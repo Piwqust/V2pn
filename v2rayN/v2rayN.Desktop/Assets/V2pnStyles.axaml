@@ -1240,6 +1240,57 @@
     <Style Selector="ListBox.sidetabs > ListBoxItem:selected PathIcon">
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
     </Style>
+    <!--  Appearance → Tabs: icons alone or names alone (MainWindow.Sidebar.cs also makes the switch lower).  -->
+    <Style Selector="ListBox.sidetabs.icons > ListBoxItem TextBlock, ListBox.sidetabs.labels > ListBoxItem PathIcon">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!--  The server rows (Appearance → Server list): without flags, without the second line.  -->
+    <Style Selector="StackPanel.rowtext">
+        <Setter Property="Margin" Value="12,0,8,0" />
+    </Style>
+    <Style Selector=":is(Window).noflags Panel.rowflag">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector=":is(Window).noflags StackPanel.rowtext">
+        <Setter Property="Margin" Value="4,0,8,0" />
+    </Style>
+    <Style Selector=":is(Window).nosubtitles DockPanel.rowsub">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+
+    <!--  The feature rail (Appearance → Buttons): tiles in a row, a list in a column, or icons only.  -->
+    <Style Selector="Border.railbar Button.rail">
+        <Setter Property="Width" Value="NaN" />
+        <Setter Property="Margin" Value="2,0" />
+        <Setter Property="HorizontalAlignment" Value="Stretch" />
+    </Style>
+    <Style Selector="Border.railbar StackPanel.railtile">
+        <Setter Property="Spacing" Value="6" />
+    </Style>
+    <Style Selector="Border.railbar.column Button.rail">
+        <Setter Property="MinHeight" Value="38" />
+        <Setter Property="Margin" Value="0,1" />
+        <Setter Property="Padding" Value="12,8" />
+        <Setter Property="HorizontalContentAlignment" Value="Left" />
+    </Style>
+    <Style Selector="Border.railbar.column StackPanel.railtile">
+        <Setter Property="Orientation" Value="Horizontal" />
+        <Setter Property="Spacing" Value="12" />
+    </Style>
+    <Style Selector="Border.railbar.column TextBlock.rail">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+        <Setter Property="TextWrapping" Value="NoWrap" />
+        <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+    </Style>
+    <Style Selector="Border.railbar.icons Button.rail">
+        <Setter Property="MinHeight" Value="40" />
+    </Style>
+    <Style Selector="Border.railbar.icons TextBlock.rail">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
 
     <!--  Tooltips match the menus: same surface, rounder, a little roomier.  -->
     <Style Selector="ToolTip">

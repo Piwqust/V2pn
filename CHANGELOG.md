@@ -2,6 +2,15 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### Your own server list
+
+- Update subscriptions, DNS and Settings moved from the map to the foot of the server list.
+- Appearance has a section for the list: tabs with icons, names or both, on top or at the bottom; the tab the window opens on; flags and the second line under each server on or off.
+- The buttons can sit at the bottom, on top or nowhere, side by side, one under another or as icons, and each of them can be turned off.
+- The Home tab is yours to arrange: turn its sections on and off, put them in any order, and pick how many favorites, recent and fastest servers it shows.
+
 ## 1.2.2
 
 V2pn no longer changes its look for any provider. A provider gets its own build of V2pn instead.

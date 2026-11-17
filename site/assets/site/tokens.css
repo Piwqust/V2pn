@@ -1,10 +1,10 @@
 /* V2pn's own type and colours (start.mjs brand --page software --bg "#ECEEF3" --ink "#16161B" --accent "#E8391B"
    --surface "#FFFFFF" --muted "#5E5E6B" --type geist --radius round): the app's light tokens (V2pnTheme.axaml) and its
    face, Geist, served from this site (no font service). Keep the :root block as printed. */
-@font-face { font-family: "Geist"; src: url(../fonts/Geist-Regular.ttf) format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
-@font-face { font-family: "Geist"; src: url(../fonts/Geist-Medium.ttf) format("truetype"); font-weight: 500; font-style: normal; font-display: swap; }
-@font-face { font-family: "Geist"; src: url(../fonts/Geist-SemiBold.ttf) format("truetype"); font-weight: 600; font-style: normal; font-display: swap; }
-@font-face { font-family: "Geist Mono"; src: url(../fonts/GeistMono-Regular.ttf) format("truetype"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(../fonts/Geist-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(../fonts/Geist-Medium.woff2) format("woff2"); font-weight: 500; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist"; src: url(../fonts/Geist-SemiBold.woff2) format("woff2"); font-weight: 600; font-style: normal; font-display: swap; }
+@font-face { font-family: "Geist Mono"; src: url(../fonts/GeistMono-Regular.woff2) format("woff2"); font-weight: 400; font-style: normal; font-display: swap; }
 :root {
   --p-bg: #eceef3; --p-surface: #ffffff; --p-ink: #16161b; --p-muted: #5e5e6b;
   --p-accent: #e8391b; --p-accent-ink: #111111; --p-action: #e8391b; --p-action-ink: #111111;

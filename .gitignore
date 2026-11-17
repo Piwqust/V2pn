@@ -436,3 +436,4 @@ site/.taste-skill/*
 !site/.taste-skill/*history.json
 !site/.taste-skill/names.json
 site/*/.taste-skill/
+!site/.taste-skill/waivers.json

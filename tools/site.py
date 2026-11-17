@@ -115,7 +115,7 @@ def build_map(out):
             paths.append("".join(rings))
     d = "".join(paths)
     for mode, col in MAP_COLOURS.items():
-        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 {w} {h}" preserveAspectRatio="xMidYMid slice">'
+        svg = (f'<svg xmlns="http://www.w3.org/2000/svg" width="{w}" height="{h}" viewBox="0 0 {w} {h}" preserveAspectRatio="xMidYMid slice">'
                f'<rect width="{w}" height="{h}" fill="{col["ocean"]}"/>'
                f'<path d="{d}" fill="{col["land"]}" stroke="{col["border"]}" stroke-width="1.2" stroke-linejoin="round"/></svg>')
         write(os.path.join(out, f"map-{mode}.svg"), svg)
@@ -126,8 +126,16 @@ def build_map(out):
 def copy_assets():
     fonts = os.path.join(SITE, "assets", "fonts")
     os.makedirs(fonts, exist_ok=True)
-    for f in ("Geist-Regular.ttf", "Geist-Medium.ttf", "Geist-SemiBold.ttf", "GeistMono-Regular.ttf", "Geist-OFL.txt"):
-        shutil.copy(os.path.join(ASSETS, "Fonts", f), os.path.join(fonts, f))
+    shutil.copy(os.path.join(ASSETS, "Fonts", "Geist-OFL.txt"), os.path.join(fonts, "Geist-OFL.txt"))
+    # WOFF2, a third of the TTF: fontTools with brotli (pip install fonttools brotli) writes it from the app's files.
+    from fontTools.ttLib import TTFont
+    for f in ("Geist-Regular", "Geist-Medium", "Geist-SemiBold", "GeistMono-Regular"):
+        font = TTFont(os.path.join(ASSETS, "Fonts", f + ".ttf"))
+        font.flavor = "woff2"
+        font.save(os.path.join(fonts, f + ".woff2"))
+        stale = os.path.join(fonts, f + ".ttf")
+        if os.path.isfile(stale):
+            os.remove(stale)
     v2 = os.path.join(SITE, "assets", "v2pn")
     os.makedirs(os.path.join(v2, "flags"), exist_ok=True)
     for code in FLAGS:
@@ -292,7 +300,7 @@ def build_builder():
     # Its stylesheet as it is, but for the font: the site's own copy of Geist (assets/fonts), one source per face.
     with open(os.path.join(src, "builder.css"), encoding="utf-8") as fh:
         css = fh.read()
-    css = re.sub(r"src: url\(\.\./fonts/([^)]+)\)(, url\([^)]*\))*;", r"src: url(../../assets/fonts/\1);", css)
+    css = re.sub(r"src: url\(\.\./fonts/([^)]+)\.ttf\)(, url\([^)]*\))*;", r'src: url(../../assets/fonts/\1.woff2) format("woff2");', css)
     write(os.path.join(out, "builder.css"), css)
     with open(os.path.join(src, "index.html"), encoding="utf-8") as fh:
         text = fh.read()
@@ -337,10 +345,10 @@ def build_partners():
 # ---------------------------------------------------------------- the upload
 
 def upload_list():
-    skip_dirs = {".taste-skill", "shots", "names"}
     files = []
     for folder, dirs, names in os.walk(SITE):
-        dirs[:] = sorted(d for d in dirs if d not in skip_dirs)
+        # the design checks' history and output, and the local screenshots, stay home
+        dirs[:] = sorted(d for d in dirs if d != ".taste-skill" and not (folder == SITE and d == "shots"))
         for n in sorted(names):
             rel = os.path.relpath(os.path.join(folder, n), SITE).replace(os.sep, "/")
             if rel in ("README.md", "names.json") or rel.endswith((".md",)):

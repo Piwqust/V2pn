@@ -32,8 +32,9 @@
 <style>
   /* page CSS: the card group's panel height, the lit ground of the split frames, the hero's pieces */
   #who .panel, #steps .panel { --p-h: 280px; }
-  @media (max-width: 639px) { #who .panel, #steps .panel { --p-h: 220px; } }
+  @media (max-width: 639px) { #who .panel, #steps .panel { --p-h: 170px; } }
   #tab .frame, #panel .frame { background: var(--ground-bg); }
+  @media (min-width: 640px) and (max-width: 1023px) { #who, #steps { --h: 2; } }
   .ly-collage .ly-piece.v2w { overflow: hidden; }
   #configra .configra-shot { margin-top: var(--s-7); }
   #configra .configra-shot > img { object-position: 50% 0; }
@@ -92,12 +93,12 @@
           <div class="ly-piece v2w" style="left: 4%; top: 6%; width: 92%; height: 10%; grid-template-rows: 1fr" aria-hidden="true">
             <div class="v2w__bar">
               <svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-              <span class="v2-tabs-bar"><span class="v2-tab"><svg class="fork" viewBox="0 0 104 112"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</span><span class="v2-tab is-on"><img src="../assets/partners/configra/mark.png" alt="">Configra</span></span>
+              <span class="v2-tabs-bar"><span class="v2-tab"><svg class="fork" viewBox="0 0 104 112"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</span><span class="v2-tab is-on"><img src="../assets/partners/configra/mark.png" alt="" width="128" height="128">Configra</span></span>
             </div>
           </div>
           <div class="ly-piece v2w v2-piece" style="left: 4%; top: 24%; width: 66%" aria-hidden="true">
             <div class="v2-plan" style="--w-brand: #FF7A2F; --w-brand-text: #B8470C; margin: 0">
-              <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt=""><span><b>Configra</b><small>Личный доступ · 77 дней · 2 из 5 устройств</small></span></div>
+              <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt="" width="128" height="128"><span><b>Configra</b><small>Личный доступ · 77 дней · 2 из 5 устройств</small></span></div>
               <div class="v2-bar" style="--v: 25%"><i></i></div>
               <small>12,4 ГБ из 50 ГБ · оплачено до 31 января 2027</small>
               <div class="v2-plan__links"><span>Продлить</span><span>Поддержка</span></div>
@@ -116,7 +117,7 @@
                 <span class="v2-connect v2-connect--go" style="--w-brand: #FF7A2F"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v8M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>Подключиться</span>
               </div>
               <div class="v2-scene-plan">
-                <img src="../assets/partners/configra/logo-dark.png" alt="">
+                <img src="../assets/partners/configra/logo-dark.png" alt="" width="337" height="96">
                 <span class="days">77<small>осталось дней<br>Оплачено до 31 января 2027</small></span>
                 <div class="v2-scene-plan__btns"><span>Продлить</span><span>Поддержка</span></div>
               </div>
@@ -127,7 +128,7 @@
         <div class="ly-collage__set" aria-hidden="true">
           <div class="ly-piece v2w v2-piece" style="left: 4%; top: 6%; width: 52%" aria-hidden="true">
             <div class="v2-login">
-              <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt=""><span><b>Войти через Configra</b><small>Подтвердите код в боте Configra</small></span></div>
+              <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt="" width="128" height="128"><span><b>Войти через Configra</b><small>Подтвердите код в боте Configra</small></span></div>
               <span class="v2-code">482 913</span>
               <small>Код действует 10 минут</small>
               <span class="v2-connect v2-connect--go" style="--w-brand: #FF7A2F; width: 100%; margin: 0">Открыть бота</span>
@@ -165,26 +166,26 @@
               <div class="v2w ui ui-v2pn" aria-hidden="true" style="width: 780px; height: 700px; --w-side-w: 40%; --w-brand: #FF7A2F; --w-brand-text: #B8470C; --w-tint: rgba(255, 122, 47, .16)">
                 <div class="v2w__bar">
                   <svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>
-                  <span class="v2-tabs-bar"><span class="v2-tab"><svg class="fork" viewBox="0 0 104 112"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</span><span class="v2-tab is-on"><img src="../assets/partners/configra/mark.png" alt="">Configra</span></span>
+                  <span class="v2-tabs-bar"><span class="v2-tab"><svg class="fork" viewBox="0 0 104 112"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</span><span class="v2-tab is-on"><img src="../assets/partners/configra/mark.png" alt="" width="128" height="128" loading="lazy">Configra</span></span>
                   <span class="v2w__sp"></span>
                 </div>
                 <div class="v2w__body">
                   <div class="v2-side">
                     <div class="v2-seg"><span class="is-on">Главная</span><span>Страны</span><span>Подписки</span></div>
                     <div class="v2-plan">
-                      <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt=""><span><b>Configra</b><small>Личный доступ · 77 дней</small></span></div>
+                      <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt="" width="128" height="128" loading="lazy"><span><b>Configra</b><small>Личный доступ · 77 дней</small></span></div>
                       <div class="v2-bar" style="--v: 25%"><i></i></div>
                       <small>12,4 ГБ из 50 ГБ · до 31 января 2027</small>
                       <div class="v2-plan__links"><span>Продлить</span><span>Поддержка</span></div>
                     </div>
                     <div class="v2-label"><span>Самые быстрые</span></div>
-                    <div class="v2-row"><img src="../assets/v2pn/flags/se.png" alt=""><span><b>Швеция</b><small>Hysteria 100/GBIT</small></span><span class="v2-ping">67 мс</span></div>
-                    <div class="v2-row"><img src="../assets/v2pn/flags/de.png" alt=""><span><b>Германия</b><small>Vless TCP 1/GBIT</small></span><span class="v2-ping">88 мс</span></div>
-                    <div class="v2-row"><img src="../assets/v2pn/flags/fi.png" alt=""><span><b>Финляндия</b><small>Hysteria 5/GBIT</small></span><span class="v2-ping">88 мс</span></div>
+                    <div class="v2-row"><img src="../assets/v2pn/flags/se.png" alt="" width="24" height="18" loading="lazy"><span><b>Швеция</b><small>Hysteria 100/GBIT</small></span><span class="v2-ping">67 мс</span></div>
+                    <div class="v2-row"><img src="../assets/v2pn/flags/de.png" alt="" width="24" height="18" loading="lazy"><span><b>Германия</b><small>Vless TCP 1/GBIT</small></span><span class="v2-ping">88 мс</span></div>
+                    <div class="v2-row"><img src="../assets/v2pn/flags/fi.png" alt="" width="24" height="18" loading="lazy"><span><b>Финляндия</b><small>Hysteria 5/GBIT</small></span><span class="v2-ping">88 мс</span></div>
                   </div>
                   <div class="v2-main">
                     <span class="v2-map"></span>
-                    <div class="v2-head"><span class="v2-pill v2-pill--off">Не защищено</span><span class="v2-title"><img class="v2-flag" src="../assets/v2pn/flags/se.png" alt="">Швеция</span><span class="v2-sub">Hysteria2</span></div>
+                    <div class="v2-head"><span class="v2-pill v2-pill--off">Не защищено</span><span class="v2-title"><img class="v2-flag" src="../assets/v2pn/flags/se.png" alt="" width="34" height="25" loading="lazy">Швеция</span><span class="v2-sub">Hysteria2</span></div>
                     <span class="v2-connect v2-connect--go"><svg class="ic" viewBox="0 0 24 24"><path d="M12 3v8M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>Подключиться</span>
                     <div class="v2-chips"><span>Самый быстрый</span><span>Для YouTube</span><span>Продлить</span></div>
                   </div>
@@ -197,7 +198,7 @@
     </div>
   </section>
 
-  <section class="section" id="who" aria-labelledby="who-h">
+  <section class="section" id="who" style="--hm: 2" aria-labelledby="who-h">
     <div class="wrap">
       <div class="section-head">
         <h2 id="who-h">Кто видит вашу вкладку. <span class="muted">Только люди, которые пришли от вас.</span></h2>
@@ -210,10 +211,10 @@
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 340px; --ax: max(24px, 50% - 170px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
                 <div class="v2-dl">
-                  <img src="../assets/partners/configra/logo-dark.png" alt="" class="v2-dl__logo">
+                  <img src="../assets/partners/configra/logo-dark.png" alt="" class="v2-dl__logo" width="337" height="96" loading="lazy">
                   <b>Configra на компьютере</b>
-                  <span class="v2-dl__btn"><img src="../assets/icons/windows.svg" alt="" width="14" height="14" data-icon="windows">Скачать для Windows</span>
-                  <span class="v2-dl__btn v2-dl__btn--q"><img src="../assets/icons/apple.svg" alt="" width="14" height="14" data-icon="apple">Скачать для macOS</span>
+                  <span class="v2-dl__btn"><img src="../assets/icons/windows.svg" alt="" width="14" height="14" data-icon="windows" loading="lazy">Скачать для Windows</span>
+                  <span class="v2-dl__btn v2-dl__btn--q"><img src="../assets/icons/apple.svg" alt="" width="14" height="14" data-icon="apple" loading="lazy">Скачать для macOS</span>
                   <small>V2pn-configra-windows-x64.zip</small>
                 </div>
               </div>
@@ -227,7 +228,7 @@
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 320px; --ax: max(24px, 50% - 160px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
                 <div class="v2-login">
-                  <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt=""><span><b>Войти через Configra</b><small>Код из бота, без ссылок</small></span></div>
+                  <div class="v2-plan__head"><img src="../assets/partners/configra/mark.png" alt="" width="128" height="128" loading="lazy"><span><b>Войти через Configra</b><small>Код из бота, без ссылок</small></span></div>
                   <span class="v2-code">482 913</span>
                   <span class="v2-connect v2-connect--go" style="--w-brand: #FF7A2F; width: 100%; margin: 0">Открыть бота</span>
                 </div>
@@ -245,7 +246,7 @@
                 <div style="padding: 0 12px 12px">
                   <div class="v2-label"><span>Подписки</span></div>
                   <div class="v2-row"><span class="v2-folder"><svg class="ic" viewBox="0 0 24 24"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg></span><span><b>Configra</b><small>24 сервера · обычная подписка</small></span><span></span></div>
-                  <div class="v2-row"><img src="../assets/v2pn/flags/se.png" alt=""><span><b>Швеция</b><small>Hysteria2</small></span><span class="v2-ping">67 мс</span></div>
+                  <div class="v2-row"><img src="../assets/v2pn/flags/se.png" alt="" width="24" height="18" loading="lazy"><span><b>Швеция</b><small>Hysteria2</small></span><span class="v2-ping">67 мс</span></div>
                 </div>
               </div>
             </div></div>
@@ -293,7 +294,7 @@
     </div>
   </section>
 
-  <section class="section" id="steps" aria-labelledby="steps-h">
+  <section class="section" id="steps" style="--hm: 2" aria-labelledby="steps-h">
     <div class="wrap">
       <div class="section-head">
         <h2 id="steps-h">Партнёрство в 3 шага. <span class="muted">API для входа по коду и тарифа можно добавить потом.</span></h2>
@@ -323,11 +324,11 @@
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 320px; --ax: max(24px, 50% - 160px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
                 <div class="v2-files">
-                  <span><img data-icon="json" src="../assets/icons/json.svg" alt="" width="18" height="18">partner.json<small>2 КБ</small></span>
-                  <span><img data-icon="json" src="../assets/icons/json.svg" alt="" width="18" height="18">listing.json<small>1 КБ</small></span>
-                  <span><img data-icon="image" src="../assets/icons/image.svg" alt="" width="18" height="18">logo-light.png<small>11 КБ</small></span>
-                  <span><img data-icon="image" src="../assets/icons/image.svg" alt="" width="18" height="18">logo-dark.png<small>10 КБ</small></span>
-                  <span><img data-icon="image" src="../assets/icons/image.svg" alt="" width="18" height="18">mark.png<small>9 КБ</small></span>
+                  <span><img data-icon="json" src="../assets/icons/json.svg" alt="" width="18" height="18" loading="lazy">partner.json<small>2 КБ</small></span>
+                  <span><img data-icon="json" src="../assets/icons/json.svg" alt="" width="18" height="18" loading="lazy">listing.json<small>1 КБ</small></span>
+                  <span><img data-icon="image" src="../assets/icons/image.svg" alt="" width="18" height="18" loading="lazy">logo-light.png<small>11 КБ</small></span>
+                  <span><img data-icon="image" src="../assets/icons/image.svg" alt="" width="18" height="18" loading="lazy">logo-dark.png<small>10 КБ</small></span>
+                  <span><img data-icon="image" src="../assets/icons/image.svg" alt="" width="18" height="18" loading="lazy">mark.png<small>9 КБ</small></span>
                 </div>
               </div>
             </div></div>
@@ -340,10 +341,10 @@
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 340px; --ax: max(24px, 50% - 170px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
                 <div class="v2-files">
-                  <span><img data-icon="json" src="../assets/icons/json.svg" alt="" width="18" height="18">partner-index.json<small>подписан</small></span>
-                  <span><img data-icon="zip" src="../assets/icons/zip.svg" alt="" width="18" height="18">partner-configra.zip<small>оформление</small></span>
-                  <span><img data-icon="zip" src="../assets/icons/zip.svg" alt="" width="18" height="18">V2pn-configra-windows-x64.zip<small>Windows</small></span>
-                  <span><img data-icon="zip" src="../assets/icons/zip.svg" alt="" width="18" height="18">V2pn-configra-macos-arm64.zip<small>macOS</small></span>
+                  <span><img data-icon="json" src="../assets/icons/json.svg" alt="" width="18" height="18" loading="lazy">partner-index.json<small>подписан</small></span>
+                  <span><img data-icon="zip" src="../assets/icons/zip.svg" alt="" width="18" height="18" loading="lazy">partner-configra.zip<small>оформление</small></span>
+                  <span><img data-icon="zip" src="../assets/icons/zip.svg" alt="" width="18" height="18" loading="lazy">V2pn-configra-windows-x64.zip<small>Windows</small></span>
+                  <span><img data-icon="zip" src="../assets/icons/zip.svg" alt="" width="18" height="18" loading="lazy">V2pn-configra-macos-arm64.zip<small>macOS</small></span>
                 </div>
               </div>
             </div></div>

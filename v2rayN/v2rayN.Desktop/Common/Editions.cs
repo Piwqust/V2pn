@@ -3,8 +3,8 @@ using Avalonia.Threading;
 namespace v2rayN.Desktop.Common;
 
 /// <summary>
-/// The tabs in the title bar: V2pn's, and one for each partner the person came from (V2pnEdition: the build's
-/// v2pn-partner.txt, or a sign-in by code) whose pack passed V2pn's checks. With none there are no tabs at all.
+/// The tabs in the title bar: V2pn's, and one for each partner the person came from (V2pnEdition: its link,
+/// a sign-in by code, or an older partner build's marker) whose pack passed V2pn's checks. With none there are no tabs at all.
 /// V2pn's tab is plain V2pn. A partner's tab puts the whole window into that partner's space: its colour (Connect and
 /// every accent), its card and plan, with a background in its theme its stage too (MainWindow.Edition.cs), its buttons,
 /// its features for its subscriptions, and the list shows its servers. The layout, the state colours and the person's

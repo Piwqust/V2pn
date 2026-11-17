@@ -4,12 +4,14 @@ namespace ServiceLib;
 /// The partners a person came from, and which tab of the main window is open. V2pn is one program for everyone; a
 /// partner gets a tab in its title bar beside V2pn's only when the person came from it:
 /// <list type="bullet">
-/// <item>the build says so: v2pn-partner.txt beside the program (on macOS in V2pn.app/Contents/MacOS) holds that
-/// partner's id. It comes with the partner's package from its download page, or install.ps1/install.sh with
-/// V2PN_PARTNER; updates keep it (AmazTool's Installer). It never goes away by itself.</item>
-/// <item>the person signed in by code with that partner (V2pnPartnerLogin): recorded in V2pn's settings
-/// (UIItem.V2pnCameFrom). This record goes when the last subscription from that partner is deleted
-/// (V2pnPartners.PruneAsync), and with it the tab.</item>
+/// <item>the person signed in by code with that partner (V2pnPartnerLogin), or followed its link
+/// (v2pn://add?url=…&amp;partner=&lt;id&gt; from its page or bot, V2pnPartners.ComeFromLinkAsync) to a subscription on its
+/// domains: recorded in V2pn's settings (UIItem.V2pnCameFrom). This record goes when the last subscription from that
+/// partner is deleted (V2pnPartners.PruneAsync), and with it the tab.</item>
+/// <item>an older partner's build said so: V2pn 1.2 had partner packages with v2pn-partner.txt beside the program (on
+/// macOS in V2pn.app/Contents/MacOS). Nothing makes such a file any more; one found at start is moved into the settings
+/// (UIItem.V2pnMarker) and deleted (<see cref="RetireMarkerFileAsync"/>), so whoever installed one keeps the tab. That
+/// record never goes away by itself.</item>
 /// </list>
 /// A pasted subscription link of a partner makes nobody "come from" it: it is just a subscription. A person who came
 /// from nobody gets no tab, and V2pn asks for no partner index and no pack for them (V2pnPartners).
@@ -17,7 +19,7 @@ namespace ServiceLib;
 /// The open tab is V2pn's (null) or one partner's. Every partner feature asks <see cref="IsOpen"/>: a partner's look,
 /// card, buttons, lock, routes, API and connection settings apply only in its own tab and only to its subscriptions;
 /// the V2pn tab is plain V2pn. The tab chosen last is kept in UIItem.V2pnTab ("" for V2pn's); before any choice a
-/// build with a marker opens its partner's tab.
+/// person with a marker gets its partner's tab.
 /// </para>
 /// </summary>
 public sealed class V2pnEdition
@@ -27,7 +29,7 @@ public sealed class V2pnEdition
 
     private static readonly Lazy<V2pnEdition> _instance = new(FromConfig);
 
-    /// <summary>The program's own: its marker, and the person's record and tab from the config.</summary>
+    /// <summary>The program's own: the person's record, marker and tab from the config.</summary>
     public static V2pnEdition Instance => _instance.Value;
 
     private readonly object _lock = new();
@@ -38,8 +40,8 @@ public sealed class V2pnEdition
     // Null: never chosen; "": V2pn's tab; an id: that partner's.
     private string? _tab;
 
-    /// <param name="marker">The partner id of v2pn-partner.txt; null without one.</param>
-    /// <param name="signedIn">The partners the person signed in with, as saved.</param>
+    /// <param name="marker">The partner of an older build's v2pn-partner.txt, as moved into the settings; null without one.</param>
+    /// <param name="signedIn">The partners the person signed in with or followed the link of, as saved.</param>
     /// <param name="tab">The tab as saved: null never chosen, "" V2pn's, an id a partner's.</param>
     /// <param name="save">Writes <see cref="SignedIn"/> and <see cref="SavedTab"/> where they are kept.</param>
     public V2pnEdition(string? marker, IEnumerable<string>? signedIn = null, string? tab = null, Action<V2pnEdition>? save = null)
@@ -53,10 +55,13 @@ public sealed class V2pnEdition
     /// <summary>Raised after the partners came from or the open tab changed. May come from any thread.</summary>
     public event Action? Changed;
 
-    /// <summary>The partner of this build's v2pn-partner.txt; null for none.</summary>
+    /// <summary>The partner of the v2pn-partner.txt an older partner's build carried (UIItem.V2pnMarker); null for none.</summary>
     public string? Marker { get; }
 
-    /// <summary>The partners the person signed in with by code, oldest first (the marker's partner may be among them).</summary>
+    /// <summary>
+    /// The partners the person signed in with by code or followed the link of, oldest first (the marker's partner may be
+    /// among them).
+    /// </summary>
     public IReadOnlyList<string> SignedIn
     {
         get
@@ -146,7 +151,10 @@ public sealed class V2pnEdition
         return true;
     }
 
-    /// <summary>The person signed in by code with <paramref name="partnerId"/>: from now on they came from it. False when they already had.</summary>
+    /// <summary>
+    /// The person signed in by code with <paramref name="partnerId"/>, or followed its link to a subscription on its domains:
+    /// from now on they came from it. False when they already had.
+    /// </summary>
     public bool RecordSignIn(string partnerId)
     {
         if (!V2pnPartnerTrust.ValidId(partnerId))
@@ -230,8 +238,16 @@ public sealed class V2pnEdition
 
     private static V2pnEdition FromConfig()
     {
-        var ui = AppManager.Instance.Config?.UiItem;
-        return new V2pnEdition(Read(Utils.GetBaseDirectory()), ui?.V2pnCameFrom, ui?.V2pnTab, edition =>
+        var config = AppManager.Instance.Config;
+        var ui = config?.UiItem;
+        var appDir = Utils.GetBaseDirectory();
+        // An older partner's build: its marker moves into the settings, then the file goes once they are saved.
+        if (config != null && Read(appDir) is { } fileMarker)
+        {
+            config.UiItem.V2pnMarker = fileMarker;
+            _ = RetireMarkerFileAsync(appDir, async () => await ConfigHandler.SaveConfig(config) == 0);
+        }
+        return new V2pnEdition(ui?.V2pnMarker, ui?.V2pnCameFrom, ui?.V2pnTab, edition =>
         {
             if (AppManager.Instance.Config is not { } config)
             {
@@ -241,6 +257,32 @@ public sealed class V2pnEdition
             config.UiItem.V2pnTab = edition.SavedTab;
             _ = ConfigHandler.SaveConfig(config);
         });
+    }
+
+    /// <summary>
+    /// Deletes the v2pn-partner.txt in <paramref name="appDir"/> once <paramref name="saved"/> says its partner is kept in
+    /// the settings, so a failed save leaves it to be read again at the next start. Logged; never throws. False when the
+    /// file stays.
+    /// </summary>
+    public static async Task<bool> RetireMarkerFileAsync(string appDir, Func<Task<bool>> saved)
+    {
+        var file = Path.Combine(appDir, FileName);
+        try
+        {
+            if (!await saved())
+            {
+                Logging.SaveLog($"{nameof(V2pnEdition)}: the settings were not saved; {FileName} stays for the next start");
+                return false;
+            }
+            File.Delete(file);
+            Logging.SaveLog($"{nameof(V2pnEdition)}: {FileName} moved into the settings and deleted");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(V2pnEdition), ex);
+            return false;
+        }
     }
 
     /// <summary>

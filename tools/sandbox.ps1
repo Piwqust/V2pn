@@ -10,8 +10,10 @@
   The app keeps its data next to the exe, so each sandbox is fully separate. Only one
   sandbox can run at a time: V2pn allows a single instance per user session.
 
-  -Partner <id> puts v2pn-partner.txt beside V2pn.exe, as a partner's package has it (the person came
-  from that partner: V2pn shows its tab); without it, -From leaves a copy from no partner.
+  -Partner <id> records in the sandbox's settings that the person came from that partner (UiItem.V2pnCameFrom,
+  as its v2pn:// link or a sign-in by code records it): V2pn shows its tab. To test the way a person really gets
+  there, pass its link instead: -AppArgs 'v2pn://add?url=<encoded subscription>&partner=<id>'.
+  Without either, -From leaves a copy from no partner.
 
   -Launch starts the app in background mode (V2PN_BACKGROUND=1): its windows open off the screen,
   take no focus and get no taskbar button, so nothing flashes in front of the owner. tools/shot.ps1
@@ -37,7 +39,7 @@ param(
     [switch]$Stop,
     # Keeps guiConfigs/ when -From refreshes the app files.
     [switch]$KeepData,
-    # The partner the person came from: writes v2pn-partner.txt with this id (ServiceLib/V2pn/V2pnEdition.cs).
+    # The partner the person came from: added to UiItem.V2pnCameFrom (ServiceLib/V2pn/V2pnEdition.cs).
     [ValidatePattern('^[a-z0-9][a-z0-9-]{1,31}$')][string]$Partner
 )
 
@@ -76,13 +78,9 @@ if ($From) {
     if ($CoresFrom) {
         Copy-Item -Recurse -Force (Join-Path $CoresFrom 'bin') $Dest
     }
-    # No partner unless asked: a marker left by an earlier partner sandbox (-KeepData) goes.
-    if (-not $Partner) { Remove-Item -Force (Join-Path $Dest 'v2pn-partner.txt') -ErrorAction SilentlyContinue }
-}
-if ($Partner) {
-    New-Item -ItemType Directory -Force $Dest | Out-Null
-    [IO.File]::WriteAllText((Join-Path $Dest 'v2pn-partner.txt'), "$Partner`n")
-    Write-Host "Sandbox has the marker of partner $Partner"
+    # A marker of V2pn 1.2's partner builds (an older sandbox with -KeepData) would make the app move it into the
+    # settings at start: the person would come from that partner without asking for it.
+    Remove-Item -Force (Join-Path $Dest 'v2pn-partner.txt') -ErrorAction SilentlyContinue
 }
 
 $configDir = Join-Path $Dest 'guiConfigs'
@@ -99,6 +97,14 @@ if (-not (Test-Path $configFile)) {
     }
     $config | ConvertTo-Json -Depth 5 | Set-Content -Encoding utf8 $configFile
     Write-Host "Sandbox config written: system proxy untouched, socks port $Port"
+}
+if ($Partner) {
+    $json = Get-Content -Raw -Encoding utf8 $configFile | ConvertFrom-Json
+    if (-not $json.UiItem) { $json | Add-Member -NotePropertyName UiItem -NotePropertyValue ([pscustomobject]@{}) }
+    $from = @($json.UiItem.V2pnCameFrom | Where-Object { $_ }) + $Partner | Select-Object -Unique
+    $json.UiItem | Add-Member -Force -NotePropertyName V2pnCameFrom -NotePropertyValue @($from)
+    $json | ConvertTo-Json -Depth 32 | Set-Content -Encoding utf8 $configFile
+    Write-Host "Sandbox person came from partner $Partner"
 }
 
 if ($Launch) {

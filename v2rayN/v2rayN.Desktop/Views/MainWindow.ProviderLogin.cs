@@ -8,8 +8,8 @@ using v2rayN.Desktop.ViewModels;
 namespace v2rayN.Desktop.Views;
 
 // V2pn: sign-in with a provider by code (PartnerLoginView, V2pnPartnerLogin), for everyone: in the add menu and in the
-// walkthrough's servers step, where a copy with a partner's v2pn-partner.txt puts that partner's sign-in first. It is
-// how a person comes from a partner without the marker: a confirmed sign-in adds the subscription as a confirmed
+// walkthrough's servers step, where a person with an older partner build's marker gets that partner's sign-in first. It
+// is one way a person comes from a partner (the other is its v2pn:// link): a confirmed sign-in adds the subscription as a confirmed
 // v2pn://add does, updates it, records that the person came from that partner (V2pnEdition), opens its tab and selects
 // its first server without connecting. The list of providers is asked for only when the person opens the sign-in.
 public partial class MainWindow
@@ -52,7 +52,7 @@ public partial class MainWindow
     // The partner whose mark the walkthrough's row showed last.
     private string? _obLoginMark;
 
-    /// <summary>The partner of this copy's v2pn-partner.txt when its pack is here and offers the sign-in; the walkthrough leads with it.</summary>
+    /// <summary>The partner of an older build's marker (V2pnEdition.Marker) when its pack is here and offers the sign-in; the walkthrough leads with it.</summary>
     private static V2pnPartner? MarkerLoginPartner() =>
         V2pnEdition.Instance.Marker is { } id && V2pnPartners.Instance.Get(id) is { } partner && V2pnPartnerLogin.Offers(partner) ? partner : null;
 

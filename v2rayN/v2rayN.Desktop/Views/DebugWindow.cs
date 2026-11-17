@@ -5,8 +5,9 @@ namespace v2rayN.Desktop.Views;
 
 /// <summary>
 /// Every scenario of the partners' tabs (and a few of the app's own) at a click, for trying them without a provider, a
-/// broken site or a week of waiting: a made-up partner the person "came from" until V2pn closes (so it gets a tab; in a
-/// copy with v2pn-partner.txt it stands in for that partner), any subscription counted as its, V2pn's tab or the
+/// broken site or a week of waiting: a made-up partner the person "came from" until V2pn closes (so it gets a tab; for a
+/// person who already came from a partner, by a marker or as tools/sandbox.ps1 -Partner records it, it stands in for that
+/// partner), any subscription counted as its, V2pn's tab or the
 /// partner's, with or without its background, the partner leaving, light and dark, every window size, what its panel
 /// says laid over, links, the walkthrough and the notices. tools/edition-matrix.ps1 drives it. Development builds and
 /// developer mode only. Stays open beside the window; the window shows the result at once.
@@ -88,8 +89,10 @@ public sealed class DebugWindow : Window
                     Logging.SaveLog("V2pn debug theme", ex);
                 }
             }
-            // The marker's partner when there is one, else the theme's id: the tab is the one the person would have.
-            var id = V2pnEdition.Instance.Marker ?? (V2pnPartnerTrust.ValidId(themeId ?? string.Empty) ? themeId! : "test-provider");
+            // The partner the person came from when there is one (tools/sandbox.ps1 -Partner records it), else the theme's
+            // id: the tab is the one the person would have.
+            var id = V2pnEdition.Instance.Marker ?? V2pnEdition.Instance.CameFrom.FirstOrDefault(c => !V2pnPartners.Instance.IsDebug(c))
+                ?? (V2pnPartnerTrust.ValidId(themeId ?? string.Empty) ? themeId! : "test-provider");
             if (V2pnPartners.Instance.AddDebugPartner(id, name, accent, Directory.Exists(folder) ? folder : null) == null)
             {
                 _main.DebugToast(ToastKind.Warning, "Тестовый партнёр есть только в сборке разработчика или в режиме разработчика.");
@@ -269,7 +272,7 @@ public sealed class DebugWindow : Window
 
         var lines = new List<string>
         {
-            $"сборка: {(V2pnInfo.IsRelease ? "релиз, режим разработчика" : "разработчика")} · V2pn {V2pnInfo.Version} · метка: {(V2pnEdition.Instance.Marker is { } marker ? $"{marker} ({V2pnEdition.FileName})" : "нет")}",
+            $"сборка: {(V2pnInfo.IsRelease ? "релиз, режим разработчика" : "разработчика")} · V2pn {V2pnInfo.Version} · метка старой сборки: {(V2pnEdition.Instance.Marker is { } marker ? $"{marker} (из {V2pnEdition.FileName})" : "нет")}",
             $"пришёл от: {string.Join(", ", V2pnEdition.Instance.CameFrom).IfEmpty("никого")} · вход по коду: {string.Join(", ", V2pnEdition.Instance.SignedIn).IfEmpty("нет")}",
             $"вкладки: V2pn{string.Concat(partners.Select(p => $", {p.Name}"))} · открыта: {Editions.Partner?.Name ?? "V2pn"}",
         };

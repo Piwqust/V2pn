@@ -361,7 +361,7 @@ public partial class MainWindow
         _obImportRows.Clear();
         _obMove = null;
         // A provider's subscription without copying its link: the code confirmed in its bot (MainWindow.ProviderLogin.cs).
-        // A copy with a partner's v2pn-partner.txt puts it first, with that partner's mark: that is why the person has it.
+        // A person with an older partner build's marker gets it first, with that partner's mark: that is why they have V2pn.
         // Nothing is downloaded for the row; the list of providers comes when it is clicked.
         var loginFirst = V2pnEdition.Instance.Marker != null;
         if (loginFirst)

@@ -3,8 +3,9 @@
   Screenshots the title bar's tabs and a partner's look in light and dark at mini, medium and wide window sizes, off
   screen, and puts them on one contact sheet: the check to run after any change to the tabs or the partner look.
   Without -Partner the person came from no partner: there must be no tabs and nothing of a partner, whatever
-  subscriptions -SeedFrom holds (a partner's pasted link included). With -Partner <id> the sandbox has that partner's
-  v2pn-partner.txt and the debug window's test partner stands in for it, wearing partners/<id> (or -Theme: a folder
+  subscriptions -SeedFrom holds (a partner's pasted link included). With -Partner <id> the sandbox's person came from that
+  partner (tools/sandbox.ps1 -Partner: UiItem.V2pnCameFrom, as its link records it) and the debug window's test partner
+  stands in for it, wearing partners/<id> (or -Theme: a folder
   with partner.json and its pictures): "V2pn" is V2pn's tab beside the partner's, "Акцент" and "Сцена" (when the theme
   has a gradient or picture background) the partner's tab.
 
@@ -25,7 +26,7 @@ param(
     [string]$From = (Join-Path $PSScriptRoot '..\v2rayN\v2rayN.Desktop\bin\Debug\net10.0'),
     [string]$Dest = (Join-Path $env:TEMP 'v2pn-matrix'),
     [string]$Out = (Join-Path $env:TEMP 'v2pn-matrix-shots'),
-    # The partner of the sandbox's v2pn-partner.txt; without it, the person came from no partner.
+    # The partner the sandbox's person came from; without it, the person came from no partner.
     [ValidatePattern('^[a-z0-9][a-z0-9-]{1,31}$')][string]$Partner,
     # V2pn (V2pn's tab; with no partner, no tabs at all), Акцент (the partner's tab: its colour, mark and card) and Сцена
     # (its tab with its background and plan; needs a theme with one). By default V2pn without -Partner, all three with it.
@@ -49,12 +50,12 @@ $shot = Join-Path $PSScriptRoot 'shot.ps1'
 New-Item -ItemType Directory -Force $Out | Out-Null
 
 & $sandbox -Dest $Dest -Stop | Out-Null
-if ($Partner) { & $sandbox -From $From -Dest $Dest -Partner $Partner | Out-Null } else { & $sandbox -From $From -Dest $Dest | Out-Null }
+& $sandbox -From $From -Dest $Dest | Out-Null
 if (Test-Path $SeedFrom) {
     Copy-Item -Recurse -Force (Join-Path $SeedFrom '*') (Join-Path $Dest 'guiConfigs')
-    # The sandbox's own ports and proxy settings, over the copied config.
-    & $sandbox -Dest $Dest | Out-Null
 }
+# Where the person came from goes into the settings last, over a copied config.
+if ($Partner) { & $sandbox -Dest $Dest -Partner $Partner | Out-Null }
 $env:V2PN_DEBUG = '1'
 if ($Theme) { $env:V2PN_DEBUG_THEME = (Resolve-Path $Theme).Path }
 try { & $sandbox -Dest $Dest -Launch | Out-Null } finally { Remove-Item Env:V2PN_DEBUG; Remove-Item Env:V2PN_DEBUG_THEME -ErrorAction SilentlyContinue }
@@ -89,7 +90,7 @@ function Invoke-Debug([string]$name) {
 Start-Sleep -Seconds 4
 Invoke-Debug 'Сбросить всё'
 if ($Partner) {
-    # The test partner stands in for the marker's; the first subscription counts as its, so its tab lists servers.
+    # The test partner stands in for the one the person came from; the first subscription counts as its, so its tab lists servers.
     Invoke-Debug 'Добавить тестового'
     Start-Sleep -Seconds 2
     Invoke-Debug 'Считать подпиской партнёра'

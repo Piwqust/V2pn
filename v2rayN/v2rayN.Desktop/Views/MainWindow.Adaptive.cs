@@ -36,7 +36,7 @@ public partial class MainWindow
     private const double MiniMinHeight = 300;
     // The list needs room for about three rows; with less, the window is only the state and Connect.
     private const double StackedListMin = 150;
-    private const double StackedStageBottom = 18;
+    private const double StackedStageBottom = 12;
     // Connect and the mode bar in a wide one-column window: as wide as Connect gets anyway.
     private const double StackedColumnMax = 520;
     // The widest in-window dialog (Appearance, 700 px) with its frame.
@@ -136,7 +136,7 @@ public partial class MainWindow
             Grid.SetColumn(borderStage, 0);
             Grid.SetRow(borderStage, 0);
             Grid.SetRow(borderSidebar, 1);
-            borderSidebar.Margin = new Thickness(0, 10, 0, 0);
+            borderSidebar.Margin = new Thickness(0, 8, 0, 0);
         }
         else
         {
@@ -146,7 +146,8 @@ public partial class MainWindow
             borderSidebar.IsVisible = true;
         }
         panelHeadline.Margin = _tier == BodyTier.Full ? _headlineMargin : default;
-        panelHeader.Margin = stacked ? new Thickness(12, 18, 12, 0) : _headerMargin;
+        panelHeader.Margin = stacked ? new Thickness(12, 12, 12, 0) : _headerMargin;
+        Tighten(stacked);
         // Connect and the mode bar span the column instead of shrinking to the bar's own width.
         var span = stacked ? Avalonia.Layout.HorizontalAlignment.Stretch : _headerAlignment;
         panelHeader.HorizontalAlignment = span;
@@ -165,6 +166,23 @@ public partial class MainWindow
         ArrangeEdition();
         ApplyWindowLimits();
         UpdateStackedRows();
+    }
+
+    // The mini window is short on height, so its top part and the list's head close up: a smaller flag
+    // and title, a lower Connect, tighter gaps. The bar's captions go too (V2pnStyles.axaml, .stacked):
+    // the icons and the route's name say what each half is. The XAML holds the full-size values.
+    private void Tighten(bool stacked)
+    {
+        pillState.Margin = stacked ? default : new Thickness(0, 0, 0, 4);
+        borderHeaderFlag.Width = stacked ? 32 : 40;
+        borderHeaderFlag.Height = stacked ? 24 : 30;
+        borderHeaderFlag.Margin = stacked ? new Thickness(0, 0, 10, 0) : new Thickness(0, 0, 12, 0);
+        panelConnect.Margin = stacked ? new Thickness(0, 8, 0, 0) : new Thickness(0, 12, 0, 0);
+        panelConnect.Spacing = stacked ? 8 : 12;
+        btnConnect.Height = stacked ? 44 : 50;
+        btnConnect.CornerRadius = new CornerRadius(stacked ? 22 : 25);
+        gridBar.RowSpacing = stacked ? 4 : 10;
+        gridSearch.Margin = stacked ? new Thickness(10, 10, 10, 6) : new Thickness(12, 12, 12, 8);
     }
 
     // Mode and route side by side, or the route under the mode: side by side they need about 440 px.

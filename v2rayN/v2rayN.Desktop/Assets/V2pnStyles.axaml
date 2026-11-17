@@ -935,6 +935,13 @@
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="8,2,0,0" />
     </Style>
+    <!--  The mini window (MainWindow.Adaptive.cs): no captions over the bar, a smaller connection header.  -->
+    <Style Selector=".stacked TextBlock.barcaption">
+        <Setter Property="IsVisible" Value="False" />
+    </Style>
+    <Style Selector=".stacked TextBlock.hdr">
+        <Setter Property="FontSize" Value="24" />
+    </Style>
     <Style Selector="PathIcon.adminlock">
         <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
         <Setter Property="VerticalAlignment" Value="Center" />

@@ -72,6 +72,18 @@ async function startFixture() {
   const body = Buffer.from(links.join('\n')).toString('base64');
   const expire = Math.floor(Date.UTC(2027, 0, 31) / 1000);
   const server = http.createServer((req, res) => {
+    // A provider's sign-in API (tier 2), as the guide describes it: the cabinet's «Проверить API» calls these two.
+    if (req.method === 'POST' && req.url === '/v2pn/login/start') {
+      const code = String(100000 + Math.floor(Math.random() * 900000));
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ code, token: `tok_${Math.random().toString(36).slice(2)}${Math.random().toString(36).slice(2)}${Date.now()}`, url: `https://t.me/kestrel_bot?start=v2pn-${code}`, expires: 600 }));
+      return;
+    }
+    if (req.method === 'GET' && req.url.startsWith('/v2pn/login/poll')) {
+      res.writeHead(200, { 'content-type': 'application/json' });
+      res.end(JSON.stringify({ state: 'waiting' }));
+      return;
+    }
     if (!req.url.startsWith('/s/')) {
       res.writeHead(404).end();
       return;
@@ -86,7 +98,8 @@ async function startFixture() {
     res.end(body);
   });
   await new Promise(r => server.listen(0, '127.0.0.1', r));
-  return { url: `http://sub.kestrel.test:${server.address().port}/s/demo-7f3a`, close: () => { server.close(); listeners.forEach(s => s.close()); } };
+  const p = server.address().port;
+  return { url: `http://sub.kestrel.test:${p}/s/demo-7f3a`, api: `http://api.kestrel.test:${p}/v2pn/`, close: () => { server.close(); listeners.forEach(s => s.close()); } };
 }
 
 const fixture = opt('fixture', false) ? await startFixture() : null;
@@ -184,7 +197,8 @@ server.listen(port, '127.0.0.1', () => {
   console.log(`site     ${origin}/  (files: ${siteDir}, then ${publicDir})`);
   console.log(`data     ${dataDir}`);
   console.log(`admin    ${hub.auth.createAdminLink(admin)}`);
-  if (fixture) console.log(`fixture  ${fixture.url}  (domain: kestrel.test)`);
+  if (fixture) console.log(`fixture  ${fixture.url}  (domain: kestrel.test)
+api      ${fixture.api}`);
 });
 
 const stop = () => {

@@ -69,7 +69,7 @@ reject with a reason, change tier or term, revoke and restore a provider, the qu
 the brand colours, or a picture), PNG pictures (`logo` and `logoOnLight` 2:1–8:1, 32–256 px tall; `mark` square
 64–512 px; `backdrop` 640–3200 px, at most 3:1; 1 MB each, as `V2pnPartnerSlots`), cabinet and support links; at tier 2
 the API address, sign-in by code, lock, and up to four buttons (`V2pnPartnerCatalog` rules). It is checked with V2pn's
-rules and colours (`lib/colors.mjs`, the builder's port of `V2pnThemePalette`), and the provider page's text must read
+rules and colours (`lib/colors.mjs`, a port of `V2pnThemePalette`), and the provider page's text must read
 at 4.5:1. Saving keeps a draft; "send" queues it; the owner's approval publishes it. `POST /api/cabinet/login-test`
 calls the provider's `login/start` and one `login/poll` under the same SSRF rules.
 

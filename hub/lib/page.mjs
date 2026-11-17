@@ -1,5 +1,5 @@
-// A provider's public page, /p/<id>/: a Node port of tools/partner-page.py (its colours, checks and layout), changed
-// for the hub's way of coming from a provider: the page offers "Открыть в V2pn" (v2pn://add?url=…&partner=<id>)
+// A provider's public page, /p/<id>/ (it began as a port of the former tools/partner-page.py: its colours, checks and
+// layout), made for the hub's way of coming from a provider: the page offers "Открыть в V2pn" (v2pn://add?url=…&partner=<id>)
 // when its address carries #sub=<subscription>, and the downloads go through /r/<name> (plain V2pn, no marker).
 // Drawn in the site's system (Geist, V2pn's tokens, the window of /assets/site/site.css) in the provider's colours.
 import fs from 'node:fs';
@@ -20,7 +20,7 @@ const onAccent = accent => (C.contrast(ON_ACCENT_INK, accent) >= C.contrast(C.WH
 
 /**
  * The page's colours in the light and dark modes and every pair of text and ground checked at 4.5:1, as
- * partner-page.py computes them. {modes, checks: [{what, ratio}], failures}.
+ * the former partner-page.py computed them. {modes, checks: [{what, ratio}], failures}.
  */
 export function pageTheme(theme) {
   const accent = C.awayFromState(theme.brand.length ? C.parse(theme.brand[0]) : C.parse(C.FALLBACK_BRAND));

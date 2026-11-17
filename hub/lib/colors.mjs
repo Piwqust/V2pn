@@ -1,7 +1,7 @@
 // V2pn's colour rules for partner looks, ported line by line from ServiceLib/V2pn/V2pnThemePalette.cs (V2pnColor,
-// AwayFromState, ReadableOn, Derive, Stage, Describe), Editions.PartnerAccent and Appearance.OnAccent, so the builder
+// AwayFromState, ReadableOn, Derive, Stage, Describe), Editions.PartnerAccent and Appearance.OnAccent, so the cabinet
 // shows the colours the app will draw and the notes tools/partner-check.cs will print. Colours are [r, g, b] bytes.
-// Copied for the hub from docs/partners/builder/v2pn-colors.js (keep the two in step).
+// Keep it in step with V2pnThemePalette.cs (it began as the former look builder's v2pn-colors.js).
 
 
 const parse = hex => {

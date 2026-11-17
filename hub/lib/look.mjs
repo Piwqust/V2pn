@@ -1,6 +1,6 @@
 // A provider's look as the cabinet edits it, the checks it must pass before it can be published (the rules of
-// docs/partners/builder and of V2pn's reader: V2pnPartnerTrust, V2pnPartnerCatalog.ParseAction, V2pnPartnerSlots),
-// and partner.json built from it the way the builder writes it.
+// V2pn's reader: V2pnPartnerTrust, V2pnPartnerCatalog.ParseAction, V2pnPartnerSlots), and partner.json built from it
+// as docs/partners/partner.schema.json describes it.
 import { colors as C } from './colors.mjs';
 import { HubError } from './errors.mjs';
 import { COLOUR, domainAllowed, httpsUrl, oneLine, validName } from './validate.mjs';
@@ -132,7 +132,7 @@ export function lookProblems(look, { tier, domains, pictures }) {
   return p;
 }
 
-/** The theme V2pn reads from the pack: brand colours and the background (builder.js theme()). */
+/** The theme V2pn reads from the pack: brand colours and the background. */
 export function themeOf(look) {
   const brand = look.brand.filter(h => COLOUR.test(h)).slice(0, 3);
   let background = { type: 'solid', colors: [], art: null };
@@ -144,7 +144,7 @@ export function themeOf(look) {
   return { brand, background };
 }
 
-/** The gradient of the brand colours; one colour gets a second one, lighter and a little turned (builder.js). */
+/** The gradient of the brand colours; one colour gets a second one, lighter and a little turned. */
 export function gradientStops(brand) {
   if (brand.length >= 2) return brand;
   if (!brand.length) return [];

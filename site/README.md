@@ -1,8 +1,8 @@
 # V2pn's website
 
 The site served at https://v2pn.angleford.co: plain files, no build step on the server, no CDN, fonts served from
-the site itself. Russian; the provider guide also in English (`/providers/guide/en/`), the builder and Configra's
-page switch to English in place.
+the site itself. Russian; the provider guide also in English (`/providers/guide/en/`), Configra's page switches to
+English in place.
 
 | URL | File | Made by |
 | --- | --- | --- |
@@ -13,7 +13,7 @@ page switch to English in place.
 | `/providers/cabinet/` | `providers/cabinet/index.html` + `assets/site/cabinet.js` | by hand: the look with its live preview, the bot's button link, the sign-in API (tier 2) |
 | `/admin/` | `admin/index.html` + `assets/site/admin.js` | by hand: the owner's decisions, publication queue, providers, downloads, sign-in codes, audit log |
 | `/providers/guide/`, `/providers/guide/en/` | `providers/guide/index.html`, `providers/guide/en/index.html` | `tools/site.py` from `docs/partners/README.ru.md` and `README.md` |
-| `/providers/builder/` | `providers/builder/index.html` and its scripts | `tools/site.py` from `docs/partners/builder/` (form, preview and scripts unchanged) |
+| `/providers/builder/` | `providers/builder/index.html` | by hand: the look builder that was here is gone; the page says the look is made in the cabinet, for old links |
 | `/p/<id>/`, `/partners/` | not in this folder | the hub (`hub/lib/page.mjs`, `hub/lib/publish.mjs`) on the server, at every publication |
 | `/api/*`, `/r/*`, `/releases/*` | not files | the hub's routes (`hub/README.md`), proxied by Caddy |
 
@@ -40,7 +40,7 @@ python tools/site.py --check          # the same, and prints the files to upload
 
 `tools/site.py` rewrites every generated file listed above, the fonts (`assets/fonts`, from the app's Geist), the
 window's map and flags (`assets/v2pn`, from `Assets/Map/world.json` and `Assets/Flags`) and the partners' pictures the
-pages show (`assets/partners/<id>`). Edit the guide, the builder or the partner's files, never their output here.
+pages show (`assets/partners/<id>`). Edit the guide or the partner's files, never their output here.
 Providers' own pages are no longer built here: the hub writes `/p/<id>/` on the server.
 
 Not generated: `index.html`, `providers/index.html`, the provider pages (`providers/login`, `apply`, `cabinet`,
@@ -112,7 +112,6 @@ assets/partners/configra/mark.png
 assets/site/admin.js
 assets/site/api.js
 assets/site/apply.js
-assets/site/builder-site.css
 assets/site/cabinet.js
 assets/site/head.js
 assets/site/hub.css
@@ -145,10 +144,7 @@ assets/v2pn/shots/configra-scene-dark.webp
 providers/index.html
 providers/share.jpg
 providers/apply/index.html
-providers/builder/builder.css
-providers/builder/builder.js
 providers/builder/index.html
-providers/builder/v2pn-colors.js
 providers/cabinet/index.html
 providers/guide/index.html
 providers/guide/partner.schema.json

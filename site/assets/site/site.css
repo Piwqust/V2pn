@@ -229,7 +229,7 @@ main.doc { padding: calc(var(--nav, 72px) + var(--s-8)) 0 var(--s-9); }
   .doc__body tr { padding: 10px 0; border-bottom: 1px solid var(--line); }
 }
 
-/* the footer of the guide and the builder: the site's links without the close, at its own height */
+/* the footer of the guide: the site's links without the close, at its own height */
 footer.site-foot { padding: var(--s-8) 0 var(--s-7); border-top: 1px solid var(--line); background: var(--bg); }
 
 /* ---------------------------------------------------------------- pieces of a partner's tab (the providers page) */

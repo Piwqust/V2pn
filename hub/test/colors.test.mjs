@@ -95,14 +95,14 @@ test("the provider page's pairs of text and ground all read for the C# examples 
   }
 });
 
-test('one brand colour still gives a two-stop gradient (the builder adds a lighter, turned one)', () => {
+test('one brand colour still gives a two-stop gradient (a lighter, turned one is added)', () => {
   const stops = gradientStops(['#FF7A2F']);
   assert.equal(stops.length, 2);
   assert.equal(stops[0], '#FF7A2F');
   assert.notEqual(stops[1], '#FF7A2F');
 });
 
-test('a look is checked as the builder and V2pn check it', () => {
+test('a look is checked as V2pn checks it', () => {
   const pictures = new Map([['a'.repeat(64), { slot: 'logo', width: 340, height: 96, size: 1000 }], ['b'.repeat(64), { slot: 'mark', width: 300, height: 96, size: 1000 }]]);
   const base = { ...defaultLook('Kestrel'), brand: ['#2F7BFF'] };
   assert.deepEqual(lookProblems(base, { tier: 1, domains: ['kestrel.example'], pictures }), {});

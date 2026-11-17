@@ -306,14 +306,16 @@
                     Background="{TemplateBinding Background}"
                     CornerRadius="{TemplateBinding CornerRadius}">
                     <Panel>
-                        <Border
-                            Name="PART_Thumb"
-                            HorizontalAlignment="Left"
-                            VerticalAlignment="Top"
-                            Background="{DynamicResource V2Selected}"
-                            BoxShadow="{DynamicResource V2NavShadow}"
-                            IsHitTestVisible="False"
-                            IsVisible="False" />
+                        <!--  A Canvas measures as nothing: the thumb, sized to the selected item, must not keep the
+                              control at an old height when the items get lower (Appearance → Tabs).  -->
+                        <Canvas>
+                            <Border
+                                Name="PART_Thumb"
+                                Background="{DynamicResource V2Selected}"
+                                BoxShadow="{DynamicResource V2NavShadow}"
+                                IsHitTestVisible="False"
+                                IsVisible="False" />
+                        </Canvas>
                         <ItemsPresenter Name="PART_ItemsPresenter" ItemsPanel="{TemplateBinding ItemsPanel}" />
                     </Panel>
                 </Border>

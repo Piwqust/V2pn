@@ -1,0 +1,28 @@
+mixed-port: 7890
+mode: rule
+proxies:
+  - name: "DE vless"
+    type: vless
+    server: de1.kestrel.example
+    port: 443
+    uuid: 11111111-2222-3333-4444-555555555555
+    network: tcp
+  - name: NL trojan
+    type: trojan
+    server: nl1.kestrel.example
+    port: 443
+    password: secret
+  - {name: "FI hy2", type: hysteria2, server: fi1.kestrel.example, port: 8443, password: "a,b"}
+  - {name: SS, type: ss, server: ss1.kestrel.example, port: 8388, cipher: aes-256-gcm, password: x}
+  - name: SSR
+    type: ssr
+    server: ssr.kestrel.example
+    port: 443
+proxy-groups:
+  - name: Auto
+    type: url-test
+    proxies:
+      - DE vless
+      - NL trojan
+rules:
+  - MATCH,Auto

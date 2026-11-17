@@ -22,7 +22,7 @@ Serves at http://127.0.0.1:<port>/:
 The index must be published with a test root key and --local (listing.json naming 127.0.0.1), and the V2pn build must
 trust that key and ask this page for releases; tools/demo/try-partner.ps1 does all of it:
 
-  dotnet build ... -p:V2pnPartnerKeys=<test root public key> -p:V2pnUpdateSources=http://127.0.0.1:18998/releases
+  dotnet build ... -p:V2pnPartnerKeys=<test root public key> -p:V2pnUpdateSources=http://127.0.0.1:18998/releases -p:V2pnPartnerSources=http://127.0.0.1:18998/releases
   dotnet run tools/partner.cs -- publish --partners <scratch>/partners --out <scratch>/published --root-key <scratch>/root.pem --local
 
 Never publish with the real root key for this. With --xray the script starts a local VLESS server (127.0.0.1 only,

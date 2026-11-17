@@ -107,7 +107,7 @@ if (-not $NoBuild -or -not (Test-Path (Join-Path $dist 'index.html')) -or -not (
     Pop-Location
     if (-not $webOk) { throw "Configra's site did not build; see $Dir\web-build.log" }
     $project = Join-Path $repo 'v2rayN\v2rayN.Desktop\v2rayN.Desktop.csproj'
-    & $dotnet build $project -c Debug -nologo -v q "-p:V2pnPartnerKeys=$rootPub" "-p:V2pnUpdateSources=$releases" -o (Join-Path $Dir 'build')
+    & $dotnet build $project -c Debug -nologo -v q "-p:V2pnPartnerKeys=$rootPub" "-p:V2pnUpdateSources=$releases" "-p:V2pnPartnerSources=$releases" -o (Join-Path $Dir 'build')
     if ($LASTEXITCODE -ne 0) { throw 'V2pn did not build' }
     # The shared obj folder now holds the test key and source; build once more so the normal Debug build has the real ones.
     & $dotnet build $project -c Debug -nologo -v q | Out-Null

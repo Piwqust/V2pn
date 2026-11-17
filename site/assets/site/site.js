@@ -1,11 +1,17 @@
-// V2pn's site: the download for the visitor's computer, and the copy buttons beside the commands.
+// V2pn's site: the download for the visitor's computer, the copy buttons beside the commands, and «Кабинет» in the
+// nav for a browser that has signed in to the provider pages.
 // Without this script every "Скачать V2pn" leads to the install section, which lists every file.
-const RELEASE = 'https://github.com/Piwqust/V2pn/releases/latest/download/';
+// Downloads go through the hub's /r/<name>: a redirect to the latest GitHub release file, counted by day and name.
+import { markNav } from './api.js';
+
+const RELEASE = '/r/';
 const FILES = {
-  win: ['V2pn-windows-x64.zip', 'Windows 10 и 11, x64'],
-  winArm: ['V2pn-windows-arm64.zip', 'Windows на ARM'],
-  mac: ['V2pn-macos-arm64.dmg', 'macOS 13.6 и новее, Apple silicon'],
+  win: ['windows-x64', 'Windows 10 и 11, x64'],
+  winArm: ['windows-arm64', 'Windows на ARM'],
+  mac: ['macos-arm64', 'macOS 13.6 и новее, Apple silicon'],
 };
+
+markNav('/');
 
 const ua = navigator.userAgent || '';
 const platform = (navigator.userAgentData && navigator.userAgentData.platform) || navigator.platform || '';

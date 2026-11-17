@@ -168,7 +168,7 @@ User=v2pn-hub
 Group=v2pn-hub
 EnvironmentFile=/etc/v2pn-hub.env
 WorkingDirectory=/opt/v2pn-hub
-ExecStart=/usr/bin/node --max-old-space-size=160 /opt/v2pn-hub/hub.mjs serve
+ExecStart=/usr/bin/env node --max-old-space-size=160 /opt/v2pn-hub/hub.mjs serve
 Restart=on-failure
 RestartSec=5
 TimeoutStopSec=20

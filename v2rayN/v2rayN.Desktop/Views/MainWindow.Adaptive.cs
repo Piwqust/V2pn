@@ -7,9 +7,9 @@ namespace v2rayN.Desktop.Views;
 /// <summary>
 /// The main window follows its own width, the way a web page does:
 /// <list type="bullet">
-/// <item>Full: the server list beside the map, the tiles on the right, the status card at the bottom.</item>
-/// <item>NoRail: the same without the tiles (their actions are in the ☰ menu), once the map gets too
-/// narrow for them beside the header.</item>
+/// <item>Full: the server list beside the map, the tiles (update, DNS, settings) at the foot of the list,
+/// the status card at the bottom.</item>
+/// <item>NoRail: the same, named for when the tiles still sat on the map; the two differ no more.</item>
 /// <item>Stacked: one column, the state, the server, Connect, the mode and the route on top and the
 /// server list under them. No map, no status card and no Appearance button; the route gets a row of its
 /// own under the mode. Too short for a useful list, the window keeps only the top part.</item>
@@ -145,7 +145,9 @@ public partial class MainWindow
             Grid.SetRow(borderSidebar, 0);
             borderSidebar.IsVisible = true;
         }
-        railHost.IsVisible = _tier == BodyTier.Full;
+        // The tiles sit at the foot of the server list, so only the one-column window, short on height,
+        // goes without them.
+        railHost.IsVisible = !stacked;
         panelHeadline.Margin = _tier == BodyTier.Full ? _headlineMargin : default;
         panelHeader.Margin = stacked ? new Thickness(12, 18, 12, 0) : _headerMargin;
         // Connect and the mode bar span the column instead of shrinking to the bar's own width.

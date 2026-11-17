@@ -41,10 +41,25 @@ public class V2pnInfoTests
     [Test]
     public async Task Sources_AreLaidOutLikeAGitHubReleasesPage()
     {
-        await V2pnInfo.UpdateSources[0].Should().BeEqualTo(V2pnInfo.ReleasesUrl);
+        // V2pn's server first (a redirect to GitHub, so the address can change without a release), GitHub as the fallback.
+        await string.Join("|", V2pnInfo.UpdateSources).Should().BeEqualTo("https://v2pn.angleford.co/releases|" + V2pnInfo.ReleasesUrl);
         await V2pnInfo.ManifestUrl("https://example.com/v2pn").Should().BeEqualTo("https://example.com/v2pn/latest/download/release.json");
         await V2pnInfo.PackageUrl("https://example.com/v2pn", "1.2.3", "V2pn-windows-x64.zip")
             .Should().BeEqualTo("https://example.com/v2pn/download/v1.2.3/V2pn-windows-x64.zip");
+    }
+
+    [Test]
+    public async Task PartnerKeys_AreTheRootKeys_TheHubsKeyIsMarked_AndTheHubIsAskedFirst()
+    {
+        await V2pnInfo.PartnerKeys.Count.Should().BeEqualTo(1);
+        await V2pnInfo.PartnerHubKeys.Count.Should().BeEqualTo(1);
+        await V2pnInfo.PartnerKeys.Intersect(V2pnInfo.PartnerHubKeys).Any().Should().BeFalse();
+        await V2pnInfo.PartnerHubKeys[0].Should().BeEqualTo(
+            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXiLGsFVHz/rlCFoS8ya/U2TmHc4wdxMJMC6Ti04ONqVlPiGI8WygOlCWPdSApROtsnIF43NdldvSsVm+gsDfYg==");
+        await string.Join("|", V2pnInfo.PartnerSources).Should().BeEqualTo("https://v2pn.angleford.co/partners|" + V2pnInfo.ReleasesUrl);
+
+        await string.Join(",", V2pnInfo.PartnerKeyList("a| hub:b |hub:|c", hub: false)).Should().BeEqualTo("a,c");
+        await string.Join(",", V2pnInfo.PartnerKeyList("a| hub:b |hub:|c", hub: true)).Should().BeEqualTo("b");
     }
 
     [Test]

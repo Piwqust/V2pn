@@ -15,8 +15,8 @@
   const win = document.getElementById("win"), mac = document.getElementById("mac");
   // The visitor's system first and as the strong button; elsewhere Windows leads, as it is the larger part.
   if (os === "mac") {
-    win.classList.remove("primary"); mac.classList.add("primary");
-    const dl = document.querySelector(".dl"); dl.insertBefore(dl.querySelector('[data-dl="mac"]'), dl.firstChild);
+    win.classList.remove("pp-btn--primary"); mac.classList.add("pp-btn--primary");
+    const dl = document.querySelector(".pp-dl"); dl.insertBefore(dl.querySelector('[data-dl="mac"]'), dl.firstChild);
   }
 
   // #sub=<subscription>: the provider's button sends its person here with the subscription after "#", which never
@@ -40,10 +40,19 @@
     open.href = "v2pn://add?url=" + encodeURIComponent(sub) + "&partner=" + encodeURIComponent(data.id) + "&name=" + encodeURIComponent(data.name);
     block.hidden = false;
     // The open button is the strong one now; the downloads step back.
-    win.classList.remove("primary"); mac.classList.remove("primary");
+    win.classList.remove("pp-btn--primary"); mac.classList.remove("pp-btn--primary");
   };
   showSub();
   window.addEventListener("hashchange", showSub);
+
+  // After a download the person still has a step to take: install, then press the button again.
+  document.addEventListener("click", e => {
+    const a = e.target.closest && e.target.closest("[data-dl-link]");
+    if (!a) return;
+    const after = document.getElementById("after");
+    document.getElementById("after-text").innerHTML = T[lang][readSub() ? "afterTextSub" : "afterText"];
+    after.hidden = false;
+  });
 
   let lang = new URLSearchParams(location.search).get("lang") === "en" ? "en" : "ru";
   const apply = () => {
@@ -55,10 +64,12 @@
       if (key === "winNote" && arm) key = "winNoteArm";
       el.innerHTML = s[key];
     });
-    document.querySelector(".switch").setAttribute("aria-label", s.lang);
-    document.querySelectorAll(".switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
+    document.querySelectorAll("[data-t-label]").forEach(el => el.setAttribute("aria-label", s[el.dataset.tLabel].replace(/&amp;/g, "&")));
+    if (!document.getElementById("after").hidden) document.getElementById("after-text").innerHTML = s[readSub() ? "afterTextSub" : "afterText"];
+    document.querySelector(".pp-switch").setAttribute("aria-label", s.lang);
+    document.querySelectorAll(".pp-switch button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.lang === lang)));
   };
-  document.querySelectorAll(".switch button").forEach(b => b.addEventListener("click", () => {
+  document.querySelectorAll(".pp-switch button").forEach(b => b.addEventListener("click", () => {
     lang = b.dataset.lang;
     const url = new URL(location.href);
     if (lang === "en") url.searchParams.set("lang", "en"); else url.searchParams.delete("lang");

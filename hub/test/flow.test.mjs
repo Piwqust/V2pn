@@ -186,7 +186,7 @@ test('apply, get checked, be rejected and approved, design a look, get published
     assert.deepEqual(pack.links, { cabinet: 'https://kestrel.test/cabinet', support: 'https://t.me/kestrel_support' });
     assert.equal(pack.api, undefined);
     const pageDir = path.join(env.config.publicDir, 'p', 'kestrel');
-    assert.deepEqual(fs.readdirSync(pageDir).sort(), ['background.png', 'index.html', 'logo-dark.png', 'logo-light.png', 'page.js']);
+    assert.deepEqual(fs.readdirSync(pageDir).sort(), ['background.png', 'index.html', 'logo-dark.png', 'logo-light.png', 'mark.png', 'page.js']);
 
     // ---- tier 2: asked for, given, the sign-in API tested, the look with API and buttons published
     assert.equal((await provider.post('/api/cabinet/login-test', {})).data.error.code, 'tier');

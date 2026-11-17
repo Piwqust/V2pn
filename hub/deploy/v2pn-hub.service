@@ -1,0 +1,33 @@
+[Unit]
+Description=V2pn Hub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+User=v2pn-hub
+Group=v2pn-hub
+EnvironmentFile=/etc/v2pn-hub.env
+WorkingDirectory=/opt/v2pn-hub
+ExecStart=/usr/bin/node --max-old-space-size=160 /opt/v2pn-hub/hub.mjs serve
+Restart=on-failure
+RestartSec=5
+TimeoutStopSec=20
+UMask=0022
+MemoryMax=256M
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+SystemCallArchitectures=native
+ReadWritePaths=/var/lib/v2pn-hub /var/www/v2pn.angleford.co/partners /var/www/v2pn.angleford.co/p
+
+[Install]
+WantedBy=multi-user.target

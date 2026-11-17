@@ -26,6 +26,7 @@ const FIXTURE = opt('fixture');
 const API = opt('api');
 const OUT = path.resolve(opt('out', path.join(here, '..', '..', 'site', 'shots', 'hub')));
 const TO = opt('to', null);
+const FROM = opt('from', null);
 const ADMIN = 'owner@example.com';
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 if (!DATA || !FIXTURE) {
@@ -95,7 +96,12 @@ async function shoot(page, name, { mobile = true, full = true } = {}) {
   }
   console.log(`shot ${name}`);
 }
-const step = name => { console.log(`\n# ${name}`); return TO && name === TO; };
+let skipping = Boolean(FROM);
+const step = name => {
+  if (name === FROM) skipping = false;
+  console.log(`\n# ${name}${skipping ? ' (skipped)' : ''}`);
+  return TO && name === TO;
+};
 
 try {
   const p = await browser.newPage({ isolated: true });
@@ -107,11 +113,14 @@ try {
 
   // ------------------------------------------------ the public page
   if (step('providers')) throw 'stop';
+  if (!skipping) {
   await p.goto(`${BASE}/providers/`);
   await shoot(p, '01-providers');
 
   // ------------------------------------------------ sign-in
+  }
   if (step('login')) throw 'stop';
+  if (!skipping) {
   await p.goto(`${BASE}/providers/login/`);
   await p.until("!document.querySelector('#nomail').hidden");
   await shoot(p, '02-login-email');
@@ -130,7 +139,9 @@ try {
   await p.until("location.pathname === '/providers/apply/'");
 
   // ------------------------------------------------ the application
+  }
   if (step('apply')) throw 'stop';
+  if (!skipping) {
   await p.until("!document.querySelector('#view-form').hidden");
   await shoot(p, '06-apply-empty');
   await p.type('#name', 'Kestrel');
@@ -153,7 +164,9 @@ try {
   await shoot(p, '10-apply-sent');
 
   // ------------------------------------------------ the owner approves
+  }
   if (step('admin')) throw 'stop';
+  if (!skipping) {
   await owner.goto(adminLink());
   await owner.until("location.pathname === '/admin/' && document.querySelector('[data-view=overview]:not([hidden])')");
   await shoot(owner, '11-admin-overview');
@@ -168,7 +181,9 @@ try {
   await sleep(600);
 
   // ------------------------------------------------ the cabinet
+  }
   if (step('cabinet')) throw 'stop';
+  if (!skipping) {
   await p.goto(`${BASE}/providers/cabinet/`);
   await p.until("document.querySelector('[data-view=overview]:not([hidden])')");
   await shoot(p, '14-cabinet-overview');
@@ -212,7 +227,9 @@ try {
   await sleep(1500);
 
   // ------------------------------------------------ the owner publishes
+  }
   if (step('publish')) throw 'stop';
+  if (!skipping) {
   await owner.goto(`${BASE}/admin/#queue`);
   await owner.until("document.querySelector('[data-queue-id]')");
   await shoot(owner, '22-admin-queue');
@@ -235,7 +252,9 @@ try {
   await shoot(p, '26-cabinet-published', { mobile: false });
 
   // ------------------------------------------------ the provider's page
+  }
   if (step('page')) throw 'stop';
+  if (!skipping) {
   const sub = encodeURIComponent('https://sub.kestrel.test/s/9f2c7a1e');
   await p.goto(`${BASE}/p/kestrel/#sub=${sub}`);
   await shoot(p, '27-page-sub');
@@ -254,7 +273,9 @@ try {
   await shoot(p, '32-page-configra');
 
   // ------------------------------------------------ a second provider: a failing link, then a returned application
+  }
   if (step('reject')) throw 'stop';
+  if (FROM) await owner.goto(adminLink());
   const q = await browser.newPage({ isolated: true });
   await q.viewport(1440, 900);
   await q.scheme('light');
@@ -265,7 +286,7 @@ try {
   await q.type('#code', await outboxCode('hello@owl.example'));
   await q.until("location.pathname === '/providers/apply/' && !document.querySelector('#view-form').hidden");
   await q.type('#name', 'Owl VPN');
-  await q.type('#domains', 'owl.test');
+  await q.type('#domains', '*.owl.test');
   await q.type('#testUrl', FIXTURE.replace('sub.kestrel.test', 'sub.owl.test').replace('/s/', '/missing/'));
   await q.type('#contact', 'hello@owl.example');
   await q.click('#check');

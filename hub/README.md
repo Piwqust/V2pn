@@ -18,6 +18,8 @@ node hub.mjs import-partner <folder> [--tier 1|2] [--email <email>]
 node hub.mjs publish                     rebuilds and re-signs the index, the zips and the pages
 node --test test/                        the tests (from hub/)
 node test/make-csharp-fixture.mjs        rewrites test/fixtures/csharp for V2pnHubFixtureTests.cs
+node dev/serve.mjs --fixture --configra  the site and the hub on one local origin, for working on the pages (not deployed)
+node dev/walk.mjs …                      a headless walk of the provider's whole way, with screenshots (site/README.md)
 ```
 
 ## Settings (environment)
@@ -79,9 +81,10 @@ base64 and a newline), and the empty `partners.json(.sig)` V2pn's publisher stil
 tier 2 `account` (with an API), `actions` (with buttons), `lock`. Never `routing`, `transport` or `core`: V2pn takes
 those only from the index the owner signs with the root key on his PC. Files are written atomically into
 `HUB_PUBLIC_DIR/partners/latest/download/`; any problem stops the whole publication. Then `HUB_PUBLIC_DIR/p/<id>/`:
-`index.html`, `page.js` (no inline script: works under `script-src 'self'`), the logos and the background. With
+`index.html`, `page.js` (no inline script: works under `script-src 'self'`), the logos, the mark and the background;
+the page takes the site's window styles (`/assets/site/site.css`), V2pn's flags and map and its font from the site. With
 `#sub=<subscription>` in its address the page offers «Открыть в V2pn» (`v2pn://add?url=…&partner=<id>&name=…`); the
-part after `#` never reaches the server. The page takes its font from the site (`/assets/fonts/Geist-*.woff2`).
+part after `#` never reaches the server.
 
 **Downloads.** `GET /r/<name>` (`windows-x64`, `windows-arm64`, `macos-arm64`, `macos-x64`, `install.ps1`, `install.sh`)
 answers 302 to `https://github.com/<repo>/releases/latest/download/<asset>` and is counted per day and name (no IP, no
@@ -125,7 +128,7 @@ time; never codes, cookies, tokens or subscription links.
 
 ## Deployment
 
-Copy `hub/` without `test/` and `docs/` to `/opt/v2pn-hub` (`deploy/` holds the unit and an example of the settings). Then, as root:
+Copy `hub/` without `test/`, `docs/` and `dev/` to `/opt/v2pn-hub` (`deploy/` holds the unit and an example of the settings). Then, as root:
 
 ```sh
 useradd --system --home /var/lib/v2pn-hub --shell /usr/sbin/nologin v2pn-hub
@@ -206,7 +209,7 @@ v2pn.angleford.co {
 		file_server
 	}
 	header {
-		Content-Security-Policy "default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+		Content-Security-Policy "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
 		X-Content-Type-Options nosniff
 		Referrer-Policy strict-origin-when-cross-origin
 	}

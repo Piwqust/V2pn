@@ -483,6 +483,8 @@ export class Hub {
       review: this.lookReview(row, draft),
       share: { page: `${this.config.origin}/p/${row.id}/`, button: `${this.config.origin}/p/${row.id}/#sub=` },
       pictures: [...this.pictureMap(row.id).values()].map(p => ({ sha256: p.sha256, slot: p.slot, width: p.width, height: p.height, size: p.size })),
+      // What each picture slot takes, in the words the upload's refusal uses (the cabinet shows them by the fields).
+      slots: Object.fromEntries(PICTURES.map(key => [key, { hint: C.SLOTS[SLOT_OF[key]].desc[0], maxBytes: C.MAX_ASSET }])),
     };
   }
 

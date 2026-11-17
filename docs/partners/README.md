@@ -150,7 +150,7 @@ from urllib.parse import quote
 url = "https://v2pn.angleford.co/p/kestrel/#sub=" + quote(subscription_url, safe="")
 ```
 
-**Why after `#`.** A browser never sends the part of an address after `#` to the server, nor puts it in the Referer. V2pn's server sees only a request for `/p/kestrel/`; the page's script reads the subscription in the person's browser. It is the person's own link: whoever they forward it to gets the subscription too, as with a plain link.
+**Why after the hash.** A browser never sends the part of an address after `#` to the server, nor puts it in the Referer. V2pn's server sees only a request for `/p/kestrel/`; the page's script reads the subscription in the person's browser. It is the person's own link: whoever they forward it to gets the subscription too, as with a plain link.
 
 The cabinet's "Share" section has your address, the button's code ready to copy and a field to try the button with a subscription of your own.
 

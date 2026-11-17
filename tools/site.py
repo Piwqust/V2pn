@@ -15,8 +15,7 @@ scripts). Generated here, from their single sources in the repository:
   converted by tools/partner-docs.py's converter, in the site's header and footer.
 - site/providers/builder/: the look builder (docs/partners/builder): its form and preview as they are, its scripts
   copied unchanged, in the site's header and footer.
-- site/p/<id>/: each partner's download page, written by tools/partner-page.py (the generator stays the one source of
-  that page; --home links its V2pn lockup back to the site).
+- site/p/<id>/: not built here: the V2pn Hub (hub/lib/page.mjs) writes each provider's page when it publishes.
 
 Standard library only. Every page works under
     Content-Security-Policy: default-src 'self'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'

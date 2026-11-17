@@ -1,8 +1,9 @@
 namespace ServiceLib.Tests.V2pn;
 
 /// <summary>
-/// v2pn-partner.txt beside the program (the person came from that partner, or from none when it is missing or does not
-/// read), the sign-ins recorded in the settings, and the tab that is open.
+/// The marker of an older partner build (v2pn-partner.txt, read once and moved into the settings: the person came from
+/// that partner, or from none when it is missing or does not read), the sign-ins and links recorded in the settings, and
+/// the tab that is open.
 /// </summary>
 public class V2pnEditionTests
 {

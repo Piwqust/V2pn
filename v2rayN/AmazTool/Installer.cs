@@ -171,8 +171,9 @@ internal sealed class Installer
     }
 
     /// <summary>
-    /// A copy with a partner's tab keeps it: the bundle is swapped whole, so its marker is copied into the staged bundle first.
-    /// A folder install needs nothing, as files the package does not carry are left where they are.
+    /// A partner build of V2pn 1.2 keeps its tab through the update to the version that moves its marker into the
+    /// settings (V2pnEdition): the bundle is swapped whole, so the marker is copied into the staged bundle first. A folder
+    /// install needs nothing, as files the package does not carry are left where they are. Nothing writes new markers.
     /// </summary>
     private void KeepPartnerMarker()
     {

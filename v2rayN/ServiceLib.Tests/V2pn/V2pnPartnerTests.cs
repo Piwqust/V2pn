@@ -84,8 +84,8 @@ internal sealed class TestPartner
     }
 
     /// <summary>
-    /// The partners of a copy of V2pn: <paramref name="edition"/> is the partner of its v2pn-partner.txt (whose tab opens
-    /// before any choice), null for a person who came from no partner.
+    /// The partners of a copy of V2pn: <paramref name="edition"/> is the partner of an older build's marker (whose tab
+    /// opens before any choice), null for a person who came from no partner.
     /// </summary>
     public V2pnPartners Manager(TestSite site, string root, List<string?> subscriptions, string? edition = "configra") =>
         Manager(site, root, subscriptions, new V2pnEdition(edition));

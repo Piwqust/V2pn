@@ -101,8 +101,9 @@ if (-not (Test-Path $configFile)) {
 if ($Partner) {
     $json = Get-Content -Raw -Encoding utf8 $configFile | ConvertFrom-Json
     if (-not $json.UiItem) { $json | Add-Member -NotePropertyName UiItem -NotePropertyValue ([pscustomobject]@{}) }
-    $from = @($json.UiItem.V2pnCameFrom | Where-Object { $_ }) + $Partner | Select-Object -Unique
-    $json.UiItem | Add-Member -Force -NotePropertyName V2pnCameFrom -NotePropertyValue @($from)
+    # [string[]]: Windows PowerShell writes a PSObject-wrapped array as one joined string.
+    [string[]]$from = @(@($json.UiItem.V2pnCameFrom | Where-Object { $_ }) + @($Partner) | Select-Object -Unique)
+    $json.UiItem | Add-Member -Force -NotePropertyName V2pnCameFrom -NotePropertyValue $from
     $json | ConvertTo-Json -Depth 32 | Set-Content -Encoding utf8 $configFile
     Write-Host "Sandbox person came from partner $Partner"
 }

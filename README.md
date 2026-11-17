@@ -135,6 +135,8 @@ If there is no **Open Anyway**, run `xattr -cr /Applications/V2pn.app` in Termin
 2. In V2pn press **Paste from clipboard** (<kbd>Ctrl</kbd>+<kbd>V</kbd>, on a Mac <kbd>⌘</kbd>+<kbd>V</kbd>).
 3. Pick a server in the list or on the map and press **Connect**.
 
+If your provider's bot or site has a **Connect in V2pn** button, press it instead: V2pn adds the subscription, and a provider that works with V2pn gets its own tab in the title bar. For providers: [v2pn.angleford.co/providers](https://v2pn.angleford.co/providers/).
+
 Two choices sit under the button:
 
 - **Proxy or VPN.** Proxy turns on the system proxy: browsers and programs that use it go through the server. VPN routes all traffic of the computer, games included; it needs administrator rights on Windows and your password on macOS.

@@ -38,7 +38,8 @@ REPO_URL = "https://github.com/Piwqust/V2pn"
 
 # The flags the window pictures on the pages use (ISO codes, Assets/Flags/<code>.png).
 FLAGS = ["de", "nl", "fi", "se", "pl", "ru", "tr", "kz", "us", "gb", "fr", "lv", "eu"]
-# Partners shown on the site: their download page under /p/<id>/ and their pictures for the tab.
+# Partners whose pictures the site's pages show (assets/partners/<id>). Their pages under /p/<id>/ are the hub's
+# (hub/lib/page.mjs): it writes them on the server, and the site's upload leaves p/ and partners/ alone.
 PARTNERS = ["configra"]
 
 
@@ -200,7 +201,7 @@ def nav(root, current):
       {item("providers/builder/", "Конструктор", "builder")}
     </nav>
     <div class="nav__actions">
-      <a class="btn btn--primary" href="{root}providers/builder/">Собрать вкладку</a>
+      <a class="btn btn--primary" href="{root}providers/apply/">Подать заявку</a>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -220,7 +221,7 @@ def footer(root):
           <p class="footer__lede">Бесплатный VPN-клиент с открытым кодом для Windows и macOS.</p>
         </div>
         <div class="span-2 footer__col"><h3>Приложение</h3><ul><li><a href="{root}#app">Окно</a></li><li><a href="{root}#features">Возможности</a></li><li><a href="{root}#install">Установка</a></li><li><a href="{root}#faq">Вопросы</a></li></ul></div>
-        <div class="span-2 footer__col"><h3>Провайдерам</h3><ul><li><a href="{root}providers/">Вкладка провайдера</a></li><li><a href="{root}providers/guide/">Руководство</a></li><li><a href="{root}providers/builder/">Конструктор</a></li><li><a href="{root}p/configra/">Configra</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Провайдерам</h3><ul><li><a href="{root}providers/">Вкладка провайдера</a></li><li><a href="{root}providers/login/">Вход в кабинет</a></li><li><a href="{root}providers/guide/">Руководство</a></li><li><a href="{root}p/configra/">Configra</a></li></ul></div>
         <div class="span-2 footer__col"><h3>Проект</h3><ul><li><a href="{REPO_URL}">Код на GitHub</a></li><li><a href="{REPO_URL}/blob/v2pn/CHANGELOG.md">Что нового</a></li><li><a href="{RELEASES}">Все релизы</a></li><li><a href="{REPO_URL}/issues/new/choose">Сообщить о проблеме</a></li></ul></div>
       </div>
       <div class="footer__legal">
@@ -235,6 +236,7 @@ def footer(root):
 
 SCRIPTS = """<script type="module" src="{root}assets/system.js"></script>
 <script type="module" src="{root}assets/motion/motion.js"></script>
+<script type="module" src="{root}assets/site/site.js"></script>
 """
 
 
@@ -333,22 +335,13 @@ def build_builder():
     write(os.path.join(out, "index.html"), page)
 
 
-# ---------------------------------------------------------------- partner pages
-
-def build_partners():
-    gen = load("partner_page", os.path.join(REPO, "tools", "partner-page.py"))
-    for pid in PARTNERS:
-        out = os.path.join(SITE, "p", pid)
-        gen.build(os.path.join(REPO, "partners", pid), out, gen.release_source().rstrip("/"), home="../../")
-
-
 # ---------------------------------------------------------------- the upload
 
 def upload_list():
     files = []
     for folder, dirs, names in os.walk(SITE):
-        # the design checks' history and output, and the local screenshots, stay home
-        dirs[:] = sorted(d for d in dirs if d != ".taste-skill" and not (folder == SITE and d == "shots"))
+        # the design checks' history and output and the local screenshots stay home; p/ and partners/ are the hub's
+        dirs[:] = sorted(d for d in dirs if d != ".taste-skill" and not (folder == SITE and d in ("shots", "p", "partners")))
         for n in sorted(names):
             rel = os.path.relpath(os.path.join(folder, n), SITE).replace(os.sep, "/")
             if rel in ("README.md", "names.json") or rel.endswith((".md",)):
@@ -364,7 +357,6 @@ def main():
     copy_assets()
     build_guide()
     build_builder()
-    build_partners()
     files = upload_list()
     print(f"site/: {len(files)} files to upload")
     if args.check:

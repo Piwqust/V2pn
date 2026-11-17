@@ -16,17 +16,22 @@ V2pn no longer changes its look by the server you pick. If you came to V2pn from
 
 ### Who gets a provider's tab
 
-- You downloaded V2pn from the provider's page, or installed it with the provider's command. That tab stays.
+- You opened the provider's "Open in V2pn" button (its page on v2pn.angleford.co, its bot or its cabinet) and added the subscription it offered. You can also paste the address of that page into V2pn. The tab opens right away; it goes when you delete your last subscription from that provider.
 - Or you signed in with the provider by code: "Sign in with a provider" in the + menu, or "I have a subscription from a provider" at first start. Both are there for everyone. That tab goes when you delete your last subscription from that provider.
 - Pasting a provider's subscription link adds no tab: it is an ordinary subscription.
 - If a provider leaves V2pn's list of partners or its term ends, its tab closes with a note and the V2pn tab opens. Your servers work as before.
 - V2pn downloads the list of partners and a provider's look only if you came from a provider, or when you open "Sign in with a provider". Otherwise it downloads nothing about providers, and it removes the provider files 1.2.1 kept.
 - 1.2.1 and older stop wearing a provider's look at their next check.
 
-### A provider's page and command
+### Providers come from v2pn.angleford.co
 
-- A provider's page gives V2pn itself with the provider's tab (`V2pn-<provider>-windows-x64.zip` and the others), or one command with `V2PN_PARTNER=<provider>`. It installs where V2pn always goes, with V2pn's settings and its start with the system. If V2pn is installed already, the command only adds the provider's tab; your servers and settings stay.
-- Updates keep the tab.
+- Providers now apply on V2pn's site, v2pn.angleford.co, and the list of partner providers comes from there, with a copy on GitHub in case the site cannot be reached.
+- There are no separate builds of V2pn for a provider any more, and no provider command for the installer: everyone installs the same V2pn, and the provider's tab comes from its button or the sign-in by code.
+- If you installed a provider's build of V2pn earlier, you keep its tab.
+
+### Updates
+
+- V2pn looks for updates on v2pn.angleford.co first, which sends it on to GitHub. If the site does not answer, V2pn goes to GitHub directly after a few seconds. Every update is still checked against V2pn's signature, wherever it comes from.
 
 ## 1.2.1
 

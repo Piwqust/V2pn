@@ -6,7 +6,7 @@
     The release script and CI pass -p:V2pnVersion=x.y.z; this default is for local builds.
   -->
   <PropertyGroup>
-    <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.2.2</V2pnVersion>
+    <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.3.0</V2pnVersion>
 
     <!--
       "release" only in packages made by tools/release.ps1. Everything else (dotnet build, the IDE)

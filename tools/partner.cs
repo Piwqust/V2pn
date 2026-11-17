@@ -436,7 +436,8 @@ string RepoRoot()
     return dir?.FullName ?? Environment.CurrentDirectory;
 }
 
-// Whether the keys built into the app (V2pnPartnerKeys in v2rayN/Directory.Build.targets) take the signature.
+// Whether the root keys built into the app (V2pnPartnerKeys in v2rayN/Directory.Build.targets, without its "hub:" key)
+// take the signature: only a root-signed index grants what is reviewed by hand.
 int CheckAgainstBuiltInKeys(byte[] data, string signature)
 {
     var targets = Path.Combine(RepoRoot(), "v2rayN", "Directory.Build.targets");
@@ -446,13 +447,13 @@ int CheckAgainstBuiltInKeys(byte[] data, string signature)
         return 0;
     }
     var match = Regex.Match(File.ReadAllText(targets), "<V2pnPartnerKeys[^>]*>([^<]*)</V2pnPartnerKeys>");
-    var keys = match.Success ? match.Groups[1].Value.Split('|', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries) : [];
+    var keys = match.Success ? V2pnInfo.PartnerKeyList(match.Groups[1].Value, hub: false) : [];
     if (keys.Any(key => V2pnPartnerSigning.Verify(key, data, signature)))
     {
-        Console.WriteLine("checked: the app's built-in partner keys accept this signature");
+        Console.WriteLine("checked: the app's built-in partner root keys accept this signature");
         return 0;
     }
-    Console.Error.WriteLine("WARNING: no key in V2pnPartnerKeys accepts this signature; installed apps will refuse this index (fine for a test key).");
+    Console.Error.WriteLine("WARNING: no root key in V2pnPartnerKeys accepts this signature; installed apps will refuse this index (fine for a test key).");
     return 3;
 }
 

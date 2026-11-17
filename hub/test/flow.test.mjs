@@ -313,3 +313,22 @@ test("import-partner takes partners/configra as an approved tier 2 provider with
     await env.close();
   }
 });
+
+test('once a day the index is made again, and a provider whose term has ended drops out', async () => {
+  const env = await startHub();
+  try {
+    const { hub } = env;
+    hub.importPartner(new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+    hub.publish('test');
+    assert.equal(published(env).index.partners.length, 1);
+    // The term ends today; the last publication was yesterday.
+    hub.db.run('UPDATE providers SET until = ? WHERE id = ?', new Date().toISOString().slice(0, 10), 'configra');
+    hub.db.setMeta('published_day', '2000-01-01');
+    hub.maintain();
+    assert.deepEqual(published(env).index.partners, []);
+    assert.ok(!fs.existsSync(path.join(env.config.publicDir, 'p', 'configra')));
+    assert.equal(hub.db.meta('published_day'), new Date().toISOString().slice(0, 10));
+  } finally {
+    await env.close();
+  }
+});

@@ -4,7 +4,7 @@ import { normalizeEmail } from './validate.mjs';
 
 // The User-Agent V2pn sends for a subscription (V2pnSubs.SubscriptionUserAgent: v2rayN's agent, by which panels pick
 // the format, then V2pn's own name). Remnawave and Marzban answer it with share links.
-export const DEFAULT_CHECK_UA = 'v2rayN/7.25.6 V2pn/1.2.2';
+export const DEFAULT_CHECK_UA = 'v2rayN/7.25.6 V2pn/1.3.0';
 
 function int(value, fallback, min, max) {
   const n = Number.parseInt(value ?? '', 10);

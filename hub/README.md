@@ -35,7 +35,7 @@ node dev/walk.mjs …                      a headless walk of the provider's who
 | `HUB_SMTP_URL` | (none) | `smtps://user:pass@host:465` (TLS) or `smtp://user:pass@host:587` (STARTTLS when offered; a password is never sent without TLS). URL-encode `@` and `:` in the user and password. Unset: **no-mail mode**: codes are not sent, they wait in the admin's outbox (`GET /api/admin/outbox`) until they expire. |
 | `HUB_MAIL_FROM` | `V2pn <no-reply@<origin host>>` | The From of the code mails. |
 | `HUB_GITHUB_REPO` | `Piwqust/V2pn` | Where `/r/*` and `/releases/*` redirect. |
-| `HUB_CHECK_UA` | `v2rayN/7.25.6 V2pn/1.2.2` | The User-Agent of the subscription check (V2pn's own, `V2pnSubs.SubscriptionUserAgent`, so panels answer with links). |
+| `HUB_CHECK_UA` | `v2rayN/7.25.6 V2pn/1.3.0` | The User-Agent of the subscription check (V2pn's own, `V2pnSubs.SubscriptionUserAgent`, so panels answer with links). |
 
 ## What it does
 

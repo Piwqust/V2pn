@@ -207,6 +207,9 @@ try {
   await p.click('#api-test');
   await p.until("document.querySelector('#api-out .lines')", 20000);
   await shoot(p, '21-cabinet-api');
+  // The stand-in API is plain http, which a published look may not carry: the draft goes back to no API.
+  await p.type('#api-url', '');
+  await sleep(1500);
 
   // ------------------------------------------------ the owner publishes
   if (step('publish')) throw 'stop';

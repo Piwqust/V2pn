@@ -307,10 +307,14 @@
                     CornerRadius="{TemplateBinding CornerRadius}">
                     <Panel>
                         <!--  A Canvas measures as nothing: the thumb, sized to the selected item, must not keep the
-                              control at an old height when the items get lower (Appearance → Tabs).  -->
+                              control at an old height when the items get lower (Appearance → Tabs). Pinned to the
+                              top left: the Canvas can keep the old, narrower slot, and centred in it a wider thumb
+                              hung past the control's left edge (the mini window's tabs).  -->
                         <Canvas>
                             <Border
                                 Name="PART_Thumb"
+                                HorizontalAlignment="Left"
+                                VerticalAlignment="Top"
                                 Background="{DynamicResource V2Selected}"
                                 BoxShadow="{DynamicResource V2NavShadow}"
                                 IsHitTestVisible="False"

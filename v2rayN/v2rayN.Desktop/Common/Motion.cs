@@ -262,6 +262,8 @@ internal static class SegmentThumb
             thumb.CornerRadius = item.CornerRadius;
             thumb.Width = item.Bounds.Width;
             thumb.Height = item.Bounds.Height;
+            // The Canvas measures as nothing, so a new thumb size alone does not re-arrange it.
+            (host as Avalonia.Layout.Layoutable)?.InvalidateArrange();
             var move = new TransformOperations.Builder(1);
             move.AppendTranslate(origin.Value.X, origin.Value.Y);
             if (placed && (snap || instant.Value) && thumb.Transitions != null)

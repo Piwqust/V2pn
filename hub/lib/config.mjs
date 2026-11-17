@@ -31,6 +31,7 @@ export function loadConfig(env = process.env) {
     keysDir: path.join(data, 'keys'),
     keyFile: path.join(data, 'keys', 'hub-partner-key.pem'),
     secretFile: path.join(data, 'keys', 'hub-secret'),
+    passwordFile: path.join(data, 'keys', 'admin-passwords.json'),
     uploadsDir: path.join(data, 'uploads'),
     publicDir: path.resolve(env.HUB_PUBLIC_DIR || '/var/www/v2pn.angleford.co'),
     origin: originUrl.origin,

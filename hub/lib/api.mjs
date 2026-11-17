@@ -77,6 +77,12 @@ function routes(hub) {
       res.setHeader('set-cookie', hub.auth.cookie(token));
       return { ok: true, account: { email: account.email, admin: hub.auth.isAdmin(account.email) } };
     }, 'public'],
+    ['POST', /^\/api\/auth\/password$/, async ({ req, ip, res }) => {
+      const body = await readJson(req);
+      const { token, account } = hub.auth.verifyPassword(body.email, body.password, ip);
+      res.setHeader('set-cookie', hub.auth.cookie(token));
+      return { ok: true, account: { email: account.email, admin: true } };
+    }, 'public'],
     ['POST', /^\/api\/auth\/signout$/, ({ session, res }) => {
       if (session) hub.auth.signOut(session.tokenHash);
       res.setHeader('set-cookie', hub.auth.clearCookie());

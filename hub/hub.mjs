@@ -3,6 +3,7 @@
 //
 //   node hub.mjs [serve]                 the service on HUB_HOST:HUB_PORT (127.0.0.1:18190)
 //   node hub.mjs admin-link <email>      a one-time sign-in link for an owner's email (HUB_ADMINS), valid 15 minutes
+//   node hub.mjs admin-password <email>  a new random password for an owner's email (sign-in at /admin/ without mail)
 //   node hub.mjs import-partner <folder> [--tier 1|2] [--email <email>]
 //                                        partners/<id> as an approved provider with its look published
 //   node hub.mjs publish                 rebuilds and re-signs the index, the zips and the pages
@@ -20,7 +21,7 @@ const option = name => {
 };
 
 function usage() {
-  process.stderr.write('usage: node hub.mjs [serve | admin-link <email> | import-partner <folder> [--tier 1|2] [--email <email>] | publish | keygen]\n');
+  process.stderr.write('usage: node hub.mjs [serve | admin-link <email> | admin-password <email> | import-partner <folder> [--tier 1|2] [--email <email>] | publish | keygen]\n');
   return 2;
 }
 
@@ -43,6 +44,17 @@ async function main() {
       const hub = createHub(config);
       try {
         process.stdout.write(hub.auth.createAdminLink(rest[0]) + '\n');
+      } finally {
+        hub.db.close();
+      }
+      return 0;
+    }
+    case 'admin-password': {
+      if (!rest[0]) return usage();
+      setQuiet(true);
+      const hub = createHub(config);
+      try {
+        process.stdout.write(hub.auth.setAdminPassword(rest[0]) + '\n');
       } finally {
         hub.db.close();
       }

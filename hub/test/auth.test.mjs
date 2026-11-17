@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
 import net from 'node:net';
 import { test } from 'node:test';
 import { parseSmtpUrl, sendMail } from '../lib/mail.mjs';
@@ -181,5 +182,38 @@ test('with SMTP the code is mailed: AUTH, a UTF-8 message, nothing in the outbox
   } finally {
     await env.close();
     smtp.close();
+  }
+});
+
+test('the owner signs in by password without mail; providers cannot, wrong tries are limited', async () => {
+  const env = await startHub();
+  try {
+    assert.throws(() => env.hub.auth.setAdminPassword('provider@example.com'), /not in HUB_ADMINS/);
+    const password = env.hub.auth.setAdminPassword('owner@example.com');
+    assert.match(password, /^[A-Za-z2-9]{5}(-[A-Za-z2-9]{5}){3}$/);
+    const stored = fs.readFileSync(env.config.passwordFile, 'utf8');
+    assert.ok(!stored.includes(password), 'only the hash is kept');
+
+    const owner = new Client(env.base);
+    const bad = await owner.post('/api/auth/password', { email: 'owner@example.com', password: 'wrong' });
+    assert.equal(bad.data.error.code, 'password_invalid');
+    const stranger = await owner.post('/api/auth/password', { email: 'provider@example.com', password });
+    assert.equal(stranger.data.error.code, 'password_invalid', 'an email that is not an owner gets the same answer');
+
+    const ok = await owner.post('/api/auth/password', { email: ' Owner@Example.com ', password: ` ${password} ` });
+    assert.equal(ok.status, 200);
+    assert.deepEqual(ok.data.account, { email: 'owner@example.com', admin: true });
+    assert.equal((await owner.get('/api/admin/outbox')).status, 200);
+
+    // A new password ends the sessions made before it.
+    env.hub.auth.setAdminPassword('owner@example.com');
+    assert.equal((await owner.get('/api/admin/outbox')).status, 401);
+
+    const guesser = new Client(env.base);
+    let last;
+    for (let i = 0; i < 9; i++) last = await guesser.post('/api/auth/password', { email: 'owner@example.com', password: `x${i}` });
+    assert.equal(last.data.error.code, 'rate_limited');
+  } finally {
+    await env.close();
   }
 });

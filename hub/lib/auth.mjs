@@ -1,6 +1,9 @@
 // Sign-in by a code sent to the email, sessions in an httpOnly cookie, and the one-time sign-in link for the owner.
 // Codes, session tokens and link tokens are stored hashed; codes are compared in constant time.
+// The owner can also sign in by password (scrypt hash in HUB_DATA/keys), so the admin works without mail.
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import { HubError } from './errors.mjs';
 import { log } from './log.mjs';
 import { normalizeEmail } from './validate.mjs';
@@ -11,6 +14,8 @@ const CODE_TRIES = 5;
 const SESSION_TTL = 30 * 24 * 3600 * 1000;
 const ADMIN_LINK_TTL = 15 * 60 * 1000;
 const HOUR = 3600 * 1000;
+// ~32 MB and ~100 ms per check on the server: slow enough against guessing, light enough for 1 CPU.
+const SCRYPT = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 
 /** Sliding-window counters in memory (they reset with the process, the database ones do not). */
 export class RateLimiter {
@@ -189,6 +194,56 @@ export class Auth {
     });
     if (!row || !this.isAdmin(row.email)) throw new HubError('link_invalid');
     return this.startSession(row.email);
+  }
+
+  /**
+   * Sets a new random password for an owner's email (hub.mjs admin-password) and returns it; only its scrypt hash is
+   * kept. The owner signs in without mail this way; providers still sign in by code.
+   */
+  setAdminPassword(emailText) {
+    const email = normalizeEmail(emailText);
+    if (!email || !this.isAdmin(email)) throw new Error(`${emailText} is not in HUB_ADMINS`);
+    // 20 characters from an alphabet without look-alikes: ~115 bits, easy to type from a screen.
+    const alphabet = 'abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+    const raw = Array.from({ length: 20 }, () => alphabet[crypto.randomInt(alphabet.length)]).join('');
+    const password = raw.match(/.{5}/g).join('-');
+    const salt = crypto.randomBytes(16);
+    const hash = crypto.scryptSync(password, salt, 32, SCRYPT);
+    const all = this.readPasswords();
+    all[email] = { salt: salt.toString('base64'), hash: hash.toString('base64'), set: new Date(this.now()).toISOString() };
+    fs.mkdirSync(path.dirname(this.config.passwordFile), { recursive: true, mode: 0o700 });
+    const tmp = `${this.config.passwordFile}.tmp`;
+    fs.writeFileSync(tmp, JSON.stringify(all, null, 2), { mode: 0o600 });
+    fs.renameSync(tmp, this.config.passwordFile);
+    // Sessions made before end, so a leaked old password or session stops working at once.
+    this.db.run('DELETE FROM sessions WHERE account_id IN (SELECT id FROM accounts WHERE email = ?)', email);
+    return password;
+  }
+
+  readPasswords() {
+    try {
+      return JSON.parse(fs.readFileSync(this.config.passwordFile, 'utf8')) || {};
+    } catch {
+      return {};
+    }
+  }
+
+  /** The owner's sign-in by email and password; a new session {token, account}. */
+  verifyPassword(emailText, passwordText, ip) {
+    const email = normalizeEmail(emailText);
+    const password = typeof passwordText === 'string' ? passwordText.trim().slice(0, 200) : '';
+    if (!this.limiter.hit(`pw-ip:${ip}`, 10, HOUR) || !this.limiter.hit(`pw-email:${email}`, 20, HOUR)) throw new HubError('rate_limited');
+    const entry = email && this.isAdmin(email) ? this.readPasswords()[email] : null;
+    // An unknown email costs the same work as a wrong password, so the answer does not tell which emails are owners'.
+    const salt = entry ? Buffer.from(entry.salt, 'base64') : crypto.randomBytes(16);
+    const actual = crypto.scryptSync(password, salt, 32, SCRYPT);
+    const expected = entry ? Buffer.from(entry.hash, 'base64') : crypto.randomBytes(32);
+    if (!entry || !password || !crypto.timingSafeEqual(expected, actual)) {
+      log.info('password sign-in refused');
+      throw new HubError('password_invalid');
+    }
+    log.info('password sign-in');
+    return this.startSession(email);
   }
 
   /** Drops what has expired: codes, sessions, links, the outbox. */

@@ -134,6 +134,69 @@ code.addEventListener('input', () => {
   if (digits.length === 6) formCode.requestSubmit();
 });
 
+// The owner signs in by password; /admin/ sends here with next=/admin/, so that form opens first then.
+const formPw = $('#step-password');
+const pwEmail = $('#pw-email');
+const pw = $('#pw');
+const pwGo = $('#pw-go');
+const pwStatus = $('#pw-status');
+
+function showPassword(focus = true) {
+  clearInterval(timer);
+  formEmail.hidden = true;
+  formCode.hidden = true;
+  formPw.hidden = false;
+  if (!pwEmail.value && email.value) pwEmail.value = email.value.trim();
+  if (focus) (pwEmail.value ? pw : pwEmail).focus();
+}
+if (next && /\/admin\/?$/.test(new URL(next, location.href).pathname)) showPassword(false);
+$('#to-password').addEventListener('click', () => showPassword());
+$('#to-code').addEventListener('click', () => {
+  formPw.hidden = true;
+  formEmail.hidden = false;
+  email.focus();
+});
+pwEmail.addEventListener('input', () => setFieldError(pwEmail, ''));
+pw.addEventListener('input', () => setFieldError(pw, ''));
+
+formPw.addEventListener('submit', async e => {
+  e.preventDefault();
+  if (busy) return;
+  const mail = pwEmail.value.trim();
+  if (!EMAIL.test(mail)) {
+    setFieldError(pwEmail, 'Напишите почту целиком, с @.');
+    pwEmail.focus();
+    return;
+  }
+  if (!pw.value.trim()) {
+    setFieldError(pw, 'Нужен пароль.');
+    pw.focus();
+    return;
+  }
+  busy = true;
+  pwGo.disabled = true;
+  const slow = setTimeout(() => { pwStatus.textContent = 'Проверяем…'; }, 300);
+  try {
+    const res = await api.post('/api/auth/password', { email: mail, password: pw.value });
+    clearTimeout(slow);
+    rememberSignIn(res.account);
+    pwStatus.textContent = 'Вы вошли. Открываем…';
+    const me = await api.get('/api/me').catch(() => ({ account: res.account, provider: null }));
+    go(me);
+  } catch (err) {
+    clearTimeout(slow);
+    pwStatus.textContent = '';
+    if (err.code === 'password_invalid') setFieldError(pw, 'Почта или пароль не подходят.');
+    else if (err.code === 'rate_limited') setFieldError(pw, 'Слишком много попыток. Подождите час или войдите по коду.');
+    else pwStatus.textContent = err.message;
+    pw.select();
+    pw.focus();
+  } finally {
+    busy = false;
+    pwGo.disabled = false;
+  }
+});
+
 formCode.addEventListener('submit', async e => {
   e.preventDefault();
   if (busy) return;

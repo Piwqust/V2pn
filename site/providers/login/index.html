@@ -67,6 +67,28 @@
         <button class="btn btn--primary" type="submit" id="send">Получить код</button>
         <p class="form__status" role="status" aria-live="polite" id="email-status"></p>
         <p class="hint">Новый провайдер? Войдите так же: после входа откроется заявка.</p>
+        <p class="hint"><button class="link-btn" type="button" id="to-password">Вход владельца V2pn по паролю</button></p>
+      </form>
+
+      <!-- the owner: email and password, no mail needed -->
+      <form id="step-password" class="stack stack--lg" novalidate hidden>
+        <div class="app__head">
+          <p class="app__crumb"><button class="link-btn" type="button" id="to-code">Вход провайдера по коду</button></p>
+          <h1>Вход владельца</h1>
+          <p>Почта и пароль владельца V2pn. Код на почту не нужен.</p>
+        </div>
+        <div class="field">
+          <label for="pw-email">Почта</label>
+          <input id="pw-email" name="username" type="email" autocomplete="username" inputmode="email" spellcheck="false" maxlength="254" required>
+          <span class="field__error" hidden></span>
+        </div>
+        <div class="field">
+          <label for="pw">Пароль</label>
+          <input id="pw" name="password" type="password" autocomplete="current-password" spellcheck="false" maxlength="200" required>
+          <span class="field__error" hidden></span>
+        </div>
+        <button class="btn btn--primary" type="submit" id="pw-go">Войти</button>
+        <p class="form__status" role="status" aria-live="polite" id="pw-status"></p>
       </form>
 
       <!-- step 2: the code -->

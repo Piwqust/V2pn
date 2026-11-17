@@ -12,6 +12,7 @@ Node 24 or newer (the server runs 26), no npm packages: `node:http`, `node:sqlit
 node hub.mjs [serve]                     the service (HUB_HOST:HUB_PORT)
 node hub.mjs keygen                      creates the hub's partner key if missing; prints its public half
 node hub.mjs admin-link <email>          a one-time sign-in link for an owner (HUB_ADMINS), valid 15 minutes
+node hub.mjs admin-password <email>      a new random password for an owner; prints it once (only its scrypt hash is kept)
 node hub.mjs import-partner <folder> [--tier 1|2] [--email <email>]
                                          partners/<id> (listing.json, partner.json, PNG pictures) as an approved
                                          provider with its look published; --email lets that address into its cabinet
@@ -43,7 +44,7 @@ node dev/walk.mjs …                      a headless walk of the provider's who
 or puts it into the outbox. Limits: 10 requests an hour per address, 5 codes an hour per email and one per 30 s, 300 an
 hour in all. `POST /api/auth/verify {email, code}` sets `hub_s` (random 32 bytes, stored as SHA-256, httpOnly, Secure,
 SameSite=Lax, 30 days). The owner's first sign-in: `node hub.mjs admin-link <email>` prints
-`<origin>/api/auth/admin-link?token=…`; opening it signs in and leads to `/admin/`. Every request that is not GET needs
+`<origin>/api/auth/admin-link?token=…`; opening it signs in and leads to `/admin/`. Without mail the owner signs in by password: `node hub.mjs admin-password <email>` prints a new one (scrypt hash in `HUB_DATA/keys/admin-passwords.json`; a new password ends the owner's sessions), and `/admin/` opens the password form on the sign-in page (10 tries an hour per address). Every request that is not GET needs
 `X-Hub: 1` and `Origin: <HUB_ORIGIN>`.
 
 **Applications.** One per account: name, id (2–32 of `a-z0-9-`, not reserved), subscription domains (1–20,
@@ -106,6 +107,7 @@ time; never codes, cookies, tokens or subscription links.
 | `POST /api/auth/verify` `{email, code}` | anyone | sets the cookie; `{account}` |
 | `POST /api/auth/signout` | anyone | |
 | `GET /api/auth/admin-link?token=` | the link | sets the cookie, 302 to `/admin/` |
+| `POST /api/auth/password` | `{email, password}` (owners only) | `{ok, account}` + cookie |
 | `GET /api/me` | signed in | `{account, application, provider}` |
 | `GET /api/application` · `PUT /api/application` | signed in | the own application; PUT saves a draft |
 | `POST /api/application/submit` | signed in | check and submit |

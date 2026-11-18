@@ -4,6 +4,36 @@ What changes for the people who use the app. Each version's section becomes the 
 
 ## Unreleased
 
+### "Connected" means checked
+
+- The window, the mini window and the tray say the same thing, and say "connected" only after V2pn has checked the connection you have now: "Proxy connected", "VPN connected" or "Local proxy on port N". In system-proxy mode a line under it says it is for apps that use the system proxy.
+- The check goes through the selected server even when your rules would send the check site direct, so a dead server can no longer look alive.
+- When the check site doesn't answer, V2pn tries a second site. If that one answers, the connection works; if neither does, it says "Server not responding". HTTP errors, redirects and timeouts each have their own words and "Check again".
+- A result for the server you just left no longer lands on the one you picked.
+
+### First connection
+
+- After you add a link or a subscription, the same screen shows how many servers came, the server, the mode and the route, with Connect. "Change mode and route" is there if you want it.
+- An empty subscription or a link that isn't one says so right there.
+
+### When a server stops working
+
+- "Find a working server" checks the other servers of the same country first. If none answers, it offers the subscription's other countries, and before switching it tells you the country changes.
+- After the computer wakes or the network changes (Wi-Fi to a hotspot, a cable back), V2pn checks the connection again. Your server, mode and route stay, and a connection you switched off stays off.
+
+### Problems with a way out
+
+- When another program holds V2pn's local port, "Change port" opens Settings right at it.
+- When VPN mode didn't get administrator rights, you can ask again or connect as a proxy.
+- When the reason isn't known, V2pn shows the core's own words and the log instead of guessing.
+- "Copy diagnostics" (Help menu, and next to any problem) shows a report for support in full before copying it: versions, system, mode, states and error codes, with no links, keys, server addresses or names.
+
+### Subscriptions
+
+- Each subscription says how its last update ended: the provider's site didn't answer, sent no servers, or sent something that isn't a subscription, and when your saved servers came. They keep working after a failed update. This now also holds for scheduled updates, which looked fresh even when they failed.
+- When the provider reports your subscription expired or out of traffic, a note next to Connect says so, with "Update subscription" and the provider's page.
+- A provider's site that stops answering ends an update in about a minute and a half instead of four.
+
 ### Your own server list
 
 - Update subscriptions, DNS and Settings moved from the map to the foot of the server list.

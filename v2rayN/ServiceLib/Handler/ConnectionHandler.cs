@@ -9,10 +9,37 @@ public static class ConnectionHandler
         {
             Credentials = new NetworkCredential(AvailabilityProbeEndpoint.User, endpoint.Password),
         };
-        var result = await ProbeAsync(proxy, url, CancellationToken.None);
+        var result = await CheckWithFallbackAsync(target => ProbeAsync(proxy, target, CancellationToken.None), url);
         return result.IsAvailable
             ? result with { Ip = (await GetIPInfo(proxy))?.ToString() }
             : result;
+    }
+
+    // Reached through the server when the check address does not answer: a different host tells a down check
+    // site from a server that carries nothing.
+    private static readonly string[] FallbackUrls =
+        ["https://www.gstatic.com/generate_204", "http://www.msftconnecttest.com/connecttest.txt"];
+
+    internal static async Task<AvailabilityCheckResult> CheckWithFallbackAsync(
+        Func<string, Task<AvailabilityCheckResult>> probe, string url)
+    {
+        var result = await probe(url);
+        if (!result.CanSearchForReplacement)
+        {
+            return result;
+        }
+        var host = Uri.TryCreate(url, UriKind.Absolute, out var target) ? target.Host : string.Empty;
+        var fallback = FallbackUrls.FirstOrDefault(f => !string.Equals(new Uri(f).Host, host, StringComparison.OrdinalIgnoreCase));
+        if (fallback == null)
+        {
+            return result;
+        }
+        var second = await probe(fallback);
+        return second.IsAvailable
+            ? second with { CheckUrlFailed = true }
+            : second.IsFailure && !second.CanSearchForReplacement
+                ? second
+                : new(AvailabilityState.NoResponse);
     }
 
     public static async Task<int> GetRealPingTime(IWebProxy? webProxy, CancellationToken cancellationToken = default)

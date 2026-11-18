@@ -436,8 +436,11 @@ public static partial class L
         AvailabilityState.Redirected => T("Check site redirected", "Проверочный сайт перенаправил запрос"),
         AvailabilityState.TimedOut => T("Connection check timed out", "Истекло время проверки"),
         AvailabilityState.Unreachable => T("Check site unavailable", "Проверочный сайт недоступен"),
+        AvailabilityState.NoResponse => StateNoResponse,
         _ => StateUnchecked,
     };
+    public static string CheckUrlFailedTip => T("The check address didn't answer, another site did through this server.",
+        "Проверочный адрес не ответил, другой сайт через этот сервер открылся.");
     public static string CheckFailureHint => T("The check could not confirm this connection. Try the check again.",
         "Проверка не смогла подтвердить подключение. Повторите проверку.");
     public static string StateNoResponse => T("Server not responding", "Сервер не отвечает");
@@ -499,6 +502,8 @@ public static partial class L
     public static string NoServersInCountryResponded => T("No other server in this country answered the check.", "Другие серверы этой страны не ответили на проверку.");
     public static string UnknownServerCountry => T("unknown country", "страна неизвестна");
     public static string ConfirmReplacement => T("Switch to {0} ({1})? V2pn will check the new connection.", "Переключиться на {0} ({1})? V2pn проверит новое подключение.");
+    public static string ConfirmReplacementOtherCountry => T("No server in {0} answered. Switch to {1}? Your country changes from {0} to {2}. V2pn will check the new connection.",
+        "Серверы страны «{0}» не ответили. Переключиться на {1}? Страна сменится с «{0}» на «{2}». V2pn проверит новое подключение.");
     public static string SwitchServer => T("Switch server", "Переключиться");
     public static string FindProgress => T("Checking {0} of {1}…", "Проверка {0} из {1}…");
     public static string StateNoResponseTip => T("The server didn't answer the check. Try another server.", "Сервер не ответил на проверку. Попробуйте другой сервер.");

@@ -84,9 +84,10 @@ public partial class MainWindow
                 return;
             }
 
-            var code = ServerCountry(best);
-            var place = WorldMap.Instance.Get(code)?.Name ?? (code.IsNotEmpty() ? code : L.UnknownServerCountry);
-            var confirm = string.Format(L.ConfirmReplacement, CountryResolver.ServerName(best), place);
+            var place = CountryName(ServerCountry(best));
+            var confirm = otherCountries
+                ? string.Format(L.ConfirmReplacementOtherCountry, CountryName(country), CountryResolver.ServerName(best), place)
+                : string.Format(L.ConfirmReplacement, CountryResolver.ServerName(best), place);
             if (await UI.ShowYesNo(confirm, L.SwitchServer) == ButtonResult.Yes && IsCurrent())
             {
                 await profiles.SetDefaultServer(best.IndexId);
@@ -131,6 +132,9 @@ public partial class MainWindow
         await Task.Run(() => service.RunLoop(ESpeedActionType.Realping, candidates, cancellationToken), cancellationToken);
         return candidates.Where(p => delays.ContainsKey(p.IndexId)).MinBy(p => delays[p.IndexId]);
     }
+
+    private static string CountryName(string? code) =>
+        WorldMap.Instance.Get(code)?.Name ?? (code.IsNotEmpty() ? code! : L.UnknownServerCountry);
 
     private static string? ServerCountry(ProfileItem profile) =>
         V2pnPartnerLive.Instance.Describe(profile.Subid, profile.Remarks, profile.Address)?.Country

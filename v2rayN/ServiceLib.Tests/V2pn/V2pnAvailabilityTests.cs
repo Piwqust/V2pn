@@ -111,3 +111,52 @@ public class V2pnAvailabilityProbeConfigTests
         await result.Data!.ToString().Should().NotContain(AvailabilityProbeEndpoint.Tag);
     }
 }
+
+public class V2pnAvailabilityFallbackTests
+{
+    private const string Url = "https://www.google.com/generate_204";
+
+    [Test]
+    public async Task ADownCheckSiteDoesNotFailAWorkingServer()
+    {
+        var asked = new List<string>();
+        var result = await ConnectionHandler.CheckWithFallbackAsync(url =>
+        {
+            asked.Add(url);
+            return Task.FromResult(asked.Count == 1 ? new AvailabilityCheckResult(AvailabilityState.Unreachable)
+                : new AvailabilityCheckResult(AvailabilityState.Available, 40));
+        }, Url);
+
+        await result.IsAvailable.Should().BeTrue();
+        await result.CheckUrlFailed.Should().BeTrue();
+        await new Uri(asked[1]).Host.Should().NotBeEqualTo("www.google.com");
+    }
+
+    [Test]
+    [Arguments(AvailabilityState.Unreachable, AvailabilityState.Unreachable)]
+    [Arguments(AvailabilityState.TimedOut, AvailabilityState.TimedOut)]
+    [Arguments(AvailabilityState.TimedOut, AvailabilityState.Unreachable)]
+    public async Task BothAddressesSilentMeansTheServerIsNotResponding(AvailabilityState first, AvailabilityState second)
+    {
+        var calls = 0;
+        var result = await ConnectionHandler.CheckWithFallbackAsync(_ =>
+            Task.FromResult(new AvailabilityCheckResult(++calls == 1 ? first : second)), Url);
+
+        await result.State.Should().BeEqualTo(AvailabilityState.NoResponse);
+        await result.CanSearchForReplacement.Should().BeTrue();
+    }
+
+    [Test]
+    public async Task AnHttpErrorIsNotRetriedElsewhere()
+    {
+        var calls = 0;
+        var result = await ConnectionHandler.CheckWithFallbackAsync(_ =>
+        {
+            calls++;
+            return Task.FromResult(new AvailabilityCheckResult(AvailabilityState.UnexpectedStatus, HttpStatus: 500));
+        }, Url);
+
+        await calls.Should().BeEqualTo(1);
+        await result.HttpStatus.Should().BeEqualTo(500);
+    }
+}

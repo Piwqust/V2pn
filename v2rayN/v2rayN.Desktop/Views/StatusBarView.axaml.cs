@@ -297,7 +297,9 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         chipCheck.Classes.Set("ok", check.IsAvailable);
         iconCheck.Data = this.FindResource("SemiIconTickCircle") as Geometry;
         txtCheck.Text = check.IsAvailable ? string.Format(L.CheckWorks, check.Time) : string.Empty;
-        ToolTip.SetTip(chipCheck, check.Ip.IsNotEmpty() ? $"IP {check.Ip}" : null);
+        var tip = string.Join('\n', new[] { check.Ip.IsNotEmpty() ? $"IP {check.Ip}" : null,
+            check.CheckUrlFailed ? L.CheckUrlFailedTip : null }.Where(t => t != null));
+        ToolTip.SetTip(chipCheck, tip.IsNullOrEmpty() ? null : tip);
         if (chipCheck.IsVisible && !was)
         {
             _ = Motion.Enter(chipCheck, dx: 6, dy: 0, ms: 180, scale: 0.97);

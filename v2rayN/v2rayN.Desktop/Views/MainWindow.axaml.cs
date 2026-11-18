@@ -890,6 +890,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             && (ESysProxyType)status.SystemProxySelected is ESysProxyType.ForcedChange or ESysProxyType.Pac;
         txtSystemProxyScope.IsVisible = systemProxy;
         var tip = faulted ? faultTip
+            : check.State == AvailabilityState.NoResponse ? L.StateNoResponseTip
             : check.IsFailure ? L.CheckFailureHint
             : state == ProtectionState.LocalOnly ? string.Format(L.LocalOnlyTip, AppManager.Instance.GetLocalPort(EInboundProtocol.socks))
             : systemProxy ? L.SystemProxyScope : null;

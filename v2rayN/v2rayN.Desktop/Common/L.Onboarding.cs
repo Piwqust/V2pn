@@ -9,7 +9,7 @@ public static partial class L
     public static string ObStepOf => T("Step {0} of {1}", "Шаг {0} из {1}");
 
     public static string ObWelcomeTitle => T("Welcome to V2pn", "Добро пожаловать в V2pn");
-    public static string ObWelcomeLead => T("A minute to set up: your servers, what goes through the VPN, and how to connect.", "Настройка займёт минуту: ваши серверы, что пускать через VPN и как подключаться.");
+    public static string ObWelcomeLead => T("Add the link from your provider, and V2pn is ready to connect.", "Добавьте ссылку от провайдера, и V2pn будет готов к подключению.");
     public static string ObLanguage => T("Language", "Язык");
     public static string ObLanguageRestart => T("V2pn restarts in the new language…", "V2pn перезапускается на новом языке…");
     public static string ObStart => T("Get started", "Начать");

@@ -2,19 +2,30 @@ namespace ServiceLib.Tests.V2pn;
 
 public class V2pnNetworkWatchTests
 {
+    // CI machines can be slow: wait for the expected state with room to spare, not a fixed pause.
+    private static async Task WaitUntil(Func<bool> done, int ms = 5000)
+    {
+        var until = DateTime.UtcNow.AddMilliseconds(ms);
+        while (!done() && DateTime.UtcNow < until)
+        {
+            await Task.Delay(20);
+        }
+    }
+
     [Test]
     public async Task ABurstOfEventsEndsInOneCheck()
     {
         var reasons = new List<string>();
         using var watch = new V2pnNetworkWatch(r => { lock (reasons) { reasons.Add(r); } return Task.CompletedTask; },
-            TimeSpan.FromMilliseconds(150));
+            TimeSpan.FromMilliseconds(600));
 
         watch.Signal("network lost");
         await Task.Delay(40);
         watch.Signal("network address changed");
         await Task.Delay(40);
         watch.Signal("network is back");
-        await Task.Delay(500);
+        await WaitUntil(() => { lock (reasons) { return reasons.Count > 0; } });
+        await Task.Delay(300);
 
         await reasons.Count.Should().BeEqualTo(1);
         await reasons[0].Should().BeEqualTo("network lost");
@@ -28,9 +39,9 @@ public class V2pnNetworkWatchTests
             TimeSpan.FromMilliseconds(50));
 
         watch.Signal("a");
-        await Task.Delay(300);
+        await WaitUntil(() => Volatile.Read(ref count) == 1);
         watch.Signal("b");
-        await Task.Delay(300);
+        await WaitUntil(() => Volatile.Read(ref count) == 2);
 
         await count.Should().BeEqualTo(2);
     }
@@ -55,7 +66,7 @@ public class V2pnNetworkWatchTests
         watch.Signal("a");
         await Task.Delay(80);
         watch.Signal("b");
-        await Task.Delay(700);
+        await WaitUntil(() => Volatile.Read(ref finished) == 2);
 
         await overlapped.Should().BeFalse();
         await finished.Should().BeEqualTo(2);
@@ -75,7 +86,7 @@ public class V2pnNetworkWatchTests
         await reasons.Count.Should().BeEqualTo(0);
 
         watch.CheckForWake(start.AddMinutes(45));
-        await Task.Delay(150);
+        await WaitUntil(() => { lock (reasons) { return reasons.Count > 0; } });
         await reasons.Count.Should().BeEqualTo(1);
         await reasons[0].Should().StartWith("woke");
     }

@@ -173,6 +173,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             }
         };
         btnReplacement.Click += async (_, _) => await FindWorkingServerAsync();
+        btnFixPrimary.Click += async (_, _) => await RunFixAsync(_fixPrimary);
+        btnFixSecondary.Click += async (_, _) => await RunFixAsync(_fixSecondary);
         pillState.PointerPressed += (_, e) =>
         {
             if (_pillOpensLog)
@@ -898,6 +900,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _pillOpensLog = faulted;
         pillState.Cursor = faulted ? _handCursor ??= new Cursor(StandardCursorType.Hand) : null;
         btnRetryConnection.IsVisible = enabled && check.IsFailure;
+        RefreshFixActions(faulted, enabled);
         RefreshReplacementAction(check, enabled);
         _statusView?.ShowCheck(check);
         spinState.IsVisible = kind == "checking";
@@ -1081,6 +1084,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
 
         // Off stops the core; the Windows proxy is cleared only if V2pn set it (V2pnConnection).
+        SetTunDenied(false);
         if (status.EnableTun)
         {
             status.EnableTun = false;
@@ -1199,16 +1203,20 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return false;
         }
+        SetTunDenied(false);
         if (status.AllowEnableTun())
         {
             return true;
         }
         if (!Utils.IsWindows())
         {
-            return await status.RequestTunPermissionAsync();
+            var granted = await status.RequestTunPermissionAsync();
+            SetTunDenied(!granted);
+            return granted;
         }
         if (await UI.ShowYesNo(L.VpnRestartAsAdmin, L.Restart) != ButtonResult.Yes)
         {
+            SetTunDenied(true);
             return false;
         }
         var (preferTun, enableTun, proxyType) =
@@ -1228,7 +1236,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _config.SystemProxyItem.SysProxyType = proxyType;
             await ConfigHandler.SaveConfig(_config);
             SyncModeSelection();
-            ShowToast(ToastKind.Warning, L.VpnAdminDeclined);
+            SetTunDenied(true);
         }
         return false;
     }

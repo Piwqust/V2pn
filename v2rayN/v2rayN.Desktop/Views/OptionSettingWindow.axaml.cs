@@ -250,6 +250,15 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         // Again once the list has realised its items: preparing them resets their visibility.
         SettingsKit.ApplyAdvanced(this, _advanced);
         btnCancel.Focus();
+        if (ViewModel?.StartPage is > 0 and var page)
+        {
+            lstNav.SelectedIndex = page;
+            if (page == 1)
+            {
+                txtlocalPort.Focus();
+                txtlocalPort.SelectAll();
+            }
+        }
     }
 
     private Control[] Pages => [pageGeneral, pageInbound, pageSysProxy, pageTun, pageTraffic, pageTests, pageUpdates, pageCores, pageLogs];

@@ -9,6 +9,15 @@ public enum EV2pnCoreState
     Failed,
 }
 
+/// <summary>What is known about why the core did not start; only causes V2pn has seen itself.</summary>
+public enum EV2pnFailureCause
+{
+    Unknown,
+
+    /// <summary>Another program answers on the local port.</summary>
+    PortBusy,
+}
+
 /// <summary>Why V2pn switched itself off.</summary>
 public enum EV2pnFailure
 {
@@ -44,21 +53,28 @@ public static class V2pnCoreWatch
     /// <summary>The core's own words about the failure, already in the app language, when it gave any.</summary>
     public static string? FailureDetail { get; private set; }
 
+    /// <summary>Set only when V2pn saw the cause; otherwise Unknown, and the screen does not guess.</summary>
+    public static EV2pnFailureCause FailureCause { get; private set; }
+
     private static string? _lastProblem;
+    private static EV2pnFailureCause _lastCause;
 
     /// <summary>The last message of a failed start, so the failure can be explained later.</summary>
-    public static void NoteProblem(string? message)
+    public static void NoteProblem(string? message, EV2pnFailureCause cause = EV2pnFailureCause.Unknown)
     {
         if (message.IsNotEmpty())
         {
             _lastProblem = message;
+            _lastCause = cause;
         }
     }
 
     public static void MarkStarting()
     {
         _lastProblem = null;
+        _lastCause = EV2pnFailureCause.Unknown;
         Failure = EV2pnFailure.None;
+        FailureCause = EV2pnFailureCause.Unknown;
         FailureDetail = null;
         // A restart after a crash keeps saying "reconnecting" until the core is up.
         if (State != EV2pnCoreState.Restarting)
@@ -76,12 +92,25 @@ public static class V2pnCoreWatch
 
     public static void MarkRestarting() => Set(EV2pnCoreState.Restarting);
 
+    /// <summary>A new attempt that never reached the core (VPN rights refused) replaces the old failure.</summary>
+    public static void ClearFailure()
+    {
+        Failure = EV2pnFailure.None;
+        FailureCause = EV2pnFailureCause.Unknown;
+        FailureDetail = null;
+        if (State == EV2pnCoreState.Failed)
+        {
+            Set(EV2pnCoreState.Stopped);
+        }
+    }
+
     /// <summary>Off, by the user or after a failure; the failure stays readable.</summary>
     public static void MarkStopped() => Set(EV2pnCoreState.Stopped);
 
     public static void MarkFailed(EV2pnFailure failure, string? detail = null)
     {
         Failure = failure;
+        FailureCause = detail.IsNotEmpty() ? EV2pnFailureCause.Unknown : _lastCause;
         FailureDetail = detail.IsNotEmpty() ? detail : _lastProblem;
         Set(EV2pnCoreState.Failed);
     }

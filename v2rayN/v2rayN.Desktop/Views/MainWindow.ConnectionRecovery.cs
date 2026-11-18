@@ -10,6 +10,105 @@ public partial class MainWindow
     private AvailabilityCheckResult? _replacementCheck;
     private AvailabilityCheckResult? _offerOtherCountriesFor;
 
+    // VPN rights were asked for and refused; cleared by the next attempt or by disconnecting.
+    private bool _tunDenied;
+    private Func<Task>? _fixPrimary;
+    private Func<Task>? _fixSecondary;
+
+    private void SetTunDenied(bool denied)
+    {
+        if (denied)
+        {
+            V2pnCoreWatch.ClearFailure();
+        }
+        if (_tunDenied != denied)
+        {
+            _tunDenied = denied;
+            RefreshStatePill();
+        }
+    }
+
+    /// <summary>
+    /// An action next to the problem, only for causes V2pn has seen itself: a taken port opens the port setting,
+    /// refused VPN rights can be asked for again or traded for proxy mode. An unknown failure keeps its own words
+    /// and points at the log instead of guessing.
+    /// </summary>
+    private void RefreshFixActions(bool faulted, bool enabled)
+    {
+        string? text = null;
+        (string Label, Func<Task> Run)? primary = null;
+        (string Label, Func<Task> Run)? secondary = null;
+        var showLog = (L.FixShowLog, (Func<Task>)(() =>
+        {
+            ShowPage(L.MenuLog, MsgPage);
+            return Task.CompletedTask;
+        }));
+        if (faulted && V2pnCoreWatch.FailureCause == EV2pnFailureCause.PortBusy)
+        {
+            text = V2pnCoreWatch.FailureDetail;
+            primary = (L.FixChangePort, () => ViewModel?.OpenLocalPortSettingAsync() ?? Task.CompletedTask);
+            secondary = showLog;
+        }
+        else if (faulted)
+        {
+            text = V2pnCoreWatch.FailureDetail.IsNotEmpty()
+                ? $"{Shorten(V2pnCoreWatch.FailureDetail!, 160)} {L.UnknownFailureExplain}"
+                : L.UnknownFailureExplain;
+            primary = showLog;
+        }
+        else if (_tunDenied)
+        {
+            text = L.TunDeniedExplain;
+            primary = (L.FixTryVpnAgain, () =>
+            {
+                if (enabled)
+                {
+                    lstMode.SelectedIndex = 1;
+                }
+                else
+                {
+                    ToggleConnection(true);
+                }
+                return Task.CompletedTask;
+            });
+            if (!enabled)
+            {
+                secondary = (L.FixUseProxy, () =>
+                {
+                    SetTunDenied(false);
+                    lstMode.SelectedIndex = 0;
+                    ToggleConnection(true);
+                    return Task.CompletedTask;
+                });
+            }
+        }
+
+        txtProblem.Text = text;
+        txtProblem.IsVisible = text.IsNotEmpty();
+        _fixPrimary = primary?.Run;
+        _fixSecondary = secondary?.Run;
+        btnFixPrimary.Content = primary?.Label;
+        btnFixPrimary.IsVisible = primary != null;
+        btnFixSecondary.Content = secondary?.Label;
+        btnFixSecondary.IsVisible = secondary != null;
+    }
+
+    private static async Task RunFixAsync(Func<Task>? fix)
+    {
+        if (fix == null)
+        {
+            return;
+        }
+        try
+        {
+            await fix();
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(RunFixAsync), ex);
+        }
+    }
+
     private void RefreshReplacementAction(AvailabilityCheckResult check, bool enabled)
     {
         if (_replacementSearch != null && !ReferenceEquals(check, _replacementCheck))

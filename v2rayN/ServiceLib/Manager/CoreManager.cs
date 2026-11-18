@@ -122,7 +122,7 @@ public class CoreManager
             // Starting anyway would point Windows at the other program's port and report its traffic as ours.
             var portBusy = string.Format(ResUI.MsgV2pnLocalPortBusy, localPort);
             Logging.SaveLog($"V2pn: local port {localPort} is held by another program; the core is not started");
-            V2pnCoreWatch.NoteProblem(portBusy);
+            V2pnCoreWatch.NoteProblem(portBusy, EV2pnFailureCause.PortBusy);
             await UpdateFunc(true, portBusy);
             return;
         }

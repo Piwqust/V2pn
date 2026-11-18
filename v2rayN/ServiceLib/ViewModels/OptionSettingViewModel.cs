@@ -4,6 +4,9 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
 {
     public event EventHandler? RequestClose;
 
+    /// <summary>V2pn: the page the window opens on (1: local proxy, with the port field focused).</summary>
+    public int StartPage { get; init; }
+
     #region Core
 
     [Reactive] public partial int LocalPort { get; set; }

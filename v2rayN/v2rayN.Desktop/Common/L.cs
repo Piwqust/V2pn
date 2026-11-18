@@ -211,8 +211,14 @@ public static partial class L
     public static string ModeVpnNeedsAdmin => T("Needs administrator rights.", "Нужны права администратора.");
     public static string VpnRestartAsAdmin => T("VPN mode needs administrator rights. Restart V2pn as administrator? VPN mode turns on after the restart.",
         "Для режима VPN нужны права администратора. Перезапустить V2pn от имени администратора? Режим VPN включится после перезапуска.");
-    public static string VpnAdminDeclined => T("VPN mode stays off: administrator rights weren't granted.",
-        "Режим VPN не включён: права администратора не выданы.");
+    public static string FixChangePort => T("Change port", "Сменить порт");
+    public static string FixShowLog => T("Show log", "Открыть журнал");
+    public static string FixTryVpnAgain => T("Ask for rights again", "Запросить права снова");
+    public static string FixUseProxy => T("Connect as proxy", "Подключиться как прокси");
+    public static string TunDeniedExplain => T("VPN mode needs administrator rights, and they weren't granted. Ask again, or connect in proxy mode.",
+        "Для режима VPN нужны права администратора, их не выдали. Запросите снова или подключитесь в режиме прокси.");
+    public static string UnknownFailureExplain => T("The reason isn't known. The log has the core's own messages.",
+        "Причина неизвестна. В журнале есть сообщения ядра.");
     public static string VpnNeedsSudo =>T("VPN mode needs the administrator password.", "Для режима VPN нужен пароль администратора.");
     public static string ModeLocalPort => T("Local port only", "Только локальный порт");
 

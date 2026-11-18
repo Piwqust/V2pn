@@ -655,9 +655,12 @@ public partial class MainWindowViewModel : MyReactiveObject
 
     #region Setting
 
-    private async Task OptionSettingAsync()
+    /// <summary>V2pn: Settings on the local proxy page, from "Change port" when the port is taken.</summary>
+    public Task OpenLocalPortSettingAsync() => OptionSettingAsync(startPage: 1);
+
+    private async Task OptionSettingAsync(int startPage = 0)
     {
-        var settingViewModel = new OptionSettingViewModel();
+        var settingViewModel = new OptionSettingViewModel { StartPage = startPage };
         var ret = await AppManager.Instance.WindowDialog.ShowDialogAsync(settingViewModel);
         if (ret == true)
         {

@@ -1201,7 +1201,21 @@
                                 Classes="muted small"
                                 IsVisible="False"
                                 Text="{x:Static loc:L.SystemProxyScope}" />
+                            <TextBlock
+                                x:Name="txtProblem"
+                                MaxWidth="460"
+                                Margin="0,0,0,2"
+                                HorizontalAlignment="Center"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Classes="muted small"
+                                IsVisible="False"
+                                AutomationProperties.LiveSetting="Polite" />
                             <WrapPanel HorizontalAlignment="Center" ItemSpacing="6" LineSpacing="4">
+                                <Button x:Name="btnFixPrimary" HorizontalAlignment="Center" Classes="ghost small"
+                                    Theme="{StaticResource V2Button}" IsVisible="False" />
+                                <Button x:Name="btnFixSecondary" HorizontalAlignment="Center" Classes="ghost small"
+                                    Theme="{StaticResource V2Button}" IsVisible="False" />
                                 <Button x:Name="btnRetryConnection" HorizontalAlignment="Center" Classes="ghost small"
                                     Theme="{StaticResource V2Button}" IsVisible="False" Content="{x:Static loc:L.RetryConnectionCheck}" />
                                 <Button x:Name="btnReplacement" HorizontalAlignment="Center" Classes="ghost small"

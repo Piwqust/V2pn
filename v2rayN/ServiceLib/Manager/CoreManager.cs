@@ -242,6 +242,7 @@ public class CoreManager
             return;
         }
         Logging.SaveLog($"V2pn: the core exited on its own, exit code {exitCode}");
+        V2pnCoreWatch.LastExitCode = exitCode;
         V2pnCoreWatch.CoreExited.Publish(exitCode);
     }
 

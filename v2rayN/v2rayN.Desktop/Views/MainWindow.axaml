@@ -1222,6 +1222,8 @@
                                     Theme="{StaticResource V2Button}" IsVisible="False">
                                     <TextBlock x:Name="txtReplacement" TextWrapping="Wrap" TextAlignment="Center" />
                                 </Button>
+                                <Button x:Name="btnDiagnostics" HorizontalAlignment="Center" Classes="ghost small"
+                                    Theme="{StaticResource V2Button}" IsVisible="False" Content="{x:Static loc:L.DiagButton}" />
                             </WrapPanel>
                             <DockPanel HorizontalAlignment="Center">
                                 <Border

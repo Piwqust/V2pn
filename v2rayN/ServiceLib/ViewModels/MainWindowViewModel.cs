@@ -373,6 +373,7 @@ public partial class MainWindowViewModel : MyReactiveObject
             return;
         }
         Logging.SaveLog($"V2pn: {reason}; checking the connection again");
+        V2pnDiagnostics.NoteNetworkEvent(reason);
         var done = new TaskCompletionSource<AvailabilityCheckResult?>();
         RxSchedulers.MainThreadScheduler.Schedule(async () =>
         {

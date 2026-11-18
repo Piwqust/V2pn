@@ -102,6 +102,10 @@ public partial class MainWindow
             }
         }
 
+        // Something went wrong on screen: the report for support is one click away.
+        btnDiagnostics.IsVisible = faulted || _tunDenied
+            || ViewModel?.StatusBarViewModel.CurrentAvailability.IsFailure == true;
+
         txtProblem.Text = text;
         txtProblem.IsVisible = text.IsNotEmpty();
         _fixPrimary = primary?.Run;
@@ -132,6 +136,22 @@ public partial class MainWindow
             return (string.Format(L.SubTrafficOutNotice, name), page);
         }
         return null;
+    }
+
+    private async Task ShowDiagnosticsAsync()
+    {
+        try
+        {
+            var status = ViewModel?.StatusBarViewModel;
+            var routeId = status?.SelectedRouting?.Id;
+            var route = RoutingPresets.KindOf(routeId) is { } kind ? RoutingPresets.Id(kind) : routeId.IsNullOrEmpty() ? "none" : "custom";
+            var snapshot = await V2pnDiagnostics.CollectAsync(_config, status?.CurrentAvailability, status?.AvailabilityCheckedAt, route);
+            await ShowRoomyDialog(new DiagnosticsView(V2pnDiagnostics.Format(snapshot)));
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(ShowDiagnosticsAsync), ex);
+        }
     }
 
     private static async Task RunFixAsync(Func<Task>? fix)

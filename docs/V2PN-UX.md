@@ -117,6 +117,10 @@ V2pn looks for other clients at start (in the background) and in Tools → "Move
 
 Code: `ServiceLib/V2pn/V2pnForeignImport.cs` (finding and adding), `V2pnForeignReaders.cs` (one reader per client), `V2pnForeignLinks.cs` (Clash, sing-box and NekoRay servers to links), `v2rayN.Desktop/Views/MainWindow.Import.cs` (card and menu).
 
+## Diagnostics for support
+
+Help → "Copy diagnostics…", and the same button under the pill whenever something went wrong, open the report in full; Copy puts exactly that text on the clipboard. `V2pnDiagnostics` builds it from an allow list: versions and build kind, the system, the mode and local port, the route preset, the server's protocol, transport and security, the core's state, failure, cause and last exit code, the last check with its HTTP code and age, the last network event, and per subscription the last update result, ages, expiry and traffic share. Free text never goes in (the core's messages, the log, names, links, addresses, paths); a detail is kept only in a fixed shape such as "HTTP 403". A test plants secrets in every free-text field and checks none reach the report.
+
 ## Subscription state
 
 Every update attempt is stored with the subscription (`SubInfoItem.LastResult`, `LastResultDetail`, `LastAttemptTime`, `LastGoodTime`), whatever started it: a click, the schedule or a new subscription. The row says how it ended: "site unreachable" (no answer or an HTTP error by every route; the tooltip names the code or says it did not answer in time), "no servers sent" (an empty answer) or "not a subscription" (an answer V2pn cannot read). The tooltip and the subscription's card also say when the saved servers arrived; they stay usable after a failed update. A download that gets no answer gives up after 10 s directly and 30 s through the VPN, for both of v2rayN's download methods.

@@ -174,6 +174,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         };
         btnReplacement.Click += async (_, _) => await FindWorkingServerAsync();
         btnFixPrimary.Click += async (_, _) => await RunFixAsync(_fixPrimary);
+        btnDiagnostics.Click += async (_, _) => await ShowDiagnosticsAsync();
         // What a provider reports (expiry, traffic) can change the note next to Connect.
         SubInfoManager.Instance.Changed += id => Dispatcher.UIThread.Post(() =>
         {
@@ -2959,6 +2960,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         menuHelp.Items.Add(new MenuItem { Classes = { "menuheader" }, Header = string.Format(L.HelpVersion, V2pnInfo.DisplayVersion), IsEnabled = false });
         menuHelp.Items.Add(HelpLink(L.HelpSite, repo, "SemiIconGlobeStroke"));
         menuHelp.Items.Add(HelpLink(L.HelpReport, $"{repo}/issues", "SemiIconComment"));
+        var diagGlyph = new PathIcon { Classes = { "mi" } };
+        diagGlyph.Bind(PathIcon.DataProperty, diagGlyph.GetResourceObservable("SemiIconCopy"));
+        var diag = new MenuItem { Header = L.DiagMenu, Icon = diagGlyph };
+        diag.Click += async (_, _) => await ShowDiagnosticsAsync();
+        menuHelp.Items.Add(diag);
         menuHelp.Items.Add(new Separator());
         menuHelp.Items.Add(HelpLink(L.HelpBasedOn, $"{Global.GithubUrl}/2dust/v2rayN", "SemiIconGithubLogo"));
     }

@@ -397,6 +397,9 @@ public partial class StatusBarViewModel : MyReactiveObject
 
     private bool _recheckAfterCurrent;
 
+    /// <summary>When the last check result landed; for the diagnostics report.</summary>
+    public DateTime? AvailabilityCheckedAt { get; private set; }
+
     /// <summary>
     /// Checks the connection again after a network change. A check already running started on the old network,
     /// so another one follows it.
@@ -434,6 +437,7 @@ public partial class StatusBarViewModel : MyReactiveObject
             return await TestServerAvailability();
         }
         Availability = result;
+        AvailabilityCheckedAt = DateTime.Now;
         var message = string.Format(ResUI.TestMeOutput, result.IsAvailable ? result.Time : -1, result.Ip ?? Global.None);
         RunningInfoDisplay = message;
         NoticeManager.Instance.SendMessageEx(message);

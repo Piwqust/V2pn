@@ -211,6 +211,13 @@ public static partial class L
     public static string ModeVpnNeedsAdmin => T("Needs administrator rights.", "Нужны права администратора.");
     public static string VpnRestartAsAdmin => T("VPN mode needs administrator rights. Restart V2pn as administrator? VPN mode turns on after the restart.",
         "Для режима VPN нужны права администратора. Перезапустить V2pn от имени администратора? Режим VPN включится после перезапуска.");
+    public static string DiagTitle => T("Diagnostics for support", "Диагностика для поддержки");
+    public static string DiagMenu => T("Copy diagnostics…", "Скопировать диагностику…");
+    public static string DiagButton => T("Copy diagnostics", "Скопировать диагностику");
+    public static string DiagLead => T("Exactly this text is copied. It has the version, system, mode, states and error codes, and no links, keys, server addresses or names.",
+        "Скопируется ровно этот текст. В нём версия, система, режим, состояния и коды ошибок, без ссылок, ключей, адресов серверов и имён.");
+    public static string DiagCopy => T("Copy", "Скопировать");
+    public static string DiagCopied => T("Copied", "Скопировано");
     public static string FixChangePort => T("Change port", "Сменить порт");
     public static string FixShowLog => T("Show log", "Открыть журнал");
     public static string FixTryVpnAgain => T("Ask for rights again", "Запросить права снова");

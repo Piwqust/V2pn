@@ -45,6 +45,9 @@ public static class V2pnCoreWatch
 
     public static V2pnRestartPolicy Restarts { get; } = new();
 
+    /// <summary>The exit code of the last core that stopped on its own; for the diagnostics report.</summary>
+    public static int? LastExitCode { get; set; }
+
     public static EV2pnCoreState State { get; private set; }
 
     /// <summary>Kept after V2pn switches off, until the next connection attempt.</summary>

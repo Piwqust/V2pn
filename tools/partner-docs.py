@@ -316,13 +316,6 @@ def build(out, shots, theme=None):
     for f in ("Geist-Regular.ttf", "Geist-Medium.ttf", "Geist-SemiBold.ttf", "GeistMono-Regular.ttf"):
         shutil.copy(os.path.join(FONTS, f), os.path.join(out, "fonts", f))
     shutil.copy(os.path.join(DOCS, "partner.schema.json"), os.path.join(out, "partner.schema.json"))
-    # The look builder ("builder/" in the guide), its link home pointing at the built pages instead of the Markdown.
-    shutil.copytree(os.path.join(DOCS, "builder"), os.path.join(out, "builder"), dirs_exist_ok=True)
-    page = os.path.join(out, "builder", "index.html")
-    with open(page, encoding="utf-8") as fh:
-        text = fh.read()
-    with open(page, "w", encoding="utf-8") as fh:
-        fh.write(text.replace("../README.ru.md", "../index.html").replace("../README.md", "../en.html"))
     found = look_shots(shots, theme)
     if found:
         os.makedirs(os.path.join(out, "looks"), exist_ok=True)

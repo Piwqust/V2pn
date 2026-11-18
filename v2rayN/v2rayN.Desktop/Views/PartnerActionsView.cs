@@ -28,7 +28,7 @@ public static class PartnerActionIcons
 }
 
 /// <summary>
-/// The partner's buttons in plain V2pn, under Connect while a server of the partner's subscription is in use: a row
+/// The partner's buttons under Connect in its tab: a row
 /// that wraps, so four buttons fit any width down to the mini window. The labels are the partner's; what they do is V2pn's.
 /// </summary>
 public sealed class PartnerActionsBar : UserControl

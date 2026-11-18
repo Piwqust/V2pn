@@ -78,7 +78,7 @@ public static class V2pnDiagnostics
         {
             Upstream = V2pnInfo.UpstreamVersion,
             Release = V2pnInfo.IsRelease,
-            Partner = V2pnEdition.PartnerId,
+            Partner = V2pnEdition.Instance.Tab,
             Os = RuntimeInformation.OSDescription,
             Arch = RuntimeInformation.OSArchitecture.ToString(),
             Runtime = RuntimeInformation.FrameworkDescription,
@@ -124,7 +124,7 @@ public static class V2pnDiagnostics
 
         sb.AppendLine("V2pn diagnostics");
         sb.AppendLine($"Generated: {s.Now:yyyy-MM-dd HH:mm} UTC");
-        sb.AppendLine($"App: V2pn {s.Version} (v2rayN {s.Upstream}), {(s.Release ? "release" : "local build")}, {(s.Partner is { } p ? $"partner build {p}" : "plain")}");
+        sb.AppendLine($"App: V2pn {s.Version} (v2rayN {s.Upstream}), {(s.Release ? "release" : "local build")}, {(s.Partner is { } p ? $"partner tab {p}" : "V2pn tab")}");
         sb.AppendLine($"System: {s.Os}, {s.Arch}, {s.Runtime}, administrator: {(s.Admin ? "yes" : "no")}");
         var mode = !s.Connected ? "off"
             : s.Tun ? $"VPN (TUN, stack {Pick(s.TunStack, KnownStacks)})"

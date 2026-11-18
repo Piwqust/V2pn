@@ -1,0 +1,44 @@
+{
+  "schema": 1,
+  "published": "2026-11-17T07:20:06Z",
+  "partners": [
+    {
+      "id": "configra",
+      "name": "Configra",
+      "domains": [
+        "angleford.co",
+        "*.angleford.co"
+      ],
+      "grants": [
+        "edition",
+        "account"
+      ],
+      "until": "2027-11-16",
+      "pack": {
+        "file": "partner-configra.zip",
+        "size": 31440,
+        "sha256": "7ceb031ffe2473595b65ac4690462934275c9a07f596f22f39ad876184309d35"
+      }
+    },
+    {
+      "id": "kestrel",
+      "name": "Кестрел",
+      "domains": [
+        "kestrel.example",
+        "*.kestrel.example"
+      ],
+      "grants": [
+        "edition",
+        "account",
+        "actions",
+        "lock"
+      ],
+      "until": "2031-11-01",
+      "pack": {
+        "file": "partner-kestrel.zip",
+        "size": 1846,
+        "sha256": "59a7e6dab0f790a04c080c093ad2343a55b45cde9e91966cedf0e0806416a7bd"
+      }
+    }
+  ]
+}

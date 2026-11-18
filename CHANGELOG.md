@@ -3,6 +3,34 @@
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
 ## Unreleased
+V2pn no longer changes its look by the server you pick. If you came to V2pn from a provider that works with it, that provider gets a tab in the title bar. Everyone else sees V2pn as before.
+
+### Tabs in the title bar
+
+- The title bar has two tabs, as in a browser: **V2pn** and the provider's, with its mark and name. Without a provider there are no tabs.
+- The provider's tab shows its colour and background, your plan with the days left, devices and traffic, its buttons, and only its servers. Its sign-in, hidden servers, locked settings, routes and connection settings work only there and only for its subscriptions.
+- The V2pn tab is plain V2pn: all your servers, the provider's too, and nothing else from it.
+- A click switches tabs at once, and V2pn opens on the tab you left. Ctrl+Tab and Ctrl+Shift+Tab go through them (on a Mac also ⌘⇧] and ⌘⇧[). In the mini window the provider's tab shows only its mark.
+- Switching tabs does not touch the connection. A provider's connection settings apply from the next connect. Leaving its tab takes its routing mode out of the menu; if that mode was on, "Everything through VPN" takes its place.
+
+### How you get a provider's tab
+
+- Press the provider's V2pn button in its bot or on its site. It opens the provider's page on v2pn.angleford.co, and "Open in V2pn" there adds the subscription and opens the tab. If you already have that subscription, the tab just opens. Pasting the page's address into V2pn works too.
+- Or sign in with the provider by code: "Sign in with a provider" in the + menu, or "I have a subscription from a provider" at first start.
+- Pasting a provider's subscription link by hand adds an ordinary subscription, with no tab.
+- The tab goes when you delete your last subscription from that provider. If the provider leaves V2pn or its term ends, the tab closes with a note and the V2pn tab opens. Your servers keep working.
+- V2pn downloads anything about providers only if you came from one, or while "Sign in with a provider" is open. It deletes the provider files 1.2.1 kept.
+- V2pn 1.2.1 and older drop a provider's look at their next check.
+
+### One V2pn for everyone
+
+- There are no separate builds of V2pn for providers any more, and no provider option in the install command. Everyone installs the same V2pn.
+- If you installed a provider's build earlier, you keep its tab.
+- Providers now apply and design their tab on V2pn's site, v2pn.angleford.co. If the site does not open, V2pn keeps what it already has.
+
+### Updates
+
+- V2pn asks v2pn.angleford.co for updates first, which sends it on to GitHub. If the site does not answer within a few seconds, V2pn goes to GitHub directly. Every update is still checked against V2pn's signature, wherever it comes from.
 
 ### "Connected" means checked
 
@@ -41,23 +69,6 @@ What changes for the people who use the app. Each version's section becomes the 
 - The buttons can sit at the bottom, on top or nowhere, side by side, one under another or as icons, and each of them can be turned off.
 - The Home tab is yours to arrange: turn its sections on and off, put them in any order, and pick how many favorites, recent and fastest servers it shows.
 - All of it is also right in the list. Right-click the tabs, the buttons, a section's title or an empty spot for its settings. Drag the buttons or the tabs to change their order, or to the other end of the list to move them there; drag a section's title to move the section. "Reset the list" in the same menu puts it all back.
-
-## 1.2.2
-
-V2pn no longer changes its look for any provider. A provider gets its own build of V2pn instead.
-
-### Plain V2pn stays plain
-
-- V2pn keeps its own look whatever server you pick, a partner provider's included: no provider's colour, logo, card or background.
-- A provider's subscription is an ordinary subscription here. Its name, traffic, term, announcement, support and cabinet links, and the Happ, INCY and v2RayTun headers work as for any provider; sign-in by code, provider buttons, hidden servers and closed settings do not.
-- V2pn no longer downloads anything about providers, and removes the provider files 1.2.1 kept.
-- 1.2.1 and older stop wearing a provider's look at their next check.
-
-### A provider's own build
-
-- A provider's build is the same V2pn with the provider's look always on, sign-in by code with that provider, and its buttons and server descriptions. It comes from the provider's download page (`V2pn-<provider>-windows-x64.zip` and the others, or one command with `V2PN_PARTNER=<provider>`).
-- It installs beside V2pn, in its own folder (`V2pn-<provider>`) with its own settings and its own start with the system, so both can be on one computer.
-- It updates itself from the same release as V2pn and stays the provider's build after every update.
 
 ## 1.2.1
 

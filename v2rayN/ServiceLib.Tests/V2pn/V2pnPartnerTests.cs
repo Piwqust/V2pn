@@ -83,8 +83,15 @@ internal sealed class TestPartner
         }
     }
 
-    /// <summary>The partners of a build: <paramref name="edition"/> is the partner whose build it is, null for plain V2pn.</summary>
+    /// <summary>
+    /// The partners of a copy of V2pn: <paramref name="edition"/> is the partner of an older build's marker (whose tab
+    /// opens before any choice), null for a person who came from no partner.
+    /// </summary>
     public V2pnPartners Manager(TestSite site, string root, List<string?> subscriptions, string? edition = "configra") =>
+        Manager(site, root, subscriptions, new V2pnEdition(edition));
+
+    /// <summary>The partners of a copy of V2pn with the person's own record of where they came from and which tab is open.</summary>
+    public V2pnPartners Manager(TestSite site, string root, List<string?> subscriptions, V2pnEdition edition) =>
         new([RootPublic], () => root, edition)
         {
             Fetch = site.FetchAsync,
@@ -446,7 +453,7 @@ public class V2pnPartnerTests
     private static void PublishTwo(TestPartner p, TestSite site)
     {
         var configra = TestPartner.Zip();
-        var kestrel = TestPartner.Zip(TestPartner.Pack(id: "kestrel", name: "Kestrel", more: pack => pack["login"] = true));
+        var kestrel = TestPartner.Zip(TestPartner.Pack(id: "kestrel", name: "Kestrel", api: "https://kestrel.example.net/v2pn/api/", more: pack => pack["login"] = true));
         p.Publish(site, Published,
             (TestPartner.Listing(zip: configra), configra),
             (TestPartner.Listing(partner: "kestrel", domains: ["kestrel.example.net"], zip: kestrel), kestrel));
@@ -455,7 +462,7 @@ public class V2pnPartnerTests
     private const string KestrelSub = "https://kestrel.example.net/s/token";
 
     [Test]
-    public async Task PartnerBuild_TakesItsOwnPackBeforeAnySubscription_AndNoOtherPartner()
+    public async Task Marker_TakesItsPartnersPackBeforeAnySubscription_OpensItsTab_AndNoOtherPartner()
     {
         var p = new TestPartner();
         var site = new TestSite();
@@ -463,21 +470,24 @@ public class V2pnPartnerTests
         var root = NewRoot();
         try
         {
-            // A Kestrel subscription in Configra's build: Kestrel is ignored entirely.
+            // A Kestrel subscription in a copy marked for Configra: Kestrel is not a partner here, just a subscription.
             var manager = p.Manager(site, root, [KestrelSub], edition: "configra");
             await manager.RefreshAsync();
 
+            await manager.Edition.CameFrom.Should().BeEquivalentTo(["configra"]);
+            await manager.Edition.Tab.Should().BeEqualTo("configra");
             await manager.All.Select(x => x.Id).ToList().Should().BeEquivalentTo(["configra"]);
             await site.Asked.Any(u => u.EndsWith("partner-kestrel.zip", StringComparison.Ordinal)).Should().BeFalse();
             await (manager.ForSubscription(new SubItem { Id = "k", Url = KestrelSub }) == null).Should().BeTrue();
             await (manager.ListingFor(KestrelSub) == null).Should().BeTrue();
             await manager.ForSubscription(new SubItem { Id = "c", Url = Sub })!.Id.Should().BeEqualTo("configra");
             await manager.ListingFor(Sub)!.Id.Should().BeEqualTo("configra");
-            // No subscription of its own yet, and it stays: the build wears that look from the first start.
+            // No subscription of its own yet, and it stays: the marker says the person came from Configra.
             await manager.Prune([KestrelSub]).Count.Should().BeEqualTo(0);
             await (manager.Get("configra") != null).Should().BeTrue();
+            await manager.Edition.CameFrom.Should().BeEquivalentTo(["configra"]);
 
-            // Kestrel's own build sees Kestrel only.
+            // A copy marked for Kestrel sees Kestrel only.
             var kestrel = p.Manager(site, NewRoot(), [Sub], edition: "kestrel");
             await kestrel.RefreshAsync();
             await kestrel.All.Select(x => x.Id).ToList().Should().BeEquivalentTo(["kestrel"]);
@@ -491,7 +501,7 @@ public class V2pnPartnerTests
     }
 
     [Test]
-    public async Task PlainV2pn_NeverAsksForAnIndexOrPack_AndKnowsNoPartner()
+    public async Task FromNoPartner_NothingIsAskedFor_APastedPartnersLinkMakesNoTab_AndNoSubscriptionIsAPartners()
     {
         var p = new TestPartner();
         var site = new TestSite();
@@ -499,19 +509,23 @@ public class V2pnPartnerTests
         var root = NewRoot();
         try
         {
-            var manager = p.Manager(site, root, [Sub, KestrelSub], edition: null);
+            // Configra's and Kestrel's links pasted by hand: subscriptions like any other.
+            var manager = p.Manager(site, root, [Sub, KestrelSub], edition: (string?)null);
             await manager.RefreshAsync(forceIndex: true);
-            var offers = await manager.LoginOffersAsync();
             await manager.PruneAsync();
 
             await site.Asked.Count.Should().BeEqualTo(0);
+            await manager.Edition.Any.Should().BeFalse();
+            await (manager.Edition.Tab == null).Should().BeTrue();
             await manager.All.Count.Should().BeEqualTo(0);
-            await offers.Count.Should().BeEqualTo(0);
             await (manager.Index == null).Should().BeTrue();
             await (manager.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
             await (manager.ForSubscription(new SubItem { Id = "k", Url = KestrelSub }) == null).Should().BeTrue();
             await (manager.ListingFor(Sub) == null).Should().BeTrue();
             await Directory.Exists(root).Should().BeFalse();
+            // No tab can be opened for a partner the person did not come from.
+            await manager.Edition.Open("configra").Should().BeFalse();
+            await (manager.Edition.Tab == null).Should().BeTrue();
         }
         finally
         {
@@ -520,7 +534,7 @@ public class V2pnPartnerTests
     }
 
     [Test]
-    public async Task PlainV2pn_RemovesThePartnerFilesAnOlderVersionKept_AndTakesNoDebugPartner()
+    public async Task FromNoPartner_RemovesThePartnerFilesAnOlderVersionKept()
     {
         var p = new TestPartner();
         var site = new TestSite();
@@ -533,11 +547,10 @@ public class V2pnPartnerTests
             await before.RefreshAsync();
             await Directory.Exists(Path.Combine(root, "configra")).Should().BeTrue();
 
-            var plain = p.Manager(site, root, [Sub], edition: null);
+            var plain = p.Manager(site, root, [Sub], edition: (string?)null);
             await plain.LoadAsync();
             await Directory.Exists(root).Should().BeFalse();
             await plain.All.Count.Should().BeEqualTo(0);
-            await (plain.AddDebugPartner("configra", "Configra", "#FF7A2F") == null).Should().BeTrue();
             plain.SetDebugSubscription("c", "configra");
             await (plain.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
         }
@@ -548,7 +561,168 @@ public class V2pnPartnerTests
     }
 
     [Test]
-    public async Task PartnerBuild_OfAnUnknownPartner_TakesNothing()
+    public async Task SignIn_IsRecorded_BringsThePartnersPack_OpensItsTab_AndIsKeptAcrossRestarts()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        PublishTwo(p, site);
+        var root = NewRoot();
+        try
+        {
+            (List<string> SignedIn, string? Tab) saved = ([], null);
+            V2pnEdition Edition() => new(null, saved.SignedIn, saved.Tab, e => saved = (e.SignedIn.ToList(), e.SavedTab));
+            var subs = new List<string?>();
+            var manager = p.Manager(site, root, subs, Edition());
+
+            // The person opens «Sign in with a provider»: only now is the index asked for, and no partner has a tab yet.
+            var offers = await manager.LoginOffersAsync();
+            await offers.Select(o => o.Id).ToList().Should().BeEquivalentTo(["kestrel"]);
+            await manager.All.Count.Should().BeEqualTo(0);
+            await manager.Edition.Any.Should().BeFalse();
+
+            // Kestrel confirms the code: its subscription is added, then the sign-in is recorded and its tab opened.
+            subs.Add(KestrelSub);
+            await manager.Edition.RecordSignIn("kestrel").Should().BeTrue();
+            await manager.Edition.Open("kestrel").Should().BeTrue();
+            await manager.RefreshAsync();
+
+            await manager.Edition.CameFrom.Should().BeEquivalentTo(["kestrel"]);
+            await manager.Edition.Tab.Should().BeEqualTo("kestrel");
+            await manager.All.Select(x => x.Id).ToList().Should().BeEquivalentTo(["kestrel"]);
+            await manager.ForSubscription(new SubItem { Id = "k", Url = KestrelSub })!.Id.Should().BeEqualTo("kestrel");
+            await saved.SignedIn.Should().BeEquivalentTo(["kestrel"]);
+            await saved.Tab.Should().BeEqualTo("kestrel");
+
+            // The next start reads it back from the settings: the same tab, the same partner.
+            var again = p.Manager(site, root, subs, Edition());
+            await again.LoadAsync();
+            await again.Edition.Tab.Should().BeEqualTo("kestrel");
+            await (again.Get("kestrel") != null).Should().BeTrue();
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task SignIn_IsForgottenWithItsLastSubscription_TheMarkerNever()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        PublishTwo(p, site);
+        var root = NewRoot();
+        try
+        {
+            var subs = new List<string?> { KestrelSub, "https://elsewhere.example.org/s/1" };
+            var edition = new V2pnEdition("configra", ["kestrel"], "kestrel");
+            var manager = p.Manager(site, root, subs, edition);
+            await manager.RefreshAsync();
+            await manager.All.Select(x => x.Id).ToList().Should().BeEquivalentTo(["configra", "kestrel"]);
+            var gone = new List<(string, V2pnPartnerGone)>();
+            manager.Removed += (partner, why) => gone.Add((partner.Id, why));
+
+            // A refresh never forgets: its links may be older than a sign-in adding its subscription right now.
+            subs.Remove(KestrelSub);
+            await manager.RefreshAsync(forceIndex: true);
+            await edition.IsFrom("kestrel").Should().BeTrue();
+
+            // The person deleted Kestrel's last subscription: the sign-in, the pack and the tab go; V2pn's tab opens.
+            await manager.PruneAsync();
+            await edition.CameFrom.Should().BeEquivalentTo(["configra"]);
+            await (manager.Get("kestrel") == null).Should().BeTrue();
+            await gone.Should().BeEquivalentTo(new[] { ("kestrel", V2pnPartnerGone.Unlinked) });
+            await (edition.Tab == null).Should().BeTrue();
+            await Directory.Exists(Path.Combine(root, "kestrel")).Should().BeFalse();
+
+            // No subscription from Configra either, but the marker says the person came from it: its tab stays.
+            await (manager.Get("configra") != null).Should().BeTrue();
+            await edition.Open("configra").Should().BeTrue();
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task PartnerFeatures_ApplyOnlyInThatPartnersTab_AndOnlyToItsSubscriptions()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        var configra = TestPartner.Zip();
+        var kestrel = TestPartner.Zip(TestPartner.Pack(id: "kestrel", name: "Kestrel", more: pack => pack["lock"] = true));
+        p.Publish(site, Published,
+            (TestPartner.Listing(zip: configra, grants: ["edition", "account", "lock"]), configra),
+            (TestPartner.Listing(partner: "kestrel", domains: ["kestrel.example.net"], grants: ["edition", "account", "lock"], zip: kestrel), kestrel));
+        var root = NewRoot();
+        try
+        {
+            var edition = new V2pnEdition("configra", ["kestrel"]);
+            var manager = p.Manager(site, root, [Sub, KestrelSub], edition);
+            await manager.RefreshAsync();
+            var configraSub = new SubItem { Id = "c", Url = Sub };
+            var kestrelSub = new SubItem { Id = "k", Url = KestrelSub };
+            var changes = 0;
+            manager.Changed += () => changes++;
+
+            // Before any choice the marker's tab is open: Configra's subscription is Configra's, Kestrel's is not.
+            await edition.Tab.Should().BeEqualTo("configra");
+            await manager.ForSubscription(configraSub)!.Id.Should().BeEqualTo("configra");
+            await (manager.ForSubscription(kestrelSub) == null).Should().BeTrue();
+
+            // Kestrel's tab: Kestrel's subscription is its, with its lock; Configra's is just a subscription.
+            await edition.Open("kestrel").Should().BeTrue();
+            await (changes > 0).Should().BeTrue();
+            await (manager.ForSubscription(configraSub) == null).Should().BeTrue();
+            await (manager.ListingFor(Sub) == null).Should().BeTrue();
+            await V2pnLockState.For(manager.ForSubscription(kestrelSub), null).Settings.Should().BeTrue();
+
+            // V2pn's tab: no partner at all, no lock.
+            await edition.Open(null).Should().BeTrue();
+            await (manager.ForSubscription(configraSub) == null).Should().BeTrue();
+            await (manager.ForSubscription(kestrelSub) == null).Should().BeTrue();
+            await (manager.ListingFor(KestrelSub) == null).Should().BeTrue();
+            await V2pnLockState.For(manager.ForSubscription(kestrelSub), null).Any.Should().BeFalse();
+            // The partners stay kept: their tabs are there to go back to.
+            await manager.All.Count.Should().BeEqualTo(2);
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task APartnerLeavingTheIndex_LosesItsTabsPartner()
+    {
+        var p = new TestPartner();
+        var site = new TestSite();
+        PublishTwo(p, site);
+        var root = NewRoot();
+        try
+        {
+            var manager = p.Manager(site, root, [Sub], edition: "configra");
+            await manager.RefreshAsync();
+            var gone = new List<(string, V2pnPartnerGone)>();
+            manager.Removed += (partner, why) => gone.Add((partner.Id, why));
+
+            p.Publish(site, Published.AddDays(1));
+            await manager.RefreshAsync(forceIndex: true);
+
+            await gone.Should().BeEquivalentTo(new[] { ("configra", V2pnPartnerGone.Revoked) });
+            await (manager.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
+            // The marker stays: a partner listed again gets its tab back.
+            await manager.Edition.IsFrom("configra").Should().BeTrue();
+        }
+        finally
+        {
+            Delete(root);
+        }
+    }
+
+    [Test]
+    public async Task Marker_OfAnUnknownPartner_TakesNothing()
     {
         var p = new TestPartner();
         var site = new TestSite();
@@ -562,7 +736,7 @@ public class V2pnPartnerTests
             await manager.All.Count.Should().BeEqualTo(0);
             await site.Asked.Any(u => u.EndsWith(".zip", StringComparison.Ordinal)).Should().BeFalse();
             await (manager.ForSubscription(new SubItem { Id = "c", Url = Sub }) == null).Should().BeTrue();
-            await (await manager.LoginOffersAsync()).Count.Should().BeEqualTo(0);
+            await (await manager.LoginOffersAsync()).Any(o => o.Id == "nobody").Should().BeFalse();
         }
         finally
         {
@@ -571,7 +745,7 @@ public class V2pnPartnerTests
     }
 
     [Test]
-    public async Task PartnerBuild_ReadsTheNewIndexName_NeverTheOneOlderCopiesRead()
+    public async Task Partners_ReadTheNewIndexName_NeverTheOneOlderCopiesRead()
     {
         var p = new TestPartner();
         var site = new TestSite();
@@ -588,7 +762,7 @@ public class V2pnPartnerTests
             await site.Asked.Any(u => u.EndsWith("/partners.json", StringComparison.Ordinal)).Should().BeFalse();
             await File.Exists(Path.Combine(root, "partner-index.json")).Should().BeTrue();
 
-            // Only the empty legacy index on the release: a partner build finds no partner there.
+            // Only the empty legacy index on the release: a person who came from a partner finds none there.
             var old = new TestSite();
             p.Publish(old, Published);
             old.Files.Remove($"{TestSite.Source}/latest/download/{V2pnPartnerTrust.IndexFile}");

@@ -25,7 +25,7 @@ public sealed class V2pnPartner(V2pnPartnerListing listing, V2pnPartnerPack pack
 /// <summary>Why a partner was dropped.</summary>
 public enum V2pnPartnerGone
 {
-    /// <summary>No subscription on this computer is from its domains any more.</summary>
+    /// <summary>The person no longer comes from it: the last subscription of a sign-in by code was deleted.</summary>
     Unlinked,
 
     /// <summary>Its term in the index ran out.</summary>
@@ -36,29 +36,47 @@ public enum V2pnPartnerGone
 }
 
 /// <summary>
-/// The partner of a partner's build (V2pnEdition), and nothing at all in plain V2pn. V2pn publishes partner-index.json
-/// with its releases, signed with the partner root key: every partner with its subscription domains, grants, term and
-/// the hash of its pack's zip. A partner's build downloads its own partner's zip (from the first start, with or without
-/// a subscription: the build always wears that look), checks it (V2pnPartnerTrust) and keeps it in
-/// guiConfigs/partners/&lt;id&gt; with the index it was checked against; every start checks the kept files again, so a pack
-/// changed on disk is not trusted either. Only that partner's subscriptions are its; every other listing is ignored.
-/// Plain V2pn (no edition) never asks for the index, never downloads a pack, matches no subscription, offers no sign-in,
-/// and removes what an older V2pn kept of a partner.
+/// The partners the person came from (V2pnEdition: a provider's link, a sign-in by code, the marker of an older build),
+/// each with a tab in the title bar. partner-index.json lists every partner with its subscription domains, grants, term
+/// and the hash of its pack's zip. Two publish it (<see cref="V2pnInfo.PartnerSources"/>): the V2pn Hub on V2pn's server,
+/// signed with the hub's key, and the GitHub release, signed with the owner's root key; V2pn asks both and goes by
+/// <see cref="V2pnPartnerIndex.Merge"/> of the newest of each. For each partner the person came from, V2pn
+/// downloads its zip (subscription or not: the tab is there before the person signs in), checks it (V2pnPartnerTrust)
+/// and keeps it in guiConfigs/partners/&lt;id&gt; with the index it was checked against; every start checks the kept files
+/// again, so a pack changed on disk is not trusted either.
+/// <para>
+/// A subscription is a partner's (<see cref="ForSubscription"/>) only while that partner's tab is open and the link is
+/// on its domains; in V2pn's tab, and for a partner the person did not come from, it is just a subscription. A person
+/// who came from no partner gets nothing asked for or downloaded, and what an older V2pn kept of a partner is removed;
+/// only the sign-in by code (<see cref="LoginOffersAsync"/>), when the person opens it, and a provider's link
+/// (<see cref="ComeFromLinkAsync"/>), when the person follows it, ask for the index.
+/// </para>
 /// </summary>
 public sealed class V2pnPartners
 {
-    private static readonly Lazy<V2pnPartners> _instance = new(() => new(V2pnInfo.PartnerKeys, () => Utils.GetConfigPath("partners"), V2pnEdition.PartnerId));
+    private static readonly Lazy<V2pnPartners> _instance = new(() =>
+        new(V2pnInfo.PartnerKeys, () => Utils.GetConfigPath("partners"), V2pnEdition.Instance, V2pnInfo.PartnerHubKeys));
     public static V2pnPartners Instance => _instance.Value;
 
     /// <summary>How often the index is asked for at most, unless a caller forces it.</summary>
     public static readonly TimeSpan IndexInterval = TimeSpan.FromHours(6);
 
+    /// <summary>How often a provider's link asks for the index at most when the kept one does not list that provider.</summary>
+    public static readonly TimeSpan LinkIndexInterval = TimeSpan.FromMinutes(1);
+
+    /// <summary>
+    /// The kept hub-signed index. The root-signed one keeps the name V2pn 1.2 kept its only index under
+    /// (<see cref="V2pnPartnerTrust.IndexFile"/>); either file is placed by the key that verifies it, not by its name.
+    /// </summary>
+    public const string HubIndexFile = "partner-index-hub.json";
+
     private const string Tag = nameof(V2pnPartners);
     private const string KeptZip = "pack.zip";
 
     private readonly IReadOnlyList<string> _rootKeys;
+    private readonly IReadOnlyList<string> _hubKeys;
     private readonly Func<string> _root;
-    private readonly string? _edition;
+    private readonly V2pnEdition _edition;
     private readonly SemaphoreSlim _gate = new(1, 1);
     private readonly ConcurrentDictionary<string, V2pnPartner> _partners = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _errors = new(StringComparer.Ordinal);
@@ -66,8 +84,12 @@ public sealed class V2pnPartners
     // The debug window's made-up partners and the subscriptions it counts as theirs; never on disk, never pruned.
     private readonly ConcurrentDictionary<string, byte> _debugIds = new(StringComparer.Ordinal);
     private readonly ConcurrentDictionary<string, string> _debugSubs = new(StringComparer.Ordinal);
+    // The newest index taken of each signer, and the two merged: what every question goes by.
+    private V2pnPartnerIndex? _rootIndex;
+    private V2pnPartnerIndex? _hubIndex;
     private V2pnPartnerIndex? _index;
-    private DateTimeOffset _indexPublished = DateTimeOffset.MinValue;
+    // The source that served each signer's index: its packs are asked there first.
+    private readonly ConcurrentDictionary<V2pnPartnerSigner, string> _servedBy = new();
     private DateTime _indexAsked = DateTime.MinValue;
     private Task? _load;
 
@@ -77,25 +99,29 @@ public sealed class V2pnPartners
     /// <summary>Raised for each partner dropped, with the reason, before <see cref="Changed"/>. May come from any thread.</summary>
     public event Action<V2pnPartner, V2pnPartnerGone>? Removed;
 
-    /// <param name="edition">The partner whose build this is (V2pnEdition.PartnerId); null for plain V2pn, which then has no partner at all.</param>
-    public V2pnPartners(IReadOnlyList<string> rootKeys, Func<string> root, string? edition)
+    /// <param name="edition">The partners the person came from and the open tab.</param>
+    /// <param name="hubKeys">The V2pn Hub's keys: an index they sign is taken without the reviewed grants.</param>
+    public V2pnPartners(IReadOnlyList<string> rootKeys, Func<string> root, V2pnEdition edition, IReadOnlyList<string>? hubKeys = null)
     {
         _rootKeys = rootKeys;
+        _hubKeys = hubKeys ?? [];
         _root = root;
         _edition = edition;
+        // Another tab makes other subscriptions a partner's: whatever asks ForSubscription asks again.
+        edition.Changed += () => Changed?.Invoke();
     }
 
-    /// <summary>The partner whose build this is; null for plain V2pn.</summary>
-    public string? Edition => _edition;
+    /// <summary>The partners the person came from and the open tab.</summary>
+    public V2pnEdition Edition => _edition;
 
-    /// <summary>The listing of this build's partner in the last index; null in plain V2pn, before an index, or when it is not listed.</summary>
-    private V2pnPartnerListing? OwnListing => _edition == null ? null : _index?.Get(_edition);
+    /// <summary>The listing of the partner whose tab is open, in the last index; null in V2pn's tab, before an index, or when it is not listed.</summary>
+    private V2pnPartnerListing? OpenListing => _edition.Tab is { } tab ? _index?.Get(tab) : null;
 
     /// <summary>Overridable for tests: the network.</summary>
     public Func<string, CancellationToken, Task<V2pnHttp.Result>> Fetch { get; set; } = DefaultFetchAsync;
 
     /// <summary>Overridable for tests: where the index and the zips are published (a releases page: &lt;source&gt;/latest/download/...).</summary>
-    public IReadOnlyList<string> Sources { get; set; } = V2pnInfo.UpdateSources;
+    public IReadOnlyList<string> Sources { get; set; } = V2pnInfo.PartnerSources;
 
     /// <summary>Overridable for tests: the links of every subscription on this computer.</summary>
     public Func<Task<IReadOnlyList<string?>>> SubscriptionUrls { get; set; } = DefaultSubscriptionUrlsAsync;
@@ -116,23 +142,26 @@ public sealed class V2pnPartners
     /// <summary>Why the index could not be taken the last time it was asked for; null after a success.</summary>
     public string? IndexError { get; private set; }
 
-    /// <summary>The partner of a subscription: the kept partner whose domains hold its link.</summary>
+    /// <summary>
+    /// The partner of a subscription: the partner whose tab is open, when the subscription's link is on its domains.
+    /// Null in V2pn's tab and for every other subscription: there it is just a subscription.
+    /// </summary>
     public V2pnPartner? ForSubscription(SubItem? item)
     {
-        if (item?.Id is { } id && _debugSubs.TryGetValue(id, out var debugPartner) && Get(debugPartner) is { } linked)
+        if (item?.Id is { } id && _debugSubs.TryGetValue(id, out var debugPartner))
         {
-            return linked;
+            return _edition.IsOpen(debugPartner) ? Get(debugPartner) : null;
         }
         return ForUrl(item?.Url);
     }
 
-    /// <summary>This build's partner when a subscription link is on its domains; null for any other link, and always in plain V2pn.</summary>
+    /// <summary>The partner whose tab is open when a subscription link is on its domains; null for any other link, and in V2pn's tab.</summary>
     public V2pnPartner? ForUrl(string? subscriptionUrl) =>
         ListingFor(subscriptionUrl) is { } listing && Get(listing.Id) is { } partner && !_debugIds.ContainsKey(partner.Id) ? partner : null;
 
-    /// <summary>This build's partner's listing when a subscription link is on its domains, whether or not its pack is here yet.</summary>
+    /// <summary>The listing of the partner whose tab is open when a subscription link is on its domains, whether or not its pack is here yet.</summary>
     public V2pnPartnerListing? ListingFor(string? subscriptionUrl) =>
-        OwnListing is { } listing && V2pnPartnerTrust.DomainAllowed(listing, subscriptionUrl) ? listing : null;
+        OpenListing is { } listing && V2pnPartnerTrust.DomainAllowed(listing, subscriptionUrl) ? listing : null;
 
     /// <summary>Pictures of a partner's pack that did not fit their slot and are not shown (V2pnPartnerSlots).</summary>
     public IReadOnlyList<string> SlotNotesFor(string? partnerId) =>
@@ -158,31 +187,40 @@ public sealed class V2pnPartners
             {
                 return;
             }
-            if (_edition == null)
+            var from = _edition.CameFrom;
+            if (from.Count == 0)
             {
-                // Plain V2pn: what V2pn 1.2.1 kept of a partner (its index, pack, pictures) goes, unread.
-                Logging.SaveLog($"{Tag}: plain V2pn; removing the partner files an older version kept");
+                // From no partner: what V2pn 1.2.1 kept of a partner (its index, pack, pictures), or the offers of a
+                // sign-in not finished, goes unread.
+                Logging.SaveLog($"{Tag}: the person came from no partner; removing kept partner files");
                 DeleteQuietly(root);
                 return;
             }
-            var index = V2pnPartnerTrust.ReadIndex(ReadOrNull(root, V2pnPartnerTrust.IndexFile, V2pnPartnerTrust.MaxIndexBytes),
-                ReadTextOrNull(root, V2pnPartnerTrust.IndexFile + ".sig"), _rootKeys, out var indexError);
-            if (index == null && File.Exists(Path.Combine(root, V2pnPartnerTrust.IndexFile)))
+            foreach (var file in new[] { V2pnPartnerTrust.IndexFile, HubIndexFile })
             {
-                Logging.SaveLog($"{Tag}: the kept partner index is not trusted: {indexError}");
+                var kept = V2pnPartnerTrust.ReadIndex(ReadOrNull(root, file, V2pnPartnerTrust.MaxIndexBytes),
+                    ReadTextOrNull(root, file + ".sig"), _rootKeys, _hubKeys, out var indexError);
+                if (kept == null)
+                {
+                    if (File.Exists(Path.Combine(root, file)))
+                    {
+                        Logging.SaveLog($"{Tag}: the kept partner index {file} is not trusted: {indexError}");
+                    }
+                    continue;
+                }
+                if (kept.Published >= (Kept(kept.Signer)?.Published ?? DateTimeOffset.MinValue))
+                {
+                    SetKept(kept);
+                }
             }
-            if (index != null)
-            {
-                _index = index;
-                _indexPublished = ReadPublished(root);
-            }
+            var index = _index = V2pnPartnerIndex.Merge(_hubIndex, _rootIndex);
             foreach (var dir in Directory.EnumerateDirectories(root))
             {
                 var id = Path.GetFileName(dir);
-                var listing = id == _edition ? index?.Get(id) : null;
+                var listing = from.Contains(id) ? index?.Get(id) : null;
                 if (id.StartsWith('.') || listing == null || listing.Until < Today())
                 {
-                    // A staging folder left behind, another partner's folder, or this partner no longer listed or run out.
+                    // A staging folder left behind, a partner the person does not come from, or one no longer listed or run out.
                     DeleteQuietly(dir);
                     continue;
                 }
@@ -204,14 +242,14 @@ public sealed class V2pnPartners
 
     /// <summary>
     /// Asks for the index (at start, then at most every <see cref="IndexInterval"/> unless <paramref name="forceIndex"/>),
-    /// downloads this build's partner's pack when its zip is not the one kept, and drops it when it left the index or ran
-    /// out. Runs one at a time; a failure keeps what is kept (a release page being down changes nothing). Plain V2pn asks
-    /// for nothing.
+    /// downloads the pack of each partner the person came from when its zip is not the one kept, and drops a partner that
+    /// left the index, ran out or the person no longer comes from. Runs one at a time; a failure keeps what is kept (a
+    /// release page being down changes nothing). For a person who came from no partner it asks for nothing.
     /// </summary>
     public async Task RefreshAsync(bool forceIndex = false, CancellationToken cancellationToken = default)
     {
         await LoadAsync();
-        if (_edition == null)
+        if (!_edition.Any)
         {
             return;
         }
@@ -234,13 +272,15 @@ public sealed class V2pnPartners
                 _indexAsked = Now();
                 await RefreshIndexAsync(cancellationToken);
             }
-            PruneCore(urls);
+            PruneCore(urls, forgetSignIns: false);
             if (_index is not { } index)
             {
                 return;
             }
-            // The build's own partner only, subscription or not: its look is there before the person signs in.
-            foreach (var listing in index.Partners.Where(l => l.Id == _edition && l.Until >= Today()))
+            // The partners the person came from only, subscription or not: the tab is there before the person signs in.
+            var from = _edition.CameFrom;
+            // The debug window's partner of the same id stays as it is: it stands in for this one on purpose.
+            foreach (var listing in index.Partners.Where(l => from.Contains(l.Id) && l.Until >= Today() && !_debugIds.ContainsKey(l.Id)))
             {
                 var kept = Get(listing.Id);
                 if (kept != null && kept.Listing.Zip.Sha256 == listing.Zip.Sha256)
@@ -270,57 +310,101 @@ public sealed class V2pnPartners
         }
     }
 
-    /// <summary>Takes the index from the first source that serves one signed by a root key and not older than the kept one.</summary>
+    /// <summary>
+    /// Asks every source at once and takes, for each signer (the root key, the hub's), the newest index served that is not
+    /// older than the one kept of that signer; then goes by their merge. The hub's index is usually the newer and the
+    /// GitHub release's copy the fallback, but each signer is judged against its own kept index: a lagging mirror of
+    /// either is skipped, and neither can push the other out by its date.
+    /// </summary>
     private async Task RefreshIndexAsync(CancellationToken cancellationToken)
     {
         var errors = new List<string>();
-        foreach (var source in Sources)
+        var served = await Task.WhenAll(Sources.Select(async source =>
         {
-            var json = await GetBytesAsync($"{source}/latest/download/{V2pnPartnerTrust.IndexFile}", V2pnPartnerTrust.MaxIndexBytes, cancellationToken);
-            var sig = await GetTextAsync($"{source}/latest/download/{V2pnPartnerTrust.IndexFile}.sig", cancellationToken);
-            if (V2pnPartnerTrust.ReadIndex(json, sig, _rootKeys, out var error) is not { } index)
+            var jsonTask = GetBytesAsync($"{source}/latest/download/{V2pnPartnerTrust.IndexFile}", V2pnPartnerTrust.MaxIndexBytes, cancellationToken);
+            var sigTask = GetTextAsync($"{source}/latest/download/{V2pnPartnerTrust.IndexFile}.sig", cancellationToken);
+            return (Source: source, Json: await jsonTask, Sig: await sigTask);
+        }));
+        var taken = new Dictionary<V2pnPartnerSigner, (V2pnPartnerIndex Index, byte[] Json, string Sig, string Source)>();
+        foreach (var (source, json, sig) in served)
+        {
+            if (V2pnPartnerTrust.ReadIndex(json, sig, _rootKeys, _hubKeys, out var error) is not { } index)
             {
                 errors.Add($"{HostOf(source)}: {error}");
                 continue;
             }
-            var published = Published(json!);
             // An older index signed earlier would bring back a partner taken out since; a mirror that lags is skipped.
-            if (published < _indexPublished)
+            if (index.Published < (Kept(index.Signer)?.Published ?? DateTimeOffset.MinValue))
             {
                 errors.Add($"{HostOf(source)}: the partner index is older than the one kept");
                 continue;
             }
-            foreach (var problem in index.Problems)
+            // Of two sources with the same signer, the newer; on a tie the one asked first.
+            if (taken.TryGetValue(index.Signer, out var other) && other.Index.Published >= index.Published)
             {
-                Logging.SaveLog($"{Tag}: index: {problem}");
+                continue;
             }
-            var root = _root();
-            Directory.CreateDirectory(root);
-            await File.WriteAllBytesAsync(Path.Combine(root, V2pnPartnerTrust.IndexFile), json!, cancellationToken);
-            await File.WriteAllTextAsync(Path.Combine(root, V2pnPartnerTrust.IndexFile + ".sig"), sig!, cancellationToken);
-            _index = index;
-            _indexPublished = published;
-            IndexError = null;
-            // The listings may have changed (grants, term, reviewed files): the kept packs are read again under them.
-            foreach (var kept in _partners.Values.Where(p => !_debugIds.ContainsKey(p.Id)).ToList())
-            {
-                if (index.Get(kept.Id) is { } listing && ReadFolder(kept.Folder, listing, out _) is { } again)
-                {
-                    _partners[kept.Id] = again;
-                }
-            }
-            Changed?.Invoke();
+            taken[index.Signer] = (index, json!, sig!, source);
+        }
+        if (taken.Count == 0)
+        {
+            IndexError = errors.Count == 0 ? "No source to ask for the partner index." : string.Join("; ", errors);
+            Logging.SaveLog($"{Tag}: {IndexError}");
             return;
         }
-        IndexError = errors.Count == 0 ? "No source to ask for the partner index." : string.Join("; ", errors);
-        Logging.SaveLog($"{Tag}: {IndexError}");
+        var root = _root();
+        Directory.CreateDirectory(root);
+        foreach (var (signer, (index, json, sig, source)) in taken)
+        {
+            foreach (var problem in index.Problems)
+            {
+                Logging.SaveLog($"{Tag}: {signer.ToString().ToLowerInvariant()} index: {problem}");
+            }
+            var file = signer == V2pnPartnerSigner.Hub ? HubIndexFile : V2pnPartnerTrust.IndexFile;
+            await File.WriteAllBytesAsync(Path.Combine(root, file), json, cancellationToken);
+            await File.WriteAllTextAsync(Path.Combine(root, file + ".sig"), sig, cancellationToken);
+            SetKept(index);
+            _servedBy[signer] = source;
+            Logging.SaveLog($"{Tag}: partner index from {HostOf(source)}, signed with the {signer.ToString().ToLowerInvariant()} key, published {index.Published:u}: {(index.Partners.Count == 0 ? "no partners" : string.Join(", ", index.Partners.Select(p => p.Id)))}");
+        }
+        var merged = _index = V2pnPartnerIndex.Merge(_hubIndex, _rootIndex)!;
+        foreach (var problem in merged.Problems.Except(_hubIndex?.Problems ?? []).Except(_rootIndex?.Problems ?? []))
+        {
+            Logging.SaveLog($"{Tag}: index: {problem}");
+        }
+        IndexError = null;
+        // The listings may have changed (grants, term, reviewed files, signer): the kept packs are read again under them.
+        foreach (var kept in _partners.Values.Where(p => !_debugIds.ContainsKey(p.Id)).ToList())
+        {
+            if (merged.Get(kept.Id) is { } listing && ReadFolder(kept.Folder, listing, out _) is { } again)
+            {
+                _partners[kept.Id] = again;
+            }
+        }
+        Changed?.Invoke();
+    }
+
+    private V2pnPartnerIndex? Kept(V2pnPartnerSigner signer) => signer == V2pnPartnerSigner.Hub ? _hubIndex : _rootIndex;
+
+    private void SetKept(V2pnPartnerIndex index)
+    {
+        if (index.Signer == V2pnPartnerSigner.Hub)
+        {
+            _hubIndex = index;
+        }
+        else
+        {
+            _rootIndex = index;
+        }
     }
 
     /// <summary>The zip of <paramref name="listing"/> from the first source that serves the one the index names, unpacked and checked.</summary>
     private async Task<(byte[] Zip, V2pnPartnerPack Pack, Dictionary<string, byte[]> Files)?> FetchPackAsync(V2pnPartnerListing listing, CancellationToken cancellationToken)
     {
         var error = "No source serves the pack.";
-        foreach (var source in Sources)
+        // The source of the index that named it first: the hub keeps the zips of its index, a release those of its own.
+        var first = _servedBy.GetValueOrDefault(listing.Signer);
+        foreach (var source in Sources.OrderBy(s => s == first ? 0 : 1))
         {
             var zip = await GetBytesAsync($"{source}/latest/download/{listing.Zip.File}", V2pnPartnerTrust.MaxZipBytes, cancellationToken);
             if (V2pnPartnerTrust.Unpack(zip, listing, out var files, out error) is { } pack)
@@ -375,27 +459,37 @@ public sealed class V2pnPartners
 
     /// <summary>
     /// The partners a person can sign in with (V2pnPartnerLogin): every listed partner whose pack says "login" and has an
-    /// API under the account grant. A partner kept for a subscription here is read from its folder; any other one's pack
-    /// is downloaded and checked like a kept one, but only shown: it does not dress the window, is not kept for a
-    /// subscription and goes with the next start (guiConfigs/partners/.offers). Asks for the index first when there is none.
+    /// API under the account grant, the build's marker partner first. Called when the person opens the sign-in (and, in
+    /// a build with a marker, for the walkthrough): it asks for the index when there is none, even for a person who came
+    /// from no partner yet, since signing in is how one comes from a partner. A kept partner is read from its folder; any
+    /// other one's pack is downloaded and checked like a kept one, but only shown: it gets no tab until the sign-in
+    /// succeeds, and goes with the next start (guiConfigs/partners/.offers).
     /// </summary>
     public async Task<IReadOnlyList<V2pnPartner>> LoginOffersAsync(CancellationToken cancellationToken = default)
     {
         await LoadAsync();
-        if (_edition == null)
-        {
-            return [];
-        }
         if (_index == null)
         {
-            await RefreshAsync(forceIndex: true, cancellationToken);
+            await _gate.WaitAsync(cancellationToken);
+            try
+            {
+                if (_index == null)
+                {
+                    _indexAsked = Now();
+                    await RefreshIndexAsync(cancellationToken);
+                }
+            }
+            finally
+            {
+                _gate.Release();
+            }
         }
         if (_index is not { } index)
         {
             return [];
         }
         var offers = new List<V2pnPartner>();
-        foreach (var listing in index.Partners.Where(l => l.Id == _edition && l.Until >= Today() && l.Allows(V2pnPartnerGrants.Account)))
+        foreach (var listing in index.Partners.Where(l => l.Until >= Today() && l.Allows(V2pnPartnerGrants.Account)))
         {
             var partner = Get(listing.Id) is { } kept && !IsDebug(kept.Id) ? kept : await OfferAsync(listing, cancellationToken);
             if (partner != null && V2pnPartnerLogin.Offers(partner))
@@ -403,7 +497,63 @@ public sealed class V2pnPartners
                 offers.Add(partner);
             }
         }
-        return offers.OrderBy(p => p.Name, StringComparer.CurrentCulture).ToList();
+        return offers.OrderBy(p => p.Id == _edition.Marker ? 0 : 1).ThenBy(p => p.Name, StringComparer.CurrentCulture).ToList();
+    }
+
+    /// <summary>
+    /// The listing a provider's link names (v2pn://add?url=…&amp;partner=&lt;id&gt;) when the last index lists
+    /// <paramref name="partnerId"/>, in term, and <paramref name="subscriptionUrl"/> is on its domains; null otherwise.
+    /// Asks nothing: what the window may say before the person answers.
+    /// </summary>
+    public V2pnPartnerListing? ListingForLink(string? partnerId, string? subscriptionUrl) =>
+        V2pnPartnerTrust.ValidId(partnerId) && _index?.Get(partnerId) is { } listing && listing.Until >= Today()
+        && V2pnPartnerTrust.DomainAllowed(listing, subscriptionUrl)
+            ? listing
+            : null;
+
+    /// <summary>
+    /// A provider's link, once the person added (or already had) its subscription: when the signed index lists
+    /// <paramref name="partnerId"/>, in term, and <paramref name="subscriptionUrl"/> is on its domains, the person came
+    /// from that provider from now on, as by a sign-in by code (V2pnEdition.RecordSignIn), and its listing is returned:
+    /// the caller opens its tab and refreshes, which brings the pack. Any other link (an unknown id, a link off its
+    /// domains, a provider out of term) is just a subscription: null, and nothing is recorded. When the kept index does not
+    /// list the provider yet, it is asked for (the person followed a provider's link: like the sign-in, a reason to ask),
+    /// at most once every <see cref="LinkIndexInterval"/>.
+    /// </summary>
+    public async Task<V2pnPartnerListing?> ComeFromLinkAsync(string? partnerId, string? subscriptionUrl, CancellationToken cancellationToken = default)
+    {
+        if (!V2pnPartnerTrust.ValidId(partnerId) || !V2pnSubs.IsHttpLink(subscriptionUrl))
+        {
+            return null;
+        }
+        await LoadAsync();
+        if (ListingForLink(partnerId, subscriptionUrl) == null)
+        {
+            await _gate.WaitAsync(cancellationToken);
+            try
+            {
+                if (ListingForLink(partnerId, subscriptionUrl) == null && Now() - _indexAsked >= LinkIndexInterval)
+                {
+                    _indexAsked = Now();
+                    await RefreshIndexAsync(cancellationToken);
+                }
+            }
+            finally
+            {
+                _gate.Release();
+            }
+        }
+        if (ListingForLink(partnerId, subscriptionUrl) is not { } listing)
+        {
+            var known = _index?.Get(partnerId);
+            Logging.SaveLog($"{Tag}: a link names {partnerId}, " + (known == null ? "which the partner index does not list"
+                : known.Until < Today() ? "whose term ran out" : $"but its subscription is not on its domains ({HostOf(subscriptionUrl!)})")
+                + "; it is just a subscription");
+            return null;
+        }
+        _edition.RecordSignIn(listing.Id);
+        Logging.SaveLog($"{Tag}: came from {listing.Id} by its link ({listing.Signer.ToString().ToLowerInvariant()}-signed listing)");
+        return listing;
     }
 
     private readonly ConcurrentDictionary<string, V2pnPartner> _offers = new(StringComparer.Ordinal);
@@ -494,9 +644,11 @@ public sealed class V2pnPartners
     }
 
     /// <summary>
-    /// Drops the partner when the index no longer lists it or its term ran out, and any partner that is not this build's.
-    /// Its kept files go too, so nothing of a former partner stays on the computer. A partner's build keeps its partner
-    /// without a subscription (it wears that look from the first start).
+    /// Drops a partner when the index no longer lists it, its term ran out, or the person no longer comes from it. Its
+    /// kept files go too, so nothing of a former partner stays on the computer. A partner the person came from stays
+    /// without a subscription (its tab is there before the sign-in). A sign-in by code is forgotten when no subscription
+    /// here is on that partner's domains any more (the person deleted the last one), and its partner goes with it; the
+    /// build's marker is never forgotten.
     /// </summary>
     /// <param name="subscriptionUrls">The link of every subscription here.</param>
     public IReadOnlyList<V2pnPartner> Prune(IEnumerable<string?> subscriptionUrls)
@@ -504,7 +656,7 @@ public sealed class V2pnPartners
         _gate.Wait();
         try
         {
-            return PruneCore(subscriptionUrls.ToList());
+            return PruneCore(subscriptionUrls.ToList(), forgetSignIns: true);
         }
         finally
         {
@@ -512,14 +664,30 @@ public sealed class V2pnPartners
         }
     }
 
-    private List<V2pnPartner> PruneCore(IReadOnlyList<string?> urls)
+    // forgetSignIns only with links read after what prompted it (a deletion, the start), never with links read before a
+    // sign-in that may be adding its subscription at this moment.
+    private List<V2pnPartner> PruneCore(IReadOnlyList<string?> urls, bool forgetSignIns)
     {
+        if (forgetSignIns && _index is { } index)
+        {
+            foreach (var id in _edition.SignedIn.Where(id => id != _edition.Marker))
+            {
+                // A partner the index does not list (taken out, or no index yet) says nothing of which links are its: it stays.
+                if (index.Get(id) is { } signedIn && !urls.Any(u => V2pnPartnerTrust.DomainAllowed(signedIn, u)))
+                {
+                    Logging.SaveLog($"{Tag}: no subscription from {id} is left; its sign-in is forgotten");
+                    _edition.ForgetSignIn(id);
+                }
+            }
+        }
+        var from = _edition.CameFrom;
         var gone = new List<(V2pnPartner Partner, V2pnPartnerGone Reason)>();
         foreach (var partner in _partners.Values.Where(p => !_debugIds.ContainsKey(p.Id)).ToList())
         {
             var listing = _index?.Get(partner.Id);
-            V2pnPartnerGone? reason = listing == null || partner.Id != _edition ? V2pnPartnerGone.Revoked
+            V2pnPartnerGone? reason = listing == null ? V2pnPartnerGone.Revoked
                 : listing.Until < Today() ? V2pnPartnerGone.Expired
+                : !from.Contains(partner.Id) ? V2pnPartnerGone.Unlinked
                 : null;
             if (reason is { } why && _partners.TryRemove(partner.Id, out _))
             {
@@ -540,17 +708,17 @@ public sealed class V2pnPartners
         return gone.Select(g => g.Partner).ToList();
     }
 
-    /// <summary><see cref="Prune"/> against the subscriptions in the database, once the kept partners are loaded.</summary>
+    /// <summary><see cref="Prune"/> against the subscriptions in the database, once the kept partners are loaded (after a subscription was deleted, and at start).</summary>
     public async Task<IReadOnlyList<V2pnPartner>> PruneAsync()
     {
         try
         {
             await LoadAsync();
-            var urls = await SubscriptionUrls();
             await _gate.WaitAsync();
             try
             {
-                return PruneCore(urls);
+                // Read under the gate, after whatever deleted a subscription: a sign-in is forgotten only by what is here now.
+                return PruneCore(await SubscriptionUrls(), forgetSignIns: true);
             }
             finally
             {
@@ -566,13 +734,13 @@ public sealed class V2pnPartners
 
     /// <summary>
     /// Debug only (V2pnPartnerTrust.DebugAllowed): a partner made up in memory with the edition, account and actions grants,
-    /// no API, standing in for this build's partner (<paramref name="id"/> must be <see cref="Edition"/>), so the look can
-    /// be tried without a published index. With <paramref name="themeFolder"/> (a folder with a partner.json and its
-    /// pictures) it takes that pack's brand, theme and pictures. Null in a plain release, and always in plain V2pn.
+    /// no API, counted as one the person came from until V2pn closes (so it has a tab), so the look can be tried without
+    /// a published index. With <paramref name="themeFolder"/> (a folder with a partner.json and its pictures) it takes
+    /// that pack's brand, theme and pictures. Null in a plain release.
     /// </summary>
     public V2pnPartner? AddDebugPartner(string id, string name, string? accent, string? themeFolder = null)
     {
-        if (!V2pnPartnerTrust.DebugAllowed || _edition == null || id != _edition)
+        if (!V2pnPartnerTrust.DebugAllowed || !V2pnPartnerTrust.ValidId(id))
         {
             return null;
         }
@@ -611,6 +779,7 @@ public sealed class V2pnPartners
         var partner = new V2pnPartner(listing, pack, folder);
         _debugIds[id] = 0;
         _partners[id] = partner;
+        _edition.AddDebug(id);
         Changed?.Invoke();
         return partner;
     }
@@ -627,14 +796,15 @@ public sealed class V2pnPartners
                 _debugSubs.TryRemove(sub, out _);
             }
             Removed?.Invoke(partner, why);
+            _edition.RemoveDebug(id);
             Changed?.Invoke();
         }
     }
 
-    /// <summary>Debug only: counts a subscription as a partner's (null: as V2pn sees it).</summary>
+    /// <summary>Debug only: counts a subscription as a partner's (null: as V2pn sees it), in that partner's tab.</summary>
     public void SetDebugSubscription(string subscriptionId, string? partnerId)
     {
-        if (!V2pnPartnerTrust.DebugAllowed || (partnerId != null && partnerId != _edition))
+        if (!V2pnPartnerTrust.DebugAllowed || (partnerId != null && !_edition.IsFrom(partnerId)))
         {
             return;
         }
@@ -662,25 +832,6 @@ public sealed class V2pnPartners
         }
         return features;
     }
-
-    /// <summary>"published" of an index already checked; the oldest time when it has none V2pn reads.</summary>
-    private static DateTimeOffset Published(byte[] json)
-    {
-        try
-        {
-            return JsonNode.Parse(json)?["published"] is JsonValue value && value.TryGetValue<string>(out var text)
-                   && DateTimeOffset.TryParse(text, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var time)
-                ? time
-                : DateTimeOffset.MinValue;
-        }
-        catch (JsonException)
-        {
-            return DateTimeOffset.MinValue;
-        }
-    }
-
-    private static DateTimeOffset ReadPublished(string root) =>
-        ReadOrNull(root, V2pnPartnerTrust.IndexFile, V2pnPartnerTrust.MaxIndexBytes) is { } json ? Published(json) : DateTimeOffset.MinValue;
 
     private static string HostOf(string source) => Utils.TryUri(source)?.Host is { Length: > 0 } host ? host : source;
 

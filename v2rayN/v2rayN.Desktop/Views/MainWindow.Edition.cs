@@ -5,9 +5,9 @@ using v2rayN.Desktop.Views.EditionLooks;
 
 namespace v2rayN.Desktop.Views;
 
-// The brand of the partner whose build this is (Common/Editions.cs, V2pnEdition), on V2pn's own layout; plain V2pn has none:
-// "Accent": its logo beside V2pn's in the title bar, Connect in its colour, its card at the top of the sidebar.
-// "Scene", when its theme has a background: the same, with the background where the map is and its plan on it.
+// The space of the partner whose tab is open (Common/Editions.cs, MainWindow.Tabs.cs), on V2pn's own layout; V2pn's tab
+// has none: "Accent": Connect in its colour, its card at the top of the sidebar. "Scene", when its theme has a
+// background: the same, with the background where the map is and its plan on it.
 public partial class MainWindow
 {
     private PartnerCard? _partnerCard;
@@ -23,6 +23,7 @@ public partial class MainWindow
 
     private void InitEdition()
     {
+        InitTabs();
         Editions.Changed += RefreshEdition;
         Editions.Closed += (partner, why) => ShowToast(why == V2pnPartnerGone.Unlinked ? ToastKind.Info : ToastKind.Warning, why switch
         {
@@ -46,7 +47,7 @@ public partial class MainWindow
         Editions.Start();
     }
 
-    /// <summary>"V2pn × Configra" in Configra's build; else V2pn.</summary>
+    /// <summary>"V2pn × Configra" in Configra's tab; else V2pn.</summary>
     private static string EditionTitle() => Editions.Partner is { } partner ? $"{L.AppName} × {partner.Name}" : L.AppName;
 
     private void RefreshEdition()
@@ -156,30 +157,13 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// V2pn's fork and name, and the partner's logo beside it: "V2pn × Configra". V2pn's mark is never recoloured. In a
-    /// mini window the title bar has room for one name: V2pn's word goes, the marks stay.
+    /// The title bar's left side: V2pn's fork and name when the person came from no partner, the tabs otherwise
+    /// (MainWindow.Tabs.cs). The mini window shows a partner's tab as its mark alone.
     /// </summary>
     private void UpdateLockup()
     {
-        while (panelBrand.Children.Count > 2)
-        {
-            panelBrand.Children.RemoveAt(2);
-        }
-        var partner = Editions.Partner;
-        txtBrand.IsVisible = partner == null || _tier != BodyTier.Stacked;
-        AutomationProperties.SetName(borderBrand, EditionTitle());
-        // The accent is the partner's now; V2pn's fork beside its logo keeps V2pn's own red.
-        if (partner == null)
-        {
-            pathBrand.Bind(Avalonia.Controls.Shapes.Shape.FillProperty, pathBrand.GetResourceObservable("V2Accent"));
-            return;
-        }
-        pathBrand.Fill = new SolidColorBrush(Color.Parse(ActualThemeVariant == ThemeVariant.Light ? "#E8391B" : "#FF3D1F"));
-        Control logo = Scene.Logo(partner, onLight: ActualThemeVariant == ThemeVariant.Light) is { } bitmap
-            ? new Image { Source = bitmap, Height = 15, MaxWidth = 140, Stretch = Stretch.Uniform, VerticalAlignment = VerticalAlignment.Center }
-            : new TextBlock { Text = partner.Name, FontSize = 13, FontWeight = FontWeight.SemiBold, MaxWidth = 140, TextTrimming = TextTrimming.CharacterEllipsis, VerticalAlignment = VerticalAlignment.Center };
-        panelBrand.Children.Add(new TextBlock { Text = "×", FontSize = 13, Opacity = 0.5, VerticalAlignment = VerticalAlignment.Center });
-        panelBrand.Children.Add(logo);
+        AutomationProperties.SetName(borderBrand, L.AppName);
+        RefreshTabs();
     }
 
     private void QueuePlace()

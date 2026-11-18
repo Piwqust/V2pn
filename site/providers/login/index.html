@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="ru" data-type="software" data-radius="round" data-buttons="solid" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Вход для провайдеров: код на почту | V2pn</title>
+<meta name="description" content="Вход в кабинет провайдера V2pn по коду из письма, без пароля.">
+<meta name="robots" content="noindex">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Вход для провайдеров V2pn">
+<meta property="og:description" content="Кабинет VPN-провайдера в V2pn: вход по коду из письма.">
+<meta property="og:image" content="https://v2pn.angleford.co/providers/share.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="icon" href="../../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#eceef3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0e11" media="(prefers-color-scheme: dark)">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="stylesheet" href="../../assets/system.css">
+<link rel="stylesheet" href="../../assets/motion/motion.css">
+<link rel="stylesheet" href="../../assets/site/tokens.css">
+<link rel="stylesheet" href="../../assets/site/site.css">
+<link rel="stylesheet" href="../../assets/site/hub.css">
+</head>
+<body>
+<header class="nav nav--centre">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">К содержанию</a>
+    <a class="nav__logo" href="../../"><svg class="v2mark" viewBox="0 0 104 112" aria-hidden="true"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</a>
+    <nav class="nav__links" aria-label="Разделы">
+      <div class="nav__item"><a class="nav__link" href="../../#features">Возможности</a></div>
+      <div class="nav__item"><a class="nav__link" href="../../#install">Установка</a></div>
+      <div class="nav__item"><a class="nav__link" href="../">Провайдерам</a></div>
+      <div class="nav__item"><a class="nav__link" href="../guide/">Руководство</a></div>
+    </nav>
+    <div class="nav__actions">
+      <a class="btn btn--secondary" href="../">Как это работает</a>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top" class="app">
+  <div class="wrap auth">
+    <div class="box">
+      <noscript><p>Вход работает со включённым JavaScript: страница просит код у сервера и проверяет его. Включите JavaScript и обновите страницу.</p></noscript>
+
+      <!-- step 1: the email -->
+      <form id="step-email" class="stack stack--lg" novalidate>
+        <div class="app__head">
+          <p class="app__crumb"><a href="../">Провайдерам</a></p>
+          <h1>Вход для провайдеров</h1>
+          <p>Пришлём на почту код из шести цифр. Пароль не нужен: каждый раз — новый код.</p>
+        </div>
+        <div class="note note--info" id="nomail" hidden>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5M10 6.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div><p><b>Письма пока не уходят.</b> Почту для V2pn ещё настраивают, поэтому код придёт не в письме: его передаст владелец V2pn.</p>
+          <p>Запросите код здесь и <a href="https://github.com/Piwqust/V2pn/issues/new" rel="noopener">напишите владельцу</a>, что ждёте код. Код живёт 10 минут; если не успели, запросите новый.</p></div>
+        </div>
+        <div class="field">
+          <label for="email">Почта</label>
+          <input id="email" name="email" type="email" autocomplete="email" inputmode="email" spellcheck="false" maxlength="254" required>
+          <span class="field__error" hidden></span>
+        </div>
+        <button class="btn btn--primary" type="submit" id="send">Получить код</button>
+        <p class="form__status" role="status" aria-live="polite" id="email-status"></p>
+        <p class="hint">Новый провайдер? Войдите так же: после входа откроется заявка.</p>
+        <p class="hint"><button class="link-btn" type="button" id="to-password">Вход владельца V2pn по паролю</button></p>
+      </form>
+
+      <!-- the owner: email and password, no mail needed -->
+      <form id="step-password" class="stack stack--lg" novalidate hidden>
+        <div class="app__head">
+          <p class="app__crumb"><button class="link-btn" type="button" id="to-code">Вход провайдера по коду</button></p>
+          <h1>Вход владельца</h1>
+          <p>Почта и пароль владельца V2pn. Код на почту не нужен.</p>
+        </div>
+        <div class="field">
+          <label for="pw-email">Почта</label>
+          <input id="pw-email" name="username" type="email" autocomplete="username" inputmode="email" spellcheck="false" maxlength="254" required>
+          <span class="field__error" hidden></span>
+        </div>
+        <div class="field">
+          <label for="pw">Пароль</label>
+          <input id="pw" name="password" type="password" autocomplete="current-password" spellcheck="false" maxlength="200" required>
+          <span class="field__error" hidden></span>
+        </div>
+        <button class="btn btn--primary" type="submit" id="pw-go">Войти</button>
+        <p class="form__status" role="status" aria-live="polite" id="pw-status"></p>
+      </form>
+
+      <!-- step 2: the code -->
+      <form id="step-code" class="stack stack--lg" novalidate hidden>
+        <div class="app__head">
+          <p class="app__crumb"><button class="link-btn" type="button" id="back">Другая почта</button></p>
+          <h1>Код из письма</h1>
+          <p id="sent-to">Отправили код на вашу почту. Он действует 10 минут.</p>
+        </div>
+        <div class="field">
+          <label for="code">Код</label>
+          <input id="code" name="code" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="······" spellcheck="false" required>
+          <span class="field__error" hidden></span>
+        </div>
+        <button class="btn btn--primary" type="submit" id="verify">Войти</button>
+        <p class="form__status" role="status" aria-live="polite" id="code-status"></p>
+        <div class="row row--between">
+          <span class="hint" id="resend-wait">Новый код можно запросить через 30 с</span>
+          <button class="btn btn--secondary btn--sm" type="button" id="resend" hidden>Прислать новый код</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</main>
+
+<footer class="footer site-foot">
+  <div class="wrap">
+    <div class="footer__legal">
+      <span>&copy; 2026 V2pn &nbsp; <a href="https://github.com/Piwqust/V2pn/blob/v2pn/LICENSE">Лицензия GPL-3.0</a></span>
+      <span class="credits"><a href="../">Провайдерам</a> · <a href="../guide/">Руководство</a> · <a href="https://github.com/Piwqust/V2pn">Код на GitHub</a></span>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="../../assets/system.js"></script>
+<script type="module" src="../../assets/motion/motion.js"></script>
+<script type="module" src="../../assets/site/login.js"></script>
+</body>
+</html>

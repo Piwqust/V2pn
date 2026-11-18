@@ -497,6 +497,42 @@ public sealed partial class SidebarViewModel : ReactiveObject
 
     private static UIItem Ui => AppManager.Instance.Config.UiItem;
 
+    // V2pn: in a partner's tab the list holds that partner's subscriptions and their servers only (Common/Editions.cs);
+    // null in V2pn's tab, which lists everything, a partner's subscriptions included.
+    private HashSet<string>? _scope;
+
+    private void UpdateScope()
+    {
+        var partner = Editions.Partner;
+        _scope = partner == null
+            ? null
+            : _profiles.SubNavItems.Where(s => V2pnPartners.Instance.ForSubscription(s.Item)?.Id == partner.Id).Select(s => s.Id).ToHashSet(StringComparer.Ordinal);
+    }
+
+    private bool InScope(ProfileItemModel m) => _scope == null || (m.Subid != null && _scope.Contains(m.Subid));
+
+    private List<ProfileItemModel> Scoped(IEnumerable<ProfileItemModel> items) => _scope == null ? items.ToList() : items.Where(InScope).ToList();
+
+    private List<ProfileItemModel> Favorites => Scoped(_profiles.FavoriteItems);
+
+    // Nothing to list: no server at all, or in a partner's tab no subscription of that partner yet.
+    private bool NoServers => _scope == null ? _profiles.AllServersCount == 0 : _scope.Count == 0;
+
+    private string NoServersText => _scope != null && Editions.Partner is { } partner ? string.Format(L.TabNoServers, partner.Name) : L.NoServersYet;
+
+    /// <summary>Another tab opened: the list shows its subscriptions; one opened from another tab closes.</summary>
+    private void OnTabChanged()
+    {
+        UpdateScope();
+        if (OpenedSub is { } opened && _scope != null && !_scope.Contains(opened.Id))
+        {
+            // Setting it rebuilds the list.
+            OpenedSub = null;
+            return;
+        }
+        QueueRebuild();
+    }
+
     public static bool StatsEnabled => Ui.V2pnStats;
 
     public static SideSort CountrySort => Ui.V2pnSort is int v && Enum.IsDefined((SideSort)v) ? (SideSort)v : SideSort.Name;
@@ -540,6 +576,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
         V2pnLocks.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
         V2pnPartnerLive.Instance.Changed += () => Dispatcher.UIThread.Post(QueueRebuild);
         profiles.SubNavItems.CollectionChanged += (_, _) => QueueRebuild();
+        Editions.Changed += OnTabChanged;
         // Fastest server and the best ping per country are computed on rebuild.
         profiles.PingTestFinished.AsObservable()
             .ObserveOn(RxSchedulers.MainThreadScheduler)
@@ -630,10 +667,10 @@ public sealed partial class SidebarViewModel : ReactiveObject
     /// </summary>
     public List<ProfileItemModel> FastestCandidates()
     {
-        var all = _profiles.ProfileItems.ToList();
+        var all = Scoped(_profiles.ProfileItems);
         var recent = (Ui.V2pnRecent ?? []).ToHashSet();
         return ServerNames.DistinctConnections(all.Where(m => m.Delay > 0).OrderBy(m => m.Delay).Take(12)
-                .Concat(_profiles.FavoriteItems)
+                .Concat(Favorites)
                 .Concat(all.Where(m => recent.Contains(m.IndexId))))
             .GroupBy(m => m.IndexId)
             .Select(g => g.First())
@@ -642,7 +679,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
     }
 
     /// <summary>Starts a ping of every server in the list; does nothing while a run is already going.</summary>
-    public Task PingAllAsync() => Ping.IsTesting ? Task.CompletedTask : _profiles.PingProfilesAsync(_profiles.ProfileItems.ToList());
+    public Task PingAllAsync() => Ping.IsTesting ? Task.CompletedTask : _profiles.PingProfilesAsync(Scoped(_profiles.ProfileItems));
 
     /// <summary>Opens the Countries tab with only this country expanded; returns its row.</summary>
     public SideCountryRow? RevealCountry(string code)
@@ -707,7 +744,8 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private void Rebuild()
     {
         var rows = new List<SideRow>();
-        var all = _profiles.ProfileItems.ToList();
+        UpdateScope();
+        var all = Scoped(_profiles.ProfileItems);
 
         if (Search.IsNotEmpty())
         {
@@ -762,18 +800,18 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private void BuildHome(List<SideRow> rows, List<ProfileItemModel> all)
     {
         // Nothing added yet: "fastest server" and favorites hints would point at servers that don't exist.
-        if (_profiles.AllServersCount == 0 && _profiles.FavoriteItems.Count == 0)
+        if (NoServers && Favorites.Count == 0)
         {
             _pingScope = [];
             rows.Add(new SideHeaderRow(L.TabHome));
-            rows.Add(new SideHintRow(L.NoServersYet));
+            rows.Add(new SideHintRow(NoServersText));
             rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, L.SubsEmptyAction));
             return;
         }
-        var everything = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).Select(g => g.First()).ToList();
+        var everything = all.Concat(Favorites).GroupBy(m => m.IndexId).Select(g => g.First()).ToList();
         _pingScope = everything;
         var byId = everything.ToDictionary(m => m.IndexId);
-        var favorites = _profiles.FavoriteItems.ToList();
+        var favorites = Favorites;
         var look = Appearance.Current;
 
         // The sections in the order chosen on the Appearance page; one taken off it is not shown.
@@ -901,7 +939,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private void BuildStats(List<SideRow> rows, List<ProfileItemModel> all)
     {
         _pingScope = [];
-        var byId = all.Concat(_profiles.FavoriteItems).GroupBy(m => m.IndexId).ToDictionary(g => g.Key, g => g.First());
+        var byId = all.Concat(Favorites).GroupBy(m => m.IndexId).ToDictionary(g => g.Key, g => g.First());
         var usage = ServerUsageManager.Instance.All().Where(t => byId.ContainsKey(t.IndexId)).ToList();
         var days = ServerUsageManager.Instance.LastDays(14);
         var total = days.Sum(d => d.Seconds);
@@ -1030,7 +1068,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
         if (groups.Count == 0)
         {
-            rows.Add(new SideHintRow(_profiles.AllServersCount == 0 ? L.NoServersYet : L.SubEmpty));
+            rows.Add(new SideHintRow(NoServers ? NoServersText : L.SubEmpty));
         }
     }
 
@@ -1162,11 +1200,11 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
 
         _pingScope = [];
-        var subs = _profiles.SubNavItems.ToList();
+        var subs = _profiles.SubNavItems.Where(s => _scope == null || _scope.Contains(s.Id)).ToList();
         if (subs.Count == 0)
         {
             rows.Add(new SideHeaderRow(L.TabSubscriptions));
-            rows.Add(new SideHintRow(L.SubsEmpty));
+            rows.Add(new SideHintRow(_scope == null ? L.SubsEmpty : NoServersText));
             rows.Add(new SideActionRow(SideActionKind.AddSubscription, L.AddSubscription, L.SubsEmptyAction));
             return;
         }

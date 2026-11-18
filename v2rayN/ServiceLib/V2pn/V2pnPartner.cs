@@ -19,6 +19,9 @@ public sealed record V2pnPartnerListing(
 {
     public bool Allows(string grant) => Grants.Contains(grant);
 
+    /// <summary>Which key signed the index this listing came from: a hub-signed listing never carries a reviewed grant.</summary>
+    public V2pnPartnerSigner Signer { get; init; } = V2pnPartnerSigner.Root;
+
     /// <summary>
     /// "reviewed": the SHA-256 of each file of the pack the owner of V2pn read by hand (routing.json, transport.json,
     /// core.json). A routing, transport or core grant counts only for the file with exactly this hash.
@@ -36,6 +39,58 @@ public sealed record V2pnPartnerIndex(IReadOnlyList<V2pnPartnerListing> Partners
 
     /// <summary>The partner whose domains hold the host of <paramref name="subscriptionUrl"/>; the first one listed when several do.</summary>
     public V2pnPartnerListing? ForUrl(string? subscriptionUrl) => Partners.FirstOrDefault(p => V2pnPartnerTrust.DomainAllowed(p, subscriptionUrl));
+
+    /// <summary>Which key signed it; a merged index (<see cref="Merge"/>) says Hub when the hub's index is in it.</summary>
+    public V2pnPartnerSigner Signer { get; init; } = V2pnPartnerSigner.Root;
+
+    /// <summary>"published" of the index; the oldest time when it has none.</summary>
+    public DateTimeOffset Published { get; init; } = DateTimeOffset.MinValue;
+
+    /// <summary>
+    /// The partners V2pn goes by when it has the hub's index and a root-signed one. The hub's index is the main one: every
+    /// partner it lists comes from it, whatever the root-signed index says of the same id, so a root-signed copy attached
+    /// to an older GitHub release can never shadow what a provider changed on the hub since. The root-signed index adds
+    /// the partners the hub does not list, unless one claims a domain of a hub partner (one domain, one partner): those
+    /// are the partners the owner signs on his computer, the only way to the grants he reviews by hand. Either index
+    /// alone is taken as it is.
+    /// </summary>
+    public static V2pnPartnerIndex? Merge(V2pnPartnerIndex? hub, V2pnPartnerIndex? root)
+    {
+        if (hub == null || root == null)
+        {
+            return hub ?? root;
+        }
+        var partners = hub.Partners.ToList();
+        var problems = hub.Problems.Concat(root.Problems).ToList();
+        foreach (var listing in root.Partners)
+        {
+            if (hub.Get(listing.Id) != null)
+            {
+                continue;
+            }
+            if (hub.Partners.FirstOrDefault(h => V2pnPartnerTrust.DomainsOverlap(h.Domains, listing.Domains)) is { } clash)
+            {
+                problems.Add($"{listing.Id}: the root-signed index gives it a domain of {clash.Id}, which the hub lists; left out");
+                continue;
+            }
+            partners.Add(listing);
+        }
+        return new V2pnPartnerIndex(partners, problems)
+        {
+            Signer = V2pnPartnerSigner.Hub,
+            Published = hub.Published > root.Published ? hub.Published : root.Published,
+        };
+    }
+}
+
+/// <summary>The kind of key that signed a partner index.</summary>
+public enum V2pnPartnerSigner
+{
+    /// <summary>The owner's root key (tools/partner.cs publish, on his computer): every grant counts.</summary>
+    Root,
+
+    /// <summary>The V2pn Hub's key (on the server): the reviewed grants (<see cref="V2pnPartnerGrants.Reviewed"/>) are dropped.</summary>
+    Hub,
 }
 
 /// <summary>A file of the pack (logo, artwork, reviewed file), pinned by size and SHA-256 in partner.json.</summary>
@@ -104,14 +159,21 @@ public static class V2pnPartnerGrants
     public const string Core = "core";
 
     public static readonly IReadOnlyList<string> All = [Edition, Account, Actions, Lock, Routing, Transport, Core];
+
+    /// <summary>
+    /// The grants of files the owner of V2pn reads by hand (their hashes in "reviewed"): taken only from an index signed
+    /// with a root key, never from the hub's. The hub drops them too (hub/lib/publish.mjs REVIEWED_GRANTS).
+    /// </summary>
+    public static readonly IReadOnlyList<string> Reviewed = [Routing, Transport, Core];
 }
 
 /// <summary>Reads and checks the partner index and the packs it pins. Pure: no network, no files, no clock but the one passed in.</summary>
 public static class V2pnPartnerTrust
 {
     /// <summary>
-    /// The index partner builds read (V2pnEdition). Its own name, so copies of 1.2.1 and older, which dressed plain V2pn
-    /// in a partner's look, never see a partner again: they read <see cref="LegacyIndexFile"/>.
+    /// The index V2pn reads for the partners a person came from (V2pnEdition). Its own name, so copies of 1.2.1 and older,
+    /// which dressed V2pn in a partner's look by the selected server, never see a partner again: they read
+    /// <see cref="LegacyIndexFile"/>.
     /// </summary>
     public const string IndexFile = "partner-index.json";
 
@@ -146,14 +208,32 @@ public static class V2pnPartnerTrust
     /// The index when its signature is one of <paramref name="rootKeys"/> over these exact bytes and it parses. An entry
     /// that does not parse is left out and named in <see cref="V2pnPartnerIndex.Problems"/>; one partner twice refuses the whole index.
     /// </summary>
-    public static V2pnPartnerIndex? ReadIndex(byte[]? json, string? signature, IEnumerable<string> rootKeys, out string error)
+    public static V2pnPartnerIndex? ReadIndex(byte[]? json, string? signature, IEnumerable<string> rootKeys, out string error) =>
+        ReadIndex(json, signature, rootKeys, [], out error);
+
+    /// <summary>
+    /// The index when its signature is one of <paramref name="rootKeys"/> (every grant counts) or one of
+    /// <paramref name="hubKeys"/> (the V2pn Hub's: the reviewed grants and the hashes of reviewed files are dropped and
+    /// named in <see cref="V2pnPartnerIndex.Problems"/>, the rest of each listing stands). A root key is tried first, so a
+    /// key in both lists counts as a root key. <see cref="V2pnPartnerIndex.Signer"/> and every listing say which it was.
+    /// </summary>
+    public static V2pnPartnerIndex? ReadIndex(byte[]? json, string? signature, IEnumerable<string> rootKeys, IEnumerable<string> hubKeys, out string error)
     {
         if (json is not { Length: > 0 and <= MaxIndexBytes })
         {
             error = "The partner index is missing or larger than 256 KB.";
             return null;
         }
-        if (!V2pnManifest.VerifySignature(json, signature, rootKeys))
+        V2pnPartnerSigner signer;
+        if (V2pnManifest.VerifySignature(json, signature, rootKeys))
+        {
+            signer = V2pnPartnerSigner.Root;
+        }
+        else if (V2pnManifest.VerifySignature(json, signature, hubKeys))
+        {
+            signer = V2pnPartnerSigner.Hub;
+        }
+        else
         {
             error = "The partner index is not signed by V2pn.";
             return null;
@@ -181,10 +261,28 @@ public static class V2pnPartnerTrust
                     error = $"The partner index lists {listing.Id} twice.";
                     return null;
                 }
-                partners.Add(listing);
+                if (signer == V2pnPartnerSigner.Hub)
+                {
+                    // The server's key may be taken from the server; what the owner reads by hand needs his own key.
+                    var dropped = listing.Grants.Where(V2pnPartnerGrants.Reviewed.Contains).ToList();
+                    if (dropped.Count > 0 || listing.ReviewedFiles.Count > 0)
+                    {
+                        problems.Add($"{listing.Id}: {string.Join(", ", dropped.Concat(listing.ReviewedFiles.Keys).Distinct())} left out: only the root key grants what is reviewed by hand");
+                    }
+                    listing = listing with
+                    {
+                        Grants = listing.Grants.Where(g => !V2pnPartnerGrants.Reviewed.Contains(g)).ToList(),
+                        Reviewed = new Dictionary<string, string>(),
+                    };
+                }
+                partners.Add(listing with { Signer = signer });
             }
             error = string.Empty;
-            return new V2pnPartnerIndex(partners, problems);
+            var published = root["published"] is JsonValue value && value.TryGetValue<string>(out var text)
+                            && DateTimeOffset.TryParse(text, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var time)
+                ? time
+                : DateTimeOffset.MinValue;
+            return new V2pnPartnerIndex(partners, problems) { Signer = signer, Published = published };
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
         {
@@ -345,6 +443,16 @@ public static class V2pnPartnerTrust
             }
         }
         return false;
+    }
+
+    /// <summary>True when a host could be on both lists of domains ("a.example.com" and "*.example.com" overlap).</summary>
+    public static bool DomainsOverlap(IEnumerable<string> a, IEnumerable<string> b)
+    {
+        static string Base(string d) => d.StartsWith("*.", StringComparison.Ordinal) ? d[2..] : d;
+        static bool Covers(string wildcard, string other) =>
+            wildcard.StartsWith("*.", StringComparison.Ordinal) && Base(other).EndsWith("." + wildcard[2..], StringComparison.Ordinal);
+        var second = b.ToList();
+        return a.Any(x => second.Any(y => x == y || Covers(x, y) || Covers(y, x)));
     }
 
     public static bool AssetMatches(V2pnPartnerAsset asset, byte[] content) =>

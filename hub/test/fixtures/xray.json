@@ -1,0 +1,80 @@
+[
+  {
+    "remarks": "NL-1",
+    "outbounds": [
+      {
+        "tag": "proxy",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "nl1.kestrel.example",
+              "port": 443,
+              "users": [
+                {
+                  "id": "x"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "security": "reality"
+        }
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom"
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      }
+    ]
+  },
+  {
+    "remarks": "NL-2",
+    "outbounds": [
+      {
+        "tag": "proxy",
+        "protocol": "vless",
+        "settings": {
+          "vnext": [
+            {
+              "address": "nl2.kestrel.example",
+              "port": 443,
+              "users": [
+                {
+                  "id": "x"
+                }
+              ]
+            }
+          ]
+        },
+        "streamSettings": {
+          "security": "reality"
+        }
+      },
+      {
+        "tag": "proxy2",
+        "protocol": "shadowsocks",
+        "settings": {
+          "servers": [
+            {
+              "address": "ss.kestrel.example",
+              "port": 8388
+            }
+          ]
+        }
+      },
+      {
+        "tag": "direct",
+        "protocol": "freedom"
+      },
+      {
+        "tag": "block",
+        "protocol": "blackhole"
+      }
+    ]
+  }
+]

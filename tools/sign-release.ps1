@@ -6,12 +6,17 @@
 .DESCRIPTION
   .github/workflows/v2pn-release.yml builds the Windows and macOS packages for a pushed tag and
   attaches them to its run. This script downloads them, writes and signs release.json with the
-  key in ~/.v2pn/release-signing-key.pem (tools/manifest.cs), publishes the partners
-  (tools/partner.cs: partner-index.json for partner builds, an empty partners.json for 1.2.1 and
-  older), makes each partner's own build from the signed standard packages
-  (tools/partner-packages.cs: V2pn-<id>-windows-x64.zip and so on, with .sha256, not in
-  release.json), and creates the DRAFT release with every file. Nothing becomes visible to
-  installed copies until you press Publish.
+  key in ~/.v2pn/release-signing-key.pem (tools/manifest.cs), publishes the root-signed partners
+  (tools/partner.cs: partner-index.json of partners/<id>, an empty partners.json for 1.2.1 and
+  older), and creates the DRAFT release with every file. Nothing becomes visible to installed
+  copies until you press Publish. There are no partner builds: a provider's people get plain
+  V2pn and come from the provider by its v2pn:// link or a sign-in by code.
+
+  The root-signed partner-index.json on the release never shadows the V2pn Hub's index
+  (v2pn.angleford.co/partners): V2pn goes by the hub's entry for every partner the hub lists,
+  whatever the dates, and takes from this one only the partners the hub does not list
+  (V2pnPartnerIndex.Merge). It is the fallback when the hub cannot be reached, and the only way
+  to the grants the owner reviews by hand (routing, transport, core).
 
   Use it when the key is not stored in the repository's "release" environment. If it is, the
   workflow signs by itself and this script is not needed.
@@ -70,7 +75,7 @@ Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $
 # The one-command installers go with every release: .../releases/latest/download/install.ps1 (Windows), install.sh (macOS)
 Copy-Item (Join-Path $PSScriptRoot 'install.ps1'), (Join-Path $PSScriptRoot 'install.sh') $dir
 # The partners (partners/<id>), signed with ~/.v2pn/partner-root-key.pem: partner-index.json and partner-<id>.zip each,
-# which partner builds read from the latest release, and partners.json with no partner in it, which V2pn 1.2.1 and
+# which V2pn reads from the latest release for partners' tabs, and partners.json with no partner in it, which V2pn 1.2.1 and
 # older read: they then drop the partner they kept and stay plain V2pn. The summary says what changed since the index
 # of the release before.
 $previous = Join-Path ([IO.Path]::GetTempPath()) "v2pn-partners-before-$Version"
@@ -87,8 +92,6 @@ foreach ($required in 'partner-index.json', 'partner-index.json.sig', 'partners.
 }
 Get-ChildItem $partnersOut -File | Move-Item -Destination $dir
 Remove-Item -Recurse -Force $partnersOut, $previous
-# Each partner's own build: the signed standard packages with v2pn-partner.txt. After release.json, which never lists them.
-Invoke-Checked $dotnet @('run', (Join-Path $PSScriptRoot 'partner-packages.cs'), '--', $dir, '--partners', (Join-Path $repo 'partners'))
 
 $notesFile = Join-Path $dir 'notes.md'
 [IO.File]::WriteAllText($notesFile, $notes)

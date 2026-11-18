@@ -2,7 +2,10 @@ using v2rayN.Desktop.Common;
 
 namespace v2rayN.Desktop.Views;
 
-// v2pn:// links from a provider's cabinet or bot (V2pnDeepLink): asked about first, then added like a pasted subscription.
+// v2pn:// links from a provider's cabinet, bot or page (V2pnDeepLink): asked about first, then added like a pasted
+// subscription. A link with partner=<id> also makes the person come from that provider, with its tab, when the signed
+// index lists it and the subscription is on its domains (V2pnPartners.ComeFromLinkAsync); otherwise it is just a
+// subscription.
 public partial class MainWindow
 {
     private bool _askingAboutLink;
@@ -73,11 +76,14 @@ public partial class MainWindow
             if (subs.FirstOrDefault(s => string.Equals(s.Url?.Trim(), link.SubscriptionUrl.Trim(), StringComparison.Ordinal)) is { } known)
             {
                 ShowToast(ToastKind.Info, string.Format(L.LinkAlreadyAdded, ViewModels.SideSubRow.NameOf(known)));
+                // The person added it before and now comes by its provider's own link: that is coming from it.
+                await ComeFromProviderLinkAsync(link);
                 return;
             }
             var host = Utils.TryUri(link.SubscriptionUrl)?.Host ?? link.SubscriptionUrl;
             // A provider V2pn already vouches for says so; an unknown one gets the general words.
-            var partner = V2pnPartners.Instance.ListingFor(link.SubscriptionUrl);
+            var partner = V2pnPartners.Instance.ListingFor(link.SubscriptionUrl)
+                          ?? V2pnPartners.Instance.ListingForLink(link.Partner, link.SubscriptionUrl);
             var body = partner != null
                 ? string.Format(L.LinkAddBodyPartner, link.Name ?? host, host, partner.Name)
                 : string.Format(L.LinkAddBody, link.Name ?? host, host);
@@ -85,11 +91,38 @@ public partial class MainWindow
             if (answer == ButtonResult.Yes)
             {
                 await AddSubscriptionLinksAsync([link.SubscriptionUrl]);
+                await ComeFromProviderLinkAsync(link);
             }
         }
         finally
         {
             _askingAboutLink = false;
+        }
+    }
+
+    /// <summary>
+    /// A link with partner=&lt;id&gt;, after its subscription is here: when V2pn's signed index says the subscription is
+    /// that provider's, the person came from it and its tab opens (as after a sign-in by code; the pack comes with the
+    /// refresh). Anything else stays just a subscription, with nothing said.
+    /// </summary>
+    private async Task ComeFromProviderLinkAsync(V2pnAddLink link)
+    {
+        if (link.Partner == null)
+        {
+            return;
+        }
+        try
+        {
+            if (await Task.Run(() => V2pnPartners.Instance.ComeFromLinkAsync(link.Partner, link.SubscriptionUrl)) is not { } listing)
+            {
+                return;
+            }
+            V2pnEdition.Instance.Open(listing.Id);
+            _ = Task.Run(() => V2pnPartners.Instance.RefreshAsync());
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog("V2pn provider link", ex);
         }
     }
 }

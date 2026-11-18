@@ -429,3 +429,11 @@ v2rayN/TestResults/
 
 # V2pn: what tools/partner.cs publish writes; it goes out with a release, not into git.
 partners/out/
+
+# V2pn's website (site/): screenshots and the design skill's check output stay local; its deal history is kept.
+site/shots/
+site/.taste-skill/*
+!site/.taste-skill/*history.json
+!site/.taste-skill/names.json
+site/*/.taste-skill/
+!site/.taste-skill/waivers.json

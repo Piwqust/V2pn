@@ -182,8 +182,8 @@ public sealed class AppearanceView : UserControl
 
     private void ShowPartnerNote()
     {
-        _partnerNote.IsVisible = Editions.Partner != null;
-        _partnerNote.Text = Editions.Partner is { } partner ? string.Format(L.ApPartnerNote, partner.Name) : string.Empty;
+        _partnerNote.IsVisible = Editions.Look != null;
+        _partnerNote.Text = Editions.Look is { } partner ? string.Format(L.ApPartnerNote, partner.Name) : string.Empty;
     }
 
     private static int Index<T>(T[] ids, T value, int fallback)

@@ -1,0 +1,138 @@
+[
+  {
+    "file": "apple.svg",
+    "icon": "logos:apple",
+    "name": "Apple",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://www.apple.com/"
+  },
+  {
+    "file": "github.svg",
+    "icon": "logos:github-icon",
+    "name": "GitHub",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://github.com/"
+  },
+  {
+    "file": "image.svg",
+    "icon": "file:file-type-image",
+    "name": "Image",
+    "kind": "colour",
+    "source": "@iconify-json/vscode-icons@1.2.30",
+    "author": "Roberto Huertas",
+    "licence": "MIT",
+    "url": "https://github.com/vscode-icons/vscode-icons",
+    "trademark": false
+  },
+  {
+    "file": "json.svg",
+    "icon": "file:file-type-json",
+    "name": "JSON",
+    "kind": "colour",
+    "source": "@iconify-json/vscode-icons@1.2.30",
+    "author": "Roberto Huertas",
+    "licence": "MIT",
+    "url": "https://github.com/vscode-icons/vscode-icons",
+    "trademark": false
+  },
+  {
+    "file": "telegram.svg",
+    "icon": "logos:telegram",
+    "name": "Telegram",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://telegram.org/"
+  },
+  {
+    "file": "ui-download.svg",
+    "icon": "ui:download",
+    "name": "Download",
+    "kind": "line",
+    "source": "@iconify-json/lucide@1.2.100",
+    "author": "Lucide Contributors",
+    "licence": "ISC",
+    "url": "https://github.com/lucide-icons/lucide",
+    "trademark": false
+  },
+  {
+    "file": "ui-file-archive.svg",
+    "icon": "ui:file-archive",
+    "name": "File Archive",
+    "kind": "line",
+    "source": "@iconify-json/lucide@1.2.100",
+    "author": "Lucide Contributors",
+    "licence": "ISC",
+    "url": "https://github.com/lucide-icons/lucide",
+    "trademark": false
+  },
+  {
+    "file": "ui-file-check.svg",
+    "icon": "ui:file-check",
+    "name": "File Check",
+    "kind": "line",
+    "source": "@iconify-json/lucide@1.2.100",
+    "author": "Lucide Contributors",
+    "licence": "ISC",
+    "url": "https://github.com/lucide-icons/lucide",
+    "trademark": false
+  },
+  {
+    "file": "ui-folder.svg",
+    "icon": "ui:folder",
+    "name": "Folder",
+    "kind": "line",
+    "source": "@iconify-json/lucide@1.2.100",
+    "author": "Lucide Contributors",
+    "licence": "ISC",
+    "url": "https://github.com/lucide-icons/lucide",
+    "trademark": false
+  },
+  {
+    "file": "ui-package.svg",
+    "icon": "ui:package",
+    "name": "Package",
+    "kind": "line",
+    "source": "@iconify-json/lucide@1.2.100",
+    "author": "Lucide Contributors",
+    "licence": "ISC",
+    "url": "https://github.com/lucide-icons/lucide",
+    "trademark": false
+  },
+  {
+    "file": "windows.svg",
+    "icon": "logos:microsoft-windows-icon",
+    "name": "Windows",
+    "kind": "colour",
+    "source": "gilbarbara/logos@d6960edc1b7309d392c76e40d3a320df7f9ff85c",
+    "author": "Gil Barbara",
+    "licence": "CC0-1.0",
+    "url": "https://github.com/gilbarbara/logos",
+    "trademark": true,
+    "markUrl": "https://www.microsoft.com/windows"
+  },
+  {
+    "file": "zip.svg",
+    "icon": "file:file-type-zip",
+    "name": "ZIP archive",
+    "kind": "colour",
+    "source": "@iconify-json/vscode-icons@1.2.30",
+    "author": "Roberto Huertas",
+    "licence": "MIT",
+    "url": "https://github.com/vscode-icons/vscode-icons",
+    "trademark": false
+  }
+]

@@ -149,6 +149,17 @@ public class UIItem
 
     // The walkthrough step to come back to after a restart it caused (a language switch, a move from v2rayN).
     public int V2pnOnboardingStep { get; set; }
+
+    // The partners the person came from by a sign-in by code or a provider's link; each gets a tab in the title bar
+    // (V2pnEdition).
+    public List<string>? V2pnCameFrom { get; set; }
+
+    // The title bar's tab chosen last: null never chosen, "" V2pn's, a partner id that partner's (V2pnEdition).
+    public string? V2pnTab { get; set; }
+
+    // The partner of the v2pn-partner.txt a partner's build of V2pn 1.2 carried, moved here at the first start of 1.3:
+    // the person came from it for good, as the file said (V2pnEdition.Marker). Nothing writes a new one.
+    public string? V2pnMarker { get; set; }
 }
 
 public class ConstItem

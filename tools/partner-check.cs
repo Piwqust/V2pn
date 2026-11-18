@@ -8,11 +8,11 @@
 //
 //   dotnet run tools/partner-check.cs -- <subscription link> [--index <folder or releases URL>] [--key <public key>]
 //       A live subscription against the published index: downloads the subscription as V2pn would and reads its
-//       headers, takes partner-index.json from where releases come from (or --index: partners/out, or a URL whose
+//       headers, takes partner-index.json from where the app does (V2pnPartnerSources: the hub, then GitHub; or --index: partners/out, or a URL whose
 //       latest/download/ has it), checks its signature against the built-in keys (or --key), finds the partner whose
-//       domains hold the link, then downloads and checks its zip as that partner's own build of V2pn does (plain V2pn
-//       takes none), then asks the partner API (account with the token, status, servers, and recommend and card for
-//       the buttons that use them) if the pack names one.
+//       domains hold the link, then downloads and checks its zip as V2pn does for a person who came from that partner,
+//       in that partner's tab (a person who came from no partner takes none), then asks the partner API (account with
+//       the token, status, servers, and recommend and card for the buttons that use them) if the pack names one.
 //
 // Every step prints OK, a note, or FAIL with what is wrong; the exit code is 0 only when the look will show and every
 // reviewed file is used.
@@ -50,7 +50,9 @@ void Note(string text) => Console.WriteLine($"  --   {text}");
 var today = DateOnly.FromDateTime(DateTime.UtcNow);
 var offline = Directory.Exists(target);
 var rootKeys = Option("--key") is { } testKey ? [testKey] : V2pnInfo.PartnerKeys;
-Console.WriteLine($"V2pn {V2pnInfo.Version}, {rootKeys.Count} partner root key(s){(Option("--key") != null ? " (--key)" : " built in")}");
+// The V2pn Hub's key too: what the hub publishes on v2pn.angleford.co must pass here as in the app.
+IReadOnlyList<string> hubKeys = Option("--key") != null ? [] : V2pnInfo.PartnerHubKeys;
+Console.WriteLine($"V2pn {V2pnInfo.Version}, {rootKeys.Count} partner root key(s) and {hubKeys.Count} hub key(s){(Option("--key") != null ? " (--key)" : " built in")}");
 
 V2pnPartner? partner = null;
 SubPanelInfo? panel = null;
@@ -162,10 +164,10 @@ async Task<V2pnPartner?> CheckPublished(string subscription)
 {
     Console.WriteLine("partner index");
     var index = Option("--index");
-    // As the build of <edition> reads it; plain V2pn reads no index at all.
-    V2pnPartners Manager(string edition)
+    // As a person who came from <cameFrom> (its link or a sign-in), in that partner's tab; a person who came from no partner reads no index at all.
+    V2pnPartners Manager(string cameFrom)
     {
-        var manager = new V2pnPartners(rootKeys, () => root, edition)
+        var manager = new V2pnPartners(rootKeys, () => root, new V2pnEdition(null, [cameFrom], cameFrom), hubKeys)
         {
             SubscriptionUrls = () => Task.FromResult<IReadOnlyList<string?>>([subscription]),
         };
@@ -186,7 +188,7 @@ async Task<V2pnPartner?> CheckPublished(string subscription)
         }
         return manager;
     }
-    // The index first, as no partner's build (nothing is downloaded), to find whose domains hold the link.
+    // The index first, as from a partner no one lists (nothing is downloaded), to find whose domains hold the link.
     var probe = Manager("index-probe");
     Note($"from {string.Join(", ", probe.Sources)}");
     await probe.RefreshAsync(forceIndex: true);
@@ -195,23 +197,23 @@ async Task<V2pnPartner?> CheckPublished(string subscription)
         Bad(probe.IndexError ?? "no index");
         return null;
     }
-    Ok($"{V2pnPartnerTrust.IndexFile}: signed by the root key, {probe.Index.Partners.Count} partner(s): {string.Join(", ", probe.Index.Partners.Select(p => p.Id))}");
+    Ok($"{V2pnPartnerTrust.IndexFile}: {string.Join(", ", probe.Index.Partners.Select(p => $"{p.Id} ({p.Signer.ToString().ToLowerInvariant()} key)"))}");
     foreach (var problem in probe.Index.Problems)
     {
         Bad($"index: {problem}");
     }
     if (probe.Index.ForUrl(subscription) is not { } whose)
     {
-        Bad($"no partner lists {Utils.TryUri(subscription)?.IdnHost ?? subscription}: no partner's build takes this subscription as its partner's");
+        Bad($"no partner lists {Utils.TryUri(subscription)?.IdnHost ?? subscription}: in no partner's tab is this subscription that partner's");
         return null;
     }
-    Note($"checked as the build of {whose.Id} (V2pn-{whose.Id}); plain V2pn shows nothing of a partner");
+    Note($"checked in the tab of {whose.Id}, as for a person who came from it; V2pn's tab shows nothing of a partner");
     var manager = Manager(whose.Id);
     await manager.RefreshAsync(forceIndex: true);
     var listing = manager.ListingFor(subscription);
     if (listing == null)
     {
-        Bad(manager.IndexError ?? $"the build of {whose.Id} does not take {subscription}");
+        Bad(manager.IndexError ?? $"the tab of {whose.Id} does not take {subscription}");
         return null;
     }
     Ok($"{listing.Name} ({listing.Id}): domains {string.Join(", ", listing.Domains)}, grants {string.Join(", ", listing.Grants)}, until {listing.Until:yyyy-MM-dd}");

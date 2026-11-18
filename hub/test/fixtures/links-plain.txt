@@ -1,0 +1,13 @@
+#profile-title: base64:0JrQtdGB0YLRgNC10LsgVlBO
+#subscription-userinfo: upload=1073741824; download=11811160064; total=53687091200; expire=1801353600
+vless://11111111-2222-3333-4444-555555555555@fi1.kestrel.example:443?security=reality&type=tcp#%F0%9F%87%AB%F0%9F%87%AE%20Finland
+vless://11111111-2222-3333-4444-555555555555@[2001:db8::10]:8443?security=reality#IPv6
+vmess://eyJ2IjoiMiIsInBzIjoiREUtMSIsImFkZCI6ImRlMS5rZXN0cmVsLmV4YW1wbGUiLCJwb3J0IjoiNDQzIiwiaWQiOiIxMTExMTExMS0yMjIyLTMzMzMtNDQ0NC01NTU1NTU1NTU1NTUiLCJuZXQiOiJ3cyIsInRscyI6InRscyJ9
+trojan://pass@tr1.kestrel.example:443?sni=tr1.kestrel.example#Trojan
+ss://Y2hhY2hhMjAtaWV0Zi1wb2x5MTMwNTpwYXNz@ss1.kestrel.example:8388#SS
+ss://YWVzLTI1Ni1nY206c2VjcmV0QG5sMS5rZXN0cmVsLmV4YW1wbGU6ODM4OA==#Legacy
+hy2://pass@hy1.kestrel.example:8443?sni=hy1.kestrel.example#Hy2
+hysteria2://pass@hy2.kestrel.example:8443#Hy2b
+tuic://uuid:pass@tu1.kestrel.example:443?congestion_control=bbr#TUIC
+wireguard://key@wg1.kestrel.example:51820?publickey=x#WG
+ssr://ZXhhbXBsZQ

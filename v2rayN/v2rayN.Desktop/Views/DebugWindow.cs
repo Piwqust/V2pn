@@ -4,13 +4,13 @@ using v2rayN.Desktop.Common;
 namespace v2rayN.Desktop.Views;
 
 /// <summary>
-/// Every scenario of a partner's build of V2pn (and a few of the app's own) at a click, for trying them without a
-/// provider, a broken site or a week of waiting: a made-up partner standing in for the build's own, any subscription
-/// counted as its, the window before its pack came, with or without its background, the partner leaving, light and
-/// dark, every window size, what its panel says laid over, links, the walkthrough and the notices. In plain V2pn (no
-/// v2pn-partner.txt) there is no partner to make up: the buttons say so and the window stays plain, which is what
-/// tools/edition-matrix.ps1 shoots for plain V2pn. Development builds and developer mode only. Stays open beside the
-/// window; the window shows the result at once.
+/// Every scenario of the partners' tabs (and a few of the app's own) at a click, for trying them without a provider, a
+/// broken site or a week of waiting: a made-up partner the person "came from" until V2pn closes (so it gets a tab; for a
+/// person who already came from a partner, by a marker or as tools/sandbox.ps1 -Partner records it, it stands in for that
+/// partner), any subscription counted as its, V2pn's tab or the
+/// partner's, with or without its background, the partner leaving, light and dark, every window size, what its panel
+/// says laid over, links, the walkthrough and the notices. tools/edition-matrix.ps1 drives it. Development builds and
+/// developer mode only. Stays open beside the window; the window shows the result at once.
 /// </summary>
 public sealed class DebugWindow : Window
 {
@@ -71,33 +71,35 @@ public sealed class DebugWindow : Window
             var accent = Color.TryParse(_testAccent.Text?.Trim(), out _) ? _testAccent.Text!.Trim().ToUpperInvariant() : null;
             var folder = _themeFolder.Text?.Trim();
             var name = (_testName.Text ?? "Тест-провайдер").Trim();
+            string? themeId = null;
             // A theme folder's own name, so the shots show the provider they are of.
             if (Directory.Exists(folder) && File.Exists(Path.Combine(folder, "partner.json")))
             {
                 try
                 {
-                    if (System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(folder, "partner.json")))?["name"]?.GetValue<string>() is { Length: > 0 } own)
+                    var pack = System.Text.Json.Nodes.JsonNode.Parse(File.ReadAllText(Path.Combine(folder, "partner.json")));
+                    if (pack?["name"]?.GetValue<string>() is { Length: > 0 } own)
                     {
                         name = own;
                     }
+                    themeId = pack?["id"]?.GetValue<string>();
                 }
                 catch (Exception ex) when (ex is System.Text.Json.JsonException or InvalidOperationException or IOException)
                 {
                     Logging.SaveLog("V2pn debug theme", ex);
                 }
             }
-            if (V2pnEdition.PartnerId is not { } buildPartner)
-            {
-                _main.DebugToast(ToastKind.Warning, $"Это обычный V2pn: партнёров в нём нет. Сборка партнёра — с {V2pnEdition.FileName} рядом с программой.");
-                return;
-            }
-            if (V2pnPartners.Instance.AddDebugPartner(buildPartner, name, accent, Directory.Exists(folder) ? folder : null) == null)
+            // The partner the person came from when there is one (tools/sandbox.ps1 -Partner records it), else the theme's
+            // id: the tab is the one the person would have.
+            var id = V2pnEdition.Instance.Marker ?? V2pnEdition.Instance.CameFrom.FirstOrDefault(c => !V2pnPartners.Instance.IsDebug(c))
+                ?? (V2pnPartnerTrust.ValidId(themeId ?? string.Empty) ? themeId! : "test-provider");
+            if (V2pnPartners.Instance.AddDebugPartner(id, name, accent, Directory.Exists(folder) ? folder : null) == null)
             {
                 _main.DebugToast(ToastKind.Warning, "Тестовый партнёр есть только в сборке разработчика или в режиме разработчика.");
                 return;
             }
             // The buttons below act on it next.
-            _pick = buildPartner;
+            _pick = id;
             _partnersKey = string.Empty;
             Refresh();
         });
@@ -119,7 +121,7 @@ public sealed class DebugWindow : Window
         _partners.ItemTemplate = new Avalonia.Controls.Templates.FuncDataTemplate<V2pnPartner>((p, _) => new TextBlock { Text = p == null ? "" : $"{p.Name} ({p.Id}{(V2pnPartners.Instance.IsDebug(p.Id) ? ", тестовый" : "")})" });
 
         return Card("Партнёры",
-            Row("Тестовый партнёр вместо партнёра сборки (без API, только в памяти)", _testName, _testAccent, add),
+            Row("Тестовый партнёр с вкладкой (без API, только в памяти; с меткой — вместо партнёра метки)", _testName, _testAccent, add),
             Row("Тема тестового партнёра (необязательно)", _themeFolder),
             Row("Партнёр для действий ниже", _partners),
             Row("Подписка", _subs, link, unlink),
@@ -137,10 +139,9 @@ public sealed class DebugWindow : Window
     {
         // The debug window speaks Russian whatever the app's language, so tools/edition-matrix.ps1 finds its buttons.
         return Card("Вид",
-            Row("Партнёр в окне",
-                Mark(Action("как в сборке", () => Editions.DebugShow(null)), () => !Editions.IsForced),
-                Mark(Action("показать партнёра", ShowSelected), () => Editions.IsForced && Editions.Partner != null),
-                Mark(Action("обычный V2pn", () => Editions.DebugShow(string.Empty)), () => Editions.IsForced && Editions.Partner == null)),
+            Row("Вкладка в заголовке (как щелчок по ней)",
+                Mark(Action("вкладка V2pn", () => Editions.Open(null)), () => Editions.Partner == null),
+                Mark(Action("вкладка партнёра", ShowSelected), () => Editions.Partner != null)),
             Row("Фон партнёра (Сцена, если он есть в теме)",
                 Mark(Action("как в теме", () => DebugOverrides.SetNoStage(false)), () => !DebugOverrides.NoStage),
                 Mark(Action("без фона", () => DebugOverrides.SetNoStage(true)), () => DebugOverrides.NoStage)),
@@ -172,7 +173,6 @@ public sealed class DebugWindow : Window
             Row(null, Action("Сбросить всё", () =>
             {
                 DebugOverrides.Reset();
-                Editions.DebugShow(null);
             })));
     }
 
@@ -201,33 +201,35 @@ public sealed class DebugWindow : Window
             Action("ошибка", () => _main.DebugToast(ToastKind.Error, "Проверка: что-то сломалось."))),
         Row("Окна", Action("Карточка IP", _main.DebugOpenIp), Action("Оформление", _main.DebugOpenAppearance),
             // Partners whose pack says "login" (tools/demo/demo_partner.py answers login/start and login/poll).
-            Action("Вход через провайдера", _main.OpenProviderLogin)));
+            Action("Вход через провайдера", () => _main.OpenProviderLogin())));
 
     // ------------------------------------------------------------------ actions
 
-    private V2pnPartner? Selected() => _partners.SelectedItem as V2pnPartner ?? Editions.Partner ?? Editions.Available.FirstOrDefault();
+    private V2pnPartner? Selected() => _partners.SelectedItem as V2pnPartner ?? Editions.Partner ?? Editions.Tabs.FirstOrDefault();
+
+    private const string NoTab = "Вкладки партнёра нет: добавьте тестового или дождитесь пакета партнёра, от которого пришёл человек.";
 
     private void ShowSelected()
     {
         if (Selected() is not { } partner)
         {
-            _main.DebugToast(ToastKind.Warning, V2pnEdition.IsPartner ? "Нет партнёра: добавьте тестового или дождитесь пакета партнёра." : "Это обычный V2pn: партнёров в нём нет.");
+            _main.DebugToast(ToastKind.Warning, NoTab);
             return;
         }
-        Editions.DebugShow(partner.Id);
+        Editions.Open(partner.Id);
     }
 
     private void Gone(V2pnPartnerGone why)
     {
         if (Selected() is not { } partner)
         {
-            _main.DebugToast(ToastKind.Warning, V2pnEdition.IsPartner ? "Нет партнёра: добавьте тестового или дождитесь пакета партнёра." : "Это обычный V2pn: партнёров в нём нет.");
+            _main.DebugToast(ToastKind.Warning, NoTab);
             return;
         }
         if (V2pnPartners.Instance.IsDebug(partner.Id))
         {
-            // A made-up partner goes for real; it is added again with one click.
-            Editions.DebugShow(partner.Id);
+            // A made-up partner goes for real, from its open tab; it is added again with one click.
+            Editions.Open(partner.Id);
             V2pnPartners.Instance.RemoveDebugPartner(partner.Id, why);
         }
         else
@@ -250,7 +252,7 @@ public sealed class DebugWindow : Window
 
     private void Refresh()
     {
-        var partners = Editions.Available.ToList();
+        var partners = Editions.Tabs.ToList();
         var key = string.Join("|", partners.Select(p => p.Id));
         if (key != _partnersKey)
         {
@@ -270,10 +272,11 @@ public sealed class DebugWindow : Window
 
         var lines = new List<string>
         {
-            $"сборка: {(V2pnInfo.IsRelease ? "релиз, режим разработчика" : "разработчика")} · V2pn {V2pnInfo.Version} · {(V2pnEdition.PartnerId is { } edition ? $"сборка партнёра {edition} ({V2pnEdition.FileName})" : "обычный V2pn, партнёров нет")}",
-            $"в окне: {(Editions.Partner is { } open ? $"{open.Name}{(Editions.IsForced ? " (показан из отладки)" : " (партнёр сборки)")}" : Editions.IsForced ? "без партнёра (из отладки)" : "обычный V2pn")}",
+            $"сборка: {(V2pnInfo.IsRelease ? "релиз, режим разработчика" : "разработчика")} · V2pn {V2pnInfo.Version} · метка старой сборки: {(V2pnEdition.Instance.Marker is { } marker ? $"{marker} (из {V2pnEdition.FileName})" : "нет")}",
+            $"пришёл от: {string.Join(", ", V2pnEdition.Instance.CameFrom).IfEmpty("никого")} · вход по коду: {string.Join(", ", V2pnEdition.Instance.SignedIn).IfEmpty("нет")}",
+            $"вкладки: V2pn{string.Concat(partners.Select(p => $", {p.Name}"))} · открыта: {Editions.Partner?.Name ?? "V2pn"}",
         };
-        if (Editions.Partner != null && Editions.Theme is { } theme)
+        if (Editions.Look != null && Editions.Theme is { } theme)
         {
             var stage = Editions.Stage(_main.ActualThemeVariant != ThemeVariant.Light);
             lines.Add($"вид: {(stage == null ? "Акцент" : "Сцена")} · акцент {Editions.PartnerAccent} · бренд {string.Join(" ", theme.Brand)} · фон {theme.Background.Kind}"
@@ -290,7 +293,7 @@ public sealed class DebugWindow : Window
         }
         if (partners.Count == 0)
         {
-            lines.Add(V2pnEdition.IsPartner ? "пакета партнёра ещё нет: добавьте тестового или дождитесь списка партнёров" : "партнёров нет: это обычный V2pn");
+            lines.Add(V2pnEdition.Instance.Any ? "пакета партнёра ещё нет: добавьте тестового или дождитесь списка партнёров" : "вкладок нет: человек не пришёл ни от одного партнёра");
         }
         var index = V2pnPartners.Instance.Index;
         lines.Add(index == null

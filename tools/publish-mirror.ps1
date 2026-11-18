@@ -10,7 +10,7 @@
     <root>/download/v<version>/<every file of the release>
     <root>/latest/download/release.json
     <root>/latest/download/release.json.sig
-    <root>/latest/download/partner-index.json(.sig), partner-<id>.zip (what partner builds read)
+    <root>/latest/download/partner-index.json(.sig), partner-<id>.zip (what V2pn reads for a partner's tab)
     <root>/latest/download/partners.json(.sig) (empty, for V2pn 1.2.1 and older)
 
   The mirror does not have to be trusted: V2pn installs a package only when it matches

@@ -1,6 +1,10 @@
 namespace ServiceLib.Tests.V2pn;
 
-/// <summary>v2pn-partner.txt beside the program: a partner's build, or plain V2pn when it is missing or does not read.</summary>
+/// <summary>
+/// The marker of an older partner build (v2pn-partner.txt, read once and moved into the settings: the person came from
+/// that partner, or from none when it is missing or does not read), the sign-ins and links recorded in the settings, and
+/// the tab that is open.
+/// </summary>
 public class V2pnEditionTests
 {
     private readonly string _dir = Path.Combine(Path.GetTempPath(), "v2pn-edition-" + Guid.NewGuid().ToString("N")[..8]);
@@ -62,28 +66,80 @@ public class V2pnEditionTests
         File.WriteAllText(file, "configra\n");
         await V2pnEdition.Read(_dir).Should().BeEqualTo("configra");
 
-        // An id V2pn does not list is still a partner's build: it just never finds that partner (V2pnPartnerTests).
+        // An id V2pn does not list still marks a partner: V2pn just never finds it (V2pnPartnerTests).
         File.WriteAllText(file, "nobody");
         await V2pnEdition.Read(_dir).Should().BeEqualTo("nobody");
     }
 
     [Test]
-    public async Task TheTestRunner_IsPlainV2pn()
+    public async Task NoMarkerNoSignIn_NoTabs_V2pnsTabIsOpen()
     {
-        await (V2pnEdition.PartnerId == null).Should().BeTrue();
-        await V2pnEdition.InstallName.Should().BeEqualTo("V2pn");
-        await V2pnEdition.AutoRunName.Should().BeEqualTo(Global.AutoRunName);
+        var edition = new V2pnEdition(null);
+        await edition.Any.Should().BeFalse();
+        await edition.CameFrom.Count.Should().BeEqualTo(0);
+        await (edition.Tab == null).Should().BeTrue();
+        await edition.IsOpen("configra").Should().BeFalse();
+        await edition.Open("configra").Should().BeFalse();
+        // A tab saved for a partner the person no longer comes from does not open it.
+        await (new V2pnEdition(null, tab: "configra").Tab == null).Should().BeTrue();
     }
 
     [Test]
-    public async Task APartnersBuild_HasNamesOfItsOwn_ThatNeverStartWithPlainV2pns()
+    public async Task Marker_IsCameFrom_AndItsTabOpensBeforeAnyChoice()
     {
-        await V2pnEdition.NameFor("configra").Should().BeEqualTo("V2pn-configra");
-        var plain = V2pnEdition.AutoRunNameFor(null);
-        var partner = V2pnEdition.AutoRunNameFor("configra");
-        // Each build tidies the sign-in entries whose names start with its own (V2pnAutostart): never the other's.
-        await partner.StartsWith(plain, StringComparison.OrdinalIgnoreCase).Should().BeFalse();
-        await plain.StartsWith(partner, StringComparison.OrdinalIgnoreCase).Should().BeFalse();
-        await V2pnEdition.AutoRunNameFor("kestrel").StartsWith(partner, StringComparison.OrdinalIgnoreCase).Should().BeFalse();
+        var edition = new V2pnEdition("configra");
+        await edition.CameFrom.Should().BeEquivalentTo(["configra"]);
+        await edition.Tab.Should().BeEqualTo("configra");
+        await edition.IsOpen("configra").Should().BeTrue();
+        // Once V2pn's tab was chosen, it is V2pn's: "" is a choice, null is none.
+        await (new V2pnEdition("configra", tab: string.Empty).Tab == null).Should().BeTrue();
+        // A marker cannot be forgotten: the build came from it.
+        await edition.ForgetSignIn("configra").Should().BeFalse();
+        await edition.IsFrom("configra").Should().BeTrue();
+    }
+
+    [Test]
+    public async Task SignIn_IsRecordedInTheSettings_TheTabChoiceIsKept_AndBothComeBackAtTheNextStart()
+    {
+        (List<string> SignedIn, string? Tab) saved = ([], null);
+        V2pnEdition Start() => new("configra", saved.SignedIn, saved.Tab, e => saved = (e.SignedIn.ToList(), e.SavedTab));
+
+        var edition = Start();
+        var changes = 0;
+        edition.Changed += () => changes++;
+        await edition.RecordSignIn("kestrel").Should().BeTrue();
+        await edition.RecordSignIn("kestrel").Should().BeFalse();
+        await edition.CameFrom.Should().BeEquivalentTo(["configra", "kestrel"]);
+        await edition.CameFrom[0].Should().BeEqualTo("configra");
+        await edition.Open("kestrel").Should().BeTrue();
+        await saved.SignedIn.Should().BeEquivalentTo(["kestrel"]);
+        await saved.Tab.Should().BeEqualTo("kestrel");
+        await (changes >= 2).Should().BeTrue();
+
+        var again = Start();
+        await again.Tab.Should().BeEqualTo("kestrel");
+        await again.CameFrom.Should().BeEquivalentTo(["configra", "kestrel"]);
+
+        await again.Open(null).Should().BeTrue();
+        await saved.Tab.Should().BeEqualTo(string.Empty);
+        await (Start().Tab == null).Should().BeTrue();
+
+        // Forgotten (its last subscription went): no longer came from, and its open tab goes back to V2pn's.
+        var third = Start();
+        third.Open("kestrel");
+        await third.ForgetSignIn("kestrel").Should().BeTrue();
+        await third.IsFrom("kestrel").Should().BeFalse();
+        await (third.Tab == null).Should().BeTrue();
+        await saved.SignedIn.Count.Should().BeEqualTo(0);
+    }
+
+    [Test]
+    public async Task Settings_WithWhatIsNotAPartnerId_AreIgnored()
+    {
+        var edition = new V2pnEdition("Not An Id", ["kestrel", "../x", "kestrel"], "Bad Tab");
+        await (edition.Marker == null).Should().BeTrue();
+        await edition.CameFrom.Should().BeEquivalentTo(["kestrel"]);
+        await (edition.SavedTab == null).Should().BeTrue();
+        await edition.RecordSignIn("NOPE").Should().BeFalse();
     }
 }

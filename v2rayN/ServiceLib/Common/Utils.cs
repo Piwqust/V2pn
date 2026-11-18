@@ -1181,8 +1181,7 @@ public class Utils
     {
         if (Environment.GetEnvironmentVariable(Global.LocalAppData) == "1")
         {
-            // V2pn: a partner's build keeps its data apart from plain V2pn's (V2pnEdition).
-            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), V2pnEdition.InstallName);
+            return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), Global.AppName);
         }
 
         return GetBaseDirectory();

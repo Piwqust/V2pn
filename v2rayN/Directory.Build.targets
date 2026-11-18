@@ -6,7 +6,7 @@
     The release script and CI pass -p:V2pnVersion=x.y.z; this default is for local builds.
   -->
   <PropertyGroup>
-    <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.2.2</V2pnVersion>
+    <V2pnVersion Condition="'$(V2pnVersion)' == ''">1.3.0</V2pnVersion>
 
     <!--
       "release" only in packages made by tools/release.ps1. Everything else (dotnet build, the IDE)
@@ -20,10 +20,13 @@
       layout of a GitHub releases page:
         <source>/latest/download/release.json(.sig)   the newest release's signed manifest
         <source>/download/v<version>/<file>           its packages
+      V2pn's server comes first: it answers with a redirect to the GitHub release, so the address
+      of updates can change later without a new release. GitHub is the fallback when the server
+      does not answer. release.json is signed, so no source has to be trusted.
       A mirror on your own server is a folder of static files laid out like that
       (tools/publish-mirror.ps1 uploads one); add it after the GitHub address.
     -->
-    <V2pnUpdateSources Condition="'$(V2pnUpdateSources)' == ''">https://github.com/Piwqust/V2pn/releases</V2pnUpdateSources>
+    <V2pnUpdateSources Condition="'$(V2pnUpdateSources)' == ''">https://v2pn.angleford.co/releases|https://github.com/Piwqust/V2pn/releases</V2pnUpdateSources>
 
     <!--
       Public keys (ECDSA P-256, SubjectPublicKeyInfo in base64, "|" between several) that sign
@@ -34,12 +37,26 @@
     <V2pnUpdateKeys Condition="'$(V2pnUpdateKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig==</V2pnUpdateKeys>
 
     <!--
-      Public root keys (ECDSA P-256, SubjectPublicKeyInfo in base64, "|" between several) that sign
-      the partner index, partners.json: which subscription domains are whose, with which grants and
-      which pack (tools/partner.cs publish). Not the release key: the partner key must never be able
-      to sign an update. The private half stays in ~/.v2pn/partner-root-key.pem.
+      Public keys (ECDSA P-256, SubjectPublicKeyInfo in base64, "|" between several) that sign
+      the partner index, partner-index.json: which subscription domains are whose, with which grants and
+      which pack. Not the release key: a partner key must never be able to sign an update.
+      A plain key is a root key: the owner of V2pn signs with it on his computer (tools/partner.cs
+      publish, the private half in ~/.v2pn/partner-root-key.pem), and only an index it signs may
+      grant what the owner reviews by hand (routing, transport, core). A key written "hub:<key>" is
+      the V2pn Hub's (hub/, on v2pn.angleford.co): it signs what providers publish there, and V2pn
+      drops those reviewed grants from an index it signs (V2pnPartnerTrust.ReadIndex).
     -->
-    <V2pnPartnerKeys Condition="'$(V2pnPartnerKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4LVjtb8RY7TUlzR32OpH1Tn5FPKp5B+m2Zb72/cQzjOSuBvYnBWdHnZ7PnPoFhmNKSeCj5shwtmJD1JIVtCGCg==</V2pnPartnerKeys>
+    <V2pnPartnerKeys Condition="'$(V2pnPartnerKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4LVjtb8RY7TUlzR32OpH1Tn5FPKp5B+m2Zb72/cQzjOSuBvYnBWdHnZ7PnPoFhmNKSeCj5shwtmJD1JIVtCGCg==|hub:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXiLGsFVHz/rlCFoS8ya/U2TmHc4wdxMJMC6Ti04ONqVlPiGI8WygOlCWPdSApROtsnIF43NdldvSsVm+gsDfYg==</V2pnPartnerKeys>
+
+    <!--
+      Where the partner index and the packs are published, in order, separated by "|"; each laid out
+      like a releases page (<source>/latest/download/partner-index.json(.sig), partner-<id>.zip).
+      The V2pn Hub publishes there as soon as the owner approves a provider; the GitHub release
+      carries the copy the owner signs with the root key (tools/sign-release.ps1). V2pn asks both
+      and goes by the hub's index, with the root-signed one adding the partners the hub does not
+      list (V2pnPartnerIndex.Merge).
+    -->
+    <V2pnPartnerSources Condition="'$(V2pnPartnerSources)' == ''">https://v2pn.angleford.co/partners|https://github.com/Piwqust/V2pn/releases</V2pnPartnerSources>
   </PropertyGroup>
 
   <!--
@@ -81,5 +98,6 @@
     <AssemblyMetadata Include="V2pnUpdateSources" Value="$(V2pnUpdateSources)" />
     <AssemblyMetadata Include="V2pnUpdateKeys" Value="$(V2pnUpdateKeys)" />
     <AssemblyMetadata Include="V2pnPartnerKeys" Value="$(V2pnPartnerKeys)" />
+    <AssemblyMetadata Include="V2pnPartnerSources" Value="$(V2pnPartnerSources)" />
   </ItemGroup>
 </Project>

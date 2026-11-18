@@ -53,10 +53,27 @@ public static class V2pnInfo
     public static IReadOnlyList<string> UpdateKeys { get; } = Split(Metadata("V2pnUpdateKeys"));
 
     /// <summary>
-    /// Public root keys that sign the partner index (partners.json, V2pnPartners): the owner of V2pn vouches for providers
-    /// with them. Separate from the release keys, so the partner key can never sign an update. Set at build time.
+    /// Public root keys that sign the partner index (partner-index.json, V2pnPartners): the owner of V2pn vouches for
+    /// providers with them on his computer, and only they may grant what he reviews by hand. Separate from the release
+    /// keys, so a partner key can never sign an update. The plain keys of V2pnPartnerKeys; set at build time.
     /// </summary>
-    public static IReadOnlyList<string> PartnerKeys { get; } = Split(Metadata("V2pnPartnerKeys"));
+    public static IReadOnlyList<string> PartnerKeys { get; } = PartnerKeyList(Metadata("V2pnPartnerKeys"), hub: false);
+
+    /// <summary>
+    /// Public keys of the V2pn Hub (the "hub:" keys of V2pnPartnerKeys): the server signs the index of the providers the
+    /// owner approved there. An index it signs grants nothing that needs a review by hand (V2pnPartnerTrust.ReadIndex).
+    /// </summary>
+    public static IReadOnlyList<string> PartnerHubKeys { get; } = PartnerKeyList(Metadata("V2pnPartnerKeys"), hub: true);
+
+    /// <summary>Where the partner index and the packs are published, in the order they are asked (V2pnPartnerSources). Set at build time.</summary>
+    public static IReadOnlyList<string> PartnerSources { get; } = Split(Metadata("V2pnPartnerSources")).Select(s => s.TrimEnd('/')).ToList();
+
+    public const string HubKeyPrefix = "hub:";
+
+    /// <summary>The root keys (<paramref name="hub"/> false) or the hub's keys of a V2pnPartnerKeys value.</summary>
+    public static List<string> PartnerKeyList(string? value, bool hub) =>
+        Split(value).Where(k => k.StartsWith(HubKeyPrefix, StringComparison.Ordinal) == hub)
+            .Select(k => hub ? k[HubKeyPrefix.Length..].Trim() : k).Where(k => k.Length > 0).ToList();
 
     /// <summary>
     /// V2pn replaces itself only where it ships a portable package (Windows, macOS) and only in a

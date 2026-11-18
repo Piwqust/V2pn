@@ -1,0 +1,366 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/Piwqust/V2pn/blob/v2pn/docs/partners/partner.schema.json",
+  "title": "V2pn partner pack (partner.json)",
+  "description": "What a provider's tab in V2pn looks like and does for its subscriptions. The V2pn Hub (v2pn.angleford.co) writes it from the look a provider made in its cabinet, in partner-<id>.zip pinned by partner-index.json signed with the hub's key; it writes schema, id, name, brand, theme (palette.brand, background gradient or image), links, api, login, actions (no scope), lock and assets, with pictures named logo-light.png, logo-dark.png, mark.png and background.png. The owner's root-signed path (partners/<id> in the V2pn repository, tools/partner.cs publish) may also use servers, scope and the reviewed files. V2pn reads a pack only for the people who came from that provider (its link with partner=<id>, or a sign-in by code). V2pn ignores fields it does not know.",
+  "type": "object",
+  "required": ["schema", "id", "name", "assets"],
+  "properties": {
+    "schema": { "const": 1 },
+    "id": { "description": "The provider's id from its application (in the owner's path, the folder's name and listing.json's id); must equal the id in partner-index.json.", "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,31}$" },
+    "name": {
+      "description": "The name people see. No control characters, and nothing that reads as V2pn.",
+      "type": "string",
+      "minLength": 1,
+      "maxLength": 40,
+      "not": { "pattern": "[Vv]\\s*2\\s*[Pp]\\s*[Nn]" }
+    },
+    "brand": {
+      "type": "object",
+      "properties": {
+        "accent": { "description": "The brand colour when theme.palette.brand names none: Connect, the links and the card in it.", "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+        "logo": { "description": "The wide logo for a dark title bar; a file in assets.", "$ref": "#/$defs/assetName" },
+        "logoOnLight": { "description": "The wide logo for a light title bar; a file in assets.", "$ref": "#/$defs/assetName" },
+        "mark": { "description": "A square mark on a transparent ground for the subscription card; a file in assets.", "$ref": "#/$defs/assetName" }
+      }
+    },
+    "edition": {
+      "description": "Retired: the look switcher's fields (variants, default, art) of former packs. Read without error, listed as notes by tools/partner-check.cs and not used: every partner has one look, Accent, and Scene when the theme has a background.",
+      "deprecated": true,
+      "type": "object"
+    },
+    "theme": {
+      "description": "Your theme; needs the edition grant, which every partner has. Every field is optional. A field V2pn cannot use falls back to its default (tools/partner-check.cs says which and why); the look always works. The layout, the font (Geist) and the corners are V2pn's. The fields of former looks (template, font, corners, density, blocks, art, palette.tone, connect, window) are read without error, noted and not used. Unknown fields are ignored.",
+      "type": "object",
+      "properties": {
+        "palette": {
+          "type": "object",
+          "properties": {
+            "brand": {
+              "description": "1 to 3 brand colours. The first is the brand colour: Connect, the links and the subscription card; V2pn does not draw the others today. V2pn derives every other colour for light and dark, keeps text at 4.5:1 and controls at 3:1, darkens or lightens the brand colour where it becomes text, and turns one that could pass for a state colour (protected green, attention amber, unprotected red) away from it. Default: brand.accent.",
+              "type": "array",
+              "minItems": 1,
+              "maxItems": 3,
+              "items": { "$ref": "#/$defs/colour" }
+            }
+          }
+        },
+        "background": {
+          "description": "What the Scene stands on, in place of the world map. solid (or no background): no Scene, the look is Accent. gradient: 2 to 4 colours corner to corner (135 degrees), deepened in dark mode. image: a picture of the pack, 640-3200 px a side, at most 3:1, under a scrim V2pn works out so the text reads whatever the picture holds; a picture that does not fit falls back to solid.",
+          "type": "object",
+          "required": ["type"],
+          "properties": {
+            "type": { "enum": ["solid", "gradient", "image"], "default": "solid" },
+            "colors": { "type": "array", "minItems": 2, "maxItems": 4, "items": { "$ref": "#/$defs/colour" } },
+            "art": { "$ref": "#/$defs/assetName" }
+          }
+        },
+        "connect": { "description": "Retired (Neon's connect control): read without error, noted, not used.", "deprecated": true },
+        "window": { "description": "Retired (Neon's first window): read without error, noted, not used.", "deprecated": true }
+      }
+    },
+    "links": {
+      "type": "object",
+      "properties": {
+        "cabinet": { "type": "string", "format": "uri", "pattern": "^https://" },
+        "support": { "type": "string", "format": "uri", "pattern": "^https://" }
+      }
+    },
+    "api": {
+      "description": "The partner API's base address; needs the account grant and a domain of the partner's listing.",
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
+    },
+    "login": {
+      "description": "Sign-in by code (guide, \"Sign-in by code\"): V2pn offers to sign in with this partner, asks POST <api>login/start for six digits and a token, shows them with a QR code of the bot link and polls GET <api>login/poll?token= until the person confirms in the partner's bot. The subscription handed over must be https on the listing's domains. Needs api (and so the account grant); without it the flag does nothing.",
+      "type": "boolean"
+    },
+    "servers": {
+      "description": "Needs the actions grant; written only in the owner's path (the hub's cabinet leaves it out: its providers say the same through GET servers of their API). What V2pn shows about the servers of the partner's subscriptions: each entry matches a server by its exact name or its address. The API's GET servers may say the same with load and health; its values win.",
+      "type": "array",
+      "maxItems": 300,
+      "items": {
+        "type": "object",
+        "anyOf": [{ "required": ["name"] }, { "required": ["host"] }],
+        "properties": {
+          "name": { "description": "The server's exact name (remark) in the subscription.", "type": "string", "maxLength": 128 },
+          "host": { "description": "The server's address in the subscription.", "type": "string", "maxLength": 253 },
+          "group": { "description": "A header in the list; the order of first mention is the order of the groups.", "type": "string", "maxLength": 24 },
+          "country": { "description": "ISO 3166 alpha-2; the flag and the map.", "type": "string", "pattern": "^[A-Za-z]{2}$" },
+          "city": { "type": "string", "maxLength": 32 },
+          "purpose": {
+            "description": "What the server is for; V2pn names it in the person's language. Unknown values are left out.",
+            "type": "array",
+            "items": { "enum": ["youtube", "games", "mobile", "whitelist", "streaming", "ai", "torrents"] },
+            "uniqueItems": true
+          },
+          "priority": { "description": "Breaks a tie between equally good servers: higher first.", "type": "integer", "minimum": -1000, "maximum": 1000 },
+          "hidden": { "description": "Not listed or offered; only the API's recommend can still pick it.", "type": "boolean" },
+          "note": { "description": "A short line under the server's name.", "type": "string", "maxLength": 60 }
+        }
+      }
+    },
+    "actions": {
+      "description": "Needs the actions grant. The partner's buttons: a label, one of V2pn's icons and one of V2pn's actions. V2pn shows the first 4 that it can run; an unknown do is left out.",
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["id", "label", "do"],
+        "properties": {
+          "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9_-]{0,31}$" },
+          "label": { "type": "string", "minLength": 1, "maxLength": 24 },
+          "icon": { "enum": ["bolt", "shield", "play", "game", "card", "chat", "globe", "star", "refresh", "check", "info", "gift"] },
+          "do": {
+            "enum": ["connect.best", "connect.recommend", "connect.server", "connect.group", "open.cabinet", "open.renew", "open.support", "open.link", "subscription.update", "check.services", "info.card"]
+          },
+          "strategy": {
+            "description": "connect.best: ping (lowest delay now), stable (most answers over V2pn's last 10 checks, then the lowest median, then the smallest spread), load (lowest load from GET servers; ping without one).",
+            "enum": ["ping", "stable", "load"]
+          },
+          "scope": {
+            "description": "connect.best: which servers it chooses from. Written only in the owner's path.",
+            "type": "object",
+            "properties": {
+              "group": { "type": "string", "maxLength": 24 },
+              "purpose": { "enum": ["youtube", "games", "mobile", "whitelist", "streaming", "ai", "torrents"] },
+              "servers": {
+                "type": "array",
+                "maxItems": 50,
+                "items": { "type": "string", "maxLength": 253 }
+              }
+            }
+          },
+          "purpose": {
+            "description": "connect.recommend: asked as GET <api>recommend?purpose=. Needs the API.",
+            "enum": ["youtube", "games", "mobile", "whitelist", "streaming", "ai", "torrents"]
+          },
+          "server": { "description": "connect.server: a name or address.", "type": "string", "maxLength": 253 },
+          "group": { "description": "connect.group: the fastest server of this group.", "type": "string", "maxLength": 24 },
+          "url": { "description": "open.link: https on the domains of the partner's listing or t.me, or tg:.", "type": "string" }
+        },
+        "allOf": [
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "connect.recommend" }
+              }
+            },
+            "then": { "required": ["purpose"] }
+          },
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "connect.server" }
+              }
+            },
+            "then": { "required": ["server"] }
+          },
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "connect.group" }
+              }
+            },
+            "then": { "required": ["group"] }
+          },
+          {
+            "if": {
+              "properties": {
+                "do": { "const": "open.link" }
+              }
+            },
+            "then": { "required": ["url"] }
+          }
+        ]
+      }
+    },
+    "lock": {
+      "description": "Needs the lock grant: closes the settings of the partner's subscriptions, as the hide-settings header does. Without the grant it does nothing.",
+      "type": "boolean"
+    },
+    "assets": {
+      "description": "Every file of the pack, pinned by size and SHA-256: at most 8 pictures, and routing.json, transport.json, core.json when the pack has them (used only when the partner index names the same hash under its reviewed field; see $defs).",
+      "type": "array",
+      "maxItems": 11,
+      "items": {
+        "type": "object",
+        "required": ["name", "size", "sha256"],
+        "properties": {
+          "name": { "anyOf": [{ "$ref": "#/$defs/assetName" }, { "$ref": "#/$defs/reviewedName" }] },
+          "size": { "type": "integer", "minimum": 1, "maximum": 1048576 },
+          "sha256": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+        },
+        "if": { "properties": { "name": { "$ref": "#/$defs/reviewedName" } } },
+        "then": { "properties": { "size": { "maximum": 65536 } } }
+      }
+    }
+  },
+  "$defs": {
+    "colour": { "type": "string", "pattern": "^#[0-9A-Fa-f]{6}$" },
+    "assetName": { "description": "A plain file name: ASCII letters, digits, - and _, one extension, no folder.", "type": "string", "pattern": "^[A-Za-z0-9][A-Za-z0-9_-]{0,47}\\.([Pp][Nn][Gg]|[Ww][Ee][Bb][Pp]|[Jj][Pp][Ee]?[Gg])$" },
+    "reviewedName": { "enum": ["routing.json", "transport.json", "core.json"] },
+    "index": {
+      "title": "partner-index.json",
+      "description": "The signed list of partners V2pn reads (<source>/latest/download/partner-index.json, its signature in partner-index.json.sig: DER ECDSA P-256 / SHA-256 in base64 and a newline). The V2pn Hub signs one with its key (v2pn.angleford.co/partners); the owner signs one with the root key (the GitHub release). V2pn merges them: the hub's entry wins for an id both list. The hub never writes reviewed, and grants routing, transport and core count only under the root key.",
+      "type": "object",
+      "required": ["schema", "published", "partners"],
+      "properties": {
+        "schema": { "const": 1 },
+        "published": { "description": "When it was signed, UTC (2026-11-17T09:30:00Z). V2pn keeps the newest of each signer.", "type": "string", "format": "date-time" },
+        "partners": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "name", "domains", "grants", "until", "pack"],
+            "properties": {
+              "id": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{1,31}$" },
+              "name": { "type": "string", "maxLength": 40 },
+              "domains": { "description": "example.com (that host) or *.example.com (every host under it). One domain, one partner.", "type": "array", "minItems": 1, "items": { "type": "string" } },
+              "grants": {
+                "description": "edition always; the hub adds account (with an API), actions (with buttons) and lock at tier 2.",
+                "type": "array",
+                "items": { "enum": ["edition", "account", "actions", "lock", "routing", "transport", "core"] },
+                "uniqueItems": true
+              },
+              "reviewed": { "$ref": "#/$defs/indexReviewed" },
+              "until": { "description": "The last day of the partnership.", "type": "string", "format": "date" },
+              "pack": {
+                "type": "object",
+                "required": ["file", "size", "sha256"],
+                "properties": {
+                  "file": { "type": "string", "pattern": "^partner-[a-z0-9][a-z0-9-]{1,31}\\.zip$" },
+                  "size": { "type": "integer", "minimum": 1 },
+                  "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "indexReviewed": {
+      "description": "partner-index.json signed with the root key (tools/partner.cs publish): \"reviewed\" maps each file the owner read by hand (and granted in listing.json) to its SHA-256. A routing, transport or core grant counts only for the file with this hash.",
+      "type": "object",
+      "propertyNames": { "$ref": "#/$defs/reviewedName" },
+      "additionalProperties": { "type": "string", "pattern": "^[0-9a-fA-F]{64}$" }
+    },
+    "routeEntryDomain": {
+      "description": "example.com or domain:example.com (the site and its subdomains), full:, keyword: (3+ characters), geosite:<tag>. No regular expressions.",
+      "type": "string",
+      "maxLength": 200,
+      "pattern": "^((domain:|full:)?[a-z0-9.-]+|keyword:[a-z0-9.-]{3,}|geosite:!?[a-z0-9][a-z0-9!@._-]{0,63})$"
+    },
+    "routeEntryIp": {
+      "description": "An IP address, a network (91.108.4.0/22) or geoip:<tag>.",
+      "type": "string",
+      "maxLength": 200
+    },
+    "routeRule": {
+      "type": "object",
+      "required": ["to"],
+      "properties": {
+        "domains": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/routeEntryDomain" } },
+        "ips": { "type": "array", "maxItems": 500, "items": { "$ref": "#/$defs/routeEntryIp" } },
+        "to": { "type": "string" }
+      }
+    },
+    "routingFile": {
+      "title": "routing.json (grant routing)",
+      "description": "A routing preset offered as a mode of \"What goes through the VPN\". The local network always goes direct first. A block rule may not block geoip: lists, a whole zone, a network wider than /16 or the local network. At most 2000 entries in all.",
+      "type": "object",
+      "required": ["rules"],
+      "properties": {
+        "schema": { "const": 1 },
+        "name": { "type": "string", "maxLength": 40 },
+        "rules": {
+          "type": "array",
+          "minItems": 1,
+          "maxItems": 50,
+          "items": { "allOf": [{ "$ref": "#/$defs/routeRule" }, { "properties": { "to": { "enum": ["proxy", "direct", "block"] } } }] }
+        },
+        "default": { "enum": ["proxy", "direct"], "default": "proxy" }
+      }
+    },
+    "transportFile": {
+      "title": "transport.json (grant transport)",
+      "description": "Fragmentation and noise for the partner's own servers only, in place of the person's fragment setting for them. Xray takes both; sing-box only turns its TLS fragment on. mux is not taken.",
+      "type": "object",
+      "properties": {
+        "schema": { "const": 1 },
+        "fragment": {
+          "type": "object",
+          "properties": {
+            "packets": { "description": "tlshello or a range of packets from 1 to 10.", "type": "string", "pattern": "^(tlshello|\\d{1,2}(-\\d{1,2})?)$", "default": "tlshello" },
+            "length": { "description": "Bytes, 1 to 1500.", "type": "string", "pattern": "^\\d{1,4}(-\\d{1,4})?$", "default": "100-200" },
+            "interval": { "description": "Milliseconds, 0 to 200.", "type": "string", "pattern": "^\\d{1,3}(-\\d{1,3})?$", "default": "10-20" }
+          }
+        },
+        "noise": {
+          "description": "Xray only, on mKCP and Hysteria servers.",
+          "type": "array",
+          "maxItems": 8,
+          "items": {
+            "type": "object",
+            "required": ["rand"],
+            "properties": {
+              "rand": { "description": "Random bytes, 1 to 1024.", "type": "string", "pattern": "^\\d{1,4}(-\\d{1,4})?$" },
+              "delay": { "description": "Milliseconds, 0 to 200.", "type": "string", "pattern": "^\\d{1,3}(-\\d{1,3})?$" }
+            }
+          }
+        }
+      },
+      "anyOf": [{ "required": ["fragment"] }, { "required": ["noise"] }]
+    },
+    "coreFile": {
+      "title": "core.json (grant core)",
+      "description": "A piece of Xray or sing-box config for the partner's own servers: extra outbounds (passing V2pn's subscription filter unchanged), a dialer for its servers, balancers (Xray) or urltest outbounds (sing-box), and rules to them. Tags are prefixed partner-<id>-; proxy is the partner's server the person connected to.",
+      "type": "object",
+      "required": ["core"],
+      "additionalProperties": false,
+      "properties": {
+        "schema": { "const": 1 },
+        "core": { "enum": ["xray", "sing-box"] },
+        "note": { "type": "string" },
+        "outbounds": {
+          "type": "array",
+          "maxItems": 8,
+          "items": { "type": "object", "required": ["tag"], "properties": { "tag": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,23}$" } } }
+        },
+        "dialer": { "description": "The tag of an outbound every server of the subscription is dialed through.", "type": "string" },
+        "balancers": {
+          "description": "Xray only.",
+          "type": "array",
+          "maxItems": 4,
+          "items": {
+            "type": "object",
+            "required": ["tag", "selector"],
+            "properties": {
+              "tag": { "type": "string", "pattern": "^[a-z0-9][a-z0-9-]{0,23}$" },
+              "selector": { "type": "array", "minItems": 1, "maxItems": 8, "items": { "type": "string" } },
+              "strategy": { "enum": ["random", "roundRobin", "leastPing", "leastLoad"], "default": "random" }
+            }
+          }
+        },
+        "observatory": {
+          "description": "Xray only.",
+          "type": "object",
+          "properties": {
+            "probeUrl": { "type": "string", "pattern": "^https://" },
+            "probeInterval": { "description": "10s to 1h.", "type": "string", "pattern": "^[1-9][0-9]{0,3}(s|m|h)$" }
+          }
+        },
+        "rules": {
+          "type": "array",
+          "maxItems": 32,
+          "items": { "$ref": "#/$defs/routeRule" }
+        },
+        "allowTop": {
+          "description": "sing-box only: top-level keys a whole-config subscription of the partner may keep.",
+          "type": "array",
+          "items": { "enum": ["ntp", "certificate"] }
+        }
+      }
+    }
+  }
+}

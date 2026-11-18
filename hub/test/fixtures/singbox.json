@@ -1,0 +1,69 @@
+{
+  "outbounds": [
+    {
+      "type": "selector",
+      "tag": "select",
+      "outbounds": [
+        "de",
+        "hy",
+        "tu"
+      ]
+    },
+    {
+      "type": "urltest",
+      "tag": "auto",
+      "outbounds": [
+        "de",
+        "hy"
+      ]
+    },
+    {
+      "type": "vless",
+      "tag": "de",
+      "server": "de1.kestrel.example",
+      "server_port": 443
+    },
+    {
+      "type": "hysteria2",
+      "tag": "hy",
+      "server": "hy1.kestrel.example",
+      "server_port": 8443
+    },
+    {
+      "type": "tuic",
+      "tag": "tu",
+      "server": "tu1.kestrel.example",
+      "server_port": 443
+    },
+    {
+      "type": "shadowtls",
+      "tag": "st",
+      "server": "st.kestrel.example",
+      "server_port": 443
+    },
+    {
+      "type": "direct",
+      "tag": "direct"
+    },
+    {
+      "type": "block",
+      "tag": "block"
+    },
+    {
+      "type": "dns",
+      "tag": "dns-out"
+    }
+  ],
+  "endpoints": [
+    {
+      "type": "wireguard",
+      "tag": "wg",
+      "peers": [
+        {
+          "address": "wg1.kestrel.example",
+          "port": 51820
+        }
+      ]
+    }
+  ]
+}

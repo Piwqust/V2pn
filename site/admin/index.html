@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="ru" data-type="software" data-radius="round" data-buttons="solid" data-motion>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Провайдеры V2pn: решения владельца | V2pn</title>
+<meta name="description" content="Заявки провайдеров, публикация оформлений, провайдеры, скачивания и журнал решений.">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="../favicon.svg" type="image/svg+xml">
+<meta name="theme-color" content="#eceef3" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0e0e11" media="(prefers-color-scheme: dark)">
+<meta name="site-kind" content="software">
+<meta name="page-type" content="software">
+<link rel="stylesheet" href="../assets/system.css">
+<link rel="stylesheet" href="../assets/motion/motion.css">
+<link rel="stylesheet" href="../assets/site/tokens.css">
+<link rel="stylesheet" href="../assets/site/site.css">
+<link rel="stylesheet" href="../assets/site/hub.css">
+</head>
+<body>
+<header class="nav nav--centre">
+  <div class="wrap nav__bar">
+    <a class="skip-link" href="#top">К содержанию</a>
+    <a class="nav__logo" href="../"><svg class="v2mark" viewBox="0 0 104 112" aria-hidden="true"><path d="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z"/></svg>V2pn</a>
+    <nav class="nav__links" aria-label="Разделы">
+      <div class="nav__item"><a class="nav__link" href="../#features">Возможности</a></div>
+      <div class="nav__item"><a class="nav__link" href="../providers/">Провайдерам</a></div>
+      <div class="nav__item"><a class="nav__link" href="../providers/guide/">Руководство</a></div>
+    </nav>
+    <div class="nav__actions">
+      <span class="who"><b data-email></b></span>
+      <button class="btn btn--secondary" type="button" data-signout>Выйти</button>
+    </div>
+    <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
+      <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
+    </button>
+  </div>
+</header>
+
+<main id="top" class="app">
+  <div class="wrap">
+    <div class="app__head">
+      <h1>Провайдеры</h1>
+      <p>Здесь всё, что ждёт вашего решения. Подпись и публикация происходят сами после кнопки.</p>
+    </div>
+    <noscript><p>Админка работает со включённым JavaScript. Включите его и обновите страницу.</p></noscript>
+
+    <div id="view-loading" class="box" aria-busy="true" aria-label="Загружаем"><div class="skel"><i></i><i></i><i></i><i></i></div></div>
+    <div id="view-error" class="state" hidden>
+      <h2 data-error-title>Админка не загрузилась</h2>
+      <p data-error-text>Сервер провайдеров сейчас недоступен.</p>
+      <button class="btn btn--secondary" type="button" data-retry>Попробовать ещё раз</button>
+    </div>
+
+    <div id="shell" class="shell" hidden>
+      <nav class="sidenav" aria-label="Разделы админки">
+        <a href="#overview" data-tab="overview">Обзор</a>
+        <a href="#applications" data-tab="applications">Заявки <span class="count" data-count="applications" hidden></span></a>
+        <a href="#queue" data-tab="queue">Публикации <span class="count" data-count="queue" hidden></span></a>
+        <a href="#providers" data-tab="providers">Провайдеры <span class="count count--quiet" data-count="providers" hidden></span></a>
+        <a href="#downloads" data-tab="downloads">Скачивания</a>
+        <a href="#outbox" data-tab="outbox">Коды входа <span class="count" data-count="outbox" hidden></span></a>
+        <a href="#audit" data-tab="audit">Журнал</a>
+      </nav>
+
+      <div class="stack stack--lg">
+        <!-- overview -->
+        <section data-view="overview" class="stack stack--lg" aria-labelledby="ov-h" hidden>
+          <h2 id="ov-h" class="sr">Обзор</h2>
+          <div class="box" id="ov-outbox" hidden>
+            <div class="box__head"><h2>Коды входа ждут вас</h2><span class="hint">Почта не настроена: передайте код человеку сами</span></div>
+            <div class="outbox" data-outbox-list></div>
+          </div>
+          <div class="counts" id="ov-counts"></div>
+          <div class="box" id="ov-publication"></div>
+        </section>
+
+        <!-- applications -->
+        <section data-view="applications" class="box" aria-labelledby="apps-h" hidden>
+          <div class="box__head">
+            <h2 id="apps-h">Заявки</h2>
+            <div class="seg" role="group" aria-label="Какие заявки" id="app-filter">
+              <button type="button" data-state="submitted" aria-pressed="true">Новые</button>
+              <button type="button" data-state="rejected" aria-pressed="false">Отклонённые</button>
+              <button type="button" data-state="approved" aria-pressed="false">Одобренные</button>
+              <button type="button" data-state="draft" aria-pressed="false">Черновики</button>
+            </div>
+          </div>
+          <div id="apps-list" aria-live="polite"></div>
+        </section>
+
+        <!-- queue -->
+        <section data-view="queue" class="box" aria-labelledby="queue-h" hidden>
+          <div class="box__head"><h2 id="queue-h">Ждут публикации</h2><p>Оформление выходит к людям только после вашей кнопки.</p></div>
+          <div id="queue-list" aria-live="polite"></div>
+        </section>
+
+        <!-- providers -->
+        <section data-view="providers" class="box" aria-labelledby="prov-h" hidden>
+          <div class="box__head"><h2 id="prov-h">Провайдеры</h2><button class="btn btn--secondary btn--sm" type="button" id="publish-now">Опубликовать заново</button></div>
+          <div id="prov-list"></div>
+        </section>
+
+        <!-- downloads -->
+        <section data-view="downloads" class="box" aria-labelledby="dl-h" hidden>
+          <div class="box__head">
+            <h2 id="dl-h">Скачивания</h2>
+            <div class="seg" role="group" aria-label="За сколько дней" id="dl-days">
+              <button type="button" data-days="14" aria-pressed="false">14 дней</button>
+              <button type="button" data-days="30" aria-pressed="true">30 дней</button>
+              <button type="button" data-days="90" aria-pressed="false">90 дней</button>
+            </div>
+          </div>
+          <div id="dl-out"></div>
+          <p class="hint">Переходы по /r/*: по дням и платформам, без адресов и cookie.</p>
+        </section>
+
+        <!-- outbox -->
+        <section data-view="outbox" class="box" aria-labelledby="out-h" hidden>
+          <div class="box__head"><h2 id="out-h">Коды входа</h2><span class="hint" id="out-mode"></span></div>
+          <div class="outbox" data-outbox-list></div>
+        </section>
+
+        <!-- audit -->
+        <section data-view="audit" class="box" aria-labelledby="audit-h" hidden>
+          <div class="box__head"><h2 id="audit-h">Журнал решений</h2><span class="hint">последние 200</span></div>
+          <div class="tbl-wrap"><table class="tbl tbl--stack" id="audit-table"><thead><tr><th>Когда</th><th>Кто</th><th>Что</th><th>Кого</th><th>Подробно</th></tr></thead><tbody></tbody></table></div>
+        </section>
+      </div>
+    </div>
+  </div>
+</main>
+
+<footer class="footer site-foot">
+  <div class="wrap">
+    <div class="footer__legal">
+      <span>&copy; 2026 V2pn</span>
+      <span class="credits"><a href="../providers/">Провайдерам</a> · <a href="../providers/guide/">Руководство</a></span>
+    </div>
+  </div>
+</footer>
+
+<script type="module" src="../assets/system.js"></script>
+<script type="module" src="../assets/motion/motion.js"></script>
+<script type="module" src="../assets/site/admin.js"></script>
+</body>
+</html>

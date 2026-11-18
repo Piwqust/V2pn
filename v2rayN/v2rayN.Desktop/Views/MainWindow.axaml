@@ -88,8 +88,8 @@
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
-                <!--  V2pn's name, with the logo of the partner whose server is selected beside it (MainWindow.Edition.cs).
-                      Not clickable, so the title bar drags the window there too.  -->
+                <!--  V2pn's name, for a person who came from no partner. Not clickable, so the title bar drags the window
+                      there too. Otherwise the tabs take its place: V2pn's and each partner's (MainWindow.Tabs.cs).  -->
                 <Border
                     x:Name="borderBrand"
                     Grid.Column="1"
@@ -116,6 +116,17 @@
                             Foreground="{DynamicResource V2InkSoft}"
                             Text="{x:Static loc:L.AppName}" />
                     </StackPanel>
+                </Border>
+                <Border
+                    x:Name="borderTabs"
+                    Grid.Column="1"
+                    Margin="2,0,0,0"
+                    Padding="3"
+                    VerticalAlignment="Center"
+                    Background="{DynamicResource V2TabTrack}"
+                    CornerRadius="12"
+                    IsVisible="False">
+                    <StackPanel x:Name="panelTabs" Orientation="Horizontal" Spacing="2" />
                 </Border>
                 <StackPanel Grid.Column="2" Orientation="Horizontal" VerticalAlignment="Center">
                 <Button

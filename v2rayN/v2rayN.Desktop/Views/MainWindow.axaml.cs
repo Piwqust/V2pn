@@ -2657,6 +2657,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             ShowToast(ToastKind.Warning, L.ClipboardEmpty);
             return;
         }
+        // A provider's page on V2pn's site with its subscription (…/p/<id>/#sub=…): asked about as its button's link is.
+        if (V2pnDeepLink.Parse(text) is { Scheme: "page" } page)
+        {
+            await AskToAddLinkAsync(page);
+            return;
+        }
         if (V2pnSubs.SubscriptionLinks(text) is { Count: > 0 } links)
         {
             await AddSubscriptionLinksAsync(links);

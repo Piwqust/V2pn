@@ -71,13 +71,12 @@ The main window follows its width (`MainWindow.Adaptive.cs`), from 360 px up:
 
 ### The walkthrough
 
-A fresh install opens a five-step walkthrough over the window (`MainWindow.Onboarding.cs`). Bars at the top show the steps; "Skip" is always there; Back and the main button stay in the footer while a long step scrolls.
+A fresh install opens a two-step walkthrough over the window (`MainWindow.Onboarding.cs`). Skip stays available. Back and the main button stay in the footer while a long step scrolls.
 
 1. **Welcome.** The language: English or Русский. Picking the other one restarts V2pn in it, back on this step.
-2. **Your servers.** Other VPN apps found on the computer, with ticks and "Move from N apps" (see "Moving from other apps"), and three tiles: paste a link, add a subscription, scan a QR code. While the search runs, a line says so, and the step redraws when it ends. The footer counts the servers as subscriptions download ("Downloading servers… 180 servers", then "180 servers ready"). Without servers the main button reads "Add later".
-3. **What goes through the VPN.** The three routing modes and "Block ads and trackers", through the same code as the menu under Connect; the Russian mode shows its download progress.
-4. **How to connect.** Proxy or VPN. Only the choice is saved: the administrator question comes with the first connection, as with the switch under Connect.
-5. **All set.** Servers, the server Connect will use, the route and the mode, each with "Change". "Connect" ends the walkthrough and connects; "Not now" ends it.
+2. **Your servers.** Paste a link, add a subscription, scan a QR code on Windows, or move servers from another app. Partner builds can offer their provider's sign-in. The footer counts the imported servers. As soon as the list is ready, the same step shows the selected server, mode and route, with Connect in the footer.
+
+Choose **Change mode and route** to review the routing presets and pick Proxy or VPN before connecting. V2pn requests VPN permissions when you connect.
 
 The step is saved (`V2pnOnboardingStep`), so a restart it causes comes back to it; `V2pnOnboarded` marks it done or skipped. While it is open, the window under it is disabled, so Tab and screen readers cannot reach Connect behind it. People who already had servers are marked done without seeing it; so is a move from v2rayN, which brings its own routing and settings. A skipped walkthrough leaves the first-run card below.
 
@@ -121,9 +120,10 @@ Code: `ServiceLib/V2pn/V2pnForeignImport.cs` (finding and adding), `V2pnForeignR
 ## Connection state
 
 - Until a server is picked, V2pn says "Unprotected", whatever proxy mode is saved: the core is not running, and "Proxy on port N" would not be true.
-- "Proxy on port N" means the "Don't change system settings" mode: only programs pointed at `127.0.0.1:N` go through the server. The hint on the state pill explains it.
-- "Check connection" is shown only when a server is picked.
-- When the check fails, the status card offers "Find a working server" (another server of the same country or subscription); the "No response" chip is hidden then, because the pill at the top already says it.
+- The main window, mini window and tray use the result for the current connection. "Proxy connected" applies to apps that follow the system proxy. "Local proxy on port N" applies to apps pointed at `127.0.0.1:N`. The route is shown separately.
+- V2pn verifies the selected server with the running Xray or sing-box configuration through an authenticated loopback listener. The check follows the server outbound and leaves application routing rules intact. Full custom configurations show that verification is unavailable.
+- Bundled `generate_204` endpoints must return HTTP 204. Custom HTTP check URLs can return any successful 2xx response. HTTP errors, redirects and timeouts have separate results and can be retried.
+- A timeout or an unreachable check address also offers a search in the selected country. If none responds, other countries in the subscription can be checked. The app asks before switching and checks the new connection afterwards.
 - The speed and session traffic come from the cores in kilobytes per one-second sample; the card turns them into bytes.
 
 ## Processor use

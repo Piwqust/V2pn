@@ -1,5 +1,26 @@
 namespace ServiceLib.Models.CoreConfigs;
 
+public sealed record AvailabilityProbeEndpoint(int Port, string Password)
+{
+    public const string Tag = "v2pn-probe";
+    public const string User = "probe";
+
+    internal static AvailabilityProbeEndpoint Create()
+    {
+        var listener = new TcpListener(IPAddress.Loopback, 0);
+        listener.Start();
+        try
+        {
+            return new(((IPEndPoint)listener.LocalEndpoint).Port,
+                System.Security.Cryptography.RandomNumberGenerator.GetHexString(32));
+        }
+        finally
+        {
+            listener.Stop();
+        }
+    }
+}
+
 public record CoreConfigContext
 {
     public required ProfileItem Node { get; init; }
@@ -10,6 +31,7 @@ public record CoreConfigContext
     public Dictionary<string, ProfileItem> AllProxiesMap { get; init; } = new();
     public Config AppConfig { get; init; } = new();
     public FullConfigTemplateItem? FullConfigTemplate { get; init; } = new();
+    public AvailabilityProbeEndpoint? AvailabilityProbe { get; init; }
 
     public Dictionary<string, string> CustomOutboundContent { get; init; } = new();
 

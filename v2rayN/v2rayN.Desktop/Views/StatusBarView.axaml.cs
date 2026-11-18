@@ -26,10 +26,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     private DateTime? _since;
     private bool _hasServer;
     private double _sessionBytes;
-    private bool _checkFailed;
-    // AvailabilityDelay as last shown: the chip's visibility depends on it and on the find offer.
-    private int _checkDelay;
-    private string? _findProgress;
+    private AvailabilityCheckResult _check = AvailabilityCheckResult.Unchecked;
     private bool _iconWarn;
     private int _iconIndex;
     // Below this width the card drops the speed graph and the Check label, so the state and the numbers
@@ -37,9 +34,6 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     private const double CompactWidth = 600;
     private bool _compact;
     private bool _chartWanted = true;
-
-    /// <summary>"Find a working server" was clicked; the window pings the neighbours and switches.</summary>
-    public event Action? FindWorkingRequested;
 
     public StatusBarView()
     {
@@ -50,13 +44,6 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         Avalonia.Automation.AutomationProperties.SetName(btnCheck, L.CheckConnection);
         btnIpInfo.Click += (_, _) => _ = MainWindow.ShowRoomyDialog(new IpInfoView());
         Avalonia.Automation.AutomationProperties.SetName(btnIpInfo, L.IpButtonTip);
-        btnFindWorking.Click += (_, _) =>
-        {
-            if (_findProgress == null)
-            {
-                FindWorkingRequested?.Invoke();
-            }
-        };
         chartHost.SizeChanged += (_, _) => DrawChart();
         // The card's width follows the window, never its own content, so this cannot flip back and forth.
         SizeChanged += (_, e) => SetCompact(e.NewSize.Width < CompactWidth);
@@ -65,11 +52,6 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
         this.WhenActivated(disposables =>
         {
-            this.WhenAnyValue(v => v.ViewModel.AvailabilityDelay)
-                .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(ShowCheck)
-                .DisposeWith(disposables);
-
             ViewModel.SetClipboardDataInteraction.RegisterHandler(async interaction =>
             {
                 await AvaUtils.SetClipboardData(this, interaction.Input);
@@ -99,7 +81,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
         SetState(ProtectionState.Unprotected);
         SetServer(null, 0);
-        ShowCheck(0);
+        ShowCheck(AvailabilityCheckResult.Unchecked);
         DrawChart();
 
         // This view is created before the first DispatcherRefreshIconInteraction can reach it.
@@ -121,7 +103,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         }
         _compact = compact;
         ApplyChart();
-        RefreshFindWorking();
+        UpdateCheckVisibility();
     }
 
     private void ApplyChart()
@@ -150,12 +132,11 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     }
 
     /// <summary>
-    /// The text follows the proxy mode; <paramref name="warn"/> paints it amber when the last connection
-    /// check failed, so the card agrees with the pill, the tint and the map pin.
+    /// The card uses the label and severity already shown in the main window and tray.
     /// </summary>
-    public void SetState(ProtectionState state, bool warn = false, bool iconWarn = false)
+    public void SetState(ProtectionState state, string? label = null, string kind = "unsafe", string? tip = null)
     {
-        _iconWarn = iconWarn;
+        _iconWarn = kind is "warn" or "checking";
         if (state != _state || _since == null)
         {
             _since = state == ProtectionState.Unprotected ? null : DateTime.Now;
@@ -165,17 +146,17 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
             }
         }
         _state = state;
+        UpdateCheckVisibility();
 
-        var (text, brush) = state switch
+        var brush = kind switch
         {
-            ProtectionState.Protected => (L.Protected, warn ? "V2PingMid" : "V2Safe"),
-            ProtectionState.LocalOnly => (L.LocalOnly, "V2PingMid"),
-            _ => (L.Unprotected, "V2Unsafe"),
+            "safe" => "V2Safe",
+            "warn" => "V2PingMid",
+            "checking" => "V2Muted",
+            _ => "V2Unsafe",
         };
-        txtState.Text = text;
-        ToolTip.SetTip(txtState, state == ProtectionState.LocalOnly
-            ? string.Format(L.LocalOnlyTip, AppManager.Instance.GetLocalPort(EInboundProtocol.socks))
-            : null);
+        txtState.Text = label ?? L.Unprotected;
+        ToolTip.SetTip(txtState, tip);
         SetBrush(txtState, TextBlock.ForegroundProperty, brush);
         SetBrush(iconState, PathIcon.ForegroundProperty, brush);
         UpdateClock();
@@ -186,17 +167,15 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     {
         // Nothing to check without a server; the check result of a previous server would mislead.
         _hasServer = item != null;
-        btnCheck.IsVisible = _hasServer;
-        _checkDelay = ViewModel?.AvailabilityDelay ?? 0;
-        RefreshFindWorking();
+        UpdateCheckVisibility();
         // By default the card answers what a person asks: which address sites see now, and whose server
         // this is. The server's own address, port and transport are for the advanced view.
         var advanced = _config.UiItem.V2pnSettingsAdvanced;
         // The address sites see is known only when an IP lookup service is set in Settings (off by default,
         // so nothing extra is asked of a third party); without it the cell names the server itself.
-        var ip = ViewModel?.AvailabilityIp;
+        var ip = _check.Ip;
         var exitKnown = !advanced && item != null && _state != ProtectionState.Unprotected
-            && ViewModel?.AvailabilityDelay > 0 && ip.IsNotEmpty();
+            && _check.IsAvailable && ip.IsNotEmpty();
         lblStatServer.Text = exitKnown ? L.ExitAddress : L.ServerIp;
         lblStatProtocol.Text = advanced ? L.Protocol : L.ServerSource;
         if (item == null)
@@ -300,72 +279,40 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
 
     private async Task CheckConnectionAsync()
     {
-        if (ViewModel == null || ViewModel.AvailabilityDelay == -2)
+        if (ViewModel != null)
         {
-            return;
+            await ViewModel.TestServerAvailability();
         }
-        await ViewModel.TestServerAvailability();
     }
 
-    // AvailabilityDelay: 0 not run, -2 running, -1 failed, otherwise the delay in ms.
-    private void ShowCheck(int delay)
+    public void ShowCheck(AvailabilityCheckResult check)
     {
-        var running = delay == -2;
+        var running = check.State == AvailabilityState.Checking;
         spinCheck.IsVisible = running;
         iconCheckIdle.IsVisible = !running;
-        // The label stays: a shorter "Checking…" made the right-aligned button jump. The spinner and the
-        // pill already say a check is running, and the -2 guard in CheckConnectionAsync stops a second run.
-        txtCheckAction.Text = L.CheckConnection;
-
+        btnCheck.IsEnabled = !running;
         var was = chipCheck.IsVisible;
-        var wasOk = chipCheck.Classes.Contains("ok");
-        _checkDelay = delay;
-        RefreshFindWorking();
-        chipCheck.Classes.Set("ok", delay > 0);
-        chipCheck.Classes.Set("fail", delay == -1);
-        iconCheck.Data = this.FindResource(delay > 0 ? "SemiIconTickCircle" : "SemiIconAlertCircle") as Geometry;
-        txtCheck.Text = delay > 0 ? string.Format(L.CheckWorks, delay) : L.CheckFailed;
-        var ip = ViewModel?.AvailabilityIp;
-        ToolTip.SetTip(chipCheck, ip.IsNotEmpty() ? $"IP {ip}" : null);
-        // The answer to a click: it settles out of the button once, not on every refresh.
-        if (chipCheck.IsVisible && (!was || wasOk != (delay > 0)))
+        _check = check;
+        UpdateCheckVisibility();
+        chipCheck.Classes.Set("ok", check.IsAvailable);
+        iconCheck.Data = this.FindResource("SemiIconTickCircle") as Geometry;
+        txtCheck.Text = check.IsAvailable ? string.Format(L.CheckWorks, check.Time) : string.Empty;
+        ToolTip.SetTip(chipCheck, check.Ip.IsNotEmpty() ? $"IP {check.Ip}" : null);
+        if (chipCheck.IsVisible && !was)
         {
             _ = Motion.Enter(chipCheck, dx: 6, dy: 0, ms: 180, scale: 0.97);
         }
     }
 
-    /// <summary>
-    /// Connected and the server didn't answer the check: offer another one. Not when the core itself
-    /// didn't run (another server won't help; the pill points at the log), and not while disconnected.
-    /// </summary>
-    public void SetCheckFailure(bool serverFailed)
+    private void UpdateCheckVisibility()
     {
-        _checkFailed = serverFailed;
-        RefreshFindWorking();
+        btnCheck.IsVisible = _hasServer && _state != ProtectionState.Unprotected
+            && _check.State != AvailabilityState.Unsupported && !_check.IsFailure;
+        txtCheckAction.Text = L.CheckConnection;
+        txtCheckAction.IsVisible = !_compact;
+        txtIpInfo.IsVisible = !_compact;
+        chipCheck.IsVisible = _hasServer && _check.IsAvailable && !_compact;
     }
-
-    /// <summary>Progress of the search ("Checking 3 of 12…"), or null when it is over.</summary>
-    public void SetFindProgress(string? progress)
-    {
-        _findProgress = progress;
-        RefreshFindWorking();
-    }
-
-    private void RefreshFindWorking()
-    {
-        var finding = _findProgress != null;
-        btnFindWorking.IsVisible = finding || (_hasServer && _checkFailed);
-        // Both labels don't fit the header at the minimum width in Russian; Check keeps its icon, tooltip and name.
-        // A compact card keeps only the icon too.
-        txtCheckAction.IsVisible = !btnFindWorking.IsVisible && !_compact;
-        txtIpInfo.IsVisible = txtCheckAction.IsVisible;
-        spinFind.IsVisible = finding;
-        txtFindWorking.Text = _findProgress ?? L.FindWorkingServer;
-        // While the offer is up, the pill above already says the server is not answering; a "No response"
-        // chip beside the button said it a third time. Without the offer (the core itself failed) it stays.
-        chipCheck.IsVisible = _hasServer && _checkDelay is -1 or > 0 && !btnFindWorking.IsVisible;
-    }
-
     private void DrawChart()
     {
         var w = chartHost.Bounds.Width;

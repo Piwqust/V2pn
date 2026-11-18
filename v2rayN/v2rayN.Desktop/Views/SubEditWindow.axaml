@@ -188,6 +188,8 @@
                                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.SubLinkHint}" />
                                     </StackPanel>
                                     <TextBox x:Name="txtUrl" MinHeight="64" AcceptsReturn="False" TextWrapping="Wrap" PlaceholderText="https://…" />
+                                    <TextBlock x:Name="txtUrlError" Classes="srowhint warn" IsVisible="False"
+                                        TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
                                     <!--  V2pn: in place of the link when the partner hid it (hide-url with the lock grant).  -->
                                     <TextBlock x:Name="txtUrlHidden" Classes="srowhint" Margin="0" IsVisible="False" TextWrapping="Wrap" />
                                 </StackPanel>

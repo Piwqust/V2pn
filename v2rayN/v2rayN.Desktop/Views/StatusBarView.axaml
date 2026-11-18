@@ -47,6 +47,7 @@
                         Margin="0,0,8,0"
                         VerticalAlignment="Center"
                         DockPanel.Dock="Left"
+                        TextTrimming="CharacterEllipsis"
                         FontWeight="SemiBold" />
                     <TextBlock
                         x:Name="txtStateTime"
@@ -69,20 +70,6 @@
                             <TextBlock x:Name="txtCheck" VerticalAlignment="Center" />
                         </StackPanel>
                     </Border>
-                    <!--  The next step after "No response": another server of the same country or subscription.  -->
-                    <Button
-                        x:Name="btnFindWorking"
-                        Classes="accent small"
-                        IsVisible="False"
-                        Theme="{StaticResource V2Button}">
-                        <StackPanel Orientation="Horizontal" Spacing="5">
-                            <Path
-                                x:Name="spinFind"
-                                Classes="spinner"
-                                IsVisible="False" />
-                            <TextBlock x:Name="txtFindWorking" VerticalAlignment="Center" />
-                        </StackPanel>
-                    </Button>
                     <!--  Everything about the address sites see, 2ip-style; asked only on a click.  -->
                     <Button
                         x:Name="btnIpInfo"

@@ -9,9 +9,8 @@ using Ellipse = Avalonia.Controls.Shapes.Ellipse;
 namespace v2rayN.Desktop.Views;
 
 /// <summary>
-/// V2pn: the first-start walkthrough. Five steps over the whole window: welcome and language, the
-/// servers (moved from other apps or added by hand), what goes through the VPN, how to connect, and a
-/// summary with Connect. Every choice is the same one the main screen offers later, made through the
+/// V2pn: the first-start walkthrough offers Connect on the import screen. Route and mode are optional
+/// steps. Every choice is the same one the main screen offers later, made through the
 /// same code, so nothing here is a separate setting. The step is saved, so a restart the walkthrough
 /// itself causes (a language switch) comes back to it. Skipping leaves the first-run card on the map,
 /// as before; people who had servers before the walkthrough existed never see it.
@@ -38,6 +37,7 @@ public partial class MainWindow
     private Button? _obPrimary;
     private Action? _obPrimaryAction;
     private DispatcherTimer? _obTimer;
+    private bool _obFinishing;
 
     // Servers step.
     private readonly List<Button> _obImportRows = [];
@@ -46,6 +46,13 @@ public partial class MainWindow
     private TextBlock? _obStatusText;
     private ShapePath? _obStatusSpin;
     private PathIcon? _obStatusTick;
+    private StackPanel? _obImportOptions;
+    private StackPanel? _obConnectionSummary;
+    private TextBlock? _obSummaryServer;
+    private TextBlock? _obSummaryRoute;
+    private TextBlock? _obSummaryMode;
+    private TextBlock? _obImportMessage;
+    private string? _obImportError;
 
     // Route and mode steps.
     private readonly Dictionary<RoutingPresetKind, Button> _obRouteRows = [];
@@ -209,13 +216,14 @@ public partial class MainWindow
 
         // Bars, not dots: the length of the road is visible at once, and the filled part grows.
         _obProgress.Children.Clear();
-        for (var i = 0; i < ObStepCount; i++)
+        var visibleSteps = _obStep <= ObStep.Servers ? 2 : ObStepCount;
+        for (var i = 0; i < visibleSteps; i++)
         {
             var bar = new Border { Width = 22, Height = 4, CornerRadius = new CornerRadius(2) };
             bar.Bind(Border.BackgroundProperty, this.GetResourceObservable(i <= (int)_obStep ? "V2Accent" : "V2Border"));
             _obProgress.Children.Add(bar);
         }
-        _obProgressText!.Text = string.Format(L.ObStepOf, (int)_obStep + 1, ObStepCount);
+        _obProgressText!.Text = string.Format(L.ObStepOf, (int)_obStep + 1, visibleSteps);
 
         _obBack!.IsVisible = _obStep != ObStep.Welcome;
         _obSecondary!.IsVisible = false;
@@ -256,6 +264,11 @@ public partial class MainWindow
 
     private async Task FinishOnboardingAsync(bool connect)
     {
+        if (_obFinishing || (connect && !_hasServer))
+        {
+            return;
+        }
+        _obFinishing = true;
         _config.UiItem.V2pnOnboarded = true;
         _config.UiItem.V2pnOnboardingStep = 0;
         await ConfigHandler.SaveConfig(_config);
@@ -354,8 +367,9 @@ public partial class MainWindow
         var sources = _importSearch is { IsCompletedSuccessfully: true } done ? done.Result : _importSources ?? [];
         _importSources = sources;
         var usable = sources.Where(s => !s.Locked).ToList();
-        var panel = new StackPanel { Spacing = 0 };
-        panel.Children.Add(StepTitle(L.ObServersTitle));
+        var step = new StackPanel { Children = { StepTitle(L.ObServersTitle) } };
+        var panel = _obImportOptions = new StackPanel();
+        step.Children.Add(panel);
         panel.Children.Add(StepLead(usable.Count > 0 ? L.ObServersLeadFound : L.ObServersLead));
 
         _obImportRows.Clear();
@@ -454,11 +468,16 @@ public partial class MainWindow
         var paste = HandTile("SemiIconCopy", L.HandPaste, L.ObPasteHint);
         paste.Click += async (_, _) =>
         {
+            _obImportError = null;
             await AddServerViaClipboardAsync();
             RefreshServersStatus();
         };
         var sub = HandTile("SemiIconLink", L.HandSubscription, L.ObSubHint);
-        sub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
+        sub.Click += (_, _) =>
+        {
+            _obImportError = null;
+            ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
+        };
         tiles.Children.Add(paste);
         Grid.SetColumn(sub, 1);
         tiles.Children.Add(sub);
@@ -471,8 +490,26 @@ public partial class MainWindow
         }
         panel.Children.Add(tiles);
 
+        _obImportMessage = new TextBlock { Margin = new Thickness(0, 12, 0, 0), TextWrapping = TextWrapping.Wrap };
+        _obImportMessage.Bind(ForegroundProperty, this.GetResourceObservable("V2Unsafe"));
+        step.Children.Add(_obImportMessage);
+
+        _obSummaryServer = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        _obSummaryRoute = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        _obSummaryMode = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var editConnection = TextButton(L.ObEditConnection, "ghost");
+        editConnection.HorizontalAlignment = HorizontalAlignment.Left;
+        editConnection.Click += (_, _) => GoTo(ObStep.Route);
+        _obConnectionSummary = new StackPanel
+        {
+            Margin = new Thickness(0, 16, 0, 0),
+            Spacing = 6,
+            Children = { _obSummaryServer, _obSummaryMode, _obSummaryRoute, editConnection },
+        };
+        step.Children.Add(_obConnectionSummary);
+
         RefreshServersStatus();
-        return panel;
+        return step;
     }
 
     private void UpdateObMove()
@@ -508,6 +545,7 @@ public partial class MainWindow
             return;
         }
         _obMove.IsEnabled = false;
+        _obImportError = null;
         _obMove.Content = L.ObMoving;
         var moving = MoveForeignAsync(picked);
         // The subscriptions download one after another; the status line under the tiles counts the servers meanwhile.
@@ -532,14 +570,45 @@ public partial class MainWindow
         }
         var count = ServerCount();
         var downloading = _subUpdatesRunning > 0;
+        if (_obImportOptions != null)
+        {
+            _obImportOptions.IsVisible = count == 0;
+        }
+        if (_obImportMessage != null)
+        {
+            _obImportMessage.IsVisible = !downloading && count == 0 && _obImportError.IsNotEmpty();
+            _obImportMessage.Text = _obImportError;
+        }
+        if (_obConnectionSummary != null)
+        {
+            _obConnectionSummary.IsVisible = count > 0;
+            _obSummaryServer!.Text = string.Format(L.ObServerSummary, _serverName ?? L.NoServer);
+            _obSummaryMode!.Text = string.Format(L.ObModeSummary, OnboardingConnectionMode());
+            _obSummaryRoute!.Text = string.Format(L.ObRouteSummary, OnboardingRoute());
+        }
         _obStatus.IsVisible = downloading || count > 0;
         _obStatusSpin!.IsVisible = downloading;
         _obStatusTick!.IsVisible = !downloading && count > 0;
         _obStatusText!.Text = downloading
             ? count > 0 ? $"{L.ObDownloading} {L.ServerCount(count)}" : L.ObDownloading
             : string.Format(L.ObServersReady, L.ServerCount(count));
-        SetPrimary(count > 0 ? L.ObNext : L.ObLater, accent: count > 0, () => GoTo(ObStep.Route));
+        if (count > 0)
+        {
+            SetPrimary(L.ObConnect, accent: true, () => _ = FinishOnboardingAsync(connect: true));
+        }
+        else
+        {
+            SetPrimary(L.ObLater, accent: false, () => _ = FinishOnboardingAsync(connect: false));
+        }
     }
+
+    private string OnboardingConnectionMode() => _config.UiItem.V2pnPreferTun ? L.ModeVpn
+        : ConnectionPrefs.ProxyMethod(_config) == ESysProxyType.Unchanged ? L.LocalOnly : L.ModeProxy;
+
+    private string OnboardingRoute() =>
+        RoutingPresets.KindOf(ViewModel?.StatusBarViewModel.SelectedRouting?.Id) is { } kind
+            ? RoutingPresets.Title(kind)
+            : ViewModel?.StatusBarViewModel.SelectedRouting?.Remarks ?? "—";
 
     private Control BuildRouteStep()
     {
@@ -710,9 +779,6 @@ public partial class MainWindow
             icon.Bind(ForegroundProperty, this.GetResourceObservable(ready ? "V2PingGood" : "V2Accent"));
         }
 
-        var route = RoutingPresets.KindOf(ViewModel?.StatusBarViewModel.SelectedRouting?.Id) is { } kind
-            ? RoutingPresets.Title(kind)
-            : ViewModel?.StatusBarViewModel.SelectedRouting?.Remarks ?? string.Empty;
         var summary = new StackPanel
         {
             Spacing = 0,
@@ -720,8 +786,8 @@ public partial class MainWindow
             {
                 SummaryRow(L.ObSumServers, ready ? L.ServerCount(count) : L.ObNone, ObStep.Servers),
                 SummaryRow(L.ObSumServer, ready && txtHeaderTitle.Text.IsNotEmpty() ? txtHeaderTitle.Text! : "—", null),
-                SummaryRow(L.ObSumRoute, route, ObStep.Route),
-                SummaryRow(L.ObSumMode, _config.UiItem.V2pnPreferTun ? L.ModeVpn : L.ModeProxy, ObStep.Mode),
+                SummaryRow(L.ObSumRoute, OnboardingRoute(), ObStep.Route),
+                SummaryRow(L.ObSumMode, OnboardingConnectionMode(), ObStep.Mode),
             },
         };
         var summaryBox = new Border

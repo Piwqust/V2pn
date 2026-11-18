@@ -89,13 +89,8 @@ public partial class StatusBarViewModel : MyReactiveObject
     [Reactive]
     public partial string RunningInfoDisplay { get; set; }
 
-    /// <summary>Last connection check: 0 not run, -2 running, -1 failed, otherwise the delay in ms.</summary>
     [Reactive]
-    public partial int AvailabilityDelay { get; set; }
-
-    /// <summary>Exit IP reported by the last connection check, when the check could see it.</summary>
-    [Reactive]
-    public partial string AvailabilityIp { get; set; }
+    public partial AvailabilityCheckResult Availability { get; private set; }
 
     [Reactive]
     public partial string SpeedProxyDisplay { get; set; }
@@ -141,7 +136,7 @@ public partial class StatusBarViewModel : MyReactiveObject
         _config = AppManager.Instance.Config;
         SelectedRouting = new();
         SelectedServer = new();
-        AvailabilityIp = string.Empty;
+        Availability = AvailabilityCheckResult.Unchecked;
         RunningServerToolTipText = GetRunningServerToolTipText("-");
         TrayToolTipText = Global.AppName;
         BlSystemProxyPacVisible = Utils.IsWindows();
@@ -354,71 +349,81 @@ public partial class StatusBarViewModel : MyReactiveObject
         SetDefaultServerRequested.Publish(SelectedServer.ID);
     }
 
-    private int _availabilityRun;
+    internal sealed record AvailabilityTarget(string ProfileId, string? RouteId, bool Tun, ESysProxyType Proxy, int Port, string Url);
+
+    private long _availabilityGeneration;
+    private (long Generation, AvailabilityTarget Target, AvailabilityProbeEndpoint? Endpoint)? _runningProbe;
+
+    internal AvailabilityTarget CaptureAvailabilityTarget() => new(_config.IndexId,
+        _config.RoutingBasicItem.RoutingIndexId, _config.TunModeItem.EnableTun, _config.SystemProxyItem.SysProxyType,
+        AppManager.Instance.GetLocalPort(EInboundProtocol.socks), _config.SpeedTestItem.SpeedPingTestUrl);
+
+    private bool IsProbeCurrent(long generation, AvailabilityTarget target) =>
+        generation == Interlocked.Read(ref _availabilityGeneration)
+        && !V2pnConnection.IsOff(_config)
+        && CoreManager.Instance.IsCoreAlive
+        && target == CaptureAvailabilityTarget();
+
+    public AvailabilityCheckResult CurrentAvailability =>
+        _runningProbe is { } probe && IsProbeCurrent(probe.Generation, probe.Target)
+            ? Availability : AvailabilityCheckResult.Unchecked;
+
+    internal long InvalidateAvailability()
+    {
+        var generation = Interlocked.Increment(ref _availabilityGeneration);
+        RxSchedulers.MainThreadScheduler.Schedule(() =>
+        {
+            if (generation == Interlocked.Read(ref _availabilityGeneration))
+            {
+                _runningProbe = null;
+                Availability = AvailabilityCheckResult.Unchecked;
+                RunningInfoDisplay = string.Empty;
+            }
+        });
+        return generation;
+    }
+
+    internal bool SetAvailabilityReady(long generation, AvailabilityTarget target, AvailabilityProbeEndpoint? endpoint)
+    {
+        if (!IsProbeCurrent(generation, target))
+        {
+            return false;
+        }
+        _runningProbe = (generation, target, endpoint);
+        Availability = endpoint != null ? AvailabilityCheckResult.Unchecked : new(AvailabilityState.Unsupported);
+        return true;
+    }
 
     public async Task<AvailabilityCheckResult?> TestServerAvailability()
     {
-        // V2pn: checks overlap (connect button, mode switch, the reload after a core start). A check that
-        // started before the core was up reports "no response"; only the newest one may report a result.
-        var run = Interlocked.Increment(ref _availabilityRun);
-        var item = await ConfigHandler.GetDefaultServer(_config);
-        if (item == null)
+        if (_runningProbe is not { Endpoint: { } endpoint } probe || !IsProbeCurrent(probe.Generation, probe.Target)
+            || Availability.State == AvailabilityState.Checking)
         {
             return null;
         }
 
-        await TestServerAvailabilitySub(ResUI.Speedtesting);
-        RxSchedulers.MainThreadScheduler.Schedule(() => AvailabilityDelay = -2);
-
-        var result = await Task.Run(ConnectionHandler.RunAvailabilityCheck);
-        if (run != Volatile.Read(ref _availabilityRun))
+        Availability = new(AvailabilityState.Checking);
+        RunningInfoDisplay = ResUI.Speedtesting;
+        var result = await ConnectionHandler.RunAvailabilityCheck(endpoint, probe.Target.Url);
+        if (!IsProbeCurrent(probe.Generation, probe.Target))
         {
-            if (result.Time > 0)
+            return null;
+        }
+
+        Availability = result;
+        var message = string.Format(ResUI.TestMeOutput, result.IsAvailable ? result.Time : -1, result.Ip ?? Global.None);
+        RunningInfoDisplay = message;
+        NoticeManager.Instance.SendMessageEx(message);
+        if (result.IsAvailable)
+        {
+            var id = probe.Target.ProfileId;
+            if (result.Ip.IsNotEmpty())
             {
-                ProfileExManager.Instance.SetTestDelay(item.IndexId, result.Time);
+                ProfileExManager.Instance.SetTestIpInfo(id, result.Ip);
             }
-            return null;
+            ProfileExManager.Instance.SetTestDelay(id, result.Time);
         }
-        RxSchedulers.MainThreadScheduler.Schedule(() =>
-        {
-            AvailabilityDelay = result.Time > 0 ? result.Time : -1;
-            AvailabilityIp = result.GetValidIp() ?? string.Empty;
-        });
-        var msg = string.Format(ResUI.TestMeOutput, result.Time, result.Ip);
-
-        var ip = result.GetValidIp();
-        if (ip.IsNotEmpty())
-        {
-            ProfileExManager.Instance.SetTestIpInfo(item.IndexId, ip);
-        }
-        if (result.Time > 0)
-        {
-            ProfileExManager.Instance.SetTestDelay(item.IndexId, result.Time);
-        }
-        else if (CoreManager.Instance.IsCoreAlive)
-        {
-            // V2pn: a failed check counts against the server only when the core was running.
-            ServerUsageManager.Instance.RecordTest(item.IndexId, -1);
-        }
-
-        NoticeManager.Instance.SendMessageEx(msg);
-        await TestServerAvailabilitySub(msg);
         return result;
-    }
-
-    private async Task TestServerAvailabilitySub(string msg)
-    {
-        RxSchedulers.MainThreadScheduler.Schedule(() =>
-        {
-            _ = TestServerAvailabilityResult(msg);
-        });
-        await Task.CompletedTask;
-    }
-
-    public async Task TestServerAvailabilityResult(string msg)
-    {
-        RunningInfoDisplay = msg;
-        await Task.CompletedTask;
     }
 
     #region System proxy and Routings
@@ -430,6 +435,7 @@ public partial class StatusBarViewModel : MyReactiveObject
             return;
         }
         var wasOff = V2pnConnection.IsOff(_config); // V2pn
+        InvalidateAvailability();
         _config.SystemProxyItem.SysProxyType = type;
         // V2pn: when turning on, the reload below starts the core and sets the proxy once the core listens.
         // Setting it here would point Windows at a port nobody answers until the core is up.
@@ -440,7 +446,7 @@ public partial class StatusBarViewModel : MyReactiveObject
         SystemProxySelected = (int)_config.SystemProxyItem.SysProxyType;
         await ConfigHandler.SaveConfig(_config);
         // V2pn: the core runs only while connected, so turning on or off starts or stops it.
-        if (wasOff != V2pnConnection.IsOff(_config))
+        if (wasOff != V2pnConnection.IsOff(_config) || !_config.TunModeItem.EnableTun)
         {
             ReloadRequested.Publish();
         }
@@ -510,6 +516,7 @@ public partial class StatusBarViewModel : MyReactiveObject
             return;
         }
 
+        InvalidateAvailability();
         _config.TunModeItem.EnableTun = EnableTun;
 
         if (EnableTun && AllowEnableTun() == false)
@@ -530,7 +537,7 @@ public partial class StatusBarViewModel : MyReactiveObject
                 var password = await PasswordInputInteraction.HandleSafe(RxVoid.Default);
                 if (password.IsNullOrEmpty())
                 {
-                    _config.TunModeItem.EnableTun = false;
+                    EnableTun = false;
                     return;
                 }
             }
@@ -556,6 +563,9 @@ public partial class StatusBarViewModel : MyReactiveObject
         }
         return false;
     }
+
+    public async Task<bool> RequestTunPermissionAsync() =>
+        AllowEnableTun() || (await PasswordInputInteraction.HandleSafe(RxVoid.Default)).IsNotEmpty();
 
     #endregion System proxy and Routings
 

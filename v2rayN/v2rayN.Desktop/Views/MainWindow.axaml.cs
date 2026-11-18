@@ -165,6 +165,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             txtSearch.Focus();
         };
         // When the core itself failed, the pill leads to the log, where the reason is.
+        btnRetryConnection.Click += async (_, _) =>
+        {
+            if (ViewModel?.StatusBarViewModel is { } status)
+            {
+                await status.TestServerAvailability();
+            }
+        };
+        btnReplacement.Click += async (_, _) => await FindWorkingServerAsync();
         pillState.PointerPressed += (_, e) =>
         {
             if (_pillOpensLog)
@@ -293,17 +301,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
                 .SubscribeAsync(async _ => await RefreshConnectionAsync())
                 .DisposeWith(disposables);
-            this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.AvailabilityDelay)
+            this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.Availability)
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(delay =>
+                .Subscribe(_ =>
                 {
-                    // Decided once per result: a reload stops the core for a moment, which is not a failure.
-                    _coreFailed = delay == -1 && !CoreManager.Instance.IsCoreAlive;
                     RefreshStatePill();
-                    // "Recent" holds only servers that passed the connection check.
-                    if (delay > 0)
+                    if (ViewModel?.StatusBarViewModel.CurrentAvailability.IsAvailable == true)
                     {
-                        Remember(_activeIndexId, CurrentState());
+                        Remember(_config.IndexId, CurrentState());
                     }
                 })
                 .DisposeWith(disposables);
@@ -413,7 +418,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         if (_statusView == null)
         {
             _statusView = new StatusBarView { ViewModel = vm.StatusBarViewModel };
-            _statusView.FindWorkingRequested += () => _ = FindWorkingServerAsync();
         }
         contentStatusBarView.Content = _statusView;
         ApplyLayout();
@@ -623,7 +627,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var up = _activeIndexId.IsNotEmpty()
                  && CurrentState() != ProtectionState.Unprotected
                  && CoreManager.Instance.IsCoreAlive
-                 && ViewModel?.StatusBarViewModel.AvailabilityDelay is not -1;
+                 && ViewModel?.StatusBarViewModel.CurrentAvailability.IsAvailable == true;
         ServerUsageManager.Instance.Tick(up ? _activeIndexId : null);
         if (++_usageTicks % 8 == 0)
         {
@@ -659,13 +663,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     // The pill's kind and spoken label last shown, and the last settled verdict on the tint and map pin.
     private string? _pillKind;
     private string? _spokenState;
-    private string? _verdict;
     private bool _quietPill;
-    // The last check failed because the core wasn't running: a local fault, not the server's.
-    private bool _coreFailed;
     private bool _pillOpensLog;
     private Cursor? _handCursor;
-    private bool _findingWorking;
     // Set by the first refresh: before it, nobody knows yet whether the welcome card or the hero shows.
     private bool _stageKnown;
 
@@ -708,6 +708,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             var country = WorldMap.Instance.Get(code);
             _mapCode = country?.Code ?? code;
             _serverName = item == null ? null : CountryResolver.ServerName(item);
+            RefreshServersStatus();
             var flag = V2pnConverters.Flag(code);
             imgHeaderFlag.Source = flag;
             borderHeaderFlag.IsVisible = flag != null;
@@ -848,63 +849,28 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         status.SystemProxySelected = (int)ESysProxyType.ForcedClear;
     }
 
-    // The pill combines the proxy mode with the last connection check, so "Protected" means the check passed.
     private void RefreshStatePill()
     {
         var state = CurrentState();
-        var delay = ViewModel?.StatusBarViewModel.AvailabilityDelay ?? 0;
-        var checking = state != ProtectionState.Unprotected && delay == -2;
-        var failed = state != ProtectionState.Unprotected && delay == -1;
-        // The core wasn't running when the check failed: a fault on this computer, not the server's.
-        var coreFailed = failed && _coreFailed;
-        // V2pn switched itself off because the core would not start or kept dying. The reason stays on the
-        // pill until the next attempt; a plain "Unprotected" would hide that anything went wrong.
+        var status = ViewModel?.StatusBarViewModel;
+        var check = status?.CurrentAvailability ?? AvailabilityCheckResult.Unchecked;
+        var enabled = state != ProtectionState.Unprotected;
         var core = V2pnCoreWatch.State;
-        var fault = state == ProtectionState.Unprotected || core == EV2pnCoreState.Failed ? V2pnCoreWatch.Failure : EV2pnFailure.None;
-        var restarting = state != ProtectionState.Unprotected && core == EV2pnCoreState.Restarting;
-        // The mode is on but the core is not up yet (app start, or the moment after Connect).
-        var starting = state != ProtectionState.Unprotected && core is EV2pnCoreState.Starting or EV2pnCoreState.Stopped;
-
-        string kind;
-        string label;
-        if (fault != EV2pnFailure.None)
+        var fault = !enabled || core == EV2pnCoreState.Failed ? V2pnCoreWatch.Failure : EV2pnFailure.None;
+        var restarting = enabled && core == EV2pnCoreState.Restarting;
+        var starting = enabled && core is EV2pnCoreState.Starting or EV2pnCoreState.Stopped;
+        var (kind, label) = (fault, enabled, restarting, starting, check.State, state) switch
         {
-            (kind, label) = ("warn", fault == EV2pnFailure.KeepsStopping ? L.StateCoreStopped : L.StateCoreFailed);
-        }
-        else if (state == ProtectionState.Unprotected)
-        {
-            (kind, label) = ("unsafe", L.Unprotected);
-        }
-        else if (restarting)
-        {
-            (kind, label) = ("checking", L.StateReconnecting);
-        }
-        else if (starting)
-        {
-            (kind, label) = ("checking", L.StateConnecting);
-        }
-        else if (checking)
-        {
-            (kind, label) = ("checking", L.StateChecking);
-        }
-        else if (coreFailed)
-        {
-            (kind, label) = ("warn", L.StateCoreFailed);
-        }
-        else if (failed)
-        {
-            (kind, label) = ("warn", L.StateNoResponse);
-        }
-        else if (state == ProtectionState.LocalOnly)
-        {
-            (kind, label) = ("warn", L.LocalOnly);
-        }
-        else
-        {
-            // The pill is the verdict; the delay is a detail and lives in the status card's check chip.
-            (kind, label) = ("safe", L.Protected);
-        }
-
+            (EV2pnFailure.KeepsStopping, _, _, _, _, _) => ("warn", L.StateCoreStopped),
+            (not EV2pnFailure.None, _, _, _, _, _) => ("warn", L.StateCoreFailed),
+            (_, false, _, _, _, _) => ("unsafe", L.Unprotected),
+            (_, _, true, _, _, _) => ("checking", L.StateReconnecting),
+            (_, _, _, true, _, _) => ("checking", L.StateConnecting),
+            (_, _, _, _, AvailabilityState.Checking, _) => ("checking", L.StateChecking),
+            (_, _, _, _, AvailabilityState.Available, ProtectionState.LocalOnly) => ("safe", L.LocalOnly),
+            (_, _, _, _, AvailabilityState.Available, _) => ("safe", status?.EnableTun == true ? L.StateVpnConnected : L.StateProxyConnected),
+            _ => ("warn", L.CheckStatus(check)),
+        };
         foreach (var c in new[] { "safe", "unsafe", "warn", "checking" })
         {
             pillState.Classes.Set(c, c == kind);
@@ -920,15 +886,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var faultTip = !faulted ? null
             : V2pnCoreWatch.FailureDetail.IsNullOrEmpty() ? L.StateCoreFailedTip
             : $"{Shorten(V2pnCoreWatch.FailureDetail, 300)}\n\n{L.StateCoreFailedTip}";
-        ToolTip.SetTip(pillState, faulted ? faultTip
-            : coreFailed ? L.StateCoreFailedTip
-            : failed ? L.StateNoResponseTip
-            : kind == "warn" && state == ProtectionState.LocalOnly
-                ? string.Format(L.LocalOnlyTip, AppManager.Instance.GetLocalPort(EInboundProtocol.socks))
-                : null);
-        _pillOpensLog = coreFailed || faulted;
-        pillState.Cursor = _pillOpensLog ? _handCursor ??= new Cursor(StandardCursorType.Hand) : null;
-        _statusView?.SetCheckFailure(failed && !coreFailed);
+        var systemProxy = enabled && status?.EnableTun == false
+            && (ESysProxyType)status.SystemProxySelected is ESysProxyType.ForcedChange or ESysProxyType.Pac;
+        txtSystemProxyScope.IsVisible = systemProxy;
+        var tip = faulted ? faultTip
+            : check.IsFailure ? L.CheckFailureHint
+            : state == ProtectionState.LocalOnly ? string.Format(L.LocalOnlyTip, AppManager.Instance.GetLocalPort(EInboundProtocol.socks))
+            : systemProxy ? L.SystemProxyScope : null;
+        ToolTip.SetTip(pillState, tip);
+        _pillOpensLog = faulted;
+        pillState.Cursor = faulted ? _handCursor ??= new Cursor(StandardCursorType.Hand) : null;
+        btnRetryConnection.IsVisible = enabled && check.IsFailure;
+        RefreshReplacementAction(check, enabled);
+        _statusView?.ShowCheck(check);
         spinState.IsVisible = kind == "checking";
         dotState.IsVisible = kind != "checking";
 
@@ -944,10 +914,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             SetConnectLabel(starting || restarting ? L.StateConnecting : L.Disconnect);
         }
         PaintVerdict(kind, state);
-        // The title and the tray say "connected" only once the check has passed.
-        RefreshTray(state, failed || faulted || kind == "checking" ? label : null);
+        _statusView?.SetState(state, label, kind, tip);
+        RefreshTray(state, label);
     }
-
     /// <summary>
     /// A setting carried over from v2rayN can leave the local port open to the whole network with no
     /// password. Said once; the Settings page keeps the warning next to the switch.
@@ -1011,49 +980,22 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     /// <summary>
     /// The tray tooltip and status item, its Connect/Disconnect item, and Window.Title (Alt+Tab, taskbar)
-    /// say what the pill says. <paramref name="problem"/> is the pill's text when the check failed.
+    /// use the same status text as the pill.
     /// </summary>
-    private void RefreshTray(ProtectionState state, string? problem)
+    private void RefreshTray(ProtectionState state, string label)
     {
-        _trayState = (state, problem);
-        var status = ViewModel?.StatusBarViewModel;
-        var server = _serverName ?? L.NoServer;
-        if (server.Length > 40)
+        _trayState = (state, label);
+        var server = Shorten(_serverName ?? L.NoServer, 40);
+        var text = state == ProtectionState.Unprotected ? label : $"{label} · {server}";
+        var title = $"{EditionTitle()} — {text}";
+        Title = title;
+        if (ViewModel?.StatusBarViewModel is { } status)
         {
-            server = server[..39] + "…";
+            status.TrayStatusText = text;
+            status.TrayToolTipText = Utils.IsLinux() ? Global.AppName : Shorten(title, 127);
+            status.TrayConnectText = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect;
         }
-        string text;
-        if (state == ProtectionState.Unprotected)
-        {
-            text = problem ?? L.Unprotected;
-        }
-        else if (problem != null)
-        {
-            text = $"{problem} · {server}";
-        }
-        else
-        {
-            var mode = status?.EnableTun == true ? L.ModeVpn : state == ProtectionState.LocalOnly ? L.LocalOnly : L.ModeProxy;
-            text = $"{L.Connected} · {server} · {mode}";
-        }
-        // V2pn: the open partner look names itself too (MainWindow.Edition.cs).
-        var app = EditionTitle();
-        Title = state == ProtectionState.Unprotected
-            ? $"{app} — {problem ?? L.Unprotected}"
-            : problem != null
-                ? $"{app} — {problem} · {server}"
-                : $"{app} — {L.Connected} · {server}";
-        if (status == null)
-        {
-            return;
-        }
-        status.TrayStatusText = text;
-        var tip = $"{app} — {text}";
-        // Windows cuts a tray tooltip at 127 characters; Linux trays keep v2rayN's plain name.
-        status.TrayToolTipText = Utils.IsLinux() ? Global.AppName : tip.Length > 127 ? tip[..126] + "…" : tip;
-        status.TrayConnectText = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect;
     }
-
     /// <summary>Connect/Disconnect from the tray menu: the window's button, without opening the window.</summary>
     public void ToggleConnectionFromTray()
     {
@@ -1074,34 +1016,24 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     /// <summary>
     /// Paints the tint, the map pin, the status line and the Disconnect glyph in the pill's colour.
-    /// While a check runs, the tint and the pin keep the last verdict, so they change once, with the result.
+    /// A connection whose check is running uses the pending colour.
     /// </summary>
     private void PaintVerdict(string kind, ProtectionState state)
     {
-        if (kind != "checking")
-        {
-            _verdict = kind;
-        }
-        var shown = _verdict ?? (state == ProtectionState.Protected ? "safe" : state == ProtectionState.LocalOnly ? "warn" : "unsafe");
-
-        // On the welcome card the only warm spot is the paste button; the pill still says "Unprotected".
         var noTint = cardWelcome.IsVisible || !_stageKnown;
-        tintSafe.Opacity = !noTint && shown == "safe" ? 1 : 0;
-        tintWarn.Opacity = !noTint && shown == "warn" ? 1 : 0;
-        tintUnsafe.Opacity = !noTint && shown == "unsafe" ? 1 : 0;
+        tintSafe.Opacity = !noTint && kind == "safe" ? 1 : 0;
+        tintWarn.Opacity = !noTint && kind == "warn" ? 1 : 0;
+        tintUnsafe.Opacity = !noTint && kind == "unsafe" ? 1 : 0;
 
-        mapView.Focus(_mapCode, shown switch
+        mapView.Focus(_mapCode, kind switch
         {
             "safe" => ProtectionState.Protected,
-            "warn" => ProtectionState.LocalOnly,
+            "warn" or "checking" => ProtectionState.LocalOnly,
             _ => ProtectionState.Unprotected,
         });
-        _statusView?.SetState(state, warn: kind == "warn", iconWarn: shown == "warn");
         btnConnect.Classes.Set("safe", kind == "safe");
-        // After a failure the button is the plain Connect again; only a live connection wears the warning.
         btnConnect.Classes.Set("warn", kind == "warn" && state != ProtectionState.Unprotected);
     }
-
     private static async Task<int> StoredDelayAsync(string? indexId)
     {
         if (indexId.IsNullOrEmpty())
@@ -1122,17 +1054,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         _statusView.SetServer(item, FindModel(_activeIndexId)?.Delay ?? await StoredDelayAsync(_activeIndexId));
     }
 
-    private void BtnConnect_Click(object? sender, RoutedEventArgs e)
-    {
-        var connect = CurrentState() == ProtectionState.Unprotected;
-        ToggleConnection(connect);
-        if (connect)
-        {
-            // Turning the proxy on proves nothing by itself; check that traffic actually goes through.
-            _ = ViewModel?.StatusBarViewModel.TestServerAvailability();
-        }
-    }
-
+    private void BtnConnect_Click(object? sender, RoutedEventArgs e) =>
+        ToggleConnection(CurrentState() == ProtectionState.Unprotected);
     private async void ToggleConnection(bool connect)
     {
         var status = ViewModel?.StatusBarViewModel;
@@ -1250,7 +1173,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var tun = lstMode.SelectedIndex == 1;
         var connected = IsConnected(status);
-        if (tun && !await EnsureTunAllowedAsync(connectAfterRestart: connected))
+        if (tun && connected && !await EnsureTunAllowedAsync(connectAfterRestart: true))
         {
             SyncModeSelection();
             return;
@@ -1261,11 +1184,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         if (connected && tun != status.EnableTun)
         {
             ApplyMode(status, tun);
-            if (!tun)
-            {
-                // Switching to the proxy doesn't reload the core, so nothing re-checks the connection by itself.
-                _ = status.TestServerAvailability();
-            }
         }
     }
 
@@ -1280,10 +1198,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return false;
         }
-        if (status.AllowEnableTun() || !Utils.IsWindows())
+        if (status.AllowEnableTun())
         {
-            // Linux and macOS ask for the password when TUN turns on.
             return true;
+        }
+        if (!Utils.IsWindows())
+        {
+            return await status.RequestTunPermissionAsync();
         }
         if (await UI.ShowYesNo(L.VpnRestartAsAdmin, L.Restart) != ButtonResult.Yes)
         {
@@ -2031,79 +1952,6 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         await ConnectToAsync(best);
     }
 
-    /// <summary>
-    /// "Find a working server" after a failed check: pings the other servers of the same country (or of the
-    /// same subscription when the country is unknown or has no other server) and switches to the quickest.
-    /// Selecting switches the running connection over (and the reload re-runs the check); if the user has
-    /// disconnected meanwhile, the server only becomes the choice for the next Connect.
-    /// </summary>
-    private async Task FindWorkingServerAsync()
-    {
-        var profiles = ViewModel?.ProfilesViewModel;
-        if (profiles == null || _findingWorking || _activeIndexId.IsNullOrEmpty())
-        {
-            return;
-        }
-        _findingWorking = true;
-        IDisposable? progress = null;
-        try
-        {
-            var current = await AppManager.Instance.GetProfileItem(_activeIndexId);
-            if (current == null)
-            {
-                return;
-            }
-            var all = await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? [];
-            var others = all.Where(m => m.IndexId != current.IndexId).ToList();
-            var code = CountryResolver.Resolve(current.Remarks);
-            var candidates = code.IsNotEmpty()
-                ? others.Where(m => string.Equals(CountryResolver.Resolve(m.Remarks), code, StringComparison.OrdinalIgnoreCase)).ToList()
-                : [];
-            if (candidates.Count == 0 && current.Subid.IsNotEmpty())
-            {
-                candidates = others.Where(m => m.Subid == current.Subid).ToList();
-            }
-            if (candidates.Count == 0)
-            {
-                ShowToast(ToastKind.Warning, L.NoOtherServers);
-                return;
-            }
-
-            _statusView?.SetFindProgress(string.Format(L.FindProgress, 0, candidates.Count));
-            progress = profiles.WhenAnyValue(p => p.PingDone, p => p.PingTotal, (done, total) => (done, total))
-                .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(t =>
-                {
-                    if (profiles.IsPingTesting && t.total > 0)
-                    {
-                        _statusView?.SetFindProgress(string.Format(L.FindProgress, t.done, t.total));
-                    }
-                });
-            await WaitForPingEndAsync(profiles);
-            if (!await PingAndWaitAsync(() => profiles.PingProfilesAsync(candidates)))
-            {
-                return;
-            }
-            var best = await FastestOfAsync(candidates.Select(m => m.IndexId));
-            if (best == null)
-            {
-                ShowToast(ToastKind.Warning, L.NoneResponding);
-                return;
-            }
-            await profiles.SetDefaultServer(best);
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog("FindWorkingServer", ex);
-        }
-        finally
-        {
-            progress?.Dispose();
-            _statusView?.SetFindProgress(null);
-            _findingWorking = false;
-        }
-    }
-
     private async void SidePing_Click(object? sender, RoutedEventArgs e)
     {
         e.Handled = true;
@@ -2198,6 +2046,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             busy?.IsBusy = false;
             _subUpdatesRunning--;
+            RefreshServersStatus();
         }
     }
 
@@ -2242,6 +2091,11 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         if (failed.Count == 0)
         {
             return;
+        }
+        if (OnboardingShown && ServerCount() == 0)
+        {
+            _obImportError = L.ObNoServersImported;
+            RefreshServersStatus();
         }
         var message = failed.Count == 1
             ? string.Format(L.SubUpdateFailed, SideSubRow.NameOf(failed[0]))
@@ -2777,6 +2631,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var text = (await AvaUtils.GetClipboardData(this))?.Trim();
         if (text.IsNullOrEmpty())
         {
+            _obImportError = L.ClipboardEmpty;
             ShowToast(ToastKind.Warning, L.ClipboardEmpty);
             return;
         }
@@ -2787,6 +2642,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         if (await ViewModel.AddServerViaClipboardAsync(text, notifyFailure: false) <= 0)
         {
+            _obImportError = L.PasteNotRecognized;
             ShowToast(ToastKind.Error, L.PasteNotRecognized);
         }
     }

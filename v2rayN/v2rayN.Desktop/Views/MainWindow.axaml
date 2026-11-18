@@ -1183,15 +1183,32 @@
                                 Margin="0,0,0,4"
                                 HorizontalAlignment="Center"
                                 Classes="state">
-                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                <Grid ColumnDefinitions="Auto,*" ColumnSpacing="7">
                                     <Ellipse x:Name="dotState" Classes="statedot" />
                                     <Path
                                         x:Name="spinState"
                                         Classes="spinner"
                                         IsVisible="False" />
-                                    <TextBlock x:Name="txtStatePill" AutomationProperties.LiveSetting="Polite" />
-                                </StackPanel>
+                                    <TextBlock x:Name="txtStatePill" Grid.Column="1" TextWrapping="Wrap"
+                                        AutomationProperties.LiveSetting="Polite" />
+                                </Grid>
                             </Border>
+                            <TextBlock
+                                x:Name="txtSystemProxyScope"
+                                HorizontalAlignment="Center"
+                                TextAlignment="Center"
+                                TextWrapping="Wrap"
+                                Classes="muted small"
+                                IsVisible="False"
+                                Text="{x:Static loc:L.SystemProxyScope}" />
+                            <StackPanel HorizontalAlignment="Center" Spacing="4">
+                                <Button x:Name="btnRetryConnection" HorizontalAlignment="Center" Classes="ghost small"
+                                    Theme="{StaticResource V2Button}" IsVisible="False" Content="{x:Static loc:L.RetryConnectionCheck}" />
+                                <Button x:Name="btnReplacement" HorizontalAlignment="Center" Classes="ghost small"
+                                    Theme="{StaticResource V2Button}" IsVisible="False">
+                                    <TextBlock x:Name="txtReplacement" TextWrapping="Wrap" TextAlignment="Center" />
+                                </Button>
+                            </StackPanel>
                             <DockPanel HorizontalAlignment="Center">
                                 <Border
                                     x:Name="borderHeaderFlag"

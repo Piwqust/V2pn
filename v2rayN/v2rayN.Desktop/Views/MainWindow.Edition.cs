@@ -19,7 +19,7 @@ public partial class MainWindow
     // How the plan last fitted the stage, for the debug window.
     private string _planFit = "—";
     // The last state the tray and the title showed; a partner coming or going renames both without waiting for the next one.
-    private (ProtectionState State, string? Problem)? _trayState;
+    private (ProtectionState State, string Label)? _trayState;
 
     private void InitEdition()
     {
@@ -54,7 +54,7 @@ public partial class MainWindow
         var partner = Editions.Partner;
         if (_trayState is { } tray)
         {
-            RefreshTray(tray.State, tray.Problem);
+            RefreshTray(tray.State, tray.Label);
         }
         UpdateLockup();
 

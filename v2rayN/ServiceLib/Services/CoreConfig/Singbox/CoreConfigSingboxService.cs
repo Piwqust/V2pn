@@ -57,6 +57,22 @@ public partial class CoreConfigSingboxService(CoreConfigContext context)
 
             ConvertGeo2Ruleset();
 
+            if (context.AvailabilityProbe is { } probe)
+            {
+                _coreConfig.inbounds.Add(new()
+                {
+                    type = "socks",
+                    tag = AvailabilityProbeEndpoint.Tag,
+                    listen = Global.Loopback,
+                    listen_port = probe.Port,
+                    users = [new() { username = AvailabilityProbeEndpoint.User, password = probe.Password }],
+                });
+                _coreConfig.route.rules.Insert(0, new()
+                {
+                    inbound = [AvailabilityProbeEndpoint.Tag],
+                    outbound = Global.ProxyTag,
+                });
+            }
             ret.Msg = string.Format(ResUI.SuccessfulConfiguration, "");
             ret.Success = true;
 

@@ -721,12 +721,12 @@ public partial class MainWindowViewModel : MyReactiveObject
     /// </summary>
     private async Task StopAfterFailureAsync(EV2pnFailure failure, string? detail = null)
     {
+        StatusBarViewModel.InvalidateAvailability();
         V2pnCoreWatch.MarkFailed(failure, detail);
         Logging.SaveLog($"V2pn: switched off after a failure ({failure}): {V2pnCoreWatch.FailureDetail}");
         await Task.Run(async () => await CoreManager.Instance.CoreStop());
         RxSchedulers.MainThreadScheduler.Schedule(() =>
         {
-            StatusBarViewModel.AvailabilityDelay = 0;
             if (StatusBarViewModel.EnableTun)
             {
                 StatusBarViewModel.EnableTun = false;
@@ -756,8 +756,8 @@ public partial class MainWindowViewModel : MyReactiveObject
                 return;
             }
 
+            StatusBarViewModel.InvalidateAvailability();
             V2pnCoreWatch.MarkRestarting();
-            StatusBarViewModel.AvailabilityDelay = -2;
             NoticeManager.Instance.SendMessageEx($"V2pn: the core stopped (exit code {exitCode}); restarting in {delay.Value.TotalSeconds:0} s");
             await Task.Delay(delay.Value);
             if (V2pnConnection.IsOff(_config) || CoreManager.Instance.IsCoreAlive)
@@ -774,6 +774,7 @@ public partial class MainWindowViewModel : MyReactiveObject
 
     public async Task Reload()
     {
+        var availabilityGeneration = StatusBarViewModel.InvalidateAvailability();
         //If there are unfinished reload job, marked with next job.
         if (!await _reloadSemaphore.WaitAsync(0))
         {
@@ -824,6 +825,7 @@ public partial class MainWindowViewModel : MyReactiveObject
                 V2pnCoreWatch.MarkStopped();
                 return;
             }
+            var availabilityTarget = StatusBarViewModel.CaptureAvailabilityTarget();
             V2pnCoreWatch.MarkStarting();
             var allResult = await CoreConfigContextBuilder.BuildAll(_config, profileItem);
             if (NoticeManager.Instance.NotifyValidatorResult(allResult.CombinedValidatorResult) && !allResult.Success)
@@ -833,9 +835,22 @@ public partial class MainWindowViewModel : MyReactiveObject
                 return;
             }
 
+            var context = allResult.MainResult.Context;
+            AvailabilityProbeEndpoint? probe = null;
+            if (context.Node.ConfigType != EConfigType.Custom && context.FullConfigTemplate is not { Enabled: true })
+            {
+                try
+                {
+                    probe = AvailabilityProbeEndpoint.Create();
+                }
+                catch (System.Net.Sockets.SocketException ex)
+                {
+                    Logging.SaveLog("Availability probe port", ex);
+                }
+            }
             await Task.Run(async () =>
             {
-                await LoadCore(allResult.MainResult.Context, allResult.PreSocksResult?.Context);
+                await LoadCore(context with { AvailabilityProbe = probe }, allResult.PreSocksResult?.Context);
                 // V2pn: a core that is not running gets no system proxy; a second look after the pause
                 // catches a core that started and exited at once (a config it rejects).
                 if (CoreManager.Instance.IsCoreAlive)
@@ -853,6 +868,11 @@ public partial class MainWindowViewModel : MyReactiveObject
             _runningConnectionKey = await V2pnSubUpdate.ConnectionKey(profileItem);
             RxSchedulers.MainThreadScheduler.Schedule(async () =>
             {
+                if (availabilityTarget.ProfileId != profileItem.IndexId
+                    || !StatusBarViewModel.SetAvailabilityReady(availabilityGeneration, availabilityTarget, probe))
+                {
+                    return;
+                }
                 var result = await StatusBarViewModel.TestServerAvailability();
                 if (result == null || profileItem.IndexId.IsNullOrEmpty())
                 {
@@ -863,7 +883,7 @@ public partial class MainWindowViewModel : MyReactiveObject
                 {
                     IndexId = profileItem.IndexId,
                     IpInfo = result.Ip,
-                    Delay = result.Time > 0 ? result.Time.ToString() : null
+                    Delay = result.IsAvailable ? result.Time.ToString() : null
                 });
             });
 

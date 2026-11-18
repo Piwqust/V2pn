@@ -113,7 +113,7 @@ public static partial class L
     public static string SubEmpty => T("No servers yet. Update the subscription to load them.", "Серверов пока нет. Обновите подписку, чтобы загрузить их.");
     public static string Protected => T("Protected", "Защищено");
     public static string Unprotected => T("Unprotected", "Не защищено");
-    public static string LocalOnly => string.Format(Tk("Proxy on port {0} only", "Proxy on port {0}", "Прокси на порту {0}"), AppManager.Instance.GetLocalPort(EInboundProtocol.socks));
+    public static string LocalOnly => string.Format(T("Local proxy on port {0}", "Локальный прокси на порту {0}"), AppManager.Instance.GetLocalPort(EInboundProtocol.socks));
     public static string Disconnect => T("Disconnect", "Отключиться");
     public static string ServerIp => T("Server", "Сервер");
     public static string Protocol => T("Protocol", "Протокол");
@@ -424,6 +424,22 @@ public static partial class L
     public static string CheckFailed => T("No response", "Нет ответа");
     public static string NoTraffic => T("No traffic yet", "Трафика пока нет");
     public static string StateChecking => T("Checking connection…", "Проверка соединения…");
+    public static string StateUnchecked => T("Connection not checked", "Подключение ещё не проверено");
+    public static string StateProxyConnected => T("Proxy connected", "Прокси подключён");
+    public static string StateVpnConnected => T("VPN connected", "VPN подключён");
+    public static string SystemProxyScope => T("For apps that use the system proxy", "Для программ, использующих системный прокси");
+    public static string RetryConnectionCheck => T("Check again", "Повторить проверку");
+    public static string CheckStatus(AvailabilityCheckResult check) => check.State switch
+    {
+        AvailabilityState.Unsupported => T("Connection check unavailable for this configuration", "Проверка недоступна для этой конфигурации"),
+        AvailabilityState.UnexpectedStatus => string.Format(T("Check site returned HTTP {0}", "Проверочный сайт вернул HTTP {0}"), check.HttpStatus),
+        AvailabilityState.Redirected => T("Check site redirected", "Проверочный сайт перенаправил запрос"),
+        AvailabilityState.TimedOut => T("Connection check timed out", "Истекло время проверки"),
+        AvailabilityState.Unreachable => T("Check site unavailable", "Проверочный сайт недоступен"),
+        _ => StateUnchecked,
+    };
+    public static string CheckFailureHint => T("The check could not confirm this connection. Try the check again.",
+        "Проверка не смогла подтвердить подключение. Повторите проверку.");
     public static string StateNoResponse => T("Server not responding", "Сервер не отвечает");
     public static string ClickToConnect => Tk("Click to connect · right-click for more", "Right-click for more actions", "Правой кнопкой\u00A0— другие действия");
 
@@ -478,6 +494,12 @@ public static partial class L
     public static string NoOtherServers => T("There are no other servers in this country or subscription. Update the subscription or ask your provider.",
         "Других серверов в этой стране или подписке нет. Обновите подписку или напишите провайдеру.");
     public static string FindWorkingServer => T("Find a working server", "Найти рабочий сервер");
+    public static string CancelServerSearch => T("Cancel server search", "Отменить поиск серверов");
+    public static string CheckOtherCountries => T("Check other countries in this subscription", "Проверить другие страны этой подписки");
+    public static string NoServersInCountryResponded => T("No other server in this country answered the check.", "Другие серверы этой страны не ответили на проверку.");
+    public static string UnknownServerCountry => T("unknown country", "страна неизвестна");
+    public static string ConfirmReplacement => T("Switch to {0} ({1})? V2pn will check the new connection.", "Переключиться на {0} ({1})? V2pn проверит новое подключение.");
+    public static string SwitchServer => T("Switch server", "Переключиться");
     public static string FindProgress => T("Checking {0} of {1}…", "Проверка {0} из {1}…");
     public static string StateNoResponseTip => T("The server didn't answer the check. Try another server.", "Сервер не ответил на проверку. Попробуйте другой сервер.");
     public static string StateCoreFailed => T("Couldn't start the connection", "Не удалось запустить подключение");

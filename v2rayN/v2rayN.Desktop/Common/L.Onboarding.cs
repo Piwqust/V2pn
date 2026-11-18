@@ -25,6 +25,12 @@ public static partial class L
     public static string ObQrHint => T("From the screen", "С экрана");
     public static string ObDownloading => T("Downloading servers…", "Загрузка серверов…");
     public static string ObServersReady => T("{0} ready", "Готово: {0}");
+    public static string ObServerSummary => T("Server · {0}", "Сервер · {0}");
+    public static string ObModeSummary => T("Mode · {0}", "Режим · {0}");
+    public static string ObRouteSummary => T("Route · {0}", "Маршрут · {0}");
+    public static string ObEditConnection => T("Change mode and route", "Изменить режим и маршрут");
+    public static string ObNoServersImported => T("The subscription provided no usable servers. Check the URL or enter another one.",
+        "Из подписки не удалось получить пригодные серверы. Проверьте адрес или введите другой.");
 
     public static string ObRouteTitle => T("What goes through the VPN", "Что пускать через VPN");
     public static string ObRouteLead => T("You can change it any time under the Connect button.", "Это можно поменять в любой момент под кнопкой «Подключиться».");

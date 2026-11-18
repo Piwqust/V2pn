@@ -2,107 +2,79 @@ namespace ServiceLib.Handler;
 
 public static class ConnectionHandler
 {
-    private static readonly string _tag = "ConnectionHandler";
-
-    /// <summary>
-    /// Runs ping and IP checks.
-    /// </summary>
-    public static async Task<AvailabilityCheckResult> RunAvailabilityCheck()
+    /// <summary>Checks the running connection through its local proxy.</summary>
+    public static async Task<AvailabilityCheckResult> RunAvailabilityCheck(AvailabilityProbeEndpoint endpoint, string url)
     {
-        var time = await GetRealPingTimeInfo();
-        var ip = time > 0 ? await GetIPInfo() : Global.None;
-
-        return new AvailabilityCheckResult(time, ip);
-    }
-
-    /// <summary>
-    /// Gets IP information using the default local proxy.
-    /// </summary>
-    private static async Task<string?> GetIPInfo()
-    {
-        var webProxy = await GetWebProxy();
-
-        var ipInfo = await GetIPInfo(webProxy);
-        return ipInfo?.ToString() ?? Global.None;
-    }
-
-    /// <summary>
-    /// Measures real ping time using configured test URL.
-    /// </summary>
-    private static async Task<int> GetRealPingTimeInfo()
-    {
-        var responseTime = -1;
-        try
+        var proxy = new WebProxy($"socks5://{Global.Loopback}:{endpoint.Port}")
         {
-            var webProxy = await GetWebProxy();
-
-            for (var i = 0; i < 2; i++)
-            {
-                responseTime = await GetRealPingTime(webProxy);
-                if (responseTime > 0)
-                {
-                    break;
-                }
-                await Task.Delay(500);
-            }
-        }
-        catch (Exception ex)
-        {
-            Logging.SaveLog(_tag, ex);
-            return -1;
-        }
-        return responseTime;
+            Credentials = new NetworkCredential(AvailabilityProbeEndpoint.User, endpoint.Password),
+        };
+        var result = await ProbeAsync(proxy, url, CancellationToken.None);
+        return result.IsAvailable
+            ? result with { Ip = (await GetIPInfo(proxy))?.ToString() }
+            : result;
     }
 
-    /// <summary>
-    /// Creates local SOCKS proxy instance.
-    /// </summary>
-    private static async Task<WebProxy?> GetWebProxy()
-    {
-        var port = AppManager.Instance.GetLocalPort(EInboundProtocol.socks);
-        return new WebProxy($"socks5://{Global.Loopback}:{port}");
-    }
-
-    /// <summary>
-    /// Measures response time by sending HTTP requests through proxy.
-    /// </summary>
     public static async Task<int> GetRealPingTime(IWebProxy? webProxy, CancellationToken cancellationToken = default)
     {
-        var url = AppManager.Instance.Config.SpeedTestItem.SpeedPingTestUrl;
-        var responseTime = -1;
+        var result = await ProbeAsync(webProxy, AppManager.Instance.Config.SpeedTestItem.SpeedPingTestUrl, cancellationToken);
+        return result.IsAvailable ? result.Time : -1;
+    }
+
+    private static async Task<AvailabilityCheckResult> ProbeAsync(IWebProxy? proxy, string url, CancellationToken cancellationToken)
+    {
+        using var client = new HttpClient(new SocketsHttpHandler
+        {
+            Proxy = proxy,
+            UseProxy = proxy != null,
+            AllowAutoRedirect = false,
+        });
+        return await ProbeHttpAsync(client, url, Global.LocalFetch, cancellationToken);
+    }
+
+    internal static async Task<AvailabilityCheckResult> ProbeHttpAsync(HttpClient client, string url, TimeSpan timeout,
+        CancellationToken cancellationToken = default)
+    {
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var target)
+            || target.Scheme is not ("http" or "https"))
+        {
+            return new(AvailabilityState.Unreachable);
+        }
+
+        // Bundled generate_204 endpoints promise a 204. User-supplied endpoints can return any 2xx.
+        var expect204 = target.AbsolutePath == "/generate_204"
+            && Global.SpeedPingTestUrls.Any(known => new Uri(known) == target);
+        using var deadline = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        deadline.CancelAfter(timeout);
         try
         {
-            using var timeoutCts = new CancellationTokenSource();
-            timeoutCts.CancelAfter(Global.LocalFetch);
-            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
-            var linkedToken = linkedCts.Token;
-            using var client = new HttpClient(new SocketsHttpHandler()
-            {
-                Proxy = webProxy,
-                UseProxy = webProxy != null,
-                ConnectTimeout = Global.LocalFetch,
-            });
-
-            List<int> oneTime = [];
+            var best = int.MaxValue;
             for (var i = 0; i < 2; i++)
             {
                 var timer = Stopwatch.StartNew();
-                await client.GetAsync(url, linkedToken).ConfigureAwait(false);
-                timer.Stop();
-                oneTime.Add((int)timer.Elapsed.TotalMilliseconds);
-                await Task.Delay(100, linkedToken);
+                using var response = await client.GetAsync(target, HttpCompletionOption.ResponseHeadersRead, deadline.Token)
+                    .ConfigureAwait(false);
+                var code = (int)response.StatusCode;
+                if (code is 301 or 302 or 303 or 307 or 308)
+                {
+                    return new(AvailabilityState.Redirected, HttpStatus: code);
+                }
+                if (!response.IsSuccessStatusCode || (expect204 && code != 204))
+                {
+                    return new(AvailabilityState.UnexpectedStatus, HttpStatus: code);
+                }
+                best = Math.Min(best, Math.Max(1, (int)timer.ElapsedMilliseconds));
             }
-            responseTime = oneTime.Where(x => x > 0).OrderBy(x => x).FirstOrDefault();
+            return new(AvailabilityState.Available, best);
         }
-        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
         {
-            throw;
+            return new(AvailabilityState.TimedOut);
         }
-        catch
+        catch (HttpRequestException)
         {
-            // Ignore
+            return new(AvailabilityState.Unreachable);
         }
-        return responseTime;
     }
 
     /// <summary>

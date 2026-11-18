@@ -822,6 +822,7 @@ public partial class ProfilesViewModel : MyReactiveObject
 
         if (await ConfigHandler.SetDefaultServerIndex(_config, indexId) == 0)
         {
+            StatusBarViewModel.Instance.InvalidateAvailability();
             await RefreshServers();
             Reload();
         }

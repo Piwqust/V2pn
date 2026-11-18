@@ -16,11 +16,15 @@ public partial class SubEditWindow : WindowBase<SubEditViewModel>
 
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
+        txtUrl.TextChanged += (_, _) => txtUrlError.IsVisible = false;
         // Click runs before the bound save command, so an empty name is filled in before v2rayN checks it.
         btnSave.Click += (s, e) =>
         {
             // A pasted link often carries a trailing space or line break.
             txtUrl.Text = txtUrl.Text?.Trim();
+            var url = txtUrl.Text;
+            txtUrlError.Text = ResUI.InvalidUrlTip;
+            txtUrlError.IsVisible = url.IsNotEmpty() && Utils.TryUri(url) == null;
             FillEmptyName();
             SaveProviderChoices();
         };

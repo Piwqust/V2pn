@@ -66,6 +66,28 @@ public partial class CoreConfigV2rayService(CoreConfigContext context)
             }
 
             var finalRule = BuildFinalRule();
+            if (context.AvailabilityProbe is { } probe)
+            {
+                _coreConfig.inbounds.Add(new()
+                {
+                    tag = AvailabilityProbeEndpoint.Tag,
+                    port = probe.Port,
+                    listen = Global.Loopback,
+                    protocol = "socks",
+                    settings = new()
+                    {
+                        auth = "password",
+                        accounts = [new() { user = AvailabilityProbeEndpoint.User, pass = probe.Password }],
+                    },
+                });
+                _coreConfig.routing.rules.Insert(0, new()
+                {
+                    type = "field",
+                    inboundTag = [AvailabilityProbeEndpoint.Tag],
+                    outboundTag = finalRule.outboundTag,
+                    balancerTag = finalRule.balancerTag,
+                });
+            }
             if (!string.IsNullOrEmpty(finalRule?.balancerTag))
             {
                 _coreConfig.routing.rules.Add(finalRule);

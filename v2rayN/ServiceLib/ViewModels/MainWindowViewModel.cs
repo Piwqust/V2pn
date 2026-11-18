@@ -355,6 +355,42 @@ public partial class MainWindowViewModel : MyReactiveObject
         await RefreshServersDispatcherAsync();
 
         await Reload();
+        _networkWatch = new V2pnNetworkWatch(OnNetworkSettledAsync);
+        _networkWatch.Start();
+    }
+
+    private V2pnNetworkWatch? _networkWatch;
+
+    /// <summary>
+    /// V2pn: the network changed or the computer woke. The server, mode and route stay as they are; the running
+    /// connection is checked again. A connection the person switched off stays off. When nothing answers, the
+    /// core is restarted once: its open connections may still be bound to the network that is gone.
+    /// </summary>
+    private async Task OnNetworkSettledAsync(string reason)
+    {
+        if (V2pnConnection.IsOff(_config) || !NetworkInterface.GetIsNetworkAvailable() || !CoreManager.Instance.IsCoreAlive)
+        {
+            return;
+        }
+        Logging.SaveLog($"V2pn: {reason}; checking the connection again");
+        var done = new TaskCompletionSource<AvailabilityCheckResult?>();
+        RxSchedulers.MainThreadScheduler.Schedule(async () =>
+        {
+            try
+            {
+                done.SetResult(await StatusBarViewModel.RecheckAvailabilityAsync());
+            }
+            catch (Exception ex)
+            {
+                done.SetException(ex);
+            }
+        });
+        var result = await done.Task;
+        if (result?.CanSearchForReplacement == true && !V2pnConnection.IsOff(_config) && CoreManager.Instance.IsCoreAlive)
+        {
+            Logging.SaveLog("V2pn: no answer after the network change; restarting the core once");
+            RxSchedulers.MainThreadScheduler.Schedule(() => _ = Reload());
+        }
     }
 
     #endregion Init

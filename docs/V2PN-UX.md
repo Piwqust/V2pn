@@ -124,6 +124,7 @@ Code: `ServiceLib/V2pn/V2pnForeignImport.cs` (finding and adding), `V2pnForeignR
 - V2pn verifies the selected server with the running Xray or sing-box configuration through an authenticated loopback listener. The check follows the server outbound and leaves application routing rules intact. Full custom configurations show that verification is unavailable.
 - Bundled `generate_204` endpoints must return HTTP 204. Custom HTTP check URLs can return any successful 2xx response. HTTP errors, redirects and timeouts have separate results and can be retried.
 - A timeout or an unreachable check address also offers a search in the selected country. If none responds, other countries in the subscription can be checked. The app asks before switching and checks the new connection afterwards.
+- After the computer wakes or the network changes, V2pn checks the running connection again, once the events have stopped for three seconds. The server, mode and route stay. A connection switched off before sleep stays off. If nothing answers, the core restarts once, since its connections may still be bound to the network that is gone.
 - The speed and session traffic come from the cores in kilobytes per one-second sample; the card turns them into bytes.
 
 ## Processor use

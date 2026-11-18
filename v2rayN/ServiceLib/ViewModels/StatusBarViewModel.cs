@@ -376,6 +376,7 @@ public partial class StatusBarViewModel : MyReactiveObject
             if (generation == Interlocked.Read(ref _availabilityGeneration))
             {
                 _runningProbe = null;
+                _recheckAfterCurrent = false;
                 Availability = AvailabilityCheckResult.Unchecked;
                 RunningInfoDisplay = string.Empty;
             }
@@ -394,6 +395,22 @@ public partial class StatusBarViewModel : MyReactiveObject
         return true;
     }
 
+    private bool _recheckAfterCurrent;
+
+    /// <summary>
+    /// Checks the connection again after a network change. A check already running started on the old network,
+    /// so another one follows it.
+    /// </summary>
+    public async Task<AvailabilityCheckResult?> RecheckAvailabilityAsync()
+    {
+        if (Availability.State == AvailabilityState.Checking)
+        {
+            _recheckAfterCurrent = true;
+            return null;
+        }
+        return await TestServerAvailability();
+    }
+
     public async Task<AvailabilityCheckResult?> TestServerAvailability()
     {
         if (_runningProbe is not { Endpoint: { } endpoint } probe || !IsProbeCurrent(probe.Generation, probe.Target)
@@ -410,6 +427,12 @@ public partial class StatusBarViewModel : MyReactiveObject
             return null;
         }
 
+        if (_recheckAfterCurrent)
+        {
+            _recheckAfterCurrent = false;
+            Availability = AvailabilityCheckResult.Unchecked;
+            return await TestServerAvailability();
+        }
         Availability = result;
         var message = string.Format(ResUI.TestMeOutput, result.IsAvailable ? result.Time : -1, result.Ip ?? Global.None);
         RunningInfoDisplay = message;

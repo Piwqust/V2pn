@@ -1,5 +1,6 @@
 using Avalonia.Automation;
 using v2rayN.Desktop.Common;
+using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
 
@@ -63,6 +64,10 @@ public partial class SubEditWindow
         txtInfoAsOf.Text = info.ReceivedTime > 0
             ? string.Format(L.SubInfoAsOf, Fmt.Ago(DateTimeOffset.FromUnixTimeSeconds(info.ReceivedTime).LocalDateTime))
             : string.Empty;
+        if (source != null && SideSubRow.UpdateStatus(source, false) is { Failed: true } status)
+        {
+            txtInfoAsOf.Text = $"{status.Tip}\n{txtInfoAsOf.Text}".TrimEnd();
+        }
 
         // Rows hidden above the first visible one would leave its top divider hanging.
         rows.First(r => r.IsVisible).BorderThickness = new Thickness(0);

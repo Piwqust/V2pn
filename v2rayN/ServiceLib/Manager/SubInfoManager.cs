@@ -109,6 +109,38 @@ public sealed class SubInfoManager
     }
 
     /// <summary>
+    /// The end of an update attempt: what happened and, when servers came, the time of the last usable list.
+    /// The saved servers stay whatever the result.
+    /// </summary>
+    public async Task RecordAttemptAsync(string subId, EV2pnSubUpdateResult result, string? detail)
+    {
+        if (subId.IsNullOrEmpty())
+        {
+            return;
+        }
+        try
+        {
+            await LoadAsync();
+            var info = Get(subId) ?? new SubInfoItem { Id = subId };
+            var now = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            info.LastAttemptTime = now;
+            info.LastResult = result;
+            info.LastResultDetail = detail.IsNullOrEmpty() ? null : detail!.Length > 200 ? detail[..199] + "…" : detail;
+            if (result == EV2pnSubUpdateResult.Ok)
+            {
+                info.LastGoodTime = now;
+            }
+            await SQLiteHelper.Instance.ReplaceAsync(info);
+            _items[subId] = info;
+            Changed?.Invoke(subId);
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+        }
+    }
+
+    /// <summary>
     /// The person's own choices for a subscription whose provider set defaults: deciding about connecting at start
     /// themselves, and the order of its servers (null follows the provider). Updates never overwrite them.
     /// </summary>

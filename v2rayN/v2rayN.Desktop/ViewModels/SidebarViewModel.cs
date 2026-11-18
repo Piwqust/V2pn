@@ -263,6 +263,8 @@ public sealed class SideSubRow : SideRow
     {
         Sub = sub;
         Busy = busy;
+        var status = UpdateStatus(sub.Item, updateFailed);
+        updateFailed = status.Failed;
         UpdateFailed = updateFailed;
         DisplayName = NameOf(sub.Item);
         var name = DisplayName;
@@ -286,11 +288,37 @@ public sealed class SideSubRow : SideRow
         var age = updated.HasValue ? DateTime.Now - updated.Value : (TimeSpan?)null;
         IsFresh = !updateFailed && age < TimeSpan.FromDays(1);
         IsStale = !updateFailed && age >= TimeSpan.FromDays(1);
-        Info = $"{L.ServerCount(sub.Count)} · {(updateFailed ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(sub.Item))}";
-        Freshness = updateFailed ? L.SubUpdateFailedTip : age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
+        Info = $"{L.ServerCount(sub.Count)} · {status.Short}";
+        Freshness = updateFailed ? status.Tip : age == null ? L.SubNeverUpdated : IsFresh ? L.SubFresh : L.SubStale;
         Usage = SubUsage.From(SubInfoManager.Instance.Get(sub.Id));
         var locked = V2pnLocks.Instance.ForSub(sub.Id);
         LockText = locked.Settings ? string.Format(L.LockedBy, locked.PartnerName) : locked.HideUrl ? string.Format(L.LockedUrl, locked.PartnerName) : null;
+    }
+
+    /// <summary>
+    /// How the last update ended, from what V2pn stored (SubInfoItem.LastResult), or from this session's own
+    /// observation for a subscription updated before V2pn stored it. The tip says what happened and that the
+    /// saved servers still work.
+    /// </summary>
+    public static (bool Failed, string Short, string Tip) UpdateStatus(SubItem item, bool sessionFailed)
+    {
+        var info = SubInfoManager.Instance.Get(item.Id);
+        var result = info?.LastResult ?? EV2pnSubUpdateResult.None;
+        var failed = result == EV2pnSubUpdateResult.None ? sessionFailed : result != EV2pnSubUpdateResult.Ok;
+        if (!failed)
+        {
+            return (false, Fmt.SubUpdatedShort(item), string.Empty);
+        }
+        var shortText = result == EV2pnSubUpdateResult.None ? L.SubUpdateFailedShort : L.SubResultShort(result);
+        var what = result == EV2pnSubUpdateResult.None ? L.SubUpdateFailedTip : L.SubResultLong(result, info?.LastResultDetail);
+        var attempt = info?.LastAttemptTime > 0
+            ? string.Format(L.SubLastAttempt, Fmt.Ago(DateTimeOffset.FromUnixTimeSeconds(info.LastAttemptTime).LocalDateTime), what)
+            : what;
+        var good = info?.LastGoodTime > 0 ? info.LastGoodTime : item.UpdateTime;
+        var kept = good > 0
+            ? string.Format(L.SubLastGood, Fmt.Ago(DateTimeOffset.FromUnixTimeSeconds(good).LocalDateTime))
+            : L.SubLastGoodUnknown;
+        return (true, shortText, $"{attempt}\n{kept}");
     }
 
     /// <summary>"Settings closed by Kestrel" when the partner closed them (V2pnLocks); null otherwise.</summary>
@@ -1087,7 +1115,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
         if (OpenedSub != null)
         {
             _pingScope = all;
-            var updated = _failedSubs.Contains(OpenedSub.Id) ? L.SubUpdateFailedShort : Fmt.SubUpdatedShort(OpenedSub.Item);
+            var updated = SideSubRow.UpdateStatus(OpenedSub.Item, _failedSubs.Contains(OpenedSub.Id)).Short;
             rows.Add(new SideActionRow(SideActionKind.Back, SideSubRow.NameOf(OpenedSub.Item), $"{L.ServerCount(all.Count)} · {updated}", OpenedSub.Id));
             // V2pn: what the provider says about this subscription, above its servers.
             var info = SubInfoManager.Instance.Get(OpenedSub.Id);

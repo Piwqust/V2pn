@@ -326,7 +326,11 @@ public partial class DownloadService
             {
                 userAgent = Utils.GetVersion(false);
             }
-            var result = await DownloaderHelper.Instance.DownloadStringAsync(webProxy, url, userAgent, RequestHeaders, AcceptHeader, cancellationToken);
+            // V2pn: the same limit as the first try. Downloader's own 100 s per attempt kept a subscription whose site
+            // stopped answering "updating" for four minutes across the direct and VPN routes.
+            using var timeoutCts = new CancellationTokenSource(webProxy is null ? Global.DirectFetch : Global.ProxyFetch);
+            using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
+            var result = await DownloaderHelper.Instance.DownloadStringAsync(webProxy, url, userAgent, RequestHeaders, AcceptHeader, linkedCts.Token);
             return result;
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)

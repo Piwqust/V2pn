@@ -174,6 +174,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         };
         btnReplacement.Click += async (_, _) => await FindWorkingServerAsync();
         btnFixPrimary.Click += async (_, _) => await RunFixAsync(_fixPrimary);
+        // What a provider reports (expiry, traffic) can change the note next to Connect.
+        SubInfoManager.Instance.Changed += id => Dispatcher.UIThread.Post(() =>
+        {
+            if (id == _activeSubId)
+            {
+                RefreshStatePill();
+            }
+        });
         btnFixSecondary.Click += async (_, _) => await RunFixAsync(_fixSecondary);
         pillState.PointerPressed += (_, e) =>
         {
@@ -704,6 +712,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             // Motion only for changes the user caused after the first paint, never for the initial state.
             var serverChanged = _shownOnce && item?.IndexId != _activeIndexId;
             _activeIndexId = item?.IndexId;
+            _activeSubId = item?.Subid;
 
             // V2pn: the partner's country for its server (pack or API) wins over a guess from the name.
             var code = V2pnPartnerLive.Instance.Describe(item?.Subid, item?.Remarks, item?.Address)?.Country ?? CountryResolver.Resolve(item?.Remarks);
@@ -2106,7 +2115,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _obImportError = L.ObNoServersImported;
             RefreshServersStatus();
         }
-        var message = failed.Count == 1
+        var only = failed.Count == 1 ? SubInfoManager.Instance.Get(failed[0].Id) : null;
+        var message = only is { LastResult: not (EV2pnSubUpdateResult.None or EV2pnSubUpdateResult.Ok) }
+            ? string.Format(L.SubUpdateFailedOne, SideSubRow.NameOf(failed[0]), L.SubResultLong(only.LastResult, only.LastResultDetail))
+            : failed.Count == 1
             ? string.Format(L.SubUpdateFailed, SideSubRow.NameOf(failed[0]))
             : string.Format(L.SubsUpdateFailed, string.Join(", ", failed.Select(SideSubRow.NameOf)));
         // Through the running VPN the provider's site is often reachable again.

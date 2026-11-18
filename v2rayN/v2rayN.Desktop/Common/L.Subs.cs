@@ -25,6 +25,41 @@ public static partial class L
     public static string SubInfoAsOf => T("Reported by the provider {0}", "Получено от провайдера {0}");
     public static string SubPanelInterval => T("The provider suggests every {0} h.", "Провайдер советует раз в {0} ч.");
 
+    // The last update attempt (SubInfoItem.LastResult).
+    public static string SubResultShort(EV2pnSubUpdateResult result) => result switch
+    {
+        EV2pnSubUpdateResult.Unreachable => T("site unreachable", "сайт недоступен"),
+        EV2pnSubUpdateResult.Empty => T("no servers sent", "серверов не прислали"),
+        EV2pnSubUpdateResult.Invalid => T("not a subscription", "это не подписка"),
+        _ => T("update failed", "не обновилась"),
+    };
+
+    public static string SubResultLong(EV2pnSubUpdateResult result, string? detail) => result switch
+    {
+        EV2pnSubUpdateResult.Unreachable when detail == SubscriptionHandler.SubTimeoutDetail =>
+            T("The provider's site didn't answer in time.", "Сайт провайдера не ответил вовремя."),
+        EV2pnSubUpdateResult.Unreachable => detail.IsNotEmpty()
+            ? string.Format(T("The provider's site didn't answer ({0}).", "Сайт провайдера не ответил ({0})."), detail)
+            : T("The provider's site didn't answer.", "Сайт провайдера не ответил."),
+        EV2pnSubUpdateResult.Empty => T("The provider's site answered with no servers.", "Сайт провайдера ответил, но не прислал серверов."),
+        EV2pnSubUpdateResult.Invalid => T("The provider's site answered, but not with servers. Check the link.",
+            "Сайт провайдера ответил, но не списком серверов. Проверьте ссылку."),
+        _ => detail.IsNotEmpty()
+            ? string.Format(T("The update failed: {0}", "Обновление не удалось: {0}"), detail)
+            : T("The update failed.", "Обновление не удалось."),
+    };
+
+    public static string SubLastAttempt => T("Last update {0}: {1}", "Последнее обновление {0}: {1}");
+    public static string SubLastGood => T("The servers you have came {0} and still work for connecting.",
+        "Сохранённые серверы получены {0}, ими можно пользоваться.");
+    public static string SubLastGoodUnknown => T("The servers you have stay available.", "Сохранённые серверы остаются доступны.");
+    public static string SubUpdateFailedOne => T("Couldn't update \"{0}\": {1}", "Не удалось обновить «{0}»: {1}");
+
+    // Near Connect when the selected server's subscription is over, by the provider's own data.
+    public static string SubExpiredNotice => T("{0}: the provider reports the subscription expired on {1}.", "{0}: по данным провайдера подписка истекла {1}.");
+    public static string SubTrafficOutNotice => T("{0}: the provider reports the traffic is used up.", "{0}: по данным провайдера трафик закончился.");
+    public static string SubUpdateNow => T("Update subscription", "Обновить подписку");
+
     /// <summary>"3 days left" with the plural form the language needs.</summary>
     public static string DaysLeft(int n)
     {

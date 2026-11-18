@@ -117,6 +117,12 @@ V2pn looks for other clients at start (in the background) and in Tools → "Move
 
 Code: `ServiceLib/V2pn/V2pnForeignImport.cs` (finding and adding), `V2pnForeignReaders.cs` (one reader per client), `V2pnForeignLinks.cs` (Clash, sing-box and NekoRay servers to links), `v2rayN.Desktop/Views/MainWindow.Import.cs` (card and menu).
 
+## Subscription state
+
+Every update attempt is stored with the subscription (`SubInfoItem.LastResult`, `LastResultDetail`, `LastAttemptTime`, `LastGoodTime`), whatever started it: a click, the schedule or a new subscription. The row says how it ended: "site unreachable" (no answer or an HTTP error by every route; the tooltip names the code or says it did not answer in time), "no servers sent" (an empty answer) or "not a subscription" (an answer V2pn cannot read). The tooltip and the subscription's card also say when the saved servers arrived; they stay usable after a failed update. A download that gets no answer gives up after 10 s directly and 30 s through the VPN, for both of v2rayN's download methods.
+
+When the provider reports the selected server's subscription as expired or out of traffic, a note under the pill says so, with "Update subscription" and the provider's page when it sent one.
+
 ## Connection state
 
 - Until a server is picked, V2pn says "Unprotected", whatever proxy mode is saved: the core is not running, and "Proxy on port N" would not be true.

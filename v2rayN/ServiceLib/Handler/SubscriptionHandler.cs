@@ -4,6 +4,9 @@ public static class SubscriptionHandler
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _updateGates = new();
 
+    /// <summary>V2pn: <see cref="SubInfoItem.LastResultDetail"/> of a download that got no answer in time.</summary>
+    public const string SubTimeoutDetail = "timeout";
+
     public static async Task UpdateProcess(Config config, string subId, bool blProxy, Func<bool, string, Task> updateFunc)
     {
         await updateFunc?.Invoke(false, ResUI.MsgUpdateSubscriptionStart);
@@ -54,6 +57,9 @@ public static class SubscriptionHandler
                 }
                 // V2pn: name, traffic, expiry and the Happ/INCY values from the panel's headers and the body's "#key: value" lines.
                 await SubInfoManager.Instance.ApplyAsync(config, item, downloadHandle.ResponseHeaders, imported, result);
+                var (outcome, detail) = Classify(imported, result, downloadHandle.ResponseHeaders != null,
+                    downloadHandle.LastStatus, downloadHandle.LastError);
+                await SubInfoManager.Instance.RecordAttemptAsync(item.Id, outcome, detail);
                 if (imported)
                 {
                     successCount++;
@@ -70,6 +76,7 @@ public static class SubscriptionHandler
             {
                 var hashCode = $"{listed.Remarks}->";
                 Logging.SaveLog("UpdateSubscription", ex);
+                await SubInfoManager.Instance.RecordAttemptAsync(listed.Id, EV2pnSubUpdateResult.Failed, ex.Message);
                 await updateFunc?.Invoke(false, $"{hashCode}{ResUI.MsgFailedImportSubscription}: {ex.Message}");
                 await updateFunc?.Invoke(false, "-------------------------------------------------------");
             }
@@ -117,6 +124,32 @@ public static class SubscriptionHandler
         await updateFunc?.Invoke(false, $"{hashCode}{string.Format(ResUI.MsgV2pnSubMoved, to)}");
     }
 
+    /// <summary>
+    /// V2pn: tells an unreachable site from one that answered with nothing or with something that is not a list of
+    /// servers. <paramref name="answered"/>: a successful HTTP response came back.
+    /// </summary>
+    internal static (EV2pnSubUpdateResult Result, string? Detail) Classify(bool imported, string? body, bool answered,
+        int? lastStatus, string? lastError)
+    {
+        if (imported)
+        {
+            return (EV2pnSubUpdateResult.Ok, null);
+        }
+        if (body.IsNotEmpty())
+        {
+            return (EV2pnSubUpdateResult.Invalid, null);
+        }
+        if (answered)
+        {
+            return (EV2pnSubUpdateResult.Empty, null);
+        }
+        if (lastStatus is { } status and not (>= 200 and < 300))
+        {
+            return (EV2pnSubUpdateResult.Unreachable, $"HTTP {status}");
+        }
+        return (EV2pnSubUpdateResult.Unreachable, lastError);
+    }
+
     private static bool IsValidSubscription(SubItem item, string subId)
     {
         var id = item.Id.TrimEx();
@@ -154,6 +187,11 @@ public static class SubscriptionHandler
         };
         downloadHandle.Error += (sender2, args) =>
         {
+            var error = args.GetException();
+            // A timeout's own words ("The operation was canceled.") say nothing to a person; the UI words it.
+            downloadHandle.LastError = error is OperationCanceledException or TimeoutException
+                ? SubTimeoutDetail
+                : error.Message;
             updateFunc?.Invoke(false, $"{hashCode}{args.GetException().Message}");
         };
         return downloadHandle;

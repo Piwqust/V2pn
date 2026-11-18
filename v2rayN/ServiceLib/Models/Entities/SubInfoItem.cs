@@ -103,4 +103,17 @@ public class SubInfoItem
 
     /// <summary>true: the person turned off the reviewed transport and core config of this subscription's partner.</summary>
     public bool PartnerConnectionOff { get; set; }
+
+    // V2pn: the last update attempt, whatever started it (a click, the schedule, a new subscription).
+
+    /// <summary>Unix seconds of the last attempt.</summary>
+    public long LastAttemptTime { get; set; }
+
+    public EV2pnSubUpdateResult LastResult { get; set; }
+
+    /// <summary>"HTTP 403", the network error's own words, or null.</summary>
+    public string? LastResultDetail { get; set; }
+
+    /// <summary>Unix seconds of the last update that brought servers; 0 before V2pn kept it.</summary>
+    public long LastGoodTime { get; set; }
 }

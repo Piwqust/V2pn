@@ -1,6 +1,7 @@
 using System.Collections.Concurrent;
 using ServiceLib.Services;
 using v2rayN.Desktop.Common;
+using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
 
@@ -9,6 +10,9 @@ public partial class MainWindow
     private CancellationTokenSource? _replacementSearch;
     private AvailabilityCheckResult? _replacementCheck;
     private AvailabilityCheckResult? _offerOtherCountriesFor;
+
+    // The subscription of the selected server, for what its provider reports next to Connect.
+    private string? _activeSubId;
 
     // VPN rights were asked for and refused; cleared by the next attempt or by disconnecting.
     private bool _tunDenied;
@@ -83,6 +87,21 @@ public partial class MainWindow
             }
         }
 
+        else if (SubscriptionOver(_activeSubId) is { } over)
+        {
+            text = over.Text;
+            var subId = _activeSubId!;
+            primary = (L.SubUpdateNow, () => UpdateSubWithStateAsync(subId, viaVpn: false));
+            if (over.Page.IsNotEmpty())
+            {
+                secondary = (L.SubWebPage, () =>
+                {
+                    ProcUtils.ProcessStart(over.Page);
+                    return Task.CompletedTask;
+                });
+            }
+        }
+
         txtProblem.Text = text;
         txtProblem.IsVisible = text.IsNotEmpty();
         _fixPrimary = primary?.Run;
@@ -91,6 +110,28 @@ public partial class MainWindow
         btnFixPrimary.IsVisible = primary != null;
         btnFixSecondary.Content = secondary?.Label;
         btnFixSecondary.IsVisible = secondary != null;
+    }
+
+    /// <summary>The provider's own word that the subscription is over: expired, or out of traffic.</summary>
+    private (string Text, string? Page)? SubscriptionOver(string? subId)
+    {
+        if (SubInfoManager.Instance.Get(subId) is not { HasUserInfo: true } info)
+        {
+            return null;
+        }
+        var sub = ViewModel?.ProfilesViewModel.SubNavItems.FirstOrDefault(s => s.Id == subId)?.Item;
+        var name = SideSubRow.NameOf(sub);
+        var page = info.WebPageUrl.IsNotEmpty() ? info.WebPageUrl : info.SupportUrl;
+        if (info.Expire > 0 && info.Expire < DateTimeOffset.UtcNow.ToUnixTimeSeconds())
+        {
+            var date = DateTimeOffset.FromUnixTimeSeconds(info.Expire).LocalDateTime.ToString("d MMMM yyyy", CultureInfo.CurrentUICulture);
+            return (string.Format(L.SubExpiredNotice, name, date), page);
+        }
+        if (info.Total > 0 && info.Upload + info.Download >= info.Total)
+        {
+            return (string.Format(L.SubTrafficOutNotice, name), page);
+        }
+        return null;
     }
 
     private static async Task RunFixAsync(Func<Task>? fix)

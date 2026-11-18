@@ -164,7 +164,7 @@
                             </Border>
                         </StackPanel>
                     </Border>
-                    <TextBlock x:Name="txtInfoAsOf" Classes="sgroupnote" />
+                    <TextBlock x:Name="txtInfoAsOf" Classes="sgroupnote" TextWrapping="Wrap" />
                 </StackPanel>
                 <StackPanel Classes="sgroup">
                     <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpSource}" />

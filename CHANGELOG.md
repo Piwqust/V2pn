@@ -2,10 +2,17 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
-V2pn no longer changes its look by the server you pick. If you came to V2pn from a provider that works with it, that provider gets a tab in the title bar. Everyone else sees V2pn as before.
+## 1.3.0
+
+V2pn now says "connected" only when it has checked that your connection works, and when something breaks it tells you what and offers the way out: another server, another country, a port, a retry. You can connect right after adding a subscription, a subscription tells you why it didn't update, and a provider you came from gets its own tab in the title bar instead of changing V2pn's look.
+
+<p align="center"><img src="docs/images/changelog/1.3.0-import.png" width="480" alt="The walkthrough after a subscription is added: three servers ready, the selected server, the mode and the route, and Connect"></p>
+
+<p align="center"><img src="docs/images/changelog/1.3.0-recovery.png" width="800" alt="The main window when the selected server does not answer: the pill says Server not responding, with Check again, Find a working server and Copy diagnostics under it"></p>
 
 ### Tabs in the title bar
+
+V2pn no longer changes its look by the server you pick. If you came to V2pn from a provider that works with it, that provider gets a tab in the title bar. Everyone else sees V2pn as before.
 
 - The title bar has two tabs, as in a browser: **V2pn** and the provider's, with its mark and name. Without a provider there are no tabs.
 - The provider's tab shows its colour and background, your plan with the days left, devices and traffic, its buttons, and only its servers. Its sign-in, hidden servers, locked settings, routes and connection settings work only there and only for its subscriptions.

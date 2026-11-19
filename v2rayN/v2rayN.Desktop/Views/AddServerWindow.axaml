@@ -6,7 +6,6 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:views="clr-namespace:v2rayN.Desktop.Views"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static loc:L.SvTitlePlain}"
@@ -34,7 +33,7 @@
             <Button
                 x:Name="btnCancel"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbCancel}"
+                Content="{x:Static loc:L.Cancel}"
                 IsCancel="True" />
         </StackPanel>
         </Border>
@@ -114,7 +113,7 @@
                                     <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBox x:Name="txtId" PlaceholderText="b831381d-6324-4d53-ad4f-8cda48b30811" />
-                                            <Button x:Name="btnGUID" Content="{x:Static resx:ResUI.TbGUID}" />
+                                            <Button x:Name="btnGUID" Content="{x:Static loc:L.SvGenerate}" />
                                         </StackPanel>
                                     </Panel>
                                 </Grid>
@@ -239,9 +238,9 @@
                             <Border Classes="srow stack adv">
                                 <StackPanel Spacing="10">
                                     <StackPanel>
-                                        <TextBlock Classes="srowtitle" x:Name="tbHttpHeaders" IsVisible="False" Text="{x:Static loc:L.SvHttpHeaders}" ToolTip.Tip="{x:Static resx:ResUI.TipHttpOutboundHeaders}" />
+                                        <TextBlock Classes="srowtitle" x:Name="tbHttpHeaders" IsVisible="False" Text="{x:Static loc:L.SvHttpHeaders}" ToolTip.Tip="{x:Static loc:L.SvHttpHeadersTip}" />
                                     </StackPanel>
-                                    <views:JsonEditor x:Name="txtHttpHeadersJson" MinHeight="100" IsVisible="False" ToolTip.Tip="{x:Static resx:ResUI.TipHttpOutboundHeaders}" />
+                                    <views:JsonEditor x:Name="txtHttpHeadersJson" MinHeight="100" IsVisible="False" ToolTip.Tip="{x:Static loc:L.SvHttpHeadersTip}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -261,7 +260,7 @@
                                     <Panel Classes="srowctl" Grid.Column="2" VerticalAlignment="Center">
                                         <StackPanel Orientation="Horizontal" Spacing="8">
                                             <TextBox x:Name="txtId5" PlaceholderText="b831381d-6324-4d53-ad4f-8cda48b30811" />
-                                            <Button x:Name="btnGUID5" Content="{x:Static resx:ResUI.TbGUID}" />
+                                            <Button x:Name="btnGUID5" Content="{x:Static loc:L.SvGenerate}" />
                                         </StackPanel>
                                     </Panel>
                                 </Grid>
@@ -377,16 +376,16 @@
                                             <Button.Flyout>
                                                 <Flyout>
                                                     <StackPanel>
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbPath7}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvHy2Obfs}" />
                                                         <TextBox x:Name="txtPath7" Width="400" Margin="{StaticResource Margin4}" />
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbGeckoPacketSize}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvHy2Gecko}" />
                                                         <StackPanel Orientation="Horizontal">
-                                                            <TextBox x:Name="txtMinGeckoPacketSize" Width="90" Margin="{StaticResource Margin4}" PlaceholderText="Min" />
-                                                            <TextBox x:Name="txtMaxGeckoPacketSize" Width="90" Margin="{StaticResource Margin4}" PlaceholderText="Max" />
+                                                            <TextBox x:Name="txtMinGeckoPacketSize" Width="90" Margin="{StaticResource Margin4}" PlaceholderText="{x:Static loc:L.SvMin}" />
+                                                            <TextBox x:Name="txtMaxGeckoPacketSize" Width="90" Margin="{StaticResource Margin4}" PlaceholderText="{x:Static loc:L.SvMax}" />
                                                         </StackPanel>
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbHy2RealmUrl}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvHy2Realm}" />
                                                         <TextBox x:Name="txtHy2RealmUrl" Width="400" Margin="{StaticResource Margin4}" />
-                                                        <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbHy2RealmUrlTip}" TextWrapping="Wrap" />
+                                                        <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvHy2RealmHint}" TextWrapping="Wrap" />
                                                     </StackPanel>
                                                 </Flyout>
                                             </Button.Flyout>
@@ -713,12 +712,12 @@
                                             <Button.Flyout>
                                                 <Flyout>
                                                     <StackPanel>
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" FontWeight="SemiBold" Text="{x:Static resx:ResUI.TbXrayOnly}" />
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbPrivateKey}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" FontWeight="SemiBold" Text="{x:Static loc:L.SvXrayOnly}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvWarpPrivateKey}" />
                                                         <TextBox x:Name="txtWarpPrivateKey" Width="400" Margin="{StaticResource Margin4}" />
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbPublicKey}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvWarpPublicKey}" />
                                                         <TextBox x:Name="txtWarpPublicKey" Width="400" Margin="{StaticResource Margin4}" />
-                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbLocalAddress}" />
+                                                        <TextBlock Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvWarpAddress}" />
                                                         <TextBox x:Name="txtWarpAddress" Width="400" Margin="{StaticResource Margin4}" PlaceholderText="172.16.0.2, fd01::2" />
                                                     </StackPanel>
                                                 </Flyout>
@@ -826,7 +825,7 @@
                                         </StackPanel>
                                         <Expander IsExpanded="True">
                                             <Expander.Header>
-                                                <TextBlock FontWeight="Normal" Text="{x:Static resx:ResUI.TransportExtraTip}" />
+                                                <TextBlock FontWeight="Normal" Text="{x:Static loc:L.SvXhttpExtraTip}" />
                                             </Expander.Header>
                                             <views:JsonEditor x:Name="txtExtraXhttp" HorizontalAlignment="Stretch" />
                                         </Expander>
@@ -1195,17 +1194,17 @@
                                                     <Button.Flyout>
                                                         <Flyout>
                                                             <StackPanel>
-                                                                <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbCertPinningTips}" TextWrapping="Wrap" />
+                                                                <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvPinningTip}" TextWrapping="Wrap" />
                                                                 <StackPanel HorizontalAlignment="Left" Orientation="Horizontal">
-                                                                    <Button x:Name="btnFetchCert" Margin="{StaticResource Margin4}" Content="{x:Static resx:ResUI.TbFetchCert}" />
-                                                                    <Button x:Name="btnFetchCertChain" Margin="{StaticResource Margin4}" Content="{x:Static resx:ResUI.TbFetchCertChain}" />
+                                                                    <Button x:Name="btnFetchCert" Margin="{StaticResource Margin4}" Content="{x:Static loc:L.SvFetchCert}" />
+                                                                    <Button x:Name="btnFetchCertChain" Margin="{StaticResource Margin4}" Content="{x:Static loc:L.SvFetchCertChain}" />
                                                                 </StackPanel>
                                                                 <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" TextWrapping="Wrap">
-                                                                    <Run Text="{x:Static resx:ResUI.TbCertSha256Tips}" />
-                                                                    <Run FontWeight="SemiBold" Text="{x:Static resx:ResUI.TbXrayOnly}" />
+                                                                    <Run Text="{x:Static loc:L.SvCertSha}" />
+                                                                    <Run FontWeight="SemiBold" Text="{x:Static loc:L.SvXrayOnly}" />
                                                                 </TextBlock>
                                                                 <TextBox x:Name="txtCertSha256Pinning" Width="400" Margin="{StaticResource Margin4}" HorizontalAlignment="Left" />
-                                                                <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static resx:ResUI.TbFullCertTips}" TextWrapping="Wrap" />
+                                                                <TextBlock Width="400" Margin="{StaticResource Margin4}" VerticalAlignment="Center" Text="{x:Static loc:L.SvFullCert}" TextWrapping="Wrap" />
                                                                 <TextBox x:Name="txtCert" Width="400" Margin="{StaticResource Margin4}" AcceptsReturn="True" Classes="TextArea" TextWrapping="NoWrap" />
                                                             </StackPanel>
                                                         </Flyout>

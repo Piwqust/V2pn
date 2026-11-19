@@ -150,6 +150,26 @@ public static partial class L
     public static string SvMldsa => T("ML-DSA-65 key", "Ключ ML-DSA-65");
     public static string SvMldsaHint => T("Post-quantum check. Usually empty.", "Постквантовая проверка. Обычно пусто.");
 
+    // Pop-out panels of the expert rows.
+    public static string SvGenerate => T("Generate", "Создать");
+    public static string SvHttpHeadersTip => T("Headers for requests to the HTTP proxy, as a JSON object: a name and a value or a list of values.", "Заголовки запросов к HTTP-прокси в виде JSON-объекта: имя и значение или список значений.");
+    public static string SvHy2Obfs => T("Obfuscation password (Salamander)", "Пароль маскировки (Salamander)");
+    public static string SvHy2Gecko => T("Gecko packet size, from and to", "Размер пакета Gecko: от и до");
+    public static string SvMin => T("min", "мин");
+    public static string SvMax => T("max", "макс");
+    public static string SvHy2Realm => T("Realm address", "Адрес Realm");
+    public static string SvHy2RealmHint => T("Format: realm://token@host[:port]/name?stun=host[:port]", "Формат: realm://токен@хост[:порт]/имя?stun=хост[:порт]");
+    public static string SvXrayOnly => T("Xray only", "Только для Xray");
+    public static string SvWarpPrivateKey => T("Private key", "Закрытый ключ");
+    public static string SvWarpPublicKey => T("Public key", "Открытый ключ");
+    public static string SvWarpAddress => T("Address (IPv4, IPv6)", "Адрес (IPv4, IPv6)");
+    public static string SvXhttpExtraTip => T("JSON object with XHTTP settings", "JSON-объект с настройками XHTTP");
+    public static string SvPinningTip => T("Fill in either field. A pinned certificate turns “Skip the certificate check” off.\n\nGetting the certificate can fail if it is self-signed or the system trusts a rogue certificate authority.", "Заполните любое из полей. С закреплённым сертификатом «Не проверять сертификат» отключается.\n\nСертификат может не загрузиться, если он самоподписанный или система доверяет поддельному центру сертификации.");
+    public static string SvFetchCert => T("Get certificate", "Получить сертификат");
+    public static string SvFetchCertChain => T("Get the chain", "Получить цепочку");
+    public static string SvCertSha => T("Certificate fingerprint (SHA-256)", "Отпечаток сертификата (SHA-256)");
+    public static string SvFullCert => T("Full certificate or chain, PEM format", "Полный сертификат или цепочка в формате PEM");
+
     // Custom-config editor.
     public static string SvCustomTitle => T("Server from a config file", "Сервер из файла настроек");
     public static string SvCustomHint => T("Pick a ready config file and give it a name.", "Выберите готовый файл настроек и дайте ему название.");

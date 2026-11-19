@@ -9,6 +9,18 @@ What changes for the people who use the app. Each version's section becomes the 
 - Home shows "Quick connect" with the fastest server, then your favorites and recent servers, each only when it has something. A server is listed once.
 - The list of the quickest servers and the statistics are off by default; turn them on in Appearance or by right-clicking the list. The empty-favorites hint and "Browse countries" are gone: the star next to every server and the Countries tab do the same.
 
+### Blocking bypass
+
+For connections that Russian filtering blocks. It is off until you turn it on in Settings → Blocking bypass; while it is off, V2pn connects exactly as before.
+
+- **Check the network** (☰ → Blocking bypass, or the button under "Server not responding") says in one sentence what is blocked: the whole internet, a whitelist (only Russian sites open), the server's address, downloads that freeze after the first ~16 KB, or the connection itself. It also says when QUIC (UDP) is cut, so Hysteria2, TUIC and WireGuard servers will not work on that network. In VPN mode only the connection is checked: direct checks would go through the tunnel.
+- **Find a way**: V2pn tries splitting the server's TLS handshake in a few ways, one at a time with pauses, and keeps the one that works. A way is kept for the network it was found on, so home Wi-Fi and a phone's hotspot each get their own. With automatic search on, this happens by itself when a server stops answering or a large download stops, but only when the network check points at the connection, not at a whitelist or a dead network.
+- **Whitelists**: "Connect via a server in Russia" picks the fastest of your servers entered in Russia (by country, or by names like "🇷🇺 →", "белые списки", "LTE"). "Chain through my server in Russia" joins your own Russian server and the selected one into a chain, saved as a server of its own.
+- **This server's settings** names what makes the selected server easy to block: REALITY over plain TCP, the name of a big foreign site, a port other than 443, no TLS, plain WireGuard or Shadowsocks, UDP, ECH.
+- **Careful connections** (on by default under the bypass): ping tests go a dozen servers at a time, never two entries of one address together, with longer pauses; the core uses a browser's TLS fingerprint where the link left none, and XHTTP's connection reuse is written out.
+- **Split the handshake of direct sites** (off by default): for sites that open past the VPN but are slowed down by the filter.
+- Rule lists that fail to download try once more the other way, directly or through the connection.
+
 ## 1.3.0
 
 V2pn now says "connected" only when it has checked that your connection works, and when something breaks it tells you what and offers the way out: another server, another country, a port, a retry. You can connect right after adding a subscription, a subscription tells you why it didn't update, and a provider you came from gets its own tab in the title bar instead of changing V2pn's look.

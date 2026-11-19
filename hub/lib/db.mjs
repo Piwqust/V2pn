@@ -2,6 +2,159 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import { DatabaseSync } from 'node:sqlite';
+import { parseActions } from './look.mjs';
+import { contentHash } from './rights.mjs';
+
+// The second version: accounts by login and password, one partner per account published on save, special rights
+// waiting for a moderator, complaints. Applications, tiers, the look queue, codes, links and the outbox are gone.
+const SCHEMA_V2 = `
+  CREATE TABLE accounts (
+    id INTEGER PRIMARY KEY,
+    login TEXT NOT NULL UNIQUE,
+    role TEXT NOT NULL DEFAULT 'provider',
+    password TEXT,
+    password_at TEXT,
+    created_at TEXT NOT NULL,
+    last_login_at TEXT
+  );
+  CREATE TABLE sessions (
+    token_hash TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+    created_at INTEGER NOT NULL,
+    expires_at INTEGER NOT NULL,
+    seen_at INTEGER NOT NULL
+  );
+  CREATE INDEX sessions_account ON sessions (account_id);
+  CREATE TABLE partners (
+    id TEXT PRIMARY KEY,
+    account_id INTEGER NOT NULL UNIQUE REFERENCES accounts (id),
+    name TEXT NOT NULL,
+    domains TEXT NOT NULL,
+    subscription TEXT,
+    check_json TEXT,
+    checked_at TEXT,
+    look TEXT NOT NULL,
+    state TEXT NOT NULL,
+    down_reason TEXT,
+    source TEXT NOT NULL,
+    until TEXT,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL,
+    published_at TEXT
+  );
+  CREATE TABLE rights (
+    partner_id TEXT NOT NULL REFERENCES partners (id),
+    name TEXT NOT NULL,
+    content TEXT NOT NULL,
+    hash TEXT NOT NULL,
+    approved TEXT,
+    approved_hash TEXT,
+    denied_hash TEXT,
+    reason TEXT,
+    requested_at TEXT NOT NULL,
+    decided_at TEXT,
+    decided_by TEXT,
+    PRIMARY KEY (partner_id, name)
+  );
+  CREATE TABLE complaints (
+    id INTEGER PRIMARY KEY,
+    partner_id TEXT NOT NULL,
+    text TEXT NOT NULL DEFAULT '',
+    created_at TEXT NOT NULL
+  );
+  CREATE INDEX complaints_partner ON complaints (partner_id);
+  CREATE TABLE uploads (
+    account_id INTEGER NOT NULL,
+    sha256 TEXT NOT NULL,
+    slot TEXT NOT NULL,
+    width INTEGER NOT NULL,
+    height INTEGER NOT NULL,
+    size INTEGER NOT NULL,
+    created_at INTEGER NOT NULL,
+    PRIMARY KEY (account_id, sha256)
+  );
+`;
+
+const parseJson = (text, fallback) => { try { return text ? JSON.parse(text) : fallback; } catch { return fallback; } };
+
+/**
+ * Version 1 to 2 on the live data. Every provider stays a partner with the look it had published; what its tier let
+ * its look carry (API and sign-in by code, buttons, lock) becomes a special right already approved. Accounts were
+ * keyed by email: a provider's account takes the provider's id as its login, any other keeps its email; nobody has a
+ * password until `hub.mjs reset-password` (or `owner`) gives one. Providers imported without an account get one.
+ * Sessions end: they were made by email codes.
+ */
+function migrateToV2(db) {
+  const now = new Date().toISOString();
+  const accounts = db.all('SELECT id, email, created_at, last_login_at FROM accounts ORDER BY id');
+  const providers = db.all('SELECT * FROM providers ORDER BY id');
+  const apps = new Map(db.all('SELECT account_id, test_url, check_json, checked_at FROM applications').map(a => [a.account_id, a]));
+  const uploads = db.all('SELECT * FROM uploads');
+
+  const used = new Set();
+  const take = base => {
+    let login = base;
+    for (let i = 2; used.has(login); i++) login = `${base}-${i}`;
+    used.add(login);
+    return login;
+  };
+  const byAccount = new Map(providers.filter(p => p.account_id).map(p => [p.account_id, p]));
+  const newAccounts = [];
+  for (const a of accounts) if (byAccount.has(a.id)) newAccounts.push({ ...a, login: take(byAccount.get(a.id).id) });
+  for (const a of accounts) if (!byAccount.has(a.id)) newAccounts.push({ ...a, login: take(a.email) });
+  let nextId = Math.max(0, ...accounts.map(a => a.id)) + 1;
+  const accountOf = new Map(providers.filter(p => p.account_id).map(p => [p.id, p.account_id]));
+  for (const p of providers.filter(x => !x.account_id)) {
+    const id = nextId++;
+    newAccounts.push({ id, login: take(p.id), created_at: p.created_at, last_login_at: null });
+    accountOf.set(p.id, id);
+  }
+
+  for (const table of ['sessions', 'login_codes', 'admin_links', 'outbox', 'applications', 'uploads', 'providers', 'accounts']) {
+    db.db.exec(`DROP TABLE IF EXISTS ${table}`);
+  }
+  db.db.exec(SCHEMA_V2);
+
+  for (const a of newAccounts) {
+    db.run("INSERT INTO accounts (id, login, role, created_at, last_login_at) VALUES (?, ?, 'provider', ?, ?)", a.id, a.login, a.created_at, a.last_login_at);
+  }
+  for (const p of providers) {
+    const old = parseJson(p.look_published, null) || parseJson(p.look_draft, null) || { name: p.name };
+    const look = {
+      name: old.name || p.name, brand: old.brand || [], background: old.background || 'none', layout: 'v2pn',
+      logo: old.logo ?? null, logoOnLight: old.logoOnLight ?? null, mark: old.mark ?? null, backdrop: old.backdrop ?? null,
+      links: { cabinet: old.links?.cabinet ?? '', support: old.links?.support ?? '' },
+    };
+    const app = p.account_id ? apps.get(p.account_id) : null;
+    db.run(`INSERT INTO partners (id, account_id, name, domains, subscription, check_json, checked_at, look, state, down_reason, source, until,
+      created_at, updated_at, published_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+    p.id, accountOf.get(p.id), p.name, p.domains, p.source === 'hub' ? app?.test_url || null : null, app?.check_json ?? null, app?.checked_at ?? null,
+    JSON.stringify(look), p.state === 'active' ? 'live' : 'down', p.state === 'active' ? null : p.revoke_reason, p.source,
+    p.source === 'import' ? p.until : null, p.created_at, now, p.published_at);
+    if (p.tier < 2) continue;
+    const rights = {};
+    if (old.api) rights.account = { api: old.api, login: old.login === true };
+    if (old.actions?.length) {
+      try {
+        rights.actions = parseActions(old.actions);
+      } catch { /* buttons V2pn would not take were never published either */ }
+    }
+    if (old.lock) rights.lock = true;
+    for (const [name, content] of Object.entries(rights)) {
+      const text = JSON.stringify(content);
+      const hash = contentHash(name, content);
+      db.run(`INSERT INTO rights (partner_id, name, content, hash, approved, approved_hash, requested_at, decided_at, decided_by)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'migration')`, p.id, name, text, hash, text, hash, now, now);
+    }
+  }
+  for (const u of uploads) {
+    const account = accountOf.get(u.provider_id);
+    if (!account) continue;
+    db.run(`INSERT INTO uploads (account_id, sha256, slot, width, height, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
+      ON CONFLICT (account_id, sha256) DO NOTHING`, account, u.sha256, u.slot, u.width, u.height, u.size, u.created_at);
+  }
+  db.audit('migration', 'hub.v2', null, { partners: providers.length, accounts: newAccounts.length });
+}
 
 const MIGRATIONS = [
   // 1: everything the first version needs.
@@ -114,27 +267,33 @@ const MIGRATIONS = [
     value TEXT NOT NULL
   );
   `,
+  // 2: the simple partner path (hub/README.md).
+  migrateToV2,
 ];
 
 export class Db {
-  constructor(file) {
+  /** <upTo> stops the migrations at a version (the tests make a database of an older version this way). */
+  constructor(file, { upTo = Infinity } = {}) {
     if (file !== ':memory:') fs.mkdirSync(path.dirname(file), { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(file);
     this.db.exec('PRAGMA journal_mode = WAL; PRAGMA synchronous = NORMAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;');
     this.statements = new Map();
-    this.migrate();
+    this.migrate(upTo);
   }
 
-  migrate() {
+  migrate(upTo = Infinity) {
     this.db.exec('CREATE TABLE IF NOT EXISTS migrations (version INTEGER PRIMARY KEY, applied_at TEXT NOT NULL)');
     const done = new Set(this.all('SELECT version FROM migrations').map(r => r.version));
-    MIGRATIONS.forEach((sql, i) => {
+    MIGRATIONS.forEach((step, i) => {
       const version = i + 1;
-      if (done.has(version)) return;
+      if (done.has(version) || version > upTo) return;
       this.tx(() => {
-        this.db.exec(sql);
+        if (typeof step === 'function') step(this);
+        else this.db.exec(step);
         this.run('INSERT INTO migrations (version, applied_at) VALUES (?, ?)', version, new Date().toISOString());
       });
+      // Statements prepared against the tables a step dropped are of no use any more.
+      this.statements.clear();
     });
   }
 

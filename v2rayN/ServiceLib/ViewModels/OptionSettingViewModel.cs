@@ -11,6 +11,10 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
 
     [Reactive] public partial int LocalPort { get; set; }
 
+    // V2pn: the kill switch (V2pnKillSwitchItem).
+    [Reactive] public partial bool KillSwitchEnabled { get; set; }
+    [Reactive] public partial bool KillSwitchAllowLan { get; set; }
+
     // V2pn: "Обход блокировок" (V2pnBypassItem).
     [Reactive] public partial bool BypassEnabled { get; set; }
     [Reactive] public partial bool BypassCalm { get; set; }
@@ -176,6 +180,10 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         HyDownMbps = _config.HysteriaItem.DownMbps;
         EnableFragment = _config.CoreBasicItem.EnableFragment;
         EnableFinalFragment = _config.CoreBasicItem.EnableFinalFragment;
+        var killSwitch = V2pnKillSwitch.Item(_config);
+        KillSwitchEnabled = killSwitch.Enabled;
+        KillSwitchAllowLan = killSwitch.AllowLan;
+
         var bypass = V2pnBypass.Item(_config);
         BypassEnabled = bypass.Enabled;
         BypassCalm = bypass.CalmTests;
@@ -422,6 +430,10 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         _config.TunModeItem.RouteExcludeAddress = Utils.String2List(TunRouteExcludeAddress);
         _config.TunModeItem.IPv4Address = TunIPv4Address;
         _config.TunModeItem.IPv6Address = TunIPv6Address;
+
+        var killSwitch = V2pnKillSwitch.Item(_config);
+        killSwitch.Enabled = KillSwitchEnabled;
+        killSwitch.AllowLan = KillSwitchAllowLan;
 
         var bypass = V2pnBypass.Item(_config);
         bypass.Enabled = BypassEnabled;

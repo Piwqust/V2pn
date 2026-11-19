@@ -111,6 +111,12 @@
                         </ListBoxItem>
                         <ListBoxItem>
                             <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Classes="nav" Data="{StaticResource SemiIconShieldStroked}" />
+                                <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetKillSwitch}" />
+                            </StackPanel>
+                        </ListBoxItem>
+                        <ListBoxItem>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
                                 <PathIcon Classes="nav" Data="{StaticResource SemiIconBolt}" />
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetBypass}" />
                             </StackPanel>
@@ -755,6 +761,42 @@
                                     </Border>
                                 </StackPanel>
                             </Border>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="pageKillSwitch" Classes="spage" IsVisible="False">
+                        <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetKillSwitch}" />
+                        <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetKillSwitchHint}" />
+                        <StackPanel Classes="sgroup">
+                            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpKillSwitch}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconShieldStroked}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.KillSwitchEnable}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.KillSwitchEnableHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togKillSwitch" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border x:Name="rowKillSwitchLan" Classes="srow win">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconWifi}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.KillSwitchLan}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.KillSwitchLanHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togKillSwitchLan" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                            <TextBlock Classes="spagehint" Margin="4,10,0,0" Text="{x:Static loc:L.KillSwitchAdminNote}" />
                         </StackPanel>
                     </StackPanel>
                     <StackPanel x:Name="pageBypass" Classes="spage" IsVisible="False">

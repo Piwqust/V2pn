@@ -334,11 +334,26 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 {
                     RefreshStatePill();
                     // A failed start already showed the core's own message; repeated crashes say nothing.
-                    if (core == EV2pnCoreState.Failed && V2pnCoreWatch.Failure == EV2pnFailure.KeepsStopping)
+                    if (core == EV2pnCoreState.Failed && V2pnKillSwitch.Holding)
+                    {
+                        ShowToast(ToastKind.Error, L.KillSwitchToast);
+                    }
+                    else if (core == EV2pnCoreState.Failed && V2pnCoreWatch.Failure == EV2pnFailure.KeepsStopping)
                     {
                         ShowToast(ToastKind.Error, L.CoreKeepsStoppingToast);
                     }
+                    // A kill switch that could not close the internet must not look like one that did.
+                    if (core == EV2pnCoreState.Running && V2pnKillSwitch.FirewallError is { } firewallError
+                        && firewallError != _shownFirewallError)
+                    {
+                        _shownFirewallError = firewallError;
+                        ShowToast(ToastKind.Error, string.Format(L.KillSwitchFirewallFailed, firewallError));
+                    }
                 })
+                .DisposeWith(disposables);
+            V2pnKillSwitch.HoldingChanged.AsObservable()
+                .ObserveOn(RxSchedulers.MainThreadScheduler)
+                .Subscribe(_ => RefreshStatePill())
                 .DisposeWith(disposables);
 
             foreach (var handler in RegisterProfileInteractions(profiles))
@@ -868,6 +883,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         status.SystemProxySelected = (int)ESysProxyType.ForcedClear;
     }
 
+    private string? _shownFirewallError;
+
     private void RefreshStatePill()
     {
         var state = CurrentState();
@@ -878,8 +895,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var fault = !enabled || core == EV2pnCoreState.Failed ? V2pnCoreWatch.Failure : EV2pnFailure.None;
         var restarting = enabled && core == EV2pnCoreState.Restarting;
         var starting = enabled && core is EV2pnCoreState.Starting or EV2pnCoreState.Stopped;
+        var holding = fault != EV2pnFailure.None && V2pnKillSwitch.Holding;
         var (kind, label) = (fault, enabled, restarting, starting, check.State, state) switch
         {
+            _ when holding => ("unsafe", L.StateKillSwitch),
             (EV2pnFailure.KeepsStopping, _, _, _, _, _) => ("warn", L.StateCoreStopped),
             (not EV2pnFailure.None, _, _, _, _, _) => ("warn", L.StateCoreFailed),
             (_, false, _, _, _, _) => ("unsafe", L.Unprotected),
@@ -903,6 +922,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var faulted = fault != EV2pnFailure.None;
         var faultTip = !faulted ? null
+            : holding ? L.KillSwitchHoldTip
             : V2pnCoreWatch.FailureDetail.IsNullOrEmpty() ? L.StateCoreFailedTip
             : $"{Shorten(V2pnCoreWatch.FailureDetail, 300)}\n\n{L.StateCoreFailedTip}";
         var systemProxy = enabled && status?.EnableTun == false

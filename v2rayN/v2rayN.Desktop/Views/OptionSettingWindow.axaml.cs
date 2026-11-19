@@ -167,6 +167,9 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
             this.Bind(ViewModel, vm => vm.CoreType9, v => v.cmbCoreType9.SelectedValue).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.CoreType14, v => v.cmbCoreType14.SelectedValue).DisposeWith(disposables);
 
+            this.Bind(ViewModel, vm => vm.KillSwitchEnabled, v => v.togKillSwitch.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.KillSwitchAllowLan, v => v.togKillSwitchLan.IsChecked).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.KillSwitchEnabled, v => v.rowKillSwitchLan.IsEnabled).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.BypassEnabled, v => v.togBypassEnabled.IsChecked).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.BypassCalm, v => v.togBypassCalm.IsChecked).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.BypassAutoTune, v => v.togBypassAutoTune.IsChecked).DisposeWith(disposables);
@@ -269,7 +272,7 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         }
     }
 
-    private Control[] Pages => [pageGeneral, pageInbound, pageSysProxy, pageTun, pageBypass, pageTraffic, pageTests, pageUpdates, pageCores, pageLogs];
+    private Control[] Pages => [pageGeneral, pageInbound, pageSysProxy, pageTun, pageKillSwitch, pageBypass, pageTraffic, pageTests, pageUpdates, pageCores, pageLogs];
 
     private void ShowPage(int index)
     {

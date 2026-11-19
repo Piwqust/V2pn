@@ -9,6 +9,20 @@ public static class V2pnThemeBackgroundKinds
     public static readonly IReadOnlyList<string> All = [Solid, Gradient, Image];
 }
 
+/// <summary>
+/// theme.layout: the window V2pn lays out for the partner. "v2pn" is V2pn's own (sidebar and stage); the others are
+/// screens of their own that V2pn draws over both and fills from the same state, with the pack's pictures and colours.
+/// </summary>
+public static class V2pnThemeLayouts
+{
+    public const string V2pn = "v2pn";
+
+    /// <summary>A sticker book: the pack's scene full height, Connect as a die-cut sticker, the servers as hero cards.</summary>
+    public const string Stickers = "stickers";
+
+    public static readonly IReadOnlyList<string> All = [V2pn, Stickers];
+}
+
 /// <summary>The picture slot of a theme.</summary>
 public static class V2pnThemeArt
 {
@@ -31,9 +45,11 @@ public sealed record V2pnThemeBackground(string Kind, IReadOnlyList<string> Colo
 /// whatever a pack gets wrong falls back to it, and <see cref="Notes"/> says what and why.
 /// </summary>
 /// <param name="Brand">1 to 3 brand colours: the accent first, then the colours of the background's gradient.</param>
+/// <param name="Layout">One of <see cref="V2pnThemeLayouts"/>; V2pn's own unless the pack names another.</param>
 public sealed record V2pnTheme(
     IReadOnlyList<string> Brand,
-    V2pnThemeBackground Background)
+    V2pnThemeBackground Background,
+    string Layout = V2pnThemeLayouts.V2pn)
 {
     /// <summary>What V2pn did not take from the pack and what it used instead, one line each (tools/partner-check.cs).</summary>
     public IReadOnlyList<string> Notes { get; init; } = [];
@@ -45,7 +61,7 @@ public sealed record V2pnTheme(
 
     /// <summary>One string that changes whenever anything that is drawn changes (for rebuilding a look).</summary>
     public string Key => string.Join("|", string.Join(",", Brand), Background.Kind, string.Join(",", Background.Colors),
-        Background.Art);
+        Background.Art, Layout);
 }
 
 /// <summary>Reads partner.json's "theme" strictly: known values only, within limits; anything else falls back.</summary>
@@ -56,7 +72,7 @@ public static class V2pnThemeReader
     public const int MaxStops = 4;
     private const int MaxText = 40;
 
-    private static readonly HashSet<string> Keys = ["palette", "background"];
+    private static readonly HashSet<string> Keys = ["palette", "background", "layout"];
 
     // Fields of the looks V2pn drew before (the six templates, then Neon's Connect and window): read without error, used no more.
     private static readonly HashSet<string> Retired = ["template", "font", "corners", "density", "blocks", "art", "connect", "window"];
@@ -104,7 +120,9 @@ public static class V2pnThemeReader
         }
         var background = Background(root["background"], isPicture, notes);
 
-        return new V2pnTheme(brand, background) { Notes = notes };
+        var layout = Pick(root["layout"], V2pnThemeLayouts.All, V2pnThemeLayouts.V2pn, "theme.layout", notes);
+
+        return new V2pnTheme(brand, background, layout) { Notes = notes };
     }
 
     private static string Pick(JsonNode? node, IReadOnlyList<string> allowed, string fallback, string field, List<string> notes)

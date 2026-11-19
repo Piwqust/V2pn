@@ -31,6 +31,22 @@ public class V2pnPartnerThemeTests
     }
 
     [Test]
+    public async Task Theme_Layout_IsOneOfV2pns_ElseV2pnsOwn()
+    {
+        var stickers = Read("""{ "layout": "Stickers" }""");
+        var unknown = Read("""{ "layout": "html" }""");
+        var none = Read("""{ "palette": { "brand": "#0a7cff" } }""");
+
+        await stickers.Layout.Should().BeEqualTo(V2pnThemeLayouts.Stickers);
+        await stickers.Notes.Count.Should().BeEqualTo(0);
+        await unknown.Layout.Should().BeEqualTo(V2pnThemeLayouts.V2pn);
+        await unknown.Notes.Any(n => n.Contains("theme.layout")).Should().BeTrue();
+        await none.Layout.Should().BeEqualTo(V2pnThemeLayouts.V2pn);
+        // A new layout redraws the window: it is part of the theme's key.
+        await (stickers.Key == none.Key).Should().BeFalse();
+    }
+
+    [Test]
     public async Task Theme_Missing_IsTheDefaultInTheBrandColour_WithoutABackground()
     {
         var theme = V2pnThemeReader.Parse(null, "#2f7bff", _ => false);

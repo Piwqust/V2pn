@@ -273,6 +273,11 @@ void CheckTheme(V2pnPartner p)
         ? "Accent (no background: the logo, the colour, the card)"
         : $"Scene on its {theme.Background.Kind} background{(theme.Background.Colors.Count > 0 ? " " + string.Join(" ", theme.Background.Colors) : "")}{(theme.Background.Art is { } art ? " " + art : "")}";
     Ok($"look: {look}; brand {string.Join(" ", theme.Brand.DefaultIfEmpty("(the pack's accent)"))}");
+    if (theme.Layout != V2pnThemeLayouts.V2pn)
+    {
+        // The screen is V2pn's; the pack gives it the background picture, the logo and the mark.
+        Ok($"layout: {theme.Layout}, a screen of V2pn's own over the sidebar and the stage{(theme.Background.Art == null ? "; without a background picture it stands on the plain night" : "")}");
+    }
     foreach (var note in theme.Notes)
     {
         Note($"theme: {note}");

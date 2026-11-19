@@ -9,6 +9,10 @@ What changes for the people who use the app. Each version's section becomes the 
 - Home shows "Quick connect" with the fastest server, then your favorites and recent servers, each only when it has something. A server is listed once.
 - The list of the quickest servers and the statistics are off by default; turn them on in Appearance or by right-clicking the list. The empty-favorites hint and "Browse countries" are gone: the star next to every server and the Countries tab do the same.
 
+### Partner layouts
+
+- A partner's theme can ask for a layout of V2pn's own instead of the sidebar and the map. The first is the sticker book: the partner's picture full height, a meme caption over V2pn's usual state, Connect as a die-cut sticker, the partner's buttons as stickers and the servers as hero cards with a brass plate, two rows at most with the rest behind a "+N" card. It is drawn at night whatever the app's theme, and "V2pn's usual look" at its bottom brings the sidebar and the map back for that tab.
+
 ### Blocking bypass
 
 For connections that Russian filtering blocks. It is off until you turn it on in Settings → Blocking bypass; while it is off, V2pn connects exactly as before.

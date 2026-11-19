@@ -55,6 +55,11 @@
             "art": { "$ref": "#/$defs/assetName" }
           }
         },
+        "layout": {
+          "description": "The window V2pn lays out for the tab. v2pn: V2pn's own (the sidebar and the stage). stickers: a sticker book over both, drawn by V2pn from the same state: the background picture full height on the right, the logo, a meme caption over V2pn's state pill, Connect as a die-cut sticker with the mark, the buttons as stickers and the servers as hero cards. The person can go back to V2pn's own layout from it. Any other value falls back to v2pn.",
+          "enum": ["v2pn", "stickers"],
+          "default": "v2pn"
+        },
         "connect": { "description": "Retired (Neon's connect control): read without error, noted, not used.", "deprecated": true },
         "window": { "description": "Retired (Neon's first window): read without error, noted, not used.", "deprecated": true }
       }

@@ -57,7 +57,7 @@ export function fork() {
     // ------------------------------------------------------------ geometry
     function layout() {
       const r = host!.getBoundingClientRect();
-      const mobile = r.width < 560;
+      const mobile = innerWidth < 768; // the phone layout: the host sits below the header, full width
       dpr = Math.min(devicePixelRatio || 1, mobile ? 1 : 2);
       W = Math.round(r.width * dpr);
       H = Math.round(r.height * dpr);

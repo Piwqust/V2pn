@@ -7,28 +7,26 @@ English in place.
 | URL | File | Made by |
 | --- | --- | --- |
 | `/` | `index.html` | by hand: the product, V2pn's window drawn as live HTML after the app's own screens and tokens |
-| `/providers/` | `providers/index.html` | by hand: one client for every subscription, the three tiers, the way in, «Подать заявку» |
-| `/providers/login/` | `providers/login/index.html` + `assets/site/login.js` | by hand: sign-in by a code to the email (the hub's no-mail mode shown plainly) |
-| `/providers/apply/` | `providers/apply/index.html` + `assets/site/apply.js` | by hand: the application, the server's check of the test link, V2pn's window as it will look |
-| `/providers/cabinet/` | `providers/cabinet/index.html` + `assets/site/cabinet.js` | by hand: the look with its live preview, the bot's button link, the sign-in API (tier 2) |
-| `/admin/` | `admin/index.html` + `assets/site/admin.js` | by hand: the owner's decisions, publication queue, providers, downloads, sign-in codes, audit log |
+| `/providers/` | `providers/index.html` | by hand: one client for every subscription; the subscription as it is, the tab, the special rights; the way in, «Создать партнёра» |
+| `/providers/login/` | `providers/login/index.html` + `assets/site/login.js` | by hand: a login and a password, «Создать аккаунт» or «Войти»; moderators go on to `/admin/`, providers to «Мой партнёр» |
+| `/providers/cabinet/` | `providers/cabinet/index.html` + `assets/site/cabinet.js` | by hand: «Мой партнёр», the one form beside V2pn's live window (light and dark, the partner's tab, the Scene, the sticker book), the link checked as it is typed, a PNG or JPG logo made into the PNG the hub takes, «Опубликовать», the special rights and their state, the share link, the password |
+| `/admin/` | `admin/index.html` + `assets/site/admin.js` | by hand: moderation, for the owner and moderators: rights waiting (approve or deny the content seen), every partner (take down, restore, reset the password, complaints), moderators (the owner), downloads, the audit log |
 | `/providers/guide/`, `/providers/guide/en/` | `providers/guide/index.html`, `providers/guide/en/index.html` | `tools/site.py` from `docs/partners/README.ru.md` and `README.md` |
-| `/providers/builder/` | `providers/builder/index.html` | by hand: the look builder that was here is gone; the page says the look is made in the cabinet, for old links |
 | `/p/<id>/`, `/partners/` | not in this folder | the hub (`hub/lib/page.mjs`, `hub/lib/publish.mjs`) on the server, at every publication |
 | `/api/*`, `/r/*`, `/releases/*` | not files | the hub's routes (`hub/README.md`), proxied by Caddy |
 
 The provider pages share `assets/site/api.js` (requests to the hub with `X-Hub: 1`, errors in Russian, offline and
-timeout states, the sign-in hint for the nav), `assets/site/hubui.js` (the check's lines, V2pn's window as a preview,
+timeout states, the sign-in hint for the nav: «Мой партнёр» or «Модерация»), `assets/site/hubui.js` (the check's lines, V2pn's window as a preview,
 copy buttons, confirmations) and `assets/site/hub.css` (the app screens in the site's system, and the dark mode of
 every page that loads it, in V2pn's dark tokens). Every script is a file: the CSP allows no inline script.
 
 ### Working on the provider pages
 
-`hub/dev/serve.mjs` serves this folder and the hub on one local origin under the live CSP, with no mail (codes wait
-in the admin's outbox), an optional stand-in subscription for the check (`--fixture`: names under `.test` resolve to
-this computer, which the real hub refuses), Configra imported (`--configra`) and made-up download counts
-(`--downloads`). It prints the owner's one-time sign-in link. `hub/dev/walk.mjs` walks the whole way of a provider in a
-headless Chrome and writes screenshots into `shots/hub/`; `hub/dev/shot.mjs` takes one. None of `hub/dev/` is deployed.
+`hub/dev/serve.mjs` serves this folder and the hub on one local origin under the live CSP, with an optional
+stand-in subscription for the check (`--fixture`: names under `.test` resolve to this computer, which the real hub
+refuses), Configra imported (`--configra`) and made-up download counts (`--downloads`). It prints the owner's login and
+a new password at start. `hub/dev/shot.mjs` takes a headless screenshot of a page; `hub/dev/cdp.mjs` is the headless
+Chrome it drives, for scripts that walk the pages. None of `hub/dev/` is deployed.
 
 ## Rebuild
 
@@ -43,7 +41,7 @@ window's map and flags (`assets/v2pn`, from `Assets/Map/world.json` and `Assets/
 pages show (`assets/partners/<id>`). Edit the guide or the partner's files, never their output here.
 Providers' own pages are no longer built here: the hub writes `/p/<id>/` on the server.
 
-Not generated: `index.html`, `providers/index.html`, the provider pages (`providers/login`, `apply`, `cabinet`,
+Not generated: `index.html`, `providers/index.html`, the provider pages (`providers/login`, `cabinet`,
 `admin/`), `assets/site/` (the site's own CSS and scripts), `favicon.svg`, `share.jpg`, `providers/share.jpg` and
 `assets/v2pn/shots/` (two captures of V2pn with Configra's tab, from `tools/edition-matrix.ps1 -Partner configra`,
 cropped to the window and saved as WebP 1280 wide). The rest of `assets/` is the design-taste-frontend skill's kit
@@ -111,7 +109,6 @@ assets/partners/configra/logo-light.png
 assets/partners/configra/mark.png
 assets/site/admin.js
 assets/site/api.js
-assets/site/apply.js
 assets/site/cabinet.js
 assets/site/head.js
 assets/site/hub.css
@@ -143,8 +140,6 @@ assets/v2pn/shots/configra-accent-light.webp
 assets/v2pn/shots/configra-scene-dark.webp
 providers/index.html
 providers/share.jpg
-providers/apply/index.html
-providers/builder/index.html
 providers/cabinet/index.html
 providers/guide/index.html
 providers/guide/partner.schema.json
@@ -188,7 +183,5 @@ home page's downloads (`/r/*`) need the hub running behind this block (`hub/READ
 
 ## Still to supply
 
-- The owner's contact for providers: while there is no mail, `/providers/login/` tells a provider to write to the owner
-  and links a new GitHub issue (`https://github.com/Piwqust/V2pn/issues/new`). Replace it with the owner's Telegram once
-  there is one (search `providers/login/index.html` for `issues/new`).
-- Mail for sign-in codes (`HUB_SMTP_URL`, `hub/README.md`): until then the owner reads codes out of `/admin/#outbox`.
+- The owner's contact for providers who forgot their password: `/providers/login/` says a moderator resets it but names
+  no channel yet. Add the owner's Telegram there once there is one.

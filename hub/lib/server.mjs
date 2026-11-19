@@ -1,23 +1,16 @@
-// Wiring: configuration, database, keys, mail, the HTTP server, the housekeeping timers and a graceful stop.
+// Wiring: configuration, database, key, the HTTP server, the housekeeping timers and a graceful stop.
 import http from 'node:http';
 import { createHandler } from './api.mjs';
 import { Db } from './db.mjs';
-import { loadKey, loadSecret, ensureKey } from './keys.mjs';
+import { loadKey, ensureKey } from './keys.mjs';
 import { log } from './log.mjs';
-import { parseSmtpUrl, sendMail } from './mail.mjs';
 import { Hub } from './service.mjs';
 
-export function createHub(config, { net, mailer } = {}) {
+export function createHub(config, { net } = {}) {
   const db = new Db(config.dbFile);
   ensureKey(config.keyFile);
   const key = loadKey(config.keyFile);
-  const secret = loadSecret(config.secretFile);
-  let send = mailer ?? null;
-  if (send === null && config.smtpUrl) {
-    const smtp = parseSmtpUrl(config.smtpUrl);
-    send = message => sendMail(smtp, { from: config.mailFrom, ...message });
-  }
-  return new Hub({ config, db, key, secret, mailer: send, net });
+  return new Hub({ config, db, key, net });
 }
 
 export function startServer(hub) {
@@ -60,7 +53,7 @@ export function startServer(hub) {
   return new Promise((resolve, reject) => {
     server.once('error', reject);
     server.listen(hub.config.port, hub.config.host, () => {
-      log.info('listening', { host: hub.config.host, port: hub.config.port, mail: hub.auth.mailer ? 'smtp' : 'outbox', admins: hub.config.admins.length });
+      log.info('listening', { host: hub.config.host, port: hub.config.port });
       resolve(server);
     });
   });

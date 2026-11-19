@@ -108,11 +108,4 @@ export function multiLine(text, max) {
   return t;
 }
 
-export function normalizeEmail(text) {
-  if (typeof text !== 'string') return null;
-  const t = text.trim().toLowerCase();
-  if (t.length < 3 || t.length > 254 || CONTROL.test(t)) return null;
-  return /^[^\s@"<>(),;:\\[\]]+@[a-z0-9-]+(\.[a-z0-9-]+)+$/.test(t) ? t : null;
-}
-
 export const COLOUR = /^#[0-9A-Fa-f]{6}$/;

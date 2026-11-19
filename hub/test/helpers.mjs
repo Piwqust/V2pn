@@ -63,7 +63,7 @@ export const testNet = {
 };
 
 /** A hub with its own data and public folders, on a free port. {hub, base, origin, close, dirs}. */
-export async function startHub({ admins = ['owner@example.com'], mailer = null, net = testNet } = {}) {
+export async function startHub({ net = testNet } = {}) {
   const root = tempDir();
   const server = http.createServer();
   await new Promise(r => server.listen(0, '127.0.0.1', r));
@@ -73,10 +73,9 @@ export async function startHub({ admins = ['owner@example.com'], mailer = null, 
     HUB_DATA: path.join(root, 'data'),
     HUB_PUBLIC_DIR: path.join(root, 'www'),
     HUB_ORIGIN: origin,
-    HUB_ADMINS: admins.join(','),
     HUB_PORT: String(port),
   });
-  const hub = createHub(config, { net, mailer });
+  const hub = createHub(config, { net });
   server.on('request', createHandler(hub));
   return {
     hub,
@@ -131,15 +130,25 @@ export class Client {
   put(p, body) { return this.request('PUT', p, body ?? {}); }
 }
 
-/** Signs <client> in as <email> through the no-mail flow (the code from the outbox). */
-export async function signIn(env, client, email) {
-  const r = await client.post('/api/auth/code', { email });
-  if (r.status !== 200) throw new Error(`code: ${JSON.stringify(r.data)}`);
-  const row = env.hub.db.get('SELECT body FROM outbox WHERE email = ? ORDER BY id DESC LIMIT 1', email);
-  const code = /(\d{6})/.exec(row.body)[1];
-  const v = await client.post('/api/auth/verify', { email, code });
-  if (v.status !== 200) throw new Error(`verify: ${JSON.stringify(v.data)}`);
-  return v.data;
+/** Registers <client> as a new provider <login> (password "secret-123"). */
+export async function register(client, login, password = 'secret-123') {
+  const r = await client.post('/api/auth/register', { login, password });
+  if (r.status !== 200) throw new Error('register: ' + JSON.stringify(r.data));
+  return r.data;
+}
+
+/** Signs <client> in as <login>. */
+export async function signIn(client, login, password) {
+  const r = await client.post('/api/auth/login', { login, password });
+  if (r.status !== 200) throw new Error('login: ' + JSON.stringify(r.data));
+  return r.data;
+}
+
+/** Makes <login> the owner (as hub.mjs owner does) and signs <client> in. */
+export async function signInOwner(env, client, login = 'owner') {
+  const password = env.hub.auth.makeOwner(login);
+  await signIn(client, login, password);
+  return password;
 }
 
 export const fixture = name => fs.readFileSync(new URL(`./fixtures/${name}`, import.meta.url));

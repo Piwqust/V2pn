@@ -1,5 +1,5 @@
-// The hub's partner key (ECDSA P-256; it signs partner-index.json as V2pnPartnerSigning.Sign does: DER, base64) and
-// the secret the hub keys its code hashes with. Both live in HUB_DATA/keys, readable by the service only.
+// The hub's partner key (ECDSA P-256; it signs partner-index.json as V2pnPartnerSigning.Sign does: DER, base64). It
+// lives in HUB_DATA/keys, readable by the service only.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -42,18 +42,4 @@ export function signature(key, data) {
 export function verify(publicKeyBase64, data, sig) {
   const key = crypto.createPublicKey({ key: Buffer.from(publicKeyBase64, 'base64'), format: 'der', type: 'spki' });
   return crypto.verify('sha256', data, { key, dsaEncoding: 'der' }, Buffer.from(sig.trim(), 'base64'));
-}
-
-/** 32 random bytes kept in <file>, made on first use. */
-export function loadSecret(file) {
-  if (!fs.existsSync(file)) {
-    try {
-      writeSecretFile(file, crypto.randomBytes(32).toString('hex') + '\n');
-    } catch (e) {
-      if (e.code !== 'EEXIST') throw e;
-    }
-  }
-  const secret = Buffer.from(fs.readFileSync(file, 'utf8').trim(), 'hex');
-  if (secret.length < 32) throw new Error(`${file} does not hold a 32-byte secret`);
-  return secret;
 }

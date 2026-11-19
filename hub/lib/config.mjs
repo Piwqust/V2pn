@@ -1,6 +1,5 @@
 // The hub's settings, from the environment (documented in hub/README.md).
 import path from 'node:path';
-import { normalizeEmail } from './validate.mjs';
 
 // The User-Agent V2pn sends for a subscription (V2pnSubs.SubscriptionUserAgent: v2rayN's agent, by which panels pick
 // the format, then V2pn's own name). Remnawave and Marzban answer it with share links.
@@ -20,7 +19,6 @@ export function loadConfig(env = process.env) {
   } catch {
     throw new Error(`HUB_ORIGIN is not a URL: ${origin}`);
   }
-  const admins = (env.HUB_ADMINS || '').split(',').map(normalizeEmail).filter(Boolean);
   const repo = env.HUB_GITHUB_REPO || 'Piwqust/V2pn';
   if (!/^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(repo)) throw new Error(`HUB_GITHUB_REPO is not owner/name: ${repo}`);
   return {
@@ -30,15 +28,10 @@ export function loadConfig(env = process.env) {
     dbFile: path.join(data, 'hub.db'),
     keysDir: path.join(data, 'keys'),
     keyFile: path.join(data, 'keys', 'hub-partner-key.pem'),
-    secretFile: path.join(data, 'keys', 'hub-secret'),
-    passwordFile: path.join(data, 'keys', 'admin-passwords.json'),
     uploadsDir: path.join(data, 'uploads'),
     publicDir: path.resolve(env.HUB_PUBLIC_DIR || '/var/www/v2pn.angleford.co'),
     origin: originUrl.origin,
     secureCookies: originUrl.protocol === 'https:',
-    admins,
-    smtpUrl: env.HUB_SMTP_URL || '',
-    mailFrom: env.HUB_MAIL_FROM || `V2pn <no-reply@${originUrl.hostname}>`,
     githubRepo: repo,
     checkUserAgent: env.HUB_CHECK_UA || DEFAULT_CHECK_UA,
   };

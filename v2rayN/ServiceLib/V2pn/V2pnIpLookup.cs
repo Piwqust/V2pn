@@ -70,8 +70,16 @@ public static class V2pnIpLookup
         var exit = await exitTask;
         var reputationTask = exit != null ? ReputationAsync(exit.Ip, proxy, cancellationToken) : Task.FromResult<Reputation?>(null);
         await Task.WhenAll(directTask, reputationTask);
-        return new Report(exit, reputationTask.Result, directTask.Result, proxy != null, direct);
+        var report = new Report(exit, reputationTask.Result, directTask.Result, proxy != null, direct);
+        Completed?.Invoke(report);
+        return report;
     }
+
+    /// <summary>
+    /// Raised, on a background thread, after every lookup the person asked for. The map takes the cities from it,
+    /// so it never sends a request of its own.
+    /// </summary>
+    public static event Action<Report>? Completed;
 
     private static async Task<Details?> DetailsAsync(IWebProxy? proxy, CancellationToken cancellationToken)
     {

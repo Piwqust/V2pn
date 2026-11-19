@@ -11,6 +11,7 @@ Settings → Kill switch. Off by default; while it is off, a connection that can
 - With it on, a dropped connection keeps the internet closed until V2pn reconnects or you press Disconnect, so nothing goes out past the VPN. The status reads "Internet blocked", and its tooltip says how to open the internet again.
 - In VPN mode Windows itself lets out only V2pn, its cores and the tunnel, from the moment you connect, so nothing slips out while the tunnel comes up or the core restarts either. DNS outside the tunnel is blocked; the local network (printers, the router's page) can stay open. The block is lifted the moment V2pn exits, even if it crashes, so it never leaves a computer without internet behind it.
 - In proxy mode the system proxy stays on V2pn with no connection behind it: programs that use the system proxy get nothing instead of a direct connection. Programs that ignore the system proxy are covered only by VPN mode.
+- **Programs only through V2pn.** On the same page, list programs (or press "Add Claude") that must never go out past V2pn. They reach the internet only through V2pn's proxy or its tunnel and are cut off at all other times: with V2pn disconnected, closed or not started, so Claude never sees your real address. Programs are matched by file name, so every copy and every version counts. Saving asks Windows for administrator rights once; removing V2pn takes the block away again. Claude Code ignores the system proxy, so in proxy mode it needs HTTPS_PROXY set to V2pn's port; VPN mode needs nothing.
 
 ### An installer for Windows
 

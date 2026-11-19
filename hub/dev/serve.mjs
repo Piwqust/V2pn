@@ -2,9 +2,10 @@
 // A local copy of v2pn.angleford.co for working on the site: the hub's routes (/api, /r, /releases) and the site's
 // files on one origin, under the live Content-Security-Policy. Development only: it is not deployed (hub/README.md).
 //
-//   node dev/serve.mjs [--port 8790] [--site ../site] [--data <dir>] [--owner owner]
+//   node dev/serve.mjs [--port 8790] [--site ../site/dist] [--data <dir>] [--owner owner]
 //                      [--fixture] [--configra] [--downloads]
 //
+// --site      the built site (cd site && npm run build); unknown paths get its 404.html, as Caddy serves them.
 // --data      where the hub keeps its database and keys (default: a new temporary folder). The hub's public folder
 //             (HUB_PUBLIC_DIR: partners/ and p/) is <data>/www; files are looked up there first, then in --site.
 // --owner     the owner's login; it is made (or given a new password) at start and the password is printed.
@@ -35,7 +36,7 @@ const opt = (name, fallback) => {
 };
 
 const port = Number(opt('port', 8790));
-const siteDir = path.resolve(opt('site', path.join(here, '..', '..', 'site')));
+const siteDir = path.resolve(opt('site', path.join(here, '..', '..', 'site', 'dist')));
 const dataDir = path.resolve(opt('data', fs.mkdtempSync(path.join(os.tmpdir(), 'v2pn-hub-dev-'))));
 const ownerLogin = String(opt('owner', 'owner'));
 const origin = `http://127.0.0.1:${port}`;
@@ -48,7 +49,8 @@ const MIME = {
   '.html': 'text/html; charset=utf-8', '.js': 'text/javascript; charset=utf-8', '.mjs': 'text/javascript; charset=utf-8',
   '.css': 'text/css; charset=utf-8', '.json': 'application/json; charset=utf-8', '.svg': 'image/svg+xml', '.png': 'image/png',
   '.jpg': 'image/jpeg', '.webp': 'image/webp', '.woff2': 'font/woff2', '.ttf': 'font/ttf', '.txt': 'text/plain; charset=utf-8',
-  '.zip': 'application/zip', '.sig': 'text/plain; charset=utf-8', '.ico': 'image/x-icon',
+  '.zip': 'application/zip', '.sig': 'text/plain; charset=utf-8', '.ico': 'image/x-icon', '.avif': 'image/avif',
+  '.xml': 'application/xml; charset=utf-8',
 };
 
 /** A stand-in subscription: a panel's headers and five servers on local ports that answer a TCP connection. */
@@ -181,6 +183,12 @@ const server = http.createServer((req, res) => {
     return;
   }
   if (!found) {
+    const page = path.join(siteDir, '404.html');
+    if (fs.existsSync(page)) {
+      res.writeHead(404, { ...headers, 'content-type': MIME['.html'] });
+      fs.createReadStream(page).pipe(res);
+      return;
+    }
     res.writeHead(404, { ...headers, 'content-type': 'text/plain; charset=utf-8' });
     res.end('Не найдено');
     return;

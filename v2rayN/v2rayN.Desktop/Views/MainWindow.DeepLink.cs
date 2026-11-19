@@ -84,10 +84,12 @@ public partial class MainWindow
             // A provider V2pn already vouches for says so; an unknown one gets the general words.
             var partner = V2pnPartners.Instance.ListingFor(link.SubscriptionUrl)
                           ?? V2pnPartners.Instance.ListingForLink(link.Partner, link.SubscriptionUrl);
-            var body = partner != null
-                ? string.Format(L.LinkAddBodyPartner, link.Name ?? host, host, partner.Name)
-                : string.Format(L.LinkAddBody, link.Name ?? host, host);
-            var answer = await UI.ShowChoice(L.LinkAddTitle, body, L.LinkAddYes, L.LinkAddNo);
+            var body = partner != null ? string.Format(L.LinkAddBodyPartner, partner.Name) : L.LinkAddBody;
+            var card = new DialogCard(link.Name ?? host,
+                partner != null ? string.Format(L.LinkAddPartnerCard, host) : host,
+                partner != null ? "SemiIconShieldStroked" : "SemiIconLink");
+            var answer = await UI.ShowChoice(L.LinkAddTitle, L.LinkAddAsk + "\n\n" + body, L.LinkAddYes, L.LinkAddNo,
+                DialogTone.Info, "SemiIconDownloadStroked", card);
             if (answer == ButtonResult.Yes)
             {
                 await AddSubscriptionLinksAsync([link.SubscriptionUrl]);

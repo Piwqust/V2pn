@@ -5,14 +5,16 @@ namespace v2rayN.Desktop;
 public static partial class L
 {
     public static string LinkAddTitle => T("Add a subscription", "Добавить подписку");
-    public static string LinkAddBody => T("Add the subscription «{0}» from {1}?\n\nV2pn downloads its server list. The provider does not see your traffic.",
-        "Добавить подписку «{0}» с {1}?\n\nV2pn скачает список серверов. Провайдер не видит ваш трафик.");
+    public static string LinkAddAsk => T("Add this subscription?", "Добавить эту подписку?");
+    public static string LinkAddBody => T("V2pn downloads its server list. The provider does not see your traffic.",
+        "V2pn скачает список серверов. Провайдер не видит ваш трафик.");
     public static string LinkAddYes => T("Add", "Добавить");
     public static string LinkAddNo => T("Cancel", "Отмена");
     public static string LinkAlreadyAdded => T("The subscription «{0}» is already in V2pn.", "Подписка «{0}» уже есть в V2pn.");
     public static string LinkAddBodyPartner => T(
-        "Add the subscription «{0}» from {1}?\n\n{2} is a V2pn partner: it is on V2pn's list of partners. The servers come into {2}'s tab. {2} does not see your traffic.",
-        "Добавить подписку «{0}» с {1}?\n\n{2} — партнёр V2pn: он есть в списке партнёров V2pn. Серверы появятся во вкладке {2}. {2} не видит ваш трафик.");
+        "{0} is a V2pn partner: it is on V2pn's list of partners. The servers come into {0}'s tab. {0} does not see your traffic.",
+        "{0} — партнёр V2pn: он есть в списке партнёров V2pn. Серверы появятся во вкладке {0}. {0} не видит ваш трафик.");
+    public static string LinkAddPartnerCard => T("{0} · V2pn partner", "{0} · партнёр V2pn");
     // What a partner's API says about the subscription (its card and its plan on the stage).
     public static string PartnerUntil => T("Paid until {0}", "Оплачено до {0}");
     public static string PartnerDevices => T("Devices: {0}", "Устройств: {0}");

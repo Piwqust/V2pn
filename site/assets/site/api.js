@@ -82,8 +82,11 @@ export const api = {
 
 // ---------------------------------------------------------------- sign-in
 
+/** Moderators and the owner work on the moderation page; everyone else on «Мой партнёр». */
+export const isMod = account => Boolean(account && (account.role === 'owner' || account.role === 'moderator'));
+
 export function rememberSignIn(account) {
-  try { localStorage.setItem(HINT, account && account.admin ? 'admin' : 'provider'); } catch { /* private mode */ }
+  try { localStorage.setItem(HINT, isMod(account) ? 'mod' : 'provider'); } catch { /* private mode */ }
 }
 
 export function forgetSignIn() {
@@ -94,10 +97,13 @@ export function signedInHint() {
   try { return localStorage.getItem(HINT); } catch { return null; }
 }
 
+/** The page an account lands on after sign-in, from the site's root. */
+export const homeOf = account => (isMod(account) ? 'admin/' : 'providers/cabinet/');
+
 /** A path on this site to go back to after sign-in; anything else becomes null. */
 export function safeNext(value) {
   if (typeof value !== 'string' || !value.startsWith('/') || value.startsWith('//') || value.includes('\\')) return null;
-  return /^\/(providers\/(apply|cabinet)\/|admin\/)/.test(value) ? value : null;
+  return /^\/(providers\/cabinet\/|admin\/)/.test(value) ? value : null;
 }
 
 /** To the sign-in page, and back here afterwards. */
@@ -108,7 +114,7 @@ export function toSignIn(root) {
 
 /**
  * GET /api/me, or a trip to the sign-in page when the session has ended. <root> is the site's root relative to the
- * page ("../../"). Resolves to {account, application, provider}; never resolves when it leaves the page.
+ * page ("../../"). Resolves to {account: {login, role}, partner}; never resolves when it leaves the page.
  */
 export async function me(root) {
   try {
@@ -131,30 +137,30 @@ export async function signOut(root) {
 }
 
 /**
- * The nav of a page: «Кабинет» (or «Админка») among its words when this browser has signed in, and on an app page
- * the email and «Выйти» in place of the main button. <who> is /api/me's account when the page knows it.
+ * The nav of a page: «Мой партнёр» (or «Модерация») among its words when this browser has signed in. <who> is
+ * /api/me's account when the page knows it.
  */
 export function markNav(root, who) {
   const links = document.querySelector('.nav__links');
   if (!links) return;
-  const kind = who ? (who.admin ? 'admin' : 'provider') : signedInHint();
+  const kind = who ? (isMod(who) ? 'mod' : 'provider') : signedInHint();
   if (!kind || links.querySelector('[data-nav-cabinet]')) return;
   const item = document.createElement('div');
   item.className = 'nav__item';
   const a = document.createElement('a');
   a.className = 'nav__link';
   a.dataset.navCabinet = '';
-  a.href = kind === 'admin' ? `${root}admin/` : `${root}providers/cabinet/`;
-  a.textContent = kind === 'admin' ? 'Админка' : 'Кабинет';
+  a.href = kind === 'mod' ? `${root}admin/` : `${root}providers/cabinet/`;
+  a.textContent = kind === 'mod' ? 'Модерация' : 'Мой партнёр';
   const here = location.pathname.replace(/index\.html$/, '');
   if (new URL(a.href).pathname === here) a.setAttribute('aria-current', 'page');
   item.appendChild(a);
   links.appendChild(item);
 }
 
-/** The account's corner of an app page's nav: its email and «Выйти». */
+/** The account's corner of an app page's nav: its login and «Выйти». */
 export function wireAccount(root, account) {
-  document.querySelectorAll('[data-email]').forEach(el => { el.textContent = account.email; el.title = account.email; });
+  document.querySelectorAll('[data-login]').forEach(el => { el.textContent = account.login; el.title = account.login; });
   document.querySelectorAll('[data-signout]').forEach(btn => btn.addEventListener('click', () => signOut(root)));
   markNav(root, account);
 }

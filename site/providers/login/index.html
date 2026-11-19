@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Вход для провайдеров: код на почту | V2pn</title>
-<meta name="description" content="Вход в кабинет провайдера V2pn по коду из письма, без пароля.">
+<title>Вход для провайдеров | V2pn</title>
+<meta name="description" content="Вход для VPN-провайдеров в V2pn: логин и пароль, без почты.">
 <meta name="robots" content="noindex">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Вход для провайдеров V2pn">
-<meta property="og:description" content="Кабинет VPN-провайдера в V2pn: вход по коду из письма.">
+<meta property="og:description" content="Партнёр V2pn для VPN-провайдера: логин, пароль и одна форма.">
 <meta property="og:image" content="https://v2pn.angleford.co/providers/share.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
@@ -45,75 +45,35 @@
 <main id="top" class="app">
   <div class="wrap auth">
     <div class="box">
-      <noscript><p>Вход работает со включённым JavaScript: страница просит код у сервера и проверяет его. Включите JavaScript и обновите страницу.</p></noscript>
-
-      <!-- step 1: the email -->
-      <form id="step-email" class="stack stack--lg" novalidate>
+      <noscript><p>Вход работает со включённым JavaScript. Включите его и обновите страницу.</p></noscript>
+      <form id="signin" class="stack stack--lg" novalidate>
         <div class="app__head">
           <p class="app__crumb"><a href="../">Провайдерам</a></p>
           <h1>Вход для провайдеров</h1>
-          <p>Пришлём на почту код из шести цифр. Пароль не нужен: каждый раз — новый код.</p>
-        </div>
-        <div class="note note--info" id="nomail" hidden>
-          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5M10 6.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <div><p><b>Письма пока не уходят.</b> Почту для V2pn ещё настраивают, поэтому код придёт не в письме: его передаст владелец V2pn.</p>
-          <p>Запросите код здесь и <a href="https://github.com/Piwqust/V2pn/issues/new" rel="noopener">напишите владельцу</a>, что ждёте код. Код живёт 10 минут; если не успели, запросите новый.</p></div>
+          <p>Любой логин и пароль. Почта и Telegram не нужны.</p>
         </div>
         <div class="field">
-          <label for="email">Почта</label>
-          <input id="email" name="email" type="email" autocomplete="email" inputmode="email" spellcheck="false" maxlength="254" required>
-          <span class="field__error" hidden></span>
-        </div>
-        <button class="btn btn--primary" type="submit" id="send">Получить код</button>
-        <p class="form__status" role="status" aria-live="polite" id="email-status"></p>
-        <p class="hint">Новый провайдер? Войдите так же: после входа откроется заявка.</p>
-        <p class="hint"><button class="link-btn" type="button" id="to-password">Вход владельца V2pn по паролю</button></p>
-      </form>
-
-      <!-- the owner: email and password, no mail needed -->
-      <form id="step-password" class="stack stack--lg" novalidate hidden>
-        <div class="app__head">
-          <p class="app__crumb"><button class="link-btn" type="button" id="to-code">Вход провайдера по коду</button></p>
-          <h1>Вход владельца</h1>
-          <p>Почта и пароль владельца V2pn. Код на почту не нужен.</p>
-        </div>
-        <div class="field">
-          <label for="pw-email">Почта</label>
-          <input id="pw-email" name="username" type="email" autocomplete="username" inputmode="email" spellcheck="false" maxlength="254" required>
+          <label for="login">Логин</label>
+          <input id="login" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="32" required aria-describedby="login-hint">
+          <span class="field__hint" id="login-hint">От 3 до 32 латинских букв, цифр и знаков . _ -</span>
           <span class="field__error" hidden></span>
         </div>
         <div class="field">
-          <label for="pw">Пароль</label>
-          <input id="pw" name="password" type="password" autocomplete="current-password" spellcheck="false" maxlength="200" required>
+          <label for="password">Пароль</label>
+          <input id="password" name="password" type="password" autocomplete="current-password" spellcheck="false" maxlength="200" required aria-describedby="password-hint">
+          <span class="field__hint" id="password-hint">От 6 символов.</span>
           <span class="field__error" hidden></span>
         </div>
-        <button class="btn btn--primary" type="submit" id="pw-go">Войти</button>
-        <p class="form__status" role="status" aria-live="polite" id="pw-status"></p>
-      </form>
-
-      <!-- step 2: the code -->
-      <form id="step-code" class="stack stack--lg" novalidate hidden>
-        <div class="app__head">
-          <p class="app__crumb"><button class="link-btn" type="button" id="back">Другая почта</button></p>
-          <h1>Код из письма</h1>
-          <p id="sent-to">Отправили код на вашу почту. Он действует 10 минут.</p>
+        <div class="row">
+          <button class="btn btn--primary" type="submit" value="register" id="register">Создать аккаунт</button>
+          <button class="btn btn--secondary" type="submit" value="login" id="enter">Войти</button>
         </div>
-        <div class="field">
-          <label for="code">Код</label>
-          <input id="code" name="code" class="code-input" type="text" inputmode="numeric" autocomplete="one-time-code" pattern="[0-9]{6}" maxlength="6" placeholder="······" spellcheck="false" required>
-          <span class="field__error" hidden></span>
-        </div>
-        <button class="btn btn--primary" type="submit" id="verify">Войти</button>
-        <p class="form__status" role="status" aria-live="polite" id="code-status"></p>
-        <div class="row row--between">
-          <span class="hint" id="resend-wait">Новый код можно запросить через 30 с</span>
-          <button class="btn btn--secondary btn--sm" type="button" id="resend" hidden>Прислать новый код</button>
-        </div>
+        <p class="form__status" role="status" aria-live="polite" id="status"></p>
+        <p class="hint">Забыли пароль? Модератор сбросит его и покажет новый. Восстановления по почте нет: почты нет.</p>
       </form>
     </div>
   </div>
 </main>
-
 <footer class="footer site-foot">
   <div class="wrap">
     <div class="footer__legal">

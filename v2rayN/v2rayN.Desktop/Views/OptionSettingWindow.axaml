@@ -1141,8 +1141,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsBindInterface}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsBindInterfaceTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptBindInterface}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptBindInterfaceHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbbindInterface" Width="240" IsEditable="True" />

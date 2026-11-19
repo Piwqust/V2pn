@@ -92,6 +92,8 @@ public partial class MainWindow
 
     internal void DebugOpenIp() => _ = ShowRoomyDialog(new IpInfoView());
 
+    internal void DebugOpenTable() => ShowPage(L.MenuTable, TablePage);
+
     internal void DebugOpenAppearance()
     {
         if (_themeSettings != null)

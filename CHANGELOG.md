@@ -13,6 +13,11 @@ What changes for the people who use the app. Each version's section becomes the 
 
 - A partner's theme can ask for a layout of V2pn's own instead of the sidebar and the map. The first is the sticker book: the partner's picture full height, a meme caption over V2pn's usual state, Connect as a die-cut sticker, the partner's buttons as stickers and the servers as hero cards with a brass plate, two rows at most with the rest behind a "+N" card. It is drawn at night whatever the app's theme, and "V2pn's usual look" at its bottom brings the sidebar and the map back for that tab.
 
+### Partners made on the site
+
+- A provider makes its partner tab on v2pn.angleford.co with a login and a password, and it goes live as soon as it is saved. People get it with one link from the provider's bot: V2pn adds the subscription and the partner's look in one go.
+- A partner's own routing rules work once a moderator on the site approves them; V2pn takes them only in the exact form approved. Transport and core settings still need V2pn's own review.
+
 ### Blocking bypass
 
 For connections that Russian filtering blocks. It is off until you turn it on in Settings → Blocking bypass; while it is off, V2pn connects exactly as before.

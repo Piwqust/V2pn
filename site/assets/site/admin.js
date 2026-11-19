@@ -1,15 +1,19 @@
-// /admin/: the owner's decisions. Applications with their checks (approve with a tier and a term, or return with a
-// reason), looks waiting for publication (with V2pn's window in light and dark), providers (tier, term, revoke and
-// restore), downloads by day and platform, the sign-in codes while there is no mail, and the audit log.
-import { api, me, wireAccount } from './api.js';
-import { $, $$, busy, checkCounts, checkHtml, confirmStep, copyText, date, esc, plural, toast, windowHtml } from './hubui.js';
+// /admin/ = moderation, for the owner and the moderators: the special rights waiting (with their content, the routing
+// rules as lines), every partner newest first (take down, restore, reset the password, complaints), the moderators
+// (the owner only), downloads and the audit log.
+import { api, isMod, me, wireAccount } from './api.js';
+import { $, $$, busy, confirmStep, copyText, date, esc, plural, toast } from './hubui.js';
 
 const ROOT = '../';
-const VIEWS = ['overview', 'applications', 'queue', 'providers', 'downloads', 'outbox', 'audit'];
-let appState = 'submitted';
+const VIEWS = ['rights', 'partners', 'mods', 'downloads', 'audit'];
+const RIGHT_NAMES = { routing: 'Свои правила маршрутизации', lock: 'Скрытые адреса серверов', actions: 'Свои кнопки', account: 'API и вход по коду' };
+const DOS = { 'open.link': 'открывает ссылку', 'open.renew': 'продлить', 'open.support': 'поддержка', 'open.cabinet': 'кабинет', 'connect.best': 'самый быстрый сервер',
+  'connect.recommend': 'сервер под задачу', 'connect.server': 'подключает сервер', 'connect.group': 'подключает группу', 'subscription.update': 'обновляет подписку',
+  'check.services': 'проверяет сервисы', 'info.card': 'карточка с данными' };
+let account = null;
 let days = 30;
-let refresh = null;
-let overview = null;
+let filter = 'all';
+let partners = [];
 
 // ---------------------------------------------------------------- the frame
 
@@ -21,316 +25,306 @@ function showState(state, title, message) {
   if (message) $('[data-error-text]').textContent = message;
 }
 
-const currentView = () => (VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview');
+const owner = () => account && account.role === 'owner';
+function currentView() {
+  const v = location.hash.slice(1);
+  return VIEWS.includes(v) && (v !== 'mods' || owner()) ? v : 'rights';
+}
 
 async function route() {
   const view = currentView();
   for (const v of VIEWS) $(`[data-view="${v}"]`).hidden = v !== view;
   $$('.sidenav [data-tab]').forEach(a => { if (a.dataset.tab === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-  clearInterval(refresh);
-  const load = { overview: loadOverview, applications: loadApplications, queue: loadQueue, providers: loadProviders, downloads: loadDownloads, outbox: loadOutbox, audit: loadAudit }[view];
+  const load = { rights: loadRights, partners: loadPartners, mods: loadMods, downloads: loadDownloads, audit: loadAudit }[view];
   await load();
-  // The codes live ten minutes: while they can be on screen, the page keeps them fresh.
-  if (view === 'overview' || view === 'outbox') refresh = setInterval(() => { if (!document.hidden) (view === 'overview' ? loadOverview : loadOutbox)({ quiet: true }); }, 10000);
 }
 window.addEventListener('hashchange', () => { route(); window.scrollTo({ top: 0 }); });
 
-function failed(box, e) {
+function failed(box, e, again) {
   box.innerHTML = `<div class="state"><h3>Не загрузилось</h3><p>${esc(e.message)}</p><button class="btn btn--secondary" type="button" data-again>Попробовать ещё раз</button></div>`;
-  $('[data-again]', box).addEventListener('click', route);
+  $('[data-again]', box).addEventListener('click', again || route);
 }
 const loading = box => { box.innerHTML = '<div class="skel" aria-busy="true"><i></i><i></i><i></i></div>'; };
 const empty = (title, text) => `<div class="state"><h3>${esc(title)}</h3>${text ? `<p>${esc(text)}</p>` : ''}</div>`;
+const setCount = (key, n) => { const el = $(`[data-count="${key}"]`); el.textContent = n; el.hidden = !n; };
 
-function counts(o) {
-  const n = (list, state) => (list.find(x => x.state === state) || {}).n || 0;
-  const set = (key, value) => { const el = $(`[data-count="${key}"]`); el.textContent = value; el.hidden = !value; };
-  set('applications', n(o.applications, 'submitted'));
-  set('queue', o.queue);
-  set('providers', n(o.providers, 'active'));
-}
-
-// ---------------------------------------------------------------- overview
-
-async function loadOverview({ quiet = false } = {}) {
-  const box = $('#ov-counts');
-  if (!quiet) loading(box);
+/** The counts beside the sections and a failed publication, from /api/mod/overview. */
+async function refreshOverview() {
   try {
-    const [o, out] = await Promise.all([api.get('/api/admin/overview'), api.get('/api/admin/outbox')]);
-    overview = o;
-    counts(o);
-    setOutboxCount(out.outbox.length);
-    const n = (list, state) => (list.find(x => x.state === state) || {}).n || 0;
-    box.innerHTML = `<a href="#applications"><b>${n(o.applications, 'submitted')}</b><span>${plural(n(o.applications, 'submitted'), 'новая заявка', 'новые заявки', 'новых заявок')}</span></a>
-      <a href="#queue"><b>${o.queue}</b><span>ждут публикации</span></a>
-      <a href="#providers"><b>${o.tierRequests}</b><span>${plural(o.tierRequests, 'просит', 'просят', 'просят')} ступень 2</span></a>
-      <a href="#providers"><b>${n(o.providers, 'active')}</b><span>${plural(n(o.providers, 'active'), 'провайдер работает', 'провайдера работают', 'провайдеров работают')}</span></a>`;
-    const pub = o.publication;
-    $('#ov-publication').innerHTML = `<div class="box__head"><h2>Публикация</h2>${pub.error ? '<span class="badge badge--fail">Ошибка</span>' : pub.last ? '<span class="badge badge--ok">В порядке</span>' : '<span class="badge">Ещё не было</span>'}</div>
-      ${pub.last ? `<p>Последняя ${esc(date(pub.last.at, { time: true }))}: ${pub.last.partners.length ? pub.last.partners.map(esc).join(', ') : 'ни одного провайдера'}. Подпись — ключом сервера, файлы в <code>/partners/latest/download/</code>.</p>` : '<p>Индекс провайдеров ещё не собирался.</p>'}
-      ${pub.error ? `<div class="note note--fail"><svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><div><p><b>${esc(date(pub.error.at, { time: true }))}: публикация не прошла.</b></p><ul class="problems">${pub.error.problems.map(p => `<li>${esc(p)}</li>`).join('')}</ul></div></div>` : ''}
-      <p class="hint">Почта: ${o.mail === 'smtp' ? 'письма уходят (SMTP)' : 'не настроена — коды входа ждут здесь, в «Кодах входа»'}.</p>`;
-    $('#ov-outbox').hidden = o.mail === 'smtp' || !out.outbox.length;
-    drawOutbox(out.outbox, $('#ov-outbox [data-outbox-list]'));
-  } catch (e) {
-    if (!quiet) failed(box, e);
+    const o = await api.get('/api/mod/overview');
+    setCount('rights', o.pendingRights);
+    setCount('partners', o.partners.reduce((s, x) => s + x.n, 0));
+    const err = o.publication && o.publication.error;
+    $('#pub-error').hidden = !err;
+    if (err) {
+      $('[data-pub-error-title]').textContent = `${date(err.at, { time: true })}: публикация не прошла. Изменения сохранены, но к пользователям не ушли.`;
+      $('[data-pub-error-list]').innerHTML = (err.problems || []).map(p => `<li>${esc(p)}</li>`).join('');
+    }
+  } catch { /* the counts wait for the next step */ }
+}
+
+/** A password shown once, with a copy button. */
+function showPassword(login, password, text) {
+  const dlg = document.createElement('dialog');
+  dlg.className = 'dlg';
+  dlg.setAttribute('aria-labelledby', 'pw-once-t');
+  dlg.innerHTML = `<form method="dialog"><h2 id="pw-once-t">Пароль для ${esc(login)}</h2>
+    <p>${esc(text)} Он показан один раз: передайте его человеку сейчас.</p>
+    <div class="copy"><code id="pw-once">${esc(password)}</code><button class="btn btn--primary" type="button" data-copy-pw>Копировать</button></div>
+    <div class="row"><button class="btn btn--secondary" type="submit">Готово</button></div></form>`;
+  document.body.appendChild(dlg);
+  $('[data-copy-pw]', dlg).addEventListener('click', async () => toast((await copyText(password)) ? 'Пароль скопирован' : 'Не скопировалось: выделите и нажмите Ctrl+C'));
+  dlg.addEventListener('close', () => dlg.remove());
+  dlg.showModal();
+}
+
+// ---------------------------------------------------------------- rights waiting
+
+function rightContent(r) {
+  const c = r.content;
+  if (r.right === 'routing') {
+    return `<pre class="rules">${esc(r.text || '')}</pre>${r.approvedText != null ? `<details class="check-more"><summary>Сейчас одобрено и в V2pn</summary><pre class="rules">${esc(r.approvedText)}</pre></details>` : ''}`;
   }
-}
-
-// ---------------------------------------------------------------- outbox
-
-function setOutboxCount(n) {
-  const el = $('[data-count="outbox"]');
-  el.textContent = n;
-  el.hidden = !n;
-}
-
-function drawOutbox(list, box) {
-  box.innerHTML = list.length ? list.map(o => {
-    const code = (/\b(\d{6})\b/.exec(o.subject) || /\b(\d{6})\b/.exec(o.body) || [])[1] || '';
-    const left = Math.max(0, Math.round((new Date(o.expiresAt) - Date.now()) / 60000));
-    return `<div><span><b>${esc(o.email)}</b><small>${esc(date(o.createdAt, { time: true }))} · ещё ${left} ${plural(left, 'минута', 'минуты', 'минут')}</small></span>
-      <span class="code" aria-label="Код ${code.split('').join(' ')}">${esc(code.replace(/(\d{3})(\d{3})/, '$1 $2'))}</span>
-      <button class="btn btn--secondary btn--sm" type="button" data-copy-code="${esc(code)}">Копировать</button></div>`;
-  }).join('') : empty('Кодов нет', 'Когда кто-то запросит вход, код появится здесь на 10 минут.');
-  $$('[data-copy-code]', box).forEach(b => b.addEventListener('click', async () => toast((await copyText(b.dataset.copyCode)) ? 'Код скопирован' : 'Не скопировалось')));
-}
-
-async function loadOutbox({ quiet = false } = {}) {
-  const box = $('[data-view="outbox"] [data-outbox-list]');
-  if (!quiet) loading(box);
-  try {
-    const [out, h] = await Promise.all([api.get('/api/admin/outbox'), api.get('/api/health')]);
-    $('#out-mode').textContent = h.mail === 'smtp' ? 'Почта настроена: коды уходят письмами' : 'Почта не настроена: передайте код человеку сами';
-    setOutboxCount(out.outbox.length);
-    drawOutbox(out.outbox, box);
-  } catch (e) {
-    if (!quiet) failed(box, e);
+  if (r.right === 'lock') return '<p>Скрыть адреса и настройки серверов: пользователь видит только названия.</p>';
+  if (r.right === 'account') return `<dl class="kv"><dt>Адрес API</dt><dd><code>${esc(c.api)}</code></dd><dt>Вход по коду</dt><dd>${c.login ? 'да' : 'нет'}</dd></dl>`;
+  if (r.right === 'actions') {
+    return `<ol class="btn-list">${c.map(a => `<li><b>${esc(a.label)}</b> <span class="hint">${esc(DOS[a.do] || a.do)}${a.url ? `: <code>${esc(a.url)}</code>` : ''}${a.strategy ? ` (${esc(a.strategy)})` : ''}${a.purpose ? ` (${esc(a.purpose)})` : ''}</span></li>`).join('')}</ol>`;
   }
+  return `<pre class="rules">${esc(JSON.stringify(c, null, 2))}</pre>`;
 }
 
-// ---------------------------------------------------------------- applications
-
-const yearFromNow = () => { const d = new Date(); d.setFullYear(d.getFullYear() + 1); return d.toISOString().slice(0, 10); };
-const STATE = { draft: ['', 'Черновик'], checking: ['info', 'Проверяется'], submitted: ['info', 'Ждёт решения'], approved: ['ok', 'Одобрена'], rejected: ['warn', 'Отклонена'] };
-
-function appItem(a) {
-  const { fail, warn } = checkCounts(a.check);
-  const [lvl, label] = STATE[a.state] || ['', a.state];
-  const checkBadge = a.check ? (fail ? `<span class="badge badge--fail">${fail} ${plural(fail, 'ошибка', 'ошибки', 'ошибок')}</span>` : warn ? `<span class="badge badge--warn">${warn} ${plural(warn, 'замечание', 'замечания', 'замечаний')}</span>` : '<span class="badge badge--ok">Проверка чистая</span>') : '';
-  const servers = a.check?.servers?.total;
-  return `<article class="item" data-app-id="${a.id}" aria-labelledby="app-${a.id}-h">
-    <div class="item__head"><h3 id="app-${a.id}-h">${esc(a.name || 'Без названия')} <span class="hint">/p/${esc(a.providerId || '—')}/</span></h3>
-      <span class="badge${lvl ? ` badge--${lvl}` : ''}">${label}</span><span class="badge">Хочет: ${a.wantedTier === 2 ? 'ступень 2' : 'ступень 1'}</span>${checkBadge}</div>
-    <div class="item__body">
-      <div class="stack">
-        <dl class="kv">
-          <dt>Почта</dt><dd>${esc(a.email)}</dd>
-          <dt>Контакт</dt><dd>${esc(a.contact || '—')}</dd>
-          <dt>Домены</dt><dd>${(a.domains || []).map(esc).join(', ') || '—'}</dd>
-          <dt>Тестовая ссылка</dt><dd><code>${esc(a.testUrl || '—')}</code></dd>
-          ${servers ? `<dt>Серверы</dt><dd>${servers}</dd>` : ''}
-          ${a.note ? `<dt>Заметка</dt><dd>${esc(a.note)}</dd>` : ''}
-          <dt>Отправлена</dt><dd>${esc(date(a.submittedAt || a.updatedAt, { time: true }))}</dd>
-          ${a.rejectReason ? `<dt>Причина отказа</dt><dd>${esc(a.rejectReason)}</dd>` : ''}
-        </dl>
-        ${a.state === 'submitted' ? `<div class="decide">
-          <div class="row">
-            <div class="field"><label for="tier-${a.id}">Ступень</label><select id="tier-${a.id}"><option value="1"${a.wantedTier === 1 ? ' selected' : ''}>1 — Проверенный</option><option value="2"${a.wantedTier === 2 ? ' selected' : ''}>2 — Интеграция</option></select></div>
-            <div class="field"><label for="until-${a.id}">До</label><input id="until-${a.id}" type="date" value="${yearFromNow()}"></div>
-          </div>
-          <div class="row"><button class="btn btn--primary" type="button" data-approve="${a.id}">Одобрить</button><button class="btn btn--secondary" type="button" data-reject="${a.id}">Отклонить</button></div>
-        </div>` : ''}
-      </div>
-      <div class="stack stack--sm">${a.check ? `<span class="hint">Проверка ${esc(date(a.checkedAt, { time: true }))}</span>${checkHtml(a.check)}` : '<p class="hint">Проверки ещё не было.</p>'}</div>
-    </div></article>`;
-}
-
-async function loadApplications() {
-  const box = $('#apps-list');
+async function loadRights() {
+  const box = $('#rights-list');
   loading(box);
   try {
-    const { applications } = await api.get(`/api/admin/applications?state=${appState}`);
-    box.innerHTML = applications.length ? applications.map(appItem).join('')
-      : empty({ submitted: 'Новых заявок нет', rejected: 'Отклонённых нет', approved: 'Одобренных нет', draft: 'Черновиков нет' }[appState], appState === 'submitted' ? 'Когда провайдер отправит заявку, она появится здесь с результатом проверки.' : '');
-    $$('[data-approve]', box).forEach(b => b.addEventListener('click', () => approve(b)));
-    $$('[data-reject]', box).forEach(b => b.addEventListener('click', () => reject(b)));
+    const { rights } = await api.get('/api/mod/rights');
+    setCount('rights', rights.length);
+    box.innerHTML = rights.length ? rights.map(r => `<article class="req" data-partner="${esc(r.partner)}" data-right="${esc(r.right)}" data-hash="${esc(r.hash)}">
+        <div class="req__head"><h3>${esc(r.partnerName)}</h3><span class="badge badge--warn">ждёт</span></div>
+        <p class="hint">${esc(RIGHT_NAMES[r.right] || r.right)} · логин ${esc(r.login)} · /p/${esc(r.partner)}/${r.requestedAt ? ` · ${esc(date(r.requestedAt, { time: true }))}` : ''}${r.live ? ' · прежняя версия уже одобрена' : ''}</p>
+        ${rightContent(r)}
+        <div class="row"><button class="btn btn--primary btn--sm" type="button" data-approve>Одобрить</button><button class="btn btn--secondary btn--sm" type="button" data-deny>Отказать</button></div>
+      </article>`).join('')
+      : empty('Пусто', 'Новые партнёры не ждут одобрения: они работают сразу. Сюда попадают только особые права.');
+    $$('[data-approve]', box).forEach(b => b.addEventListener('click', () => decide(b, true)));
+    $$('[data-deny]', box).forEach(b => b.addEventListener('click', () => decide(b, false)));
   } catch (e) {
     failed(box, e);
   }
 }
-$$('#app-filter button').forEach(b => b.addEventListener('click', () => {
-  appState = b.dataset.state;
-  $$('#app-filter button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-  loadApplications();
-}));
 
-async function approve(btn) {
-  const id = btn.dataset.approve;
-  const item = btn.closest('[data-app-id]');
-  const name = $('h3', item).firstChild.textContent.trim();
-  const tier = Number($(`#tier-${id}`).value);
-  const until = $(`#until-${id}`).value;
-  const ok = await confirmStep({
-    title: `Одобрить ${name}?`,
-    text: `Ступень ${tier} до ${esc(date(until))}. Сервер подпишет индекс и опубликует страницу провайдера сразу; провайдер получит кабинет.`,
-    action: 'Одобрить',
-  });
-  if (!ok) return;
+async function decide(btn, approve) {
+  const card = btn.closest('.req');
+  const { partner, right, hash } = card.dataset;
+  const name = $('h3', card).textContent;
+  let reason = null;
+  if (!approve) {
+    reason = await confirmStep({ title: `Отказать ${name}?`, text: `${esc(RIGHT_NAMES[right] || right)}. Провайдер увидит причину у себя. Партнёр останется опубликованным.`,
+      action: 'Отказать', danger: true, field: { label: 'Причина', multiline: true, required: true, empty: 'Напишите причину: провайдер увидит эти слова.' } });
+    if (!reason) return;
+  }
   await busy(btn, async () => {
     try {
-      await api.post(`/api/admin/applications/${id}/approve`, { tier, until: until || undefined });
-      toast(`${name}: одобрено и опубликовано`);
-      loadApplications();
-      refreshCounts();
+      await api.post(`/api/mod/partners/${encodeURIComponent(partner)}/rights/${right}/${approve ? 'approve' : 'deny'}`, approve ? { hash } : { hash, reason });
+      toast(approve ? 'Одобрено и подписано сервером' : 'Отказано. Провайдер увидит причину');
     } catch (e) {
-      toast(e.fields ? Object.values(e.fields)[0] : e.message);
+      // 409: the provider changed the request after this page showed it; it is shown again as it is now.
+      toast(e.code === 'conflict' ? 'Провайдер изменил запрос. Посмотрите его ещё раз.' : e.message);
     }
   });
+  await loadRights();
+  refreshOverview();
 }
 
-async function reject(btn) {
-  const id = btn.dataset.reject;
-  const name = $(`[data-app-id="${id}"] h3`).firstChild.textContent.trim();
-  const reason = await confirmStep({
-    title: `Отклонить заявку ${name}?`,
-    text: 'Провайдер увидит причину у себя в заявке, исправит и отправит снова.',
-    action: 'Отклонить',
-    danger: true,
-    field: { label: 'Причина', multiline: true, required: true, empty: 'Напишите, что исправить: провайдер увидит эти слова.' },
-  });
-  if (!reason) return;
-  try {
-    await api.post(`/api/admin/applications/${id}/reject`, { reason });
-    toast(`${name}: заявка возвращена с причиной`);
-    loadApplications();
-    refreshCounts();
-  } catch (e) {
-    toast(e.message);
-  }
+// ---------------------------------------------------------------- partners
+
+const isNew = p => Date.now() - new Date(p.createdAt).getTime() < 48 * 3600 * 1000;
+
+function thumb(p) {
+  const bg = p.brand.length > 1 ? `linear-gradient(135deg, ${p.brand.join(', ')})` : p.brand[0] || '#E8391B';
+  const pic = p.pictures.mark ? `<img src="/api/mod/pictures/${esc(p.pictures.mark)}" alt="">` : esc((p.name || '?').charAt(0).toUpperCase());
+  return `<span class="pthumb" style="background: ${esc(bg)}">${pic}</span>`;
 }
 
-async function refreshCounts() {
-  try { counts(await api.get('/api/admin/overview')); } catch { /* the badges wait for the next view */ }
-}
-
-// ---------------------------------------------------------------- the queue
-
-const adminPic = sha => (sha ? `/api/admin/pictures/${sha}` : null);
-
-function queueItem({ provider: p, look, review }) {
-  const problems = Object.entries(review.problems || {});
-  const win = mode => windowHtml({ root: ROOT, mode, name: look.name, tab: true, colours: review.colours?.[mode] || null,
-    mark: adminPic(look.mark), logo: adminPic(look.logo), logoOnLight: adminPic(look.logoOnLight), backdrop: adminPic(look.backdrop) });
-  const bg = { none: '«Акцент» (карта)', gradient: '«Сцена», градиент', image: '«Сцена», картинка' }[look.background] || look.background;
-  return `<article class="item" data-queue-id="${esc(p.id)}" aria-labelledby="q-${esc(p.id)}-h">
-    <div class="item__head"><h3 id="q-${esc(p.id)}-h">${esc(look.name)} <span class="hint">/p/${esc(p.id)}/</span></h3>
-      <span class="badge">Ступень ${p.tier}</span>${problems.length ? `<span class="badge badge--fail">${problems.length} ${plural(problems.length, 'проблема', 'проблемы', 'проблем')}</span>` : '<span class="badge badge--ok">Контраст в норме</span>'}</div>
-    <div class="mini--pair"><div class="mini">${win('light')}</div><div class="mini">${win('dark')}</div></div>
-    <dl class="kv"><dt>Отправлено</dt><dd>${esc(date(p.queuedAt, { time: true }))}</dd><dt>Цвета</dt><dd>${look.brand.map(h => `<code>${esc(h)}</code>`).join(' ') || '—'}</dd>
-      <dt>Фон</dt><dd>${esc(bg)}</dd>${look.links.cabinet || look.links.support ? `<dt>Ссылки</dt><dd>${[look.links.cabinet, look.links.support].filter(Boolean).map(esc).join('<br>')}</dd>` : ''}
-      ${look.api ? `<dt>API</dt><dd><code>${esc(look.api)}</code>${look.login ? ', вход по коду' : ''}${look.lock ? ', скрытые адреса' : ''}</dd>` : ''}
-      ${look.actions.length ? `<dt>Кнопки</dt><dd>${look.actions.map(a => esc(a.label)).join(', ')}</dd>` : ''}</dl>
-    ${(review.notes || []).length ? `<ul class="notes-list">${review.notes.map(n => `<li>${esc(n)}</li>`).join('')}</ul>` : ''}
-    ${problems.length ? `<ul class="problems">${problems.map(([k, m]) => `<li>${esc(k)}: ${esc(m)}</li>`).join('')}</ul>` : ''}
-    <div class="row"><button class="btn btn--primary" type="button" data-publish="${esc(p.id)}"${problems.length ? ' disabled' : ''}>Опубликовать</button><button class="btn btn--secondary" type="button" data-return="${esc(p.id)}">Вернуть</button></div>
+function partnerItem(p) {
+  const pills = [
+    p.state === 'down' ? '<span class="badge badge--fail">снят</span>' : isNew(p) ? '<span class="badge badge--ok">новый</span>' : '',
+    p.complaints ? `<span class="badge badge--warn">${p.complaints} ${plural(p.complaints, 'жалоба', 'жалобы', 'жалоб')}</span>` : '',
+    p.pending.length ? `<a class="badge badge--info" href="#rights">ждут права: ${p.pending.length}</a>` : '',
+    p.layout === 'stickers' ? '<span class="badge">наклейки</span>' : '',
+    p.source === 'import' ? '<span class="badge">перенесён</span>' : '',
+  ].join('');
+  return `<article class="pitem${p.state === 'down' ? ' is-off' : ''}" data-id="${esc(p.id)}" data-login="${esc(p.login)}">
+    ${thumb(p)}
+    <div class="pitem__meta"><div class="pitem__name"><b>${esc(p.name)}</b>${pills}</div>
+      <span class="pitem__sub">${(p.domains || []).map(esc).join(', ')} · логин ${esc(p.login)} · ${esc(date(p.createdAt, { time: true }))} · <a href="${esc(p.page)}" target="_blank" rel="noopener">/p/${esc(p.id)}/</a></span>
+      ${p.state === 'down' && p.downReason ? `<span class="pitem__sub">Причина: ${esc(p.downReason)}</span>` : ''}</div>
+    <div class="pitem__act">${p.state === 'down'
+    ? '<button class="btn btn--secondary btn--sm" type="button" data-restore>Вернуть</button>'
+    : '<button class="btn btn--danger btn--sm" type="button" data-down>Снять</button>'}
+      <button class="btn btn--secondary btn--sm" type="button" data-reset>Сбросить пароль</button>
+      ${p.complaints ? '<button class="btn btn--secondary btn--sm" type="button" data-complaints aria-expanded="false">Жалобы</button>' : ''}</div>
+    <div class="pitem__more" hidden></div>
   </article>`;
 }
 
-async function loadQueue() {
-  const box = $('#queue-list');
+function drawPartners() {
+  const box = $('#partners-list');
+  const list = partners.filter(p => (filter === 'down' ? p.state === 'down' : filter === 'complaints' ? p.complaints > 0 : true));
+  const live = partners.filter(p => p.state !== 'down').length;
+  $('#partners-count').textContent = `${live} ${plural(live, 'работает', 'работают', 'работают')} · ${partners.length - live} ${plural(partners.length - live, 'снят', 'снято', 'снято')}`;
+  box.innerHTML = list.length ? list.map(partnerItem).join('')
+    : empty({ all: 'Партнёров пока нет', complaints: 'Жалоб нет', down: 'Снятых нет' }[filter], filter === 'all' ? 'Провайдер публикует партнёра сам, и он появится здесь.' : '');
+}
+
+async function loadPartners() {
+  const box = $('#partners-list');
   loading(box);
   try {
-    const { queue } = await api.get('/api/admin/queue');
-    box.innerHTML = queue.length ? queue.map(queueItem).join('') : empty('Ничего не ждёт', 'Когда провайдер отправит оформление, оно появится здесь с окном V2pn в светлой и тёмной теме.');
-    $$('[data-publish]', box).forEach(b => b.addEventListener('click', async () => {
-      const id = b.dataset.publish;
-      const ok = await confirmStep({ title: `Опубликовать оформление ${id}?`, text: 'Сервер подпишет индекс; V2pn у людей провайдера подхватит новое в течение часа.', action: 'Опубликовать' });
-      if (!ok) return;
-      await busy(b, async () => {
-        try {
-          await api.post(`/api/admin/queue/${id}/approve`);
-          toast('Опубликовано');
-          loadQueue();
-          refreshCounts();
-        } catch (e) { toast(e.message); }
-      });
-    }));
-    $$('[data-return]', box).forEach(b => b.addEventListener('click', async () => {
-      const id = b.dataset.return;
-      const reason = await confirmStep({ title: `Вернуть оформление ${id}?`, text: 'Люди продолжат видеть опубликованную версию. Провайдер увидит, что поправить.', action: 'Вернуть',
-        field: { label: 'Что поправить', multiline: true, required: true, empty: 'Напишите, что поправить.' } });
-      if (!reason) return;
+    ({ partners } = await api.get('/api/mod/partners'));
+    setCount('partners', partners.length);
+    drawPartners();
+  } catch (e) {
+    failed(box, e);
+  }
+}
+
+$$('#partners-filter button').forEach(b => b.addEventListener('click', () => {
+  filter = b.dataset.filter;
+  $$('#partners-filter button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+  drawPartners();
+}));
+
+$('#partners-list').addEventListener('click', async e => {
+  const btn = e.target.closest('button');
+  const item = btn && btn.closest('.pitem');
+  if (!item) return;
+  const { id, login } = item.dataset;
+  const name = $('.pitem__name b', item).textContent;
+  if (btn.hasAttribute('data-down')) {
+    const reason = await confirmStep({ title: `Снять ${name}?`, text: 'Страница партнёра скажет, что он снят, а V2pn у пользователей уберёт его вкладку при следующей проверке. Вернуть можно в любой момент.',
+      action: 'Снять', danger: true, field: { label: 'Причина', multiline: true, required: true, empty: 'Напишите причину: провайдер увидит её.' } });
+    if (!reason) return;
+    await act(btn, () => api.post(`/api/mod/partners/${id}/down`, { reason }), 'Снят. У пользователей вкладка пропадёт при следующей проверке');
+  } else if (btn.hasAttribute('data-restore')) {
+    await act(btn, () => api.post(`/api/mod/partners/${id}/restore`), 'Возвращён и опубликован');
+  } else if (btn.hasAttribute('data-reset')) {
+    const ok = await confirmStep({ title: `Сбросить пароль ${login}?`, text: 'Старый пароль перестанет работать, все входы этого аккаунта закончатся.', action: 'Сбросить', danger: true });
+    if (!ok) return;
+    await busy(btn, async () => {
       try {
-        await api.post(`/api/admin/queue/${id}/return`, { reason });
-        toast('Возвращено провайдеру');
-        loadQueue();
-        refreshCounts();
-      } catch (e) { toast(e.message); }
-    }));
+        const res = await api.post(`/api/mod/accounts/${encodeURIComponent(login)}/password`, {});
+        showPassword(res.login, res.password, 'Новый пароль.');
+      } catch (err) { toast(err.message); }
+    });
+  } else if (btn.hasAttribute('data-complaints')) {
+    await toggleComplaints(btn, item, id);
+  } else if (btn.hasAttribute('data-clear')) {
+    const ok = await confirmStep({ title: `Очистить жалобы на ${name}?`, text: 'Жалобы удалятся. Сделайте это, когда разобрались с ними.', action: 'Очистить' });
+    if (!ok) return;
+    await act(btn, () => api.post(`/api/mod/partners/${id}/complaints/clear`), 'Жалобы очищены');
+  }
+});
+
+async function act(btn, call, done) {
+  await busy(btn, async () => {
+    try {
+      await call();
+      toast(done);
+    } catch (err) {
+      toast(err.message);
+    }
+  });
+  await loadPartners();
+  refreshOverview();
+}
+
+async function toggleComplaints(btn, item, id) {
+  const more = $('.pitem__more', item);
+  const open = btn.getAttribute('aria-expanded') === 'true';
+  btn.setAttribute('aria-expanded', String(!open));
+  more.hidden = open;
+  if (open) return;
+  loading(more);
+  try {
+    const { complaints } = await api.get(`/api/mod/partners/${id}/complaints`);
+    more.innerHTML = `<ul class="complaints">${complaints.map(c => `<li><span class="hint">${esc(date(c.createdAt, { time: true }))}</span>${c.text ? esc(c.text) : '<span class="hint">без текста</span>'}</li>`).join('')}</ul>
+      <button class="btn btn--secondary btn--sm" type="button" data-clear>Очистить жалобы</button>`;
   } catch (e) {
-    failed(box, e);
+    failed(more, e, () => toggleComplaints(btn, item, id));
   }
 }
 
-// ---------------------------------------------------------------- providers
+$$('[data-publish-now]').forEach(b => b.addEventListener('click', async () => {
+  const ok = await confirmStep({ title: 'Опубликовать заново?', text: 'Сервер соберёт и подпишет индекс, пакеты и страницы всех партнёров.', action: 'Опубликовать' });
+  if (!ok) return;
+  await busy(b, async () => {
+    try {
+      const r = await api.post('/api/mod/publish');
+      toast(`Опубликовано: ${r.publication.partners.length}`);
+    } catch (err) {
+      toast(err.detail ? `${err.message} ${[].concat(err.detail)[0]}` : err.message);
+    }
+  });
+  refreshOverview();
+}));
 
-async function loadProviders() {
-  const box = $('#prov-list');
+// ---------------------------------------------------------------- moderators (the owner)
+
+async function loadMods() {
+  const box = $('#mods-list');
   loading(box);
   try {
-    const { providers } = await api.get('/api/admin/providers');
-    if (!providers.length) { box.innerHTML = empty('Провайдеров пока нет', 'Одобренная заявка становится провайдером.'); return; }
-    box.innerHTML = `<div class="tbl-wrap"><table class="tbl tbl--stack"><thead><tr><th>Провайдер</th><th>Ступень</th><th>Срок</th><th>Состояние</th><th>Связь</th><th></th></tr></thead><tbody>
-      ${providers.map(p => `<tr data-provider-id="${esc(p.id)}">
-        <td data-label="Провайдер"><b>${esc(p.name)}</b><br><a href="${esc(p.page)}" target="_blank" rel="noopener">/p/${esc(p.id)}/</a>${p.source === 'import' ? ' <span class="hint">· перенесён</span>' : ''}</td>
-        <td data-label="Ступень"><select aria-label="Ступень ${esc(p.name)}" data-tier="${esc(p.id)}"><option value="1"${p.tier === 1 ? ' selected' : ''}>1 — Проверенный</option><option value="2"${p.tier === 2 ? ' selected' : ''}>2 — Интеграция</option></select>
-          ${p.tierRequest ? '<br><span class="badge badge--info">просит ступень 2</span>' : ''}</td>
-        <td data-label="Срок"><div class="row" style="gap: 6px; flex-wrap: nowrap"><input type="date" value="${esc(p.until)}" aria-label="Срок ${esc(p.name)}" data-until="${esc(p.id)}" style="height: 36px; padding: 0 8px; border: 1px solid var(--line-strong); border-radius: var(--r-sm); background: var(--bg); color: var(--ink); font: inherit">
-          <button class="btn btn--secondary btn--sm" type="button" data-save-until="${esc(p.id)}" hidden>Сохранить</button></div>${p.expired ? '<span class="badge badge--fail">истёк</span>' : ''}</td>
-        <td data-label="Состояние">${p.state === 'revoked' ? `<span class="badge badge--fail">Отозван</span>${p.revokeReason ? `<br><span class="hint">${esc(p.revokeReason)}</span>` : ''}` : '<span class="badge badge--ok">Работает</span>'}
-          ${p.queueState === 'queued' ? '<br><a href="#queue" class="hint">оформление ждёт</a>' : ''}</td>
-        <td data-label="Связь">${esc(p.email || '—')}<br><span class="hint">${esc(p.contact || '')}</span></td>
-        <td>${p.state === 'revoked' ? `<button class="btn btn--secondary btn--sm" type="button" data-restore="${esc(p.id)}">Вернуть</button>` : `<button class="btn btn--danger btn--sm" type="button" data-revoke="${esc(p.id)}">Отозвать</button>`}</td>
-      </tr>`).join('')}</tbody></table></div>`;
-    $$('[data-tier]', box).forEach(sel => {
-      const before = sel.value;
-      sel.addEventListener('change', async () => {
-        const id = sel.dataset.tier;
-        const ok = await confirmStep({ title: `Ступень ${sel.value} для ${id}?`, text: Number(sel.value) === 2 ? 'Провайдер получит вход по коду, свои кнопки и скрытые адреса.' : 'Вход по коду и свои кнопки пропадут из его вкладки после публикации.', action: 'Поменять', danger: Number(sel.value) === 1 });
-        if (!ok) { sel.value = before; return; }
-        try { await api.post(`/api/admin/providers/${id}/tier`, { tier: Number(sel.value) }); toast('Ступень изменена'); loadProviders(); } catch (e) { toast(e.message); sel.value = before; }
-      });
-    });
-    $$('[data-until]', box).forEach(input => {
-      const save = $(`[data-save-until="${input.dataset.until}"]`, box);
-      input.addEventListener('input', () => { save.hidden = false; });
-      save.addEventListener('click', async () => {
-        try { await api.post(`/api/admin/providers/${input.dataset.until}/until`, { until: input.value }); toast('Срок сохранён'); loadProviders(); } catch (e) { toast(e.fields?.until || e.message); }
-      });
-    });
-    $$('[data-revoke]', box).forEach(b => b.addEventListener('click', async () => {
-      const id = b.dataset.revoke;
-      const reason = await confirmStep({ title: `Отозвать ${id}?`, text: 'Вкладка пропадёт у людей при следующем обновлении индекса, страница /p/ уйдёт. Подписка провайдера останется обычной. Вернуть можно в любой момент.', action: 'Отозвать', danger: true,
-        field: { label: 'Причина', multiline: true, required: true, empty: 'Напишите причину: провайдер увидит её в кабинете.' } });
-      if (!reason) return;
-      try { await api.post(`/api/admin/providers/${id}/revoke`, { reason }); toast('Отозван'); loadProviders(); } catch (e) { toast(e.message); }
-    }));
-    $$('[data-restore]', box).forEach(b => b.addEventListener('click', async () => {
-      const id = b.dataset.restore;
-      const ok = await confirmStep({ title: `Вернуть ${id}?`, text: 'Вкладка и страница снова опубликуются.', action: 'Вернуть' });
-      if (!ok) return;
-      try { await api.post(`/api/admin/providers/${id}/restore`); toast('Возвращён'); loadProviders(); } catch (e) { toast(e.message); }
-    }));
+    const { moderators } = await api.get('/api/mod/moderators');
+    box.innerHTML = moderators.map(m => `<article class="pitem pitem--plain" data-login="${esc(m.login)}">
+      <div class="pitem__meta"><div class="pitem__name"><b>${esc(m.login)}</b>${m.role === 'owner' ? '<span class="badge">владелец</span>' : '<span class="badge badge--info">модератор</span>'}</div>
+        <span class="pitem__sub">${m.lastLoginAt ? `входил ${esc(date(m.lastLoginAt, { time: true }))}` : 'ещё не входил'}</span></div>
+      <div class="pitem__act">${m.role === 'owner' ? '' : '<button class="btn btn--secondary btn--sm" type="button" data-mod-reset>Сбросить пароль</button><button class="btn btn--danger btn--sm" type="button" data-mod-remove>Убрать</button>'}</div>
+    </article>`).join('');
   } catch (e) {
     failed(box, e);
   }
 }
-$('#publish-now').addEventListener('click', async e => {
-  const ok = await confirmStep({ title: 'Опубликовать заново?', text: 'Сервер соберёт и подпишет индекс, пакеты и страницы всех провайдеров.', action: 'Опубликовать' });
-  if (!ok) return;
-  await busy(e.currentTarget, async () => {
-    try { const r = await api.post('/api/admin/publish'); toast(`Опубликовано: ${r.publication.partners.length}`); } catch (err) { toast(err.detail ? `${err.message} ${[].concat(err.detail)[0]}` : err.message); }
+
+$('#mods-list').addEventListener('click', async e => {
+  const btn = e.target.closest('button');
+  const item = btn && btn.closest('[data-login]');
+  if (!item) return;
+  const { login } = item.dataset;
+  if (btn.hasAttribute('data-mod-remove')) {
+    const ok = await confirmStep({ title: `Убрать модератора ${login}?`, text: 'Аккаунт останется обычным аккаунтом провайдера, его входы закончатся.', action: 'Убрать', danger: true });
+    if (!ok) return;
+    await busy(btn, async () => {
+      try { await api.post(`/api/mod/moderators/${encodeURIComponent(login)}/remove`, {}); toast(`${login} больше не модератор`); } catch (err) { toast(err.message); }
+    });
+    loadMods();
+  } else if (btn.hasAttribute('data-mod-reset')) {
+    const ok = await confirmStep({ title: `Сбросить пароль ${login}?`, text: 'Старый пароль перестанет работать, все входы этого аккаунта закончатся.', action: 'Сбросить', danger: true });
+    if (!ok) return;
+    await busy(btn, async () => {
+      try { const res = await api.post(`/api/mod/accounts/${encodeURIComponent(login)}/password`, {}); showPassword(res.login, res.password, 'Новый пароль модератора.'); } catch (err) { toast(err.message); }
+    });
+  }
+});
+
+$('#mod-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const input = $('#mod-login');
+  const err = $('.field__error', input.closest('.field'));
+  const say = m => { err.textContent = m || ''; err.hidden = !m; input.setAttribute('aria-invalid', String(Boolean(m))); };
+  say('');
+  const login = input.value.trim();
+  if (!login) { say('Напишите логин.'); input.focus(); return; }
+  await busy($('#mod-add'), async () => {
+    try {
+      const { moderator } = await api.post('/api/mod/moderators', { login });
+      input.value = '';
+      toast(`${moderator.login} теперь модератор`);
+      if (moderator.password) showPassword(moderator.login, moderator.password, 'Аккаунт создан.');
+      loadMods();
+    } catch (er) {
+      say((er.fields && er.fields.login) || er.message);
+    }
   });
 });
 
@@ -398,7 +392,7 @@ async function loadDownloads() {
   const box = $('#dl-out');
   loading(box);
   try {
-    const { downloads } = await api.get(`/api/admin/downloads?days=${days}`);
+    const { downloads } = await api.get(`/api/mod/downloads?days=${days}`);
     const c = chartHtml(downloads, days);
     box.innerHTML = c.html;
     const tip = $('.tip', box);
@@ -432,16 +426,16 @@ $$('#dl-days button').forEach(b => b.addEventListener('click', () => {
 // ---------------------------------------------------------------- audit
 
 const ACTIONS = {
-  'application.submit': 'отправил заявку', 'application.approve': 'одобрил заявку', 'application.reject': 'отклонил заявку',
-  'provider.tier': 'сменил ступень', 'provider.until': 'сменил срок', 'provider.revoke': 'отозвал', 'provider.restore': 'вернул',
-  'provider.import': 'перенёс', 'provider.tier_request': 'попросил ступень 2', 'look.submit': 'отправил оформление', 'look.approve': 'опубликовал оформление', 'look.return': 'вернул оформление',
+  'partner.create': 'опубликовал партнёра', 'partner.save': 'сохранил партнёра', 'partner.import': 'перенёс партнёра', 'partner.down': 'снял', 'partner.restore': 'вернул',
+  'right.request': 'попросил право', 'right.withdraw': 'убрал право', 'right.approve': 'одобрил право', 'right.deny': 'отказал в праве',
+  'complaints.clear': 'очистил жалобы', 'account.password': 'сбросил пароль', 'moderator.add': 'добавил модератора', 'moderator.remove': 'убрал модератора',
 };
 
 async function loadAudit() {
   const body = $('#audit-table tbody');
   body.innerHTML = '<tr><td colspan="5"><div class="skel"><i></i><i></i></div></td></tr>';
   try {
-    const { audit } = await api.get('/api/admin/audit?limit=200');
+    const { audit } = await api.get('/api/mod/audit?limit=200');
     body.innerHTML = audit.length ? audit.map(r => `<tr><td data-label="Когда">${esc(date(r.at, { time: true }))}</td><td data-label="Кто">${esc(r.actor)}</td>
       <td data-label="Что">${esc(ACTIONS[r.action] || r.action)}</td><td data-label="Кого">${esc(r.target || '')}</td>
       <td data-label="Подробно">${r.detail ? `<code>${esc(Object.entries(r.detail).map(([k, v]) => `${k}: ${typeof v === 'object' ? JSON.stringify(v) : v}`).join(', '))}</code>` : ''}</td></tr>`).join('')
@@ -457,17 +451,22 @@ async function start() {
   showState('loading');
   try {
     const who = await me(ROOT);
-    wireAccount(ROOT, who.account);
-    if (!who.account.admin) {
-      showState('error', 'Это страница владельца V2pn', 'Ваша почта не среди владельцев. Кабинет провайдера — в разделе «Кабинет».');
+    account = who.account;
+    wireAccount(ROOT, account);
+    if (!isMod(account)) {
+      showState('error', 'Это страница модераторов', 'Ваш аккаунт провайдерский. Ваш партнёр на странице «Мой партнёр».');
       $('[data-retry]').hidden = true;
+      $('[data-to-cabinet]').hidden = false;
       return;
     }
+    $$('[data-owner-only]').forEach(el => { el.hidden = !owner(); });
     showState('ready');
+    refreshOverview();
     await route();
   } catch (e) {
-    showState('error', 'Админка не загрузилась', e.message);
+    showState('error', e.code === 'offline' ? 'Нет связи' : 'Модерация не загрузилась', e.message);
   }
 }
 $('[data-retry]').addEventListener('click', start);
+window.addEventListener('online', () => { if (!$('#view-error').hidden && !$('[data-retry]').hidden) start(); });
 start();

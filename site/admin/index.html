@@ -3,8 +3,8 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Провайдеры V2pn: решения владельца | V2pn</title>
-<meta name="description" content="Заявки провайдеров, публикация оформлений, провайдеры, скачивания и журнал решений.">
+<title>Модерация партнёров | V2pn</title>
+<meta name="description" content="Модерация партнёров V2pn: особые права, жалобы, снятие и возврат, модераторы.">
 <meta name="robots" content="noindex, nofollow">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
 <meta name="theme-color" content="#eceef3" media="(prefers-color-scheme: light)">
@@ -28,7 +28,7 @@
       <div class="nav__item"><a class="nav__link" href="../providers/guide/">Руководство</a></div>
     </nav>
     <div class="nav__actions">
-      <span class="who"><b data-email></b></span>
+      <span class="who"><b data-login></b></span>
       <button class="btn btn--secondary" type="button" data-signout>Выйти</button>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
@@ -40,68 +40,62 @@
 <main id="top" class="app">
   <div class="wrap">
     <div class="app__head">
-      <h1>Провайдеры</h1>
-      <p>Здесь всё, что ждёт вашего решения. Подпись и публикация происходят сами после кнопки.</p>
+      <h1>Модерация</h1>
+      <p>Партнёры публикуются сами. Сюда попадают особые права на одобрение, жалобы и всё, что нужно снять.</p>
     </div>
-    <noscript><p>Админка работает со включённым JavaScript. Включите его и обновите страницу.</p></noscript>
+    <noscript><p>Модерация работает со включённым JavaScript. Включите его и обновите страницу.</p></noscript>
 
     <div id="view-loading" class="box" aria-busy="true" aria-label="Загружаем"><div class="skel"><i></i><i></i><i></i><i></i></div></div>
     <div id="view-error" class="state" hidden>
-      <h2 data-error-title>Админка не загрузилась</h2>
+      <h2 data-error-title>Модерация не загрузилась</h2>
       <p data-error-text>Сервер провайдеров сейчас недоступен.</p>
-      <button class="btn btn--secondary" type="button" data-retry>Попробовать ещё раз</button>
+      <div class="row"><button class="btn btn--secondary" type="button" data-retry>Попробовать ещё раз</button><a class="btn btn--secondary" href="../providers/cabinet/" data-to-cabinet hidden>Мой партнёр</a></div>
     </div>
 
     <div id="shell" class="shell" hidden>
-      <nav class="sidenav" aria-label="Разделы админки">
-        <a href="#overview" data-tab="overview">Обзор</a>
-        <a href="#applications" data-tab="applications">Заявки <span class="count" data-count="applications" hidden></span></a>
-        <a href="#queue" data-tab="queue">Публикации <span class="count" data-count="queue" hidden></span></a>
-        <a href="#providers" data-tab="providers">Провайдеры <span class="count count--quiet" data-count="providers" hidden></span></a>
+      <nav class="sidenav" aria-label="Разделы модерации">
+        <a href="#rights" data-tab="rights">Ждут одобрения <span class="count" data-count="rights" hidden></span></a>
+        <a href="#partners" data-tab="partners">Все партнёры <span class="count count--quiet" data-count="partners" hidden></span></a>
+        <a href="#mods" data-tab="mods" data-owner-only hidden>Модераторы</a>
         <a href="#downloads" data-tab="downloads">Скачивания</a>
-        <a href="#outbox" data-tab="outbox">Коды входа <span class="count" data-count="outbox" hidden></span></a>
         <a href="#audit" data-tab="audit">Журнал</a>
       </nav>
 
       <div class="stack stack--lg">
-        <!-- overview -->
-        <section data-view="overview" class="stack stack--lg" aria-labelledby="ov-h" hidden>
-          <h2 id="ov-h" class="sr">Обзор</h2>
-          <div class="box" id="ov-outbox" hidden>
-            <div class="box__head"><h2>Коды входа ждут вас</h2><span class="hint">Почта не настроена: передайте код человеку сами</span></div>
-            <div class="outbox" data-outbox-list></div>
-          </div>
-          <div class="counts" id="ov-counts"></div>
-          <div class="box" id="ov-publication"></div>
+        <div class="note note--fail" id="pub-error" hidden>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div><p><b data-pub-error-title>Публикация не прошла.</b></p><ul class="problems" data-pub-error-list></ul><button class="btn btn--secondary btn--sm" type="button" data-publish-now>Опубликовать заново</button></div>
+        </div>
+
+        <section data-view="rights" class="box" aria-labelledby="rights-h" hidden>
+          <div class="box__head"><h2 id="rights-h">Ждут одобрения</h2><p>Только особые права. Партнёр в это время уже работает.</p></div>
+          <div id="rights-list" class="stack" aria-live="polite"></div>
         </section>
 
-        <!-- applications -->
-        <section data-view="applications" class="box" aria-labelledby="apps-h" hidden>
-          <div class="box__head">
-            <h2 id="apps-h">Заявки</h2>
-            <div class="seg" role="group" aria-label="Какие заявки" id="app-filter">
-              <button type="button" data-state="submitted" aria-pressed="true">Новые</button>
-              <button type="button" data-state="rejected" aria-pressed="false">Отклонённые</button>
-              <button type="button" data-state="approved" aria-pressed="false">Одобренные</button>
-              <button type="button" data-state="draft" aria-pressed="false">Черновики</button>
+        <section data-view="partners" class="box" aria-labelledby="partners-h" hidden>
+          <div class="box__head"><h2 id="partners-h">Все партнёры</h2><span class="hint" id="partners-count"></span></div>
+          <div class="seg" role="group" aria-label="Какие партнёры" id="partners-filter">
+            <button type="button" data-filter="all" aria-pressed="true">Все</button>
+            <button type="button" data-filter="complaints" aria-pressed="false">С жалобами</button>
+            <button type="button" data-filter="down" aria-pressed="false">Снятые</button>
+          </div>
+          <div id="partners-list" class="plist" aria-live="polite"></div>
+          <div class="row"><button class="btn btn--secondary btn--sm" type="button" data-publish-now>Опубликовать заново</button><span class="hint">Пересобирает и подписывает индекс, пакеты и страницы всех партнёров.</span></div>
+        </section>
+
+        <section data-view="mods" class="box" aria-labelledby="mods-h" hidden>
+          <div class="box__head"><h2 id="mods-h">Модераторы</h2><p>Добавлять и убирать модераторов может только владелец.</p></div>
+          <div id="mods-list" class="plist"></div>
+          <form id="mod-form" class="stack stack--sm" novalidate>
+            <div class="field">
+              <label for="mod-login">Логин нового модератора</label>
+              <div class="input-row"><input id="mod-login" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32"><button class="btn btn--primary" type="submit" id="mod-add">Добавить модератора</button></div>
+              <span class="field__hint">Существующий аккаунт станет модератором. Для нового логина сервер создаст аккаунт и покажет пароль один раз.</span>
+              <span class="field__error" hidden></span>
             </div>
-          </div>
-          <div id="apps-list" aria-live="polite"></div>
+          </form>
         </section>
 
-        <!-- queue -->
-        <section data-view="queue" class="box" aria-labelledby="queue-h" hidden>
-          <div class="box__head"><h2 id="queue-h">Ждут публикации</h2><p>Оформление выходит к людям только после вашей кнопки.</p></div>
-          <div id="queue-list" aria-live="polite"></div>
-        </section>
-
-        <!-- providers -->
-        <section data-view="providers" class="box" aria-labelledby="prov-h" hidden>
-          <div class="box__head"><h2 id="prov-h">Провайдеры</h2><button class="btn btn--secondary btn--sm" type="button" id="publish-now">Опубликовать заново</button></div>
-          <div id="prov-list"></div>
-        </section>
-
-        <!-- downloads -->
         <section data-view="downloads" class="box" aria-labelledby="dl-h" hidden>
           <div class="box__head">
             <h2 id="dl-h">Скачивания</h2>
@@ -115,13 +109,6 @@
           <p class="hint">Переходы по /r/*: по дням и платформам, без адресов и cookie.</p>
         </section>
 
-        <!-- outbox -->
-        <section data-view="outbox" class="box" aria-labelledby="out-h" hidden>
-          <div class="box__head"><h2 id="out-h">Коды входа</h2><span class="hint" id="out-mode"></span></div>
-          <div class="outbox" data-outbox-list></div>
-        </section>
-
-        <!-- audit -->
         <section data-view="audit" class="box" aria-labelledby="audit-h" hidden>
           <div class="box__head"><h2 id="audit-h">Журнал решений</h2><span class="hint">последние 200</span></div>
           <div class="tbl-wrap"><table class="tbl tbl--stack" id="audit-table"><thead><tr><th>Когда</th><th>Кто</th><th>Что</th><th>Кого</th><th>Подробно</th></tr></thead><tbody></tbody></table></div>

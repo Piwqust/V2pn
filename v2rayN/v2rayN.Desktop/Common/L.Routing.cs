@@ -135,4 +135,34 @@ public static partial class L
         "Необязательно. Эти сайты идут через тот же сервер из любой программы, в том числе из браузера.");
     public static string PinNeedServer => T("Choose a server or a group.", "Выберите сервер или группу.");
     public static string PinNeedRules => T("List at least one program or site.", "Укажите хотя бы одну программу или сайт.");
+
+    // The rule-sets window as a list beside the chosen set (no window on top of another).
+    public static string RtMatchNav => T("How sites are matched", "Как узнаются сайты");
+    public static string RtMatchHint => T("For every rule set. Change only if a rule doesn't catch a site.",
+        "Для всех наборов. Меняйте, только если правило не срабатывает на нужном сайте.");
+    public static string RtRulesNote => T("checked top to bottom, the first match wins", "проверяются сверху вниз, срабатывает первое подходящее");
+    public static string RtRuleCount => T("Rules: {0}", "Правил: {0}");
+    public static string RtLinkNote => T("rules link: {0}", "ссылка на правила: {0}");
+    public static string RtNoRules => T("No rules yet", "Правил пока нет");
+    public static string RtNoRulesHint => T("Without rules everything goes through the VPN.", "Без правил весь трафик идёт через VPN.");
+    public static string RtAddFirstRule => T("Add the first rule", "Добавить первое правило");
+    public static string RtNewRule => T("New rule", "Новое правило");
+    public static string RtDuplicate => T("Duplicate", "Дублировать");
+    public static string RtCopyName => T("{0} (copy)", "{0} (копия)");
+    public static string RtCopyRules => T("Copy all rules", "Скопировать все правила");
+    public static string RtCopyRule => T("Copy", "Скопировать");
+    public static string RtCopied => T("Copied", "Скопировано");
+    public static string RtTurnOff => T("Turn off", "Выключить");
+    public static string RtTurnOn => T("Turn on", "Включить");
+    public static string RtRuleOff => T("Off", "Выключено");
+    public static string RtDeleteSetAsk => T("Delete the set “{0}”?", "Удалить набор «{0}»?");
+    public static string RtDeleteRuleAsk => T("Delete the rule “{0}”?", "Удалить правило «{0}»?");
+    public static string RtActiveCantDelete => T("The set in use can't be deleted: turn on another one first.",
+        "Набор, который сейчас работает, удалить нельзя: сначала включите другой.");
+    public static string RtSetDetails => T("More about this set", "Ещё о наборе");
+    public static string RtAnything => T("Everything else", "Всё остальное");
+    public static string RtPortsShort => T("ports {0}", "порты {0}");
+    public static string RtMoreActions => T("More", "Ещё");
+    public static string RtRuleMenu => T("More for the rule", "Ещё для правила");
+    public static string RtPinEditHint => T("Opens the editor of programs and sites.", "Откроет редактор программ и сайтов.");
 }

@@ -13,6 +13,7 @@ public static partial class L
     public static string WelcomeRouteLater => T("You can change it any time under the Connect button.", "Это можно поменять в любой момент под кнопкой «Подключиться».");
 
     public static string Save => T("Save", "Сохранить");
+    public static string Cancel => T("Cancel", "Отмена");
     // v2rayN reports deletes, copies, saves and core updates with one "Operation successful".
     public static string Done => T("Done", "Готово");
     public static string Close => T("Close", "Закрыть");

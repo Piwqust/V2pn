@@ -8,7 +8,7 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuSetting}"
+    Title="{x:Static loc:L.Settings}"
     Width="1060"
     Height="700"
     MinWidth="880"
@@ -31,7 +31,7 @@
                     IsDefault="True" />
                 <Button
                     x:Name="btnCancel"
-                    Content="{x:Static resx:ResUI.TbCancel}"
+                    Content="{x:Static loc:L.Cancel}"
                     IsCancel="True" />
             </StackPanel>
         </Border>
@@ -277,7 +277,7 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconMinimize}" /></Border>
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsHide2TrayWhenClose}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptHideToTray}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetHideToTrayHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
@@ -289,7 +289,8 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconApps}" /></Border>
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMacOSShowInDock}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptMacDock}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptRestartHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togMacOSShowInDock" />
@@ -307,8 +308,8 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsCurrentFontFamily}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsCurrentFontFamilyLinuxTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptFont}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptFontHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbcurrentFontFamily" Width="240" IsEditable="True" />
@@ -331,7 +332,8 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsStatistics}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptStatistics}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptStatisticsHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togEnableStatistics" />
@@ -342,8 +344,8 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMainGirdOrientation}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintGridOrientation}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLayout}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptRestartHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbMainGirdOrientation" Width="240" />
@@ -360,7 +362,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDoubleClick2Activate}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptDoubleClick}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togDoubleClick2Activate" />
@@ -370,7 +372,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableDragDropSort}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptDragSort}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptRestartHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togEnableDragDropSort" />
@@ -380,7 +383,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableAutoAdjustMainLvColWidth}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptAutoColumns}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togEnableAutoAdjustMainLvColWidth" />
@@ -390,7 +393,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsKeepOlderDedupl}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptKeepOlder}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintKeepOlder}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -425,7 +428,7 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSecondLocalPortEnabled}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSecondPort}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSecondPort}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
@@ -437,7 +440,7 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUdpEnabled}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptUdp}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintUdp}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
@@ -475,7 +478,7 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsNewPort4LAN}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLanPort}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintNewPortLan}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
@@ -487,7 +490,7 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUser}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLanUser}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtuser" Width="240" />
@@ -498,7 +501,7 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsPass}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLanPass}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtpass" Width="240" />
@@ -538,7 +541,7 @@
                                     <Border Classes="srow win adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsNotProxyLocalAddress}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLocalDirect}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintNotProxyLocal}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -549,7 +552,8 @@
                                     <Border Classes="srow win adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsAdvancedProtocol}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptProxyProtocol}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptProxyProtocolHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbsystemProxyAdvancedProtocol" Width="240" />
@@ -567,8 +571,8 @@
                                         <StackPanel Spacing="10">
                                             <StackPanel>
                                                 <TextBlock Classes="srowtitle" Text="{x:Static loc:L.ProxyExceptions}" />
-                                                <TextBlock Classes="srowhint" IsVisible="{Binding BlIsWindows}" Text="{x:Static resx:ResUI.TbSettingsExceptionTip}" />
-                                                <TextBlock Classes="srowhint" IsVisible="{Binding BlIsNonWindows}" Text="{x:Static resx:ResUI.TbSettingsExceptionTip2}" />
+                                                <TextBlock Classes="srowhint" IsVisible="{Binding BlIsWindows}" Text="{x:Static loc:L.OptExceptionsHintWin}" />
+                                                <TextBlock Classes="srowhint" IsVisible="{Binding BlIsNonWindows}" Text="{x:Static loc:L.OptExceptionsHint}" />
                                             </StackPanel>
                                             <TextBox x:Name="txtsystemProxyExceptions" Height="110" AcceptsReturn="True" TextWrapping="Wrap" />
                                         </StackPanel>
@@ -583,13 +587,13 @@
                                     <Border Classes="srow win adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsCustomSystemProxyPacPath}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptPacFile}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintPacPath}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <TextBox x:Name="txtCustomSystemProxyPacPath" Width="260" PlaceholderText="pac.txt" />
-                                                    <Button x:Name="btnBrowseCustomSystemProxyPacPath" Content="{x:Static resx:ResUI.TbBrowse}" />
+                                                    <Button x:Name="btnBrowseCustomSystemProxyPacPath" Content="{x:Static loc:L.OptBrowse}" />
                                                 </StackPanel>
                                             </Panel>
                                         </Grid>
@@ -597,13 +601,13 @@
                                     <Border Classes="srow nonwin adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsCustomSystemProxyScriptPath}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptProxyScript}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintScriptPath}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
                                                     <TextBox x:Name="txtCustomSystemProxyScriptPath" Width="260" PlaceholderText="proxy_set.sh" />
-                                                    <Button x:Name="btnBrowseCustomSystemProxyScriptPath" Content="{x:Static resx:ResUI.TbBrowse}" />
+                                                    <Button x:Name="btnBrowseCustomSystemProxyScriptPath" Content="{x:Static loc:L.OptBrowse}" />
                                                 </StackPanel>
                                             </Panel>
                                         </Grid>
@@ -627,7 +631,7 @@
                                                 <TextBlock x:Name="txtTunAdminState" Classes="srowhint" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
-                                                <Button x:Name="btnTunRestartAdmin" Content="{x:Static resx:ResUI.menuRebootAsAdmin}" />
+                                                <Button x:Name="btnTunRestartAdmin" Content="{x:Static loc:L.MenuRestartAdmin}" />
                                             </Panel>
                                         </Grid>
                                     </Border>
@@ -641,7 +645,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunAutoRoute}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptAutoRoute}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintAutoRoute}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -652,7 +656,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunStrictRoute}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptStrictRoute}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintStrictRoute}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -663,8 +667,8 @@
                                     <Border Classes="srow stack adv">
                                         <StackPanel Spacing="10">
                                             <StackPanel>
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRouteExcludeAddress}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbRouteExcludeAddressTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptRouteExclude}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptRouteExcludeHint}" />
                                             </StackPanel>
                                             <TextBox x:Name="txtRouteExcludeAddress" Height="80" AcceptsReturn="True" TextWrapping="Wrap" />
                                         </StackPanel>
@@ -679,7 +683,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunStack}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptStack}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintStack}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -690,7 +694,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbMtu}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptMtu}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptMtuHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbMtu" Width="180" IsEditable="True" />
@@ -700,7 +705,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbIcmpRoutingPolicy}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptIcmp}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptIcmpHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbIcmpRoutingPolicy" Width="180" />
@@ -710,7 +716,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsTunDnsMode}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptTunDns}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintTunDnsMode}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -721,7 +727,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableIPv6Address}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptIpv6}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togEnableIPv6Address" />
@@ -731,7 +737,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbIpv4Address}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptIpv4Address}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbIpv4Address" Width="180" />
@@ -741,7 +747,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbIpv6Address}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptIpv6Address}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbIpv6Address" Width="180" />
@@ -751,8 +757,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbLegacyProtect}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbLegacyProtectTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLegacyProtect}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptLegacyProtectHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togEnableLegacyProtect" />
@@ -947,7 +953,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSniffingEnabled}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSniffing}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSniffing}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -958,7 +964,7 @@
                                     <Border Classes="srow stack adv">
                                         <StackPanel Spacing="10">
                                             <StackPanel>
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDestOverride}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSniffTypes}" />
                                             </StackPanel>
                                             <ListBox x:Name="clbdestOverride" SelectionMode="Multiple,Toggle" Classes="chips" />
                                         </StackPanel>
@@ -966,7 +972,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsRouteOnly}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptRouteOnly}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintRouteOnly}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -984,7 +990,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableFragment}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptFragment}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintFragment}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -995,8 +1001,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentPackets}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsFragmentPacketsTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptFragPackets}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptFragPacketsHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbFragmentPackets" Width="180" />
@@ -1006,8 +1012,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentLength}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsFragmentLengthTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptFragLength}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptFragLengthHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtFragmentLengths" Width="140" PlaceholderText="50-100" />
@@ -1017,8 +1023,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentInterval}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsFragmentIntervalTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptFragDelay}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptFragDelayHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtFragmentDelays" Width="140" PlaceholderText="10-20" />
@@ -1028,8 +1034,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsFragmentMaxSplit}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsFragmentMaxSplitTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptFragMaxSplit}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptFragMaxSplitHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtFragmentMaxSplit" Width="140" PlaceholderText="0" />
@@ -1039,8 +1045,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbEnableFinalFragment}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbEnableFinalFragmentTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptFinalFragment}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptFinalFragmentHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togenableFinalFragment" />
@@ -1057,7 +1063,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4RayConcurrency}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptMuxXray}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintMux}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -1068,7 +1074,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4RayXudpConcurrency}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptMuxXrayXudp}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtmux4RayXudpConcurrency" Width="140" PlaceholderText="16" />
@@ -1078,7 +1084,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4RayXudpProxyUDP443}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptMuxXrayQuic}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptMuxXrayQuicHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbmux4RayXudpProxyUDP443" Width="180" />
@@ -1088,7 +1095,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMux4SboxProtocol}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptMuxSbox}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbmux4SboxProtocol" Width="180" />
@@ -1105,7 +1112,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDefFingerprint}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptDefFingerprint}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintFingerprint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -1116,8 +1123,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDefUserAgent}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsDefUserAgentTips}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptUserAgent}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptUserAgentHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbdefUserAgent" Width="240" />
@@ -1127,13 +1134,13 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsHysteriaBandwidth}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptHysteria}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintHysteria}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <StackPanel Orientation="Horizontal" Spacing="8">
-                                                    <TextBox x:Name="txtUpMbps" Width="116" PlaceholderText="Up" />
-                                                    <TextBox x:Name="txtDownMbps" Width="116" PlaceholderText="Down" />
+                                                    <TextBox x:Name="txtUpMbps" Width="116" PlaceholderText="{x:Static loc:L.OptUpload}" />
+                                                    <TextBox x:Name="txtDownMbps" Width="116" PlaceholderText="{x:Static loc:L.OptDownload}" />
                                                 </StackPanel>
                                             </Panel>
                                         </Grid>
@@ -1152,8 +1159,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSendThrough}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsSendThroughTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSendThrough}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptSendThroughHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <TextBox x:Name="txtsendThrough" Width="240" PlaceholderText="0.0.0.0" />
@@ -1163,7 +1170,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsEnableCacheFile4Sbox}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSboxCache}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintCacheFile}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -1185,7 +1192,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsMixedConcurrencyCount}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptTestConcurrency}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptTestConcurrencyHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbMixedConcurrencyCount" Width="140" />
@@ -1195,7 +1203,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSpeedTestTimeout}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptTestTimeout}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptTestTimeoutHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbSpeedTestTimeout" Width="140" />
@@ -1212,7 +1221,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSpeedPingTestUrl}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptPingUrl}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptPingUrlHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbSpeedPingTestUrl" Width="320" IsEditable="True" />
@@ -1222,7 +1232,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSpeedTestUrl}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSpeedUrl}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptSpeedUrlHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbSpeedTestUrl" Width="320" IsEditable="True" />
@@ -1232,7 +1243,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsUdpTestUrl}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptUdpTarget}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptUdpTargetHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbUdpTestTarget" Width="320" IsEditable="True" />
@@ -1242,7 +1254,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsIPAPIUrl}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptIpApi}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptIpApiHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbIPAPIUrl" Width="320" IsEditable="True" />
@@ -1276,8 +1289,8 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsGeoFilesSource}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsChinaUserTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptGeoSource}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptSourceHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbGetFilesSourceUrl" Width="320" IsEditable="True" />
@@ -1288,8 +1301,8 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSrsFilesSource}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsChinaUserTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSrsSource}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptSourceHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbSrsFilesSourceUrl" Width="320" IsEditable="True" />
@@ -1300,8 +1313,8 @@
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon blank" />
                                             <StackPanel Grid.Column="1" Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsRoutingRulesSource}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbSettingsChinaUserTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptRulesSource}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptSourceHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="2" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbRoutingRulesSourceUrl" Width="320" IsEditable="True" />
@@ -1318,7 +1331,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsSubConvert}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptSubConvert}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSubConvert}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -1329,8 +1342,8 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbRootCertificateProvider}" />
-                                                <TextBlock Classes="srowhint" Text="{x:Static resx:ResUI.TbRootCertificateProviderTip}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptRootCerts}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.OptRootCertsHint}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbRootCertificateProvider" Width="200" />
@@ -1430,7 +1443,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="Custom Pre" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptCoreCustom}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbCoreType2" Width="200" />
@@ -1450,7 +1463,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsLogEnabledToFile}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLogToFile}" />
                                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintLogToFile}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
@@ -1461,7 +1474,7 @@
                                     <Border Classes="srow adv">
                                         <Grid ColumnDefinitions="*,Auto">
                                             <StackPanel Classes="srowtext">
-                                                <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsLogLevel}" />
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.OptLogLevel}" />
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ComboBox x:Name="cmbloglevel" Width="180" />

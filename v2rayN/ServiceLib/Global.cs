@@ -49,6 +49,7 @@ public class Global
     public const string MozillaRootProvider = "mozilla";
 
     public const string DefaultSecurity = "auto";
+    public const string BindInterfaceAuto = "AUTO";
     public const string DefaultNetwork = "raw";
     public const string RawHeaderHttp = "http";
     public const string None = "none";
@@ -339,7 +340,8 @@ public class Global
         "kcp",
         "grpc",
         "ws",
-        "httpupgrade"
+        "httpupgrade",
+        "xdrive"
     ];
 
     public static readonly List<string> KcpHeaderTypes =
@@ -457,6 +459,18 @@ public class Global
         "stream-one"
     ];
 
+    public static readonly List<string> XdriveServices = ["google-drive", "s3", "local"];
+
+    public static readonly List<string> XdriveProviders =
+    [
+        "Cloudflare R2",
+        "Google Drive",
+        "AWS S3 (Global)",
+        "Yandex Cloud S3",
+        "ArvanCloud S3",
+        "Custom S3"
+    ];
+
     public static readonly List<string> DomainStrategy =
     [
         "AsIs",
@@ -488,6 +502,9 @@ public class Global
         "https://doh.dns.sb/dns-query",
         "https://doh.opendns.com/dns-query",
         "https://common.dot.dns.yandex.net/dns-query",
+        "https://1.1.1.1/dns-query",
+        "https://8.8.8.8/dns-query",
+        "https://1.1.1.1/dns-query,https://8.8.8.8/dns-query",
         "8.8.8.8",
         "1.1.1.1",
         "185.222.222.222",
@@ -567,7 +584,8 @@ public class Global
         "tun",
         "socks",
         "socks2",
-        "socks3"
+        "socks3",
+        "dns-module"
     ];
 
     public static readonly List<string> RuleProtocols =
@@ -709,6 +727,7 @@ public class Global
         @"https://api-ipv4.ip.sb/geoip",
         @"https://api-ipv6.ip.sb/geoip",
         @"https://api.ipapi.is",
+        @"https://api.internetdata.io/myip",
         @""
     ];
 

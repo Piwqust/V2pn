@@ -34,7 +34,7 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
         }
         try
         {
-            var sizeItem = ConfigHandler.GetWindowSizeItem(AppManager.Instance.Config, GetType().Name);
+            var sizeItem = ConfigTextHandler.GetWindowSizeItem(GetType().Name);
             // V2pn: the main window also fits the screen on its first launch, before anything is saved.
             var isMain = this is Views.MainWindow;
             if (sizeItem is null && !isMain)
@@ -119,7 +119,7 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
         }
         try
         {
-            ConfigHandler.SaveWindowSizeItem(AppManager.Instance.Config, GetType().Name, Width, Height);
+            ConfigTextHandler.SaveWindowSizeItem(GetType().Name, Width, Height);
         }
         catch { }
     }

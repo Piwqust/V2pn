@@ -42,7 +42,7 @@ public partial class MainWindow
         try
         {
             await Task.Delay(TimeSpan.FromMinutes(1));
-            var ids = (await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? []).Select(m => m.IndexId).ToList();
+            var ids = (await ConfigDbQuery.ProfileModels(string.Empty, string.Empty) ?? []).Select(m => m.IndexId).ToList();
             if (ids.Count > 0)
             {
                 await Task.Run(() => V2pnDelayHistory.Instance.Retain(ids));
@@ -115,7 +115,7 @@ public partial class MainWindow
     private static async Task<(List<V2pnCandidate> Candidates, Dictionary<string, ProfileItemModel> Models)> PartnerServersAsync(V2pnPartner partner)
     {
         var subs = PartnerSubIds(partner).ToHashSet(StringComparer.Ordinal);
-        var models = (await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? [])
+        var models = (await ConfigDbQuery.ProfileModels(string.Empty, string.Empty) ?? [])
             .Where(m => m.Subid != null && subs.Contains(m.Subid))
             .ToList();
         var delays = (await ProfileExManager.Instance.GetProfileExs()).GroupBy(t => t.IndexId).ToDictionary(g => g.Key, g => g.First().Delay);

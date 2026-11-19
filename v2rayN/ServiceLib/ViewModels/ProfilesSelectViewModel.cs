@@ -54,7 +54,7 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
 
     public ProfilesSelectViewModel()
     {
-        _config = AppManager.Instance.Config;
+        _config = ConfigTextHandler.Config;
         _subIndexId = _config.SubIndexId ?? string.Empty;
 
         #region WhenAnyValue && ReactiveCommand
@@ -172,7 +172,7 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
 
     private async Task RefreshSubscriptions()
     {
-        var subItems = await AppManager.Instance.SubItems();
+        var subItems = await ConfigDbQuery.SubItems();
         subItems.Insert(0, new SubItem { Remarks = ResUI.AllGroupServers });
 
         SubItems.ReplaceRange(subItems);
@@ -184,7 +184,7 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
 
     private async Task<List<ProfileItemModel>?> GetProfileItemsEx(string subid, string filter)
     {
-        var lstModel = await AppManager.Instance.ProfileModels(_subIndexId, filter);
+        var lstModel = await ConfigDbQuery.ProfileModels(_subIndexId, filter);
         var lstProfileExs = await ProfileExManager.Instance.GetProfileExs();
         lstModel = (from t in lstModel
                     join t3 in lstProfileExs on t.IndexId equals t3.IndexId into t3b
@@ -238,7 +238,7 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
             return null;
         }
         var indexId = SelectedProfile.IndexId;
-        var item = await AppManager.Instance.GetProfileItem(indexId);
+        var item = await ConfigDbQuery.GetProfileItem(indexId);
         if (item is null)
         {
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);
@@ -253,7 +253,7 @@ public partial class ProfilesSelectViewModel : MyReactiveObject, ICloseable
         {
             return null;
         }
-        var lst = await AppManager.Instance.GetProfileItemsOrderedByIndexIds(SelectedProfiles.Select(sp => sp?.IndexId));
+        var lst = await ConfigDbQuery.GetProfileItemsOrderedByIndexIds(SelectedProfiles.Select(sp => sp?.IndexId));
         if (lst.Count == 0)
         {
             NoticeManager.Instance.Enqueue(ResUI.PleaseSelectServer);

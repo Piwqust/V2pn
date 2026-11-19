@@ -6,6 +6,7 @@ namespace v2rayN.Desktop;
 internal class Program
 {
     public static EventWaitHandle ProgramStarted;
+    private static Mutex? _instanceMutex;
 
     // V2pn: started by the sign-in entry (Global.AutostartArg), not by the user.
     public static bool StartedAtSignIn { get; private set; }
@@ -57,7 +58,9 @@ internal class Program
         }
         else
         {
-            _ = new Mutex(true, "V2pn", out var bOnlyOneInstance);
+            // Keep the named mutex alive for the process lifetime. Discarding the handle lets
+            // the runtime finalize it, so the next launch sees no running instance.
+            _instanceMutex = new Mutex(true, "V2pn", out var bOnlyOneInstance);
             if (!bOnlyOneInstance)
             {
                 return false;
@@ -93,7 +96,7 @@ internal class Program
 
         if (OperatingSystem.IsMacOS())
         {
-            var showInDock = Design.IsDesignMode || AppManager.Instance.Config.UiItem.MacOSShowInDock;
+            var showInDock = Design.IsDesignMode || ConfigTextHandler.Config.UiItem.MacOSShowInDock;
             builder = builder.With(new MacOSPlatformOptions { ShowInDock = showInDock });
         }
 

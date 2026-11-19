@@ -90,7 +90,7 @@ public sealed class V2pnLocks
         {
             await SubInfoManager.Instance.LoadAsync();
             await V2pnPartners.Instance.LoadAsync();
-            var sub = await AppManager.Instance.GetSubItem(subId);
+            var sub = await ConfigDbQuery.GetSubItem(subId);
             return sub == null ? V2pnLockState.None : V2pnLockState.For(V2pnPartners.Instance.ForSubscription(sub), SubInfoManager.Instance.Get(sub.Id));
         }
         catch (Exception ex)
@@ -192,7 +192,7 @@ public sealed class V2pnLocks
                 _again = false;
                 await SubInfoManager.Instance.LoadAsync();
                 await V2pnPartners.Instance.LoadAsync();
-                var subs = await AppManager.Instance.SubItems() ?? [];
+                var subs = await ConfigDbQuery.SubItems() ?? [];
                 var map = new Dictionary<string, V2pnLockState>(StringComparer.Ordinal);
                 var partners = new Dictionary<string, V2pnPartner>(StringComparer.Ordinal);
                 foreach (var sub in subs.Where(s => s.Id.IsNotEmpty()))

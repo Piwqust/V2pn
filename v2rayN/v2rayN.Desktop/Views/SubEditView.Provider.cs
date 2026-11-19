@@ -219,7 +219,7 @@ public partial class SubEditView
     private async Task FillReviewedAsync(V2pnPartner partner, IReadOnlyList<V2pnReviewedFile> files, bool off)
     {
         // Routes are "in use" only while they are the active mode.
-        var activeRoute = (await ConfigHandler.GetDefaultRouting(AppManager.Instance.Config))?.Id;
+        var activeRoute = (await ConfigDbHandler.GetDefaultRouting())?.Id;
         panelReviewed.Children.Clear();
         foreach (var file in files)
         {

@@ -212,7 +212,7 @@ public partial class MainWindow
 
         try
         {
-            var current = await AppManager.Instance.GetProfileItem(indexId);
+            var current = await ConfigDbQuery.GetProfileItem(indexId);
             if (current == null || !IsCurrent())
             {
                 return;
@@ -220,7 +220,7 @@ public partial class MainWindow
 
             var country = ServerCountry(current);
             var otherCountries = ReferenceEquals(_offerOtherCountriesFor, origin);
-            var all = await AppManager.Instance.ProfileItems(string.Empty) ?? [];
+            var all = await ConfigDbQuery.ProfileItems(string.Empty) ?? [];
             var sameCountry = all.Where(p => p.IndexId != indexId && country.IsNotEmpty()
                 && string.Equals(ServerCountry(p), country, StringComparison.OrdinalIgnoreCase)).ToList();
             var elsewhere = all.Where(p => p.IndexId != indexId && current.Subid.IsNotEmpty()

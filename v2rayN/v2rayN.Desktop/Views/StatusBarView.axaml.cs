@@ -39,7 +39,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     {
         InitializeComponent();
 
-        _config = AppManager.Instance.Config;
+        _config = ConfigTextHandler.Config;
         btnCheck.Click += (_, _) => _ = CheckConnectionAsync();
         Avalonia.Automation.AutomationProperties.SetName(btnCheck, L.CheckConnection);
         btnIpInfo.Click += (_, _) => _ = MainWindow.ShowRoomyDialog(new IpInfoView());
@@ -240,7 +240,7 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
     {
         try
         {
-            var sub = await AppManager.Instance.GetSubItem(subId);
+            var sub = await ConfigDbQuery.GetSubItem(subId);
             _sourceNames[subId] = sub == null ? L.OwnServer : ViewModels.SideSubRow.NameOf(sub);
         }
         catch (Exception ex)

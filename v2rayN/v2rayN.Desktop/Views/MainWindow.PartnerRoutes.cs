@@ -89,7 +89,7 @@ public partial class MainWindow
         }
         if (fresh.Count > 0)
         {
-            _ = ConfigHandler.SaveConfig(_config);
+            _ = ConfigTextHandler.SaveConfig();
         }
     }
 

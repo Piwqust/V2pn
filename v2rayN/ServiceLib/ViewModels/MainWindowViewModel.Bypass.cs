@@ -27,7 +27,7 @@ public partial class MainWindowViewModel
     /// <summary>The network check on the selected server and the running connection.</summary>
     public async Task<V2pnBlockReport> CheckNetworkAsync(IProgress<string>? progress = null, CancellationToken ct = default)
     {
-        var server = await ConfigHandler.GetDefaultServer(_config);
+        var server = await ConfigTextHandler.GetDefaultServer();
         var proxy = StatusBarViewModel.CurrentProbeProxy();
         var report = await Task.Run(() => new V2pnBlockCheck(server, proxy, _config.TunModeItem.EnableTun).RunAsync(progress, ct), ct);
         Logging.SaveLog($"V2pn bypass: network check: {report.Verdict}; {string.Join("; ", report.Probes.Select(p => $"{p.Name} {p.Ok} {p.Detail}"))}");
@@ -44,7 +44,7 @@ public partial class MainWindowViewModel
         {
             return null;
         }
-        var server = await ConfigHandler.GetDefaultServer(_config);
+        var server = await ConfigTextHandler.GetDefaultServer();
         if (server == null)
         {
             return null;
@@ -65,7 +65,7 @@ public partial class MainWindowViewModel
                 ProxyCarriesAsync,
                 (variant, index, count) => RxSchedulers.MainThreadScheduler.Schedule(() => BypassTune = new(variant, index, count)),
                 cts.Token);
-            await ConfigHandler.SaveConfig(_config);
+            await ConfigTextHandler.SaveConfig();
             BypassTuned?.Invoke(outcome, manual);
             return outcome;
         }
@@ -84,10 +84,10 @@ public partial class MainWindowViewModel
     /// <summary>Forgets the way kept for the selected server on this network and reconnects without it.</summary>
     public async Task ForgetBypassForServerAsync()
     {
-        var server = await ConfigHandler.GetDefaultServer(_config);
+        var server = await ConfigTextHandler.GetDefaultServer();
         if (server != null && V2pnBypass.Forget(_config, server.IndexId, V2pnBypass.NetworkKey(_config)))
         {
-            await ConfigHandler.SaveConfig(_config);
+            await ConfigTextHandler.SaveConfig();
             await Reload();
         }
     }
@@ -95,7 +95,7 @@ public partial class MainWindowViewModel
     /// <summary>The way kept for the selected server on this network, for the screen.</summary>
     public async Task<V2pnBypassVariant?> BypassWayForServerAsync()
     {
-        var server = await ConfigHandler.GetDefaultServer(_config);
+        var server = await ConfigTextHandler.GetDefaultServer();
         return server == null || !V2pnBypass.On(_config) ? null : V2pnBypass.Learned(_config, server.IndexId, V2pnBypass.NetworkKey(_config));
     }
 
@@ -184,7 +184,7 @@ public partial class MainWindowViewModel
         {
             return false;
         }
-        var server = await ConfigHandler.GetDefaultServer(_config);
+        var server = await ConfigTextHandler.GetDefaultServer();
         var before = V2pnBypassPlan.From(_config).For(server)?.Id;
         if (!await V2pnNetworkId.RefreshAsync())
         {

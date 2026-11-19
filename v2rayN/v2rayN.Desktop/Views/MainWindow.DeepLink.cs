@@ -36,7 +36,7 @@ public partial class MainWindow
         }
         await AddSubscriptionLinksAsync(links);
         // Only what made it in counts as done; a link that failed is tried again at the next start.
-        var subs = await AppManager.Instance.SubItems() ?? [];
+        var subs = await ConfigDbQuery.SubItems() ?? [];
         V2pnPreset.MarkApplied(links.Where(l => subs.Any(s => string.Equals(s.Url?.Trim(), l, StringComparison.Ordinal))));
     }
 
@@ -72,7 +72,7 @@ public partial class MainWindow
         try
         {
             // A link to a subscription V2pn already has (a second click in the cabinet): nothing to ask.
-            var subs = await AppManager.Instance.SubItems() ?? [];
+            var subs = await ConfigDbQuery.SubItems() ?? [];
             if (subs.FirstOrDefault(s => string.Equals(s.Url?.Trim(), link.SubscriptionUrl.Trim(), StringComparison.Ordinal)) is { } known)
             {
                 ShowToast(ToastKind.Info, string.Format(L.LinkAlreadyAdded, ViewModels.SideSubRow.NameOf(known)));

@@ -128,7 +128,7 @@ public static partial class V2pnForeignImport
             if (IsOwnName(sub.Name, sub.Url))
             {
                 result.Item.Remarks = sub.Name.Trim();
-                await ConfigHandler.AddSubItem(config, result.Item);
+                await ConfigDbHandler.AddSubItem(result.Item);
             }
             newSubs.Add(result.Item.Id);
         }
@@ -137,7 +137,7 @@ public static partial class V2pnForeignImport
         var links = await NewLinksAsync(app.Links);
         if (links.Count > 0)
         {
-            added = Math.Max(0, await ConfigHandler.AddBatchServers(config, string.Join(Environment.NewLine, links), string.Empty, false));
+            added = Math.Max(0, await ConfigDbHandler.AddBatchServers(string.Join(Environment.NewLine, links), string.Empty, false));
         }
         Logging.SaveLog($"V2pn: moved from {app.Name} at {app.Folder}: {newSubs.Count} new subscriptions, {existing} already there, {added} servers, {app.Skipped} skipped");
         return new ForeignImportResult(newSubs, existing, added, app.Skipped);
@@ -196,7 +196,7 @@ public static partial class V2pnForeignImport
     /// <summary>The links whose server V2pn does not hold yet (same kind, address, port and secret).</summary>
     private static async Task<List<string>> NewLinksAsync(IEnumerable<string> links)
     {
-        var have = (await AppManager.Instance.ProfileItems(string.Empty) ?? [])
+        var have = (await ConfigDbQuery.ProfileItems(string.Empty) ?? [])
             .Select(Identity)
             .ToHashSet(StringComparer.Ordinal);
         var result = new List<string>();

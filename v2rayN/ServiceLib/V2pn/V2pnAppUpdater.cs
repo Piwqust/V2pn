@@ -96,7 +96,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                 DeleteFile(Path.Combine(PendingDir, FailedMarker));
             }
 
-            var preferProxy = AppManager.Instance.Config.CheckUpdateItem.UpdateViaProxy;
+            var preferProxy = ConfigTextHandler.Config.CheckUpdateItem.UpdateViaProxy;
             var (release, nothingPublished, error) = await FindReleaseAsync(preferProxy, cancellationToken);
             if (release == null)
             {
@@ -365,7 +365,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         {
             DeleteFile(part);
             string? downloadError = null;
-            var service = new DownloadService();
+            using var service = await DownloadService.CreateDownloadServiceWithCheck(viaProxy);
             service.UpdateCompleted += (_, args) =>
             {
                 // The first message names the URL; the rest are "speed | done/total".
@@ -375,7 +375,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                 }
             };
             service.Error += (_, args) => downloadError ??= args.GetException().Message;
-            await service.DownloadFileAsync(new() { FileUrl = V2pnInfo.PackageUrl(source, version, package.Name), FilePath = part }, viaProxy, cancellationToken);
+            await service.DownloadFileAsync(new() { FileUrl = V2pnInfo.PackageUrl(source, version, package.Name), FilePath = part }, cancellationToken);
 
             if (!File.Exists(part))
             {

@@ -114,7 +114,7 @@ public partial class SubSettingWindow : WindowBase<SubSettingViewModel>
 
     private async Task ShowAsync(SubItem? item)
     {
-        var source = item == null ? new SubItem() : await AppManager.Instance.GetSubItem(item.Id) ?? new SubItem();
+        var source = item == null ? new SubItem() : await ConfigDbQuery.GetSubItem(item.Id) ?? new SubItem();
         if (_edit != null)
         {
             _edit.RequestClose -= Edit_RequestClose;
@@ -207,7 +207,7 @@ public partial class SubSettingWindow : WindowBase<SubSettingViewModel>
         {
             return;
         }
-        await ConfigHandler.DeleteSubItem(AppManager.Instance.Config, _shownId);
+        await ConfigDbHandler.DeleteSubItem(_shownId);
         ViewModel.IsModified = true;
         _shownId = null;
         _form = null;

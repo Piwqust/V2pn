@@ -238,24 +238,24 @@ public sealed class V2pnEdition
 
     private static V2pnEdition FromConfig()
     {
-        var config = AppManager.Instance.Config;
+        var config = ConfigTextHandler.Config;
         var ui = config?.UiItem;
         var appDir = Utils.GetBaseDirectory();
         // An older partner's build: its marker moves into the settings, then the file goes once they are saved.
         if (config != null && Read(appDir) is { } fileMarker)
         {
             config.UiItem.V2pnMarker = fileMarker;
-            _ = RetireMarkerFileAsync(appDir, async () => await ConfigHandler.SaveConfig(config) == 0);
+            _ = RetireMarkerFileAsync(appDir, async () => await ConfigTextHandler.SaveConfig() == 0);
         }
         return new V2pnEdition(ui?.V2pnMarker, ui?.V2pnCameFrom, ui?.V2pnTab, edition =>
         {
-            if (AppManager.Instance.Config is not { } config)
+            if (ConfigTextHandler.Config is not { } config)
             {
                 return;
             }
             config.UiItem.V2pnCameFrom = edition.SignedIn.ToList();
             config.UiItem.V2pnTab = edition.SavedTab;
-            _ = ConfigHandler.SaveConfig(config);
+            _ = ConfigTextHandler.SaveConfig();
         });
     }
 

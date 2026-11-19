@@ -44,14 +44,14 @@ public static class V2pnRussianSources
 
     public static async Task<Snapshot> TakeAsync(Config config, IEnumerable<string>? files = null)
     {
-        var active = (await AppManager.Instance.RoutingItems())?.FirstOrDefault(t => t.IsActive);
+        var active = (await ConfigDbQuery.RoutingItems())?.FirstOrDefault(t => t.IsActive);
         return new Snapshot(
             config.ConstItem.GeoSourceUrl,
             config.ConstItem.SrsSourceUrl,
             config.ConstItem.RouteRulesTemplateSourceUrl,
             JsonUtils.DeepCopy(config.SimpleDNSItem),
-            JsonUtils.DeepCopy(await AppManager.Instance.GetDNSItem(ECoreType.Xray)),
-            JsonUtils.DeepCopy(await AppManager.Instance.GetDNSItem(ECoreType.sing_box)),
+            JsonUtils.DeepCopy(await ConfigDbQuery.GetDNSItem(ECoreType.Xray)),
+            JsonUtils.DeepCopy(await ConfigDbQuery.GetDNSItem(ECoreType.sing_box)),
             active?.Id,
             StampFiles(files ?? GeoFiles()));
     }
@@ -72,16 +72,16 @@ public static class V2pnRussianSources
         }
         if (snapshot.XrayDns != null)
         {
-            await ConfigHandler.SaveDNSItems(config, snapshot.XrayDns);
+            await ConfigDbHandler.SaveDNSItems(snapshot.XrayDns);
         }
         if (snapshot.SingboxDns != null)
         {
-            await ConfigHandler.SaveDNSItems(config, snapshot.SingboxDns);
+            await ConfigDbHandler.SaveDNSItems(snapshot.SingboxDns);
         }
         // An external template makes its first rule set the default, and that set needs the new files.
-        if (snapshot.ActiveRoutingId.IsNotEmpty() && await AppManager.Instance.GetRoutingItem(snapshot.ActiveRoutingId) is { } routing)
+        if (snapshot.ActiveRoutingId.IsNotEmpty() && await ConfigDbQuery.GetRoutingItem(snapshot.ActiveRoutingId) is { } routing)
         {
-            await ConfigHandler.SetDefaultRouting(config, routing);
+            await ConfigDbHandler.SetDefaultRouting(routing);
         }
     }
 }

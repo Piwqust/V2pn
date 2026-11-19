@@ -8,7 +8,7 @@ public class ProfileExManagerPersistenceTests
     [Test]
     public async Task SaveTo_NewProfilesWithRepeatedResults_ShouldPersistEveryProfile()
     {
-        SQLiteHelper.Instance.CreateTable<ProfileExItem>();
+        TestDatabase.Initialize();
         var manager = new ProfileExManager();
         var ids = Enumerable.Range(0, 3).Select(_ => Guid.NewGuid().ToString("N")).ToArray();
 
@@ -49,7 +49,7 @@ public class ProfileExManagerPersistenceTests
     [Test]
     public async Task SaveTo_MixedNewAndExistingProfiles_ShouldInsertAndUpdateResults()
     {
-        SQLiteHelper.Instance.CreateTable<ProfileExItem>();
+        TestDatabase.Initialize();
         var manager = new ProfileExManager();
         var existingId = Guid.NewGuid().ToString("N");
         var newId = Guid.NewGuid().ToString("N");

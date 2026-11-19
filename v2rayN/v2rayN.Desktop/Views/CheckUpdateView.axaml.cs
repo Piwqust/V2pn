@@ -24,7 +24,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
     public static readonly FuncValueConverter<string?, string> Plain = new(remarks =>
         remarks.IsNullOrEmpty() ? string.Empty : remarks.Replace("v2rayN", L.AppName, StringComparison.Ordinal));
 
-    private readonly Config _config = AppManager.Instance.Config;
+    private readonly Config _config = ConfigTextHandler.Config;
     private readonly V2pnAppUpdater _updater = V2pnAppUpdater.Instance;
     private readonly V2pnDevBuild _dev = V2pnDevBuild.Instance;
     private string? _backError;
@@ -42,7 +42,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
         togAutoUpdate.IsCheckedChanged += async (_, _) =>
         {
             _config.UiItem.V2pnAutoUpdate = togAutoUpdate.IsChecked == true;
-            await ConfigHandler.SaveConfig(_config);
+            await ConfigTextHandler.SaveConfig();
         };
         btnAppAction.Click += async (_, _) => await OnAppActionAsync();
         btnWhatsNew.Click += (_, _) => ProcUtils.ProcessStart($"{V2pnInfo.ReleasesUrl}/tag/v{_updater.LatestVersion}");
@@ -52,7 +52,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
         togDevMode.IsCheckedChanged += async (_, _) =>
         {
             _config.UiItem.V2pnDevMode = togDevMode.IsChecked == true;
-            await ConfigHandler.SaveConfig(_config);
+            await ConfigTextHandler.SaveConfig();
             RefreshDev();
         };
         btnDevSource.Click += async (_, _) => await ChooseSourceAsync();
@@ -174,7 +174,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
         if (_config.UiItem.V2pnDevSource.IsNullOrEmpty() && V2pnDevBuild.IsSourceFolder(V2pnInfo.SourceDir))
         {
             _config.UiItem.V2pnDevSource = V2pnInfo.SourceDir;
-            _ = ConfigHandler.SaveConfig(_config);
+            _ = ConfigTextHandler.SaveConfig();
         }
         var source = _config.UiItem.V2pnDevSource;
         var sourceOk = V2pnDevBuild.IsSourceFolder(source);
@@ -238,7 +238,7 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
             return;
         }
         _config.UiItem.V2pnDevSource = folder;
-        await ConfigHandler.SaveConfig(_config);
+        await ConfigTextHandler.SaveConfig();
         RefreshDev();
     }
 

@@ -73,12 +73,12 @@ public partial class MainWindow
             {
                 return;
             }
-            var hasServers = ((await AppManager.Instance.ProfileItems(string.Empty))?.Count ?? 0) > 0;
+            var hasServers = ((await ConfigDbQuery.ProfileItems(string.Empty))?.Count ?? 0) > 0;
             if (hasServers && _config.UiItem.V2pnOnboardingStep == 0)
             {
                 // Set up before the walkthrough existed (or moved whole from v2rayN): nothing to walk through.
                 _config.UiItem.V2pnOnboarded = true;
-                await ConfigHandler.SaveConfig(_config);
+                await ConfigTextHandler.SaveConfig();
                 return;
             }
             ShowOnboarding((ObStep)Math.Clamp(_config.UiItem.V2pnOnboardingStep, 0, ObStepCount - 1));
@@ -212,7 +212,7 @@ public partial class MainWindow
         }
         _obStep = (ObStep)Math.Clamp((int)step, 0, ObStepCount - 1);
         _config.UiItem.V2pnOnboardingStep = (int)_obStep;
-        _ = ConfigHandler.SaveConfig(_config);
+        _ = ConfigTextHandler.SaveConfig();
 
         // Bars, not dots: the length of the road is visible at once, and the filled part grows.
         _obProgress.Children.Clear();
@@ -271,7 +271,7 @@ public partial class MainWindow
         _obFinishing = true;
         _config.UiItem.V2pnOnboarded = true;
         _config.UiItem.V2pnOnboardingStep = 0;
-        await ConfigHandler.SaveConfig(_config);
+        await ConfigTextHandler.SaveConfig();
         _obTimer?.Stop();
         onboardingHost.Transitions ??= [new Avalonia.Animation.DoubleTransition { Property = OpacityProperty, Duration = TimeSpan.FromMilliseconds(200) }];
         onboardingHost.Opacity = 0;
@@ -347,7 +347,7 @@ public partial class MainWindow
         {
             _config.UiItem.CurrentLanguage = code;
             _config.UiItem.V2pnOnboardingStep = (int)ObStep.Welcome;
-            await ConfigHandler.SaveConfig(_config);
+            await ConfigTextHandler.SaveConfig();
             CultureInfo.CurrentUICulture = new CultureInfo(code);
             ShowToast(ToastKind.Info, L.ObLanguageRestart);
             await Task.Delay(500);
@@ -729,7 +729,7 @@ public partial class MainWindow
             row.Click += async (_, _) =>
             {
                 _config.UiItem.V2pnPreferTun = tun;
-                await ConfigHandler.SaveConfig(_config);
+                await ConfigTextHandler.SaveConfig();
                 SyncModeSelection();
                 RefreshOnboardingMode();
             };

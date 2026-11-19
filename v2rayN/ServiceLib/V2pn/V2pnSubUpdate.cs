@@ -18,7 +18,7 @@ public static class V2pnSubUpdate
             return null;
         }
         if (item.Subid.IsNotEmpty()
-            && await AppManager.Instance.GetSubItem(item.Subid) is { } sub
+            && await ConfigDbQuery.GetSubItem(item.Subid) is { } sub
             && (sub.PrevProfile.IsNotEmpty() || sub.NextProfile.IsNotEmpty()))
         {
             return null;

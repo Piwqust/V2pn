@@ -96,7 +96,7 @@ public partial class PinEditWindow : WindowBase<PinEditModel>
     {
         var group = new ProfileItem
         {
-            Subid = AppManager.Instance.Config.SubIndexId,
+            Subid = ConfigTextHandler.Config.SubIndexId,
             ConfigType = EConfigType.PolicyGroup,
             IsSub = false,
         };

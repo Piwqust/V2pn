@@ -495,7 +495,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
     private bool _favoritesExpanded;
     private DateTime _statsRebuilt;
 
-    private static UIItem Ui => AppManager.Instance.Config.UiItem;
+    private static UIItem Ui => ConfigTextHandler.Config.UiItem;
 
     // V2pn: in a partner's tab the list holds that partner's subscriptions and their servers only (Common/Editions.cs);
     // null in V2pn's tab, which lists everything, a partner's subscriptions included.
@@ -615,7 +615,7 @@ public sealed partial class SidebarViewModel : ReactiveObject
     {
         try
         {
-            var stored = await AppManager.Instance.GetSubItem(id);
+            var stored = await ConfigDbQuery.GetSubItem(id);
             var cached = _profiles.SubNavItems.FirstOrDefault(s => s.Id == id)?.Item;
             if (stored != null && cached != null)
             {

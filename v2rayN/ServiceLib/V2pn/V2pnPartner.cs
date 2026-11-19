@@ -691,7 +691,7 @@ public static class V2pnPartnerTrust
     {
         try
         {
-            return AppManager.Instance.Config?.UiItem?.V2pnDevMode == true;
+            return ConfigTextHandler.Config?.UiItem?.V2pnDevMode == true;
         }
         catch (Exception ex) when (ex is InvalidOperationException or NullReferenceException)
         {

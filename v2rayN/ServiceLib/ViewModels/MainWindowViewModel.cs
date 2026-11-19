@@ -90,7 +90,7 @@ public partial class MainWindowViewModel : MyReactiveObject
 
     public MainWindowViewModel()
     {
-        _config = AppManager.Instance.Config;
+        _config = ConfigTextHandler.Config;
         BlIsWindows = Utils.IsWindows();
         MainGirdOrientation = _config.UiItem.MainGirdOrientation;
 
@@ -315,11 +315,6 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await ShowHideWindowInteraction.HandleSafe(blShow);
             });
 
-        StatusBarViewModel.SetDefaultServerRequested
-            .AsObservable()
-            .ObserveOn(RxSchedulers.MainThreadScheduler)
-            .SubscribeAsync(async indexId => await ProfilesViewModel.SetDefaultServer(indexId));
-
         StatusBarViewModel.SubscriptionsUpdateRequested
             .AsObservable()
             .ObserveOn(RxSchedulers.MainThreadScheduler)
@@ -340,9 +335,9 @@ public partial class MainWindowViewModel : MyReactiveObject
             return;
         }
 
-        //await ConfigHandler.InitBuiltinRouting(_config);
-        await ConfigHandler.InitBuiltinDNS(_config);
-        await ConfigHandler.InitBuiltinFullConfigTemplate(_config);
+        //await ConfigDbHandler.InitBuiltinRouting();
+        await ConfigDbHandler.InitBuiltinDNS();
+        await ConfigDbHandler.InitBuiltinFullConfigTemplate();
         await ProfileExManager.Instance.Init();
         await CoreManager.Instance.Init(_config, UpdateHandler);
         await CertPemManager.Instance.Init(_config);
@@ -421,7 +416,6 @@ public partial class MainWindowViewModel : MyReactiveObject
         NoticeManager.Instance.SendMessageEx(msg);
         if (success)
         {
-            var indexIdOld = _config.IndexId;
             await RefreshServersDispatcherAsync();
 
             // V2pn: after a subscription update, restart the core only when the server in use changed.
@@ -436,19 +430,9 @@ public partial class MainWindowViewModel : MyReactiveObject
                 Logging.SaveLog("V2pn: subscription updated, the server in use changed; core reloaded");
                 await Reload();
             }
-            // If indexId changed or subIndexId is empty, directly reload.
-            else if (indexIdOld != _config.IndexId || _config.SubIndexId.IsNullOrEmpty())
+            else if (_config.IndexId != _config.PreIndexId)
             {
                 await Reload();
-            }
-            else
-            {
-                // The activity config belongs to the current group.
-                var profile = await AppManager.Instance.GetProfileItem(_config.IndexId);
-                if (profile != null && profile.Subid == _config.SubIndexId)
-                {
-                    await Reload();
-                }
             }
 
             if (_config.UiItem.EnableAutoAdjustMainLvColWidth)
@@ -577,7 +561,7 @@ public partial class MainWindowViewModel : MyReactiveObject
             }
             stringData = result;
         }
-        var ret = await ConfigHandler.AddBatchServers(_config, stringData, _config.SubIndexId, false);
+        var ret = await ConfigDbHandler.AddBatchServers(stringData, _config.SubIndexId, false);
         if (ret > 0)
         {
             await RefreshSubscriptions();
@@ -628,7 +612,7 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
         else
         {
-            var ret = await ConfigHandler.AddBatchServers(_config, result, _config.SubIndexId, false);
+            var ret = await ConfigDbHandler.AddBatchServers(result, _config.SubIndexId, false);
             if (ret > 0)
             {
                 await RefreshSubscriptions();
@@ -657,7 +641,11 @@ public partial class MainWindowViewModel : MyReactiveObject
 
     public async Task UpdateSubscriptionProcess(string subId, bool blProxy)
     {
-        await Task.Run(async () => await SubscriptionHandler.UpdateProcess(_config, subId, blProxy, UpdateTaskHandler));
+        await Task.Run(async () =>
+        {
+            var handler = new SubscriptionHandler(_config, blProxy, UpdateTaskHandler);
+            await handler.UpdateProcess(subId);
+        });
     }
 
     #endregion Subscription
@@ -688,7 +676,7 @@ public partial class MainWindowViewModel : MyReactiveObject
         var ret = await AppManager.Instance.WindowDialog.ShowDialogAsync(routingSettingViewModel);
         if (ret == true)
         {
-            await ConfigHandler.InitBuiltinRouting(_config);
+            await ConfigDbHandler.InitBuiltinRouting();
             RxSchedulers.MainThreadScheduler.Schedule(async () =>
             {
                 await StatusBarViewModel.RefreshRoutingsMenu();
@@ -757,7 +745,7 @@ public partial class MainWindowViewModel : MyReactiveObject
         {
             return false;
         }
-        var current = await AppManager.Instance.GetProfileItem(_config.IndexId);
+        var current = await ConfigDbQuery.GetProfileItem(_config.IndexId);
         return await V2pnSubUpdate.ConnectionKey(current) == _runningConnectionKey;
     }
 
@@ -880,7 +868,7 @@ public partial class MainWindowViewModel : MyReactiveObject
                 V2pnCoreWatch.MarkStopped();
                 return;
             }
-            var profileItem = await ConfigHandler.GetDefaultServer(_config);
+            var profileItem = await ConfigTextHandler.GetDefaultServer();
             if (profileItem == null)
             {
                 // V2pn: no servers means off. Pointing Windows at a port no core listens on would cut the
@@ -1019,15 +1007,16 @@ public partial class MainWindowViewModel : MyReactiveObject
 
     public async Task ApplyRegionalPreset(EPresetType type)
     {
-        await ConfigHandler.ApplyRegionalPreset(_config, type);
-        await ConfigHandler.InitRouting(_config);
+        await ConfigDbHandler.ApplyRegionalPreset(type);
+        await ConfigDbHandler.InitRouting();
         RxSchedulers.MainThreadScheduler.Schedule(async () =>
         {
             await StatusBarViewModel.RefreshRoutingsMenu();
         });
 
-        await ConfigHandler.SaveConfig(_config);
-        await new UpdateService(_config, UpdateTaskHandler).UpdateGeoFileAll();
+        await ConfigTextHandler.SaveConfig();
+        using var downloadService = await DownloadService.CreateDownloadServiceWithCheck();
+        await new UpdateService(downloadService, _config, UpdateTaskHandler).UpdateGeoFileAll();
         await Reload();
     }
 
@@ -1039,17 +1028,18 @@ public partial class MainWindowViewModel : MyReactiveObject
     public async Task<bool> UseRussianSourcesAsync()
     {
         var before = await V2pnRussianSources.TakeAsync(_config);
-        await ConfigHandler.ApplyRegionalPreset(_config, EPresetType.Russia);
-        await ConfigHandler.InitRouting(_config);
-        await ConfigHandler.SaveConfig(_config);
+        await ConfigDbHandler.ApplyRegionalPreset(EPresetType.Russia);
+        await ConfigDbHandler.InitRouting();
+        await ConfigTextHandler.SaveConfig();
         // Messages only: a "success" here would restart the core right before the routing switch restarts it again.
-        await new UpdateService(_config, (_, msg) => UpdateTaskHandler(false, msg)).UpdateGeoFileAll();
+        using var downloadService = await DownloadService.CreateDownloadServiceWithCheck();
+        await new UpdateService(downloadService, _config, (_, msg) => UpdateTaskHandler(false, msg)).UpdateGeoFileAll();
         if (V2pnRussianSources.FilesRefreshed(before.Files))
         {
             return true;
         }
         await V2pnRussianSources.RestoreAsync(_config, before);
-        await ConfigHandler.SaveConfig(_config);
+        await ConfigTextHandler.SaveConfig();
         return false;
     }
 

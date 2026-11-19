@@ -24,14 +24,14 @@ public partial class MainWindow
             await V2pnLocks.Instance.RefreshAsync();
             // Read once the start is done: a person who left V2pn connected is connected again by now.
             var startsConnected = !V2pnConnection.IsOff(_config);
-            var subs = (await AppManager.Instance.SubItems() ?? []).Where(s => s.Id.IsNotEmpty() && s.Enabled).ToList();
+            var subs = (await ConfigDbQuery.SubItems() ?? []).Where(s => s.Id.IsNotEmpty() && s.Enabled).ToList();
             if (subs.Count == 0)
             {
                 return;
             }
             var bySub = await ServersBySubAsync();
             string? serverSubId = null;
-            if (_config.IndexId.IsNotEmpty() && await AppManager.Instance.GetProfileItem(_config.IndexId) is { } current)
+            if (_config.IndexId.IsNotEmpty() && await ConfigDbQuery.GetProfileItem(_config.IndexId) is { } current)
             {
                 serverSubId = current.Subid ?? string.Empty;
             }
@@ -83,7 +83,7 @@ public partial class MainWindow
 
     // Every server that belongs to a subscription, in the order the app keeps them.
     private static async Task<Dictionary<string, List<ProfileItemModel>>> ServersBySubAsync() =>
-        (await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? [])
+        (await ConfigDbQuery.ProfileModels(string.Empty, string.Empty) ?? [])
         .Where(m => m.Subid.IsNotEmpty())
         .GroupBy(m => m.Subid!)
         .ToDictionary(g => g.Key, g => g.ToList());

@@ -42,7 +42,7 @@ public static class V2pnPartnerTraffics
                 return map;
             }
             await SubInfoManager.Instance.LoadAsync();
-            foreach (var sub in await AppManager.Instance.SubItems() ?? [])
+            foreach (var sub in await ConfigDbQuery.SubItems() ?? [])
             {
                 if (For(V2pnPartners.Instance.ForSubscription(sub), SubInfoManager.Instance.Get(sub.Id)) is { } traffic)
                 {

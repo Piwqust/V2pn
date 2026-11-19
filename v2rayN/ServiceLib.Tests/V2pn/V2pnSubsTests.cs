@@ -32,8 +32,8 @@ public class V2pnSubsTests
         var config = Setup();
         var url = $"https://panel.example.com/sub/{Guid.NewGuid():N}";
 
-        await (await ConfigHandler.AddSubItem(config, url)).Should().BeEqualTo(0);
-        var saved = (await AppManager.Instance.SubItems())!.Single(s => s.Url == url);
+        await (await ConfigDbHandler.AddSubItem(url)).Should().BeEqualTo(0);
+        var saved = (await ConfigDbQuery.SubItems())!.Single(s => s.Url == url);
 
         await saved.Remarks.Should().BeEqualTo("panel.example.com");
         await SubInfoManager.IsPanelName(saved, null).Should().BeTrue();
@@ -55,7 +55,7 @@ public class V2pnSubsTests
         await first.Value.Item.AutoUpdateInterval.Should().BeEqualTo(V2pnSubs.NewSubUpdateMinutes);
         await again!.Value.Existed.Should().BeTrue();
         await again.Value.Item.Id.Should().BeEqualTo(first.Value.Item.Id);
-        await (await AppManager.Instance.SubItems())!.Count(s => s.Url == url).Should().BeEqualTo(1);
+        await (await ConfigDbQuery.SubItems())!.Count(s => s.Url == url).Should().BeEqualTo(1);
     }
 
     [Test]

@@ -265,7 +265,7 @@ public partial class MainWindow
             {
                 WindowState = WindowState.Normal;
             }
-            var saved = ConfigHandler.GetWindowSizeItem(_config, toMini ? MiniKey : FullKey);
+            var saved = ConfigTextHandler.GetWindowSizeItem(toMini ? MiniKey : FullKey);
             var size = saved != null ? new Size(saved.Width, saved.Height) : default;
             // A size saved before the sidebar got wider or narrower may now fall in the other layout.
             if (saved == null || (TierFor(size.Width) == BodyTier.Stacked) != toMini)
@@ -280,7 +280,7 @@ public partial class MainWindow
                 WindowState = WindowState.Maximized;
             }
             _ = Motion.Enter(gridBody, dy: 0, ms: 160);
-            await ConfigHandler.SaveConfig(_config);
+            await ConfigTextHandler.SaveConfig();
         }
         catch (Exception ex)
         {

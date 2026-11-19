@@ -62,9 +62,9 @@ public static class V2pnDiagnostics
     /// <summary>Gathers the snapshot from the running app. <paramref name="route"/> is a preset id or "custom".</summary>
     public static async Task<Snapshot> CollectAsync(Config config, AvailabilityCheckResult? check, DateTime? checkedAt, string route)
     {
-        var server = await AppManager.Instance.GetProfileItem(config.IndexId);
-        var subs = await AppManager.Instance.SubItems() ?? [];
-        var profiles = await AppManager.Instance.ProfileItems(string.Empty) ?? [];
+        var server = await ConfigDbQuery.GetProfileItem(config.IndexId);
+        var subs = await ConfigDbQuery.SubItems() ?? [];
+        var profiles = await ConfigDbQuery.ProfileItems(string.Empty) ?? [];
         var counts = profiles.GroupBy(p => p.Subid ?? string.Empty).ToDictionary(g => g.Key, g => g.Count());
         var lines = subs.Select(s =>
         {

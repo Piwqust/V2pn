@@ -75,7 +75,7 @@ public sealed class IpInfoView : UserControl
         {
             // In VPN mode a request "past V2pn" still enters the tunnel and would show the VPN address
             // as the person's own.
-            var askDirect = !AppManager.Instance.Config.TunModeItem.EnableTun;
+            var askDirect = !ConfigTextHandler.Config.TunModeItem.EnableTun;
             var report = await Task.Run(() => V2pnIpLookup.LookUpAsync(askDirect, cts.Token), cts.Token);
             if (cts.IsCancellationRequested)
             {

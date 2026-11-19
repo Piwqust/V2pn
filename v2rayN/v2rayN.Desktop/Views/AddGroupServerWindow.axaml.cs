@@ -115,7 +115,7 @@ public partial class AddGroupServerWindow : WindowBase<AddGroupServerViewModel>
     {
         try
         {
-            var models = await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? [];
+            var models = await ConfigDbQuery.ProfileModels(string.Empty, string.Empty) ?? [];
             var delays = (await ProfileExManager.Instance.GetProfileExs())
                 .GroupBy(x => x.IndexId)
                 .ToDictionary(g => g.Key, g => g.First().Delay);

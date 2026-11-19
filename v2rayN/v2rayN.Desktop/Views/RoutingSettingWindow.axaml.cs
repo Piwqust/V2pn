@@ -16,7 +16,7 @@ public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
 {
     private enum Pane { Set, Pin, Match }
 
-    private static Config AppConfig => AppManager.Instance.Config;
+    private static Config AppConfig => ConfigTextHandler.Config;
 
     private Pane _pane = Pane.Set;
     private string? _setId;
@@ -200,7 +200,7 @@ public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
 
     private async Task ShowSetAsync(string id)
     {
-        var item = await AppManager.Instance.GetRoutingItem(id);
+        var item = await ConfigDbQuery.GetRoutingItem(id);
         if (item is null)
         {
             return;
@@ -853,7 +853,7 @@ public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
     // Saved at once; closing the window then reloads the core (IsModified), as for the sets.
     private async Task SavePinsAsync()
     {
-        await ConfigHandler.SaveConfig(AppConfig);
+        await ConfigTextHandler.SaveConfig();
         if (ViewModel != null)
         {
             ViewModel.IsModified = true;

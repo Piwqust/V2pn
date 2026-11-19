@@ -1,16 +1,22 @@
 namespace ServiceLib.Handler;
 
-public static class SubscriptionHandler
+public class SubscriptionHandler(
+    Config config,
+    bool blProxy,
+    Func<bool, string, Task> updateFunc)
 {
     private static readonly ConcurrentDictionary<string, SemaphoreSlim> _updateGates = new();
 
     /// <summary>V2pn: <see cref="SubInfoItem.LastResultDetail"/> of a download that got no answer in time.</summary>
     public const string SubTimeoutDetail = "timeout";
 
-    public static async Task UpdateProcess(Config config, string subId, bool blProxy, Func<bool, string, Task> updateFunc)
+    private readonly Config _config = config;
+    private readonly bool _blProxy = blProxy;
+
+    public async Task UpdateProcess(string subId)
     {
         await updateFunc?.Invoke(false, ResUI.MsgUpdateSubscriptionStart);
-        var subItem = await AppManager.Instance.SubItems();
+        var subItem = await ConfigDbQuery.SubItems();
 
         if (subItem is not { Count: > 0 })
         {
@@ -18,6 +24,7 @@ public static class SubscriptionHandler
             return;
         }
 
+        await ConfigTextHandler.ResetDefaultServer();
         var successCount = 0;
         foreach (var listed in subItem)
         {
@@ -33,30 +40,30 @@ public static class SubscriptionHandler
             try
             {
                 // The list was read before waiting; the other update may have changed this subscription since.
-                var item = await AppManager.Instance.GetSubItem(listed.Id) ?? listed;
+                var item = await ConfigDbQuery.GetSubItem(listed.Id) ?? listed;
                 var hashCode = $"{item.Remarks}->";
-                if (item.Enabled == false)
+                if (!item.Enabled)
                 {
                     await updateFunc?.Invoke(false, $"{hashCode}{ResUI.MsgSkipSubscriptionUpdate}");
                     continue;
                 }
 
-                // Create download handler
-                var downloadHandle = CreateDownloadHandler(item, hashCode, updateFunc);
+                using var processor = new SubscriptionHandlerProcessor(this, item, hashCode);
                 await updateFunc?.Invoke(false, $"{hashCode}{ResUI.MsgStartGettingSubscriptions}");
 
                 // Get all subscription content (main subscription + additional subscriptions)
-                var result = await DownloadAllSubscriptions(config, item, blProxy, downloadHandle);
+                var result = await processor.DownloadAllSubscriptions();
 
                 // Process download result
-                var imported = await ProcessDownloadResult(config, item.Id, result, hashCode, updateFunc);
+                var imported = await ProcessDownloadResult(item.Id, result, hashCode);
+                var downloadHandle = processor.DownloadService;
                 // V2pn: a verified partner's panel may move the subscription to another of its domains.
                 if (imported)
                 {
-                    await MoveIfAskedAsync(config, item, downloadHandle.ResponseHeaders, hashCode, updateFunc);
+                    await MoveIfAskedAsync(item, downloadHandle.ResponseHeaders, hashCode);
                 }
                 // V2pn: name, traffic, expiry and the Happ/INCY values from the panel's headers and the body's "#key: value" lines.
-                await SubInfoManager.Instance.ApplyAsync(config, item, downloadHandle.ResponseHeaders, imported, result);
+                await SubInfoManager.Instance.ApplyAsync(_config, item, downloadHandle.ResponseHeaders, imported, result);
                 var (outcome, detail) = Classify(imported, result, downloadHandle.ResponseHeaders != null,
                     downloadHandle.LastStatus, downloadHandle.LastError);
                 await SubInfoManager.Instance.RecordAttemptAsync(item.Id, outcome, detail);
@@ -67,7 +74,7 @@ public static class SubscriptionHandler
                     // Always forward: the UI tells a failed update by an unchanged time, and two updates can land
                     // in the same second.
                     item.UpdateTime = Math.Max(((DateTimeOffset)DateTime.Now).ToUnixTimeSeconds(), item.UpdateTime + 1);
-                    await ConfigHandler.AddSubItem(config, item);
+                    await ConfigDbHandler.AddSubItem(item);
                 }
 
                 await updateFunc?.Invoke(false, "-------------------------------------------------------");
@@ -94,7 +101,7 @@ public static class SubscriptionHandler
     /// partner's listing names the new host (V2pnSubDefaults.MovedUrl). The subscription keeps its id, name and
     /// settings; only its address changes, and the log says so.
     /// </summary>
-    private static async Task MoveIfAskedAsync(Config config, SubItem item, IReadOnlyDictionary<string, string>? headers, string hashCode, Func<bool, string, Task> updateFunc)
+    private async Task MoveIfAskedAsync(SubItem item, IReadOnlyDictionary<string, string>? headers, string hashCode)
     {
         string? Get(string name) => headers?.FirstOrDefault(h => string.Equals(h.Key, name, StringComparison.OrdinalIgnoreCase)).Value;
         var newUrl = Get(SubPanelHeaders.NewUrl);
@@ -110,7 +117,7 @@ public static class SubscriptionHandler
             Logging.SaveLog($"V2pn: {Utils.TryUri(item.Url)?.Host} asked to move the subscription; ignored (the new address is not a domain of a verified partner)");
             return;
         }
-        var subs = await AppManager.Instance.SubItems() ?? [];
+        var subs = await ConfigDbQuery.SubItems() ?? [];
         if (subs.Any(s => s.Id != item.Id && string.Equals(s.Url?.Trim(), target, StringComparison.Ordinal)))
         {
             Logging.SaveLog("V2pn: the subscription's new address belongs to another subscription already; not moved");
@@ -118,7 +125,7 @@ public static class SubscriptionHandler
         }
         var from = Utils.TryUri(item.Url)?.Host;
         item.Url = target;
-        await ConfigHandler.AddSubItem(config, item);
+        await ConfigDbHandler.AddSubItem(item);
         var to = Utils.TryUri(target)?.Host ?? target;
         Logging.SaveLog($"V2pn: subscription {item.Id} moved from {from} to {to} ({partner!.Id})");
         await updateFunc?.Invoke(false, $"{hashCode}{string.Format(ResUI.MsgV2pnSubMoved, to)}");
@@ -150,7 +157,7 @@ public static class SubscriptionHandler
         return (EV2pnSubUpdateResult.Unreachable, lastError);
     }
 
-    private static bool IsValidSubscription(SubItem item, string subId)
+    private bool IsValidSubscription(SubItem item, string subId)
     {
         var id = item.Id.TrimEx();
         var url = item.Url.TrimEx();
@@ -173,133 +180,7 @@ public static class SubscriptionHandler
         return true;
     }
 
-    private static DownloadService CreateDownloadHandler(SubItem item, string hashCode, Func<bool, string, Task> updateFunc)
-    {
-        if (!HttpRequestHeadersHelper.TryParse(item.RequestHeaders, out var requestHeaders))
-        {
-            throw new FormatException(ResUI.SubRequestHeadersInvalid);
-        }
-
-        var downloadHandle = new DownloadService
-        {
-            AcceptHeader = "*/*",
-            RequestHeaders = requestHeaders
-        };
-        downloadHandle.Error += (sender2, args) =>
-        {
-            var error = args.GetException();
-            // A timeout's own words ("The operation was canceled.") say nothing to a person; the UI words it.
-            downloadHandle.LastError = error is OperationCanceledException or TimeoutException
-                ? SubTimeoutDetail
-                : error.Message;
-            updateFunc?.Invoke(false, $"{hashCode}{args.GetException().Message}");
-        };
-        return downloadHandle;
-    }
-
-    private static async Task<string> DownloadSubscriptionContent(DownloadService downloadHandle, string url, bool blProxy, string userAgent)
-    {
-        var result = await downloadHandle.TryDownloadString(url, blProxy, userAgent);
-
-        // If download with proxy fails, try direct connection
-        if (blProxy && result.IsNullOrEmpty())
-        {
-            result = await downloadHandle.TryDownloadString(url, false, userAgent);
-        }
-        // V2pn: and the other way round. A provider's site blocked or throttled on the direct route failed a manual
-        // update (and every new subscription) now and then, while the running VPN could reach it.
-        else if (!blProxy && result.IsNullOrEmpty() && CoreManager.Instance.IsCoreAlive)
-        {
-            Logging.SaveLog("V2pn: subscription unreachable directly, trying through the VPN");
-            result = await downloadHandle.TryDownloadString(url, true, userAgent);
-        }
-
-        return result ?? string.Empty;
-    }
-
-    private static async Task<string> DownloadAllSubscriptions(Config config, SubItem item, bool blProxy, DownloadService downloadHandle)
-    {
-        // Download main subscription content
-        var result = await DownloadMainSubscription(config, item, blProxy, downloadHandle);
-
-        // Process additional subscription links (if any)
-        if (item.ConvertTarget.IsNullOrEmpty() && item.MoreUrl.TrimEx().IsNotEmpty())
-        {
-            result = await DownloadAdditionalSubscriptions(item, result, blProxy, downloadHandle);
-        }
-
-        return result;
-    }
-
-    private static async Task<string> DownloadMainSubscription(Config config, SubItem item, bool blProxy, DownloadService downloadHandle)
-    {
-        // Prepare subscription URL and download directly
-        var url = Utils.GetPunycode(item.Url.TrimEx());
-
-        // If conversion is needed
-        if (item.ConvertTarget.IsNotEmpty())
-        {
-            var subConvertUrl = config.ConstItem.SubConvertUrl.IsNullOrEmpty()
-                ? Global.SubConvertUrls.FirstOrDefault()
-                : config.ConstItem.SubConvertUrl;
-
-            url = string.Format(subConvertUrl!, Utils.UrlEncode(url));
-
-            if (!url.Contains("target="))
-            {
-                url += $"&target={item.ConvertTarget}";
-            }
-
-            if (!url.Contains("config="))
-            {
-                url += $"&config={Global.SubConvertConfig.FirstOrDefault()}";
-            }
-        }
-
-        // Download and return result directly
-        return await DownloadSubscriptionContent(downloadHandle, url, blProxy, V2pnSubs.UserAgentFor(item));
-    }
-
-    private static async Task<string> DownloadAdditionalSubscriptions(SubItem item, string mainResult, bool blProxy, DownloadService downloadHandle)
-    {
-        var result = mainResult;
-
-        // If main subscription result is Base64 encoded, decode it first
-        if (result.IsNotEmpty() && Utils.IsBase64String(result))
-        {
-            result = Utils.Base64Decode(result);
-        }
-
-        // Process additional URL list
-        var lstUrl = item.MoreUrl.TrimEx().Split(",") ?? [];
-        foreach (var it in lstUrl)
-        {
-            var url2 = Utils.GetPunycode(it);
-            if (url2.IsNullOrEmpty())
-            {
-                continue;
-            }
-
-            var additionalResult = await DownloadSubscriptionContent(downloadHandle, url2, blProxy, V2pnSubs.UserAgentFor(item));
-
-            if (additionalResult.IsNotEmpty())
-            {
-                // Process additional subscription results, add to main result
-                if (Utils.IsBase64String(additionalResult))
-                {
-                    result += Environment.NewLine + Utils.Base64Decode(additionalResult);
-                }
-                else
-                {
-                    result += Environment.NewLine + additionalResult;
-                }
-            }
-        }
-
-        return result;
-    }
-
-    private static async Task<bool> ProcessDownloadResult(Config config, string id, string result, string hashCode, Func<bool, string, Task> updateFunc)
+    private async Task<bool> ProcessDownloadResult(string id, string result, string hashCode)
     {
         if (result.IsNullOrEmpty())
         {
@@ -318,7 +199,7 @@ public static class SubscriptionHandler
         await updateFunc?.Invoke(false, $"{hashCode}{ResUI.MsgStartParsingSubscription}");
 
         // Add servers to configuration
-        var ret = await ConfigHandler.AddBatchServers(config, result, id, true);
+        var ret = await ConfigDbHandler.AddBatchServers(result, id, true);
         if (ret <= 0)
         {
             Logging.SaveLog("FailedImportSubscription");
@@ -327,9 +208,174 @@ public static class SubscriptionHandler
 
         // Update completion message
         await updateFunc?.Invoke(false, ret > 0
-                ? $"{hashCode}{ResUI.MsgUpdateSubscriptionEnd}"
-                : $"{hashCode}{ResUI.MsgFailedImportSubscription}");
+            ? $"{hashCode}{ResUI.MsgUpdateSubscriptionEnd}"
+            : $"{hashCode}{ResUI.MsgFailedImportSubscription}");
 
         return ret > 0;
+    }
+
+    private class SubscriptionHandlerProcessor : IDisposable
+    {
+        private readonly DownloadService[] _downloadServices;
+        private readonly SubscriptionHandler _handler;
+        private readonly SubItem _item;
+        private readonly string _hashCode;
+
+        public SubscriptionHandlerProcessor(SubscriptionHandler handler, SubItem item, string hashCode)
+        {
+            _handler = handler;
+            _item = item;
+            _hashCode = hashCode;
+            _downloadServices = CreateDownloadHandler();
+        }
+
+        /// <summary>V2pn: the service whose response headers, status and error describe the main link.</summary>
+        public DownloadService DownloadService => _downloadServices[0];
+
+        private DownloadService[] CreateDownloadHandler()
+        {
+            if (!HttpRequestHeadersHelper.TryParse(_item.RequestHeaders, out var requestHeaders))
+            {
+                throw new FormatException(ResUI.SubRequestHeadersInvalid);
+            }
+
+            var userAgent = V2pnSubs.UserAgentFor(_item);
+            if (userAgent.IsNullOrEmpty())
+            {
+                userAgent = Utils.GetVersion(false);
+            }
+            // V2pn: the direct route falls back to the VPN only while the core runs. A provider's site blocked or
+            // throttled on the direct route failed a manual update (and every new subscription) now and then, while
+            // the running VPN could reach it; with the core stopped a second try would only hide the real error.
+            var handler = _handler._blProxy || CoreManager.Instance.IsCoreAlive
+                ? HttpClientHelper.Instance.CreateFallbackHandler(_handler._blProxy, new())
+                : HttpClientHelper.CreateSocketsHttpHandler(false, new());
+            var headersHandler = HttpRequestHeadersHelper.CreateHandler(handler, userAgent, "*/*", requestHeaders);
+            // V2pn: keeps the response headers, where panels put a subscription's name, traffic and expiry.
+            var downloadHandle = new DownloadService
+            {
+                Handler = DownloadService.KeepResponseHeaders(headersHandler),
+                DisposeHandler = true,
+            };
+            downloadHandle.Error += (sender2, args) =>
+            {
+                var error = args.GetException();
+                // A timeout's own words ("The operation was canceled.") say nothing to a person; the UI words it.
+                downloadHandle.LastError = error is OperationCanceledException or TimeoutException
+                    ? SubTimeoutDetail
+                    : error.Message;
+                _handler.ReportError($"{_hashCode}{error.Message}");
+            };
+            return [downloadHandle];
+        }
+
+        private async Task<string> DownloadSubscriptionContent(string url)
+        {
+            foreach (var downloadService in _downloadServices)
+            {
+                var result = await downloadService.TryDownloadString(url);
+                if (!result.IsNullOrEmpty())
+                {
+                    return result;
+                }
+            }
+
+            return string.Empty;
+        }
+
+        public async Task<string> DownloadAllSubscriptions()
+        {
+            // Download main subscription content
+            var result = await DownloadMainSubscription();
+
+            // Process additional subscription links (if any)
+            if (_item.ConvertTarget.IsNullOrEmpty() && _item.MoreUrl.TrimEx().IsNotEmpty())
+            {
+                result = await DownloadAdditionalSubscriptions(result);
+            }
+
+            return result;
+        }
+
+        private async Task<string> DownloadMainSubscription()
+        {
+            // Prepare subscription URL and download directly
+            var url = Utils.GetPunycode(_item.Url.TrimEx());
+
+            // If conversion is needed
+            if (_item.ConvertTarget.IsNotEmpty())
+            {
+                var subConvertUrl = _handler._config.ConstItem.SubConvertUrl.IsNullOrEmpty()
+                    ? Global.SubConvertUrls.FirstOrDefault()
+                    : _handler._config.ConstItem.SubConvertUrl;
+
+                url = string.Format(subConvertUrl!, Utils.UrlEncode(url));
+
+                if (!url.Contains("target="))
+                {
+                    url += $"&target={_item.ConvertTarget}";
+                }
+
+                if (!url.Contains("config="))
+                {
+                    url += $"&config={Global.SubConvertConfig.FirstOrDefault()}";
+                }
+            }
+
+            // Download and return result directly
+            return await DownloadSubscriptionContent(url);
+        }
+
+        private async Task<string> DownloadAdditionalSubscriptions(string mainResult)
+        {
+            var result = mainResult;
+
+            // If main subscription result is Base64 encoded, decode it first
+            if (result.IsNotEmpty() && Utils.IsBase64String(result))
+            {
+                result = Utils.Base64Decode(result);
+            }
+
+            // Process additional URL list
+            var lstUrl = _item.MoreUrl.TrimEx().Split(",") ?? [];
+            foreach (var it in lstUrl)
+            {
+                var url2 = Utils.GetPunycode(it);
+                if (url2.IsNullOrEmpty())
+                {
+                    continue;
+                }
+
+                var additionalResult = await DownloadSubscriptionContent(url2);
+
+                if (additionalResult.IsNotEmpty())
+                {
+                    // Process additional subscription results, add to main result
+                    if (Utils.IsBase64String(additionalResult))
+                    {
+                        result += Environment.NewLine + Utils.Base64Decode(additionalResult);
+                    }
+                    else
+                    {
+                        result += Environment.NewLine + additionalResult;
+                    }
+                }
+            }
+
+            return result;
+        }
+
+        public void Dispose()
+        {
+            foreach (var downloadService in _downloadServices)
+            {
+                downloadService.Dispose();
+            }
+        }
+    }
+
+    private void ReportError(string message)
+    {
+        updateFunc?.Invoke(false, message);
     }
 }

@@ -222,10 +222,10 @@ public class V2pnForeignLinksTests
         SQLiteHelper.Instance.CreateTable<ProfileItem>();
         var subId = Guid.NewGuid().ToString("N");
 
-        var count = await ConfigHandler.AddBatchServers(config, ClashConfig, subId, true);
+        var count = await ConfigDbHandler.AddBatchServers(ClashConfig, subId, true);
 
         await count.Should().BeEqualTo(9);
-        var servers = await AppManager.Instance.ProfileItems(subId);
+        var servers = await ConfigDbQuery.ProfileItems(subId);
         await servers!.Any(s => s.Remarks == "NL Reality" && s.ConfigType == EConfigType.VLESS).Should().BeTrue();
         await servers!.Any(s => s.CoreType == ECoreType.mihomo).Should().BeFalse();
     }

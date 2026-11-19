@@ -36,7 +36,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
 
     public RoutingRuleSettingViewModel(RoutingItem routingItem)
     {
-        _config = AppManager.Instance.Config;
+        _config = ConfigTextHandler.Config;
 
         var canEditRemove = this.WhenAnyValue(
             x => x.SelectedSource,
@@ -209,7 +209,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
             return;
         }
         var index = _rules.IndexOf(item);
-        if (await ConfigHandler.MoveRoutingRule(_rules, index, eMove) == 0)
+        if (await ConfigDbHandler.MoveRoutingRule(_rules, index, eMove) == 0)
         {
             RefreshRulesItems();
         }
@@ -231,7 +231,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
         item.RuleNum = _rules.Count;
         item.RuleSet = JsonUtils.Serialize(_rules, false);
 
-        if (await ConfigHandler.SaveRoutingItem(_config, item) == 0)
+        if (await ConfigDbHandler.SaveRoutingItem(item) == 0)
         {
             NoticeManager.Instance.Enqueue(ResUI.OperationSuccess);
             RequestClose?.Invoke(this, EventArgs.Empty);
@@ -287,7 +287,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
     public async Task<bool> MoveRuleAsync(string id, EMove eMove)
     {
         var index = _rules.FindIndex(t => t.Id == id);
-        if (index < 0 || await ConfigHandler.MoveRoutingRule(_rules, index, eMove) != 0)
+        if (index < 0 || await ConfigDbHandler.MoveRoutingRule(_rules, index, eMove) != 0)
         {
             return false;
         }
@@ -340,7 +340,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
         SelectedRouting.RuleNum = _rules.Count;
         SelectedRouting.RuleSet = JsonUtils.Serialize(_rules, false);
 
-        var ok = await ConfigHandler.SaveRoutingItem(_config, SelectedRouting) == 0;
+        var ok = await ConfigDbHandler.SaveRoutingItem(SelectedRouting) == 0;
         if (!ok)
         {
             NoticeManager.Instance.Enqueue(ResUI.OperationFailed);
@@ -414,8 +414,8 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
             return;
         }
 
-        var downloadHandle = new DownloadService();
-        var result = await downloadHandle.TryDownloadString(url, true, "");
+        using var downloadHandle = await DownloadService.CreateDownloadServiceWithCheck();
+        var result = await downloadHandle.TryDownloadString(url);
         var ret = await AddBatchRoutingRulesAsync(SelectedRouting, result);
         if (ret == 0)
         {

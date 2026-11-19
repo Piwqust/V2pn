@@ -66,7 +66,6 @@ public class GUIItem
     public bool DisplayRealTimeSpeed { get; set; }
     public bool KeepOlderDedupl { get; set; }
     public int AutoUpdateInterval { get; set; }
-    public int TrayMenuServersLimit { get; set; } = 20;
     public bool EnableHWA { get; set; } = false;
     public bool EnableLog { get; set; } = true;
     public string? RootCertProvider { get; set; }
@@ -97,6 +96,7 @@ public class UIItem
     public List<ColumnItem> MainColumnItem { get; set; }
     public List<WindowSizeItem> WindowSizeItem { get; set; }
     public bool HideColumnIpInfo { get; set; }
+    public int? FrozenColumnCount { get; set; }
 
     // V2pn: how Connect protects the computer. The live state stays in SystemProxyItem/TunModeItem;
     // these remember the choice while disconnected.

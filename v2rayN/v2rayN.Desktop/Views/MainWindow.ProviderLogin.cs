@@ -132,7 +132,7 @@ public partial class MainWindow
             {
                 await UpdateAddedSubscriptionAsync(item.Id);
             }
-            var first = (await AppManager.Instance.ProfileModels(string.Empty, string.Empty) ?? []).FirstOrDefault(m => m.Subid == item.Id);
+            var first = (await ConfigDbQuery.ProfileModels(string.Empty, string.Empty) ?? []).FirstOrDefault(m => m.Subid == item.Id);
             // Selected only: connecting is the person's own step. While connected elsewhere the connection stays as it is.
             if (first != null && CurrentState() == ProtectionState.Unprotected)
             {
@@ -149,7 +149,7 @@ public partial class MainWindow
                 _sidebar.OpenedSub = null;
             }
             SelectTab(SidebarTab.Subscriptions);
-            var saved = (await AppManager.Instance.SubItems() ?? []).FirstOrDefault(s => s.Id == item.Id) ?? item;
+            var saved = (await ConfigDbQuery.SubItems() ?? []).FirstOrDefault(s => s.Id == item.Id) ?? item;
             var name = ViewModels.SideSubRow.NameOf(saved);
             if (name.IsNullOrEmpty())
             {

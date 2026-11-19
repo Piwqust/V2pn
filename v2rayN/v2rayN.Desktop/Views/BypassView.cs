@@ -111,7 +111,7 @@ public sealed class BypassView : UserControl
 
     private async Task ShowAsync(V2pnBlockReport report)
     {
-        var server = await ConfigHandler.GetDefaultServer(AppManager.Instance.Config);
+        var server = await ConfigTextHandler.GetDefaultServer();
         var connected = report.ProxySmall != null;
         _body.Children.Clear();
 
@@ -182,7 +182,7 @@ public sealed class BypassView : UserControl
     {
         var panel = new WrapPanel { ItemSpacing = 8, LineSpacing = 8 };
         var core = server != null ? AppManager.Instance.GetCoreType(server, server.ConfigType) : ECoreType.Xray;
-        var canTune = connected && server != null && V2pnBypass.On(AppManager.Instance.Config)
+        var canTune = connected && server != null && V2pnBypass.On(ConfigTextHandler.Config)
                       && V2pnBypass.CandidatesFor(server, core).Count > 0;
         // Splitting the handshake cannot reach an address that does not answer, or one a whitelist keeps out.
         if (canTune && report.Verdict is not (EV2pnBlockVerdict.NoInternet or EV2pnBlockVerdict.Whitelist or EV2pnBlockVerdict.ServerBlocked))
@@ -203,7 +203,7 @@ public sealed class BypassView : UserControl
             chain.Click += async (_, _) => await ChainAsync(server);
             panel.Children.Add(chain);
         }
-        if (server != null && V2pnBypass.Learned(AppManager.Instance.Config, server.IndexId, V2pnBypass.NetworkKey(AppManager.Instance.Config)) != null)
+        if (server != null && V2pnBypass.Learned(ConfigTextHandler.Config, server.IndexId, V2pnBypass.NetworkKey(ConfigTextHandler.Config)) != null)
         {
             var forget = TextButton(L.BypassForgetServer, "SemiIconDeleteStroked");
             forget.Click += async (_, _) =>
@@ -258,8 +258,8 @@ public sealed class BypassView : UserControl
         button.IsEnabled = false;
         try
         {
-            var current = AppManager.Instance.Config.IndexId;
-            var all = await AppManager.Instance.ProfileItems(string.Empty) ?? [];
+            var current = ConfigTextHandler.Config.IndexId;
+            var all = await ConfigDbQuery.ProfileItems(string.Empty) ?? [];
             var entries = all.Where(p => p.IndexId != current && !p.ConfigType.IsGroupType() && V2pnRussianEntry.LooksLikeEntry(p, _country(p))).ToList();
             if (entries.Count == 0)
             {
@@ -290,7 +290,7 @@ public sealed class BypassView : UserControl
     /// <summary>The chain form in place of the results: the person's server in Russia, then the selected one.</summary>
     private async Task ChainAsync(ProfileItem exit)
     {
-        var all = await AppManager.Instance.ProfileItems(string.Empty) ?? [];
+        var all = await ConfigDbQuery.ProfileItems(string.Empty) ?? [];
         var choices = all.Where(p => p.IndexId != exit.IndexId && !p.ConfigType.IsGroupType())
             .OrderByDescending(p => V2pnRussianEntry.LooksLikeEntry(p, _country(p)))
             .ThenBy(p => p.Subid.IsNotEmpty())
@@ -320,7 +320,7 @@ public sealed class BypassView : UserControl
             create.IsEnabled = false;
             var entry = choices[picker.SelectedIndex];
             var name = $"🇷🇺 → {exitName}";
-            var id = await V2pnRussianEntry.CreateChainAsync(AppManager.Instance.Config, entry, exit, name);
+            var id = await V2pnRussianEntry.CreateChainAsync(ConfigTextHandler.Config, entry, exit, name);
             if (id == null)
             {
                 SetStatus(L.BypassChainFailed);

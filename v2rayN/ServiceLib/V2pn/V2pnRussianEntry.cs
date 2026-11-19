@@ -35,6 +35,6 @@ public static class V2pnRussianEntry
             Address = string.Empty,
         };
         chain.SetProtocolExtra(new ProtocolExtraItem { ChildItems = Utils.List2String([entry.IndexId, exit.IndexId]) });
-        return await ConfigHandler.AddServerCommon(config, chain) == 0 ? chain.IndexId : null;
+        return await ConfigDbHandler.AddServerCommon(chain) == 0 ? chain.IndexId : null;
     }
 }

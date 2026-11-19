@@ -12,7 +12,7 @@ public sealed class SubInfoManager
 
     private static readonly string _tag = "SubInfoManager";
 
-    // What ConfigHandler.AddSubItem(config, url) calls a subscription imported from a bare link.
+    // What ConfigDbHandler.AddSubItem(url) calls a subscription imported from a bare link.
     private const string ImportedName = "import_sub";
 
     private readonly ConcurrentDictionary<string, SubInfoItem> _items = new();
@@ -39,7 +39,7 @@ public sealed class SubInfoManager
         try
         {
             SQLiteHelper.Instance.CreateTable<SubInfoItem>();
-            var subIds = (await AppManager.Instance.SubItems() ?? []).Select(t => t.Id).ToHashSet();
+            var subIds = (await ConfigDbQuery.SubItems() ?? []).Select(t => t.Id).ToHashSet();
             foreach (var info in await SQLiteHelper.Instance.TableAsync<SubInfoItem>().ToListAsync())
             {
                 // Rows of deleted subscriptions; v2rayN's delete does not know about this table.
@@ -91,7 +91,7 @@ public sealed class SubInfoManager
 
             if (imported && ApplyToSubscription(item, info, panel))
             {
-                await ConfigHandler.AddSubItem(config, item);
+                await ConfigDbHandler.AddSubItem(item);
             }
 
             await SQLiteHelper.Instance.ReplaceAsync(info);

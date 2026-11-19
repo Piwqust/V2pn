@@ -60,7 +60,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         SetConnectLabel(L.Connect);
         txtRoute.Text = L.RouteTitle;
 
-        _config = AppManager.Instance.Config;
+        _config = ConfigTextHandler.Config;
         InitAdaptive();
         // Above the status card and clear of the feature rail, over the empty part of the map.
         _manager = new WindowNotificationManager(TopLevel.GetTopLevel(this))
@@ -724,7 +724,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private async Task RefreshConnectionAsync()
     {
-        var item = await AppManager.Instance.GetProfileItem(_config.IndexId);
+        var item = await ConfigDbQuery.GetProfileItem(_config.IndexId);
         try
         {
             _hasServer = item != null;
@@ -975,7 +975,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return;
         }
         _config.UiItem.V2pnLanWarned = true;
-        _ = ConfigHandler.SaveConfig(_config);
+        _ = ConfigTextHandler.SaveConfig();
         ShowToast(ToastKind.Warning, L.LanOpenToast);
     }
 
@@ -1092,7 +1092,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return;
         }
-        var item = await AppManager.Instance.GetProfileItem(_activeIndexId);
+        var item = await ConfigDbQuery.GetProfileItem(_activeIndexId);
         _statusView.SetServer(item, FindModel(_activeIndexId)?.Delay ?? await StoredDelayAsync(_activeIndexId));
     }
 
@@ -1223,7 +1223,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
 
         _config.UiItem.V2pnPreferTun = tun;
-        await ConfigHandler.SaveConfig(_config);
+        await ConfigTextHandler.SaveConfig();
         if (connected && tun != status.EnableTun)
         {
             ApplyMode(status, tun);
@@ -1265,14 +1265,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _config.TunModeItem.EnableTun = true;
             _config.SystemProxyItem.SysProxyType = ESysProxyType.ForcedClear;
         }
-        await ConfigHandler.SaveConfig(_config);
+        await ConfigTextHandler.SaveConfig();
         if (!await AppManager.Instance.RebootAsAdmin())
         {
             // UAC declined: the app keeps running, so put back what it was doing before the question.
             _config.UiItem.V2pnPreferTun = preferTun;
             _config.TunModeItem.EnableTun = enableTun;
             _config.SystemProxyItem.SysProxyType = proxyType;
-            await ConfigHandler.SaveConfig(_config);
+            await ConfigTextHandler.SaveConfig();
             SyncModeSelection();
             SetTunDenied(true);
         }
@@ -1315,16 +1315,16 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     /// </summary>
     private async Task UseV2pnRouteOnFreshInstallAsync()
     {
-        var active = await ConfigHandler.GetDefaultRouting(_config);
+        var active = await ConfigDbHandler.GetDefaultRouting();
         if (active == null || !RoutingPresets.IsV2rayNBuiltin(active.Remarks)
-            || (await AppManager.Instance.SubItems())?.Count > 0
-            || (await AppManager.Instance.ProfileItems(string.Empty))?.Count > 0)
+            || (await ConfigDbQuery.SubItems())?.Count > 0
+            || (await ConfigDbQuery.ProfileItems(string.Empty))?.Count > 0)
         {
             return;
         }
-        if (await AppManager.Instance.GetRoutingItem(RoutingPresets.IdAll) is { } all)
+        if (await ConfigDbQuery.GetRoutingItem(RoutingPresets.IdAll) is { } all)
         {
-            await ConfigHandler.SetDefaultRouting(_config, all);
+            await ConfigDbHandler.SetDefaultRouting(all);
         }
     }
 
@@ -1479,12 +1479,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private async Task ActivateRoutingAsync(string id, bool sourcesChanged)
     {
         var status = ViewModel?.StatusBarViewModel;
-        var item = await AppManager.Instance.GetRoutingItem(id);
+        var item = await ConfigDbQuery.GetRoutingItem(id);
         if (status == null || item == null)
         {
             return;
         }
-        var changed = await ConfigHandler.SetDefaultRouting(_config, item) == 0;
+        var changed = await ConfigDbHandler.SetDefaultRouting(item) == 0;
         await status.RefreshRoutingsMenu();
         if (changed || sourcesChanged)
         {
@@ -1501,7 +1501,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return;
         }
         _config.UiItem.V2pnBlockAds = on;
-        await ConfigHandler.SaveConfig(_config);
+        await ConfigTextHandler.SaveConfig();
         var changed = await RoutingPresets.EnsureAsync(_config);
         await status.RefreshRoutingsMenu();
         if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id))
@@ -2282,7 +2282,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         flyout.Items.Add(Item(L.TestPing, async () =>
         {
-            var servers = await AppManager.Instance.ProfileModels(row.Sub.Id ?? string.Empty, string.Empty);
+            var servers = await ConfigDbQuery.ProfileModels(row.Sub.Id ?? string.Empty, string.Empty);
             var ids = servers?.Select(s => s.IndexId).ToHashSet() ?? [];
             var models = vm.ProfilesViewModel.ProfileItems.Where(m => ids.Contains(m.IndexId)).ToList();
             await vm.ProfilesViewModel.PingProfilesAsync(models);
@@ -2304,7 +2304,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var exs = await ProfileExManager.Instance.GetProfileExs();
         var failed = exs.Where(t => t.Delay == -1).Select(t => t.IndexId).ToHashSet();
-        var servers = await AppManager.Instance.ProfileModels(subId, string.Empty) ?? [];
+        var servers = await ConfigDbQuery.ProfileModels(subId, string.Empty) ?? [];
         if (!servers.Any(s => failed.Contains(s.IndexId)))
         {
             NoticeManager.Instance.Enqueue(L.RemoveDeadNone);
@@ -2314,7 +2314,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return;
         }
-        var count = await ConfigHandler.RemoveInvalidServerResult(_config, subId);
+        var count = await ConfigDbHandler.RemoveInvalidServerResult(subId);
         await profiles.RefreshServersBiz();
         await profiles.RefreshNavCounts();
         // v2rayN's own text says "invalid", which reads as an error and breaks the Russian plural.
@@ -2391,7 +2391,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         // v2rayN announces a started core with the server summary; show the server instead of its raw summary.
         // Information, not success: the availability check has not answered yet.
-        var item = await AppManager.Instance.GetProfileItem(_config.IndexId);
+        var item = await ConfigDbQuery.GetProfileItem(_config.IndexId);
         if (item != null && content == item.GetSummary())
         {
             ShowNotice(Toasts.Server(item), NotificationType.Information, TimeSpan.FromSeconds(4));
@@ -2482,7 +2482,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 }
                 _config.UiItem.Hide2TrayWhenClose = answer == ButtonResult.Yes;
                 _config.UiItem.V2pnCloseAsked = true;
-                await ConfigHandler.SaveConfig(_config);
+                await ConfigTextHandler.SaveConfig();
             }
             if (_config.UiItem.Hide2TrayWhenClose)
             {
@@ -2863,7 +2863,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _normalPosition = Position;
         }
         // Reopens maximized when it was left maximized; a start in the tray restores that on the first show.
-        if (ConfigHandler.GetWindowSizeItem(_config, GetType().Name) is { IsMaximized: true })
+        if (ConfigTextHandler.GetWindowSizeItem(GetType().Name) is { IsMaximized: true })
         {
             if (_startHidden)
             {
@@ -2950,7 +2950,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         var size = _normalSize ?? new Size(Width, Height);
         var position = _normalPosition ?? (normal && IsVisible ? (PixelPoint?)Position : null);
         var maximized = WindowState == WindowState.Maximized || (WindowState == WindowState.Minimized && _restoreState == WindowState.Maximized);
-        ConfigHandler.SaveWindowPlacement(_config, key ?? GetType().Name, size.Width, size.Height, position?.X, position?.Y, maximized);
+        ConfigTextHandler.SaveWindowPlacement(key ?? GetType().Name, size.Width, size.Height, position?.X, position?.Y, maximized);
     }
 
     private void UpdateNoticeMargin()

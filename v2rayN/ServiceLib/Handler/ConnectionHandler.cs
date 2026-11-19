@@ -10,9 +10,16 @@ public static class ConnectionHandler
             Credentials = new NetworkCredential(AvailabilityProbeEndpoint.User, endpoint.Password),
         };
         var result = await CheckWithFallbackAsync(target => ProbeAsync(proxy, target, CancellationToken.None), url);
-        return result.IsAvailable
-            ? result with { Ip = (await GetIPInfo(proxy))?.ToString() }
-            : result;
+        if (!result.IsAvailable)
+        {
+            return result;
+        }
+        using var downloadHandle = new DownloadService
+        {
+            Handler = HttpClientHelper.CreateProxySocketsHttpHandler(proxy),
+            DisposeHandler = true,
+        };
+        return result with { Ip = (await GetIPInfo(downloadHandle))?.ToString() };
     }
 
     // Reached through the server when the check address does not answer: a different host tells a down check
@@ -42,9 +49,33 @@ public static class ConnectionHandler
                 : new(AvailabilityState.NoResponse);
     }
 
-    public static async Task<int> GetRealPingTime(IWebProxy? webProxy, CancellationToken cancellationToken = default)
+    /// <summary>
+    /// Measures response time by sending HTTP requests through proxy.
+    /// </summary>
+    public static async Task<int> GetRealPingTime(bool useProxy, CancellationToken cancellationToken = default)
     {
-        var result = await ProbeAsync(webProxy, AppManager.Instance.Config.SpeedTestItem.SpeedPingTestUrl, cancellationToken);
+        var responseTime = -1;
+        try
+        {
+            using var client = HttpClientHelper.Instance.GetHttpClient(useProxy);
+            responseTime = await GetRealPingTime(client, cancellationToken);
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            throw;
+        }
+        catch
+        {
+            // Ignore
+        }
+        return responseTime;
+    }
+
+    // V2pn: the ping is the availability probe, so a server that answers with a redirect or a wrong status
+    // (a captive portal, a block page) counts as not working.
+    public static async Task<int> GetRealPingTime(HttpClient client, CancellationToken cancellationToken = default)
+    {
+        var result = await ProbeHttpAsync(client, ConfigTextHandler.Config.SpeedTestItem.SpeedPingTestUrl, Global.LocalFetch, cancellationToken);
         return result.IsAvailable ? result.Time : -1;
     }
 
@@ -107,18 +138,17 @@ public static class ConnectionHandler
     /// <summary>
     /// Gets IP and country information through specified proxy.
     /// </summary>
-    public static async Task<IpInfoResult?> GetIPInfo(IWebProxy? webProxy, CancellationToken cancellationToken = default)
+    public static async Task<IpInfoResult?> GetIPInfo(DownloadService downloadHandle, CancellationToken cancellationToken = default)
     {
         try
         {
-            var url = AppManager.Instance.Config.SpeedTestItem.IPAPIUrl;
+            var url = ConfigTextHandler.Config.SpeedTestItem.IPAPIUrl;
             if (url.IsNullOrEmpty())
             {
                 return null;
             }
 
-            var downloadHandle = new DownloadService();
-            var result = await downloadHandle.TryDownloadString(url, webProxy, "", cancellationToken);
+            var result = await downloadHandle.TryDownloadString(url, cancellationToken);
             if (result == null)
             {
                 return null;
@@ -131,7 +161,7 @@ public static class ConnectionHandler
             }
 
             var ip = ipInfo.ip ?? ipInfo.clientIp ?? ipInfo.ip_addr ?? ipInfo.query;
-            var country = ipInfo.country_code ?? ipInfo.country ?? ipInfo.countryCode ?? ipInfo.location?.country_code ?? "unknown";
+            var country = ipInfo.country_code ?? ipInfo.country ?? ipInfo.countryCode ?? ipInfo.location?.country_code ?? ipInfo.location?.country ?? "unknown";
 
             return new IpInfoResult(country, ip);
         }

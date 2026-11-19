@@ -860,7 +860,7 @@ public sealed class V2pnPartners
 
     private static async Task<IReadOnlyList<string?>> DefaultSubscriptionUrlsAsync()
     {
-        var subs = await AppManager.Instance.SubItems() ?? [];
+        var subs = await ConfigDbQuery.SubItems() ?? [];
         return subs.Select(s => (string?)s.Url).ToList();
     }
 

@@ -107,21 +107,21 @@ public static class V2pnPartnerRoutes
     /// <summary>Brings the partner presets in the database in line with <paramref name="partners"/>; returns what changed.</summary>
     public static async Task<Changes> SyncAsync(Config config, IEnumerable<V2pnPartner> partners)
     {
-        var existing = await AppManager.Instance.RoutingItems() ?? [];
+        var existing = await ConfigDbQuery.RoutingItems() ?? [];
         var changes = Plan(existing, partners);
         foreach (var item in changes.Upserts)
         {
             // Saved as planned: the preset's rule ids tell its rules from the person's.
-            await ConfigHandler.SaveRoutingItem(config, item);
+            await ConfigDbHandler.SaveRoutingItem(item);
         }
         foreach (var item in changes.Deletes)
         {
-            await ConfigHandler.RemoveRoutingItem(item);
+            await ConfigDbHandler.RemoveRoutingItem(item);
             Logging.SaveLog($"{nameof(V2pnPartnerRoutes)}: removed {item.Id}");
         }
         if (changes.Activate != null)
         {
-            await ConfigHandler.SetDefaultRouting(config, changes.Activate);
+            await ConfigDbHandler.SetDefaultRouting(changes.Activate);
         }
         return changes;
     }

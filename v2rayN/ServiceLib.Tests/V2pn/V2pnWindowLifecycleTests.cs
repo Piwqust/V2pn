@@ -3,6 +3,7 @@ using ServiceLib.Tests.CoreConfig;
 namespace ServiceLib.Tests.V2pn;
 
 /// <summary>"Start in the tray" applies to the sign-in launch, and the main window reopens where it was left.</summary>
+[NotInParallel]
 public class V2pnWindowLifecycleTests
 {
     [Test]
@@ -45,9 +46,10 @@ public class V2pnWindowLifecycleTests
     public async Task SaveWindowPlacement_KeepsNormalBoundsAndTheMaximizedFlag()
     {
         var config = CoreConfigTestFactory.CreateConfig();
+        CoreConfigTestFactory.BindAppManagerConfig(config);
 
-        ConfigHandler.SaveWindowPlacement(config, "MainWindow", 1100.6, 700.2, -1500, 120, maximized: true);
-        var item = ConfigHandler.GetWindowSizeItem(config, "MainWindow");
+        ConfigTextHandler.SaveWindowPlacement("MainWindow", 1100.6, 700.2, -1500, 120, maximized: true);
+        var item = ConfigTextHandler.GetWindowSizeItem("MainWindow");
 
         await item.Should().NotBeNull();
         await item!.Width.Should().BeEqualTo(1100);
@@ -57,9 +59,9 @@ public class V2pnWindowLifecycleTests
         await item.IsMaximized.Should().BeTrue();
 
         // Saved again while normal and hidden (no position known): the flag clears, the entry stays single.
-        ConfigHandler.SaveWindowPlacement(config, "MainWindow", 1000, 640, null, null, maximized: false);
+        ConfigTextHandler.SaveWindowPlacement("MainWindow", 1000, 640, null, null, maximized: false);
         await config.UiItem.WindowSizeItem.Count(t => t.TypeName == "MainWindow").Should().BeEqualTo(1);
-        await ConfigHandler.GetWindowSizeItem(config, "MainWindow")!.IsMaximized.Should().BeFalse();
-        await ConfigHandler.GetWindowSizeItem(config, "MainWindow")!.X.Should().BeNull();
+        await ConfigTextHandler.GetWindowSizeItem("MainWindow")!.IsMaximized.Should().BeFalse();
+        await ConfigTextHandler.GetWindowSizeItem("MainWindow")!.X.Should().BeNull();
     }
 }

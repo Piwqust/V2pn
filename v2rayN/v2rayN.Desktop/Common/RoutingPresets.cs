@@ -151,7 +151,7 @@ public static class RoutingPresets
     /// </summary>
     public static async Task<bool> EnsureAsync(Config config)
     {
-        var existing = await AppManager.Instance.RoutingItems() ?? [];
+        var existing = await ConfigDbQuery.RoutingItems() ?? [];
         var minSort = existing.Count > 0 ? existing.Min(t => t.Sort) : 0;
         var changed = false;
         var i = 0;
@@ -170,7 +170,7 @@ public static class RoutingPresets
             item.Remarks = Title(kind);
             item.Enabled = true;
             item.DomainStrategy = strategy;
-            await ConfigHandler.AddBatchRoutingRules(item, rules);
+            await ConfigDbHandler.AddBatchRoutingRules(item, rules);
             changed = true;
             i++;
         }

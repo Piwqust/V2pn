@@ -52,11 +52,11 @@ public static class V2pnPins
 
     public static async Task<ProfileItem?> FindServerAsync(V2pnPin pin)
     {
-        if (pin.ServerId.IsNotEmpty() && await AppManager.Instance.GetProfileItem(pin.ServerId) is { } byId)
+        if (pin.ServerId.IsNotEmpty() && await ConfigDbQuery.GetProfileItem(pin.ServerId) is { } byId)
         {
             return byId;
         }
-        return await AppManager.Instance.GetProfileItemViaRemarks(pin.ServerName);
+        return await ConfigDbQuery.GetProfileItemViaRemarks(pin.ServerName);
     }
 
     /// <summary>
@@ -201,5 +201,5 @@ public static class V2pnPins
     // The interface language from the config: core configs are built on pool threads, which do not
     // carry the UI culture.
     private static string T(string en, string ru) =>
-        AppManager.Instance.Config?.UiItem?.CurrentLanguage?.StartsWith("ru", StringComparison.OrdinalIgnoreCase) == true ? ru : en;
+        ConfigTextHandler.Config?.UiItem?.CurrentLanguage?.StartsWith("ru", StringComparison.OrdinalIgnoreCase) == true ? ru : en;
 }

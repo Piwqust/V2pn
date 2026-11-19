@@ -136,7 +136,7 @@ public sealed class AppearanceView : UserControl
                     Row(L.ApButtonsLayout, null, Segment([L.ApButtonsRow, L.ApButtonsColumn, L.ApButtonsIcons],
                         s => Index(RailLayoutIds, s.RailLayout, 0), (s, i) => s.RailLayout = RailLayoutIds[i])),
                     Row(L.RailUpdate, null, Switch(s => s.RailUpdate, (s, v) => s.RailUpdate = v)),
-                    Row(L.RailDns, null, Switch(s => s.RailDns ?? AppManager.Instance.Config.UiItem.V2pnSettingsAdvanced, (s, v) => s.RailDns = v)),
+                    Row(L.RailDns, null, Switch(s => s.RailDns ?? ConfigTextHandler.Config.UiItem.V2pnSettingsAdvanced, (s, v) => s.RailDns = v)),
                     Row(L.RailSettings, null, Switch(s => s.RailSettings, (s, v) => s.RailSettings = v))),
                 Group(L.ApGrpHome,
                     Stacked(L.ApHomeHint, _homeSections),

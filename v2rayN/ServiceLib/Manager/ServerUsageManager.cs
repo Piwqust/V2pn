@@ -190,7 +190,7 @@ public sealed class ServerUsageManager
     /// <summary>Raised after new numbers were recorded or the statistics were cleared. May come from any thread.</summary>
     public event Action? Changed;
 
-    public static bool Enabled => AppManager.Instance.Config?.UiItem?.V2pnStats == true;
+    public static bool Enabled => ConfigTextHandler.Config?.UiItem?.V2pnStats == true;
 
     public Task LoadAsync()
     {

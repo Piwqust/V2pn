@@ -135,7 +135,7 @@ public static class V2pnAutostart
             if (config.UiItem.V2pnAutostartArg != carriesArg)
             {
                 config.UiItem.V2pnAutostartArg = carriesArg;
-                await ConfigHandler.SaveConfig(config);
+                await ConfigTextHandler.SaveConfig();
             }
         }
         catch (Exception ex)

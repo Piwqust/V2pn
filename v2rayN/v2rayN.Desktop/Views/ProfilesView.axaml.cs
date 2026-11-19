@@ -12,7 +12,7 @@ public partial class ProfilesView : ReactiveUserControl<ProfilesViewModel>
     {
         InitializeComponent();
 
-        _config = AppManager.Instance.Config;
+        _config = ConfigTextHandler.Config;
 
         menuSelectAll.Click += (_, _) => lstProfiles.SelectAll();
         txtServerFilter.KeyDown += TxtServerFilter_KeyDown;

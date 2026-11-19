@@ -55,7 +55,7 @@ public static class V2pnSubs
     public static async Task<(SubItem Item, bool Existed)?> AddSubscriptionAsync(Config config, string url)
     {
         url = url.Trim();
-        var existing = (await AppManager.Instance.SubItems() ?? []).FirstOrDefault(s => s.Url?.Trim() == url);
+        var existing = (await ConfigDbQuery.SubItems() ?? []).FirstOrDefault(s => s.Url?.Trim() == url);
         if (existing != null)
         {
             return (existing, true);
@@ -72,7 +72,7 @@ public static class V2pnSubs
             AutoUpdateInterval = NewSubUpdateMinutes,
             Remarks = Utils.ParseQueryString(uri.Query)["remarks"] ?? SubInfoManager.FallbackName(url) ?? string.Empty,
         };
-        if (await ConfigHandler.AddSubItem(config, item) != 0 || item.Id.IsNullOrEmpty())
+        if (await ConfigDbHandler.AddSubItem(item) != 0 || item.Id.IsNullOrEmpty())
         {
             return null;
         }
@@ -85,7 +85,7 @@ public static class V2pnSubs
     /// </summary>
     public static async Task<Dictionary<string, long>> SnapshotAsync(string? subId)
     {
-        var subs = await AppManager.Instance.SubItems() ?? [];
+        var subs = await ConfigDbQuery.SubItems() ?? [];
         return subs
             .Where(s => s.Id.IsNotEmpty() && s.Url.IsNotEmpty() && s.Enabled)
             .Where(s => subId.IsNullOrEmpty() || s.Id == subId)
@@ -100,7 +100,7 @@ public static class V2pnSubs
         {
             return [];
         }
-        var subs = await AppManager.Instance.SubItems() ?? [];
+        var subs = await ConfigDbQuery.SubItems() ?? [];
         return subs.Where(s => before.TryGetValue(s.Id, out var time) && s.UpdateTime == time).ToList();
     }
 }

@@ -29,20 +29,20 @@ const first = presets[0];
     <div class="wrap grid hero__grid">
       <div class="hero__text">
         <h1 id="hero-h" class="hero__h">
-          <span class="hero__kicker" data-split="lines" data-intro>V2pn, VPN-клиент для Windows и macOS.</span>
+          <span class="hero__kicker">V2pn, VPN-клиент для Windows и macOS.</span>
           <span class="t-mega hero__title" data-split="lines" data-intro data-delay="0.1">Всегда две дороги</span>
         </h1>
-        <p class="lead hero__lead" data-reveal="up" data-intro data-delay="0.35">
+        <p class="lead hero__lead">
           Вставьте ссылку на подписку от провайдера и нажмите «Подключиться». Российские сайты пойдут напрямую, остальное через выбранный сервер.
         </p>
-        <div class="hero__act" data-reveal="up" data-intro data-delay="0.45">
+        <div class="hero__act">
           <a class="btn btn--lg" href="/download/" data-dl-primary><span data-dl-label>Скачать V2pn</span><Arrow class="btn__arr" /></a>
           <a class="btn btn--text" href="#install"><span>Установить одной командой</span></a>
         </div>
-        <p class="t-xs muted hero__meta" data-reveal="fade" data-intro data-delay="0.6">
+        <p class="t-xs muted hero__meta">
           <span data-dl-detail>Windows 10 и 11, macOS 13.6 и новее</span> · бесплатно · открытый код
         </p>
-        <div class="hero__route" data-reveal="up" data-intro data-delay="0.55">
+        <div class="hero__route">
           <p class="label" id="route-label">Что идёт через VPN: выберите, как в приложении</p>
           <div class="presets" role="radiogroup" aria-labelledby="route-label" data-presets>
             {presets.map((p, i) => (
@@ -228,6 +228,9 @@ const first = presets[0];
   }
   .presets button:last-child { border-right: 0; }
   .presets button[aria-checked='true'] { background: #ECECF1; color: var(--tunnel); }
+  .presets button::after { content: ''; position: absolute; left: 0; right: 0; bottom: 0; height: 3px; background: var(--signal); scale: 0 1; transform-origin: left; transition: scale 0.35s var(--e-standard); }
+  @media (hover: hover) { .presets button:hover::after { scale: 1 1; } }
+  .presets button:focus-visible::after { scale: 1 1; }
   @media (hover: hover) { .presets button:not([aria-checked='true']):hover { color: var(--c-fg); background: rgb(255 255 255 / 0.06); } }
   .presets button:focus-visible { outline-offset: -3px; }
   .presets__rec { display: block; font-size: 0.6875rem; font-weight: 600; color: var(--protected); margin-top: 0.15rem; }

@@ -11,7 +11,8 @@
 .app__head h1 { font: 600 var(--t-xl)/0.96 var(--f-display); letter-spacing: -0.045em; margin-left: -0.04em; }
 .app__head p { color: var(--c-muted); max-width: 60ch; }
 .app__crumb { font-size: var(--t-xs); color: var(--c-muted); }
-.app__crumb a { color: inherit; text-decoration: underline; text-underline-offset: 0.2em; }
+.app__crumb a { display: inline-block; padding-block: 0.3rem; color: inherit; text-decoration: underline; text-underline-offset: 0.2em; transition: color 0.2s var(--e-standard), text-decoration-thickness 0.2s var(--e-standard); }
+@media (hover: hover) { .app__crumb a:hover { color: var(--c-fg); text-decoration-thickness: 3px; text-decoration-color: var(--signal); } }
 
 /* ---------------------------------------------------------------- generic pieces */
 .row { display: flex; flex-wrap: wrap; align-items: center; gap: 0.75rem 1rem; }

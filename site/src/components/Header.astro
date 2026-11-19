@@ -29,7 +29,7 @@ const here = (href: string) => (href === '/' ? current === '/' : current.startsW
     </button>
   </div>
 </header>
-<nav id="menu" class="menu" aria-label="Меню" lang="ru">
+<nav id="menu" class="menu" aria-label="Меню" lang="ru" hidden>
   <ul>
     <li><a href="/" aria-current={current === '/' ? 'page' : undefined}>Главная</a></li>
     <li><a href="/download/" aria-current={here('/download/') ? 'page' : undefined}>Скачать</a></li>

@@ -60,7 +60,7 @@ const en = lang === 'en';
     {toc.length > 1 && (
       <aside class="docs__toc" aria-label={en ? 'On this page' : 'На этой странице'}>
         <p class="docs__group">{en ? 'On this page' : 'На этой странице'}</p>
-        <ul role="list">{toc.map((h) => <li><a class="quiet" href={`#${h.slug}`}>{h.text}</a></li>)}</ul>
+        <ul role="list">{toc.map((h) => <li><a class="docs__toc-link" href={`#${h.slug}`}>{h.text}</a></li>)}</ul>
       </aside>
     )}
   </div>
@@ -77,7 +77,8 @@ const en = lang === 'en';
   .docs__group:first-child { margin-top: 0; }
   .docs__link { position: relative; display: block; padding: 0.4rem 0 0.4rem 0.9rem; color: var(--c-muted); border-left: 1px solid var(--c-line); transition: color 0.2s var(--e-standard); }
   .docs__link::before { content: ''; position: absolute; left: -1px; bottom: 0; width: 3px; height: 100%; background: var(--signal); scale: 1 0; transform-origin: bottom; transition: scale 0.35s var(--e-standard); }
-  @media (hover: hover) { .docs__link:hover { color: var(--c-fg); } .docs__link:hover::before { scale: 1 0.6; } }
+  .docs__link { transition: color 0.2s var(--e-standard), translate 0.3s var(--e-standard); }
+  @media (hover: hover) { .docs__link:hover { color: var(--c-fg); translate: 4px 0; } .docs__link:hover::before { scale: 1 0.6; } }
   .docs__link:focus-visible { color: var(--c-fg); }
   .docs__link[aria-current='page'] { color: var(--c-fg); font-weight: 600; }
   .docs__link[aria-current='page']::before { scale: 1 1; }
@@ -85,7 +86,9 @@ const en = lang === 'en';
   .docs__head { display: grid; gap: 1rem; padding-bottom: calc(var(--u) * 4); margin-bottom: calc(var(--u) * 4); border-bottom: 1px solid var(--c-line); }
   .docs__desc { font-size: var(--t-m); line-height: 1.4; color: var(--c-muted); max-width: 40ch; }
   .docs__toc { grid-column: 11 / -1; position: sticky; top: calc(var(--header-h) + 1.5rem); font-size: var(--t-xs); display: grid; gap: 0.5rem; }
-  .docs__toc li a { display: block; padding: 0.3rem 0; }
+  .docs__toc li a { display: block; padding: 0.3rem 0 0.3rem 0.75rem; color: var(--c-muted); box-shadow: inset 1px 0 0 var(--c-line); transition: color 0.2s var(--e-standard), box-shadow 0.3s var(--e-standard); }
+  @media (hover: hover) { .docs__toc li a:hover { color: var(--c-fg); box-shadow: inset 3px 0 0 var(--signal); } }
+  .docs__toc li a:focus-visible { color: var(--c-fg); box-shadow: inset 3px 0 0 var(--signal); }
   .docs__pager { display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); margin-top: calc(var(--u) * 8); }
   .docs__pg { grid-template-columns: 1fr; gap: 0.3rem; }
   .docs__pg--next { grid-template-columns: 1fr auto; text-align: left; }

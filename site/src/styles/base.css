@@ -107,7 +107,7 @@ kbd { font-family: var(--f-mono); font-size: 0.8em; padding: 0.1em 0.4em; border
   text-decoration: none;
   background: linear-gradient(var(--signal) 0 0) left 100% / 100% 1.5px no-repeat;
   transition: background-size 0.35s var(--e-standard);
-  padding-bottom: 0.05em;
+  padding-block: 0.18em 0.08em;
 }
 @media (hover: hover) { .link:hover, .prose a:hover { background-size: 100% 0.42em; } }
 .link:focus-visible, .prose a:focus-visible { background-size: 100% 0.42em; }
@@ -124,8 +124,9 @@ kbd { font-family: var(--f-mono); font-size: 0.8em; padding: 0.1em 0.4em; border
 .draw:focus-visible, .draw[aria-current='page'] { background-size: 100% 1px; }
 .draw[aria-current='page']::before {
   content: ''; position: absolute; left: -0.85em; top: 50%; width: 0.38em; height: 0.38em;
-  background: var(--signal); translate: 0 -50%;
+  background: var(--signal); translate: 0 -50%; transition: scale 0.3s var(--e-standard), translate 0.3s var(--e-standard);
 }
+@media (hover: hover) { .draw[aria-current='page']:hover::before { scale: 1.5; translate: 0.1em -50%; } }
 
 /* Utility links: colour only. */
 .quiet { color: var(--c-muted); transition: color 0.2s var(--e-standard); }
@@ -230,7 +231,10 @@ html.hdr-away .hdr { translate: 0 -105%; }
 .hdr__in { height: 100%; display: flex; align-items: center; gap: 2rem; }
 .lockup { display: inline-flex; align-items: center; height: 1.6rem; color: var(--c-fg); flex: none; }
 .lockup svg { height: 100%; width: auto; }
-.lockup .lockup__mark { fill: var(--signal); }
+.lockup .lockup__mark { fill: var(--signal); transition: translate 0.35s var(--e-standard); }
+.lockup .lockup__wm { transition: fill 0.25s var(--e-standard); }
+@media (hover: hover) { .lockup:hover .lockup__mark { translate: 0 -10px; } .lockup:hover .lockup__wm { fill: var(--c-muted); } }
+.lockup:focus-visible .lockup__mark { translate: 0 -10px; }
 .lockup .lockup__wm { fill: currentColor; }
 .hdr__nav { display: flex; gap: 1.9rem; margin-left: auto; font-size: var(--t-s); font-weight: 500; }
 .hdr__nav a { color: var(--c-fg); }
@@ -272,12 +276,13 @@ html.menu-open { overflow: hidden; }
 .ftr { position: relative; padding-top: calc(var(--u) * 14); padding-bottom: calc(var(--u) * 4); overflow: clip; }
 .ftr__cols { row-gap: 2.5rem; }
 .ftr__col h2 { font-size: var(--t-xs); font-weight: 500; color: var(--c-muted); margin-bottom: 1rem; }
-.ftr__col ul { list-style: none; padding: 0; display: grid; gap: 0.55rem; font-size: var(--t-s); }
-.ftr__col a { display: inline-block; }
+.ftr__col ul { list-style: none; padding: 0; display: grid; gap: 0.2rem; font-size: var(--t-s); }
+.ftr__col a { display: inline-block; padding-block: 0.3rem; }
 .ftr__mark { margin-top: calc(var(--u) * 10); color: var(--c-fg); }
 .ftr__mark svg { width: 100%; height: auto; }
 .ftr__mark .lockup__mark { fill: var(--signal); }
 .ftr__mark .lockup__wm { fill: currentColor; }
+.ftr__legal a { display: inline-block; padding-block: 0.4rem; }
 .ftr__legal { display: flex; flex-wrap: wrap; justify-content: space-between; gap: 0.75rem 2rem; margin-top: calc(var(--u) * 3); font-size: var(--t-xs); color: var(--c-muted); }
 
 /* ---------------------------------------------------------------- the glass pane (page transitions) */

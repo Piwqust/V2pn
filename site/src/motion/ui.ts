@@ -89,10 +89,19 @@ export function initMenu(onToggle?: (open: boolean) => void) {
   if (!btn || !menu) return () => {};
   const html = document.documentElement;
   const focusables = () => [...menu.querySelectorAll<HTMLElement>('a, button')];
+  let timer = 0;
   const set = (open: boolean) => {
     btn.setAttribute('aria-expanded', String(open));
     btn.querySelector('[data-menu-word]')!.textContent = open ? 'Закрыть' : 'Меню';
-    menu.classList.toggle('is-open', open);
+    clearTimeout(timer);
+    if (open) {
+      menu.hidden = false;
+      void menu.offsetWidth; // start the opening move from the closed state
+      menu.classList.add('is-open');
+    } else {
+      menu.classList.remove('is-open');
+      timer = window.setTimeout(() => { menu.hidden = true; }, 650);
+    }
     menu.toggleAttribute('inert', !open);
     html.classList.toggle('menu-open', open);
     onToggle?.(open);
@@ -111,6 +120,7 @@ export function initMenu(onToggle?: (open: boolean) => void) {
   };
   const linkClick = (e: Event) => { if ((e.target as HTMLElement).closest('a')) set(false); };
   menu.toggleAttribute('inert', true);
+  menu.hidden = true;
   btn.addEventListener('click', click);
   document.addEventListener('keydown', key);
   menu.addEventListener('click', linkClick);

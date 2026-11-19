@@ -67,7 +67,7 @@ public partial class ThemeSettingViewModel : MyReactiveObject
                     _config.UiItem.CurrentLanguage = CurrentLanguage;
                     Thread.CurrentThread.CurrentUICulture = new(CurrentLanguage);
                     await ConfigTextHandler.SaveConfig();
-                    NoticeManager.Instance.Enqueue(ResUI.NeedRebootTips);
+                    NoticeManager.Instance.Enqueue(L.LanguageAfterRestart);
                 }
             });
     }

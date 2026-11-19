@@ -80,7 +80,7 @@ public partial class SubEditView : ReactiveUserControl<SubEditViewModel>
         // A pasted link often carries a trailing space or line break.
         txtUrl.Text = txtUrl.Text?.Trim();
         var url = txtUrl.Text;
-        txtUrlError.Text = ResUI.InvalidUrlTip;
+        txtUrlError.Text = L.SeBadLink;
         txtUrlError.IsVisible = url.IsNotEmpty() && Utils.TryUri(url) == null;
         FillEmptyName();
         SaveProviderChoices();

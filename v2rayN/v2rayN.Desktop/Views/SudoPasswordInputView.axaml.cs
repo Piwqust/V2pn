@@ -44,7 +44,7 @@ public partial class SudoPasswordInputView : UserControl
             else
             {
                 // Password verification failed, display error and let user try again
-                NoticeManager.Instance.Enqueue(ResUI.SudoIncorrectPasswordTip);
+                NoticeManager.Instance.Enqueue(L.SudoWrongPassword);
                 txtPassword.Focus();
             }
         }

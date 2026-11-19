@@ -6,9 +6,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    Title="{x:Static resx:ResUI.menuAddCustomServer}"
+    Title="{x:Static loc:L.MenuCustomConfig}"
     Width="760"
     Height="520"
     x:DataType="vms:AddServer2ViewModel"
@@ -27,7 +26,7 @@
             <Button
                 x:Name="btnCancel"
                 MinWidth="100"
-                Content="{x:Static resx:ResUI.TbCancel}"
+                Content="{x:Static loc:L.Cancel}"
                 IsCancel="True" />
         </StackPanel>
         </Border>
@@ -62,8 +61,8 @@
                                         <Grid ColumnDefinitions="*,Auto">
                                             <TextBox x:Name="txtAddress" IsReadOnly="True" PlaceholderText="config.json" />
                                             <StackPanel Grid.Column="1" Margin="8,0,0,0" Orientation="Horizontal" Spacing="8">
-                                                <Button x:Name="btnBrowse" Content="{x:Static resx:ResUI.TbBrowse}" />
-                                                <Button x:Name="btnEdit" Content="{x:Static resx:ResUI.TbEdit}" />
+                                                <Button x:Name="btnBrowse" Content="{x:Static loc:L.TlChooseFile}" />
+                                                <Button x:Name="btnEdit" Content="{x:Static loc:L.Edit}" />
                                             </StackPanel>
                                         </Grid>
                                     </StackPanel>

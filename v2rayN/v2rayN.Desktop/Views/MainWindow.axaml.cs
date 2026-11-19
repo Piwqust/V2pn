@@ -1489,7 +1489,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         await status.RefreshRoutingsMenu();
         if (changed || sourcesChanged)
         {
-            NoticeManager.Instance.SendMessageEx(ResUI.TipChangeRouting);
+            NoticeManager.Instance.SendMessageEx(L.RoutingChanged);
             status.ReloadRequested.Publish();
         }
     }
@@ -2721,7 +2721,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         if (added.Count + existing.Count == 0)
         {
-            ShowToast(ToastKind.Error, ResUI.OperationFailed);
+            ShowToast(ToastKind.Error, L.LoginAddFailed);
             return;
         }
 

@@ -4,7 +4,6 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:dialogHost="clr-namespace:DialogHostAvalonia;assembly=DialogHost.Avalonia"
     xmlns:loc="using:v2rayN.Desktop"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:semi="https://irihi.tech/semi"
     xmlns:service="clr-namespace:ServiceLib;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
@@ -47,7 +46,7 @@
                         <NativeMenuItem Command="{Binding ShowWindowCmd}" Header="{x:Static loc:L.TrayOpen}" />
                         <NativeMenuItem
                             Command="{Binding NotifyLeftClickCmd}"
-                            Header="{x:Static resx:ResUI.menuShowOrHideMainWindow}"
+                            Header="{x:Static loc:L.TrayShowHide}"
                             IsVisible="{Binding BlIsNonWindows}" />
                         <NativeMenuItem Click="MenuToggleConnectionClick" Header="{Binding TrayConnectText, TargetNullValue={x:Static loc:L.Connect}}" />
                         <NativeMenuItemSeparator />

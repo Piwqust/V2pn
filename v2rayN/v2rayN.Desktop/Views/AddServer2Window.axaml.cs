@@ -44,7 +44,7 @@ public partial class AddServer2Window : WindowBase<AddServer2ViewModel>
     {
         if (profileItem.ConfigType is EConfigType.Custom)
         {
-            Title = ResUI.menuAddCustomServer;
+            Title = L.SvCustomTitle;
             tbPageTitle.Text = L.SvCustomTitle;
             tbPageHint.Text = L.SvCustomHint;
             cmbCoreType.ItemsSource = Utils.GetEnumNames<ECoreType>().Where(t => t != nameof(ECoreType.v2rayN)).ToList();
@@ -53,7 +53,7 @@ public partial class AddServer2Window : WindowBase<AddServer2ViewModel>
         }
         else if (profileItem.ConfigType is EConfigType.Outbound)
         {
-            Title = ResUI.menuAddCustomOutboundServer;
+            Title = L.SvOutboundTitle;
             tbPageTitle.Text = L.SvOutboundTitle;
             tbPageHint.Text = L.SvOutboundHint;
             cmbCoreType.ItemsSource = Global.CoreTypes;

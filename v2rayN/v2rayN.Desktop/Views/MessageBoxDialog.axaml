@@ -2,9 +2,9 @@
     x:Class="v2rayN.Desktop.Views.MessageBoxDialog"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     Width="440"
     MinWidth="360"
     MaxWidth="600"
@@ -68,11 +68,11 @@
             <StackPanel Classes="footer">
                 <Button
                     x:Name="btnYes"
-                    Content="{x:Static resx:ResUI.TbConfirm}"
+                    Content="{x:Static loc:L.Ok}"
                     IsDefault="True" />
                 <Button
                     x:Name="btnNo"
-                    Content="{x:Static resx:ResUI.TbCancel}"
+                    Content="{x:Static loc:L.Cancel}"
                     IsCancel="True" />
             </StackPanel>
         </Border>

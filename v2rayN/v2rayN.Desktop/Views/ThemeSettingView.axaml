@@ -2,10 +2,10 @@
     x:Class="v2rayN.Desktop.Views.ThemeSettingView"
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:v2rayN.Desktop.ViewModels"
     x:DataType="vms:ThemeSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.ThemeSetting}"
@@ -30,7 +30,7 @@
                         <TextBlock
                             Margin="{StaticResource Margin4}"
                             VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbSettingsTheme}" />
+                            Text="{x:Static loc:L.ApGrpTheme}" />
                         <ComboBox
                             x:Name="cmbCurrentTheme"
                             Margin="{StaticResource Margin4}"
@@ -40,7 +40,7 @@
                         <TextBlock
                             Margin="{StaticResource Margin4}"
                             VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbSettingsFontSize}" />
+                            Text="{x:Static loc:L.ApFontSize}" />
                         <ComboBox
                             x:Name="cmbCurrentFontSize"
                             Margin="{StaticResource Margin4}"
@@ -50,7 +50,7 @@
                         <TextBlock
                             Margin="{StaticResource Margin4}"
                             VerticalAlignment="Center"
-                            Text="{x:Static resx:ResUI.TbSettingsLanguage}" />
+                            Text="{x:Static loc:L.ApLanguage}" />
                         <ComboBox
                             x:Name="cmbCurrentLanguage"
                             Margin="{StaticResource Margin4}"

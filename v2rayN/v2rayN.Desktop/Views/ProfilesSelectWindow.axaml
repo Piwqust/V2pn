@@ -7,7 +7,6 @@
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
     xmlns:loc="using:v2rayN.Desktop"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:side="using:v2rayN.Desktop.ViewModels"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     Title="{x:Static loc:L.PickTitleOne}"
@@ -51,7 +50,7 @@
                     <Button
                         x:Name="btnCancel"
                         MinWidth="100"
-                        Content="{x:Static resx:ResUI.TbCancel}"
+                        Content="{x:Static loc:L.Cancel}"
                         IsCancel="True" />
                 </StackPanel>
             </DockPanel>

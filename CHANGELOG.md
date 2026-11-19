@@ -4,6 +4,14 @@ What changes for the people who use the app. Each version's section becomes the 
 
 ## Unreleased
 
+### Kill switch
+
+Settings → Kill switch. Off by default; while it is off, a connection that cannot be brought back switches V2pn off and the internet goes on directly, as before.
+
+- With it on, a dropped connection keeps the internet closed until V2pn reconnects or you press Disconnect, so nothing goes out past the VPN. The status reads "Internet blocked", and its tooltip says how to open the internet again.
+- In VPN mode Windows itself lets out only V2pn, its cores and the tunnel, from the moment you connect, so nothing slips out while the tunnel comes up or the core restarts either. DNS outside the tunnel is blocked; the local network (printers, the router's page) can stay open. The block is lifted the moment V2pn exits, even if it crashes, so it never leaves a computer without internet behind it.
+- In proxy mode the system proxy stays on V2pn with no connection behind it: programs that use the system proxy get nothing instead of a direct connection. Programs that ignore the system proxy are covered only by VPN mode.
+
 ### An installer for Windows
 
 - Windows gets `V2pn-windows-x64-setup.exe` (and `-arm64-setup.exe`) instead of a zip to unpack: a window of V2pn's own, with the map of Europe on the left and one button on the right. It installs V2pn for your Windows user without administrator rights, adds it to the Start menu and, if you leave the box ticked, to the desktop, offers to take your servers from v2rayN, and shows the files going in with lines spreading from the pin on the map.

@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    V2pn's Windows installer window: V2pn-windows-<arch>-setup.exe. It is this program with the Inno Setup
+    engine (tools/installer/V2pn.iss) appended to it; the engine runs hidden and reports its progress to
+    the window. .NET Framework 4.8 comes with Windows 10 1903 and later and with every Windows 11, so the
+    installer needs nothing downloaded and stays about a megabyte. tools/release.ps1 builds and packs it.
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net48</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <LangVersion>latest</LangVersion>
+    <ImplicitUsings>disable</ImplicitUsings>
+    <Nullable>disable</Nullable>
+    <AssemblyName>V2pnSetup</AssemblyName>
+    <RootNamespace>V2pnSetup</RootNamespace>
+    <ApplicationIcon>..\v2rayN.Desktop\Assets\V2pn.ico</ApplicationIcon>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <!-- AnyCPU runs natively on x64 and on ARM64 (.NET Framework 4.8.1 is ARM64-native). -->
+    <PlatformTarget>AnyCPU</PlatformTarget>
+    <Prefer32Bit>false</Prefer32Bit>
+    <GenerateDocumentationFile>false</GenerateDocumentationFile>
+    <Product>V2pn</Product>
+    <Company>V2pn</Company>
+    <Description>V2pn setup</Description>
+    <Copyright>Copyright © 2026 V2pn contributors. GPL-3.0.</Copyright>
+    <DebugType>embedded</DebugType>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="..\v2rayN.Desktop\Assets\Fonts\Inter-Regular.ttf" Link="Assets\Fonts\Inter-Regular.ttf" />
+    <Resource Include="..\v2rayN.Desktop\Assets\Fonts\Inter-Medium.ttf" Link="Assets\Fonts\Inter-Medium.ttf" />
+    <Resource Include="..\v2rayN.Desktop\Assets\Fonts\Inter-SemiBold.ttf" Link="Assets\Fonts\Inter-SemiBold.ttf" />
+    <Resource Include="..\v2rayN.Desktop\Assets\V2pn.ico" Link="Assets\V2pn.ico" />
+    <EmbeddedResource Include="Assets\map.txt" LogicalName="map.txt" />
+  </ItemGroup>
+
+</Project>

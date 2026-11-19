@@ -1,0 +1,219 @@
+<Window x:Class="V2pnSetup.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Width="820" Height="500" WindowStyle="None" ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterScreen" Background="{StaticResource WindowBg}"
+        UseLayoutRounding="True" SnapsToDevicePixels="True" TextElement.Foreground="{StaticResource Ink}" Foreground="{StaticResource Ink}"
+        Icon="pack://application:,,,/Assets/V2pn.ico">
+  <WindowChrome.WindowChrome>
+    <!-- No caption of Windows' own; a one-pixel glass edge keeps the system shadow. -->
+    <WindowChrome CaptionHeight="0" ResizeBorderThickness="0" GlassFrameThickness="0,0,0,1" CornerRadius="0" UseAeroCaptionButtons="False" />
+  </WindowChrome.WindowChrome>
+
+  <Grid x:Name="Root" Background="{StaticResource WindowBg}">
+    <Grid.ColumnDefinitions>
+      <ColumnDefinition Width="360" />
+      <ColumnDefinition Width="*" />
+    </Grid.ColumnDefinitions>
+
+    <!-- ============ The picture: V2pn's own map, Europe with its servers ============ -->
+    <Grid x:Name="Picture" Background="{StaticResource MapBg}" ClipToBounds="True" MouseLeftButtonDown="OnDrag">
+      <Viewbox Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center">
+        <Canvas x:Name="Map" Width="470" Height="652">
+          <Path x:Name="Land" Fill="{StaticResource MapLand}" Stroke="{StaticResource MapBorder}" StrokeThickness="1.1" StrokeLineJoin="Round" />
+          <Canvas x:Name="Links" />
+          <Canvas x:Name="Dots" />
+          <Canvas x:Name="Pin">
+            <Ellipse x:Name="PulseA" Width="64" Height="64" Canvas.Left="-32" Canvas.Top="-32" Fill="{StaticResource Accent}" Opacity="0" RenderTransformOrigin="0.5,0.5">
+              <Ellipse.RenderTransform><ScaleTransform ScaleX="0.2" ScaleY="0.2" /></Ellipse.RenderTransform>
+            </Ellipse>
+            <Ellipse x:Name="PulseB" Width="64" Height="64" Canvas.Left="-32" Canvas.Top="-32" Fill="{StaticResource Accent}" Opacity="0" RenderTransformOrigin="0.5,0.5">
+              <Ellipse.RenderTransform><ScaleTransform ScaleX="0.2" ScaleY="0.2" /></Ellipse.RenderTransform>
+            </Ellipse>
+            <Ellipse Width="22" Height="22" Canvas.Left="-11" Canvas.Top="-11" Fill="{StaticResource Accent}" />
+            <Ellipse Width="9" Height="9" Canvas.Left="-4.5" Canvas.Top="-4.5" Fill="White" />
+          </Canvas>
+        </Canvas>
+      </Viewbox>
+
+      <!-- Shade at the top and the bottom, so the name and the caption read over the map. -->
+      <Border Height="150" VerticalAlignment="Top" IsHitTestVisible="False">
+        <Border.Background>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#F20E0E11" Offset="0" />
+            <GradientStop Color="#000E0E11" Offset="1" />
+          </LinearGradientBrush>
+        </Border.Background>
+      </Border>
+      <Border Height="170" VerticalAlignment="Bottom" IsHitTestVisible="False">
+        <Border.Background>
+          <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+            <GradientStop Color="#000E0E11" Offset="0" />
+            <GradientStop Color="#F20E0E11" Offset="1" />
+          </LinearGradientBrush>
+        </Border.Background>
+      </Border>
+
+      <StackPanel Orientation="Horizontal" Margin="28,26,0,0" VerticalAlignment="Top" HorizontalAlignment="Left" IsHitTestVisible="False">
+        <Border Width="30" Height="30" CornerRadius="8" Background="{StaticResource Accent}">
+          <Viewbox Width="15" Height="16">
+            <Path Fill="White" Data="M0,0 L32,0 L32,40 L72,0 L104,0 L104,32 L85.255,32 L64,53.255 L64,112 L32,112 L32,72 L0,40 Z" />
+          </Viewbox>
+        </Border>
+        <TextBlock Text="V2pn" FontSize="17" FontWeight="SemiBold" Margin="11,0,0,1" VerticalAlignment="Center" />
+      </StackPanel>
+
+      <TextBlock x:Name="MapCaption" Style="{StaticResource Note}" Foreground="{StaticResource Muted}" Margin="28,0,0,26"
+                 VerticalAlignment="Bottom" HorizontalAlignment="Left" IsHitTestVisible="False" />
+    </Grid>
+    <Border Grid.Column="0" Width="1" HorizontalAlignment="Right" Background="{StaticResource Divider}" />
+
+    <!-- ============ The words and the buttons ============ -->
+    <Grid Grid.Column="1" Background="Transparent" MouseLeftButtonDown="OnDrag">
+      <Grid.RowDefinitions>
+        <RowDefinition Height="44" />
+        <RowDefinition Height="*" />
+        <RowDefinition Height="Auto" />
+      </Grid.RowDefinitions>
+
+      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,8,8,0">
+        <Button Style="{StaticResource WindowButton}" Click="OnMinimize" ToolTip="—">
+          <Path Data="M0,0.5 L10,0.5" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" />
+        </Button>
+        <Button x:Name="CloseButton" Style="{StaticResource WindowButton}" Click="OnClose">
+          <Path Data="M0,0 L10,10 M10,0 L0,10" Stroke="{Binding Foreground, RelativeSource={RelativeSource AncestorType=Button}}" StrokeThickness="1.2" />
+        </Button>
+      </StackPanel>
+
+      <Grid x:Name="Screens" Grid.Row="1" Margin="48,6,48,0">
+
+        <!-- Welcome: what is installed where, and the one button. -->
+        <DockPanel x:Name="WelcomeScreen">
+          <StackPanel DockPanel.Dock="Bottom" Margin="0,0,0,0">
+            <TextBlock x:Name="FolderError" Style="{StaticResource Note}" Foreground="{StaticResource Unsafe}" TextWrapping="Wrap" Margin="0,0,0,12" Visibility="Collapsed" />
+            <Button x:Name="InstallButton" Style="{StaticResource Primary}" Click="OnInstall" IsDefault="True" />
+            <TextBlock x:Name="NoAdminNote" Style="{StaticResource Note}" HorizontalAlignment="Center" Margin="0,12,0,0" />
+          </StackPanel>
+          <StackPanel>
+            <TextBlock x:Name="WelcomeEyebrow" Style="{StaticResource Eyebrow}" />
+            <TextBlock x:Name="WelcomeTitle" Style="{StaticResource Title}" />
+            <TextBlock x:Name="WelcomeBody" Style="{StaticResource Body}" />
+
+            <TextBlock x:Name="FolderLabel" Style="{StaticResource Label}" Margin="0,26,0,8" />
+            <Border Background="{StaticResource Field}" BorderBrush="{StaticResource FieldBorder}" BorderThickness="1" CornerRadius="12" Height="46" Padding="14,0,7,0">
+              <Grid>
+                <Grid.ColumnDefinitions>
+                  <ColumnDefinition Width="*" />
+                  <ColumnDefinition Width="Auto" />
+                </Grid.ColumnDefinitions>
+                <Path Width="15" Height="13" Stretch="Uniform" HorizontalAlignment="Left" Stroke="{StaticResource Muted}" StrokeThickness="1.4" StrokeLineJoin="Round"
+                      Data="M1,3 C1,1.9 1.9,1 3,1 L6.5,1 L8.5,3 L15,3 C16.1,3 17,3.9 17,5 L17,13 C17,14.1 16.1,15 15,15 L3,15 C1.9,15 1,14.1 1,13 Z" />
+                <TextBlock x:Name="FolderText" FontSize="13" Foreground="{StaticResource InkSoft}" VerticalAlignment="Center" Margin="26,0,10,0" TextTrimming="CharacterEllipsis" />
+                <Button x:Name="ChangeButton" Grid.Column="1" Style="{StaticResource Small}" Click="OnChangeFolder" />
+              </Grid>
+            </Border>
+
+            <StackPanel x:Name="Options" Margin="0,18,0,0">
+              <CheckBox x:Name="DesktopBox" IsChecked="True">
+                <TextBlock x:Name="DesktopText" FontSize="13.5" />
+              </CheckBox>
+              <CheckBox x:Name="ImportBox" IsChecked="True" Margin="0,12,0,0">
+                <StackPanel>
+                  <TextBlock x:Name="ImportText" FontSize="13.5" />
+                  <TextBlock x:Name="ImportHint" Style="{StaticResource Note}" Margin="0,3,0,0" />
+                </StackPanel>
+              </CheckBox>
+            </StackPanel>
+          </StackPanel>
+        </DockPanel>
+
+        <!-- Progress: the engine's own per mille, smoothed. -->
+        <DockPanel x:Name="ProgressScreen" Visibility="Collapsed">
+          <TextBlock x:Name="ProgressHint" DockPanel.Dock="Bottom" Style="{StaticResource Note}" Margin="0,0,0,4" />
+          <StackPanel>
+            <TextBlock x:Name="ProgressEyebrow" Style="{StaticResource Eyebrow}" />
+            <TextBlock x:Name="ProgressTitle" Style="{StaticResource Title}" />
+            <TextBlock x:Name="Percent" FontSize="64" FontWeight="SemiBold" Margin="0,46,0,0" Typography.NumeralAlignment="Tabular" Text="0%" />
+            <Grid x:Name="Bar" Height="6" Margin="0,18,0,0" ClipToBounds="True">
+              <Border Background="{StaticResource Track}" CornerRadius="3" />
+              <Border x:Name="BarFill" Background="{StaticResource Accent}" CornerRadius="3" HorizontalAlignment="Left" Width="0" />
+              <Border x:Name="BarRunner" Background="{StaticResource Accent}" CornerRadius="3" HorizontalAlignment="Left" Width="90" Visibility="Collapsed">
+                <Border.RenderTransform><TranslateTransform X="-90" /></Border.RenderTransform>
+              </Border>
+            </Grid>
+            <TextBlock x:Name="StepText" FontSize="13" Foreground="{StaticResource Muted}" Margin="0,14,0,0" />
+          </StackPanel>
+        </DockPanel>
+
+        <!-- Done, removed, or something went wrong: an icon, words, buttons. -->
+        <DockPanel x:Name="ResultScreen" Visibility="Collapsed">
+          <StackPanel DockPanel.Dock="Bottom">
+            <Button x:Name="ResultPrimary" Style="{StaticResource Primary}" Click="OnResultPrimary" IsDefault="True" />
+            <Button x:Name="ResultSecondary" Style="{StaticResource Ghost}" Height="40" Margin="0,8,0,0" Click="OnResultSecondary" />
+          </StackPanel>
+          <StackPanel>
+            <Grid x:Name="ResultIcon" Width="60" Height="60" HorizontalAlignment="Left" Margin="0,18,0,0">
+              <Ellipse x:Name="ResultCircle" Fill="{StaticResource SafeSoft}" />
+              <Path x:Name="ResultMark" Stroke="{StaticResource Safe}" StrokeThickness="3" StrokeStartLineCap="Round" StrokeEndLineCap="Round" StrokeLineJoin="Round"
+                    Data="M19,31 L26.5,38.5 L41.5,22" />
+            </Grid>
+            <TextBlock x:Name="ResultTitle" Style="{StaticResource Title}" FontSize="26" Margin="0,24,0,0" />
+            <TextBlock x:Name="ResultBody" Style="{StaticResource Body}" />
+            <TextBlock x:Name="ResultDetail" Style="{StaticResource Note}" TextWrapping="Wrap" Margin="0,14,0,0" Visibility="Collapsed" />
+          </StackPanel>
+        </DockPanel>
+
+        <!-- V2pn is running: wait for it, without a button to press. -->
+        <DockPanel x:Name="WaitScreen" Visibility="Collapsed">
+          <Button x:Name="WaitCancel" DockPanel.Dock="Bottom" Style="{StaticResource Secondary}" Click="OnWaitCancel" />
+          <StackPanel>
+            <Grid Width="60" Height="60" HorizontalAlignment="Left" Margin="0,18,0,0">
+              <Ellipse Fill="{StaticResource AccentSoft}" />
+              <Path Stroke="{StaticResource Accent}" StrokeThickness="2.6" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                    Data="M30,19 L30,30 M22.5,23.5 A10.5,10.5 0 1 0 37.5,23.5" />
+            </Grid>
+            <TextBlock x:Name="WaitTitle" Style="{StaticResource Title}" FontSize="26" Margin="0,24,0,0" />
+            <TextBlock x:Name="WaitBody" Style="{StaticResource Body}" />
+            <StackPanel Orientation="Horizontal" Margin="0,22,0,0">
+              <Grid Width="16" Height="16">
+                <Ellipse Stroke="{StaticResource Track}" StrokeThickness="2" />
+                <Path x:Name="Spinner" Stroke="{StaticResource Accent}" StrokeThickness="2" StrokeStartLineCap="Round" StrokeEndLineCap="Round"
+                      Data="M8,1 A7,7 0 0 1 15,8" RenderTransformOrigin="0.5,0.5">
+                  <Path.RenderTransform><RotateTransform /></Path.RenderTransform>
+                </Path>
+              </Grid>
+              <TextBlock x:Name="WaitText" FontSize="13" Foreground="{StaticResource Muted}" Margin="10,0,0,0" VerticalAlignment="Center" />
+            </StackPanel>
+          </StackPanel>
+        </DockPanel>
+
+        <!-- Remove: one question and one choice. -->
+        <DockPanel x:Name="UninstallScreen" Visibility="Collapsed">
+          <StackPanel DockPanel.Dock="Bottom">
+            <Button x:Name="RemoveButton" Style="{StaticResource Danger}" Click="OnRemove" />
+            <Button x:Name="RemoveCancel" Style="{StaticResource Ghost}" Height="40" Margin="0,8,0,0" Click="OnClose" IsCancel="True" />
+          </StackPanel>
+          <StackPanel>
+            <TextBlock x:Name="UninstallEyebrow" Style="{StaticResource Eyebrow}" Foreground="{StaticResource Unsafe}" />
+            <TextBlock x:Name="UninstallTitle" Style="{StaticResource Title}" />
+            <TextBlock x:Name="UninstallBody" Style="{StaticResource Body}" />
+            <Border Background="{StaticResource Field}" BorderBrush="{StaticResource FieldBorder}" BorderThickness="1" CornerRadius="12" Padding="14,11" Margin="0,22,0,0">
+              <StackPanel>
+                <TextBlock x:Name="UninstallVersion" FontSize="13.5" FontWeight="Medium" />
+                <TextBlock x:Name="UninstallFolder" FontSize="12" Foreground="{StaticResource Muted}" Margin="0,3,0,0" TextTrimming="CharacterEllipsis" />
+              </StackPanel>
+            </Border>
+            <CheckBox x:Name="RemoveDataBox" Margin="0,18,0,0">
+              <StackPanel>
+                <TextBlock x:Name="RemoveDataText" FontSize="13.5" />
+                <TextBlock x:Name="RemoveDataHint" Style="{StaticResource Note}" Margin="0,3,0,0" />
+              </StackPanel>
+            </CheckBox>
+          </StackPanel>
+        </DockPanel>
+      </Grid>
+
+      <TextBlock x:Name="FooterText" Grid.Row="2" Style="{StaticResource Note}" FontSize="11" Margin="48,14,48,22" />
+    </Grid>
+  </Grid>
+</Window>

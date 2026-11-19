@@ -14,6 +14,11 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
     // V2pn: the kill switch (V2pnKillSwitchItem).
     [Reactive] public partial bool KillSwitchEnabled { get; set; }
     [Reactive] public partial bool KillSwitchAllowLan { get; set; }
+    [Reactive] public partial bool AppKillSwitchEnabled { get; set; }
+    [Reactive] public partial string AppKillSwitchApps { get; set; } = string.Empty;
+
+    /// <summary>The window's words for a failure to put the "only through V2pn" filters in place; {0} is the reason.</summary>
+    public string AppKillSwitchFailedText { get; set; } = "{0}";
 
     // V2pn: "Обход блокировок" (V2pnBypassItem).
     [Reactive] public partial bool BypassEnabled { get; set; }
@@ -183,6 +188,8 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         var killSwitch = V2pnKillSwitch.Item(_config);
         KillSwitchEnabled = killSwitch.Enabled;
         KillSwitchAllowLan = killSwitch.AllowLan;
+        AppKillSwitchEnabled = killSwitch.AppsEnabled;
+        AppKillSwitchApps = string.Join(Environment.NewLine, V2pnAppKillSwitch.Names(killSwitch.Apps));
 
         var bypass = V2pnBypass.Item(_config);
         BypassEnabled = bypass.Enabled;
@@ -434,6 +441,8 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         var killSwitch = V2pnKillSwitch.Item(_config);
         killSwitch.Enabled = KillSwitchEnabled;
         killSwitch.AllowLan = KillSwitchAllowLan;
+        killSwitch.AppsEnabled = AppKillSwitchEnabled;
+        killSwitch.Apps = V2pnAppKillSwitch.Names(AppKillSwitchApps.Split('\n'));
 
         var bypass = V2pnBypass.Item(_config);
         bypass.Enabled = BypassEnabled;
@@ -454,6 +463,11 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         {
             await AutoStartupHandler.UpdateTask(_config);
             AppManager.Instance.Reset();
+            // May ask Windows for administrator rights; a "no" keeps the settings and says what is not in place.
+            if (await V2pnAppKillSwitch.SyncAsync(_config) is { } appKillSwitchError)
+            {
+                NoticeManager.Instance.Enqueue(string.Format(AppKillSwitchFailedText, appKillSwitchError));
+            }
 
             NoticeManager.Instance.Enqueue(needReboot ? ResUI.NeedRebootTips : ResUI.OperationSuccess);
             RequestClose?.Invoke(this, EventArgs.Empty);

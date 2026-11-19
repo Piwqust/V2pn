@@ -27,6 +27,14 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
 
         clbdestOverride.SelectionChanged += ClbdestOverride_SelectionChanged;
         btnBrowseCustomSystemProxyPacPath.Click += BtnBrowseCustomSystemProxyPacPath_Click;
+        btnAppKillSwitchClaude.Click += (_, _) => AddKillSwitchApps(V2pnAppKillSwitch.ClaudePreset);
+        btnAppKillSwitchPick.Click += BtnAppKillSwitchPick_Click;
+        var appliedApps = V2pnAppKillSwitch.Applied();
+        txtAppKillSwitchState.Text = appliedApps.Count == 0 ? L.AppKillSwitchNone : L.AppKillSwitchNow(string.Join(", ", appliedApps));
+        if (ViewModel != null)
+        {
+            ViewModel.AppKillSwitchFailedText = L.AppKillSwitchFailed;
+        }
         btnBrowseCustomSystemProxyScriptPath.Click += BtnBrowseCustomSystemProxyScriptPath_Click;
 
         clbdestOverride.ItemsSource = Global.destOverrideProtocols;
@@ -168,6 +176,9 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
             this.Bind(ViewModel, vm => vm.CoreType14, v => v.cmbCoreType14.SelectedValue).DisposeWith(disposables);
 
             this.Bind(ViewModel, vm => vm.KillSwitchEnabled, v => v.togKillSwitch.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.AppKillSwitchEnabled, v => v.togAppKillSwitch.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.AppKillSwitchApps, v => v.txtAppKillSwitchApps.Text).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.AppKillSwitchEnabled, v => v.rowAppKillSwitchList.IsEnabled).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.KillSwitchAllowLan, v => v.togKillSwitchLan.IsChecked).DisposeWith(disposables);
             this.OneWayBind(ViewModel, vm => vm.KillSwitchEnabled, v => v.rowKillSwitchLan.IsEnabled).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.BypassEnabled, v => v.togBypassEnabled.IsChecked).DisposeWith(disposables);
@@ -231,6 +242,26 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         if (ViewModel != null)
         {
             ViewModel.DestOverride = clbdestOverride.SelectedItems.Cast<string>().ToList();
+        }
+    }
+
+    private void AddKillSwitchApps(IEnumerable<string> names)
+    {
+        if (ViewModel == null)
+        {
+            return;
+        }
+        var list = V2pnAppKillSwitch.Names((ViewModel.AppKillSwitchApps ?? string.Empty).Split('\n').Concat(names));
+        ViewModel.AppKillSwitchApps = string.Join(Environment.NewLine, list);
+        ViewModel.AppKillSwitchEnabled = true;
+    }
+
+    private async void BtnAppKillSwitchPick_Click(object? sender, RoutedEventArgs e)
+    {
+        var fileName = await UI.OpenFileDialog(null);
+        if (V2pnAppKillSwitch.Normalize(fileName) is { } name)
+        {
+            AddKillSwitchApps([name]);
         }
     }
 

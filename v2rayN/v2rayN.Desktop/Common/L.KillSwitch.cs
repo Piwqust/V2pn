@@ -20,6 +20,26 @@ public static partial class L
         "VPN mode needs V2pn started as administrator; the kill switch uses the same rights.",
         "Режиму VPN нужны права администратора; kill switch пользуется ими же.");
 
+    public static string GrpAppKillSwitch => T("Programs only through V2pn", "Программы только через V2pn");
+    public static string AppKillSwitch => T("Never let these programs out past V2pn", "Не выпускать эти программы мимо V2pn");
+    public static string AppKillSwitchHint => T(
+        "They reach the internet only through V2pn's proxy or its tunnel, and are cut off otherwise: with V2pn disconnected, closed or not started. The real address never shows, for example to Claude.",
+        "Они выходят в интернет только через прокси или туннель V2pn, а в остальное время отрезаны: когда V2pn отключён, закрыт или ещё не запущен. Настоящий адрес не засветится, например перед Claude.");
+    public static string AppKillSwitchList => T("Programs, one per line", "Программы, по одной в строке");
+    public static string AppKillSwitchListHint => T(
+        "By file name, such as claude.exe: every copy and every version of it counts. Saving asks Windows for administrator rights once.",
+        "По имени файла, например claude.exe: считаются все копии и все версии. При сохранении Windows один раз спросит права администратора.");
+    public static string AppKillSwitchClaude => T("Add Claude", "Добавить Claude");
+    public static string AppKillSwitchPick => T("Choose a program…", "Выбрать программу…");
+    public static string AppKillSwitchCodeNote => T(
+        "Claude Code ignores the system proxy: in proxy mode it works only with HTTPS_PROXY set to V2pn's port; VPN mode needs nothing.",
+        "Claude Code не смотрит на системный прокси: в режиме прокси он заработает, только если задать HTTPS_PROXY на порт V2pn; в режиме VPN ничего не нужно.");
+    public static string AppKillSwitchNow(string names) => T($"Closed now: {names}", $"Сейчас закрыты: {names}");
+    public static string AppKillSwitchNone => T("Nothing is closed now.", "Сейчас ничего не закрыто.");
+    public static string AppKillSwitchFailed => T(
+        "The programs could not be closed off: {0}",
+        "Не удалось закрыть программы: {0}");
+
     public static string StateKillSwitch => T("Internet blocked", "Интернет заблокирован");
     public static string KillSwitchHoldTip => T(
         "The connection dropped, and the kill switch keeps the internet closed so nothing goes out past the VPN. Reconnect, choose another server, or press Disconnect to open the internet.",

@@ -697,10 +697,10 @@
         <Setter Property="Stroke" Value="{DynamicResource V2InkSoft}" />
     </Style>
 
-    <!--  Countries with servers on the map.  -->
+    <!--  Countries with servers on the map, in the colour of their best ping (the tiers of the list's ping pills).  -->
     <Style Selector="Ellipse.mapdot">
-        <Setter Property="Width" Value="9" />
-        <Setter Property="Height" Value="9" />
+        <Setter Property="Width" Value="11" />
+        <Setter Property="Height" Value="11" />
         <Setter Property="Fill" Value="{DynamicResource V2MapDot}" />
         <Setter Property="Stroke" Value="{DynamicResource V2MapOcean}" />
         <Setter Property="StrokeThickness" Value="2" />
@@ -708,10 +708,67 @@
         <Setter Property="HorizontalAlignment" Value="Center" />
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
-    <!--  Each dot sits in a 24 px hit area (MapView), so it is easy to point at; hovering the area lights the dot.  -->
+    <Style Selector="Ellipse.mapdot.good">
+        <Setter Property="Fill" Value="{DynamicResource V2PingGood}" />
+    </Style>
+    <Style Selector="Ellipse.mapdot.mid">
+        <Setter Property="Fill" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="Ellipse.mapdot.bad">
+        <Setter Property="Fill" Value="{DynamicResource V2PingBad}" />
+    </Style>
+    <!--  Dots that would overlap merge into one with the number of countries in it, ringed in the fastest one's colour.  -->
+    <Style Selector="Border.mapcluster">
+        <Setter Property="Width" Value="22" />
+        <Setter Property="Height" Value="22" />
+        <Setter Property="CornerRadius" Value="11" />
+        <Setter Property="BorderThickness" Value="1.5" />
+        <Setter Property="Background" Value="{DynamicResource V2CardBackground}" />
+        <Setter Property="BorderBrush" Value="{DynamicResource V2MapDot}" />
+        <Setter Property="RenderTransform" Value="scale(1)" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <Style Selector="Border.mapcluster.good">
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PingGood}" />
+    </Style>
+    <Style Selector="Border.mapcluster.mid">
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PingMid}" />
+    </Style>
+    <Style Selector="Border.mapcluster.bad">
+        <Setter Property="BorderBrush" Value="{DynamicResource V2PingBad}" />
+    </Style>
+    <Style Selector="Border.mapcluster > TextBlock">
+        <Setter Property="FontSize" Value="11" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+        <Setter Property="HorizontalAlignment" Value="Center" />
+        <Setter Property="VerticalAlignment" Value="Center" />
+    </Style>
+    <!--  Each dot sits in a 28 px hit area (MapView), so it is easy to point at; hovering the area grows the dot.  -->
     <Style Selector="Panel.mapdothit:pointerover > Ellipse.mapdot">
-        <Setter Property="Fill" Value="{DynamicResource V2Ink}" />
-        <Setter Property="RenderTransform" Value="scale(1.5)" />
+        <Setter Property="RenderTransform" Value="scale(1.4)" />
+    </Style>
+    <Style Selector="Panel.mapdothit:pointerover > Border.mapcluster">
+        <Setter Property="RenderTransform" Value="scale(1.12)" />
+    </Style>
+    <!--  The label beside the map pin: flag, city, ping.  -->
+    <Style Selector="Border.mapchip">
+        <Setter Property="CornerRadius" Value="9" />
+        <Setter Property="Padding" Value="8,6,11,6" />
+    </Style>
+    <Style Selector="TextBlock.mapchiptitle">
+        <Setter Property="FontSize" Value="13" />
+        <Setter Property="FontWeight" Value="SemiBold" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+    </Style>
+    <Style Selector="TextBlock.mapchipsub">
+        <Setter Property="FontSize" Value="12" />
+        <Setter Property="FontFeatures" Value="+tnum" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+    </Style>
+    <Style Selector="TextBlock.mapchipsub.alert">
+        <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
     </Style>
 
     <!--  Sidebar rows are mouse targets; keyboard focus stays on the list item around them.  -->

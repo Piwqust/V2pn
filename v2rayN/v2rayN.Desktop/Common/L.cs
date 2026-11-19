@@ -265,6 +265,7 @@ public static partial class L
     public static string Remove => T("Delete", "Удалить");
     public static string TestSpeed => T("Speed test", "Тест скорости");
     public static string Europe => T("Europe", "Европа");
+    public static string MapYourAddress => T("your address is visible", "ваш адрес виден");
     public static string Seconds => T("s", "с");
 
     public static string PingProgress => T("Stop · {0}/{1}", "Стоп · {0}/{1}");

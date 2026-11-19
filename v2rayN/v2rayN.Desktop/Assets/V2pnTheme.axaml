@@ -58,6 +58,9 @@
             <SolidColorBrush x:Key="V2MapActiveSafe" Color="#2A4A3A" />
             <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#4A2A22" />
             <SolidColorBrush x:Key="V2MapActiveLocal" Color="#463D27" />
+            <!--  Meridians and parallels on the ocean, and the shadow under the map pin.  -->
+            <SolidColorBrush x:Key="V2MapGrid" Color="#0BFFFFFF" />
+            <BoxShadows x:Key="V2PinShadow">0 1 6 0 #66000000</BoxShadows>
             <BoxShadows x:Key="V2CardShadow">inset 0 1 0 0 #0FFFFFFF, 0 1 2 0 #4D000000, 0 6 16 -4 #59000000, 0 20 40 -14 #73000000</BoxShadows>
             <BoxShadows x:Key="V2RaisedShadow">inset 0 1 0 0 #14FFFFFF, 0 2 4 0 #4D000000, 0 12 28 -8 #73000000, 0 32 64 -20 #8C000000</BoxShadows>
             <BoxShadows x:Key="V2NavShadow">inset 0 1 0 0 #14FFFFFF, 0 1 2 0 #66000000, 0 4 10 -3 #4D000000</BoxShadows>
@@ -245,6 +248,9 @@
             <SolidColorBrush x:Key="V2MapActiveSafe" Color="#C9EEDB" />
             <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#F8D3CF" />
             <SolidColorBrush x:Key="V2MapActiveLocal" Color="#F5E6C4" />
+            <!--  Meridians and parallels on the ocean, and the shadow under the map pin.  -->
+            <SolidColorBrush x:Key="V2MapGrid" Color="#0E16161B" />
+            <BoxShadows x:Key="V2PinShadow">0 1 5 0 #3316161B</BoxShadows>
             <BoxShadows x:Key="V2CardShadow">inset 0 1 0 0 #FFFFFFFF, 0 1 2 0 #0F16161B, 0 6 16 -4 #1716161B, 0 20 40 -14 #2416161B</BoxShadows>
             <BoxShadows x:Key="V2RaisedShadow">inset 0 1 0 0 #FFFFFFFF, 0 2 4 0 #1216161B, 0 12 28 -8 #2416161B, 0 32 64 -20 #3316161B</BoxShadows>
             <BoxShadows x:Key="V2NavShadow">inset 0 1 0 0 #FFFFFFFF, 0 0 0 1 #1416161B, 0 1 2 0 #1416161B, 0 4 10 -3 #1A16161B</BoxShadows>

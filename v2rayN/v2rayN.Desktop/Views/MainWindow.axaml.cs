@@ -738,6 +738,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             var code = V2pnPartnerLive.Instance.Describe(item?.Subid, item?.Remarks, item?.Address)?.Country ?? CountryResolver.Resolve(item?.Remarks);
             var country = WorldMap.Instance.Get(code);
             _mapCode = country?.Code ?? code;
+            _mapRemarks = item?.Remarks;
             _serverName = item == null ? null : CountryResolver.ServerName(item);
             RefreshServersStatus();
             var flag = V2pnConverters.Flag(code);
@@ -835,7 +836,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
         // V2pn: the partner's buttons under Connect while a server of its subscription is in use.
         RefreshPartnerActionBar(item?.Subid);
-        _statusView?.SetServer(item, FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId));
+        ShowServerDelay(item, FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId));
     }
 
     /// <summary>
@@ -1067,12 +1068,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         tintWarn.Opacity = !noTint && kind == "warn" ? 1 : 0;
         tintUnsafe.Opacity = !noTint && kind == "unsafe" ? 1 : 0;
 
-        mapView.Focus(_mapCode, kind switch
+        FocusMap(kind switch
         {
             "safe" => ProtectionState.Protected,
             "warn" or "checking" => ProtectionState.LocalOnly,
             _ => ProtectionState.Unprotected,
-        });
+        }, state != ProtectionState.Unprotected);
         btnConnect.Classes.Set("safe", kind == "safe");
         btnConnect.Classes.Set("warn", kind == "warn" && state != ProtectionState.Unprotected);
     }
@@ -1093,7 +1094,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             return;
         }
         var item = await ConfigDbQuery.GetProfileItem(_activeIndexId);
-        _statusView.SetServer(item, FindModel(_activeIndexId)?.Delay ?? await StoredDelayAsync(_activeIndexId));
+        ShowServerDelay(item, FindModel(_activeIndexId)?.Delay ?? await StoredDelayAsync(_activeIndexId));
     }
 
     private void BtnConnect_Click(object? sender, RoutedEventArgs e) =>

@@ -164,17 +164,20 @@
     </Style>
 
     <!--
-        Map pin pulse: a few waves when the pin lands or the protection changes, then a still halo.
+        Map pin ripple: two waves when the pin lands or the protection changes, then nothing moves.
         Every frame of it redraws the map under the pin; pulsing for as long as V2pn stays
-        connected cost a third of a CPU core, minimized too. MapView adds .pulse to replay it.
+        connected cost a third of a CPU core, minimized too. MapView adds .play to replay it.
     -->
-    <Style Selector="Ellipse.halo.pulse[IsVisible=True]">
+    <Style Selector="Ellipse.mapripple">
+        <Setter Property="Opacity" Value="0" />
+    </Style>
+    <Style Selector="Ellipse.mapripple.play[IsVisible=True]">
         <Style.Animations>
-            <Animation IterationCount="3" Duration="0:0:2.4">
+            <Animation IterationCount="2" Duration="0:0:1.5" Easing="CubicEaseOut">
                 <KeyFrame Cue="0%">
-                    <Setter Property="ScaleTransform.ScaleX" Value="0.35" />
-                    <Setter Property="ScaleTransform.ScaleY" Value="0.35" />
-                    <Setter Property="Opacity" Value="0.55" />
+                    <Setter Property="ScaleTransform.ScaleX" Value="0.12" />
+                    <Setter Property="ScaleTransform.ScaleY" Value="0.12" />
+                    <Setter Property="Opacity" Value="0.6" />
                 </KeyFrame>
                 <KeyFrame Cue="100%">
                     <Setter Property="ScaleTransform.ScaleX" Value="1" />
@@ -187,6 +190,13 @@
 
     <!--  Map dots grow a little under the pointer.  -->
     <Style Selector="Ellipse.mapdot">
+        <Setter Property="Transitions">
+            <Transitions>
+                <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />
+            </Transitions>
+        </Setter>
+    </Style>
+    <Style Selector="Border.mapcluster">
         <Setter Property="Transitions">
             <Transitions>
                 <TransformOperationsTransition Property="RenderTransform" Duration="0:0:0.12" />

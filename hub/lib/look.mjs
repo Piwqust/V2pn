@@ -1,6 +1,6 @@
-// A provider's look as the cabinet edits it, the checks it must pass before it can be published (the rules of
-// V2pn's reader: V2pnPartnerTrust, V2pnPartnerCatalog.ParseAction, V2pnPartnerSlots), and partner.json built from it
-// as docs/partners/partner.schema.json describes it.
+// A partner's look as the provider edits it, its buttons, the checks they must pass before they go out (the rules of
+// V2pn's reader: V2pnPartnerTrust, V2pnPartnerCatalog.ParseAction, V2pnPartnerSlots, V2pnPartnerTheme), and
+// partner.json built from them as docs/partners/partner.schema.json describes it.
 import { colors as C } from './colors.mjs';
 import { HubError } from './errors.mjs';
 import { COLOUR, domainAllowed, httpsUrl, oneLine, validName } from './validate.mjs';
@@ -21,13 +21,22 @@ export const PICTURES = Object.keys(FILE);
 
 const SHA = /^[0-9a-f]{64}$/;
 
-/** A look with nothing but the name: what an approved provider has before it designs its own. */
+export const LAYOUTS = ['v2pn', 'stickers'];
+// The words the site's form uses for the background, next to the pack's own.
+const BACKGROUNDS = { none: 'none', map: 'none', gradient: 'gradient', image: 'image', picture: 'image' };
+
+/** A look with nothing but the name. */
 export function defaultLook(name) {
-  return { name, brand: [], background: 'none', logo: null, logoOnLight: null, mark: null, backdrop: null,
-    links: { cabinet: '', support: '' }, api: '', login: false, actions: [], lock: false };
+  return { name, brand: [], background: 'none', layout: 'v2pn', logo: null, logoOnLight: null, mark: null, backdrop: null,
+    links: { cabinet: '', support: '' } };
 }
 
 const bad = (fields, key, message) => { fields[key] = message; };
+
+/** "t.me/x" as the provider types it: an https link without the scheme gets it. */
+function withScheme(text) {
+  return text && !/^[a-z][a-z0-9+.-]*:/i.test(text) ? `https://${text}` : text;
+}
 
 /**
  * The look of a request body, with every value of the right type and within its limits; throws "invalid" otherwise.
@@ -46,8 +55,10 @@ export function parseLook(input) {
     if (!brand.includes(hex)) brand.push(hex);
   }
   if (brand.length > 3) bad(fields, 'brand', 'Не больше трёх цветов.');
-  const background = input.background ?? 'none';
-  if (!['none', 'gradient', 'image'].includes(background)) bad(fields, 'background', 'Фон: нет, градиент или картинка.');
+  const background = BACKGROUNDS[input.background ?? 'none'];
+  if (!background) bad(fields, 'background', 'Фон: карта мира, градиент или картинка.');
+  const layout = input.layout ?? 'v2pn';
+  if (!LAYOUTS.includes(layout)) bad(fields, 'layout', 'Раскладка: обычная V2pn или наклейки.');
   const pics = {};
   for (const key of PICTURES) {
     const v = input[key] ?? null;
@@ -58,30 +69,37 @@ export function parseLook(input) {
   for (const key of ['cabinet', 'support']) {
     const v = oneLine(input.links?.[key] ?? '', 2048);
     if (v == null) bad(fields, `links.${key}`, 'Ссылка до 2048 символов.');
-    else links[key] = v;
+    else links[key] = withScheme(v);
   }
-  const api = oneLine(input.api ?? '', 512);
-  if (api == null) bad(fields, 'api', 'Адрес до 512 символов.');
-  if (input.login != null && typeof input.login !== 'boolean') bad(fields, 'login', 'Да или нет.');
-  if (input.lock != null && typeof input.lock !== 'boolean') bad(fields, 'lock', 'Да или нет.');
+  if (Object.keys(fields).length) throw new HubError('invalid', { fields });
+  return { name, brand, background, layout, ...pics, links };
+}
+
+/** The buttons of a request body, each field within its limits; throws "invalid" under <prefix> otherwise. */
+export function parseActions(input, prefix = 'actions') {
+  const fields = {};
+  if (!Array.isArray(input)) throw new HubError('invalid', { fields: { [prefix]: 'Список кнопок.' } });
+  if (input.length > 4) bad(fields, prefix, 'Не больше четырёх кнопок.');
+  if (!input.length) bad(fields, prefix, 'Добавьте хотя бы одну кнопку.');
   const actions = [];
-  if (input.actions != null && !Array.isArray(input.actions)) bad(fields, 'actions', 'Список кнопок.');
-  const rawActions = Array.isArray(input.actions) ? input.actions : [];
-  if (rawActions.length > 4) bad(fields, 'actions', 'Не больше четырёх кнопок.');
-  rawActions.slice(0, 4).forEach((a, i) => {
-    if (!a || typeof a !== 'object') { bad(fields, `actions.${i}`, 'Кнопка не заполнена.'); return; }
+  input.slice(0, 4).forEach((a, i) => {
+    if (!a || typeof a !== 'object') { bad(fields, `${prefix}.${i}`, 'Кнопка не заполнена.'); return; }
     const action = { label: oneLine(a.label ?? '', 64), icon: oneLine(a.icon ?? '', 16), do: oneLine(a.do ?? '', 32) };
     for (const [k, max] of Object.entries(NEED_MAX)) action[k] = oneLine(a[k] ?? '', max);
-    if (Object.values(action).some(v => v == null)) { bad(fields, `actions.${i}`, 'Слишком длинное поле.'); return; }
+    if (Object.values(action).some(v => v == null)) { bad(fields, `${prefix}.${i}`, 'Слишком длинное поле.'); return; }
+    // Only the field its kind needs is kept, so the same button always has the same content (and hash).
+    const need = NEEDS[action.do];
+    for (const k of Object.keys(NEED_MAX)) if (k !== need) action[k] = '';
     actions.push(action);
   });
   if (Object.keys(fields).length) throw new HubError('invalid', { fields });
-  return { name, brand, background, ...pics, links, api, login: input.login === true, actions, lock: input.lock === true };
+  return actions;
 }
 
 const hostOf = u => { try { return new URL(u).hostname.toLowerCase(); } catch { return null; } };
 
-function actionProblem(a, look, domains) {
+/** Why a button would not pass V2pnPartnerCatalog.ParseAction for a partner with <api> on <domains>; null when it does. */
+export function actionProblem(a, api, domains) {
   if (!a.label || a.label.length > 24) return 'Подпись от 1 до 24 символов.';
   if (!DOS.includes(a.do)) return 'Выберите, что делает кнопка.';
   if (a.icon && !ICONS.includes(a.icon)) return 'Такого значка нет.';
@@ -89,20 +107,22 @@ function actionProblem(a, look, domains) {
   if (need && !a[need]) return 'Заполните поле этой кнопки.';
   if (a.do === 'connect.best' && !STRATEGIES.includes(a.strategy)) return 'Способ выбора: ping, stable или load.';
   if (a.do === 'connect.recommend' && !PURPOSES.includes(a.purpose)) return 'Выберите назначение из списка.';
-  if (NEEDS_API.has(a.do) && !httpsUrl(look.api)) return 'Эта кнопка работает только с API.';
+  if (NEEDS_API.has(a.do) && !httpsUrl(api || '')) return 'Эта кнопка работает только с API (особое право «API»).';
   if (a.do === 'open.link') {
     const h = hostOf(a.url);
     const ok = a.url.startsWith('tg:') ? !/\s/.test(a.url) : Boolean(httpsUrl(a.url) && h && (h === 't.me' || domainAllowed(domains, a.url)));
-    if (!ok) return 'Ссылка: tg: или https на t.me или на ваших доменах.';
+    if (!ok) return 'Ссылка: tg: или https на t.me или на домене вашей подписки.';
   }
   return null;
 }
 
+export const needsApi = a => NEEDS_API.has(a.do);
+
 /**
- * What keeps <look> from being published for a provider of <tier> with <domains>; <pictures> maps a sha256 to its
- * upload {slot, width, height, size} (only the provider's own). An empty object when it can go out.
+ * What keeps <look> from being published; <pictures> maps a sha256 to its upload {slot, width, height, size} (only
+ * the account's own). An empty object when it can go out.
  */
-export function lookProblems(look, { tier, domains, pictures }) {
+export function lookProblems(look, { pictures }) {
   const p = {};
   if (validName(look.name) !== look.name) p.name = 'Название от 1 до 40 символов, без «V2pn».';
   if (!look.brand.length) p.brand = 'Нужен хотя бы один цвет.';
@@ -118,17 +138,6 @@ export function lookProblems(look, { tier, domains, pictures }) {
   for (const key of ['cabinet', 'support']) {
     if (look.links[key] && !httpsUrl(look.links[key])) p[`links.${key}`] = 'Ссылка должна начинаться с https://.';
   }
-  const tier2 = tier >= 2;
-  if (look.api) {
-    if (!tier2) p.api = 'API — на ступени 2.';
-    else if (!httpsUrl(look.api)) p.api = 'Адрес API должен начинаться с https://.';
-    else if (!domainAllowed(domains, look.api)) p.api = 'Адрес API должен быть на одном из ваших доменов.';
-  }
-  if (look.login && !tier2) p.login = 'Вход по коду — на ступени 2.';
-  else if (look.login && !look.api) p.login = 'Для входа по коду нужен адрес API.';
-  if (look.lock && !tier2) p.lock = 'Скрытые адреса — на ступени 2.';
-  if (look.actions.length && !tier2) p.actions = 'Свои кнопки — на ступени 2.';
-  else look.actions.forEach((a, i) => { const why = actionProblem(a, look, domains); if (why) p[`actions.${i}`] = why; });
   return p;
 }
 
@@ -156,8 +165,8 @@ export function gradientStops(brand) {
 const slug = s => s.toLowerCase().normalize('NFKD').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '').slice(0, 32);
 
 /**
- * partner.json of <look> for provider <id> (an object; jsonfmt writes it). <assets> are [{key, content}] of the
- * pictures that go into the pack, with their pack names; every picture is a PNG.
+ * partner.json of <look> for partner <id> (an object; jsonfmt writes it). <look> carries the approved rights too
+ * (api, login, actions, lock). <assets> are [{key, content}] of the pictures that go into the pack.
  */
 export function packObject(id, look, assets) {
   const theme = themeOf(look);
@@ -170,6 +179,8 @@ export function packObject(id, look, assets) {
   const pack = { schema: 1, id, name: look.name, brand, theme: { palette: { brand: theme.brand } } };
   if (theme.background.type === 'gradient') pack.theme.background = { type: 'gradient', colors: theme.background.colors };
   if (theme.background.type === 'image') pack.theme.background = { type: 'image', art: theme.background.art };
+  // V2pn's own layout is what a pack without one gets; leaving it out keeps such packs as they were.
+  if (look.layout && look.layout !== 'v2pn') pack.theme.layout = look.layout;
   if (look.api) pack.api = look.api;
   if (look.login) pack.login = true;
   const links = {};
@@ -199,13 +210,4 @@ export function packPictures(look) {
   const theme = themeOf(look);
   return PICTURES.filter(key => look[key] && (key !== 'backdrop' || theme.background.type === 'image'))
     .map(key => ({ key, sha: look[key], name: FILE[key] }));
-}
-
-/** The grants of a provider's listing: edition always; the rest at tier 2, as far as its published look uses them. */
-export function grantsFor(tier, look) {
-  const grants = ['edition'];
-  if (tier >= 2 && look?.api) grants.push('account');
-  if (tier >= 2 && look?.actions?.length) grants.push('actions');
-  if (tier >= 2 && look?.lock) grants.push('lock');
-  return grants;
 }

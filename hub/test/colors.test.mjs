@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { colors as C } from '../lib/colors.mjs';
-import { lookProblems, defaultLook, gradientStops, themeOf } from '../lib/look.mjs';
+import { actionProblem, lookProblems, defaultLook, gradientStops, parseLook, themeOf } from '../lib/look.mjs';
 import { pageTheme } from '../lib/page.mjs';
 
 const P = C.parse;
@@ -102,22 +102,23 @@ test('one brand colour still gives a two-stop gradient (a lighter, turned one is
   assert.notEqual(stops[1], '#FF7A2F');
 });
 
-test('a look is checked as V2pn checks it', () => {
+test('a look and buttons are checked as V2pn checks them', () => {
   const pictures = new Map([['a'.repeat(64), { slot: 'logo', width: 340, height: 96, size: 1000 }], ['b'.repeat(64), { slot: 'mark', width: 300, height: 96, size: 1000 }]]);
   const base = { ...defaultLook('Kestrel'), brand: ['#2F7BFF'] };
-  assert.deepEqual(lookProblems(base, { tier: 1, domains: ['kestrel.example'], pictures }), {});
+  assert.deepEqual(lookProblems(base, { pictures }), {});
   const p = lookProblems({
-    ...base, name: 'Kestrel V2pn', brand: [], logo: 'a'.repeat(64), mark: 'b'.repeat(64), api: 'https://kestrel.example/api/', login: true,
-    actions: [{ label: 'Самый быстрый', icon: 'bolt', do: 'connect.best', strategy: 'ping', purpose: '', server: '', group: '', url: '' }],
+    ...base, name: 'Kestrel V2pn', brand: [], logo: 'a'.repeat(64), mark: 'b'.repeat(64), background: 'image',
     links: { cabinet: 'http://kestrel.example', support: '' },
-  }, { tier: 1, domains: ['kestrel.example'], pictures });
-  assert.deepEqual(Object.keys(p).sort(), ['actions', 'api', 'brand', 'links.cabinet', 'login', 'mark', 'name']);
-  const t2 = lookProblems({
-    ...base, api: 'https://other.example/api/', actions: [
-      { label: 'Ссылка', icon: '', do: 'open.link', strategy: '', purpose: '', server: '', group: '', url: 'https://evil.example/' },
-      { label: 'Карточка', icon: '', do: 'info.card', strategy: '', purpose: '', server: '', group: '', url: '' },
-      { label: 'Телеграм', icon: 'chat', do: 'open.link', strategy: '', purpose: '', server: '', group: '', url: 'https://t.me/kestrel' },
-    ],
-  }, { tier: 2, domains: ['kestrel.example'], pictures });
-  assert.deepEqual(Object.keys(t2).sort(), ['actions.0', 'api']);
+  }, { pictures });
+  assert.deepEqual(Object.keys(p).sort(), ['backdrop', 'brand', 'links.cabinet', 'mark', 'name']);
+  const look = parseLook({ name: 'K', background: 'map', layout: 'stickers', links: { support: 't.me/k' } });
+  assert.deepEqual([look.background, look.layout, look.links.support], ['none', 'stickers', 'https://t.me/k']);
+  assert.equal(parseLook({ background: 'picture' }).background, 'image');
+  const domains = ['kestrel.example'];
+  const button = (o) => ({ label: 'Кнопка', icon: '', strategy: '', purpose: '', server: '', group: '', url: '', ...o });
+  assert.match(actionProblem(button({ do: 'open.link', url: 'https://evil.example/' }), '', domains), /на домене вашей подписки/);
+  assert.equal(actionProblem(button({ do: 'open.link', url: 'https://t.me/kestrel' }), '', domains), null);
+  assert.match(actionProblem(button({ do: 'info.card' }), '', domains), /API/);
+  assert.equal(actionProblem(button({ do: 'info.card' }), 'https://kestrel.example/api/', domains), null);
+  assert.match(actionProblem(button({ do: 'connect.best', strategy: 'fast' }), '', domains), /ping, stable или load/);
 });

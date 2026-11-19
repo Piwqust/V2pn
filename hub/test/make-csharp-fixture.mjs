@@ -1,5 +1,5 @@
 // Writes hub/test/fixtures/csharp/: a publication made by the hub with a throwaway key (Configra imported, and a
-// provider "kestrel" that went through the hub with every tier-2 field), its public key, and the colours the hub's
+// partner "kestrel" saved on the hub with its special rights approved), its public key, and the colours the hub's
 // port derives for a set of themes. v2rayN/ServiceLib.Tests/V2pn/V2pnHubFixtureTests.cs reads it with V2pn's own code.
 //
 //   node hub/test/make-csharp-fixture.mjs
@@ -8,43 +8,46 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { colors as C } from '../lib/colors.mjs';
 import { publicKeyOf } from '../lib/keys.mjs';
-import { makePng, startHub } from './helpers.mjs';
+import { makePng, serve, startHub, testNet } from './helpers.mjs';
 
 const out = fileURLToPath(new URL('./fixtures/csharp/', import.meta.url));
 const configra = fileURLToPath(new URL('../../partners/configra', import.meta.url));
 
-const env = await startHub();
+// A stand-in subscription for kestrel.example on this computer, so the hub's check passes as on the server.
+const servers = await serve((req, res) => res.end());
+const sub = await serve((req, res) => res.end(Buffer.from(`vless://id@s1.kestrel.example:${servers.port}?security=reality#S1`).toString('base64')));
+const env = await startHub({
+  net: { ...testNet, tcp: false, resolve: async host => (host.endsWith('kestrel.example') ? [{ address: '127.0.0.1', family: 4 }] : testNet.resolve(host)) },
+});
 try {
   const { hub, config } = env;
   hub.importPartner(configra);
 
-  const now = new Date().toISOString();
-  hub.db.run('INSERT INTO accounts (email, created_at) VALUES (?, ?)', 'boss@kestrel.example', now);
-  const account = hub.db.get('SELECT id FROM accounts WHERE email = ?', 'boss@kestrel.example').id;
-  hub.db.run(`INSERT INTO applications (account_id, provider_id, name, domains, test_url, contact, wanted_tier, state, created_at, updated_at)
-    VALUES (?, 'kestrel', 'Kestrel', ?, 'https://sub.kestrel.example/s/x', '@kestrel', 2, 'submitted', ?, ?)`,
-  account, JSON.stringify(['kestrel.example', '*.kestrel.example']), now, now);
-  const app = hub.db.get('SELECT id FROM applications WHERE provider_id = ?', 'kestrel').id;
-  hub.approve(app, { tier: 2, until: '2031-11-01' }, 'fixture');
+  // Kestrel: a provider that went the whole way on the hub, every special right but routing approved (V2pn takes
+  // routing from a hub-signed index only after the client stage; until then it would be a problem of the index).
+  const { account } = hub.auth.register('kestrel', 'fixture-password', '127.0.0.1');
   const pics = {
-    logo: hub.upload(account, 'logo', makePng(340, 96, [255, 255, 255])).sha256,
-    logoOnLight: hub.upload(account, 'logoOnLight', makePng(340, 96, [17, 17, 20])).sha256,
-    mark: hub.upload(account, 'mark', makePng(128, 128, [47, 123, 255])).sha256,
-    backdrop: hub.upload(account, 'backdrop', makePng(1600, 1000, [20, 40, 120])).sha256,
+    logo: hub.upload(account.id, 'logo', makePng(340, 96, [255, 255, 255])).sha256,
+    logoOnLight: hub.upload(account.id, 'logoOnLight', makePng(340, 96, [17, 17, 20])).sha256,
+    mark: hub.upload(account.id, 'mark', makePng(128, 128, [47, 123, 255])).sha256,
+    backdrop: hub.upload(account.id, 'backdrop', makePng(1600, 1000, [20, 40, 120])).sha256,
   };
-  hub.saveLook(account, {
-    name: 'Кестрел', brand: ['#2F7BFF', '#7C4DFF', '#FFD600'], background: 'image', ...pics,
-    links: { cabinet: 'https://kestrel.example/cabinet', support: 'https://t.me/kestrel_support' },
-    api: 'https://api.kestrel.example/v2pn/api/', login: true, lock: true,
-    actions: [
-      { label: 'Самый быстрый', icon: 'bolt', do: 'connect.best', strategy: 'stable' },
-      { label: 'Для YouTube', icon: 'play', do: 'connect.recommend', purpose: 'youtube' },
-      { label: 'Бот', icon: 'chat', do: 'open.link', url: 'https://t.me/kestrel_bot' },
-      { label: 'Тариф', icon: 'card', do: 'info.card' },
-    ],
-  });
-  hub.submitLook(account);
-  hub.approveLook('kestrel', 'fixture');
+  await hub.savePartner(account.id, {
+    name: 'Кестрел', subscription: `http://kestrel.example:${sub.port}/s/x`, brand: ['#2F7BFF', '#7C4DFF', '#FFD600'], background: 'image',
+    layout: 'stickers', ...pics, links: { cabinet: 'https://kestrel.example/cabinet', support: 'https://t.me/kestrel_support' },
+    rights: {
+      account: { api: 'https://kestrel.example/v2pn/api/', login: true },
+      lock: true,
+      actions: [
+        { label: 'Самый быстрый', icon: 'bolt', do: 'connect.best', strategy: 'stable' },
+        { label: 'Для YouTube', icon: 'play', do: 'connect.recommend', purpose: 'youtube' },
+        { label: 'Бот', icon: 'chat', do: 'open.link', url: 'https://t.me/kestrel_bot' },
+        { label: 'Тариф', icon: 'card', do: 'info.card' },
+      ],
+    },
+  }, 'fixture');
+  const id = hub.ownPartner(account.id).id;
+  for (const right of hub.rightsQueue()) hub.decideRight(id, right.right, true, { hash: right.hash }, 'fixture');
 
   fs.rmSync(out, { recursive: true, force: true });
   fs.mkdirSync(out, { recursive: true });
@@ -78,4 +81,6 @@ try {
   process.stdout.write(`wrote ${fs.readdirSync(out).sort().join(', ')} into ${out}\n`);
 } finally {
   await env.close();
+  await sub.close();
+  await servers.close();
 }

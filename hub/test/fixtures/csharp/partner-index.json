@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "published": "2026-11-17T07:20:06Z",
+  "published": "2026-11-19T15:47:46Z",
   "partners": [
     {
       "id": "configra",
@@ -24,8 +24,7 @@
       "id": "kestrel",
       "name": "Кестрел",
       "domains": [
-        "kestrel.example",
-        "*.kestrel.example"
+        "kestrel.example"
       ],
       "grants": [
         "edition",
@@ -33,11 +32,11 @@
         "actions",
         "lock"
       ],
-      "until": "2031-11-01",
+      "until": "2027-11-19",
       "pack": {
         "file": "partner-kestrel.zip",
-        "size": 1846,
-        "sha256": "59a7e6dab0f790a04c080c093ad2343a55b45cde9e91966cedf0e0806416a7bd"
+        "size": 1853,
+        "sha256": "3f7f45cca1950d93f2f40288df45b0b0d2fdf4ac03131c6e3a68c459fb801aaa"
       }
     }
   ]

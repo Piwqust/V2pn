@@ -57,6 +57,7 @@ public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
         btnRuleSave.Click += (_, _) => _rule?.SaveCmd.Execute().Subscribe();
         btnRuleCancel.Click += (_, _) => CloseEditor();
 
+        menuAddBuiltin.Click += (_, _) => ViewModel?.RoutingAdvancedImportRulesCmd.Execute().Subscribe();
         menuDuplicate.Click += async (_, _) => await DuplicateSetAsync();
         menuCopyRules.Click += async (_, _) => await CopyAsync(_set?.ExportRules());
         menuImportFile.Click += (_, _) => _set?.ImportRulesFromFileCmd.Execute().Subscribe();
@@ -723,6 +724,7 @@ public partial class RoutingSettingWindow : WindowBase<RoutingSettingViewModel>
         lstPins.ItemsSource = items;
         _syncingLists = false;
         btnPinClaude.IsVisible = !pins.Any(V2pnPins.IsClaude);
+        txtNoPins.IsVisible = pins.Count == 0;
 
         if (_pane == Pane.Pin)
         {

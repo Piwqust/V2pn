@@ -24,7 +24,6 @@
         Rule sets as a list beside the chosen set: the sets and the programs on the left, the chosen one
         on the right with its rules, and a rule opens below them. v2rayN stacked three windows for this
         (sets, one set, one rule). Every change is saved at once; closing the window reloads the core.
-        Decided from a prototype on 2026-11-19: see docs/internal/RULESETS-SPLIT.md.
     -->
     <Window.Styles>
         <Style Selector="TextBlock.navsec">
@@ -131,15 +130,31 @@
         <Border Classes="settingsnav">
             <DockPanel Margin="12,16,12,12">
                 <StackPanel DockPanel.Dock="Bottom" Margin="0,10,0,0" Spacing="6">
-                    <Button
-                        x:Name="btnNewSet"
-                        HorizontalAlignment="Stretch"
-                        Theme="{StaticResource V2Button}">
-                        <StackPanel Orientation="Horizontal" Spacing="7">
-                            <PathIcon Classes="i12" Data="{StaticResource SemiIconPlus}" />
-                            <TextBlock Text="{x:Static loc:L.RtNewSet}" />
-                        </StackPanel>
-                    </Button>
+                    <Grid ColumnDefinitions="*,Auto" ColumnSpacing="6">
+                        <Button
+                            x:Name="btnNewSet"
+                            HorizontalAlignment="Stretch"
+                            Theme="{StaticResource V2Button}">
+                            <StackPanel Orientation="Horizontal" Spacing="7">
+                                <PathIcon Classes="i12" Data="{StaticResource SemiIconPlus}" />
+                                <TextBlock Text="{x:Static loc:L.RtNewSet}" />
+                            </StackPanel>
+                        </Button>
+                        <Button
+                            x:Name="btnListMenu"
+                            Grid.Column="1"
+                            AutomationProperties.Name="{x:Static loc:L.RtMoreActions}"
+                            Classes="icon"
+                            Theme="{StaticResource V2Button}"
+                            ToolTip.Tip="{x:Static loc:L.RtMoreActions}">
+                            <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}" />
+                            <Button.Flyout>
+                                <MenuFlyout Placement="TopEdgeAlignedRight">
+                                    <MenuItem x:Name="menuAddBuiltin" Header="{x:Static loc:L.RtAddBuiltin}" />
+                                </MenuFlyout>
+                            </Button.Flyout>
+                        </Button>
+                    </Grid>
                     <ListBox x:Name="lstMatch" Theme="{StaticResource V2NavList}">
                         <ListBoxItem>
                             <StackPanel Orientation="Horizontal" Spacing="10">
@@ -180,6 +195,12 @@
                             x:Name="lstPins"
                             AutomationProperties.Name="{x:Static loc:L.PinGroup}"
                             Theme="{StaticResource V2NavList}" />
+                        <TextBlock
+                            x:Name="txtNoPins"
+                            Margin="10,0,10,4"
+                            Classes="srowhint"
+                            Text="{x:Static loc:L.PinEmpty}"
+                            TextWrapping="Wrap" />
                         <StackPanel Margin="4,4,0,0" Orientation="Horizontal" Spacing="4">
                             <Button
                                 x:Name="btnPinClaude"

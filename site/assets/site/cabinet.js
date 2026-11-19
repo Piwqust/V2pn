@@ -10,8 +10,8 @@ const STARTER = '#2F6BFF';
 const RIGHT_NAMES = { routing: 'свои правила маршрутизации', lock: 'скрытые адреса серверов', actions: 'свои кнопки', account: 'API и вход по коду' };
 const ROUTING_EXAMPLE = 'domain:ru, geoip:ru → direct\ndomain:youtube.com, domain:openai.com → proxy';
 // What a button can do here; the hub knows more (V2pnPartnerCatalog), and a button that does one of those stays as it is.
-const KINDS = [['open.link', 'Открыть ссылку'], ['open.renew', 'Продлить (ссылка «Оплата»)'], ['open.support', 'Поддержка'], ['open.cabinet', 'Открыть кабинет'],
-  ['connect.best', 'Подключить самый быстрый'], ['subscription.update', 'Обновить подписку'], ['check.services', 'Проверить сервисы']];
+const KINDS = [['open.link', 'Открыть ссылку'], ['open.renew', 'Продлить'], ['open.support', 'Поддержка'], ['open.cabinet', 'Открыть кабинет'],
+  ['connect.best', 'Самый быстрый сервер'], ['subscription.update', 'Обновить подписку'], ['check.services', 'Проверить сервисы']];
 const STARTER_ACTIONS = [{ label: 'Продлить', do: 'open.renew' }, { label: 'Устройства', do: 'open.link', url: '' }];
 
 let account = null;
@@ -85,7 +85,7 @@ function payload() {
   const r = form.rights;
   if (r.routing.on) rights.routing = r.routing.text;
   if (r.lock.on) rights.lock = true;
-  if (r.actions.on) rights.actions = r.actions.list.map(a => ({ ...a, label: (a.label || '').trim(), url: (a.url || '').trim() }));
+  if (r.actions.on) rights.actions = r.actions.list.map(a => ({ ...a, label: (a.label || '').trim(), url: withScheme((a.url || '').trim()) }));
   if (r.account.on) rights.account = { api: r.account.api.trim(), login: r.account.login };
   return {
     name: form.name.trim(), subscription: form.subscription.trim(), brand: form.brand, background: form.background, layout: form.layout,
@@ -93,6 +93,8 @@ function payload() {
     links: { support: form.links.support.trim(), cabinet: form.links.cabinet.trim() }, rights,
   };
 }
+// "t.me/x" as people type it, the way the hub takes the support link.
+const withScheme = text => (text && !/^[a-z][a-z0-9+.-]*:/i.test(text) ? `https://${text}` : text);
 const dirty = () => !partner() || JSON.stringify(payload()) !== savedKey;
 
 // ---------------------------------------------------------------- drawing the form

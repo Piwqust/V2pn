@@ -10,6 +10,13 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
     #region Core
 
     [Reactive] public partial int LocalPort { get; set; }
+
+    // V2pn: "Обход блокировок" (V2pnBypassItem).
+    [Reactive] public partial bool BypassEnabled { get; set; }
+    [Reactive] public partial bool BypassCalm { get; set; }
+    [Reactive] public partial bool BypassAutoTune { get; set; }
+    [Reactive] public partial bool BypassPerNetwork { get; set; }
+    [Reactive] public partial bool BypassDirectFragment { get; set; }
     [Reactive] public partial bool SecondLocalPortEnabled { get; set; }
     [Reactive] public partial bool UdpEnabled { get; set; }
     [Reactive] public partial bool SniffingEnabled { get; set; }
@@ -169,6 +176,12 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         HyDownMbps = _config.HysteriaItem.DownMbps;
         EnableFragment = _config.CoreBasicItem.EnableFragment;
         EnableFinalFragment = _config.CoreBasicItem.EnableFinalFragment;
+        var bypass = V2pnBypass.Item(_config);
+        BypassEnabled = bypass.Enabled;
+        BypassCalm = bypass.CalmTests;
+        BypassAutoTune = bypass.AutoTune;
+        BypassPerNetwork = bypass.PerNetwork;
+        BypassDirectFragment = bypass.DirectFragment;
         FragmentPackets = _config.Fragment4RayItem?.Packets;
         FragmentLengths = Utils.List2String(_config.Fragment4RayItem?.Lengths);
         FragmentDelays = Utils.List2String(_config.Fragment4RayItem?.Delays);
@@ -409,6 +422,18 @@ public partial class OptionSettingViewModel : MyReactiveObject, ICloseable
         _config.TunModeItem.RouteExcludeAddress = Utils.String2List(TunRouteExcludeAddress);
         _config.TunModeItem.IPv4Address = TunIPv4Address;
         _config.TunModeItem.IPv6Address = TunIPv6Address;
+
+        var bypass = V2pnBypass.Item(_config);
+        bypass.Enabled = BypassEnabled;
+        bypass.CalmTests = BypassCalm;
+        bypass.AutoTune = BypassAutoTune;
+        bypass.PerNetwork = BypassPerNetwork;
+        bypass.DirectFragment = BypassDirectFragment;
+        if (BypassEnabled)
+        {
+            // The ways are kept per network: the network must be known before the reload that follows the save.
+            await V2pnNetworkId.RefreshAsync();
+        }
 
         //coreType
         await SaveCoreType();

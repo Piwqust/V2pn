@@ -109,6 +109,12 @@
                                 <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetTun}" />
                             </StackPanel>
                         </ListBoxItem>
+                        <ListBoxItem>
+                            <StackPanel Orientation="Horizontal" Spacing="10">
+                                <PathIcon Classes="nav" Data="{StaticResource SemiIconBolt}" />
+                                <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.SetBypass}" />
+                            </StackPanel>
+                        </ListBoxItem>
                         <ListBoxItem Classes="adv">
                             <StackPanel Orientation="Horizontal" Spacing="10">
                                 <PathIcon Classes="nav" Data="{StaticResource SemiIconFilterStroked}" />
@@ -744,6 +750,110 @@
                                             </StackPanel>
                                             <Panel Grid.Column="1" VerticalAlignment="Center">
                                                 <ToggleSwitch x:Name="togEnableLegacyProtect" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                    </StackPanel>
+                    <StackPanel x:Name="pageBypass" Classes="spage" IsVisible="False">
+                        <TextBlock Classes="spagetitle" Text="{x:Static loc:L.SetBypass}" />
+                        <TextBlock Classes="spagehint" Text="{x:Static loc:L.SetBypassHint}" />
+                        <StackPanel Classes="sgroup">
+                            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpBypassMain}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconShieldStroked}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.BypassEnable}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.BypassEnableHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togBypassEnabled" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <StackPanel x:Name="panelBypassOptions">
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconStopwatchStroked}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.BypassCalm}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.BypassCalmHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togBypassCalm" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconBolt}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.BypassAuto}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.BypassAutoHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togBypassAutoTune" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconWifi}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.BypassPerNetwork}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.BypassPerNetworkHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togBypassPerNetwork" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconGlobeStroke}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.BypassDirect}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.BypassDirectHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togBypassDirectFragment" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel Classes="sgroup">
+                            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpBypassTools}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconPulse}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.BypassCheckNetwork}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.BypassCheckNetworkHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <Button x:Name="btnBypassCheck" Classes="ghost small" Theme="{StaticResource V2Button}" Content="{x:Static loc:L.BypassOpen}" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconHistory}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.BypassForgetAll}" />
+                                                <TextBlock x:Name="txtBypassKept" Classes="srowhint" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <Button x:Name="btnBypassForgetAll" Classes="ghost small" Theme="{StaticResource V2Button}" Content="{x:Static loc:L.BypassForget}" />
                                             </Panel>
                                         </Grid>
                                     </Border>

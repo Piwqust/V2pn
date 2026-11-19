@@ -23,6 +23,7 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         btnCancel.Click += (s, e) => Close();
         InitMoreLinks();
         _config = AppManager.Instance.Config;
+        InitBypass();
 
         clbdestOverride.SelectionChanged += ClbdestOverride_SelectionChanged;
         btnBrowseCustomSystemProxyPacPath.Click += BtnBrowseCustomSystemProxyPacPath_Click;
@@ -166,6 +167,13 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
             this.Bind(ViewModel, vm => vm.CoreType9, v => v.cmbCoreType9.SelectedValue).DisposeWith(disposables);
             this.Bind(ViewModel, vm => vm.CoreType14, v => v.cmbCoreType14.SelectedValue).DisposeWith(disposables);
 
+            this.Bind(ViewModel, vm => vm.BypassEnabled, v => v.togBypassEnabled.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.BypassCalm, v => v.togBypassCalm.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.BypassAutoTune, v => v.togBypassAutoTune.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.BypassPerNetwork, v => v.togBypassPerNetwork.IsChecked).DisposeWith(disposables);
+            this.Bind(ViewModel, vm => vm.BypassDirectFragment, v => v.togBypassDirectFragment.IsChecked).DisposeWith(disposables);
+            this.OneWayBind(ViewModel, vm => vm.BypassEnabled, v => v.panelBypassOptions.IsEnabled).DisposeWith(disposables);
+
             this.BindCommand(ViewModel, vm => vm.SaveCmd, v => v.btnSave).DisposeWith(disposables);
         });
     }
@@ -261,7 +269,7 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         }
     }
 
-    private Control[] Pages => [pageGeneral, pageInbound, pageSysProxy, pageTun, pageTraffic, pageTests, pageUpdates, pageCores, pageLogs];
+    private Control[] Pages => [pageGeneral, pageInbound, pageSysProxy, pageTun, pageBypass, pageTraffic, pageTests, pageUpdates, pageCores, pageLogs];
 
     private void ShowPage(int index)
     {
@@ -289,6 +297,34 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         btnMoreDns.Click += (_, _) => RunMain(vm => vm.DNSSettingCmd.Execute().Subscribe());
         btnMoreHotkeys.Click += (_, _) => RunMain(vm => vm.GlobalHotkeySettingCmd.Execute().Subscribe());
         btnMoreTemplate.Click += (_, _) => RunMain(vm => vm.FullConfigTemplateCmd.Execute().Subscribe());
+    }
+
+    // V2pn: "Обход блокировок". The network check opens in the main window once this one is closed: the main
+    // window's dialogs show inside it, so one opened from here would sit behind this window.
+    private void InitBypass()
+    {
+        RefreshBypassKept();
+        btnBypassForgetAll.Click += async (_, _) =>
+        {
+            V2pnBypass.ForgetAll(_config);
+            await ConfigHandler.SaveConfig(_config);
+            RefreshBypassKept();
+        };
+        btnBypassCheck.Click += (_, _) =>
+        {
+            if ((Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.MainWindow is MainWindow main)
+            {
+                Close();
+                main.OpenBypass();
+            }
+        };
+    }
+
+    private void RefreshBypassKept()
+    {
+        var count = _config.V2pnBypassItem?.Learned?.Count ?? 0;
+        txtBypassKept.Text = count > 0 ? string.Format(L.BypassKept, count) : L.BypassNoneKept;
+        btnBypassForgetAll.IsEnabled = count > 0;
     }
 
     private static void RunMain(Action<MainWindowViewModel> action)

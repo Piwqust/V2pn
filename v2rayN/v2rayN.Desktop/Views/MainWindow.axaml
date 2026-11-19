@@ -66,6 +66,7 @@
                             <Separator />
                             <!--  Settings are looked for in the main menu first; they used to be only behind the tile on the map.  -->
                             <MenuItem x:Name="menuSettingsMain" Header="{x:Static loc:L.Settings}" InputGesture="Ctrl+OemComma"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconSetting}" /></MenuItem.Icon></MenuItem>
+                            <MenuItem x:Name="menuBypass" Header="{x:Static loc:L.BypassButton}" IsVisible="False"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconShieldStroked}" /></MenuItem.Icon></MenuItem>
                             <MenuItem x:Name="menuTools" Header="{x:Static loc:L.MenuTools}"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconMoreStroked}" /></MenuItem.Icon>
                                 <MenuItem Classes="menuheader" Header="{x:Static loc:L.MenuGrpData}" IsEnabled="False" />
                                 <MenuItem x:Name="menuBackupAndRestore" Header="{x:Static loc:L.MenuBackup}" Classes="rich"><MenuItem.Icon><PathIcon Classes="mi" Data="{StaticResource SemiIconArchive}" /></MenuItem.Icon></MenuItem>
@@ -1233,6 +1234,8 @@
                                     Theme="{StaticResource V2Button}" IsVisible="False">
                                     <TextBlock x:Name="txtReplacement" TextWrapping="Wrap" TextAlignment="Center" />
                                 </Button>
+                                <Button x:Name="btnBypass" HorizontalAlignment="Center" Classes="ghost small"
+                                    Theme="{StaticResource V2Button}" IsVisible="False" Content="{x:Static loc:L.BypassButton}" />
                                 <Button x:Name="btnDiagnostics" HorizontalAlignment="Center" Classes="ghost small"
                                     Theme="{StaticResource V2Button}" IsVisible="False" Content="{x:Static loc:L.DiagButton}" />
                             </WrapPanel>

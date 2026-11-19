@@ -175,6 +175,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         btnReplacement.Click += async (_, _) => await FindWorkingServerAsync();
         btnFixPrimary.Click += async (_, _) => await RunFixAsync(_fixPrimary);
         btnDiagnostics.Click += async (_, _) => await ShowDiagnosticsAsync();
+        btnBypass.Click += async (_, _) => await ShowBypassAsync();
+        menuBypass.Click += async (_, _) => await ShowBypassAsync();
         // What a provider reports (expiry, traffic) can change the note next to Connect.
         SubInfoManager.Instance.Changed += id => Dispatcher.UIThread.Post(() =>
         {
@@ -215,6 +217,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             var vm = ViewModel!;
             var profiles = vm.ProfilesViewModel;
             var status = vm.StatusBarViewModel;
+            InitBypass(vm).DisposeWith(disposables);
 
             //sub
             this.BindCommand(ViewModel, vm => vm.SubSettingCmd, v => v.menuSubSetting).DisposeWith(disposables);

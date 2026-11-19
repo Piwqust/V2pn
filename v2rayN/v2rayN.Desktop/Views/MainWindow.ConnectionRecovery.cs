@@ -105,6 +105,7 @@ public partial class MainWindow
         // Something went wrong on screen: the report for support is one click away.
         btnDiagnostics.IsVisible = faulted || _tunDenied
             || ViewModel?.StatusBarViewModel.CurrentAvailability.IsFailure == true;
+        RefreshBypassUi(ViewModel?.StatusBarViewModel.CurrentAvailability.IsFailure == true);
 
         txtProblem.Text = text;
         txtProblem.IsVisible = text.IsNotEmpty();

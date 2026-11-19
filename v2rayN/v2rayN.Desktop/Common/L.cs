@@ -244,7 +244,7 @@ public static partial class L
     public static string RouteAll => T("Everything through VPN", "Всё через VPN");
     public static string RouteBuiltinWhitelist => T("Everything except China", "Всё, кроме Китая");
     public static string RouteBuiltinBlacklist => T("Sites blocked in China", "Заблокированное в Китае");
-    public static string RouteBuiltinGlobal => T("Everything through VPN (simple set)", "Всё через VPN (простой набор)");
+    public static string RouteBuiltinGlobal => T("Simple: all through VPN", "Простой: всё через VPN");
     public static string RouteAllHint => Tk("All traffic except the local network goes through the server. Some Russian banks and Gosuslugi may refuse a foreign IP.",
         "All traffic goes through the server. Some banks and Gosuslugi refuse a foreign IP.",
         "Весь трафик через сервер. Некоторые банки и Госуслуги не пускают с иностранного IP.");

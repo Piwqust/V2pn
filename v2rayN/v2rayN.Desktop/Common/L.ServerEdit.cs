@@ -176,7 +176,7 @@ public static partial class L
     public static string SvOutboundTitle => T("Server from an outbound", "Сервер из outbound");
     public static string SvOutboundHint => T("Pick a file with one outbound block from Xray or sing-box and give it a name.", "Выберите файл с одним блоком outbound из Xray или sing-box и дайте ему название.");
     public static string SvConfigFile => T("Config file", "Файл настроек");
-    public static string SvConfigFileHint => T("Choose the file. Edit opens it in your editor.", "Выберите файл. «Редактировать» откроет его в редакторе.");
+    public static string SvConfigFileHint => T("Choose the file. Edit opens it in your editor.", "Выберите файл. «Изменить» откроет его в редакторе.");
     public static string SvCustomCore => T("Core", "Ядро");
     public static string SvCustomCoreHint => T("The program that runs this file.", "Программа, которая запустит этот файл.");
     public static string SvShowLog => T("Show the core's log", "Показывать журнал ядра");

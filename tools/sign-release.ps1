@@ -28,7 +28,10 @@ param(
     [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
     [string]$Repository = 'Piwqust/V2pn',
     # The workflow run to take the packages from; by default the newest successful one for the tag.
-    [string]$Run
+    [string]$Run,
+    # Takes the packages already in dist/release/<version>/download (one folder per artifact, unpacked) instead
+    # of downloading the run's artifacts again: a gigabyte over a slow route can outlast a 60-minute task.
+    [switch]$Downloaded
 )
 
 $ErrorActionPreference = 'Stop'
@@ -58,9 +61,15 @@ Write-Host "Packages from run $Run"
 
 $dir = Join-Path $repo "dist/release/$Version"
 $download = Join-Path $dir 'download'
-if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
-New-Item -ItemType Directory -Force $download | Out-Null
-Invoke-Checked 'gh' @('run', 'download', $Run, '--repo', $Repository, '--pattern', 'packages-*', '--dir', $download)
+if ($Downloaded) {
+    if (-not (Test-Path $download)) { throw "-Downloaded: there is no $download" }
+    Get-ChildItem $dir -File | Remove-Item -Force
+}
+else {
+    if (Test-Path $dir) { Remove-Item -Recurse -Force $dir }
+    New-Item -ItemType Directory -Force $download | Out-Null
+    Invoke-Checked 'gh' @('run', 'download', $Run, '--repo', $Repository, '--pattern', 'packages-*', '--dir', $download)
+}
 # One folder per artifact (packages-windows, packages-macos); the release wants them side by side.
 Get-ChildItem $download -Recurse -File | Move-Item -Destination $dir
 Remove-Item -Recurse -Force $download

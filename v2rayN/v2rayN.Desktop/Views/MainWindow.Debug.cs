@@ -94,6 +94,12 @@ public partial class MainWindow
 
     internal void DebugOpenTable() => ShowPage(L.MenuTable, TablePage);
 
+    internal void DebugOpenConnections() => ShowPage(L.MenuClashConnections, ClashConnectionsPage);
+
+    internal void DebugOpenProxies() => ShowPage(L.MenuClashProxies, ClashProxiesPage);
+
+    internal void DebugOpenLog() => ShowPage(L.MenuLog, MsgPage);
+
     internal void DebugOpenAppearance()
     {
         if (_themeSettings != null)

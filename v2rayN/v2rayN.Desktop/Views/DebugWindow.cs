@@ -203,6 +203,8 @@ public sealed class DebugWindow : Window
             Action("Обход блокировок", _main.OpenBypass),
             Action("Наборы правил", () => _main.ViewModel?.RoutingSettingCmd.Execute().Subscribe()),
             Action("Таблица серверов", _main.DebugOpenTable),
+            Action("Соединения", _main.DebugOpenConnections), Action("Прокси", _main.DebugOpenProxies),
+            Action("Журнал", _main.DebugOpenLog),
             // Partners whose pack says "login" (tools/demo/demo_partner.py answers login/start and login/poll).
             Action("Вход через провайдера", () => _main.OpenProviderLogin())),
         // The windows V2pn took over from v2rayN, one click each, for scripted checks of their layout.

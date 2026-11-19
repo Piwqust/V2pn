@@ -2,9 +2,15 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
+## 1.4.0
+
+V2pn can now hold the internet closed when the connection drops, and keep the programs you choose, such as Claude, from ever going out past it. It tells you what Russian filtering blocks on your network and tries ways around it. Windows gets an installer of its own, the map zooms to the country and pins the city, and the windows V2pn took over from v2rayN (rule sets, subscriptions, connections, proxies, the log and the settings) now look and read like the rest of V2pn.
+
+<p align="center"><img src="docs/images/changelog/1.4.0-hero.png" width="800" alt="V2pn 1.4.0: the main window connected through Frankfurt, the Blocking bypass window and a partner tab drawn as a sticker book"></p>
 
 ### Kill switch
+
+<p align="center"><img src="docs/images/changelog/1.4.0-kill-switch.png" width="800" alt="Settings, Kill switch: the switch that keeps the internet closed when the connection drops, and the list of programs that only ever go out through V2pn, with claude.exe in it. Beside them the status goes from VPN connected to Internet blocked and back"></p>
 
 Settings → Kill switch. Off by default; while it is off, a connection that cannot be brought back switches V2pn off and the internet goes on directly, as before.
 
@@ -13,28 +19,9 @@ Settings → Kill switch. Off by default; while it is off, a connection that can
 - In proxy mode the system proxy stays on V2pn with no connection behind it: programs that use the system proxy get nothing instead of a direct connection. Programs that ignore the system proxy are covered only by VPN mode.
 - **Programs only through V2pn.** On the same page, list programs (or press "Add Claude") that must never go out past V2pn. They reach the internet only through V2pn's proxy or its tunnel and are cut off at all other times: with V2pn disconnected, closed or not started, so Claude never sees your real address. Programs are matched by file name, so every copy and every version counts. Saving asks Windows for administrator rights once; removing V2pn takes the block away again. Claude Code ignores the system proxy, so in proxy mode it needs HTTPS_PROXY set to V2pn's port; VPN mode needs nothing.
 
-### An installer for Windows
-
-- Windows gets `V2pn-windows-x64-setup.exe` (and `-arm64-setup.exe`) instead of a zip to unpack: a window of V2pn's own, with the map of Europe on the left and one button on the right. It installs V2pn for your Windows user without administrator rights, adds it to the Start menu and, if you leave the box ticked, to the desktop, offers to take your servers from v2rayN, and shows the files going in with lines spreading from the pin on the map.
-- If V2pn is running, the window asks you to quit it from the tray, so that the system proxy is put back, and goes on by itself once you have. An update keeps the cores V2pn already has; an older version is installed only if you say so.
-- V2pn appears in "Installed apps". Removing it opens the same window, which asks whether to keep your servers and settings for the next install.
-- Inside is Inno Setup doing the work, hidden. The zip stays for a portable copy.
-
-### A calmer Home tab
-
-- Home shows "Quick connect" with the fastest server, then your favorites and recent servers, each only when it has something. A server is listed once.
-- The list of the quickest servers and the statistics are off by default; turn them on in Appearance or by right-clicking the list. The empty-favorites hint and "Browse countries" are gone: the star next to every server and the Countries tab do the same.
-
-### Partner layouts
-
-- A partner's theme can ask for a layout of V2pn's own instead of the sidebar and the map. The first is the sticker book: the partner's picture full height, a meme caption over V2pn's usual state, Connect as a die-cut sticker, the partner's buttons as stickers and the servers as hero cards with a brass plate, two rows at most with the rest behind a "+N" card. It is drawn at night whatever the app's theme, and "V2pn's usual look" at its bottom brings the sidebar and the map back for that tab.
-
-### Partners made on the site
-
-- A provider makes its partner tab on v2pn.angleford.co with a login and a password, and it goes live as soon as it is saved. People get it with one link from the provider's bot: V2pn adds the subscription and the partner's look in one go.
-- A partner's own routing rules work once a moderator on the site approves them; V2pn takes them only in the exact form approved. Transport and core settings still need V2pn's own review.
-
 ### Blocking bypass
+
+<p align="center"><img src="docs/images/changelog/1.4.0-blocking-bypass.png" width="800" alt="The Blocking bypass window with the network check, and what the check tells apart: the whole internet down, a whitelist, a blocked server address, downloads that freeze after 16 KB, cut QUIC. Below, the TLS handshake split into pieces"></p>
 
 For connections that Russian filtering blocks. It is off until you turn it on in Settings → Blocking bypass; while it is off, V2pn connects exactly as before.
 
@@ -45,6 +32,67 @@ For connections that Russian filtering blocks. It is off until you turn it on in
 - **Careful connections** (on by default under the bypass): ping tests go a dozen servers at a time, never two entries of one address together, with longer pauses; the core uses a browser's TLS fingerprint where the link left none, and XHTTP's connection reuse is written out.
 - **Split the handshake of direct sites** (off by default): for sites that open past the VPN but are slowed down by the filter.
 - Rule lists that fail to download try once more the other way, directly or through the connection.
+
+### An installer for Windows
+
+<p align="center"><img src="docs/images/changelog/1.4.0-installer.png" width="800" alt="V2pn's setup window: the map of Europe on the left, Install on the right, and behind it the same window copying files with lines spreading from the pin"></p>
+
+- Windows gets `V2pn-windows-x64-setup.exe` (and `-arm64-setup.exe`) instead of a zip to unpack: a window of V2pn's own, with the map of Europe on the left and one button on the right. It installs V2pn for your Windows user without administrator rights, adds it to the Start menu and, if you leave the box ticked, to the desktop, offers to take your servers from v2rayN, and shows the files going in with lines spreading from the pin on the map.
+- If V2pn is running, the window asks you to quit it from the tray, so that the system proxy is put back, and goes on by itself once you have. An update keeps the cores V2pn already has; an older version is installed only if you say so.
+- V2pn appears in "Installed apps", with the version it last updated itself to. Removing it opens the same window, which asks whether to keep your servers and settings for the next install.
+- Inside is Inno Setup doing the work, hidden. The zip stays for a portable copy.
+
+### V2pn's look in every window
+
+<p align="center"><img src="docs/images/changelog/1.4.0-windows.png" width="800" alt="Four redrawn windows: rule sets as a list beside the chosen set, subscriptions as a list beside the chosen subscription, live connections as rows, and proxy groups beside their proxies"></p>
+
+The windows that still came from v2rayN now look and read like the rest of V2pn: a list on the left, the chosen item beside it, and no window opening on top of another.
+
+- **Rule sets**: the sets on the left, with the one in use marked, then the programs on their own server and how sites are matched. The chosen set shows its name to edit in place, "Use this set" or "In use", a menu to duplicate it, copy its rules, import or delete, and its rules as rows: what each does and what it catches, with a menu to move, turn off, copy or delete it. A rule opens below the list with Save and Cancel; everything else is saved at once. The windows for one set and one rule are gone.
+- **Subscriptions**: the list on the left (the name, the link or "servers added by hand", a dot when it is included in updates) and the chosen subscription's form beside it. "New subscription" opens an empty form in the same place; Share and Delete sit at the top, and leaving unsaved changes asks first.
+- **Connections**: each live connection is a row: the address, the rule and the chain under it, the app, the type and the time, with sorting and a close button on the row. The count, auto refresh and "Close all" sit above the list.
+- **Proxies**: the groups in a list beside the chosen group's proxies, a ping pill that tests one, "Use" for groups you pick by hand, the order as chips, and the mode in plain words: by rules, all via proxy, direct.
+- **Log**: a field that filters the lines, Copy all and Clear as labelled buttons, and an empty log that says who writes there.
+- About eighty rows of Settings, the dialogs, the editors, the tray and the main menu speak V2pn's words instead of v2rayN's, with a short hint where a name says little. Pickers call their empty choice "Not set" instead of showing a blank box, check-box cards became toggle chips, and questions read as a headline with a badge.
+
+### The map
+
+<p align="center"><img src="docs/images/changelog/1.4.0-map.png" width="800" alt="The map connected through Amsterdam, Frankfurt and Almaty: it zooms close in on the Netherlands, a step back for Germany and far out for Kazakhstan, with the pin in the city and its ping beside it"></p>
+
+- The zoom follows the size of the country instead of one slice for all: a small country fills the view, a large one fits in it.
+- The pin stands in the server's city, taken from its name or the last My IP lookup, with the flag, the city and the ping beside it. "EU" servers get a pin over Europe.
+- Server dots take the colour of their best ping; dots that would overlap merge into one with a count.
+- The map has no edge: it repeats left and right, and a flight to another server takes the short way round and zooms out in the middle.
+- While V2pn is off, the pin no longer sits red on the chosen server: it stands over your own city when a lookup found it, otherwise a quiet ring.
+
+### A calmer Home tab
+
+<p align="center"><img src="docs/images/changelog/1.4.0-home.png" width="800" alt="The Home tab: Quick connect with the fastest server, one favorite and two recent servers"></p>
+
+- Home shows "Quick connect" with the fastest server, then your favorites and recent servers, each only when it has something. A server is listed once.
+- The list of the quickest servers and the statistics are off by default; turn them on in Appearance or by right-clicking the list. The empty-favorites hint and "Browse countries" are gone: the star next to every server and the Countries tab do the same.
+
+### Partner layouts
+
+<p align="center"><img src="docs/images/changelog/1.4.0-sticker-book.png" width="800" alt="A demo partner's tab as a sticker book: the partner's logo and caption, Connect as a die-cut sticker, buttons as stickers and servers as hero cards with their ping"></p>
+
+- A partner's theme can ask for a layout of V2pn's own instead of the sidebar and the map. The first is the sticker book: the partner's picture full height, a meme caption over V2pn's usual state, Connect as a die-cut sticker, the partner's buttons as stickers and the servers as hero cards with a brass plate, two rows at most with the rest behind a "+N" card. It is drawn at night whatever the app's theme, and "V2pn's usual look" at its bottom brings the sidebar and the map back for that tab.
+
+### Partners made on the site
+
+<p align="center"><img src="docs/images/changelog/1.4.0-partners.png" width="800" alt="Four steps: a provider signs up with a login and a password, fills in one form beside V2pn's live window, the tab goes live on save with one link for the bot, and V2pn adds the subscription and the look in one go"></p>
+
+- A provider makes its partner tab on v2pn.angleford.co with a login and a password, and it goes live as soon as it is saved. People get it with one link from the provider's bot: V2pn adds the subscription and the partner's look in one go.
+- A partner's own routing rules work once a moderator on the site approves them; V2pn takes them only in the exact form approved. Transport and core settings still need V2pn's own review.
+
+### Also in 1.4.0
+
+<p align="center"><img src="docs/images/changelog/1.4.0-more.png" width="800" alt="The server form with the XDRIVE transport and its cloud preset, and the question a v2pn:// link asks, with the subscription shown as a card"></p>
+
+- V2pn takes in v2rayN's latest changes after 7.25.6. The server form gets the XDRIVE transport (traffic through Google Drive or S3 storage) with plain hints and a preset for the usual clouds.
+- Fingerprint and ALPN take values outside the list: a link with an ALPN such as "h3,h2" or an unusual fingerprint no longer shows an empty box that saving would write back.
+- A v2pn:// link shows the subscription it adds as a card in its question: the name and the address it comes from.
+- The line under the country is one short line: the server's name without the country repeated, and the protocol once, only when the name does not already say it. The line "For apps that use the system proxy" under the status is gone; the status's tooltip still says it.
 
 ## 1.3.0
 

@@ -535,8 +535,10 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
         };
     }
 
-    private async Task DownloadGeoFiles(List<FileDownloadRequest> requests, bool blProxy, CancellationToken cancellationToken = default)
+    private async Task DownloadGeoFiles(List<FileDownloadRequest> requests, bool blProxy, CancellationToken cancellationToken = default,
+        bool otherWayOnFailure = true)
     {
+        var failed = false;
         var tmpFilePathDict = new Dictionary<string, string>();
         var tmpFileRequests = new List<FileDownloadRequest>();
         foreach (var request in requests)
@@ -587,10 +589,20 @@ public partial class UpdateService(Config config, Func<bool, string, Task> updat
         };
         downloadHandle.Error += (sender2, args) =>
         {
+            failed = true;
             _ = UpdateFunc(false, args.GetException().Message);
         };
 
         await downloadHandle.DownloadSmallFilesAsync(tmpFileRequests, blProxy, cancellationToken);
+
+        // V2pn: under "Обход блокировок" a blocked or frozen source gets one more try the other way: direct when the
+        // connection failed, through the connection when direct did (it only exists while the core runs).
+        if (failed && otherWayOnFailure && V2pnBypass.On(AppManager.Instance.Config) && CoreManager.Instance.IsCoreAlive)
+        {
+            _ = UpdateFunc(false, blProxy ? "V2pn: the rule lists did not download through the connection; trying directly"
+                : "V2pn: the rule lists did not download directly; trying through the connection");
+            await DownloadGeoFiles(requests, !blProxy, cancellationToken, otherWayOnFailure: false);
+        }
     }
 
     #endregion Geo private

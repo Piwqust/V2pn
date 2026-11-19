@@ -25,7 +25,7 @@ public static partial class L
     public static string OptLanPass => T("Password", "Пароль");
     public static string OptLocalDirect => T("Local addresses go directly", "Локальные адреса — напрямую");
     public static string OptProxyProtocol => T("Proxy address format", "Формат адреса прокси");
-    public static string OptProxyProtocolHint => T("How V2pn writes itself into the system proxy setting. The first line suits almost everyone.", "Как V2pn прописывает себя в системный прокси. Первый вариант подходит почти всем.");
+    public static string OptProxyProtocolHint => T("How V2pn writes itself into the system proxy setting. Leave it empty unless an app needs another format.", "Как V2pn прописывает себя в системный прокси. Оставьте пустым, если программе не нужен другой формат.");
     public static string OptExceptionsHintWin => T("Addresses that start with these go directly. Separate them with semicolons (;).", "Адреса, которые начинаются так, идут напрямую. Разделяйте точкой с запятой (;).");
     public static string OptExceptionsHint => T("These addresses go directly. Separate them with commas (,).", "Эти адреса идут напрямую. Разделяйте запятой (,).");
     public static string OptPacFile => T("Own PAC file", "Свой PAC-файл");

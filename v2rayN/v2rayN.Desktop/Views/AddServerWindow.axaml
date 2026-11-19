@@ -37,7 +37,7 @@
                 IsCancel="True" />
         </StackPanel>
         </Border>
-        <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+        <ScrollViewer x:Name="svForm" HorizontalScrollBarVisibility="Disabled">
             <StackPanel Classes="spagebody">
                 <TextBlock x:Name="tbPageTitle" Classes="spagetitle" Text="{x:Static loc:L.SvTitlePlain}" />
                 <TextBlock Classes="spagehint" Text="{x:Static loc:L.SvHint}" />

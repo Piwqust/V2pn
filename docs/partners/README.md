@@ -2,13 +2,13 @@
 
 [По-русски](README.ru.md)
 
-V2pn is a free VPN client for Windows and macOS. Your subscription link works in it as it is, with no application. If you want your people to have a tab of your own, with your logo and colours, apply on [v2pn.angleford.co](https://v2pn.angleford.co/providers/). You put the look together in a cabinet on the site, and V2pn's server signs and publishes it. You need no keys, no hosting and no separate build of V2pn.
+V2pn is a free VPN client for Windows and macOS. Your subscription link works in it as it is. If you want your people to have a tab of your own, with your logo and colours, fill in one form on [v2pn.angleford.co](https://v2pn.angleford.co/providers/): the partner is published at once, and V2pn's server signs and hands it out. You need no keys, no hosting and no separate build of V2pn.
 
 Someone who came from you sees two tabs in the title bar, as in a browser: **V2pn** and yours, with your mark and name. Your tab has your colour, a card with the plan, your buttons and only your servers. The V2pn tab stays plain V2pn: all of the person's servers, yours included, and nothing from a provider. The connection, the settings and the protection state always belong to V2pn.
 
 ## Do nothing
 
-Tier 0, "Subscription". No application: the person pastes your link, and V2pn reads it and the headers you already send for other clients. There is no tab; it is an ordinary subscription.
+No sign-up: the person pastes your link, and V2pn reads it and the headers you already send for other clients. There is no tab; it is an ordinary subscription.
 
 ### Subscription headers
 
@@ -35,8 +35,8 @@ The Happ, INCY and v2RayTun headers work too, so a panel set up for them needs n
 | `subscriptions-sort-type` (Happ), `sort-order` (INCY) | the order of servers: by ping, by name or as you send them |
 | `subscription-ping-onopen-enabled: 1` | testing the subscription's servers at start |
 | `update-always: true` (v2RayTun), `subscription-auto-update-open-enable: 1` (Happ) | updating this subscription at start |
-| `new-url`, `new-domain` | moving the subscription to another of your domains from the application; only for people who came from you, and only in HTTP headers |
-| `hide-settings`, `hide-url` | locked settings; only at tier 2 with hidden addresses |
+| `new-url`, `new-domain` | moving the subscription to another of your domains; only for people who came from you, and only in HTTP headers |
+| `hide-settings`, `hide-url` | locked settings; only with the special right "Hide server addresses" |
 | `ping-type`, `check-url-via-proxy` | kept, not applied yet |
 
 V2pn also reads `#key: value` lines at the start of a subscription that lists links, as Happ and INCY do. A header wins over the same line. `new-url`, `new-domain`, the INCY banners and `v2pn-account-token` work only as headers.
@@ -73,43 +73,34 @@ What V2pn never takes from headers: routes, fragmentation, noise and other setti
 
 **Add links.** `v2pn://add?url=<URL-encoded link>&name=<name>` opens V2pn, which asks whether to add the subscription. V2pn also understands Happ (`happ://add/…`), v2RayTun (`v2raytun://import/…`) and Hiddify (`hiddify://import/…`) links. Such a link adds an ordinary subscription, with no tab.
 
-## Apply
+## Make a partner
 
-1. Sign in on [v2pn.angleford.co/providers/login/](https://v2pn.angleford.co/providers/login/) by email: you get a six-digit code, there is no password. The code lasts 10 minutes. While the site has no mail set up, the page says so and the owner of V2pn passes the code to you.
-2. Fill in the [application](https://v2pn.angleford.co/providers/apply/); the fields are in the table below. The draft saves itself.
-3. On submit, V2pn's server checks the test link the way V2pn will open it: the address must be public, the answer must fit in 8 seconds and 2 MB. The server reads the headers, counts the servers by protocol and opens a connection to five of them. You see the result line by line. A red line keeps the application a draft: fix it and submit again.
-4. The owner of V2pn approves the application with a tier and a term (a year by default), or returns it with the reason.
-5. Once approved, the [cabinet](https://v2pn.angleford.co/providers/cabinet/) opens.
+1. On [v2pn.angleford.co/providers/login/](https://v2pn.angleford.co/providers/login/) pick a login and a password and press «Создать аккаунт» (create an account). A login is 3 to 32 Latin letters, digits and `. _ -`; a password is at least 6 characters. No email, no Telegram. There is no recovery by email: a V2pn moderator resets a forgotten password.
+2. «Мой партнёр» (my partner) opens: one form, with a live V2pn window showing your tab on the right. The fields are in the next section.
+3. Press «Опубликовать» (publish). V2pn's server checks the subscription link the way V2pn will open it: the address must be public, the answer must fit in 8 seconds and 2 MB. The server reads the headers, counts the servers by protocol and opens a connection to five of them. It takes the subscription's domain from the link itself. If the check fails, the form says what to fix and nothing is published.
+4. Once published, the partner works at once: your page, the link for your bot and the tab for your people. A moderator can take the partner down later, for example after complaints, and bring it back.
 
-| Field | |
-| --- | --- |
-| Name | what people see: up to 40 characters, no "V2pn" |
-| id | for addresses: 2–32 of `a–z`, `0–9` and `-` |
-| Domains | 1 to 20, where your subscription links live: `example.com` is that address only, `*.example.com` every address under it. One domain, one provider |
-| Test link | a working subscription, https. Only you and the owner see it; it never goes into logs |
-| Contact, tier, note | how to reach you; tier 1 or 2 |
+The server makes the page's address `/p/<id>/` from the name at the first publication (Cyrillic spelled out in Latin) and never changes it. One domain, one partner: the form does not take a link on a domain another partner already has.
 
-## Look
+## The form
 
-In the cabinet's "Look" section, a live V2pn window with your tab stands on the right, in light and dark.
-
-- **Name**, up to 40 characters.
-- **Colours**: one to three, `#RRGGBB`. The first is the brand colour: Connect, links, the subscription card.
-- **Background**: none, a gradient of the brand colours, or a picture. With a background your tab shows the Scene: your background in place of the world map, with the plan large on it. Without one it is Accent: V2pn's layout in your colour. One colour is enough for a gradient; V2pn adds a second, lighter one.
-- **Pictures**: PNG only, up to 1 MB each, sizes in the table below.
-- **Links** "Cabinet" and "Support" (https), when your subscription headers do not send them.
-- **At tier 2** also the API address, sign-in by code, hidden server addresses and up to four buttons (see "Tiers and grants").
+- **Name**: up to 40 characters, without "V2pn".
+- **Subscription link**: a working subscription, https. Only you see it; moderators do not, and it never reaches the logs. While you paste it, the server checks it and says under the field which domain it found and how many servers answer.
+- **Logo**: the square mark for the tab and the plan card. PNG or JPG: the page crops it to a square and makes a PNG itself. Without a picture V2pn draws a mark from the first letter.
+- **Brand colours**: one to three. The first is the Connect button, links and the subscription card.
+- **Background**: the world map in your colours ("Accent"), a gradient of the brand colours, or a picture. A gradient or a picture gives the tab the "Scene": your background instead of the map, with the plan large on it. One colour is enough for a gradient; V2pn adds a second.
+- **Layout**: V2pn's usual one (the sidebar and the main screen) or «Наклейки» (stickers): a sticker-book screen over the whole window, always in night colours.
+- **Support** and **Payment**: links for the "Support" and "Renew" buttons when the subscription headers have none. `t.me/…` works without `https://`.
+- **Special rights**: below, in their own section.
 
 | Picture | Size |
 | --- | --- |
-| logo for a dark ground | 2:1 to 8:1, 32–256 px tall, transparent; 340×96 will do |
-| logo for a light ground | the same |
-| mark for the tab and the card | square, 64–512 px, transparent; 128×128 will do |
-| background picture | 640–3200 px a side, at most 3:1 |
+| logo (mark) | a square, 64–512 px; the page shrinks a bigger one |
+| background picture | at least 640 px a side, at most 3:1, up to 1 MB as PNG; the page shrinks a bigger one |
 
-V2pn works out every other colour itself: text reads at 4.5:1 or better, buttons and fields at 3:1. A colour that could pass for the green "Protected", the amber "Attention" or the red "Not protected" is turned away from it, and the cabinet says what becomes what. If the text of your page `/p/<id>/` would not read, the look cannot be sent.
+V2pn works out every other colour itself: text reads at 4.5:1 or better, buttons and fields at 3:1. A colour that could pass for the green "Protected", the amber "Attention" or the red "Not protected" is turned away from it, and the form says what becomes what. If the text of your page `/p/<id>/` would not read, nothing can be published.
 
-The draft saves itself. "Send for publication" queues the look: the owner looks at it and publishes it or returns it with the reason. On publication V2pn's server rebuilds and signs the list of providers and your pack and updates your page. V2pn on your people's computers sees the new look at its next start or within six hours.
+«Опубликовать» (later «Сохранить», save) rebuilds and signs the list of partners and your pack at once and updates your page. V2pn on your people's computers sees the change at its next start or within six hours.
 
 ## Share
 
@@ -121,7 +112,7 @@ For your bot, site or email, the same page with the person's subscription after 
 https://v2pn.angleford.co/p/<id>/#sub=<the subscription link, URL-encoded>
 ```
 
-The page then shows "Open in V2pn". It opens `v2pn://add?url=…&partner=<id>&name=…`: V2pn adds the subscription and, as its domain is in your application, opens your tab. If V2pn is not installed yet, the person downloads it on the same page, installs it and presses the button again. If they already have the subscription, the button just opens your tab.
+The page then shows "Open in V2pn". It opens `v2pn://add?url=…&partner=<id>&name=…`: V2pn adds the subscription and, as its domain is yours, opens your tab. If V2pn is not installed yet, the person downloads it on the same page, installs it and presses the button again. If they already have the subscription, the button just opens your tab.
 
 A `v2pn://` link cannot go into a Telegram button: bot buttons open only `https://` and `tg://`. That is why the button leads to the page.
 
@@ -152,13 +143,13 @@ url = "https://v2pn.angleford.co/p/kestrel/#sub=" + quote(subscription_url, safe
 
 **Why after the hash.** A browser never sends the part of an address after `#` to the server, nor puts it in the Referer. V2pn's server sees only a request for `/p/kestrel/`; the page's script reads the subscription in the person's browser. It is the person's own link: whoever they forward it to gets the subscription too, as with a plain link.
 
-The cabinet's "Share" section has your address, the button's code ready to copy and a field to try the button with a subscription of your own.
+Once published, «Мой партнёр» shows your address with a copy button and a ready example of the bot's button.
 
 ## Sign-in by code
 
-Tier 2. The person copies nothing. In V2pn they pick "Sign in with a provider" in the + menu, or "I have a subscription from a provider" at first start, see six digits and a QR code, and confirm in your bot. V2pn gets the person's own link, adds the subscription, updates it, selects its first server and opens your tab. The person connects themselves.
+The special right "API". The person copies nothing. In V2pn they pick "Sign in with a provider" in the + menu, or "I have a subscription from a provider" at first start, see six digits and a QR code, and confirm in your bot. V2pn gets the person's own link, adds the subscription, updates it, selects its first server and opens your tab. The person connects themselves.
 
-You need the API address in the cabinet (https, on a domain of your application) and "Sign-in by code" turned on. Below, `<api>` is that address with a `/` at the end.
+You need the API address in the form's special rights (https, on the subscription's domain), "Sign-in by code" turned on, and a moderator's approval. Below, `<api>` is that address with a `/` at the end.
 
 ### POST `<api>login/start`
 
@@ -200,7 +191,7 @@ Every 2 seconds while the sign-in is open and the code has not expired. The answ
 ```
 
 - `waiting`: the person has not confirmed yet. A state V2pn does not know counts as `waiting` too.
-- `done`: confirmed. `subscription` is https, up to 2048 characters, no spaces, no user name or password in it, on a domain of your application; V2pn takes no other link and shows an error. `name` is optional, up to 40 characters.
+- `done`: confirmed. `subscription` is https, up to 2048 characters, no spaces, no user name or password in it, on your subscription's domain; V2pn takes no other link and shows an error. `name` is optional, up to 40 characters.
 - `expired` or status `404`: the code ran out, you do not know it, or the person pressed "Not me" in the bot. V2pn offers a new code.
 - JSON without `state`: an error; the sign-in stops.
 - No answer, or a status other than `200` and `404`: V2pn keeps waiting; after five such answers in a row (about 10 seconds) the sign-in stops with an error.
@@ -226,11 +217,11 @@ A token gets one `done`. After it V2pn asks no more; forget the token.
 - Codes and tokens are short-lived and work once.
 - `device` is written by software on the person's computer. Escape it in the bot's message (Telegram HTML or Markdown) and use it for nothing but the caption.
 
-The cabinet's "Check the API" button calls your `login/start` once with `device: "V2pn Hub · проверка"` and `login/poll` once. It expects `waiting`, not `404` and not `done`. The check's code simply expires. Configra's bot is a working example.
+The form's «Проверить API» (check the API) button calls your `login/start` once with `device: "V2pn Hub · проверка"` and `login/poll` once. It expects `waiting`, not `404` and not `done`. The check's code simply expires. Configra's bot is a working example.
 
 ## What V2pn never does
 
-- Sends you or V2pn's server nothing about the person: not their traffic, other subscriptions or V2pn's measurements. Your server gets the subscription request and, at tier 2, calls to your API. The one exception is `login/start`: the system and the computer's name, when the person opened the sign-in themselves.
+- Sends you or V2pn's server nothing about the person: not their traffic, other subscriptions or V2pn's measurements. Your server gets the subscription request and, with the "API" right, calls to your API. The one exception is `login/start`: the system and the computer's name, when the person opened the sign-in themselves.
 - Shows your tab to someone who only pasted your link. The V2pn tab has nothing from a provider.
 - Takes from headers anything that changes the way traffic goes.
 - Gives a provider the protection state, the connect button, the layout or the font.
@@ -239,25 +230,34 @@ The cabinet's "Check the API" button calls your `login/start` once with `device:
 - Follows redirects with a token or sends a token to another domain.
 - Holds the person: if you leave or your term ends, the tab closes with a note and the servers work as an ordinary subscription.
 
-## Tiers and grants
+## Special rights
 
-| | 0 "Subscription" | 1 "Verified" | 2 "Integration" |
-| --- | --- | --- | --- |
-| Application | none | yes | yes |
-| Subscription headers and other apps' headers | yes | yes | yes |
-| A tab with your logo, colours and background | no | yes | yes |
-| The page `/p/<id>/` and the bot button | no | yes | yes |
-| Moving a subscription to another of your domains (`new-url`) | no | yes | yes |
-| API: plan, devices, server health | no | no | yes |
-| Sign-in by code | no | no | yes |
-| Up to four buttons of your own | no | no | yes |
-| Hidden server addresses (`hide-settings`, `hide-url`) | no | no | yes |
+Everything above is published at once. These rights change how V2pn works for your people, so a moderator approves them first. Tick the ones you need under «Особые права» (special rights) and press «Сохранить»: the rest of the partner works meanwhile, and the form shows what waits for a moderator, what is approved and what was refused, with the reason.
 
-Tier 2 can be asked for in the cabinet; the owner decides. Your own routes, fragmentation and extra servers do not go through the site: the owner reads such files by hand (the last section).
+| Right | What it gives |
+| --- | --- |
+| Your own routing rules | which sites go through the VPN, which go direct or are blocked (below) |
+| Hide server addresses | the person sees server names only (`hide-settings`, `hide-url`) |
+| Your own buttons | up to four buttons in the tab |
+| API: account data and sign-in by code | plan, devices, server state and sign-in by a code from your bot |
+
+An approval covers what the moderator saw. Change a right's content and it waits again, while your people keep the version approved before. Unticking a right takes it out of the pack. Transport (`transport.json`) and extra servers (`core.json`) cannot be asked for in the form: the owner of V2pn reads those by hand (the last section).
+
+### Your own routing rules
+
+One rule a line: sites or addresses separated by commas, an arrow, and where they go: `proxy` (through the VPN), `direct` or `block`. The line `default → direct` sends everything else direct (without it, the rest goes through the VPN). Lines starting with `#` are comments.
+
+```
+domain:ru, geoip:ru → direct
+domain:youtube.com, domain:openai.com → proxy
+default → proxy
+```
+
+Up to 50 rules and 2000 entries, no regular expressions. `block` cannot close a whole country, a zone, the local network or a network wider than /16. The rules are checked as V2pn reads them; a mistake shows under the field.
 
 ### API
 
-All at tier 2, with `<api>` on your domain. An answer is `200` and JSON up to 64 KB; V2pn takes anything else as no answer. Every field is optional. The token is the subscription header `v2pn-account-token`: one per person, up to 200 of `A–Z a–z 0–9 - _ . ~`. V2pn sends it as `Authorization: Bearer <token>` and follows no redirects with it. If your site does not open directly, V2pn asks again through the VPN.
+With the "API" right, with `<api>` on your domain. An answer is `200` and JSON up to 64 KB; V2pn takes anything else as no answer. Every field is optional. The token is the subscription header `v2pn-account-token`: one per person, up to 200 of `A–Z a–z 0–9 - _ . ~`. V2pn sends it as `Authorization: Bearer <token>` and follows no redirects with it. If your site does not open directly, V2pn asks again through the VPN.
 
 `GET <api>account` with the token: when your tab opens and every 30 minutes while it is open.
 
@@ -298,7 +298,7 @@ Icons: `bolt`, `shield`, `play`, `game`, `card`, `chat`, `globe`, `star`, `refre
 
 ### Hidden addresses
 
-With them V2pn shows no addresses, ports or keys of your servers, lets no one share a server, show its QR code, export a config or change the subscription's link, and leaves those servers out of backups. The person sees that you locked the settings. Turn it on in the look or with the header `hide-settings: 1`; `hide-url: 1` hides the link itself too. The protection is not absolute: the core's config is on disk. The aim is that addresses cannot be forwarded in two clicks.
+With them V2pn shows no addresses, ports or keys of your servers, lets no one share a server, show its QR code, export a config or change the subscription's link, and leaves those servers out of backups. The person sees that you locked the settings. Turn it on with the special right "Hide server addresses" or with the header `hide-settings: 1`; `hide-url: 1` hides the link itself too. The protection is not absolute: the core's config is on disk. The aim is that addresses cannot be forwarded in two clicks.
 
 ## Questions
 
@@ -306,7 +306,7 @@ With them V2pn shows no addresses, ports or keys of your servers, lets no one sh
 
 **Someone already added my link by hand. How do they get the tab?** Let them press the bot's button. V2pn says the subscription is already there and opens your tab.
 
-**When does the tab go?** When the person deletes your last subscription, when the term ends, or when the owner revokes the provider. V2pn checks the term at start and every hour.
+**When does the tab go?** When the person deletes your last subscription or a moderator takes the partner down. V2pn checks at start and every hour.
 
 **How fast do look changes arrive?** After publication: at V2pn's next start or within six hours. A pack that did not change is not downloaded again.
 
@@ -314,13 +314,15 @@ With them V2pn shows no addresses, ports or keys of your servers, lets no one sh
 
 **I used to hand out a V2pn build with my marker. What about it?** Those copies keep your tab: at the first start of the new version V2pn moves the marker into its settings and deletes the file. There are no new builds or install commands for a provider any more; hand out the button.
 
-**Does V2pn's server see my people's links?** No: in the button the subscription is after `#` and never reaches the server. The server sees only the test link from your application.
+**Does V2pn's server see my people's links?** No: in the button the subscription is after `#` and never reaches the server. The server sees only your own link from the form, and not even moderators see that.
 
-**How do I change the name or the domains?** The name in the look; the domains through the owner of V2pn.
+**How do I change the name or the domain?** In «Мой партнёр»: the name changes at once, the domain together with the subscription link. The page's address `/p/<id>/` stays.
+
+**I forgot my password.** Write to a V2pn moderator: they reset it and pass you the new one.
 
 ## The owner's path: the root signature
 
-Only for partners that need their own routes (`routing.json`), transport (`transport.json`) or extra servers (`core.json`). These files change the way traffic goes, so the owner of V2pn reads each one by hand, and V2pn takes them only from a list signed with the root key on the owner's computer, not with the site's key.
+Only for partners that need transport (`transport.json`) or extra servers (`core.json`); your own routes can now be asked for in the form. These files change the way traffic goes, so the owner of V2pn reads each one by hand, and V2pn takes them only from a list signed with the root key on the owner's computer, not with the site's key.
 
 - The partner lives in `partners/<id>/` of the V2pn repository: `listing.json` (id, name, domains, grants, term, contact), `partner.json` ([JSON schema](partner.schema.json)), pictures and the reviewed files. The three files' formats are in the schema, under `$defs`.
 - `dotnet run tools/partner.cs -- review partners/<id>` says in plain words what each file does; `dotnet run tools/partner-check.cs -- partners/<id>` checks the folder the way V2pn will read it.

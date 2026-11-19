@@ -13,8 +13,6 @@ scripts). Generated here, from their single sources in the repository:
 - site/assets/partners/<id>: the partner's logo and mark (partners/<id>), for the provider tab pictured on the pages.
 - site/providers/guide/ and site/providers/guide/en/: the provider guide (docs/partners/README.ru.md, README.md),
   converted by tools/partner-docs.py's converter, in the site's header and footer.
-- site/providers/builder/: not built here: a small hand-written page saying the look is now made in the cabinet
-  (/providers/cabinet/), for old links to the builder that was there.
 - site/p/<id>/: not built here: the V2pn Hub (hub/lib/page.mjs) writes each provider's page when it publishes.
 
 Standard library only. Every page works under
@@ -199,7 +197,7 @@ def nav(root, current):
       {item("providers/guide/", "Руководство", "guide")}
     </nav>
     <div class="nav__actions">
-      <a class="btn btn--primary" href="{root}providers/apply/">Подать заявку</a>
+      <a class="btn btn--primary" href="{root}providers/login/">Создать партнёра</a>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -219,7 +217,7 @@ def footer(root):
           <p class="footer__lede">Бесплатный VPN-клиент с открытым кодом для Windows и macOS.</p>
         </div>
         <div class="span-2 footer__col"><h3>Приложение</h3><ul><li><a href="{root}#app">Окно</a></li><li><a href="{root}#features">Возможности</a></li><li><a href="{root}#install">Установка</a></li><li><a href="{root}#faq">Вопросы</a></li></ul></div>
-        <div class="span-2 footer__col"><h3>Провайдерам</h3><ul><li><a href="{root}providers/">Вкладка провайдера</a></li><li><a href="{root}providers/login/">Вход в кабинет</a></li><li><a href="{root}providers/guide/">Руководство</a></li><li><a href="{root}p/configra/">Configra</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Провайдерам</h3><ul><li><a href="{root}providers/">Вкладка провайдера</a></li><li><a href="{root}providers/login/">Вход для провайдеров</a></li><li><a href="{root}providers/guide/">Руководство</a></li><li><a href="{root}p/configra/">Configra</a></li></ul></div>
         <div class="span-2 footer__col"><h3>Проект</h3><ul><li><a href="{REPO_URL}">Код на GitHub</a></li><li><a href="{REPO_URL}/blob/v2pn/CHANGELOG.md">Что нового</a></li><li><a href="{RELEASES}">Все релизы</a></li><li><a href="{REPO_URL}/issues/new/choose">Сообщить о проблеме</a></li></ul></div>
       </div>
       <div class="footer__legal">

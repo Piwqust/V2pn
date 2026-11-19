@@ -177,6 +177,32 @@ public static class CountryResolver
         return address.IsNotEmpty() ? address! : type.ToString();
     }
 
+    /// <summary>
+    /// The server's name without the country the header already shows above it: "Швеция — напрямую" under "Sweden"
+    /// reads "напрямую". The name stays whole when nothing would be left of it.
+    /// </summary>
+    public static string WithoutCountry(string name, string? code)
+    {
+        if (name.IsNullOrEmpty() || code.IsNullOrEmpty() || WorldMap.Instance.Get(code) is not { } country)
+        {
+            return name;
+        }
+        var result = name;
+        foreach (var word in new[] { country.Ru, country.En, country.Name }.Where(w => w.Length >= 3).Distinct())
+        {
+            result = Regex.Replace(result, $@"(?<![\p{{L}}]){Regex.Escape(word)}(?![\p{{L}}])", " ", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant);
+        }
+        return TidySeparators(result) is { Length: > 0 } left ? left : name;
+    }
+
+    /// <summary>Takes out separators left at the ends or twice in a row once words are removed from a name.</summary>
+    public static string TidySeparators(string text)
+    {
+        var result = Regex.Replace(text, @"\s+", " ");
+        result = Regex.Replace(result, @"\s*([·|—–\-,:])(\s*[·|—–\-,:])+\s*", " $1 ");
+        return result.Trim().Trim('·', '|', '—', '–', '-', ',', ':', ' ').Trim();
+    }
+
     /// <summary>Removes flag emoji so the image flag beside the name is not duplicated.</summary>
     public static string StripFlag(string? remarks)
     {

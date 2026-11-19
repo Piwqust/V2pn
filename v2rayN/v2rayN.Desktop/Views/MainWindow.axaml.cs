@@ -738,12 +738,15 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 var name = CountryResolver.ServerName(item);
                 var region = string.Equals(code, "EU", StringComparison.OrdinalIgnoreCase) ? L.Europe : null;
                 txtHeaderTitle.Text = country?.Name ?? region ?? name;
-                var transport = string.Join(" · ", new[] { item.ConfigType.ToString(), item.StreamSecurity }.Where(t => t.IsNotEmpty()));
                 var placed = country != null || region != null;
-                // "VLESS · tls" under the country is for those who asked for the advanced view.
-                txtHeaderSubtitle.Text = _config.UiItem.V2pnSettingsAdvanced
-                    ? placed ? $"{name}  ·  {transport}" : transport
-                    : placed ? name : item.ConfigType.ToString();
+                // One short line under the country: the server's own name without the country repeated, and, in the
+                // advanced view, its protocol unless the name already says it ("tls" says nothing to anyone).
+                var shortName = placed ? CountryResolver.WithoutCountry(name, code) : name;
+                var protocol = item.StreamSecurity == Global.StreamSecurityReality ? $"{item.ConfigType} REALITY" : item.ConfigType.ToString();
+                var showProtocol = _config.UiItem.V2pnSettingsAdvanced
+                    && !shortName.Contains(item.ConfigType.ToString(), StringComparison.OrdinalIgnoreCase);
+                txtHeaderSubtitle.Text = !placed ? (showProtocol ? protocol : name)
+                    : showProtocol ? $"{shortName} · {protocol}" : shortName;
             }
 
             // No servers at all: the welcome card replaces the header, Connect, the mode bar and the
@@ -903,7 +906,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             : $"{Shorten(V2pnCoreWatch.FailureDetail, 300)}\n\n{L.StateCoreFailedTip}";
         var systemProxy = enabled && status?.EnableTun == false
             && (ESysProxyType)status.SystemProxySelected is ESysProxyType.ForcedChange or ESysProxyType.Pac;
-        txtSystemProxyScope.IsVisible = systemProxy;
+        // What system-proxy mode covers is in the pill's tooltip; a line of its own under every connection was one too many.
+        txtSystemProxyScope.IsVisible = false;
         var tip = faulted ? faultTip
             : check.State == AvailabilityState.NoResponse ? L.StateNoResponseTip
             : check.IsFailure ? L.CheckFailureHint

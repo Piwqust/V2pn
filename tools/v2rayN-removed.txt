@@ -1,0 +1,7 @@
+# Files of v2rayN that V2pn removed on purpose: their job moved into V2pn's own views.
+# tools/sync-upstream.ps1 drops them again after a merge, so a change in v2rayN never brings them
+# back, and lists what v2rayN changed in them under "To port by hand".
+v2rayN/v2rayN.Desktop/Views/RoutingRuleSettingWindow.axaml
+v2rayN/v2rayN.Desktop/Views/RoutingRuleSettingWindow.axaml.cs
+v2rayN/v2rayN.Desktop/Views/RoutingRuleDetailsWindow.axaml
+v2rayN/v2rayN.Desktop/Views/RoutingRuleDetailsWindow.axaml.cs

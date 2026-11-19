@@ -67,6 +67,10 @@ $owned = @()
 if ($changed) {
     $owned = @(git check-attr merge -- @changed | Where-Object { $_ -match ': merge: ours$' } | ForEach-Object { ($_ -split ': merge:')[0] })
 }
+# Files V2pn removed on purpose (tools/v2rayN-removed.txt): what v2rayN changed there is ported by hand too.
+$removedList = Join-Path $PSScriptRoot 'v2rayN-removed.txt'
+$removed = @(if (Test-Path $removedList) { Get-Content $removedList | ForEach-Object { $_.Trim() } | Where-Object { $_ -and -not $_.StartsWith('#') } })
+$owned += @($removed | Where-Object { $_ -in $changed })
 
 $syncBranch = "sync/v2rayN-$short"
 if (git branch --list $syncBranch) { Invoke-Git branch -D $syncBranch }
@@ -98,6 +102,10 @@ Invoke-Git add -- $lockFile
 # dropped again, which also settles the "deleted by us, modified by them" conflicts.
 $foreign = @(git ls-files -- .github/workflows | Sort-Object -Unique | Where-Object { (Split-Path -Leaf $_) -notlike 'v2pn-*' })
 foreach ($file in $foreign) { git rm -q -f -- $file 2>$null | Out-Null }
+# The same for the files V2pn removed on purpose: a change in v2rayN would bring them back.
+foreach ($file in $removed) {
+    if (git ls-files -- $file) { git rm -q -f -- $file 2>$null | Out-Null }
+}
 
 $conflicts = @(git diff --name-only --diff-filter=U)
 if ($conflicts) {
@@ -170,7 +178,7 @@ if ($testSummary) {
 $md += '## To port by hand'
 $md += ''
 if ($owned) {
-    $md += 'v2rayN changed these views, but V2pn keeps its own version of them. Bring over what matters (new settings, fixes):'
+    $md += 'v2rayN changed these views, but V2pn keeps its own version of them (or removed them, tools/v2rayN-removed.txt). Bring over what matters (new settings, fixes):'
     $md += ''
     foreach ($f in $owned) {
         $md += "### ``$f``"

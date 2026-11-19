@@ -1,7 +1,8 @@
 // A provider's public page, /p/<id>/ (it began as a port of the former tools/partner-page.py: its colours, checks and
 // layout), made for the hub's way of coming from a provider: the page offers "Открыть в V2pn" (v2pn://add?url=…&partner=<id>)
 // when its address carries #sub=<subscription>, and the downloads go through /r/<name> (plain V2pn, no marker).
-// Drawn in the site's system (Geist, V2pn's tokens, the window of /assets/site/site.css) in the provider's colours.
+// Drawn in the site's system (Inter Tight and Inter, square chrome with the fork's 45° cut, the window of
+// /assets/window.css) in the provider's colours.
 import fs from 'node:fs';
 import { colors as C } from './colors.mjs';
 
@@ -82,7 +83,7 @@ function strings(name, login, cabinet) {
   const ru = {
     title: `V2pn для ${n}`,
     h1: `${n} на компьютере`,
-    lead: `Ваша подписка ${n} в V2pn — бесплатном VPN-клиенте для Windows и macOS. Во вкладке ${n} — ваш тариф, серверы и цвета ${n}. `
+    lead: `Ваша подписка ${n} в V2pn, бесплатном VPN-клиенте для Windows и macOS. Во вкладке ${n} ваш тариф, серверы и цвета ${n}. `
       + (login ? `Войти можно по коду из бота ${n}, без ссылок.` : 'Подключается в один клик.'),
     open: 'Открыть в V2pn',
     openNote: 'Браузер спросит, открыть ли V2pn. Если V2pn ещё нет, скачайте его ниже, установите и нажмите «Открыть в V2pn» ещё раз.',
@@ -94,7 +95,7 @@ function strings(name, login, cabinet) {
     afterTitle: 'Скачивание началось',
     afterText: `Установите V2pn и нажмите кнопку «Подключить в V2pn» в боте ${n} ещё раз: V2pn откроется и добавит подписку с вкладкой ${n}.`,
     afterTextSub: 'Установите V2pn и нажмите «Открыть в V2pn» на этой странице ещё раз: V2pn добавит подписку с вашей вкладкой.',
-    phoneTitle: 'V2pn — для компьютера',
+    phoneTitle: 'V2pn работает на компьютере',
     phoneText: 'На телефоне V2pn не работает. Откройте эту страницу на компьютере с Windows или macOS.',
     share: 'Отправить ссылку себе',
     copied: 'Ссылка скопирована',
@@ -112,12 +113,12 @@ function strings(name, login, cabinet) {
     s3: login ? 'Подтвердите в боте' : 'Подключитесь',
     s3t: login
       ? `V2pn покажет код. Подтвердите его в боте ${n}, и V2pn сам добавит подписку: останется нажать «Подключиться».`
-      : `Нажмите «Подключиться». Серверы ${n} — во вкладке ${n} вверху окна.`,
+      : `Нажмите «Подключиться». Серверы ${n} во вкладке ${n} вверху окна.`,
     bot: 'Открыть бота',
-    what: 'V2pn — бесплатный VPN-клиент с открытым кодом для Windows и macOS. Он ничего не знает о вас и никуда не отправляет ваши данные.',
+    what: 'V2pn: бесплатный VPN-клиент с открытым кодом для Windows и macOS. Он ничего не знает о вас и никуда не отправляет ваши данные.',
     whatLink: 'Что такое V2pn',
     art: `Окно V2pn во вкладке ${n}: карточка тарифа, кнопка «Подключиться» и самые быстрые серверы`,
-    foot: 'V2pn — открытый код, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn на GitHub</a>',
+    foot: 'V2pn: открытый код, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn на GitHub</a>',
     lang: 'Язык',
     report: 'Пожаловаться',
     reportText: 'Что не так? Можно не писать.',
@@ -179,7 +180,7 @@ const ICON_POWER = '<svg class="ic" viewBox="0 0 24 24"><path d="M12 3v8M6.3 6.3
 const ICON_MENU = '<svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 
 /**
- * V2pn's window in the provider's tab, as the app draws it (the site's .v2w, /assets/site/site.css): the plan card
+ * V2pn's window in the provider's tab, as the app draws it (the site's .v2w, /assets/window.css): the plan card
  * and the map for Accent, the provider's background for Scene. Decorative: the hero says the same in words.
  */
 function windowHtml({ theme, dark, name, files }) {
@@ -221,7 +222,7 @@ function windowHtml({ theme, dark, name, files }) {
 /**
  * The files of /p/<id>/: index.html, page.js and the pictures it shows. <pictures> maps logo / logoOnLight / mark /
  * backdrop to their PNG bytes (only those the pack carries). Throws when a pair of text and ground would not read.
- * The page takes the site's font, its window styles (/assets/site/site.css), V2pn's flags and map from the site.
+ * The page takes the site's fonts, its window styles (/assets/window.css), V2pn's flags and map from the site.
  */
 export function buildPage({ id, name, look, theme, pictures, origin, home = '/' }) {
   const { modes, failures } = pageTheme(theme);
@@ -257,73 +258,78 @@ export function buildPage({ id, name, look, theme, pictures, origin, home = '/' 
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>${ru.title}</title>
-<meta name="description" content="${esc(name)} в V2pn — бесплатном VPN-клиенте для Windows и macOS: подписка со своей вкладкой в один клик.">
+<meta name="description" content="${esc(name)} в V2pn, бесплатном VPN-клиенте для Windows и macOS: подписка со своей вкладкой в один клик.">
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="${modes.light.bg}" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="${modes.dark.bg}" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
-<link rel="stylesheet" href="/assets/site/site.css">
+<link rel="preload" href="/assets/fonts/inter-tight-cyrillic.woff2" as="font" type="font/woff2" crossorigin>
+<link rel="stylesheet" href="/assets/window.css">
 <style>
-@font-face { font-family: Geist; src: url(/assets/fonts/Geist-Regular.woff2) format("woff2"); font-weight: 400; font-display: swap; }
-@font-face { font-family: Geist; src: url(/assets/fonts/Geist-Medium.woff2) format("woff2"); font-weight: 500; font-display: swap; }
-@font-face { font-family: Geist; src: url(/assets/fonts/Geist-SemiBold.woff2) format("woff2"); font-weight: 600; font-display: swap; }
-@font-face { font-family: "Geist Mono"; src: url(/assets/fonts/GeistMono-Regular.woff2) format("woff2"); font-weight: 400; font-display: swap; }
+@font-face { font-family: "Inter Tight"; src: url(/assets/fonts/inter-tight-cyrillic.woff2) format("woff2"); font-weight: 200 800; font-display: swap; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: "Inter Tight"; src: url(/assets/fonts/inter-tight-latin.woff2) format("woff2"); font-weight: 200 800; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: Inter; src: url(/assets/fonts/inter-cyrillic.woff2) format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: Inter; src: url(/assets/fonts/inter-latin.woff2) format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+2000-206F, U+20AC, U+2122, U+2212; }
+@font-face { font-family: "JetBrains Mono"; src: url(/assets/fonts/jetbrains-mono-latin.woff2) format("woff2"); font-weight: 400 500; font-display: swap; }
 :root { color-scheme: light; ${tokens(modes.light)};
-  --font-text: Geist, "Segoe UI", system-ui, -apple-system, sans-serif; --font-display: var(--font-text); --font-mono: "Geist Mono", ui-monospace, Consolas, Menlo, monospace;
-  --ease: cubic-bezier(.23, 1, .32, 1); }
+  --font-text: Inter, "Segoe UI", system-ui, -apple-system, sans-serif; --font-display: "Inter Tight", Inter, system-ui, sans-serif; --font-mono: "JetBrains Mono", ui-monospace, Consolas, Menlo, monospace;
+  --ease: cubic-bezier(.2, 0, 0, 1); --cut: 10px; --margin: clamp(16px, 3vw + 4px, 56px); }
 @media (prefers-color-scheme: dark) { :root { color-scheme: dark; ${tokens(modes.dark)}; } }
 * { box-sizing: border-box; }
 html { -webkit-text-size-adjust: 100%; }
-body { margin: 0; background: var(--bg); color: var(--ink); font: 400 16px/1.55 var(--font-text); -webkit-font-smoothing: antialiased; }
+body { margin: 0; background: var(--bg); color: var(--ink); font: 400 17px/1.55 var(--font-text); -webkit-font-smoothing: antialiased; }
 img, svg { display: block; max-width: 100%; }
-a { color: var(--linkBg); text-underline-offset: 3px; text-decoration-thickness: 1px; }
-:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: 6px; }
+a { color: var(--linkBg); text-underline-offset: 3px; text-decoration-thickness: 1.5px; }
+:focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 .pp-hero :focus-visible { outline-color: var(--heroInk); }
 [hidden] { display: none !important; }
-.pp-wrap { width: min(100% - 160px, 1280px); margin-inline: auto; }
-.pp-bar { position: sticky; top: 0; z-index: 10; background: var(--bg); border-bottom: 1px solid var(--line); }
-.pp-bar__in { display: flex; align-items: center; gap: 12px; height: 72px; }
-.pp-lockup { display: flex; align-items: center; gap: 10px; min-width: 0; font: 500 20px/1 var(--font-display); letter-spacing: -0.02em; color: inherit; text-decoration: none; }
-.pp-lockup .fork { width: 19px; height: 20px; flex: none; fill: #E8391B; }
-.pp-x { color: var(--muted); font-weight: 400; }
+::selection { background: var(--accent); color: var(--onAccent); }
+.pp-wrap { width: min(100% - 2 * var(--margin), 1440px); margin-inline: auto; }
+.pp-bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
+.pp-bar__in { display: flex; align-items: center; gap: 14px; height: 68px; }
+.pp-lockup { display: flex; align-items: center; gap: 10px; min-width: 0; font: 700 21px/1 var(--font-display); letter-spacing: -0.04em; color: inherit; text-decoration: none; }
+.pp-lockup .fork { width: 19px; height: 20px; flex: none; fill: #FF3D1F; }
+.pp-x { color: var(--muted); font-weight: 300; }
 .pp-barlogo { height: 22px; width: auto; max-width: 160px; object-fit: contain; object-position: left center; }
 .name { font-weight: 600; }
 .pp-sp { flex: 1; }
-.pp-switch { display: inline-flex; padding: 3px; border-radius: 12px; background: var(--mutedBg); flex: none; }
-.pp-switch button { font: 600 13px/1 var(--font-text); border: 0; background: none; color: var(--muted); height: 38px; min-width: 44px; padding: 0 10px; border-radius: 9px; cursor: pointer; }
-.pp-switch button[aria-pressed=true] { background: var(--card); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
-main { padding: 32px 0 0; }
-.pp-hero { position: relative; overflow: hidden; border-radius: 24px; background: var(--hero); color: var(--heroInk); box-shadow: 0 0 0 1px var(--line); }
+.pp-switch { display: inline-flex; border: 1px solid var(--line); flex: none; }
+.pp-switch button { font: 600 13px/1 var(--font-text); border: 0; background: none; color: var(--muted); height: 40px; min-width: 48px; padding: 0 12px; cursor: pointer; transition: color 200ms var(--ease), background-color 200ms var(--ease); }
+.pp-switch button + button { border-left: 1px solid var(--line); }
+.pp-switch button[aria-pressed=true] { background: var(--ink); color: var(--bg); }
+.pp-hero { position: relative; overflow: hidden; background: var(--hero); color: var(--heroInk); border-bottom: 1px solid var(--line); }
 .pp-hero::before { content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none; }
-.pp-hero__in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 48px; align-items: center; padding: 56px; min-height: min(640px, calc(100svh - 136px)); }
-.pp-text { display: grid; gap: 24px; align-content: center; }
+.pp-hero__in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 72px; min-height: min(720px, calc(100svh - 68px)); }
+.pp-text { display: grid; gap: 22px; align-content: center; }
 .pp-herologo { height: 44px; width: auto; max-width: 320px; object-fit: contain; object-position: left center; }
 .pp-hero .name { font-size: 28px; }
-h1 { margin: 0; font: 500 clamp(36px, 2.4vw + 18px, 56px)/1.04 var(--font-display); letter-spacing: -0.035em; text-wrap: balance; }
-.pp-lead { margin: 0; font-size: 18px; line-height: 1.5; color: var(--heroSoft); max-width: 34em; text-wrap: pretty; }
+h1 { margin: 0; font: 600 clamp(40px, 3.6vw + 16px, 76px)/0.98 var(--font-display); letter-spacing: -0.045em; margin-left: -0.03em; text-wrap: balance; }
+.pp-lead { margin: 0; font-size: 19px; line-height: 1.45; color: var(--heroSoft); max-width: 32em; text-wrap: pretty; }
 .pp-open, .pp-dl .pp-opt { display: grid; gap: 8px; justify-items: start; }
-.pp-dl { display: flex; flex-wrap: wrap; gap: 16px 20px; }
-.pp-btn { display: inline-flex; align-items: center; justify-content: center; gap: 10px; height: 52px; padding: 0 26px; border-radius: 999px; font: 600 16px/1 var(--font-text);
-  text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; background: var(--ghost); color: var(--heroInk);
-  transition: transform 160ms var(--ease), filter 160ms ease, background-color 160ms ease; }
-.pp-btn:hover { filter: brightness(1.07); }
-.pp-btn:active { transform: scale(.97); }
+.pp-dl { display: flex; flex-wrap: wrap; gap: 18px 22px; }
+/* The fork's 45° cut on the strong button; it opens on hover. */
+.pp-btn { --c: var(--cut); position: relative; display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 54px; padding: 0 24px; font: 600 16px/1 var(--font-text);
+  text-decoration: none; border: 0; cursor: pointer; white-space: nowrap; background: transparent; color: var(--heroInk); box-shadow: inset 0 0 0 1.5px currentColor;
+  transition: clip-path 400ms var(--ease), translate 150ms var(--ease), background-color 200ms var(--ease), color 200ms var(--ease); }
 .pp-btn svg { width: 18px; height: 18px; flex: none; }
-.pp-btn--primary { background: var(--solid); color: var(--onSolid); box-shadow: 0 1px 2px rgba(0,0,0,.16), 0 10px 22px -12px rgba(0,0,0,.45); }
-.pp-btn--small { height: 44px; padding: 0 18px; font-size: 15px; }
+.pp-btn--primary { background: var(--solid); color: var(--onSolid); box-shadow: none; clip-path: polygon(0 0, calc(100% - var(--c)) 0, 100% var(--c), 100% 100%, 0 100%); }
+@media (hover: hover) { .pp-btn--primary:hover { --c: calc(var(--cut) * 2); } .pp-btn:not(.pp-btn--primary):hover { background: var(--ghost); } }
+.pp-btn:focus-visible { --c: calc(var(--cut) * 2); }
+.pp-btn:active { translate: 0 1px; }
+.pp-btn--small { min-height: 44px; padding: 0 18px; font-size: 15px; }
 .pp-note { font-size: 14px; line-height: 1.45; color: var(--heroSoft); max-width: 34em; }
 .pp-hero a:not(.pp-btn) { color: var(--heroInk); }
-.pp-after { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 16px 18px; border-radius: 16px; background: var(--ghost); color: var(--heroInk); max-width: 34em; }
-.pp-after svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+.pp-after { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 16px 18px; background: var(--ghost); color: var(--heroInk); max-width: 34em; box-shadow: inset 3px 0 0 var(--heroInk); }
+.pp-after svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; }
 .pp-after b { display: block; font-weight: 600; }
 .pp-after p { margin: 2px 0 0; font-size: 15px; line-height: 1.5; }
 .pp-phone { display: none; gap: 12px; justify-items: start; }
-.pp-phone h2 { margin: 0; font-size: 20px; letter-spacing: -0.01em; }
+.pp-phone h2 { margin: 0; font: 600 22px/1.2 var(--font-display); letter-spacing: -0.02em; }
 .pp-phone p { margin: 0; color: var(--heroSoft); }
 body.is-phone .pp-phone { display: grid; }
 body.is-phone .pp-dl, body.is-phone .pp-open, body.is-phone .pp-after { display: none !important; }
 .pp-art { position: relative; min-width: 0; }
-.pp-art .v2w { width: 100%; aspect-ratio: 16 / 11; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 40px 80px -36px rgba(0,0,0,.45); }
+.pp-art .v2w { width: 100%; aspect-ratio: 16 / 11; box-shadow: 0 1px 2px rgba(0,0,0,.08), 0 50px 90px -40px rgba(0,0,0,.55); }
 .pp-art .v2-tab img { width: 16px; height: 16px; }
 .pp-win--dark { display: none !important; }
 @media (prefers-color-scheme: dark) { .pp-win--light { display: none !important; } .pp-win--dark { display: grid !important; } }
@@ -331,71 +337,67 @@ body.is-phone .pp-dl, body.is-phone .pp-open, body.is-phone .pp-after { display:
 .v2-plan__head .pp-letter { width: 30px; height: 30px; border-radius: 8px; font-size: 15px; }
 .pp-scene-name { font: 600 24px/1.1 var(--font-display); }
 .v2-panel-dark .v2-pill--off { color: #ff7a62; background: rgba(255, 90, 61, .16); }
-.pp-steps { padding: 96px 0 0; }
-.pp-steps h2 { margin: 0 0 32px; font: 500 clamp(28px, 1.2vw + 20px, 40px)/1.1 var(--font-display); letter-spacing: -0.03em; }
-.pp-steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 24px; }
-.pp-steps li { background: var(--card); border-radius: 24px; padding: 28px; display: grid; gap: 12px; align-content: start; box-shadow: 0 0 0 1px var(--line); }
-.pp-num { width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center; background: var(--accent); color: var(--onAccent); font-weight: 600; font-size: 15px; font-variant-numeric: tabular-nums; }
-.pp-steps h3 { margin: 0; font-size: 19px; font-weight: 500; letter-spacing: -0.01em; }
+.pp-steps { padding: 104px 0 0; }
+.pp-steps h2 { margin: 0 0 40px; font: 600 clamp(30px, 2vw + 18px, 48px)/1.05 var(--font-display); letter-spacing: -0.035em; }
+.pp-steps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 32px; }
+.pp-steps li { display: grid; gap: 12px; align-content: start; padding-top: 20px; border-top: 2px solid var(--ink); }
+.pp-num { font: 200 56px/0.85 var(--font-display); letter-spacing: -0.05em; color: var(--link); font-variant-numeric: tabular-nums; }
+.pp-steps h3 { margin: 0; font: 600 21px/1.25 var(--font-display); letter-spacing: -0.015em; }
 .pp-steps p { margin: 0; color: var(--soft); font-size: 16px; line-height: 1.55; }
 .pp-steps p b { color: var(--ink); font-weight: 600; }
 .pp-steps li a { color: var(--link); }
-.pp-steps .pp-btn--quiet { background: var(--accent); color: var(--onAccent); justify-self: start; margin-top: 4px; }
+.pp-steps .pp-btn--quiet { background: var(--accent); color: var(--onAccent); box-shadow: none; justify-self: start; margin-top: 6px;
+  clip-path: polygon(0 0, calc(100% - var(--c)) 0, 100% var(--c), 100% 100%, 0 100%); }
 .pp-cmd { font-size: 14px; color: var(--muted); }
-.pp-cmd code { display: block; margin-top: 6px; padding: 10px 12px; border-radius: 12px; background: var(--mutedBg); color: var(--ink);
+.pp-cmd code { display: block; margin-top: 6px; padding: 11px 13px; background: var(--mutedBg); color: var(--ink); border: 1px solid var(--line);
   font: 13px/1.45 var(--font-mono); overflow-wrap: anywhere; user-select: all; }
 body.os-win [data-os=mac], body.os-mac [data-os=win] { display: none; }
 .pp-osl { display: none; }
 body.os-any .pp-osl, body.os-phone .pp-osl { display: inline; }
-.pp-what { margin: 64px 0 0; padding: 24px 0 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; }
+.pp-what { margin: 88px 0 0; padding: 24px 0 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: baseline; justify-content: space-between; }
 .pp-what p { margin: 0; color: var(--soft); max-width: 62ch; }
-.pp-what a { color: var(--ink); font-weight: 500; }
-.pp-links { display: inline-flex; gap: 20px; align-items: baseline; }
+.pp-what a { color: var(--ink); font-weight: 600; }
+.pp-links { display: inline-flex; gap: 22px; align-items: baseline; }
 .pp-report-open { border: 0; background: none; padding: 0; font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
 .pp-report { margin: 16px 0 0; display: grid; gap: 8px; max-width: 34em; color: var(--soft); }
-.pp-report textarea { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; resize: vertical; }
+.pp-report textarea { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 10px 12px; resize: vertical; }
 .pp-report__row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
-.pp-report .pp-btn--quiet { background: var(--accent); color: var(--onAccent); }
+.pp-report .pp-btn--quiet { background: var(--accent); color: var(--onAccent); box-shadow: none; }
 .pp-report__state { font-size: 14px; color: var(--muted); }
 footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
 footer a { color: var(--muted); }
 @media (max-width: 1023px) {
-  .pp-wrap { width: min(100% - 48px, 1280px); }
-  .pp-hero__in { grid-template-columns: minmax(0, 1fr); padding: 40px; min-height: 0; }
-  .pp-steps ol { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+  .pp-hero__in { grid-template-columns: minmax(0, 1fr); padding-block: 48px; min-height: 0; }
+  .pp-steps ol { grid-template-columns: minmax(0, 1fr); gap: 28px; }
 }
 @media (max-width: 639px) {
-  .pp-wrap { width: calc(100% - 32px); }
-  .pp-bar__in { height: 56px; }
+  .pp-bar__in { height: 58px; }
   .pp-lockup { font-size: 18px; }
-  main { padding-top: 16px; }
-  .pp-hero { border-radius: 20px; }
-  .pp-hero__in { padding: 28px 20px; gap: 28px; }
+  .pp-hero__in { padding-block: 32px 40px; gap: 32px; }
   .pp-herologo { height: 34px; max-width: 100%; }
-  .pp-lead { font-size: 16.5px; }
+  .pp-lead { font-size: 17px; }
   .pp-dl, .pp-dl .pp-opt, .pp-open { width: 100%; }
   .pp-btn { width: 100%; }
   .pp-btn--small { width: auto; }
   .pp-steps { padding-top: 64px; }
-  .pp-steps li { padding: 20px; border-radius: 20px; }
   .pp-art .v2w { aspect-ratio: 4 / 5; }
 }
-@media (prefers-reduced-motion: reduce) { .pp-btn { transition: none; } .pp-btn:active { transform: none; } }
+@media (prefers-reduced-motion: reduce) { .pp-btn { transition: none; } .pp-btn:active { translate: none; } }
 </style>
 </head>
 <body class="os-any">
 <header class="pp-bar">
   <div class="pp-wrap pp-bar__in">
-    <a class="pp-lockup" href="${esc(home)}"><svg class="fork" viewBox="0 0 104 112" aria-hidden="true"><path d="${FORK_PATH}"/></svg><span>V2pn</span><span class="pp-x" aria-hidden="true">×</span>${pic('pp-barlogo', barLogo, esc(name))}</a>
+    <a class="pp-lockup" href="${esc(home)}"><svg class="fork" viewBox="0 0 104 112" aria-hidden="true"><path d="${FORK_PATH}"/></svg><span>v2pn</span><span class="pp-x" aria-hidden="true">×</span>${pic('pp-barlogo', barLogo, esc(name))}</a>
     <div class="pp-sp"></div>
     <div class="pp-switch" role="group" aria-label="Язык">
       <button type="button" data-lang="ru" aria-pressed="true">RU</button><button type="button" data-lang="en" aria-pressed="false">EN</button>
     </div>
   </div>
 </header>
-<main class="pp-wrap">
+<main>
   <section class="pp-hero" aria-labelledby="pp-h1">
-    <div class="pp-hero__in">
+    <div class="pp-wrap pp-hero__in">
       <div class="pp-text">
         ${pic('pp-herologo', heroLogo, esc(name))}
         <h1 id="pp-h1" data-t="h1">${ru.h1}</h1>
@@ -428,12 +430,13 @@ footer a { color: var(--muted); }
       <div class="pp-art" role="img" aria-label="${ru.art}" data-t-label="art">${winLight}${winDark}</div>
     </div>
   </section>
+  <div class="pp-wrap">
   <section class="pp-steps" aria-labelledby="pp-steps-h">
     <h2 id="pp-steps-h" data-t="stepsTitle">${ru.stepsTitle}</h2>
     <ol>
-      <li><span class="pp-num">1</span><h3 data-t="s1">${ru.s1}</h3><p data-os="win"><b class="pp-osl">Windows. </b><span data-t="s1win">${ru.s1win}</span></p><p class="pp-cmd" data-os="win"><span data-t="cmdWin">${ru.cmdWin}</span><code>${esc(commands.win)}</code></p><p data-os="mac"><b class="pp-osl">macOS. </b><span data-t="s1mac">${ru.s1mac}</span></p><p class="pp-cmd" data-os="mac"><span data-t="cmdMac">${ru.cmdMac}</span><code>${esc(commands.mac)}</code></p></li>
-      <li><span class="pp-num">2</span><h3 data-t="s2">${ru.s2}</h3><p data-t="s2t">${ru.s2t}</p></li>
-      <li><span class="pp-num">3</span><h3 data-t="s3">${ru.s3}</h3><p data-t="s3t">${ru.s3t}</p>${botHtml}</li>
+      <li><span class="pp-num" aria-hidden="true">1</span><h3 data-t="s1">${ru.s1}</h3><p data-os="win"><b class="pp-osl">Windows. </b><span data-t="s1win">${ru.s1win}</span></p><p class="pp-cmd" data-os="win"><span data-t="cmdWin">${ru.cmdWin}</span><code>${esc(commands.win)}</code></p><p data-os="mac"><b class="pp-osl">macOS. </b><span data-t="s1mac">${ru.s1mac}</span></p><p class="pp-cmd" data-os="mac"><span data-t="cmdMac">${ru.cmdMac}</span><code>${esc(commands.mac)}</code></p></li>
+      <li><span class="pp-num" aria-hidden="true">2</span><h3 data-t="s2">${ru.s2}</h3><p data-t="s2t">${ru.s2t}</p></li>
+      <li><span class="pp-num" aria-hidden="true">3</span><h3 data-t="s3">${ru.s3}</h3><p data-t="s3t">${ru.s3t}</p>${botHtml}</li>
     </ol>
   </section>
   <div class="pp-what"><p data-t="what">${ru.what}</p><span class="pp-links"><a href="${esc(home)}" data-t="whatLink">${ru.whatLink}</a><button type="button" class="pp-report-open" id="report-open" data-t="report">${ru.report}</button></span></div>
@@ -442,6 +445,7 @@ footer a { color: var(--muted); }
     <textarea id="report-text" maxlength="1000" rows="3"></textarea>
     <div class="pp-report__row"><button type="submit" class="pp-btn pp-btn--small pp-btn--quiet" id="report-send" data-t="reportSend">${ru.reportSend}</button><span class="pp-report__state" id="report-state" role="status"></span></div>
   </form>
+  </div>
 </main>
 <footer class="pp-wrap" data-t="foot">${ru.foot}</footer>
 <script type="application/json" id="page-data">${data}</script>
@@ -475,12 +479,15 @@ export function buildDownPage({ name }) {
 <meta name="robots" content="noindex">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">
 <style>
+@font-face { font-family: "Inter Tight"; src: url(/assets/fonts/inter-tight-cyrillic.woff2) format("woff2"); font-weight: 200 800; font-display: swap; }
+@font-face { font-family: Inter; src: url(/assets/fonts/inter-cyrillic.woff2) format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0400-045F; }
+@font-face { font-family: Inter; src: url(/assets/fonts/inter-latin.woff2) format("woff2"); font-weight: 400 600; font-display: swap; unicode-range: U+0000-00FF; }
 :root { color-scheme: light dark; --bg: ${LIGHT.bg}; --card: ${LIGHT.card}; --ink: ${LIGHT.ink}; --soft: ${LIGHT.soft}; --line: ${LIGHT.line}; }
 @media (prefers-color-scheme: dark) { :root { --bg: ${DARK.bg}; --card: ${DARK.card}; --ink: ${DARK.ink}; --soft: ${DARK.soft}; --line: ${DARK.line}; } }
 body { margin: 0; min-height: 100svh; display: grid; place-items: center; background: var(--bg); color: var(--ink);
-  font: 400 16px/1.55 Geist, "Segoe UI", system-ui, -apple-system, sans-serif; }
-main { width: min(100% - 32px, 34em); padding: 32px; border-radius: 24px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
-h1 { margin: 0 0 12px; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+  font: 400 16px/1.55 Inter, "Segoe UI", system-ui, -apple-system, sans-serif; }
+main { width: min(100% - 32px, 34em); padding: 32px; background: var(--card); box-shadow: 0 0 0 1px var(--line), inset 3px 0 0 #FF3D1F; }
+h1 { margin: 0 0 12px; font: 600 28px/1.1 "Inter Tight", Inter, system-ui, sans-serif; letter-spacing: -0.03em; }
 p { margin: 0 0 12px; color: var(--soft); }
 a { color: var(--ink); }
 </style>

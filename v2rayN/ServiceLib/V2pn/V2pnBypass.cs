@@ -33,6 +33,45 @@ public static class V2pnBypass
 
     public static IReadOnlyList<V2pnBypassVariant> All { get; } = [Fragment, FragmentFine, FragmentTcp];
 
+    /// <summary>The most servers tested at once in calm mode.</summary>
+    public const int CalmBatchSize = 12;
+
+    /// <summary>The pause between two calm batches.</summary>
+    public static readonly TimeSpan CalmPause = TimeSpan.FromSeconds(3);
+
+    /// <summary>
+    /// Splits servers into test batches of at most <see cref="CalmBatchSize"/> (or <paramref name="pageSize"/>, if
+    /// smaller), with one entry per server address in each: several handshakes to one address in a moment look like a
+    /// VPN to the filter, which then freezes that address for minutes. Order is kept as far as that allows.
+    /// </summary>
+    public static List<List<T>> CalmBatches<T>(IReadOnlyList<T> items, Func<T, string?> address, int pageSize)
+    {
+        var size = Math.Clamp(pageSize, 1, CalmBatchSize);
+        var batches = new List<List<T>>();
+        var hosts = new List<HashSet<string>>();
+        foreach (var item in items)
+        {
+            var host = (address(item) ?? string.Empty).Trim().ToLowerInvariant();
+            var placed = false;
+            for (var i = 0; i < batches.Count; i++)
+            {
+                if (batches[i].Count < size && (host.Length == 0 || !hosts[i].Contains(host)))
+                {
+                    batches[i].Add(item);
+                    hosts[i].Add(host);
+                    placed = true;
+                    break;
+                }
+            }
+            if (!placed)
+            {
+                batches.Add([item]);
+                hosts.Add([host]);
+            }
+        }
+        return batches;
+    }
+
     public static V2pnBypassVariant? Variant(string? id) => All.FirstOrDefault(v => v.Id == id);
 
     public static V2pnBypassItem Item(Config config) => config.V2pnBypassItem ??= new();

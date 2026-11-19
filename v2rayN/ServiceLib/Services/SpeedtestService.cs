@@ -10,7 +10,9 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
     private readonly Lock _runLock = new();
     private readonly List<CancellationTokenSource> _runCtsList = [];
     private readonly int _speedTestPageSize = config.SpeedTestItem.SpeedTestPageSize ?? Global.SpeedTestPageSize;
-    private readonly TimeSpan _delayInterval = TimeSpan.FromSeconds(config.SpeedTestItem.SpeedTestDelayInterval ?? 1);
+    private readonly TimeSpan _delayInterval = V2pnBypass.Calm(config)
+        ? V2pnBypass.CalmPause
+        : TimeSpan.FromSeconds(config.SpeedTestItem.SpeedTestDelayInterval ?? 1);
 
     public Task RunLoop(ESpeedActionType actionType, List<ProfileItem> selecteds, CancellationToken ct = default)
     {
@@ -610,6 +612,15 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
         pageSize = Math.Max(pageSize, 1);
         var lst1 = lstSelected.Where(t => t.CoreType == ECoreType.Xray).ToList();
         var lst2 = lstSelected.Where(t => t.CoreType == ECoreType.sing_box).ToList();
+
+        // V2pn: "Обход блокировок" keeps tests from looking like a burst: a few servers at a time, never two
+        // entries of one server address in the same batch.
+        if (V2pnBypass.Calm(_config))
+        {
+            lstTest.AddRange(V2pnBypass.CalmBatches(lst1, t => t.Address, pageSize));
+            lstTest.AddRange(V2pnBypass.CalmBatches(lst2, t => t.Address, pageSize));
+            return lstTest;
+        }
 
         for (var num = 0; num < (int)Math.Ceiling(lst1.Count * 1.0 / pageSize); num++)
         {

@@ -214,4 +214,18 @@ public class V2pnBypassTests
         await V2pnNetworkId.IsMobile("Remote NDIS based Internet Sharing Device", NetworkInterfaceType.Ethernet, "192.168.42.129").Should().BeTrue();
         await V2pnNetworkId.IsMobile("Intel Wi-Fi 6", NetworkInterfaceType.Wireless80211, "192.168.1.1").Should().BeFalse();
     }
+    [Test]
+    public async Task CalmBatches_OneEntryPerAddressAndFewAtOnce()
+    {
+        var items = new List<string> { "a", "a", "a", "b", "c" };
+        var batches = V2pnBypass.CalmBatches(items, x => x, 100);
+
+        await batches.Count.Should().BeEqualTo(3);
+        await batches.All(b => b.Distinct().Count() == b.Count).Should().BeTrue();
+        await batches[0].Should().BeEquivalentTo(["a", "b", "c"]);
+
+        var many = Enumerable.Range(0, 30).Select(i => $"h{i}").ToList();
+        await V2pnBypass.CalmBatches(many, x => x, 1000).Max(b => b.Count).Should().BeEqualTo(V2pnBypass.CalmBatchSize);
+        await V2pnBypass.CalmBatches(many, x => x, 5).Max(b => b.Count).Should().BeEqualTo(5);
+    }
 }

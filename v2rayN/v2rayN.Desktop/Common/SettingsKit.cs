@@ -83,8 +83,40 @@ internal static class SettingsKit
             });
             LabelControl(row, title);
         }
+        NameEmptyChoices(root);
         QueueMarkFirst(root);
     }
+
+    /// <summary>
+    /// v2rayN's pickers offer an empty item for "any" or "the default", shown as a blank box that reads as
+    /// broken. Pickers in V2pn forms name it "Not set" instead; the value stays empty.
+    /// </summary>
+    public static void NameEmptyChoices(Control root)
+    {
+        foreach (var combo in root.GetLogicalDescendants().OfType<ComboBox>().Where(c => !c.IsEditable))
+        {
+            if (combo.ItemTemplate == null && combo.DisplayMemberBinding == null)
+            {
+                combo.ItemTemplate = EmptyChoiceTemplate;
+            }
+            // Nothing picked at all (the bound value is null) means the same.
+            if (string.IsNullOrEmpty(combo.PlaceholderText))
+            {
+                combo.PlaceholderText = L.HotkeyNotSet;
+            }
+        }
+    }
+
+    private static readonly Avalonia.Controls.Templates.FuncDataTemplate<object?> EmptyChoiceTemplate = new((item, _) =>
+    {
+        if (item is string { Length: 0 })
+        {
+            var empty = new TextBlock { Text = L.HotkeyNotSet };
+            empty.Bind(TextBlock.ForegroundProperty, empty.GetResourceObservable("V2Muted"));
+            return empty;
+        }
+        return new TextBlock { Text = item?.ToString() };
+    }, supportsRecycling: false);
 
     // A screen reader on the row's switch or field reads the row title (and its hint) instead of a bare
     // "toggle switch". Rows with an explicitly named control (two pickers in one row) keep their names.

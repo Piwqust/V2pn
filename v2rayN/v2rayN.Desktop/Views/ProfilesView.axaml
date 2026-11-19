@@ -9,7 +9,6 @@
     xmlns:ent="clr-namespace:ServiceLib.Models.Entities;assembly=ServiceLib"
     xmlns:loc="using:v2rayN.Desktop"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     x:Name="Root"
     d:DesignHeight="760"
@@ -48,14 +47,14 @@
                 <Button
                     x:Name="btnUpdateSub"
                     Theme="{StaticResource V2Button}"
-                    ToolTip.Tip="{x:Static resx:ResUI.menuSubGroupUpdate}">
+                    ToolTip.Tip="{x:Static loc:L.UpdateSubscription}">
                     <StackPanel Orientation="Horizontal" Spacing="7">
                         <PathIcon Classes="i14" Data="{StaticResource SemiIconRefresh}" />
                         <TextBlock Text="{x:Static loc:L.Update}" />
                     </StackPanel>
                     <Button.ContextMenu>
                         <ContextMenu>
-                            <MenuItem x:Name="menuUpdateSubViaProxy" Header="{x:Static resx:ResUI.menuSubGroupUpdateViaProxy}" />
+                            <MenuItem x:Name="menuUpdateSubViaProxy" Header="{x:Static loc:L.MenuSubUpdateViaVpn}" />
                         </ContextMenu>
                     </Button.ContextMenu>
                 </Button>
@@ -69,34 +68,34 @@
                         <MenuFlyout Placement="BottomEdgeAlignedRight">
                             <MenuItem
                                 x:Name="menuAddServerViaClipboard"
-                                Header="{x:Static resx:ResUI.menuAddServerViaClipboard}"
+                                Header="{x:Static loc:L.PasteFromClipboard}"
                                 InputGesture="Ctrl+V" />
                             <MenuItem
                                 x:Name="menuAddServerViaScan"
-                                Header="{x:Static resx:ResUI.menuAddServerViaScan}"
+                                Header="{x:Static loc:L.MenuScanScreen}"
                                 InputGesture="Ctrl+S" />
-                            <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static resx:ResUI.menuAddServerViaImage}" />
+                            <MenuItem x:Name="menuAddServerViaImage" Header="{x:Static loc:L.MenuScanImage}" />
                             <Separator />
                             <MenuItem x:Name="menuAddSubscription" Header="{x:Static loc:L.AddSubscription}" />
                             <Separator />
-                            <MenuItem Header="{x:Static resx:ResUI.menuServers}">
-                                <MenuItem x:Name="menuAddVlessServer" Header="{x:Static resx:ResUI.menuAddVlessServer}" />
-                                <MenuItem x:Name="menuAddVmessServer" Header="{x:Static resx:ResUI.menuAddVmessServer}" />
-                                <MenuItem x:Name="menuAddShadowsocksServer" Header="{x:Static resx:ResUI.menuAddShadowsocksServer}" />
-                                <MenuItem x:Name="menuAddTrojanServer" Header="{x:Static resx:ResUI.menuAddTrojanServer}" />
-                                <MenuItem x:Name="menuAddHysteria2Server" Header="{x:Static resx:ResUI.menuAddHysteria2Server}" />
-                                <MenuItem x:Name="menuAddTuicServer" Header="{x:Static resx:ResUI.menuAddTuicServer}" />
-                                <MenuItem x:Name="menuAddWireguardServer" Header="{x:Static resx:ResUI.menuAddWireguardServer}" />
-                                <MenuItem x:Name="menuAddAnytlsServer" Header="{x:Static resx:ResUI.menuAddAnytlsServer}" />
-                                <MenuItem x:Name="menuAddNaiveServer" Header="{x:Static resx:ResUI.menuAddNaiveServer}" />
-                                <MenuItem x:Name="menuAddMasqueServer" Header="{x:Static resx:ResUI.menuAddMasqueServer}" />
-                                <MenuItem x:Name="menuAddSocksServer" Header="{x:Static resx:ResUI.menuAddSocksServer}" />
-                                <MenuItem x:Name="menuAddHttpServer" Header="{x:Static resx:ResUI.menuAddHttpServer}" />
+                            <MenuItem Header="{x:Static loc:L.MenuServerByProtocol}">
+                                <MenuItem x:Name="menuAddVlessServer" Header="VLESS" />
+                                <MenuItem x:Name="menuAddVmessServer" Header="VMess" />
+                                <MenuItem x:Name="menuAddShadowsocksServer" Header="Shadowsocks" />
+                                <MenuItem x:Name="menuAddTrojanServer" Header="Trojan" />
+                                <MenuItem x:Name="menuAddHysteria2Server" Header="Hysteria2" />
+                                <MenuItem x:Name="menuAddTuicServer" Header="TUIC" />
+                                <MenuItem x:Name="menuAddWireguardServer" Header="WireGuard" />
+                                <MenuItem x:Name="menuAddAnytlsServer" Header="AnyTLS" />
+                                <MenuItem x:Name="menuAddNaiveServer" Header="NaïveProxy" />
+                                <MenuItem x:Name="menuAddMasqueServer" Header="MASQUE" />
+                                <MenuItem x:Name="menuAddSocksServer" Header="SOCKS" />
+                                <MenuItem x:Name="menuAddHttpServer" Header="HTTP" />
                             </MenuItem>
-                            <MenuItem x:Name="menuAddCustomServer" Header="{x:Static resx:ResUI.menuAddCustomServer}" />
-                            <MenuItem x:Name="menuAddPolicyGroupServer" Header="{x:Static resx:ResUI.menuAddPolicyGroupServer}" />
-                            <MenuItem x:Name="menuAddProxyChainServer" Header="{x:Static resx:ResUI.menuAddProxyChainServer}" />
-                            <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static resx:ResUI.menuAddCustomOutboundServer}" />
+                            <MenuItem x:Name="menuAddCustomServer" Header="{x:Static loc:L.MenuCustomConfig}" />
+                            <MenuItem x:Name="menuAddPolicyGroupServer" Header="{x:Static loc:L.MenuPolicyGroup}" />
+                            <MenuItem x:Name="menuAddProxyChainServer" Header="{x:Static loc:L.MenuProxyChain}" />
+                            <MenuItem x:Name="menuAddCustomOutboundServer" Header="{x:Static loc:L.MenuCustomOutbound}" />
                         </MenuFlyout>
                     </Button.Flyout>
                 </Button>
@@ -108,7 +107,7 @@
                         Classes="primary"
                         CornerRadius="9,0,0,9"
                         Theme="{StaticResource V2Button}"
-                        ToolTip.Tip="{x:Static resx:ResUI.menuFastRealPing}">
+                        ToolTip.Tip="{x:Static loc:L.TbPingAllTip}">
                         <StackPanel Orientation="Horizontal" Spacing="7">
                             <PathIcon Classes="i14" Data="{StaticResource SemiIconBolt}" />
                             <TextBlock Text="{x:Static loc:L.TestPing}" />
@@ -124,24 +123,24 @@
                         <PathIcon Classes="i14" Data="{StaticResource SemiIconChevronDown}" />
                         <Button.Flyout>
                             <MenuFlyout Placement="BottomEdgeAlignedRight">
-                                <MenuItem x:Name="menuMixedTestServer" Header="{x:Static resx:ResUI.menuMixedTestServer}" />
+                                <MenuItem x:Name="menuMixedTestServer" Header="{x:Static loc:L.TbPingAndSpeed}" />
                                 <Separator />
                                 <MenuItem
                                     x:Name="menuTcpingServer2"
-                                    Header="{x:Static resx:ResUI.menuTcpingServer}"
+                                    Header="{x:Static loc:L.MenuTcping}"
                                     InputGesture="Ctrl+O" />
                                 <MenuItem
                                     x:Name="menuRealPingServer2"
-                                    Header="{x:Static resx:ResUI.menuRealPingServer}"
+                                    Header="{x:Static loc:L.TestPing}"
                                     InputGesture="Ctrl+R" />
                                 <MenuItem
                                     x:Name="menuSpeedServer2"
-                                    Header="{x:Static resx:ResUI.menuSpeedServer}"
+                                    Header="{x:Static loc:L.TestSpeed}"
                                     InputGesture="Ctrl+T" />
-                                <MenuItem x:Name="menuUdpTestServer2" Header="{x:Static resx:ResUI.menuUdpTestServer}" />
+                                <MenuItem x:Name="menuUdpTestServer2" Header="{x:Static loc:L.TbUdpPing}" />
                                 <Separator />
                                 <MenuItem x:Name="menuSortServerResult2" Header="{x:Static loc:L.SortByPing}" />
-                                <MenuItem x:Name="menuRemoveInvalidServerResult2" Header="{x:Static resx:ResUI.menuRemoveInvalidServerResult}" />
+                                <MenuItem x:Name="menuRemoveInvalidServerResult2" Header="{x:Static loc:L.RemoveDead}" />
                                 <Separator />
                                 <MenuItem
                                     x:Name="menuStopTests"
@@ -366,39 +365,39 @@
                             <ContextMenu x:Name="ctxProfiles">
                                 <MenuItem
                                     x:Name="menuSetDefaultServer"
-                                    Header="{x:Static resx:ResUI.menuSetDefaultServer}"
+                                    Header="{x:Static loc:L.Connect}"
                                     InputGesture="Enter" />
                                 <MenuItem x:Name="menuToggleFavorite" Header="{x:Static loc:L.ToggleFavorite}" />
                                 <MenuItem
                                     x:Name="menuEditServer"
-                                    Header="{x:Static resx:ResUI.menuEditServer}"
+                                    Header="{x:Static loc:L.Edit}"
                                     InputGesture="Ctrl+D" />
-                                <MenuItem x:Name="menuCopyServer" Header="{x:Static resx:ResUI.menuCopyServer}" />
+                                <MenuItem x:Name="menuCopyServer" Header="{x:Static loc:L.RtDuplicate}" />
                                 <MenuItem
                                     x:Name="menuRemoveServer"
-                                    Header="{x:Static resx:ResUI.menuRemoveServer}"
+                                    Header="{x:Static loc:L.MenuDelete}"
                                     InputGesture="Delete" />
-                                <MenuItem x:Name="menuRemoveDuplicateServer" Header="{x:Static resx:ResUI.menuRemoveDuplicateServer}" />
-                                <MenuItem x:Name="menuRemoveInvalidServerResult" Header="{x:Static resx:ResUI.menuRemoveInvalidServerResult}" />
+                                <MenuItem x:Name="menuRemoveDuplicateServer" Header="{x:Static loc:L.TbRemoveDuplicates}" />
+                                <MenuItem x:Name="menuRemoveInvalidServerResult" Header="{x:Static loc:L.RemoveDead}" />
                                 <Separator />
                                 <MenuItem
                                     x:Name="menuTcpingServer"
-                                    Header="{x:Static resx:ResUI.menuTcpingServer}"
+                                    Header="{x:Static loc:L.MenuTcping}"
                                     InputGesture="Ctrl+O" />
                                 <MenuItem
                                     x:Name="menuRealPingServer"
-                                    Header="{x:Static resx:ResUI.menuRealPingServer}"
+                                    Header="{x:Static loc:L.TestPing}"
                                     InputGesture="Ctrl+R" />
                                 <MenuItem
                                     x:Name="menuSpeedServer"
-                                    Header="{x:Static resx:ResUI.menuSpeedServer}"
+                                    Header="{x:Static loc:L.TestSpeed}"
                                     InputGesture="Ctrl+T" />
-                                <MenuItem x:Name="menuUdpTestServer" Header="{x:Static resx:ResUI.menuUdpTestServer}" />
-                                <MenuItem x:Name="menuSortServerResult" Header="{x:Static resx:ResUI.menuSortServerResult}" />
+                                <MenuItem x:Name="menuUdpTestServer" Header="{x:Static loc:L.TbUdpPing}" />
+                                <MenuItem x:Name="menuSortServerResult" Header="{x:Static loc:L.SortByPing}" />
                                 <Separator />
                                 <MenuItem
                                     x:Name="menuMoveToGroup"
-                                    Header="{x:Static resx:ResUI.menuMoveToGroup}"
+                                    Header="{x:Static loc:L.TbMoveToSub}"
                                     ItemsSource="{Binding SubItems}">
                                     <MenuItem.ItemTemplate>
                                         <DataTemplate x:DataType="ent:SubItem">
@@ -406,48 +405,48 @@
                                         </DataTemplate>
                                     </MenuItem.ItemTemplate>
                                 </MenuItem>
-                                <MenuItem Header="{x:Static resx:ResUI.menuMoveTo}">
+                                <MenuItem Header="{x:Static loc:L.TbOrder}">
                                     <MenuItem
                                         x:Name="menuMoveTop"
-                                        Header="{x:Static resx:ResUI.menuMoveTop}"
+                                        Header="{x:Static loc:L.RtMoveTop}"
                                         InputGesture="T" />
                                     <MenuItem
                                         x:Name="menuMoveUp"
-                                        Header="{x:Static resx:ResUI.menuMoveUp}"
+                                        Header="{x:Static loc:L.RtMoveUp}"
                                         InputGesture="U" />
                                     <MenuItem
                                         x:Name="menuMoveDown"
-                                        Header="{x:Static resx:ResUI.menuMoveDown}"
+                                        Header="{x:Static loc:L.RtMoveDown}"
                                         InputGesture="D" />
                                     <MenuItem
                                         x:Name="menuMoveBottom"
-                                        Header="{x:Static resx:ResUI.menuMoveBottom}"
+                                        Header="{x:Static loc:L.RtMoveBottom}"
                                         InputGesture="B" />
                                 </MenuItem>
                                 <MenuItem
                                     x:Name="menuSelectAll"
-                                    Header="{x:Static resx:ResUI.menuSelectAll}"
+                                    Header="{x:Static loc:L.PickSelectAll}"
                                     InputGesture="Ctrl+A" />
                                 <Separator />
                                 <MenuItem
                                     x:Name="menuShareServer"
-                                    Header="{x:Static resx:ResUI.menuShareServer}"
+                                    Header="{x:Static loc:L.Share}"
                                     InputGesture="Ctrl+F" />
-                                <MenuItem Header="{x:Static resx:ResUI.menuExportConfig}">
-                                    <MenuItem x:Name="menuExport2ClientConfig" Header="{x:Static resx:ResUI.menuExport2ClientConfig}" />
-                                    <MenuItem x:Name="menuExport2ClientConfigClipboard" Header="{x:Static resx:ResUI.menuExport2ClientConfigClipboard}" />
+                                <MenuItem Header="{x:Static loc:L.TbExport}">
+                                    <MenuItem x:Name="menuExport2ClientConfig" Header="{x:Static loc:L.TbExportFile}" />
+                                    <MenuItem x:Name="menuExport2ClientConfigClipboard" Header="{x:Static loc:L.TbExportCopy}" />
                                     <Separator />
                                     <MenuItem
                                         x:Name="menuExport2ShareUrl"
-                                        Header="{x:Static resx:ResUI.menuExport2ShareUrl}"
+                                        Header="{x:Static loc:L.CopyLink}"
                                         InputGesture="Ctrl+C" />
-                                    <MenuItem x:Name="menuExport2ShareUrlBase64" Header="{x:Static resx:ResUI.menuExport2ShareUrlBase64}" />
-                                    <MenuItem x:Name="menuExport2InnerUri" Header="{x:Static resx:ResUI.menuExport2InnerUri}" />
+                                    <MenuItem x:Name="menuExport2ShareUrlBase64" Header="{x:Static loc:L.TbCopyBase64}" />
+                                    <MenuItem x:Name="menuExport2InnerUri" Header="{x:Static loc:L.TbCopyFullLink}" />
                                 </MenuItem>
                                 <Separator />
-                                <MenuItem Header="{x:Static resx:ResUI.menuGenGroupServer}">
-                                    <MenuItem x:Name="menuGenGroupAllServer" Header="{x:Static resx:ResUI.menuAllServers}" />
-                                    <MenuItem x:Name="menuGenGroupRegionServer" Header="{x:Static resx:ResUI.menuGenRegionGroup}" />
+                                <MenuItem Header="{x:Static loc:L.TbMakeGroup}">
+                                    <MenuItem x:Name="menuGenGroupAllServer" Header="{x:Static loc:L.TbGroupFromList}" />
+                                    <MenuItem x:Name="menuGenGroupRegionServer" Header="{x:Static loc:L.TbGroupByCountry}" />
                                 </MenuItem>
                             </ContextMenu>
                         </ListBox.ContextMenu>
@@ -538,7 +537,7 @@
                                         Command="{Binding #Root.((vms:ProfilesViewModel)DataContext).PingServerCmd}"
                                         CommandParameter="{Binding}"
                                         Theme="{StaticResource V2Button}"
-                                        ToolTip.Tip="{x:Static resx:ResUI.menuRealPingServer}">
+                                        ToolTip.Tip="{x:Static loc:L.TestPing}">
                                         <Border
                                             Classes="pill"
                                             Classes.bad="{Binding Delay, Converter={x:Static conv:V2pnConverters.IsPingBad}}"

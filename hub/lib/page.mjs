@@ -119,6 +119,11 @@ function strings(name, login, cabinet) {
     art: `Окно V2pn во вкладке ${n}: карточка тарифа, кнопка «Подключиться» и самые быстрые серверы`,
     foot: 'V2pn — открытый код, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn на GitHub</a>',
     lang: 'Язык',
+    report: 'Пожаловаться',
+    reportText: 'Что не так? Можно не писать.',
+    reportSend: 'Отправить жалобу',
+    reportDone: 'Жалоба отправлена. Модератор V2pn посмотрит.',
+    reportFail: 'Не получилось отправить. Попробуйте позже.',
   };
   const en = {
     title: `V2pn for ${n}`,
@@ -160,6 +165,11 @@ function strings(name, login, cabinet) {
     art: `V2pn's window in the ${n} tab: the plan card, the Connect button and the fastest servers`,
     foot: 'V2pn is open source, GPL-3.0. <a href="https://github.com/Piwqust/V2pn">V2pn on GitHub</a>',
     lang: 'Language',
+    report: 'Report',
+    reportText: 'What is wrong? You may leave it empty.',
+    reportSend: 'Send the report',
+    reportDone: 'Report sent. A V2pn moderator will look at it.',
+    reportFail: 'Could not send it. Try again later.',
   };
   return { ru, en };
 }
@@ -340,6 +350,13 @@ body.os-any .pp-osl, body.os-phone .pp-osl { display: inline; }
 .pp-what { margin: 64px 0 0; padding: 24px 0 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 8px 24px; align-items: baseline; justify-content: space-between; }
 .pp-what p { margin: 0; color: var(--soft); max-width: 62ch; }
 .pp-what a { color: var(--ink); font-weight: 500; }
+.pp-links { display: inline-flex; gap: 20px; align-items: baseline; }
+.pp-report-open { border: 0; background: none; padding: 0; font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.pp-report { margin: 16px 0 0; display: grid; gap: 8px; max-width: 34em; color: var(--soft); }
+.pp-report textarea { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); border-radius: 12px; padding: 10px 12px; resize: vertical; }
+.pp-report__row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
+.pp-report .pp-btn--quiet { background: var(--accent); color: var(--onAccent); }
+.pp-report__state { font-size: 14px; color: var(--muted); }
 footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
 footer a { color: var(--muted); }
 @media (max-width: 1023px) {
@@ -419,7 +436,12 @@ footer a { color: var(--muted); }
       <li><span class="pp-num">3</span><h3 data-t="s3">${ru.s3}</h3><p data-t="s3t">${ru.s3t}</p>${botHtml}</li>
     </ol>
   </section>
-  <div class="pp-what"><p data-t="what">${ru.what}</p><a href="${esc(home)}" data-t="whatLink">${ru.whatLink}</a></div>
+  <div class="pp-what"><p data-t="what">${ru.what}</p><span class="pp-links"><a href="${esc(home)}" data-t="whatLink">${ru.whatLink}</a><button type="button" class="pp-report-open" id="report-open" data-t="report">${ru.report}</button></span></div>
+  <form class="pp-report" id="report" hidden>
+    <label for="report-text" data-t="reportText">${ru.reportText}</label>
+    <textarea id="report-text" maxlength="1000" rows="3"></textarea>
+    <div class="pp-report__row"><button type="submit" class="pp-btn pp-btn--small pp-btn--quiet" id="report-send" data-t="reportSend">${ru.reportSend}</button><span class="pp-report__state" id="report-state" role="status"></span></div>
+  </form>
 </main>
 <footer class="pp-wrap" data-t="foot">${ru.foot}</footer>
 <script type="application/json" id="page-data">${data}</script>
@@ -436,4 +458,42 @@ footer a { color: var(--muted); }
   if (pictures.mark) out.push({ name: 'mark.png', content: pictures.mark });
   if (theme.background.type === 'image' && pictures.backdrop) out.push({ name: 'background.png', content: pictures.backdrop });
   return out;
+}
+
+/**
+ * The page of a partner a moderator took down: it says so and offers nothing, in V2pn's own colours (the partner's
+ * may be what got it taken down). No script.
+ */
+export function buildDownPage({ name }) {
+  const n = esc(name);
+  const html = `<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>${n} снят модератором V2pn</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<style>
+:root { color-scheme: light dark; --bg: ${LIGHT.bg}; --card: ${LIGHT.card}; --ink: ${LIGHT.ink}; --soft: ${LIGHT.soft}; --line: ${LIGHT.line}; }
+@media (prefers-color-scheme: dark) { :root { --bg: ${DARK.bg}; --card: ${DARK.card}; --ink: ${DARK.ink}; --soft: ${DARK.soft}; --line: ${DARK.line}; } }
+body { margin: 0; min-height: 100svh; display: grid; place-items: center; background: var(--bg); color: var(--ink);
+  font: 400 16px/1.55 Geist, "Segoe UI", system-ui, -apple-system, sans-serif; }
+main { width: min(100% - 32px, 34em); padding: 32px; border-radius: 24px; background: var(--card); box-shadow: 0 0 0 1px var(--line); }
+h1 { margin: 0 0 12px; font-size: 26px; font-weight: 500; letter-spacing: -0.02em; }
+p { margin: 0 0 12px; color: var(--soft); }
+a { color: var(--ink); }
+</style>
+</head>
+<body>
+<main>
+<h1>${n} снят модератором V2pn</h1>
+<p>По этой ссылке ничего не будет добавлено. Если вы пользуетесь ${n}, обратитесь к провайдеру.</p>
+<p lang="en">${n} was taken down by a V2pn moderator. Nothing will be added from this link.</p>
+<p><a href="/">V2pn</a></p>
+</main>
+</body>
+</html>
+`;
+  return [{ name: 'index.html', content: Buffer.from(html, 'utf8') }];
 }

@@ -1,14 +1,15 @@
-// Publication: partner-<id>.zip for every approved provider with a published look, partner-index.json signed with
-// the hub's key (V2pnPartnerPublisher.IndexBytes / WriteOut, byte for byte in layout), the empty legacy partners.json
-// V2pnPartnerPublisher still writes, and each provider's page /p/<id>/. Everything is written atomically; an index is
+// Publication: partner-<id>.zip for every live partner, partner-index.json signed with the hub's key
+// (V2pnPartnerPublisher.IndexBytes / WriteOut, byte for byte in layout), the empty legacy partners.json
+// V2pnPartnerPublisher still writes, and each partner's page /p/<id>/. Everything is written atomically; an index is
 // never half right: any problem stops the whole publication and the files already out stay as they were.
 import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { dotnetJson } from './jsonfmt.mjs';
 import { colors as C } from './colors.mjs';
-import { grantsFor, packObject, packPictures, themeOf } from './look.mjs';
-import { buildPage } from './page.mjs';
+import { needsApi, packObject, packPictures, themeOf } from './look.mjs';
+import { buildDownPage, buildPage } from './page.mjs';
+import { routingBytes } from './routing.mjs';
 import { domainsOverlap } from './validate.mjs';
 import { makeZip, readZip } from './zip.mjs';
 import { signature } from './keys.mjs';
@@ -19,14 +20,23 @@ export const MAX_INDEX_BYTES = 256 * 1024;
 export const MAX_PACK_BYTES = 64 * 1024;
 export const MAX_ZIP_BYTES = 64 * 1024 + 8 * 1024 * 1024 + 3 * 64 * 1024 + 64 * 1024;
 
-// Grants V2pn takes only from an index the owner signs with the root key on his PC: files read by hand.
-export const REVIEWED_GRANTS = new Set(['routing', 'transport', 'core']);
+// routing.json of an approved routing right; its SHA-256 goes into the listing's "reviewed" (V2pnReviewedFiles).
+// transport and core stay with the index the owner signs with the root key on his PC: the hub never offers them.
+export const ROUTING_FILE = 'routing.json';
+export const ROOT_ONLY_GRANTS = new Set(['transport', 'core']);
 export const GRANT_ORDER = ['edition', 'account', 'actions', 'lock', 'routing', 'transport', 'core'];
 
 const sha256 = buf => crypto.createHash('sha256').update(buf).digest('hex');
 
 export function publishedStamp(date = new Date()) {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
+}
+
+/** The until of a partner without a term of its own: a year on, renewed by every publication. */
+export function rollingUntil(today) {
+  const d = new Date(`${today}T00:00:00Z`);
+  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  return d.toISOString().slice(0, 10);
 }
 
 /** partner-index.json for <listings> ({id, name, domains, grants, until, reviewed?, pack: {file, size, sha256}}), by id. */
@@ -42,36 +52,53 @@ export function indexBytes(listings, published, newline = '\n') {
 }
 
 /**
- * One provider's pack: {listing, zip, packBytes, pictures}. <provider> is a row of providers with look_published;
- * <readUpload>(sha) gives a picture's bytes.
+ * One partner's pack: {listing, zip, packBytes, look, pictures}. <partner> is {id, name, domains, until, look,
+ * approved: {account?, actions?, lock?, routing?}} with only the approved rights; <readUpload>(sha) gives a picture.
  */
-export function buildPack(provider, readUpload) {
-  const look = JSON.parse(provider.look_published);
+export function buildPack(partner, readUpload, today) {
+  const { look } = partner;
+  const approved = partner.approved || {};
   const pictures = packPictures(look).map(p => ({ ...p, content: readUpload(p.sha) }));
   for (const p of pictures) {
-    if (!p.content) throw new Error(`${provider.id}: the picture ${p.key} is missing`);
-    if (sha256(p.content) !== p.sha) throw new Error(`${provider.id}: the picture ${p.key} is damaged`);
+    if (!p.content) throw new Error(`${partner.id}: the picture ${p.key} is missing`);
+    if (sha256(p.content) !== p.sha) throw new Error(`${partner.id}: the picture ${p.key} is damaged`);
     const size = C.imageSize(p.content);
     if (!size || !C.SLOTS[p.key === 'backdrop' ? 'backdrop' : p.key === 'mark' ? 'mark' : 'logo'].fits(size[0], size[1]) || p.content.length > C.MAX_ASSET) {
-      throw new Error(`${provider.id}: the picture ${p.key} does not fit its slot`);
+      throw new Error(`${partner.id}: the picture ${p.key} does not fit its slot`);
     }
   }
-  const pack = packObject(provider.id, look, pictures);
-  pack.assets = pictures.map(p => ({ name: p.name, size: p.content.length, sha256: p.sha }))
+  const api = approved.account?.api ?? '';
+  // A button that needs the API goes out only with an approved API.
+  const actions = (approved.actions ?? []).filter(a => api || !needsApi(a));
+  const full = { ...look, api, login: Boolean(api && approved.account?.login), actions, lock: approved.lock === true };
+  const pack = packObject(partner.id, full, pictures);
+  const files = pictures.map(p => ({ name: p.name, content: p.content }));
+  const reviewed = {};
+  if (approved.routing) {
+    const bytes = routingBytes(approved.routing);
+    files.push({ name: ROUTING_FILE, content: bytes });
+    reviewed[ROUTING_FILE] = sha256(bytes);
+  }
+  pack.assets = files.map(f => ({ name: f.name, size: f.content.length, sha256: sha256(f.content) }))
     .sort((a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0));
   const packBytes = dotnetJson(pack);
-  if (packBytes.length > MAX_PACK_BYTES) throw new Error(`${provider.id}: partner.json is larger than 64 KB`);
-  const zip = makeZip([{ name: 'partner.json', content: packBytes }, ...pictures.map(p => ({ name: p.name, content: p.content }))]);
-  const grants = grantsFor(provider.tier, look).filter(g => !REVIEWED_GRANTS.has(g));
+  if (packBytes.length > MAX_PACK_BYTES) throw new Error(`${partner.id}: partner.json is larger than 64 KB`);
+  const zip = makeZip([{ name: 'partner.json', content: packBytes }, ...files]);
+  const grants = ['edition'];
+  if (full.api) grants.push('account');
+  if (full.actions.length) grants.push('actions');
+  if (full.lock) grants.push('lock');
+  if (approved.routing) grants.push('routing');
   const listing = {
-    id: provider.id,
-    name: look.name || provider.name,
-    domains: JSON.parse(provider.domains),
+    id: partner.id,
+    name: look.name || partner.name,
+    domains: [...partner.domains],
     grants: GRANT_ORDER.filter(g => grants.includes(g)),
-    until: provider.until,
-    pack: { file: `partner-${provider.id}.zip`, size: zip.length, sha256: sha256(zip) },
+    reviewed,
+    until: partner.until || rollingUntil(today),
+    pack: { file: `partner-${partner.id}.zip`, size: zip.length, sha256: sha256(zip) },
   };
-  return { listing, zip, packBytes, look, pictures };
+  return { listing, zip, packBytes, look: full, pictures };
 }
 
 /** Reads a built pack back the way V2pn checks it (sizes, hashes, entries, id); throws on the first mismatch. */
@@ -87,19 +114,31 @@ export function verifyPack(listing, zip) {
     names.add(a.name);
   }
   for (const name of entries.keys()) if (!names.has(name)) throw new Error(`${listing.pack.file} has ${name}, which partner.json does not list`);
+  for (const [file, hash] of Object.entries(listing.reviewed || {})) {
+    if (!pack.assets?.some(a => a.name === file && a.sha256 === hash)) throw new Error(`${listing.pack.file}: ${file} is not the reviewed one`);
+  }
 }
 
-/** Everything a publication writes, or {problems} when any provider cannot go out. */
-export function buildPublication(providers, { readUpload, today, published, origin }) {
+/**
+ * Everything a publication writes, or {problems} when any partner cannot go out. <partners> are as buildPack takes
+ * them, with their state: a partner taken down gets a page that says so instead of its pack.
+ */
+export function buildPublication(partners, { readUpload, today, published, origin }) {
   const problems = [];
   const built = [];
-  for (const provider of providers) {
-    if (provider.state !== 'active' || !provider.look_published || provider.until <= today) continue;
+  const down = [];
+  for (const partner of partners) {
+    if (partner.until && partner.until <= today) continue;
+    if (partner.state === 'down') {
+      down.push({ id: partner.id, page: buildDownPage({ name: partner.look.name || partner.name }) });
+      continue;
+    }
+    if (partner.state !== 'live') continue;
     try {
-      const pack = buildPack(provider, readUpload);
+      const pack = buildPack(partner, readUpload, today);
       verifyPack(pack.listing, pack.zip);
       const pics = Object.fromEntries(pack.pictures.map(p => [p.key, p.content]));
-      const page = buildPage({ id: provider.id, name: pack.listing.name, look: pack.look, theme: themeOf(pack.look), pictures: pics, origin });
+      const page = buildPage({ id: partner.id, name: pack.listing.name, look: pack.look, theme: themeOf(pack.look), pictures: pics, origin });
       built.push({ ...pack, page });
     } catch (e) {
       problems.push(String(e.message || e));
@@ -113,7 +152,7 @@ export function buildPublication(providers, { readUpload, today, published, orig
   }
   const index = indexBytes(built.map(b => b.listing), published);
   if (index.length > MAX_INDEX_BYTES) problems.push('partner-index.json would be larger than 256 KB');
-  return { problems, built, index, legacy: indexBytes([], published) };
+  return { problems, built, down, index, legacy: indexBytes([], published) };
 }
 
 function writeAtomic(file, content) {
@@ -140,8 +179,8 @@ export const isPublishedName = name => name === INDEX_FILE || name === `${INDEX_
 
 /**
  * Writes <publication> under <publicDir>: partners/latest/download/ (zips first, then the indexes and their
- * signatures) and p/<id>/ for each provider. <previousPages> are the ids whose pages the hub wrote before; the pages
- * of those no longer published are removed. Returns the ids of the pages now out.
+ * signatures) and p/<id>/ for each partner, published or taken down. <previousPages> are the ids whose pages the hub
+ * wrote before; the pages of the others are removed. Returns the ids of the pages now out.
  */
 export function writePublication(publicDir, publication, key, previousPages = []) {
   const out = path.join(publicDir, 'partners', 'latest', 'download');
@@ -166,6 +205,10 @@ export function writePublication(publicDir, publication, key, previousPages = []
   for (const b of publication.built) {
     replaceDir(path.join(pagesDir, b.listing.id), b.page);
     pages.push(b.listing.id);
+  }
+  for (const d of publication.down) {
+    replaceDir(path.join(pagesDir, d.id), d.page);
+    pages.push(d.id);
   }
   for (const id of previousPages) {
     if (!pages.includes(id) && /^[a-z0-9][a-z0-9-]{1,31}$/.test(id)) fs.rmSync(path.join(pagesDir, id), { recursive: true, force: true });

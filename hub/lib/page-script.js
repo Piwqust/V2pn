@@ -96,5 +96,33 @@
     share.textContent = T[lang].copied;
     setTimeout(() => { share.textContent = T[lang].share; }, 2400);
   });
+  // «Пожаловаться»: the hub counts it for its moderators; nothing about the person is sent, the subscription after "#"
+  // included.
+  const report = document.getElementById("report");
+  const reportState = document.getElementById("report-state");
+  document.getElementById("report-open").addEventListener("click", () => {
+    report.hidden = !report.hidden;
+    if (!report.hidden) document.getElementById("report-text").focus();
+  });
+  report.addEventListener("submit", async e => {
+    e.preventDefault();
+    const send = document.getElementById("report-send");
+    send.disabled = true;
+    reportState.textContent = "";
+    try {
+      const res = await fetch("/api/complaints", {
+        method: "POST",
+        headers: { "content-type": "application/json", "x-hub": "1" },
+        credentials: "omit",
+        body: JSON.stringify({ partner: data.id, text: document.getElementById("report-text").value.slice(0, 1000) }),
+      });
+      if (!res.ok) throw new Error(String(res.status));
+      reportState.textContent = T[lang].reportDone;
+      document.getElementById("report-text").value = "";
+    } catch (err) {
+      reportState.textContent = T[lang].reportFail;
+      send.disabled = false;
+    }
+  });
   apply();
 })();

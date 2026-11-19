@@ -384,6 +384,11 @@ public class V2pnKillSwitchItem
 
     // Printers, a NAS and the router's page stay reachable while the block holds (VPN mode).
     public bool AllowLan { get; set; } = true;
+
+    // Programs that only ever go out through V2pn (V2pnAppKillSwitch), by file name: "claude.exe".
+    public bool AppsEnabled { get; set; }
+
+    public List<string>? Apps { get; set; }
 }
 
 /// <summary>The way that made one server work on one network.</summary>

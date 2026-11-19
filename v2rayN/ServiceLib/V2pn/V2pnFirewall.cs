@@ -26,12 +26,13 @@ public static class V2pnFirewall
 
     public enum Layer { ConnectV4, ConnectV6, AcceptV4, AcceptV6 }
 
-    public enum Field { AppId, LoopbackFlag, LocalAddress, RemoteAddress, RemotePort, LocalPort, LocalInterface }
+    public enum Field { AppId, AppNameSuffix, LoopbackFlag, LocalAddress, RemoteAddress, RemotePort, LocalPort, LocalInterface }
 
     public sealed record Condition(Field Field, object Value);
 
     /// <summary>One filter: its layer, its weight inside V2pn's sublayer (higher wins), permit or block.</summary>
-    public sealed record FilterSpec(string Name, Layer Layer, byte Weight, bool Permit, IReadOnlyList<Condition> Conditions);
+    /// <param name="Key">A fixed key, for persistent filters that are later deleted by it.</param>
+    public sealed record FilterSpec(string Name, Layer Layer, byte Weight, bool Permit, IReadOnlyList<Condition> Conditions, Guid? Key = null);
 
     // Weights inside V2pn's sublayer: the first matching filter by weight decides.
     public const byte WeightPrograms = 15;
@@ -154,8 +155,8 @@ public static class V2pnFirewall
             var engine = IntPtr.Zero;
             try
             {
-                engine = Native.Open();
-                Native.Install(engine, Filters(plan));
+                engine = Native.Open(dynamic: true);
+                Native.Install(engine, Filters(plan), Native.KillSwitchSubLayer, "V2pn kill switch", persistent: false);
             }
             catch (Exception ex)
             {
@@ -231,7 +232,8 @@ public static class V2pnFirewall
     /// </summary>
     internal static class Native
     {
-        private static readonly Guid SubLayerKey = new("6a1f2d3e-8b4c-4f5a-9e7d-0c1b2a3f4e5d");
+        internal static readonly Guid KillSwitchSubLayer = new("6a1f2d3e-8b4c-4f5a-9e7d-0c1b2a3f4e5d");
+        internal static readonly Guid AppsSubLayer = new("6a1f2d3e-8b4c-4f5a-9e7d-0c1b2a3f4e5e");
 
         internal static readonly Guid LayerConnectV4 = new("c38d57d1-05a7-4c33-904f-7fbceee60e82");
         internal static readonly Guid LayerConnectV6 = new("4a72393b-319f-44bc-84c3-ba54dcb3b6b4");
@@ -263,6 +265,13 @@ public static class V2pnFirewall
         // FWP_MATCH_TYPE
         private const uint MatchEqual = 0;
         private const uint MatchFlagsAllSet = 6;
+        // Named "prefix", but it tests how the value ends (Microsoft documents the misnomer): "\claude.exe" matches
+        // that program in any folder, whatever version its folder is named after.
+        private const uint MatchSuffix = 11;
+
+        private const uint FlagPersistent = 0x1;
+        private const uint FwpEFilterNotFound = 0x80320003;
+        private const uint FwpESubLayerNotFound = 0x80320007;
 
         [StructLayout(LayoutKind.Explicit, Size = 16)]
         internal struct DisplayData
@@ -352,7 +361,8 @@ public static class V2pnFirewall
             public byte PrefixLength;
         }
 
-        public static IntPtr Open()
+        /// <param name="dynamic">Dynamic: everything added goes when the session closes. Persistent objects need a non-dynamic one.</param>
+        public static IntPtr Open(bool dynamic)
         {
             var name = Marshal.StringToHGlobalUni("V2pn kill switch");
             try
@@ -360,7 +370,7 @@ public static class V2pnFirewall
                 var session = new Session
                 {
                     DisplayData = new DisplayData { Name = name },
-                    Flags = SessionFlagDynamic,
+                    Flags = dynamic ? SessionFlagDynamic : 0,
                     TxnWaitTimeoutInMSec = 5000,
                 };
                 Check(FwpmEngineOpen0(null, RpcCAuthnWinNt, IntPtr.Zero, ref session, out var engine), "FwpmEngineOpen0");
@@ -374,7 +384,43 @@ public static class V2pnFirewall
 
         public static void Close(IntPtr engine) => FwpmEngineClose0(engine);
 
-        public static void Install(IntPtr engine, IReadOnlyList<FilterSpec> filters)
+        /// <summary>Deletes filters by their keys and, when asked, the sublayer; missing ones are not an error.</summary>
+        public static void Delete(IntPtr engine, IEnumerable<Guid> filterKeys, Guid? subLayer)
+        {
+            Check(FwpmTransactionBegin0(engine, 0), "FwpmTransactionBegin0");
+            var committed = false;
+            try
+            {
+                foreach (var key in filterKeys)
+                {
+                    var k = key;
+                    var r = FwpmFilterDeleteByKey0(engine, ref k);
+                    if (r != 0 && r != FwpEFilterNotFound)
+                    {
+                        Check(r, "FwpmFilterDeleteByKey0");
+                    }
+                }
+                if (subLayer is { } sub)
+                {
+                    var r = FwpmSubLayerDeleteByKey0(engine, ref sub);
+                    if (r != 0 && r != FwpESubLayerNotFound)
+                    {
+                        Check(r, "FwpmSubLayerDeleteByKey0");
+                    }
+                }
+                Check(FwpmTransactionCommit0(engine), "FwpmTransactionCommit0");
+                committed = true;
+            }
+            finally
+            {
+                if (!committed)
+                {
+                    FwpmTransactionAbort0(engine);
+                }
+            }
+        }
+
+        public static void Install(IntPtr engine, IReadOnlyList<FilterSpec> filters, Guid subLayerKey, string subLayerName, bool persistent)
         {
             var memory = new List<IntPtr>();
             IntPtr Keep(IntPtr p)
@@ -390,8 +436,9 @@ public static class V2pnFirewall
             {
                 var subLayer = new SubLayer
                 {
-                    SubLayerKey = SubLayerKey,
-                    DisplayData = new DisplayData { Name = Text("V2pn kill switch") },
+                    SubLayerKey = subLayerKey,
+                    DisplayData = new DisplayData { Name = Text(subLayerName) },
+                    Flags = persistent ? FlagPersistent : 0,
                     Weight = 0xFFFF,
                 };
                 var added = FwpmSubLayerAdd0(engine, ref subLayer, IntPtr.Zero);
@@ -417,9 +464,11 @@ public static class V2pnFirewall
                     }
                     var filter = new Filter
                     {
+                        FilterKey = spec.Key ?? Guid.Empty,
                         DisplayData = new DisplayData { Name = Text(spec.Name) },
+                        Flags = persistent ? FlagPersistent : 0,
                         LayerKey = LayerKey(spec.Layer),
-                        SubLayerKey = SubLayerKey,
+                        SubLayerKey = subLayerKey,
                         Weight = new Value { Type = TypeUint8, Data = spec.Weight },
                         NumFilterConditions = (uint)conditions.Length,
                         FilterCondition = array,
@@ -448,6 +497,10 @@ public static class V2pnFirewall
             }
         }
 
+        /// <summary>What a program's app id ends with: a backslash, its lower-case file name in UTF-16, then the terminating zero.</summary>
+        internal static byte[] SuffixBytes(string fileName) =>
+            System.Text.Encoding.Unicode.GetBytes(@"\" + fileName.ToLowerInvariant() + (char)0);
+
         private static Guid LayerKey(Layer layer) => layer switch
         {
             Layer.ConnectV4 => LayerConnectV4,
@@ -468,6 +521,14 @@ public static class V2pnFirewall
                         appIds[path] = blob;
                     }
                     return new FilterCondition { FieldKey = ConditionAppId, MatchType = MatchEqual, ConditionValue = new Value { Type = TypeByteBlob, Data = (ulong)blob.ToInt64() } };
+                case Field.AppNameSuffix:
+                    // The app id is the program's lower-case NT path in UTF-16 with its terminating zero.
+                    var suffix = SuffixBytes((string)condition.Value);
+                    var data = keep(Marshal.AllocHGlobal(suffix.Length));
+                    Marshal.Copy(suffix, 0, data, suffix.Length);
+                    var suffixBlob = keep(Marshal.AllocHGlobal(Marshal.SizeOf<ByteBlob>()));
+                    Marshal.StructureToPtr(new ByteBlob { Size = (uint)suffix.Length, Data = data }, suffixBlob, false);
+                    return new FilterCondition { FieldKey = ConditionAppId, MatchType = MatchSuffix, ConditionValue = new Value { Type = TypeByteBlob, Data = (ulong)suffixBlob.ToInt64() } };
                 case Field.LoopbackFlag:
                     return new FilterCondition { FieldKey = ConditionFlags, MatchType = MatchFlagsAllSet, ConditionValue = new Value { Type = TypeUint32, Data = (uint)condition.Value } };
                 case Field.RemotePort:
@@ -535,6 +596,12 @@ public static class V2pnFirewall
 
         [DllImport("fwpuclnt.dll")]
         private static extern uint FwpmFilterAdd0(IntPtr engineHandle, ref Filter filter, IntPtr sd, out ulong id);
+
+        [DllImport("fwpuclnt.dll")]
+        private static extern uint FwpmFilterDeleteByKey0(IntPtr engineHandle, ref Guid key);
+
+        [DllImport("fwpuclnt.dll")]
+        private static extern uint FwpmSubLayerDeleteByKey0(IntPtr engineHandle, ref Guid key);
 
         [DllImport("fwpuclnt.dll", CharSet = CharSet.Unicode)]
         internal static extern uint FwpmGetAppIdFromFileName0(string fileName, out IntPtr appId);

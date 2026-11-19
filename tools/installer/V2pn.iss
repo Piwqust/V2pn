@@ -303,6 +303,7 @@ procedure RemoveIntegration();
 var
   Value: String;
   Scheduler, Folder, Task: Variant;
+  Code: Integer;
 begin
   if RegQueryStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'V2pnAutoRun', Value) and PointsHere(Value) then
     RegDeleteValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Run', 'V2pnAutoRun');
@@ -323,6 +324,20 @@ begin
 
   if RegQueryStringValue(HKCU, 'Software\Classes\v2pn\shell\open\command', '', Value) and PointsHere(Value) then
     RegDeleteKeyIncludingSubkeys(HKCU, 'Software\Classes\v2pn');
+
+  // Programs kept "only through V2pn" (V2pnAppKillSwitch.cs) are held by persistent firewall filters that outlive
+  // V2pn; left behind, they would cut those programs off for good. Removing them needs administrator rights, so
+  // V2pn.exe runs once more elevated, and Windows asks.
+  if RegQueryStringValue(HKCU, 'Software\V2pn', 'AppKillSwitch', Value) and (Value <> '') and FileExists(AppDir() + '\V2pn.exe') then
+  begin
+    if ShellExec('runas', AppDir() + '\V2pn.exe', '--app-killswitch', '', SW_HIDE, ewWaitUntilTerminated, Code) and (Code = 0) then
+    begin
+      RegDeleteValue(HKCU, 'Software\V2pn', 'AppKillSwitch');
+      RegDeleteValue(HKCU, 'Software\V2pn', 'AppKillSwitchApplied');
+    end
+    else
+      Log('Programs only through V2pn: the filters were not removed; run "V2pn.exe --app-killswitch" as administrator.');
+  end;
 end;
 
 // Updates add files the uninstall log does not list; everything goes except, when kept, the servers

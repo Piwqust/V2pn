@@ -19,6 +19,13 @@ internal class Program
     [STAThread]
     public static void Main(string[] args)
     {
+        // V2pn started elevated only to put the "only through V2pn" filters in place, or to remove them (the uninstaller).
+        if (V2pnAppKillSwitch.TryRunCommand(args, out var killSwitchExit))
+        {
+            Environment.Exit(killSwitchExit);
+            return;
+        }
+
         if (OnStartup(args) == false)
         {
             Environment.Exit(0);

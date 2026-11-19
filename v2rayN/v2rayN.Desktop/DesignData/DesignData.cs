@@ -53,7 +53,6 @@ public static class DesignData
 
     public static AddServerViewModel? AddServer { get; } = SafeCreate(() => new AddServerViewModel(new ProfileItem { Remarks = "Design VMess Server", ConfigType = EConfigType.VMess, Address = "example.com", Port = 443 }));
 
-    public static RoutingRuleSettingViewModel? RoutingRuleSetting { get; } = SafeCreate(() => new RoutingRuleSettingViewModel(new RoutingItem { Remarks = "Design Routing Rule" }));
 
     public static RoutingRuleDetailsViewModel? RoutingRuleDetails { get; } = SafeCreate(() => new RoutingRuleDetailsViewModel(new RulesItem { Domain = ["example.com"], OutboundTag = "direct" }));
 

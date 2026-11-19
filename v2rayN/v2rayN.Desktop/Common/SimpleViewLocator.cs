@@ -27,8 +27,6 @@ public class SimpleViewLocator : IDataTemplate
         RegisterViewFactory<OptionSettingViewModel, OptionSettingWindow>();
         RegisterViewFactory<ProfilesSelectViewModel, ProfilesSelectWindow>();
         RegisterViewFactory<ProfilesViewModel, ProfilesView>();
-        RegisterViewFactory<RoutingRuleDetailsViewModel, RoutingRuleDetailsWindow>();
-        RegisterViewFactory<RoutingRuleSettingViewModel, RoutingRuleSettingWindow>();
         RegisterViewFactory<RoutingSettingViewModel, RoutingSettingWindow>();
         RegisterViewFactory<StatusBarViewModel, StatusBarView>();
         RegisterViewFactory<SubEditViewModel, SubEditWindow>();

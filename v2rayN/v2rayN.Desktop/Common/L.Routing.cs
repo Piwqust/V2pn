@@ -5,8 +5,6 @@ public static partial class L
 {
     // List of rule sets.
     public static string RtListTitle => T("Your rule sets", "Свои наборы правил");
-    public static string RtListHint => T("The three modes in the main window cover most needs; here you build your own sets for special cases.",
-        "Обычно хватает трёх режимов главного окна, а здесь собирают свои наборы для особых случаев.");
     public static string RtSetsTab => T("Rule sets", "Наборы");
     public static string RtNewSet => T("New set", "Новый набор");
     public static string RtAddBuiltin => T("Add the built-in sets", "Добавить стандартные наборы");
@@ -14,12 +12,6 @@ public static partial class L
     public static string RtEdit => T("Edit", "Изменить");
     public static string RtInUse => T("In use", "Используется");
     public static string RtDelete => T("Delete", "Удалить");
-    public static string RtSelectAll => T("Select all", "Выделить все");
-    public static string RtColName => T("Name", "Название");
-    public static string RtColRules => T("Rules", "Правил");
-    public static string RtColOrder => T("Order", "Порядок");
-    public static string RtColLink => T("Link", "Ссылка");
-    public static string RtGrpDomains => T("Matching domains", "Сопоставление доменов");
     public static string RtDomainStrategy => T("How to match domains (Xray)", "Как сопоставлять домены (Xray)");
     public static string RtDomainStrategyHint => T("AsIs checks only the name; IPIfNonMatch also checks the site's IP address.",
         "AsIs смотрит только на имя, IPIfNonMatch — ещё и на IP-адрес сайта.");
@@ -28,10 +20,6 @@ public static partial class L
     public static string RtLearnMore => T("Learn more", "Подробнее");
 
     // One rule set.
-    public static string RtSetTitle => T("Rule set", "Набор правил");
-    public static string RtSetHint => T("Rules are checked from top to bottom; the first match decides where the traffic goes.",
-        "Правила проверяются сверху вниз: первое подходящее решает, куда пойдёт трафик.");
-    public static string RtGrpSet => T("Set", "Набор");
     public static string RtSetName => T("Name", "Название");
     public static string RtSetNamePlaceholder => T("My sites", "Мои сайты");
     public static string RtSetOrder => T("Position in the list", "Место в списке");
@@ -48,23 +36,13 @@ public static partial class L
     public static string RtFromFile => T("From a file…", "Из файла…");
     public static string RtFromClipboard => T("From the clipboard", "Из буфера обмена");
     public static string RtFromUrl => T("From the link", "По ссылке");
-    public static string RtCopySelected => T("Copy selected", "Скопировать выбранные");
     public static string RtMoveTop => T("Move to the top", "В самый верх");
     public static string RtMoveUp => T("Move up", "Выше");
     public static string RtMoveDown => T("Move down", "Ниже");
     public static string RtMoveBottom => T("Move to the bottom", "В самый низ");
-    public static string RtColWhere => T("Where to", "Куда");
-    public static string RtColMatch => T("Sites, addresses, programs", "Сайты, адреса, программы");
-    public static string RtColApplies => T("Applies to", "Где действует");
-    public static string RtColPort => T("Port", "Порт");
-    public static string RtColProtocol => T("Protocol", "Протокол");
-    public static string RtColEntry => T("Entry", "Вход");
-    public static string RtColNetwork => T("Network", "Сеть");
 
     // One rule.
     public static string RtRuleTitle => T("Rule", "Правило");
-    public static string RtRuleHint => T("Choose what to do and list the sites, addresses or programs it applies to.",
-        "Выберите, что делать, и перечислите сайты, адреса или программы, к которым это относится.");
     public static string RtGrpAction => T("What to do", "Что делать");
     public static string RtAction => T("Send the traffic", "Куда направить трафик");
     public static string RtActionHint => T("Through the VPN, directly past it, or nowhere.", "Через VPN, напрямую в обход него или никуда.");
@@ -101,8 +79,6 @@ public static partial class L
 
     // Programs pinned to one server or group (V2pnPins), above the rule sets.
     public static string PinGroup => T("Programs on their own server", "Программы на своём сервере");
-    public static string PinNote => T("Checked before any rule set, whichever server is selected.",
-        "Проверяются раньше любого набора правил, какой бы сервер ни был выбран.");
     public static string PinEmpty => T("For example, every Claude on this computer through one group of servers, while you switch the main server as you like.",
         "Например, все Claude на компьютере через одну группу серверов, а основной сервер переключайте как угодно.");
     public static string PinAdd => T("Add programs", "Добавить программы");

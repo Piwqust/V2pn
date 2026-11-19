@@ -53,6 +53,12 @@ jobs:
       - name: Test
         run: dotnet test --project v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
 
+      - name: Inno Setup (for the installer)
+        shell: pwsh
+        run: |
+          . ./tools/_common.ps1
+          if (-not (Find-Iscc)) { choco install innosetup --no-progress -y }
+
       - name: Build packages
         shell: pwsh
         run: ./tools/release.ps1 -Version $env:TAG.TrimStart('v') -Arch x64,arm64 -NoManifest -OutDir packages

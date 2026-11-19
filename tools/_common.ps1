@@ -15,6 +15,18 @@ function Find-Dotnet {
     throw 'No .NET 10 SDK found. Install it (https://dot.net) or set DOTNET_ROOT.'
 }
 
+# Inno Setup 6's compiler, which makes the Windows installer (tools/installer/V2pn.iss); $null when it is not installed.
+function Find-Iscc {
+    $command = Get-Command 'ISCC.exe' -ErrorAction SilentlyContinue | Select-Object -First 1
+    $candidates = @()
+    if ($command) { $candidates += $command.Source }
+    foreach ($root in ${env:ProgramFiles(x86)}, $env:ProgramFiles, (Join-Path $env:LOCALAPPDATA 'Programs')) {
+        if ($root) { $candidates += (Join-Path $root 'Inno Setup 6\ISCC.exe') }
+    }
+    # Chocolatey's ISCC.exe in its bin folder is a shim that starts the real one; either works.
+    return $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
+}
+
 function Invoke-Checked([string]$exe, [string[]]$arguments) {
     & $exe @arguments
     if ($LASTEXITCODE -ne 0) { throw "$exe $($arguments -join ' ') failed with exit code $LASTEXITCODE" }

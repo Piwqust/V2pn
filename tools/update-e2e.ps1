@@ -62,7 +62,7 @@ if (-not (Test-Path $keyFile) -or -not (Test-Path $publicFile)) {
 $publicKey = (Get-Content $publicFile -Raw).Trim()
 
 function Build-Package([string]$version, [string]$into) {
-    & (Join-Path $PSScriptRoot 'release.ps1') -Version $version -Arch x64 -NoCores -OutDir $into `
+    & (Join-Path $PSScriptRoot 'release.ps1') -Version $version -Arch x64 -NoCores -NoInstaller -OutDir $into `
         -UpdateSources $source -UpdateKeys $publicKey -SigningKey $keyFile | Out-Null
 }
 

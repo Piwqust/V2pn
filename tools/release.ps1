@@ -5,7 +5,8 @@
 
 .DESCRIPTION
   Package (default): builds V2pn and AmazTool for each architecture as a release build, adds the
-  cores pinned in tools/cores.lock.json, and writes dist/release/<version>/V2pn-windows-<arch>.zip.
+  cores pinned in tools/cores.lock.json, and writes dist/release/<version>/V2pn-windows-<arch>.zip and,
+  from the same files, the installer V2pn-windows-<arch>-setup.exe (tools/installer/V2pn.iss, Inno Setup 6).
   Then tools/manifest.cs lists the packages in release.json and signs it: an installed V2pn
   installs only what that signed manifest names.
 
@@ -21,7 +22,7 @@
 .EXAMPLE
   tools/release.ps1 -Version 1.0.1                  # packages + manifest, nothing is committed
   tools/release.ps1 -Version 1.0.1 -Tag             # the same, then bump, commit and tag
-  tools/release.ps1 -Version 1.0.1 -Arch x64 -NoCores -OutDir $env:TEMP/rel   # quick test build
+  tools/release.ps1 -Version 1.0.1 -Arch x64 -NoCores -NoInstaller -OutDir $env:TEMP/rel   # quick test build
   tools/release.ps1 -Version 1.0.1 -ManifestOnly    # re-list and re-sign what is in the folder
   tools/release.ps1 -Version 1.0.1-local.202611141320 -Arch x64 -UpdateOnly -NoManifest -OutDir <dir>
                                                     # what the app's developer mode runs
@@ -51,8 +52,10 @@ param(
     [string]$UpdateKeys,
     [string]$SigningKey,
     # A special build that adds these subscriptions at its first start (v2pn-preset.txt next to V2pn.exe,
-    # ServiceLib/V2pn/V2pnPreset.cs). Only the full zip carries it, never the update zip everyone downloads.
-    [string[]]$Preset
+    # ServiceLib/V2pn/V2pnPreset.cs). Only the full zip and the installer carry it, never the update zip everyone downloads.
+    [string[]]$Preset,
+    # No V2pn-windows-<arch>-setup.exe (it needs Inno Setup 6 and takes about 1.5 minutes per architecture).
+    [switch]$NoInstaller
 )
 
 $ErrorActionPreference = 'Stop'
@@ -134,6 +137,13 @@ function New-Manifest {
 
 $dotnet = Find-Dotnet
 Write-Host "Using $dotnet"
+
+$iscc = $null
+if (-not $NoInstaller -and -not $UpdateOnly -and -not $ManifestOnly) {
+    $iscc = Find-Iscc
+    if (-not $iscc) { throw 'Inno Setup 6 is needed for the installer: winget install JRSoftware.InnoSetup (or pass -NoInstaller).' }
+    Write-Host "Using $iscc"
+}
 
 if ($ManifestOnly) {
     New-Manifest
@@ -224,6 +234,15 @@ foreach ($a in $Arch) {
     Test-V2pnZip -Zip $zip
     $size = [math]::Round((Get-Item $zip).Length / 1MB, 1)
     Write-Host "== $zipName  $size MB"
+
+    # What people download: the same files as the full zip, installed for the current user.
+    if ($iscc) {
+        $setupName = "V2pn-windows-$a-setup"
+        Invoke-Checked $iscc @('/Q', "/DAppVersion=$Version", "/DArch=$a", "/DSourceDir=$stage", "/DOutputDir=$OutDir",
+            "/DOutputName=$setupName", (Join-Path $PSScriptRoot 'installer/V2pn.iss'))
+        $size = [math]::Round((Get-Item (Join-Path $OutDir "$setupName.exe")).Length / 1MB, 1)
+        Write-Host "== $setupName.exe  $size MB"
+    }
 }
 
 Remove-Item -Recurse -Force $work

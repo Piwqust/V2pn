@@ -88,6 +88,28 @@ public sealed class WorldMap
     public MapCountry? Get(string? code) =>
         code != null && Countries.TryGetValue(code.ToUpperInvariant(), out var c) ? c : null;
 
+    // The latitude tools/mapgen puts at the top edge: the canvas starts at the Arctic.
+    private const double TopLatitude = 83.5;
+
+    /// <summary>A longitude and latitude in the map's pixel space, with the projection tools/mapgen uses.</summary>
+    public Point Project(double lon, double lat)
+    {
+        var scale = Width / (2 * Math.PI);
+        var top = -scale * Math.Log(Math.Tan((Math.PI / 4) + (TopLatitude * Math.PI / 360)));
+        var y = -scale * Math.Log(Math.Tan((Math.PI / 4) + (Math.Clamp(lat, -85, 85) * Math.PI / 360)));
+        return new Point((Width / 2) + (scale * lon * Math.PI / 180), y - top);
+    }
+
+    /// <summary>Where a country's dot stands: a representative city for the few countries whose middle misleads.</summary>
+    public Point? Anchor(string? code)
+    {
+        if (MapCities.Representative(code) is { } city)
+        {
+            return Project(city.Lon, city.Lat);
+        }
+        return Get(code) is { } country ? new Point(country.X, country.Y) : null;
+    }
+
     private static WorldMap Load()
     {
         try

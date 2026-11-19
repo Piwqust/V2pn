@@ -453,7 +453,7 @@ public partial class MainWindow
         {
             var hasOwn = (ViewModel?.ProfilesViewModel.AllServersCount ?? 0) > 0;
             if ((!fromWelcome || hasOwn)
-                && await UI.ShowYesNo(string.Format(L.ImportConfirm, install.DataDir), L.ImportConfirmYes) != ButtonResult.Yes)
+                && await UI.ShowYesNo(string.Format(L.ImportConfirm, install.DataDir), L.ImportConfirmYes, icon: "SemiIconDownloadStroked") != ButtonResult.Yes)
             {
                 return;
             }

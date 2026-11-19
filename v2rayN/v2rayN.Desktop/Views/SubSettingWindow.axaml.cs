@@ -92,7 +92,7 @@ public partial class SubSettingWindow : WindowBase<SubSettingViewModel>
         if (IsDirty())
         {
             var name = _edit!.SelectedSource.Remarks.IsNotEmpty() ? _edit.SelectedSource.Remarks : L.NewSubscription;
-            var answer = await UI.ShowChoice(L.TlSubsTitle, string.Format(L.SubSaveAsk, name), L.Save, L.SubDontSave);
+            var answer = await UI.ShowChoice(L.TlSubsTitle, string.Format(L.SubSaveAsk, name), L.Save, L.SubDontSave, icon: "SemiIconEditStroked");
             if (answer == ButtonResult.Yes)
             {
                 // Saving re-selects what was saved; the person picks the other one again.
@@ -230,7 +230,7 @@ public partial class SubSettingWindow : WindowBase<SubSettingViewModel>
         if (IsDirty())
         {
             var name = _edit!.SelectedSource.Remarks.IsNotEmpty() ? _edit.SelectedSource.Remarks : L.NewSubscription;
-            var answer = await UI.ShowChoice(L.TlSubsTitle, string.Format(L.SubSaveAsk, name), L.Save, L.SubDontSave);
+            var answer = await UI.ShowChoice(L.TlSubsTitle, string.Format(L.SubSaveAsk, name), L.Save, L.SubDontSave, icon: "SemiIconEditStroked");
             if (answer == ButtonResult.Yes)
             {
                 Save();

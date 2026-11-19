@@ -8,7 +8,7 @@ internal class UI
 {
     private static readonly string caption = Global.AppName;
 
-    public static async Task<ButtonResult> ShowYesNo(string msg, string? yes = null, bool danger = false)
+    public static async Task<ButtonResult> ShowYesNo(string msg, string? yes = null, bool danger = false, string? icon = null)
     {
         // V2pn: v2rayN asks its delete question with one generic sentence for servers, rules and subscriptions.
         if (msg == ResUI.RemoveServer)
@@ -16,7 +16,7 @@ internal class UI
             (msg, yes, danger) = (L.RemoveConfirm, L.MenuDelete, true);
         }
         var owner = WindowDialog.TryGetOwnerWindow();
-        var box = new MessageBoxDialog(caption, msg, yes, danger);
+        var box = new MessageBoxDialog(caption, msg, yes, danger, icon: icon);
         var result = await box.ShowDialog<ButtonResult>(owner);
         return result == ButtonResult.Yes ? ButtonResult.Yes : ButtonResult.No;
     }
@@ -25,10 +25,11 @@ internal class UI
     /// V2pn: a question with two named answers where neither is a cancel. Yes or No; None when the dialog
     /// is closed or Esc is pressed without choosing.
     /// </summary>
-    public static async Task<ButtonResult> ShowChoice(string caption, string msg, string yes, string no)
+    public static async Task<ButtonResult> ShowChoice(string caption, string msg, string yes, string no,
+        DialogTone? tone = null, string? icon = null, DialogCard? card = null)
     {
         var owner = WindowDialog.TryGetOwnerWindow();
-        var box = new MessageBoxDialog(caption, msg, yes, no: no);
+        var box = new MessageBoxDialog(caption, msg, yes, no: no, tone: tone, icon: icon, card: card);
         return await box.ShowDialog<ButtonResult>(owner);
     }
 

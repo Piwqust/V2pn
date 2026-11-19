@@ -249,7 +249,7 @@ public partial class MainWindow
             var confirm = otherCountries
                 ? string.Format(L.ConfirmReplacementOtherCountry, CountryName(country), CountryResolver.ServerName(best), place)
                 : string.Format(L.ConfirmReplacement, CountryResolver.ServerName(best), place);
-            if (await UI.ShowYesNo(confirm, L.SwitchServer) == ButtonResult.Yes && IsCurrent())
+            if (await UI.ShowYesNo(confirm, L.SwitchServer, icon: "SemiIconRefresh") == ButtonResult.Yes && IsCurrent())
             {
                 await profiles.SetDefaultServer(best.IndexId);
             }

@@ -5,8 +5,8 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
-    Width="420"
-    MinWidth="350"
+    Width="440"
+    MinWidth="360"
     MaxWidth="600"
     CanResize="False"
     ShowInTaskbar="False"
@@ -15,8 +15,56 @@
     WindowStartupLocation="CenterOwner"
     mc:Ignorable="d">
 
-    <DockPanel>
-        <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+    <Window.Styles>
+        <!--  A question, not a form: the answers sit on the dialog's own surface, without the footer strip.  -->
+        <Style Selector="Border.dialogfooter.ask">
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="BorderThickness" Value="0" />
+            <Setter Property="Padding" Value="24,4,24,22" />
+        </Style>
+        <Style Selector="Border.dialogfooter.ask Button">
+            <Setter Property="MinWidth" Value="104" />
+            <Setter Property="Height" Value="38" />
+            <Setter Property="Padding" Value="18,0" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+        </Style>
+
+        <!--  The badge says what kind of question this is before a word is read.  -->
+        <Style Selector="Border#badge">
+            <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
+        </Style>
+        <Style Selector="Border#badge PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
+        </Style>
+        <Style Selector="Border#badge.info">
+            <Setter Property="Background" Value="{DynamicResource V2ToastInfoSoft}" />
+        </Style>
+        <Style Selector="Border#badge.info PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource V2ToastInfo}" />
+        </Style>
+        <Style Selector="Border#badge.danger">
+            <Setter Property="Background" Value="{DynamicResource V2UnsafeSoft}" />
+        </Style>
+        <Style Selector="Border#badge.danger PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+        </Style>
+    </Window.Styles>
+
+    <DockPanel x:Name="root">
+        <DockPanel.Transitions>
+            <Transitions>
+                <DoubleTransition
+                    Easing="CubicEaseOut"
+                    Property="Opacity"
+                    Duration="0:0:0.18" />
+                <TransformOperationsTransition
+                    Easing="CubicEaseOut"
+                    Property="RenderTransform"
+                    Duration="0:0:0.22" />
+            </Transitions>
+        </DockPanel.Transitions>
+
+        <Border Classes="dialogfooter ask" DockPanel.Dock="Bottom">
             <StackPanel Classes="footer">
                 <Button
                     x:Name="btnYes"
@@ -30,19 +78,94 @@
         </Border>
 
         <ScrollViewer
-            MinHeight="60"
-            MaxHeight="300"
-            Margin="24,22,24,22"
+            MaxHeight="420"
             HorizontalScrollBarVisibility="Disabled"
             VerticalScrollBarVisibility="Auto">
-            <TextBlock
-                x:Name="txtMessage"
-                VerticalAlignment="Center"
-                Classes="message"
-                FontSize="14"
-                Foreground="{DynamicResource V2Ink}"
-                LineHeight="22"
-                TextWrapping="Wrap" />
+            <Grid Margin="24,24,24,20" ColumnDefinitions="Auto,*">
+                <Border
+                    x:Name="badge"
+                    Width="44"
+                    Height="44"
+                    Margin="0,0,16,0"
+                    VerticalAlignment="Top"
+                    CornerRadius="14">
+                    <PathIcon
+                        x:Name="badgeIcon"
+                        Width="22"
+                        Height="22"
+                        Data="{DynamicResource SemiIconHelpCircleStroked}" />
+                </Border>
+
+                <!--  The top margin centres the first line (22 px) on the 44-px badge.  -->
+                <StackPanel
+                    Grid.Column="1"
+                    Margin="0,11,0,0"
+                    VerticalAlignment="Top"
+                    Spacing="8">
+                    <TextBlock
+                        x:Name="txtHead"
+                        Classes="message"
+                        FontSize="16"
+                        FontWeight="SemiBold"
+                        Foreground="{DynamicResource V2Ink}"
+                        LineHeight="22"
+                        TextWrapping="Wrap" />
+
+                    <Border
+                        x:Name="cardBox"
+                        Margin="0,6,0,2"
+                        Padding="12,10"
+                        Background="{DynamicResource V2CardMutedBackground}"
+                        BorderBrush="{DynamicResource V2Border}"
+                        BorderThickness="1"
+                        CornerRadius="12"
+                        IsVisible="False">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <Border
+                                Width="34"
+                                Height="34"
+                                Margin="0,0,12,0"
+                                VerticalAlignment="Center"
+                                Background="{DynamicResource V2CardBackground}"
+                                BoxShadow="{DynamicResource V2ChipShadow}"
+                                CornerRadius="10">
+                                <PathIcon
+                                    x:Name="cardIcon"
+                                    Width="16"
+                                    Height="16"
+                                    Data="{DynamicResource SemiIconLink}"
+                                    Foreground="{DynamicResource V2InkSoft}" />
+                            </Border>
+                            <StackPanel
+                                Grid.Column="1"
+                                VerticalAlignment="Center"
+                                Spacing="1">
+                                <TextBlock
+                                    x:Name="cardTitle"
+                                    Classes="message"
+                                    FontSize="14"
+                                    FontWeight="SemiBold"
+                                    Foreground="{DynamicResource V2Ink}"
+                                    TextTrimming="CharacterEllipsis" />
+                                <TextBlock
+                                    x:Name="cardSubtitle"
+                                    Classes="message"
+                                    FontSize="12"
+                                    Foreground="{DynamicResource V2Muted}"
+                                    TextTrimming="CharacterEllipsis" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+
+                    <TextBlock
+                        x:Name="txtMessage"
+                        Classes="message"
+                        FontSize="13"
+                        Foreground="{DynamicResource V2Muted}"
+                        LineHeight="20"
+                        TextWrapping="Wrap" />
+                </StackPanel>
+            </Grid>
         </ScrollViewer>
     </DockPanel>
 </Window>

@@ -1252,7 +1252,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             SetTunDenied(!granted);
             return granted;
         }
-        if (await UI.ShowYesNo(L.VpnRestartAsAdmin, L.Restart) != ButtonResult.Yes)
+        if (await UI.ShowYesNo(L.VpnRestartAsAdmin, L.Restart, icon: "SemiIconShieldStroked") != ButtonResult.Yes)
         {
             SetTunDenied(true);
             return false;
@@ -2473,7 +2473,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (!_config.UiItem.V2pnCloseAsked)
             {
                 _closeAsking = true;
-                var answer = await UI.ShowChoice(L.CloseToTrayTitle, L.CloseToTrayBody, L.CloseToTrayHide, L.Quit);
+                var answer = await UI.ShowChoice(L.CloseToTrayTitle, L.CloseToTrayBody, L.CloseToTrayHide, L.Quit, icon: "SemiIconShrink");
                 _closeAsking = false;
                 // Dismissed without an answer: the window stays, and the question comes back next time.
                 if (answer == ButtonResult.None)
@@ -2776,7 +2776,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     {
         try
         {
-            if (await UI.ShowYesNo(L.QuitConfirm, L.Quit) != ButtonResult.Yes)
+            if (await UI.ShowYesNo(L.QuitConfirm, L.Quit, icon: "SemiIconPower") != ButtonResult.Yes)
             {
                 return;
             }

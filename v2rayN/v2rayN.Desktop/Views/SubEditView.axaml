@@ -1,0 +1,350 @@
+<UserControl
+    x:Class="v2rayN.Desktop.Views.SubEditView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:views="using:v2rayN.Desktop.Views"
+    xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    Design.DataContext="{x:Static dd:DesignData.SubEdit}"
+    mc:Ignorable="d">
+    <!--  One subscription: the provider's report, the link, updates and the expert fields. Shown beside the list
+          in the subscriptions window and on its own in SubEditWindow (editing from the server list).  -->
+    <StackPanel Classes="spagebody">
+        <TextBlock x:Name="txtPageTitle" Classes="spagetitle" Text="{x:Static loc:L.SubEditTitle}" />
+        <TextBlock x:Name="txtPageHint" Classes="spagehint" Text="{x:Static loc:L.SubEditHint}" />
+        <!--  What the provider's panel reported with the last update (Common/SubUsage.cs).  -->
+        <StackPanel x:Name="grpProvider" Classes="sgroup" IsVisible="False">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpProvider}" />
+            <Border Classes="sgroupcard">
+                <StackPanel x:Name="panelProvider">
+                    <!--  V2pn: the partner closed the subscription's settings (V2pnLocks); what stays open is said too.  -->
+                    <Border x:Name="rowLock" Classes="srow" IsVisible="False">
+                        <Grid ColumnDefinitions="Auto,*">
+                            <PathIcon
+                                Margin="0,2,12,0"
+                                VerticalAlignment="Top"
+                                Classes="i16"
+                                Foreground="{DynamicResource V2Muted}"
+                                Data="{StaticResource SemiIconLock}" />
+                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                <TextBlock x:Name="txtLock" Classes="srowtitle" TextWrapping="Wrap" />
+                                <TextBlock x:Name="txtLockHint" Classes="srowhint" Text="{x:Static loc:L.LockedHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                        </Grid>
+                    </Border>
+                    <!--  V2pn: the provider's banner or the reminder that the subscription runs out (V2pnSubDefaults).  -->
+                    <Border x:Name="rowBanner" Classes="srow stack" IsVisible="False">
+                        <views:SubBannerView x:Name="viewBanner" />
+                    </Border>
+                    <Border x:Name="rowTraffic" Classes="srow stack">
+                        <StackPanel Spacing="8">
+                            <Grid ColumnDefinitions="*,Auto">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.Traffic}" />
+                                <TextBlock x:Name="txtTraffic" Grid.Column="1" Classes="usagevalue" />
+                            </Grid>
+                            <views:UsageBar x:Name="barTraffic" />
+                            <TextBlock x:Name="txtTrafficHint" Classes="srowhint" Margin="0" />
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="rowExpiry" Classes="srow">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubValidity}" />
+                            </StackPanel>
+                            <TextBlock x:Name="txtExpiry" Grid.Column="1" Classes="usagevalue" VerticalAlignment="Center" />
+                        </Grid>
+                    </Border>
+                    <Border x:Name="rowAnnounce" Classes="srow stack">
+                        <StackPanel Spacing="6">
+                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubAnnounce}" />
+                            <SelectableTextBlock x:Name="txtAnnounce" Classes="announce" />
+                            <Button
+                                x:Name="btnAnnounceMore"
+                                HorizontalAlignment="Left"
+                                Classes="small"
+                                Theme="{StaticResource V2Button}">
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <TextBlock Text="{x:Static loc:L.SubAnnounceMore}" />
+                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconExternalOpenStroked}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="rowLinks" Classes="srow">
+                        <StackPanel VerticalAlignment="Center" Orientation="Horizontal" Spacing="8">
+                            <Button x:Name="btnSupport" Theme="{StaticResource V2Button}">
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconHelpCircleStroked}" />
+                                    <TextBlock Text="{x:Static loc:L.SubSupport}" />
+                                </StackPanel>
+                            </Button>
+                            <Button x:Name="btnWebPage" Theme="{StaticResource V2Button}">
+                                <StackPanel Orientation="Horizontal" Spacing="7">
+                                    <PathIcon Classes="i14" Data="{StaticResource SemiIconExternalOpenStroked}" />
+                                    <TextBlock Text="{x:Static loc:L.SubWebPage}" />
+                                </StackPanel>
+                            </Button>
+                        </StackPanel>
+                    </Border>
+                    <!--  V2pn: what the provider advises for its subscription; the person can take it or decide (SubEditWindow.Provider.cs).  -->
+                    <Border x:Name="rowStartConnect" Classes="srow" IsVisible="False">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubStartConnect}" />
+                                <TextBlock x:Name="txtStartConnectHint" Classes="srowhint" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ComboBox x:Name="cmbStartConnect" Width="220" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border x:Name="rowOrder" Classes="srow" IsVisible="False">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubOrder}" />
+                                <TextBlock x:Name="txtOrderHint" Classes="srowhint" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ComboBox x:Name="cmbOrder" Width="220" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border x:Name="rowOnStart" Classes="srow" IsVisible="False">
+                        <TextBlock x:Name="txtOnStart" Classes="srowhint" Margin="0" TextWrapping="Wrap" />
+                    </Border>
+                    <!--  V2pn: the provider's brand on V2pn, if its panel offers one (SubEditWindow.Provider.cs).  -->
+                    <Border x:Name="rowPartner" Classes="srow" IsVisible="False">
+                        <StackPanel Classes="srowtext">
+                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubPartnerTitle}" />
+                            <TextBlock x:Name="txtPartner" Classes="srowhint" TextWrapping="Wrap" />
+                            <!--  What the certificate lets the partner do, in plain words.  -->
+                            <TextBlock x:Name="txtPartnerMay" Classes="srowhint" TextWrapping="Wrap" IsVisible="False" />
+                        </StackPanel>
+                    </Border>
+                    <!--  The partner's reviewed files (routing, connection settings, chains) and whether each is used.  -->
+                    <Border x:Name="rowReviewed" Classes="srow" IsVisible="False">
+                        <StackPanel Classes="srowtext">
+                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubReviewedTitle}" />
+                            <StackPanel x:Name="panelReviewed" Spacing="2" />
+                        </StackPanel>
+                    </Border>
+                    <Border x:Name="rowPartnerConn" Classes="srow" IsVisible="False">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock x:Name="txtPartnerConn" Classes="srowtitle" />
+                                <TextBlock x:Name="txtPartnerConnHint" Classes="srowhint" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ToggleSwitch x:Name="togPartnerConn" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+            <TextBlock x:Name="txtInfoAsOf" Classes="sgroupnote" TextWrapping="Wrap" />
+        </StackPanel>
+        <StackPanel Classes="sgroup">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpSource}" />
+            <Border Classes="sgroupcard">
+                <StackPanel>
+                    <Border Classes="srow">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubName}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SubNameHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtRemarks" Width="280" PlaceholderText="{x:Static loc:L.SubNameAuto}" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow stack">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubLink}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SubLinkHint}" />
+                            </StackPanel>
+                            <TextBox x:Name="txtUrl" MinHeight="64" AcceptsReturn="False" TextWrapping="Wrap" PlaceholderText="https://…" />
+                            <TextBlock x:Name="txtUrlError" Classes="srowhint warn" IsVisible="False"
+                                TextWrapping="Wrap" AutomationProperties.LiveSetting="Polite" />
+                            <!--  V2pn: in place of the link when the partner hid it (hide-url with the lock grant).  -->
+                            <TextBlock x:Name="txtUrlHidden" Classes="srowhint" Margin="0" IsVisible="False" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        <StackPanel Classes="sgroup">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpUpdates}" />
+            <Border Classes="sgroupcard">
+                <StackPanel>
+                    <Border Classes="srow">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubAutoUpdate}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.HintSubEnabled}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ToggleSwitch x:Name="togEnable" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubInterval}" />
+                                <TextBlock x:Name="txtIntervalHint" Classes="srowhint" Text="{x:Static loc:L.HintSubInterval}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtAutoUpdateInterval" Width="140" PlaceholderText="0" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        <StackPanel Classes="sgroup">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpMore}" />
+            <Border Classes="sgroupcard">
+                <StackPanel>
+                    <Border Classes="srow stack adv">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeMoreUrl}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeMoreUrlHint}" />
+                            </StackPanel>
+                            <TextBox x:Name="txtMoreUrl" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" PlaceholderText="https://…" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeFilter}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeFilterHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtFilter" Width="280" PlaceholderText="Germany|Netherlands" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SePrev}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SePrevHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox x:Name="txtPrevProfile" Width="200" />
+                                    <Button x:Name="btnSelectPrevProfile" Content="{x:Static loc:L.SeChoose}" />
+                                </StackPanel>
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeNext}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeNextHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <TextBox x:Name="txtNextProfile" Width="200" />
+                                    <Button x:Name="btnSelectNextProfile" Content="{x:Static loc:L.SeChoose}" />
+                                </StackPanel>
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeUa}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeUaHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtUserAgent" Width="280" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow stack adv">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeHeaders}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeHeadersHint}" />
+                            </StackPanel>
+                            <TextBox x:Name="txtRequestHeaders" MinHeight="64" AcceptsReturn="True" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeConvert}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeConvertHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ComboBox x:Name="cmbConvertTarget" Width="200" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SePreResolve}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SePreResolveHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ComboBox x:Name="cmbPreResolve" Width="280" IsEditable="True" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeCore}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeCoreHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ComboBox x:Name="cmbCustomCoreType" Width="200" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SePreSocks}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SePreSocksHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtPreSocksPort" Width="140" PlaceholderText="0" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeSort}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SeSortHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtSort" Width="140" PlaceholderText="0" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow stack adv">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SeMemo}" />
+                            </StackPanel>
+                            <TextBox x:Name="txtMemo" MinHeight="56" AcceptsReturn="True" TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
+    </StackPanel>
+</UserControl>

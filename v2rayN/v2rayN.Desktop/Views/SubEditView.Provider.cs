@@ -5,7 +5,7 @@ using v2rayN.Desktop.ViewModels;
 namespace v2rayN.Desktop.Views;
 
 // What the subscription's panel reported (traffic, expiry, announcement, links) and the self-filling name.
-public partial class SubEditWindow
+public partial class SubEditView
 {
     private void ShowProviderInfo()
     {
@@ -292,7 +292,7 @@ public partial class SubEditWindow
         source.Remarks = SubInfoManager.Instance.SuggestName(source) ?? string.Empty;
     }
 
-    private void AnnounceIfAdded()
+    public void AnnounceIfAdded()
     {
         var source = ViewModel?.SelectedSource;
         var url = source?.Url?.Trim();

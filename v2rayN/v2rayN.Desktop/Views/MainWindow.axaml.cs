@@ -110,7 +110,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         btnWelcomeRouteRu.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.RussiaDirect);
         btnWelcomeRouteAll.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.All);
-        SubEditWindow.SubscriptionAdded += subId => _ = UpdateAddedSubscriptionAsync(subId);
+        SubEditView.SubscriptionAdded += subId => _ = UpdateAddedSubscriptionAsync(subId);
         menuRegionalPresetsRussia.Icon = new Image { Source = V2pnConverters.Flag("RU"), Width = 16, Height = 12 };
         menuRegionalPresetsIran.Icon = new Image { Source = V2pnConverters.Flag("IR"), Width = 16, Height = 12 };
         if (OperatingSystem.IsMacOS())

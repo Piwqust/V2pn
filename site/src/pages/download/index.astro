@@ -1,0 +1,137 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Arrow from '../../components/Arrow.astro';
+import { site, downloads, commands, shots, links } from '../../data/site';
+import welcome from '../../assets/shots/welcome.png';
+import importShot from '../../assets/shots/import.png';
+import ready from '../../assets/shots/ready.png';
+
+const steps = [
+  {
+    title: 'Откройте V2pn',
+    text: [
+      'Windows: распакуйте ZIP в свою папку (не в Program Files: настройки лежат рядом с программой) и запустите V2pn.exe. Если Windows скажет, что защитила компьютер, нажмите «Подробнее», затем «Выполнить в любом случае».',
+      'Mac: откройте DMG и перетащите V2pn в «Программы». В первый раз разрешите запуск: «Системные настройки», «Конфиденциальность и безопасность», «Всё равно открыть».',
+      'На первом экране выберите язык.',
+    ],
+    img: welcome, alt: shots.welcome.alt,
+  },
+  {
+    title: 'Добавьте ссылку',
+    text: [
+      'Скопируйте ссылку на подписку у провайдера или ссылку на сервер вида vless://… На шаге «Ваши серверы» нажмите «Вставить ссылку» или добавьте подписку.',
+      'Есть кнопка «Подключить в V2pn» в боте провайдера? Нажмите её: V2pn добавит подписку сам. А если на компьютере были v2rayN, Hiddify или Clash, V2pn предложит перенести серверы оттуда.',
+    ],
+    img: importShot, alt: shots.import.alt,
+  },
+  {
+    title: 'Нажмите «Подключиться»',
+    text: [
+      'На том же шаге V2pn покажет выбранный сервер, режим и маршрут. Нажмите «Подключиться»: «Защищено» появится после проверки соединения.',
+    ],
+    img: ready, alt: shots.ready.alt,
+  },
+];
+---
+<Base title="Скачать для Windows и macOS" description="Скачать V2pn для Windows 10 и 11 и macOS 13.6+, бесплатно. Нужна своя подписка или ссылка на сервер от провайдера.">
+  <section class="dl-hero" aria-labelledby="dl-h">
+    <div class="wrap grid">
+      <div class="dl-hero__text">
+        <h1 id="dl-h" class="t-mega dl-hero__title" data-split="lines" data-intro>Скачать V2pn</h1>
+        <p class="lead" data-reveal="up" data-intro data-delay="0.2">Клиент для Windows и macOS. Для подключения понадобится своя подписка или ссылка на сервер от провайдера: V2pn серверы не продаёт.</p>
+      </div>
+      <div class="dl-pick" data-reveal="branch" data-intro data-delay="0.3">
+        <a class="btn btn--lg" href="#files" data-dl-primary><span data-dl-label>Выбрать файл</span><Arrow class="btn__arr" down /></a>
+        <p class="t-s muted"><span data-dl-detail>Windows 10 и 11, macOS 13.6 и новее</span>{site.version && <> · версия <span class="tnum">{site.version}</span></>}</p>
+        <p class="dl-phone t-s">Вы на телефоне. V2pn работает на компьютерах с Windows и macOS: откройте эту страницу там.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section section--tight" id="files" aria-labelledby="files-h">
+    <div class="wrap grid">
+      <h2 id="files-h" class="label on-left files-label">Все файлы</h2>
+      <ul class="files" role="list">
+        {downloads.map((d) => (
+          <li>
+            <a class="row-link files__row" href={d.href} data-dl={d.key}>
+              <span class="files__title t-m">{d.title}</span>
+              <span class="files__detail muted t-s">{d.detail}</span>
+              <span class="files__file mono muted">{d.file}</span>
+              <span class="files__yours t-xs">для этого компьютера</span>
+              <Arrow class="arr" down />
+            </a>
+          </li>
+        ))}
+      </ul>
+      <div class="cmds">
+        <h3 class="t-m">Одной командой, без окна SmartScreen</h3>
+        <p class="muted t-s measure">Скачает последнюю версию, сверит её со списком файлов релиза, поставит V2pn без прав администратора и откроет. Если на компьютере есть v2rayN, V2pn заберёт его серверы и настройки.</p>
+        <p class="label">Windows: Терминал (<kbd>Win</kbd>+<kbd>X</kbd>, «Терминал»)</p>
+        <div class="cmd cmd--ps"><code id="cmd-win">{commands.win}</code><button class="copy" type="button" data-copy="cmd-win">Копировать</button></div>
+        <p class="label">macOS: «Программы», «Утилиты», «Терминал»</p>
+        <div class="cmd"><code id="cmd-mac">{commands.mac}</code><button class="copy" type="button" data-copy="cmd-mac">Копировать</button></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section steps" aria-labelledby="steps-h" data-ground="paper">
+    <div class="wrap">
+      <h2 id="steps-h" class="t-xl" data-split="lines">После загрузки</h2>
+      <ol class="steps__list" role="list">
+        {steps.map((s, i) => (
+          <li class="step" data-reveal="up" data-delay={String(i * 0.08)}>
+            <figure class="shot step__shot">
+              <Picture src={s.img} formats={['avif', 'webp']} fallbackFormat="webp" widths={[480, 800, 1200]} sizes="(max-width: 767px) 92vw, 30vw" alt={s.alt} loading="lazy" />
+            </figure>
+            <span class="step__n tnum" aria-hidden="true">{i + 1}</span>
+            <h3 class="t-m">{s.title}</h3>
+            {s.text.map((t) => <p class="muted t-s">{t}</p>)}
+          </li>
+        ))}
+      </ol>
+      <p class="steps__more t-s">Подробно: <a class="link" href="/docs/install/">установка</a>, <a class="link" href="/docs/start/">первое подключение</a>, <a class="link" href="/docs/move/">переезд с других программ</a>. Скриншоты на английском: так окно выглядит до выбора языка.</p>
+    </div>
+  </section>
+
+  <section class="section section--tight trust" aria-labelledby="trust-h">
+    <div class="wrap grid">
+      <h2 id="trust-h" class="label on-left">Откуда файлы</h2>
+      <div class="trust__text">
+        <p class="t-m">Файлы берутся из релизов на GitHub. Каждый релиз подписан ключом, открытая часть которого встроена в V2pn: изменённый или недокачанный пакет он не поставит, откуда бы его ни скачали.</p>
+        <p class="t-s"><a class="link" href={links.releases} rel="noopener">Все версии на GitHub</a> · <a class="link" href={links.changelog} rel="noopener">Что нового</a></p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .dl-hero { padding-top: calc(var(--header-h) + var(--u) * 10); padding-bottom: calc(var(--u) * 8); }
+  .dl-hero__text { grid-column: 1 / span 8; display: grid; gap: 1.75rem; }
+  .dl-hero__title { max-width: 8ch; }
+  .dl-pick { grid-column: 10 / -1; align-self: end; display: grid; gap: 0.9rem; justify-items: start; }
+  .dl-phone { display: none; padding: 0.85rem 1rem; box-shadow: inset 2px 0 0 var(--signal); background: var(--c-raised); }
+  :global(html[data-os='phone']) .dl-phone { display: block; }
+  :global(html[data-os='phone']) .dl-pick .btn { display: none; }
+  .files-label { padding-top: 1.4rem; }
+  .cmds { grid-column: 5 / span 7; margin-top: calc(var(--u) * 7); display: grid; gap: 0.85rem; }
+  .cmds .label { margin-top: 0.5rem; }
+  .steps { background: var(--c-bg); color: var(--c-fg); }
+  .steps__list { list-style: none; padding: 0; margin-top: calc(var(--u) * 6); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--col-gap); counter-reset: s; }
+  .step { display: grid; gap: 0.75rem; align-content: start; position: relative; }
+  .step__shot { margin-bottom: 0.75rem; }
+  .step__shot :global(img) { border-radius: 10px; box-shadow: 0 30px 60px -36px rgb(11 11 13 / 0.6); }
+  .step__n { font: 200 3.2rem/0.9 var(--f-display); color: var(--signal-deep); letter-spacing: -0.04em; }
+  .steps__more { margin-top: calc(var(--u) * 6); max-width: 70ch; color: var(--c-muted); }
+  .trust__text { grid-column: 5 / span 8; display: grid; gap: 1rem; }
+  @media (max-width: 1023px) { .steps__list { grid-template-columns: 1fr; gap: calc(var(--u) * 7); } .step { grid-template-columns: 1fr; max-width: 44rem; } }
+  @media (max-width: 767px) {
+    .dl-hero__text, .dl-pick, .files, .cmds, .trust__text { grid-column: 1 / -1; }
+    .dl-pick { margin-top: 2rem; }
+    .files { margin-top: 1rem; }
+    .files__row { grid-template-columns: 1fr 1.25rem; }
+    .files__detail, .files__file { grid-column: 1; }
+    .files__row :global(.arr) { grid-column: 2; grid-row: 1; }
+  }
+</style>

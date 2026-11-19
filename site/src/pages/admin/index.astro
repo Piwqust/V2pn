@@ -1,0 +1,88 @@
+---
+import Tool from '../../layouts/Tool.astro';
+---
+<Tool title="Модерация" description="Модерация партнёров V2pn: особые права, жалобы, модераторы, скачивания и журнал." windowCss={false}>
+  <div class="wrap">
+    <div class="app__head">
+      <h1>Модерация</h1>
+      <p>Партнёры публикуются сами. Сюда попадают особые права на одобрение, жалобы и всё, что нужно снять.</p>
+    </div>
+    <noscript><p>Модерация работает со включённым JavaScript. Включите его и обновите страницу.</p></noscript>
+
+    <div id="view-loading" class="box" aria-busy="true" aria-label="Загружаем"><div class="skel"><i></i><i></i><i></i><i></i></div></div>
+    <div id="view-error" class="state" hidden>
+      <h2 data-error-title>Модерация не загрузилась</h2>
+      <p data-error-text>Сервер провайдеров сейчас недоступен.</p>
+      <div class="row"><button class="btn btn--secondary" type="button" data-retry>Попробовать ещё раз</button><a class="btn btn--secondary" href="/providers/cabinet/" data-to-cabinet hidden>Мой партнёр</a></div>
+    </div>
+
+    <div id="shell" class="shell" hidden>
+      <nav class="sidenav" aria-label="Разделы модерации">
+        <a href="#rights" data-tab="rights">Ждут одобрения <span class="count" data-count="rights" hidden></span></a>
+        <a href="#partners" data-tab="partners">Все партнёры <span class="count count--quiet" data-count="partners" hidden></span></a>
+        <a href="#mods" data-tab="mods" data-owner-only hidden>Модераторы</a>
+        <a href="#downloads" data-tab="downloads">Скачивания</a>
+        <a href="#audit" data-tab="audit">Журнал</a>
+      </nav>
+
+      <div class="stack stack--lg">
+        <div class="note note--fail" id="pub-error" hidden>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div><p><b data-pub-error-title>Публикация не прошла.</b></p><ul class="problems" data-pub-error-list></ul><button class="btn btn--secondary btn--sm" type="button" data-publish-now>Опубликовать заново</button></div>
+        </div>
+
+        <section data-view="rights" class="box" aria-labelledby="rights-h" hidden>
+          <div class="box__head"><h2 id="rights-h">Ждут одобрения</h2><p>Только особые права. Партнёр в это время уже работает.</p></div>
+          <div id="rights-list" class="stack" aria-live="polite"></div>
+        </section>
+
+        <section data-view="partners" class="box" aria-labelledby="partners-h" hidden>
+          <div class="box__head"><h2 id="partners-h">Все партнёры</h2><span class="hint" id="partners-count"></span></div>
+          <div class="seg" role="group" aria-label="Какие партнёры" id="partners-filter">
+            <button type="button" data-filter="all" aria-pressed="true">Все</button>
+            <button type="button" data-filter="complaints" aria-pressed="false">С жалобами</button>
+            <button type="button" data-filter="down" aria-pressed="false">Снятые</button>
+          </div>
+          <div id="partners-list" class="plist" aria-live="polite"></div>
+          <div class="row"><button class="btn btn--secondary btn--sm" type="button" data-publish-now>Опубликовать заново</button><span class="hint">Пересобирает и подписывает индекс, пакеты и страницы всех партнёров.</span></div>
+        </section>
+
+        <section data-view="mods" class="box" aria-labelledby="mods-h" hidden>
+          <div class="box__head"><h2 id="mods-h">Модераторы</h2><p>Добавлять и убирать модераторов может только владелец.</p></div>
+          <div id="mods-list" class="plist"></div>
+          <form id="mod-form" class="stack stack--sm" novalidate>
+            <div class="field">
+              <label for="mod-login">Логин нового модератора</label>
+              <div class="input-row"><input id="mod-login" type="text" autocomplete="off" autocapitalize="none" spellcheck="false" maxlength="32"><button class="btn" type="submit" id="mod-add">Добавить модератора</button></div>
+              <span class="field__hint">Существующий аккаунт станет модератором. Для нового логина сервер создаст аккаунт и покажет пароль один раз.</span>
+              <span class="field__error" hidden></span>
+            </div>
+          </form>
+        </section>
+
+        <section data-view="downloads" class="box" aria-labelledby="dl-h" hidden>
+          <div class="box__head">
+            <h2 id="dl-h">Скачивания</h2>
+            <div class="seg" role="group" aria-label="За сколько дней" id="dl-days">
+              <button type="button" data-days="14" aria-pressed="false">14 дней</button>
+              <button type="button" data-days="30" aria-pressed="true">30 дней</button>
+              <button type="button" data-days="90" aria-pressed="false">90 дней</button>
+            </div>
+          </div>
+          <div id="dl-out"></div>
+          <p class="hint">Переходы по /r/*: по дням и платформам, без адресов и cookie.</p>
+        </section>
+
+        <section data-view="audit" class="box" aria-labelledby="audit-h" hidden>
+          <div class="box__head"><h2 id="audit-h">Журнал решений</h2><span class="hint">последние 200</span></div>
+          <div class="tbl-wrap"><table class="tbl tbl--stack" id="audit-table"><thead><tr><th>Когда</th><th>Кто</th><th>Что</th><th>Кого</th><th>Подробно</th></tr></thead><tbody></tbody></table></div>
+        </section>
+      </div>
+    </div>
+  </div>
+  <script>
+    import '../../app/admin.js';
+    import { initMenu } from '../../motion/ui';
+    initMenu();
+  </script>
+</Tool>

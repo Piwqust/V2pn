@@ -1,0 +1,53 @@
+---
+import Tool from '../../../layouts/Tool.astro';
+import Mark from '../../../components/Mark.astro';
+---
+<Tool title="Вход для провайдеров" description="Вход и регистрация провайдера V2pn: любой логин и пароль, без почты и Telegram." account={false}>
+  <div class="wrap signin">
+    <form id="signin" class="signin__form" novalidate>
+      <p class="app__crumb"><a href="/providers/">Провайдерам</a></p>
+      <h1>Вход для провайдеров</h1>
+      <p class="lead">Любой логин и пароль. Почта и Telegram не нужны.</p>
+      <noscript><p class="note note--warn">Вход работает со включённым JavaScript. Включите его и обновите страницу.</p></noscript>
+      <div class="field">
+        <label for="login">Логин</label>
+        <input id="login" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" maxlength="32" aria-describedby="login-hint" />
+        <span class="field__hint" id="login-hint">От 3 до 32 латинских букв, цифр и знаков . _ -</span>
+        <span class="field__error" hidden></span>
+      </div>
+      <div class="field">
+        <label for="password">Пароль</label>
+        <input id="password" name="password" type="password" autocomplete="current-password" maxlength="200" aria-describedby="password-hint" />
+        <span class="field__hint" id="password-hint">От 6 символов.</span>
+        <span class="field__error" hidden></span>
+      </div>
+      <div class="signin__btns">
+        <button class="btn btn--lg" type="submit" id="enter" value="login">Войти</button>
+        <button class="btn btn--secondary btn--lg" type="submit" id="register" value="register">Создать аккаунт</button>
+      </div>
+      <p id="status" class="field__error" role="status" aria-live="polite"></p>
+      <p class="hint">Забыли пароль? Модератор сбросит его и покажет новый. Восстановления по почте нет: почты нет.</p>
+    </form>
+    <aside class="signin__side" aria-label="Что дальше">
+      <div class="signin__glass" aria-hidden="true"><Mark class="signin__mark" /></div>
+      <p>Одна форма, и у ваших людей своя вкладка в V2pn. Их подписки идут в ссылке после <b>#</b>: сервер V2pn их не видит.</p>
+    </aside>
+  </div>
+  <script>
+    import '../../../app/login.js';
+    import { initMenu } from '../../../motion/ui';
+    initMenu();
+  </script>
+</Tool>
+
+<style>
+  .signin__glass { position: absolute; inset: 0; }
+  .signin__mark { position: absolute; width: 78%; left: 11%; top: 8%; fill: var(--signal); }
+  .signin__glass::after {
+    content: ''; position: absolute; inset: 0 0 0 54%;
+    background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.18) 0, rgb(255 255 255 / 0.05) 3px, rgb(0 0 0 / 0) 50%, rgb(0 0 0 / 0.32) 20px, rgb(255 255 255 / 0.12) 22px);
+    backdrop-filter: blur(9px) saturate(1.2);
+    box-shadow: -6px 0 0 rgb(0 0 0 / 0.35), inset 1px 0 0 rgb(255 255 255 / 0.35);
+  }
+  .signin__side p { background: var(--tunnel); padding: 1rem 1.1rem; box-shadow: inset 2px 0 0 var(--signal); }
+</style>

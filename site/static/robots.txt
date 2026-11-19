@@ -1,0 +1,6 @@
+User-agent: *
+Allow: /
+Disallow: /admin/
+Disallow: /providers/cabinet/
+Disallow: /providers/login/
+Sitemap: https://v2pn.angleford.co/sitemap-index.xml

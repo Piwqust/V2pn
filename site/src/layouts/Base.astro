@@ -1,0 +1,45 @@
+---
+// The marketing pages and the docs: smooth scroll, reveals, the glass pane between pages (ClientRouter).
+import { ClientRouter } from 'astro:transitions';
+import Head from '../components/Head.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import Mark from '../components/Mark.astro';
+import '../styles/tokens.css';
+import '../styles/base.css';
+
+interface Props {
+  title?: string;
+  description?: string;
+  image?: string;
+  ground?: 'tunnel' | 'paper';
+  noindex?: boolean;
+  jsonLd?: object | null;
+  footer?: 'full' | 'compact' | 'none';
+  lang?: 'ru' | 'en';
+}
+const { ground = 'tunnel', footer = 'full', lang = 'ru', ...head } = Astro.props;
+---
+<!doctype html>
+<html lang={lang} data-ground={ground} transition:animate="none">
+  <head>
+    <Head ground={ground} {...head} />
+    <ClientRouter fallback="swap" />
+  </head>
+  <body>
+    <a class="skip-link" href="#main">К содержанию</a>
+    <div id="curtain" transition:persist="curtain" aria-hidden="true">
+      <div class="curtain__panel"><Mark class="curtain__mark" /></div>
+    </div>
+    <Header />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    {footer !== 'none' && <Footer compact={footer === 'compact'} />}
+    <script>
+      import { start } from '../engine/astro';
+      import { setupMotion } from '../motion/setup';
+      start(setupMotion);
+    </script>
+  </body>
+</html>

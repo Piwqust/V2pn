@@ -1,0 +1,53 @@
+---
+// The finale: links on the mark's three lines (left road, stem, right road), then the lockup at full width.
+import Lockup from './Lockup.astro';
+import { links, site } from '../data/site';
+interface Props { compact?: boolean }
+const { compact = false } = Astro.props;
+const year = new Date().getFullYear();
+---
+<footer class="ftr" lang="ru">
+  <div class="wrap">
+    {!compact && (
+      <div class="grid ftr__cols">
+        <div class="ftr__col on-left">
+          <h2>Приложение</h2>
+          <ul>
+            <li><a class="quiet" href="/download/">Скачать</a></li>
+            <li><a class="quiet" href="/docs/">Документация</a></li>
+            <li><a class="quiet" href="/docs/faq/">Вопросы</a></li>
+            <li><a class="quiet" href={links.changelog} rel="noopener">Что нового</a></li>
+          </ul>
+        </div>
+        <div class="ftr__col ftr__col--stem">
+          <h2>Провайдерам</h2>
+          <ul>
+            <li><a class="quiet" href="/providers/">Своя вкладка в V2pn</a></li>
+            <li><a class="quiet" href="/providers/login/">Вход для провайдеров</a></li>
+            <li><a class="quiet" href="/providers/guide/">Руководство</a></li>
+            <li><a class="quiet" href="/p/configra/">Configra</a></li>
+          </ul>
+        </div>
+        <div class="ftr__col on-right">
+          <h2>Проект</h2>
+          <ul>
+            <li><a class="quiet" href={site.repo} rel="noopener">Код на GitHub</a></li>
+            <li><a class="quiet" href={links.releases} rel="noopener">Все версии</a></li>
+            <li><a class="quiet" href={links.issues} rel="noopener">Сообщить о проблеме</a></li>
+            <li><a class="quiet" href={links.upstream} rel="noopener">v2rayN, на котором он построен</a></li>
+          </ul>
+        </div>
+      </div>
+    )}
+    {!compact && <div class="ftr__mark" aria-hidden="true"><Lockup /></div>}
+    <div class="ftr__legal">
+      <span>© {year} V2pn · <a class="quiet" href={links.license} rel="noopener">GPL-3.0</a>{site.version && <> · версия <span class="tnum">{site.version}</span></>}</span>
+      <span>V2pn не продаёт серверы. Названия и логотипы продуктов принадлежат их владельцам.</span>
+    </div>
+  </div>
+</footer>
+
+<style>
+  .ftr__col--stem { grid-column: 5 / span 4; }
+  @media (max-width: 767px) { .ftr__col--stem { grid-column: 1 / -1; } }
+</style>

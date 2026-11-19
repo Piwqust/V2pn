@@ -1,0 +1,105 @@
+---
+// The documentation and the provider guide: Paper, the sections on the left road, the article on the stem, its
+// contents on the right road.
+import { getCollection } from 'astro:content';
+import Base from './Base.astro';
+import Arrow from '../components/Arrow.astro';
+import '../styles/prose.css';
+
+interface Heading { depth: number; slug: string; text: string }
+interface Props {
+  title: string;
+  description: string;
+  headings?: Heading[];
+  lang?: 'ru' | 'en';
+  kicker?: string;
+  updated?: string;
+}
+const { title, description, headings = [], lang = 'ru', kicker = 'Документация' } = Astro.props;
+const docs = (await getCollection('docs')).sort((a, b) => a.data.order - b.data.order);
+const here = Astro.url.pathname;
+const index = docs.findIndex((d) => `/docs/${d.id}/` === here);
+const prev = index > 0 ? docs[index - 1] : null;
+const next = index >= 0 && index < docs.length - 1 ? docs[index + 1] : null;
+const toc = headings.filter((h) => h.depth === 2);
+const en = lang === 'en';
+---
+<Base title={title} description={description} ground="paper" footer="compact" lang={lang}>
+  <div class="wrap docs">
+    <nav class="docs__nav" aria-label={en ? 'Documentation' : 'Документация'}>
+      <p class="docs__group">{en ? 'For people (in Russian)' : 'Пользователям'}</p>
+      <ul role="list" lang="ru">
+        <li><a class="docs__link" href="/docs/" aria-current={here === '/docs/' ? 'page' : undefined}>Обзор</a></li>
+        {docs.map((d) => <li><a class="docs__link" href={`/docs/${d.id}/`} aria-current={here === `/docs/${d.id}/` ? 'page' : undefined}>{d.data.title}</a></li>)}
+      </ul>
+      <p class="docs__group">{en ? 'For providers' : 'Провайдерам'}</p>
+      <ul role="list">
+        <li><a class="docs__link" href="/providers/guide/" aria-current={here === '/providers/guide/' ? 'page' : undefined} lang="ru">Руководство</a></li>
+        <li><a class="docs__link" href="/providers/guide/en/" aria-current={here === '/providers/guide/en/' ? 'page' : undefined} lang="en">Guide in English</a></li>
+        <li><a class="docs__link" href="/providers/guide/partner.schema.json">partner.schema.json</a></li>
+      </ul>
+    </nav>
+
+    <article class="docs__article">
+      <header class="docs__head">
+        <p class="label">{kicker}</p>
+        <h1 class="t-xl">{title}</h1>
+        <p class="docs__desc">{description}</p>
+      </header>
+      <div class="prose">
+        <slot />
+      </div>
+      {(prev || next) && (
+        <nav class="docs__pager" aria-label="Соседние страницы" lang="ru">
+          {prev ? <a class="row-link docs__pg" href={`/docs/${prev.id}/`}><span class="label">Назад</span><span class="t-m">{prev.data.title}</span></a> : <span></span>}
+          {next && <a class="row-link docs__pg docs__pg--next" href={`/docs/${next.id}/`}><span class="label">Дальше</span><span class="t-m">{next.data.title}</span><Arrow /></a>}
+        </nav>
+      )}
+    </article>
+
+    {toc.length > 1 && (
+      <aside class="docs__toc" aria-label={en ? 'On this page' : 'На этой странице'}>
+        <p class="docs__group">{en ? 'On this page' : 'На этой странице'}</p>
+        <ul role="list">{toc.map((h) => <li><a class="quiet" href={`#${h.slug}`}>{h.text}</a></li>)}</ul>
+      </aside>
+    )}
+  </div>
+</Base>
+
+<style>
+  .docs {
+    display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); column-gap: var(--col-gap);
+    padding-top: calc(var(--header-h) + var(--u) * 7); padding-bottom: calc(var(--u) * 12); align-items: start;
+  }
+  .docs__nav { grid-column: 1 / span 3; position: sticky; top: calc(var(--header-h) + 1.5rem); display: grid; gap: 0.5rem; font-size: var(--t-s); }
+  .docs__nav ul, .docs__toc ul { list-style: none; padding: 0; display: grid; }
+  .docs__group { font-size: var(--t-xs); font-weight: 600; color: var(--c-muted); margin-top: 1rem; }
+  .docs__group:first-child { margin-top: 0; }
+  .docs__link { position: relative; display: block; padding: 0.4rem 0 0.4rem 0.9rem; color: var(--c-muted); border-left: 1px solid var(--c-line); transition: color 0.2s var(--e-standard); }
+  .docs__link::before { content: ''; position: absolute; left: -1px; bottom: 0; width: 3px; height: 100%; background: var(--signal); scale: 1 0; transform-origin: bottom; transition: scale 0.35s var(--e-standard); }
+  @media (hover: hover) { .docs__link:hover { color: var(--c-fg); } .docs__link:hover::before { scale: 1 0.6; } }
+  .docs__link:focus-visible { color: var(--c-fg); }
+  .docs__link[aria-current='page'] { color: var(--c-fg); font-weight: 600; }
+  .docs__link[aria-current='page']::before { scale: 1 1; }
+  .docs__article { grid-column: 5 / span 6; min-width: 0; }
+  .docs__head { display: grid; gap: 1rem; padding-bottom: calc(var(--u) * 4); margin-bottom: calc(var(--u) * 4); border-bottom: 1px solid var(--c-line); }
+  .docs__desc { font-size: var(--t-m); line-height: 1.4; color: var(--c-muted); max-width: 40ch; }
+  .docs__toc { grid-column: 11 / -1; position: sticky; top: calc(var(--header-h) + 1.5rem); font-size: var(--t-xs); display: grid; gap: 0.5rem; }
+  .docs__toc li a { display: block; padding: 0.3rem 0; }
+  .docs__pager { display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); margin-top: calc(var(--u) * 8); }
+  .docs__pg { grid-template-columns: 1fr; gap: 0.3rem; }
+  .docs__pg--next { grid-template-columns: 1fr auto; text-align: left; }
+  .docs__pg--next .label { grid-column: 1; }
+  .docs__pg--next :global(.arr) { grid-row: 1 / span 2; grid-column: 2; align-self: center; }
+  @media (max-width: 1100px) {
+    .docs__nav { grid-column: 1 / span 4; }
+    .docs__article { grid-column: 5 / -1; }
+    .docs__toc { display: none; }
+  }
+  @media (max-width: 767px) {
+    .docs { padding-top: calc(var(--header-h) + 1.5rem); }
+    .docs__nav { position: static; grid-column: 1 / -1; order: 2; margin-top: calc(var(--u) * 8); padding-top: 1.5rem; border-top: 1px solid var(--c-line); }
+    .docs__article { grid-column: 1 / -1; }
+    .docs__pager { grid-template-columns: 1fr; }
+  }
+</style>

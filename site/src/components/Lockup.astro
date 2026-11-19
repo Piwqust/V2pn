@@ -1,0 +1,11 @@
+---
+// V2pn's horizontal lockup: the fork and the drawn wordmark (brand book, chapter 02). Never typed in a font.
+import brand from '../data/brand.json';
+interface Props { title?: string; class?: string }
+const { title, class: cls } = Astro.props;
+const { w, h, wm } = brand.lockup;
+---
+<svg class={cls} viewBox={`0 0 ${w} ${h}`} role={title ? 'img' : undefined} aria-hidden={title ? undefined : 'true'} aria-label={title}>
+  <polygon class="lockup__mark" points={brand.markPoints}></polygon>
+  <path class="lockup__wm" transform={`translate(${wm.tx} ${wm.ty}) scale(${wm.s})`} d={wm.d}></path>
+</svg>

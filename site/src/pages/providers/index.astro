@@ -1,0 +1,226 @@
+---
+import { Picture } from 'astro:assets';
+import Base from '../../layouts/Base.astro';
+import Arrow from '../../components/Arrow.astro';
+import { shots } from '../../data/site';
+import accent from '../../assets/shots/configra-accent-light.webp';
+import scene from '../../assets/shots/configra-scene-dark.webp';
+
+const levels = [
+  { name: 'Подписка как есть', what: 'Ничего', text: 'Ссылка работает сразу. Название, трафик, срок и «Поддержка» V2pn берёт из заголовков, которые вы уже отдаёте Happ и Hiddify. Вкладки нет: это обычная подписка.' },
+  { name: 'Своя вкладка', what: 'Одна форма', text: 'Логотип, цвета, фон, своя страница и кнопка «Подключить в V2pn» для бота. Публикуется сразу после «Опубликовать», без заявки и ожидания.' },
+  { name: 'Особые права', what: 'После модератора', text: 'Вход по коду из бота, свои кнопки, скрытые адреса серверов и свои правила маршрутизации. Пока модератор смотрит, остальное уже работает.' },
+];
+const way = [
+  { t: 'Логин и пароль', d: 'Любые. Почта и Telegram не нужны.' },
+  { t: 'Одна форма', d: 'Название, ссылка на подписку, логотип и цвета. Рядом живое окно V2pn в светлой и тёмной теме.' },
+  { t: '«Опубликовать»', d: 'Сервер V2pn проверит ссылку и сам найдёт ваш домен. Партнёр работает сразу.' },
+  { t: 'Кнопка в боте', d: 'Одна ссылка для всех ваших людей: бот добавляет в её конец подписку человека.' },
+  { t: 'Особые права', d: 'Если нужны. Ждут модератора, решение видно в форме.' },
+];
+const headers = ['profile-title', 'subscription-userinfo', 'profile-update-interval', 'support-url', 'profile-web-page-url', 'announce', 'sub-info-text', 'sub-expire', 'banner-text', 'subscription-autoconnect', 'subscriptions-sort-type', 'new-url'];
+const faq = [
+  { q: 'Сколько это стоит?', a: 'Нисколько: и V2pn, и вкладка бесплатны. Ваши люди платят только вам.' },
+  { q: 'Что уходит на сервер V2pn?', a: 'Ваша форма: название, оформление и ваша ссылка на подписку для проверки. Подписки ваших людей туда не попадают: в ссылке кнопки они стоят после #, а эту часть браузер не отправляет.' },
+  { q: 'Кто увидит мою вкладку?', a: 'Только люди, которые пришли от вас: по кнопке в боте или по коду из него. Кто вставил ссылку сам, получает обычную подписку.' },
+  { q: 'Что V2pn никогда не делает?', a: 'Не продаёт серверы, не собирает данные о людях и не показывает ваш бренд тем, кто пришёл не от вас.' },
+  { q: 'Можно поменять оформление потом?', a: 'Да, в любой момент на странице «Мой партнёр». Изменения уходят к людям сразу после «Сохранить».' },
+  { q: 'Что если я забуду пароль?', a: 'Напишите модератору V2pn: он сбросит пароль или снимет партнёра. Подписка останется работать как обычная.' },
+];
+const remnawave = `{
+  "name": "V2pn",
+  "conditions": [
+    { "headerName": "user-agent",
+      "operator": "CONTAINS", "value": "v2pn" }
+  ],
+  "responseType": "XRAY_BASE64",
+  "responseModifications": { "headers": [
+    { "key": "sub-expire", "value": "1" },
+    { "key": "subscription-autoconnect", "value": "1" },
+    { "key": "subscriptions-sort-type", "value": "ping" }
+  ] }
+}`;
+---
+<Base title="Провайдерам: своя вкладка в V2pn" description="Ваша VPN-подписка в V2pn со своей вкладкой: логотип, цвета, тариф и кнопка «Подключить в V2pn» для бота. Одна форма, бесплатно.">
+  <section class="pv-hero" aria-labelledby="pv-h">
+    <div class="wrap grid">
+      <div class="pv-hero__text">
+        <p class="label" data-reveal="fade" data-intro>Провайдерам</p>
+        <h1 id="pv-h" class="t-xl" data-split="lines" data-intro>Ваша подписка в V2pn со своей вкладкой</h1>
+        <p class="lead" data-reveal="up" data-intro data-delay="0.25">V2pn бесплатен, работает на Windows и macOS и открывает вашу ссылку как есть. Заполните одну форму, и у ваших людей появится вкладка с вашим логотипом и цветами.</p>
+        <div class="pv-hero__act" data-reveal="up" data-intro data-delay="0.35">
+          <a class="btn btn--lg" href="/providers/login/" data-astro-reload>Создать партнёра<Arrow class="btn__arr" /></a>
+          <a class="btn btn--text" href="/providers/guide/"><span>Руководство провайдера</span></a>
+        </div>
+      </div>
+      <figure class="shot pv-hero__shot" data-reveal="branch" data-intro data-delay="0.2">
+        <Picture src={accent} formats={['avif', 'webp']} fallbackFormat="webp" widths={[640, 960, 1280]} sizes="(max-width: 767px) 92vw, 50vw" alt={shots.partnerAccent.alt} />
+        <figcaption>Вкладка Configra рядом с вкладкой V2pn, в заголовке окна.</figcaption>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section levels" aria-labelledby="levels-h">
+    <div class="wrap grid">
+      <h2 id="levels-h" class="t-l on-left">Три уровня. Первый не требует ничего</h2>
+      <ol class="levels__list" role="list">
+        {levels.map((l, i) => (
+          <li class="levels__row" data-reveal="up">
+            <span class="levels__n tnum" aria-hidden="true">{i + 1}</span>
+            <h3 class="t-m">{l.name}</h3>
+            <span class="levels__what">{l.what}</span>
+            <p class="muted">{l.text}</p>
+          </li>
+        ))}
+      </ol>
+    </div>
+  </section>
+
+  <!-- The link: everything before # reaches the server, the person's subscription after it stays behind glass. -->
+  <section class="section hash" aria-labelledby="hash-h" data-ground="tunnel">
+    <div class="wrap grid">
+      <div class="hash__text">
+        <h2 id="hash-h" class="t-l" data-split="lines">Одна ссылка из вашего бота. Подписка идёт после #</h2>
+        <p class="muted measure" data-reveal="up">Бот добавляет личную подписку человека в конец вашей ссылки. Браузер не отправляет на сервер то, что стоит после #, поэтому сервер V2pn её не видит: она уходит прямо в V2pn на компьютере человека.</p>
+      </div>
+      <figure class="url" data-reveal="branch" aria-labelledby="url-cap">
+        <div class="url__line mono" aria-hidden="true">
+          <span class="url__open">https://v2pn.angleford.co/p/ваш-id/</span><span class="url__hash">#sub=https://ваш-домен/s/AbC123xYz…</span>
+        </div>
+        <div class="url__legend t-xs">
+          <span><i class="url__k url__k--open"></i>Это видит сервер V2pn</span>
+          <span><i class="url__k url__k--hash"></i>Это остаётся в браузере и уходит в V2pn</span>
+        </div>
+        <figcaption id="url-cap" class="sr-only">Ссылка вида v2pn.angleford.co/p/ваш-id/#sub= и подписка человека. Часть до знака # видит сервер V2pn, часть после него остаётся в браузере.</figcaption>
+      </figure>
+      <ol class="people" role="list">
+        <li data-reveal="up"><h3 class="t-m">Человек жмёт кнопку</h3><p class="muted t-s">«Подключить в V2pn» в боте или в личном кабинете ведёт на вашу страницу с его подпиской в ссылке.</p></li>
+        <li data-reveal="up" data-delay="0.08"><h3 class="t-m">V2pn уже стоит</h3><p class="muted t-s">Он открывается и добавляет подписку, а в заголовке окна появляется ваша вкладка.</p></li>
+        <li data-reveal="up" data-delay="0.16"><h3 class="t-m">V2pn ещё нет</h3><p class="muted t-s">Страница даёт скачать V2pn для его системы. После установки он жмёт ту же кнопку ещё раз.</p></li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="section panel" aria-labelledby="panel-h">
+    <div class="wrap grid">
+      <div class="panel__text">
+        <h2 id="panel-h" class="t-l" data-split="lines">Ваша панель уже готова</h2>
+        <p class="muted" data-reveal="up">V2pn читает заголовки, которые вы отдаёте Happ, Hiddify, INCY и v2RayTun: название, трафик и срок, баннер, напоминание о продлении, порядок серверов. Для Remnawave хватит одного правила ответа.</p>
+        <ul class="hdrs" role="list" data-reveal="up">{headers.map((h) => <li class="mono">{h}</li>)}</ul>
+        <p class="t-s"><a class="link" href="/providers/guide/#заголовки-подписки">Что делает каждый заголовок</a></p>
+      </div>
+      <figure class="panel__code" data-reveal="branch">
+        <figcaption class="label">Remnawave · правило ответа для V2pn</figcaption>
+        <pre class="code"><code>{remnawave}</code></pre>
+      </figure>
+    </div>
+  </section>
+
+  <section class="section way" aria-labelledby="way-h" data-ground="paper">
+    <div class="wrap grid">
+      <h2 id="way-h" class="t-xl on-left way__h" data-split="lines">Как сделать вкладку</h2>
+      <ol class="way__list" role="list">
+        {way.map((w, i) => (
+          <li data-reveal="up" data-delay={String(i * 0.05)}><span class="way__n tnum" aria-hidden="true">{i + 1}</span><h3 class="t-m">{w.t}</h3><p class="muted">{w.d}</p></li>
+        ))}
+      </ol>
+      <div class="way__act">
+        <a class="btn btn--lg" href="/providers/login/" data-astro-reload>Создать партнёра<Arrow class="btn__arr" /></a>
+        <p class="t-s muted">Уже есть аккаунт? Там же «Войти».</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section scene" aria-labelledby="scene-h">
+    <div class="wrap grid">
+      <figure class="shot scene__shot" data-reveal="clip">
+        <Picture src={scene} formats={['avif', 'webp']} fallbackFormat="webp" widths={[640, 960, 1280]} sizes="(max-width: 767px) 92vw, 58vw" alt={shots.partnerScene.alt} loading="lazy" />
+      </figure>
+      <div class="scene__text">
+        <h2 id="scene-h" class="t-l">Configra, первый провайдер</h2>
+        <p class="muted">У Configra фон на оранжевом градиенте вместо карты, вход по коду из бота и своя страница, с которой подписка открывается в V2pn сразу с её вкладкой.</p>
+        <a class="btn btn--ghost" href="/p/configra/" data-astro-reload>Страница Configra<Arrow class="btn__arr" /></a>
+      </div>
+    </div>
+  </section>
+
+  <section class="section faq" aria-labelledby="pfaq-h">
+    <div class="wrap grid">
+      <h2 id="pfaq-h" class="t-l on-left">Вопросы провайдеров</h2>
+      <dl class="faq__list">
+        {faq.map((f) => (<div class="faq__item" data-reveal="up"><dt class="t-m">{f.q}</dt><dd class="muted">{f.a}</dd></div>))}
+      </dl>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .pv-hero { padding-top: calc(var(--header-h) + var(--u) * 9); padding-bottom: calc(var(--u) * 10); }
+  .pv-hero .grid { align-items: center; row-gap: 3rem; }
+  .pv-hero__text { grid-column: 1 / span 6; display: grid; gap: 1.5rem; }
+  .pv-hero__act { display: flex; flex-wrap: wrap; gap: 1rem 1.75rem; align-items: center; margin-top: 0.5rem; }
+  .pv-hero__shot { grid-column: 8 / -1; margin-right: calc((min(100vw - 2 * var(--margin), var(--max)) - 100vw) / 2); }
+  .pv-hero__shot :global(img) { border-radius: 14px 0 0 14px; }
+
+  .levels__list { grid-column: 5 / -1; list-style: none; padding: 0; border-top: 1px solid var(--c-line); }
+  .levels__row { display: grid; grid-template-columns: 3rem minmax(0, 4fr) minmax(0, 3fr) minmax(0, 7fr); gap: 0.5rem 1.5rem; align-items: baseline; padding: 1.6rem 0; border-bottom: 1px solid var(--c-line); }
+  .levels__n { font: 200 2.2rem/1 var(--f-display); color: var(--signal); }
+  .levels__what { font-size: var(--t-s); font-weight: 600; }
+  .levels__what::before { content: ''; display: inline-block; width: 0.45rem; height: 0.45rem; margin-right: 0.5rem; background: var(--signal); vertical-align: 0.15em; }
+
+  .hash__text { grid-column: 1 / span 6; display: grid; gap: 1.25rem; align-content: start; }
+  .url { grid-column: 1 / -1; margin-top: calc(var(--u) * 6); }
+  .url__line { display: flex; flex-wrap: wrap; font-size: clamp(0.95rem, 0.5rem + 1.25vw, 1.6rem); line-height: 1; border: 1px solid var(--c-line); }
+  .url__open { padding: 1.4rem 1.2rem; background: var(--c-raised); color: #ECECF1; }
+  .url__hash {
+    position: relative; padding: 1.4rem 1.2rem; color: #ECECF1; flex: 1; min-width: 14ch;
+    background: linear-gradient(110deg, var(--signal), #b81f0a 55%, var(--flare));
+    filter: blur(0); overflow: hidden;
+  }
+  /* The part after # behind ribbed glass: light gets through, the details stay in the browser. */
+  .url__hash::after {
+    content: ''; position: absolute; inset: 0;
+    background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.2) 0, rgb(255 255 255 / 0.05) 2px, rgb(0 0 0 / 0) 50%, rgb(0 0 0 / 0.3) 15px, rgb(255 255 255 / 0.14) 16px);
+    backdrop-filter: blur(5px);
+  }
+  .url__legend { display: flex; flex-wrap: wrap; gap: 0.6rem 2rem; margin-top: 1rem; color: var(--c-muted); }
+  .url__k { display: inline-block; width: 0.8rem; height: 0.8rem; margin-right: 0.5rem; vertical-align: -0.1em; }
+  .url__k--open { background: var(--graphite-2); box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.3); }
+  .url__k--hash { background: var(--signal); }
+  .people { grid-column: 1 / -1; list-style: none; padding: 0; margin-top: calc(var(--u) * 8); display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--col-gap); }
+  .people li { border-top: 2px solid var(--c-fg); padding-top: 1rem; display: grid; gap: 0.5rem; align-content: start; }
+
+  .panel .grid { align-items: start; }
+  .panel__text { grid-column: 1 / span 6; display: grid; gap: 1.25rem; }
+  .hdrs { list-style: none; padding: 0; display: flex; flex-wrap: wrap; gap: 0.4rem; }
+  .hdrs li { padding: 0.3rem 0.55rem; border: 1px solid var(--c-line); font-size: 0.8125rem; }
+  .panel__code { grid-column: 8 / -1; display: grid; gap: 0.75rem; }
+  .code { margin: 0; padding: 1.25rem; background: var(--graphite); border: 1px solid var(--c-line); overflow-x: auto; font: 0.8125rem/1.65 var(--f-mono); color: #D7D5DC; }
+
+  .way { background: var(--c-bg); color: var(--c-fg); }
+  .way__h { align-self: start; }
+  .way__list { grid-column: 5 / -1; list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: calc(var(--u) * 4) var(--col-gap); }
+  .way__list li { display: grid; gap: 0.5rem; align-content: start; }
+  .way__n { font: 200 2.6rem/1 var(--f-display); color: var(--signal-deep); }
+  .way__act { grid-column: 5 / -1; margin-top: calc(var(--u) * 7); display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; align-items: center; }
+
+  .scene .grid { align-items: center; }
+  .scene__shot { grid-column: 1 / span 8; }
+  .scene__text { grid-column: 10 / -1; display: grid; gap: 1.25rem; justify-items: start; }
+
+
+  @media (max-width: 1023px) {
+    .levels__row { grid-template-columns: 2.5rem 1fr; }
+    .levels__what, .levels__row p { grid-column: 2; }
+    .people { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 767px) {
+    .pv-hero__text, .pv-hero__shot, .levels__list, .hash__text, .panel__text, .panel__code, .way__list, .way__act, .scene__shot, .scene__text, .faq__list { grid-column: 1 / -1; }
+    .pv-hero__shot { margin-right: calc(-1 * var(--margin)); }
+    .levels__list, .way__list, .faq__list { margin-top: 1.5rem; }
+    .panel__code { margin-top: 2rem; }
+    .scene__text { margin-top: 2rem; }
+    .faq__list { grid-template-columns: 1fr; }
+    .url__line { font-size: 0.875rem; }
+  }
+</style>

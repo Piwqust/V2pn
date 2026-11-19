@@ -1,0 +1,34 @@
+---
+// <head> lines every page shares: title, description, canonical, Open Graph, fonts, the flags script.
+import { site } from '../data/site';
+interface Props { title?: string; description?: string; image?: string; ground?: 'tunnel' | 'paper'; noindex?: boolean; jsonLd?: object | null }
+const { title, description = site.description, image = '/share.png', ground = 'tunnel', noindex = false, jsonLd = null } = Astro.props;
+const fullTitle = title ? `${title} · V2pn` : `V2pn · ${site.tagline}`;
+const canonical = new URL(Astro.url.pathname, Astro.site ?? site.url).href;
+const ogImage = new URL(image, Astro.site ?? site.url).href;
+---
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>{fullTitle}</title>
+<meta name="description" content={description} />
+<link rel="canonical" href={canonical} />
+{noindex && <meta name="robots" content="noindex" />}
+<meta name="theme-color" content={ground === 'paper' ? '#F2F0EC' : '#0B0B0D'} />
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+<link rel="icon" href="/favicon.png" type="image/png" sizes="192x192" />
+<link rel="apple-touch-icon" href="/favicon.png" />
+<link rel="sitemap" href="/sitemap-index.xml" />
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="V2pn" />
+<meta property="og:locale" content="ru_RU" />
+<meta property="og:title" content={fullTitle} />
+<meta property="og:description" content={description} />
+<meta property="og:url" content={canonical} />
+<meta property="og:image" content={ogImage} />
+<meta property="og:image:width" content="1200" />
+<meta property="og:image:height" content="630" />
+<meta name="twitter:card" content="summary_large_image" />
+<link rel="preload" href="/assets/fonts/inter-tight-cyrillic.woff2" as="font" type="font/woff2" crossorigin />
+<link rel="preload" href="/assets/fonts/inter-cyrillic.woff2" as="font" type="font/woff2" crossorigin />
+{jsonLd && <script type="application/ld+json" set:html={JSON.stringify(jsonLd)} />}
+<script src="/assets/head.js" is:inline></script>

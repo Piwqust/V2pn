@@ -1,0 +1,108 @@
+/* V2pn's tokens: the brand book (docs/brand/v2pn-brand-book.html) and the app's own colours. DESIGN.md explains
+   every value. Names with --c-* follow the ground (tunnel or paper); the rest are fixed. */
+
+@font-face { font-family: 'Inter Tight'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/assets/fonts/inter-tight-cyrillic.woff2') format('woff2'); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: 'Inter Tight'; font-style: normal; font-weight: 200 800; font-display: swap; src: url('/assets/fonts/inter-tight-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400 600; font-display: swap; src: url('/assets/fonts/inter-cyrillic.woff2') format('woff2'); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: 'Inter'; font-style: normal; font-weight: 400 600; font-display: swap; src: url('/assets/fonts/inter-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 500; font-display: swap; src: url('/assets/fonts/jetbrains-mono-cyrillic.woff2') format('woff2'); unicode-range: U+0301, U+0400-045F, U+0490-0491, U+04B0-04B1, U+2116; }
+@font-face { font-family: 'JetBrains Mono'; font-style: normal; font-weight: 400 500; font-display: swap; src: url('/assets/fonts/jetbrains-mono-latin.woff2') format('woff2'); unicode-range: U+0000-00FF, U+0131, U+0152-0153, U+02BB-02BC, U+02C6, U+02DA, U+02DC, U+0304, U+0308, U+0329, U+2000-206F, U+20AC, U+2122, U+2191, U+2193, U+2212, U+2215, U+FEFF, U+FFFD; }
+
+:root {
+  /* Brand colours (chapter 03) */
+  --tunnel: #0B0B0D;
+  --graphite: #19191E;
+  --graphite-2: #24242B;
+  --paper: #F2F0EC;
+  --paper-2: #E4E1DB;
+  --signal: #FF3D1F;
+  --signal-deep: #C42A10; /* Signal as text on Paper: 5.0:1 */
+  --flare: #FF8A2A;
+  --protected: #3DD68C;
+  --protected-deep: #12784A;
+  --caution: #F2B84B;
+  --caution-deep: #8A5A00;
+  --white: #FFFFFF;
+
+  /* The ground. html[data-ground] and any [data-ground] section switch these four together. */
+  --c-bg: var(--tunnel);
+  --c-fg: #ECECF1;
+  --c-muted: #9B9BA8;
+  --c-line: rgb(255 255 255 / 0.12);
+  --c-raised: var(--graphite);
+  --c-raised-2: var(--graphite-2);
+  --c-accent-text: var(--signal);
+  --c-ok: var(--protected);
+  --c-warn: var(--caution);
+  --c-curtain: var(--tunnel);
+
+  /* Type */
+  --f-display: 'Inter Tight', 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-body: 'Inter', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --f-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
+
+  --t-mega: clamp(3.4rem, 0.6rem + 11.2vw, 13rem);
+  --t-num: clamp(5rem, 2rem + 12vw, 14rem);
+  --t-xl: clamp(2.4rem, 1.2rem + 4.4vw, 5.6rem);
+  --t-l: clamp(1.6rem, 1.2rem + 1.6vw, 2.6rem);
+  --t-m: clamp(1.2rem, 1.1rem + 0.45vw, 1.5rem);
+  --t-body: 1.0625rem;
+  --t-s: 0.9375rem;
+  --t-xs: 0.8125rem;
+
+  /* Space and grid. Thirteen columns: one u of the mark is four of them (DESIGN.md). */
+  --u: clamp(0.5rem, 0.35rem + 0.6vw, 1rem);
+  --gutter: clamp(1rem, 0.4rem + 1.8vw, 2.5rem);
+  --margin: clamp(1rem, 0.2rem + 3vw, 3.5rem);
+  --col-gap: clamp(0.75rem, 0.3rem + 1.1vw, 1.5rem);
+  --cols: 13;
+  --max: 1520px;
+  --header-h: 4.5rem;
+
+  /* Shape: no radius; one 45° cut from the mark. */
+  --radius: 0px;
+  --cut: 10px;
+
+  /* Motion (chapter 08) */
+  --e-standard: cubic-bezier(0.2, 0, 0, 1);
+  --e-glass: cubic-bezier(0.7, 0, 0.2, 1);
+  --e-exit: cubic-bezier(0.4, 0, 1, 1);
+
+  /* Layers */
+  --z-content: 1;
+  --z-header: 50;
+  --z-menu: 60;
+  --z-curtain: 90;
+
+  color-scheme: dark;
+}
+
+[data-ground='paper'] {
+  --c-bg: var(--paper);
+  --c-fg: var(--tunnel);
+  --c-muted: #5F5C57;
+  --c-line: rgb(11 11 13 / 0.14);
+  --c-raised: #FBFAF8;
+  --c-raised-2: var(--paper-2);
+  --c-accent-text: var(--signal-deep);
+  --c-ok: var(--protected-deep);
+  --c-warn: var(--caution-deep);
+  color-scheme: light;
+}
+
+[data-ground='tunnel'] {
+  --c-bg: var(--tunnel);
+  --c-fg: #ECECF1;
+  --c-muted: #9B9BA8;
+  --c-line: rgb(255 255 255 / 0.12);
+  --c-raised: var(--graphite);
+  --c-raised-2: var(--graphite-2);
+  --c-accent-text: var(--signal);
+  --c-ok: var(--protected);
+  --c-warn: var(--caution);
+  color-scheme: dark;
+}
+
+@media (max-width: 767px) {
+  :root { --cols: 4; --header-h: 3.75rem; --cut: 8px; }
+}

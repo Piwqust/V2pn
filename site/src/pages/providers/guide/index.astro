@@ -1,0 +1,16 @@
+---
+// The provider guide in Russian, rendered from docs/partners/README.ru.md (edit it there).
+import { getEntry, render } from 'astro:content';
+import Docs from '../../../layouts/Docs.astro';
+const entry = await getEntry('guide', 'ru');
+if (!entry) throw new Error('docs/partners/README.ru.md is missing');
+const { Content, headings } = await render(entry);
+---
+<Docs title="V2pn для провайдеров" kicker="Руководство провайдера" description="Ваша подписка в V2pn: заголовки, которые он читает, своя вкладка, кнопка для бота, вход по коду и особые права." headings={headings.filter((h) => h.depth > 1)}>
+  <div class="guide"><Content /></div>
+</Docs>
+
+<style>
+  /* The guide's own title and its language link are in the page head already. */
+  .guide :global(h1), .guide :global(h1 + p) { display: none; }
+</style>

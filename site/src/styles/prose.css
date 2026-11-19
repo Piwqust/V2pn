@@ -1,0 +1,33 @@
+/* Reading on Paper: the docs and the provider guide. 17 px text, a 64-character measure, headings that tighten as
+   they grow, tables that stack on a phone, code on Tunnel. */
+
+.prose { font-size: var(--t-body); line-height: 1.62; max-width: 68ch; }
+.prose > * + * { margin-top: 1.1em; }
+.prose h2 {
+  font: 600 var(--t-l)/1.1 var(--f-display); letter-spacing: -0.028em;
+  margin-top: 2.4em; padding-top: 0.6em; border-top: 1px solid var(--c-line); scroll-margin-top: calc(var(--header-h) + 1.5rem);
+}
+.prose h3 { font: 600 1.25rem/1.25 var(--f-display); letter-spacing: -0.015em; margin-top: 1.9em; scroll-margin-top: calc(var(--header-h) + 1.5rem); }
+.prose h4 { font: 600 1.05rem/1.3 var(--f-body); margin-top: 1.6em; }
+.prose h2 + *, .prose h3 + *, .prose h4 + * { margin-top: 0.6em; }
+.prose > :first-child { margin-top: 0; }
+.prose h2:first-child { border-top: 0; padding-top: 0; }
+.prose strong { font-weight: 600; }
+.prose ul, .prose ol { padding-left: 1.35em; }
+.prose li + li { margin-top: 0.4em; }
+.prose ul li::marker { color: var(--signal); content: '■  '; font-size: 0.7em; }
+.prose ol li::marker { color: var(--c-accent-text); font-weight: 600; font-variant-numeric: tabular-nums; }
+.prose code { font-family: var(--f-mono); font-size: 0.84em; padding: 0.08em 0.32em; background: rgb(11 11 13 / 0.07); overflow-wrap: anywhere; }
+.prose pre {
+  margin-top: 1.2em; padding: 1rem 1.15rem; overflow-x: auto; background: var(--tunnel); color: #E4E4EA;
+  font: 0.84rem/1.65 var(--f-mono); box-shadow: inset 3px 0 0 var(--signal);
+}
+.prose pre code { padding: 0; background: none; font-size: inherit; color: inherit; overflow-wrap: normal; }
+.prose blockquote { padding: 0.2em 0 0.2em 1.1em; box-shadow: inset 3px 0 0 var(--c-line); color: var(--c-muted); }
+.prose hr { border: 0; border-top: 1px solid var(--c-line); margin-block: 2.4em; }
+.prose img { border: 1px solid var(--c-line); }
+.prose table { width: 100%; border-collapse: collapse; font-size: var(--t-s); line-height: 1.5; display: block; overflow-x: auto; }
+.prose th, .prose td { text-align: left; vertical-align: top; padding: 0.65rem 1rem 0.65rem 0; border-bottom: 1px solid var(--c-line); }
+.prose th { font-weight: 600; color: var(--c-muted); font-size: var(--t-xs); border-bottom-color: var(--c-fg); }
+.prose td code { white-space: nowrap; }
+.prose kbd { background: var(--white); }

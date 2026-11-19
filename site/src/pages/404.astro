@@ -1,0 +1,45 @@
+---
+// The fork where neither road leads to this page: both ends are real links.
+import Base from '../layouts/Base.astro';
+import brand from '../data/brand.json';
+---
+<Base title="Здесь дороги нет" description="Такой страницы на сайте V2pn нет." noindex footer="compact">
+  <section class="nf" aria-labelledby="nf-h">
+    <div class="wrap nf__in">
+      <div class="nf__fork" aria-hidden="true">
+        <svg viewBox="-2 -2 108 150" preserveAspectRatio="xMidYMax meet"><polygon points={brand.markPoints}></polygon><rect x="32" y="111" width="32" height="40"></rect></svg>
+      </div>
+      <a class="nf__road nf__road--left" href="/"><span class="label">Напрямую</span><span class="nf__go">На главную</span></a>
+      <a class="nf__road nf__road--right" href="/docs/"><span class="label">Через сервер</span><span class="nf__go">В документацию</span></a>
+      <div class="nf__text">
+        <p class="label mono">404</p>
+        <h1 id="nf-h" class="t-xl" data-split="lines" data-intro>Здесь дороги нет</h1>
+        <p class="lead muted" data-reveal="up" data-intro data-delay="0.2">Такой страницы на сайте нет. Обе дороги наверху ведут туда, где есть.</p>
+      </div>
+    </div>
+  </section>
+</Base>
+
+<style>
+  .nf { min-height: 100svh; padding-top: var(--header-h); display: grid; }
+  .nf__in { position: relative; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); column-gap: var(--col-gap); align-items: end; padding-block: 2rem 4rem; }
+  .nf__fork { grid-column: 5 / span 5; grid-row: 1; position: relative; }
+  .nf__fork svg { width: 100%; height: auto; fill: var(--signal); }
+  .nf__road { grid-row: 1; align-self: start; display: grid; gap: 0.4rem; padding: 0.9rem 1.1rem; background: var(--tunnel); color: #ECECF1; box-shadow: inset 0 0 0 1px rgb(255 255 255 / 0.2); position: relative; z-index: 1; transition: box-shadow 0.3s var(--e-standard), translate 0.4s var(--e-standard); }
+  .nf__road--left { grid-column: 2 / span 3; margin-top: 2rem; }
+  .nf__road--right { grid-column: 10 / span 3; margin-top: 2rem; }
+  .nf__go { font: 600 var(--t-m)/1.2 var(--f-display); }
+  .nf__go::after { content: ''; display: inline-block; width: 0.55em; height: 0.55em; margin-left: 0.5em; border-top: 2px solid currentColor; border-right: 2px solid currentColor; vertical-align: 0.1em; }
+  @media (hover: hover) {
+    .nf__road--left:hover { translate: 0 -6px; box-shadow: inset 0 0 0 2px var(--signal); }
+    .nf__road--right:hover { translate: 6px -6px; box-shadow: inset 0 0 0 2px var(--signal); }
+  }
+  .nf__road:focus-visible { box-shadow: inset 0 0 0 2px var(--signal); }
+  .nf__text { grid-column: 1 / span 6; grid-row: 2; margin-top: -8rem; position: relative; z-index: 1; display: grid; gap: 1rem; background: var(--c-bg); padding: 1.5rem 1.5rem 0 0; }
+  @media (max-width: 767px) {
+    .nf__fork { grid-column: 1 / -1; padding-inline: 12%; }
+    .nf__road--left { grid-column: 1 / span 2; grid-row: 2; margin-top: 1.5rem; }
+    .nf__road--right { grid-column: 3 / span 2; grid-row: 2; margin-top: 1.5rem; }
+    .nf__text { grid-column: 1 / -1; grid-row: 3; margin-top: 2rem; padding: 0; }
+  }
+</style>

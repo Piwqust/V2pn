@@ -1,0 +1,33 @@
+---
+import { getCollection } from 'astro:content';
+import Docs from '../../layouts/Docs.astro';
+import Arrow from '../../components/Arrow.astro';
+const docs = (await getCollection('docs')).sort((a, b) => a.data.order - b.data.order);
+---
+<Docs title="Документация V2pn" description="Как поставить V2pn, подключиться, выбрать режим и маршрут, перенести серверы из другой программы и что делать, если что-то не так.">
+  <ul class="doc-index" role="list">
+    {docs.map((d) => (
+      <li>
+        <a class="row-link doc-index__row" href={`/docs/${d.id}/`}>
+          <span class="doc-index__t t-m">{d.data.title}</span>
+          <span class="doc-index__d muted t-s">{d.data.description}</span>
+          <Arrow />
+        </a>
+      </li>
+    ))}
+    <li>
+      <a class="row-link doc-index__row" href="/providers/guide/">
+        <span class="doc-index__t t-m">Руководство провайдера</span>
+        <span class="doc-index__d muted t-s">Заголовки подписки, своя вкладка, кнопка для бота, вход по коду и особые права. Есть на английском.</span>
+        <Arrow />
+      </a>
+    </li>
+  </ul>
+</Docs>
+
+<style>
+  .doc-index { list-style: none; padding: 0; border-bottom: 1px solid var(--c-line); max-width: none; }
+  .doc-index__row { grid-template-columns: minmax(0, 1fr) 1.2rem; gap: 0.35rem 1.5rem; }
+  .doc-index__t, .doc-index__d { grid-column: 1; }
+  .doc-index__row :global(.arr) { grid-column: 2; grid-row: 1 / span 2; }
+</style>

@@ -1,0 +1,15 @@
+---
+// The provider guide in English, rendered from docs/partners/README.md (edit it there).
+import { getEntry, render } from 'astro:content';
+import Docs from '../../../../layouts/Docs.astro';
+const entry = await getEntry('guide', 'en');
+if (!entry) throw new Error('docs/partners/README.md is missing');
+const { Content, headings } = await render(entry);
+---
+<Docs lang="en" title="V2pn for providers" kicker="Provider guide" description="Your subscription in V2pn: the headers it reads, a tab of your own, a button for your bot, sign-in by code and special rights." headings={headings.filter((h) => h.depth > 1)}>
+  <div class="guide"><Content /></div>
+</Docs>
+
+<style>
+  .guide :global(h1), .guide :global(h1 + p) { display: none; }
+</style>

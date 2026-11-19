@@ -1,0 +1,28 @@
+---
+// The provider tools: sign-in, «Мой партнёр», moderation. Paper ground, no page router (each is an app of its own
+// and loads in full), no smooth scroll. Each page brings its own <script>.
+import Head from '../components/Head.astro';
+import Header from '../components/Header.astro';
+import Footer from '../components/Footer.astro';
+import '../styles/tokens.css';
+import '../styles/base.css';
+import '../styles/tool.css';
+
+interface Props { title: string; description?: string; account?: boolean; windowCss?: boolean }
+const { title, description, account = true, windowCss = false } = Astro.props;
+---
+<!doctype html>
+<html lang="ru" data-ground="paper" class="tool">
+  <head>
+    <Head title={title} description={description} ground="paper" noindex />
+    {windowCss && <link rel="stylesheet" href="/assets/window.css" />}
+  </head>
+  <body>
+    <a class="skip-link" href="#main">К содержанию</a>
+    <Header tool={account} />
+    <main id="main" tabindex="-1">
+      <slot />
+    </main>
+    <Footer compact />
+  </body>
+</html>

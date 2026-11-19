@@ -1,0 +1,44 @@
+---
+// The site's header: the lockup, three sections, the download, and on phones one «Меню» button that opens a sheet.
+// On the provider tools (tool = true) the right side holds the account instead of the download.
+import Lockup from './Lockup.astro';
+import Arrow from './Arrow.astro';
+import { nav, site } from '../data/site';
+interface Props { current?: string; tool?: boolean }
+const { current = Astro.url.pathname, tool = false } = Astro.props;
+const here = (href: string) => (href === '/' ? current === '/' : current.startsWith(href));
+---
+<header class="hdr" lang="ru">
+  <div class="wrap hdr__in">
+    <a class="lockup" href="/" aria-label="V2pn, на главную"><Lockup /></a>
+    <nav class="hdr__nav" aria-label="Разделы">
+      {nav.map((n) => <a class="draw" href={n.href} aria-current={here(n.href) ? 'page' : undefined}>{n.label}</a>)}
+      <a class="draw" href={site.repo} rel="noopener">GitHub</a>
+      <a class="draw" href="/providers/cabinet/" data-nav-cabinet hidden>Мой партнёр</a>
+    </nav>
+    {tool ? (
+      <div class="hdr__who">
+        <span class="muted" data-login></span>
+        <button class="btn btn--ghost btn--sm" type="button" data-signout>Выйти</button>
+      </div>
+    ) : (
+      <a class="btn btn--sm hdr__cta" href="/download/" aria-current={here('/download/') ? 'page' : undefined}>Скачать<Arrow class="btn__arr" /></a>
+    )}
+    <button class="hdr__menu" type="button" aria-expanded="false" aria-controls="menu" data-menu-button>
+      <span data-menu-word>Меню</span><i aria-hidden="true"></i>
+    </button>
+  </div>
+</header>
+<nav id="menu" class="menu" aria-label="Меню" lang="ru">
+  <ul>
+    <li><a href="/" aria-current={current === '/' ? 'page' : undefined}>Главная</a></li>
+    <li><a href="/download/" aria-current={here('/download/') ? 'page' : undefined}>Скачать</a></li>
+    {nav.map((n) => <li><a href={n.href} aria-current={here(n.href) ? 'page' : undefined}>{n.label}</a></li>)}
+    <li><a href={site.repo} rel="noopener">GitHub</a></li>
+  </ul>
+  <div class="menu__foot">
+    {tool ? <button class="btn btn--ghost" type="button" data-signout>Выйти</button>
+      : <a class="btn btn--lg" href="/download/">Скачать V2pn<Arrow class="btn__arr" /></a>}
+    <p class="t-xs muted">Windows 10 и 11, macOS 13.6 и новее. Бесплатно, GPL-3.0.</p>
+  </div>
+</nav>

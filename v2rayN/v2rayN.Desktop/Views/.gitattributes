@@ -22,6 +22,7 @@ GlobalHotkeySettingWindow.axaml merge=ours
 MainWindow.axaml merge=ours
 MainWindow.axaml.cs merge=ours
 MessageBoxDialog.axaml merge=ours
+MsgView.axaml merge=ours
 OptionSettingWindow.axaml merge=ours
 ProfilesView.axaml merge=ours
 ProfilesView.axaml.cs merge=ours

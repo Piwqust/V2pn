@@ -62,4 +62,18 @@ public static partial class L
     public static string PxTypeFallback => T("First that works", "Первый рабочий");
     public static string PxTypeLoadBalance => T("Balanced", "Балансировка");
     public static string PxTypeGlobal => T("All traffic", "Весь трафик");
+
+    // Log
+    public static string LogFilter => T("Filter lines", "Фильтр строк");
+    public static string LogFilterTip => T("New lines are shown only if they contain this text or match it as a regular expression",
+        "Новые строки показываются, только если в них есть этот текст или они подходят под регулярное выражение");
+    public static string LogCopyAll => T("Copy all", "Скопировать всё");
+    public static string LogCopy => T("Copy", "Копировать");
+    public static string LogSelectAll => T("Select all", "Выделить всё");
+    public static string LogClear => T("Clear", "Очистить");
+    public static string LogScrollToEnd => T("Follow new lines", "Следить за новыми");
+    public static string LogCleared => T("Log cleared", "Журнал очищен");
+    public static string LogEmptyTitle => T("The log is empty", "Журнал пуст");
+    public static string LogEmptyHint => T("V2pn and its core write here once you connect.",
+        "Сюда пишут V2pn и ядро, когда вы подключаетесь.");
 }

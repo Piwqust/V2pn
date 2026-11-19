@@ -10,6 +10,7 @@ public partial class MsgView : ReactiveUserControl<MsgViewModel>
     {
         InitializeComponent();
         txtMsg.TextArea.TextView.Options.EnableHyperlinks = false;
+        txtMsg.Document.TextChanged += (_, _) => panelEmpty.IsVisible = txtMsg.Document.TextLength == 0;
 
         this.WhenActivated(disposables =>
         {
@@ -61,7 +62,7 @@ public partial class MsgView : ReactiveUserControl<MsgViewModel>
     public void ClearMsg()
     {
         txtMsg.Clear();
-        txtMsg.AppendText("----- Message cleared -----\n");
+        txtMsg.AppendText($"----- {L.LogCleared} -----\n");
     }
 
     private void menuMsgViewSelectAll_Click(object? sender, RoutedEventArgs e)

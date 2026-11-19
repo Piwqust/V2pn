@@ -366,7 +366,7 @@
                                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvHy2ExtraHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <Button Classes="IconButton">
+                                        <Button Classes="ghost small icon" Theme="{StaticResource V2Button}">
                                             <Button.Content>
                                                 <PathIcon Data="{StaticResource SemiIconMore}">
                                                     <PathIcon.RenderTransform>
@@ -702,7 +702,7 @@
                                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvWarpHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <Button Classes="IconButton">
+                                        <Button Classes="ghost small icon" Theme="{StaticResource V2Button}">
                                             <Button.Content>
                                                 <PathIcon Data="{StaticResource SemiIconMore}">
                                                     <PathIcon.RenderTransform>
@@ -966,7 +966,7 @@
                                         <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvFinalmaskHint}" />
                                     </StackPanel>
                                     <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                        <Button Classes="IconButton">
+                                        <Button Classes="ghost small icon" Theme="{StaticResource V2Button}">
                                             <Button.Content>
                                                 <PathIcon Data="{StaticResource SemiIconMore}">
                                                     <PathIcon.RenderTransform>
@@ -1081,7 +1081,7 @@
                                         <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
                                             <StackPanel Orientation="Horizontal">
                                                 <TextBlock x:Name="labCertPinning" Margin="{StaticResource Margin8}" VerticalAlignment="Center" />
-                                                <Button Margin="{StaticResource MarginLr4}" HorizontalAlignment="Left" VerticalAlignment="Center" Classes="IconButton">
+                                                <Button Margin="{StaticResource MarginLr4}" HorizontalAlignment="Left" VerticalAlignment="Center" Classes="ghost small icon" Theme="{StaticResource V2Button}">
                                                     <Button.Content>
                                                         <PathIcon Data="{StaticResource SemiIconMore}">
                                                             <PathIcon.RenderTransform>

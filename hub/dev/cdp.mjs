@@ -1,4 +1,4 @@
-// A headless Chrome driven over the DevTools protocol, for walking the site in dev/walk.mjs. No window ever opens:
+// A headless Chrome driven over the DevTools protocol, for screenshots of the site (dev/shot.mjs). No window ever opens:
 // --headless=new, its own profile in the temp folder, and the process tree is killed at the end.
 import { execFileSync, spawn } from 'node:child_process';
 import fs from 'node:fs';

@@ -2,18 +2,17 @@
 // A local copy of v2pn.angleford.co for working on the site: the hub's routes (/api, /r, /releases) and the site's
 // files on one origin, under the live Content-Security-Policy. Development only: it is not deployed (hub/README.md).
 //
-//   node dev/serve.mjs [--port 8790] [--site ../site] [--data <dir>] [--admin owner@example.com]
+//   node dev/serve.mjs [--port 8790] [--site ../site] [--data <dir>] [--owner owner]
 //                      [--fixture] [--configra] [--downloads]
 //
 // --data      where the hub keeps its database and keys (default: a new temporary folder). The hub's public folder
 //             (HUB_PUBLIC_DIR: partners/ and p/) is <data>/www; files are looked up there first, then in --site.
-// --fixture   a stand-in subscription on this computer, so the application's check has something to open: the hub
+// --owner     the owner's login; it is made (or given a new password) at start and the password is printed.
+// --fixture   a stand-in subscription on this computer, so the subscription check has something to open: the hub
 //             refuses private addresses and plain http, so here (and only here) names under .test resolve to
 //             127.0.0.1 and http is allowed. The test link is printed at start.
-// --configra  imports ../partners/configra as an approved provider (tier 2) with its look published.
-// --downloads fills the download counters of the last 30 days with made-up numbers for the admin's chart.
-//
-// No mail is set up: sign-in codes wait in the admin's outbox. The owner's one-time sign-in link is printed at start.
+// --configra  imports ../partners/configra as a live partner with its account right approved (login: configra).
+// --downloads fills the download counters of the last 30 days with made-up numbers for the moderators' chart.
 import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
@@ -38,7 +37,7 @@ const opt = (name, fallback) => {
 const port = Number(opt('port', 8790));
 const siteDir = path.resolve(opt('site', path.join(here, '..', '..', 'site')));
 const dataDir = path.resolve(opt('data', fs.mkdtempSync(path.join(os.tmpdir(), 'v2pn-hub-dev-'))));
-const admin = String(opt('admin', 'owner@example.com'));
+const ownerLogin = String(opt('owner', 'owner'));
 const origin = `http://127.0.0.1:${port}`;
 const publicDir = path.join(dataDir, 'www');
 fs.mkdirSync(publicDir, { recursive: true });
@@ -72,7 +71,7 @@ async function startFixture() {
   const body = Buffer.from(links.join('\n')).toString('base64');
   const expire = Math.floor(Date.UTC(2027, 0, 31) / 1000);
   const server = http.createServer((req, res) => {
-    // A provider's sign-in API (tier 2), as the guide describes it: the cabinet's «Проверить API» calls these two.
+    // A provider's sign-in API (the account right), as the guide describes it: the form's «Проверить API» calls these two.
     if (req.method === 'POST' && req.url === '/v2pn/login/start') {
       const code = String(100000 + Math.floor(Math.random() * 900000));
       res.writeHead(200, { 'content-type': 'application/json' });
@@ -99,7 +98,7 @@ async function startFixture() {
   });
   await new Promise(r => server.listen(0, '127.0.0.1', r));
   const p = server.address().port;
-  return { url: `http://sub.kestrel.test:${p}/s/demo-7f3a`, api: `http://api.kestrel.test:${p}/v2pn/`, close: () => { server.close(); listeners.forEach(s => s.close()); } };
+  return { url: `http://sub.kestrel.test:${p}/s/demo-7f3a`, api: `http://sub.kestrel.test:${p}/v2pn/`, close: () => { server.close(); listeners.forEach(s => s.close()); } };
 }
 
 const fixture = opt('fixture', false) ? await startFixture() : null;
@@ -113,15 +112,14 @@ const config = loadConfig({
   HUB_DATA: dataDir,
   HUB_PUBLIC_DIR: publicDir,
   HUB_ORIGIN: origin,
-  HUB_ADMINS: admin,
   HUB_PORT: String(port),
 });
-const hub = createHub(config, { net: devNet, mailer: null });
+const hub = createHub(config, { net: devNet });
 
 if (opt('configra', false)) {
   const folder = path.join(here, '..', '..', 'partners', 'configra');
   try {
-    hub.importPartner(folder, { email: 'configra@example.com' });
+    hub.importPartner(folder);
   } catch (e) {
     console.error(`configra not imported: ${e.message}`);
   }
@@ -196,8 +194,8 @@ const server = http.createServer((req, res) => {
 server.listen(port, '127.0.0.1', () => {
   console.log(`site     ${origin}/  (files: ${siteDir}, then ${publicDir})`);
   console.log(`data     ${dataDir}`);
-  console.log(`admin    ${hub.auth.createAdminLink(admin)}`);
-  if (fixture) console.log(`fixture  ${fixture.url}  (domain: kestrel.test)
+  console.log(`owner    ${ownerLogin} / ${hub.auth.makeOwner(ownerLogin)}`);
+  if (fixture) console.log(`fixture  ${fixture.url}  (domain: sub.kestrel.test)
 api      ${fixture.api}`);
 });
 

@@ -203,7 +203,24 @@ public sealed class DebugWindow : Window
             Action("Обход блокировок", _main.OpenBypass),
             Action("Наборы правил", () => _main.ViewModel?.RoutingSettingCmd.Execute().Subscribe()),
             // Partners whose pack says "login" (tools/demo/demo_partner.py answers login/start and login/poll).
-            Action("Вход через провайдера", () => _main.OpenProviderLogin())));
+            Action("Вход через провайдера", () => _main.OpenProviderLogin())),
+        // The windows V2pn took over from v2rayN, one click each, for scripted checks of their layout.
+        Row("Окна v2rayN", Run("Подписки", vm => vm.SubSettingCmd), Run("DNS", vm => vm.DNSSettingCmd),
+            Run("Шаблон конфига", vm => vm.FullConfigTemplateCmd), Run("Горячие клавиши", vm => vm.GlobalHotkeySettingCmd),
+            Run("Настройки", vm => vm.OptionSettingCmd)),
+        Row("Серверы v2rayN", Run("VLESS", vm => vm.AddVlessServerCmd), Run("Shadowsocks", vm => vm.AddShadowsocksServerCmd),
+            Run("WireGuard", vm => vm.AddWireguardServerCmd), Run("Свой конфиг", vm => vm.AddCustomServerCmd),
+            Run("Группа", vm => vm.AddPolicyGroupServerCmd), Run("Цепочка", vm => vm.AddProxyChainServerCmd),
+            Action("Выбор сервера", () => _ = AppManager.Instance.WindowDialog.ShowDialogAsync(new ProfilesSelectViewModel()))));
+
+    private Control Run(string text, Func<MainWindowViewModel, ReactiveCommand<RxVoid, RxVoid>> command) =>
+        Action(text, () =>
+        {
+            if (_main.ViewModel is { } vm)
+            {
+                command(vm).Execute().Subscribe();
+            }
+        });
 
     // ------------------------------------------------------------------ actions
 

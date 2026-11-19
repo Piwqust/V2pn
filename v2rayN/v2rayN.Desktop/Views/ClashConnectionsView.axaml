@@ -4,102 +4,301 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
+    xmlns:dto="clr-namespace:ServiceLib.Models.Dto;assembly=ServiceLib"
+    xmlns:loc="using:v2rayN.Desktop"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    xmlns:resx="clr-namespace:ServiceLib.Resx;assembly=ServiceLib"
+    xmlns:views="using:v2rayN.Desktop.Views"
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
-    d:DesignHeight="450"
-    d:DesignWidth="800"
+    d:DesignHeight="560"
+    d:DesignWidth="900"
     x:DataType="vms:ClashConnectionsViewModel"
     Design.DataContext="{x:Static dd:DesignData.ClashConnections}"
     mc:Ignorable="d">
+    <!--
+        Live connections as V2pn rows: the address as the title, the rule and chain under it, the app,
+        the type and the time in fixed columns. v2rayN had a nine-column grid with grid lines.
+    -->
+    <UserControl.Styles>
+        <!--  The close button shows on the row under the pointer, the selected one and the focused one.  -->
+        <!--  A narrow list drops the app column: the address needs the room more.  -->
+        <Style Selector="Border.narrow :is(Control).appcol">
+            <Setter Property="IsVisible" Value="False" />
+        </Style>
+        <Style Selector="ListBoxItem Button.rowclose">
+            <Setter Property="Opacity" Value="0" />
+        </Style>
+        <Style Selector="ListBoxItem:pointerover Button.rowclose, ListBoxItem:selected Button.rowclose, ListBoxItem Button.rowclose:focus-visible">
+            <Setter Property="Opacity" Value="1" />
+        </Style>
+    </UserControl.Styles>
 
-    <DockPanel Classes="page">
-        <WrapPanel Classes="toolbar"
-            VerticalAlignment="Center"
-            DockPanel.Dock="Top"
-            Orientation="Horizontal">
+    <DockPanel Margin="28,20,28,24">
 
-            <TextBox
-                x:Name="txtHostFilter"
-                Width="200"
-                VerticalContentAlignment="Center"
-                PlaceholderText="{x:Static resx:ResUI.ConnectionsHostFilterTitle}" />
-
-            <Button
-                x:Name="btnConnectionCloseAll"
-                Classes="IconButton Success"
-                ToolTip.Tip="{x:Static resx:ResUI.menuConnectionCloseAll}">
-                <Button.Content>
-                    <PathIcon Data="{StaticResource SemiIconClose}" />
-                </Button.Content>
-            </Button>
-
-            <Button
-                x:Name="btnAutofitColumnWidth"
-                Classes="IconButton Success"
-                ToolTip.Tip="{x:Static resx:ResUI.menuProfileAutofitColumnWidth}">
-                <Button.Content>
-                    <PathIcon Data="{StaticResource SemiIconExpand}" />
-                </Button.Content>
-            </Button>
-
-            <TextBlock
+        <!--  ── Count and actions ──  -->
+        <Grid ColumnDefinitions="*,Auto" DockPanel.Dock="Top">
+            <StackPanel VerticalAlignment="Center" Spacing="3">
+                <TextBlock
+                    x:Name="txtCount"
+                    Classes="display h3"
+                    TextTrimming="CharacterEllipsis" />
+                <TextBlock
+                    x:Name="txtState"
+                    Classes="muted small"
+                    TextTrimming="CharacterEllipsis" />
+            </StackPanel>
+            <StackPanel
+                Grid.Column="1"
+                Margin="16,0,0,0"
                 VerticalAlignment="Center"
-                Text="{x:Static resx:ResUI.TbAutoRefresh}" />
-            <ToggleSwitch
-                x:Name="togAutoRefresh"
-                HorizontalAlignment="Left" />
-        </WrapPanel>
+                Orientation="Horizontal"
+                Spacing="14">
+                <StackPanel
+                    VerticalAlignment="Center"
+                    Orientation="Horizontal"
+                    Spacing="8">
+                    <TextBlock
+                        VerticalAlignment="Center"
+                        Classes="muted"
+                        Text="{x:Static loc:L.LiveAutoRefresh}" />
+                    <ToggleSwitch
+                        x:Name="togAutoRefresh"
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        AutomationProperties.Name="{x:Static loc:L.LiveAutoRefresh}"
+                        OffContent=""
+                        OnContent="" />
+                </StackPanel>
+                <Button
+                    x:Name="btnConnectionCloseAll"
+                    AutomationProperties.Name="{x:Static loc:L.ConnCloseAll}"
+                    Theme="{StaticResource V2Button}"
+                    ToolTip.Tip="{x:Static loc:L.ConnCloseAllTip}">
+                    <StackPanel Orientation="Horizontal" Spacing="7">
+                        <PathIcon Classes="i14" Data="{StaticResource SemiIconClose}" />
+                        <TextBlock Text="{x:Static loc:L.ConnCloseAll}" />
+                    </StackPanel>
+                </Button>
+            </StackPanel>
+        </Grid>
 
-        <Border Classes="formcard table">
-            <DataGrid
-            x:Name="lstConnections"
-            AutoGenerateColumns="False"
-            BorderThickness="1"
-            CanUserResizeColumns="True"
-            GridLinesVisibility="All"
-            HeadersVisibility="Column"
-            IsReadOnly="True"
-            ItemsSource="{Binding ConnectionItems}">
-            <DataGrid.ContextMenu>
-                <ContextMenu>
-                    <MenuItem x:Name="menuConnectionClose" Header="{x:Static resx:ResUI.menuConnectionClose}" />
-                    <MenuItem x:Name="menuConnectionCloseAll" Header="{x:Static resx:ResUI.menuConnectionCloseAll}" />
-                </ContextMenu>
-            </DataGrid.ContextMenu>
-            <DataGrid.Columns>
-                <DataGridTextColumn
-                    Width="300"
-                    Binding="{Binding Host}"
-                    Header="{x:Static resx:ResUI.TbSortingHost}"
-                    Tag="Host" />
-                <DataGridTextColumn
-                    Width="500"
-                    Binding="{Binding Chain}"
-                    Header="{x:Static resx:ResUI.TbSortingChain}"
-                    Tag="Chain" />
-                <DataGridTextColumn
-                    Width="80"
-                    Binding="{Binding Network}"
-                    Header="{x:Static resx:ResUI.TbSortingNetwork}"
-                    Tag="Network" />
-                <DataGridTextColumn
-                    Width="160"
-                    Binding="{Binding Type}"
-                    Header="{x:Static resx:ResUI.TbSortingType}"
-                    Tag="Type" />
-                <DataGridTextColumn
-                    Width="100"
-                    Binding="{Binding ProcessPath}"
-                    Header="{x:Static resx:ResUI.TbSortingProcess}"
-                    Tag="ProcessPath" />
-                <DataGridTextColumn
-                    Width="100"
-                    Binding="{Binding Elapsed}"
-                    Header="{x:Static resx:ResUI.TbSortingTime}"
-                    Tag="Elapsed" />
-            </DataGrid.Columns>
-        </DataGrid>
+        <!--  ── Search ──  -->
+        <TextBox
+            x:Name="txtHostFilter"
+            Width="300"
+            Margin="0,18,0,14"
+            HorizontalAlignment="Left"
+            AutomationProperties.Name="{x:Static loc:L.ConnSearch}"
+            Classes="search"
+            DockPanel.Dock="Top"
+            PlaceholderText="{x:Static loc:L.ConnSearch}">
+            <TextBox.InnerLeftContent>
+                <PathIcon
+                    Width="14"
+                    Height="14"
+                    Margin="10,0,2,0"
+                    Foreground="{DynamicResource V2Muted}"
+                    Data="{StaticResource SemiIconSearch}" />
+            </TextBox.InnerLeftContent>
+        </TextBox>
+
+        <!--  ── The list ──  -->
+        <Border
+            x:Name="cardList"
+            Classes="card"
+            ClipToBounds="True">
+            <DockPanel>
+                <Grid
+                    Height="40"
+                    Margin="16,0,16,0"
+                    ColumnDefinitions="*,Auto,120,84,40"
+                    DockPanel.Dock="Top">
+                    <Button
+                        x:Name="btnSortHost"
+                        Padding="6,0"
+                        HorizontalAlignment="Left"
+                        Classes="ghost small"
+                        Tag="Host"
+                        Theme="{StaticResource V2Button}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Classes="muted" Text="{x:Static loc:L.ConnColHost}" />
+                            <PathIcon
+                                Width="10"
+                                Height="10"
+                                Foreground="{DynamicResource V2Faint}"
+                                Data="{StaticResource SemiIconChevronUpDown}" />
+                        </StackPanel>
+                    </Button>
+                    <Panel
+                        Grid.Column="1"
+                        Width="150"
+                        Classes="appcol">
+                    <Button
+                        x:Name="btnSortApp"
+                        Padding="6,0"
+                        HorizontalAlignment="Left"
+                        Classes="ghost small"
+                        Tag="ProcessPath"
+                        Theme="{StaticResource V2Button}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Classes="muted" Text="{x:Static loc:L.ConnColApp}" />
+                            <PathIcon
+                                Width="10"
+                                Height="10"
+                                Foreground="{DynamicResource V2Faint}"
+                                Data="{StaticResource SemiIconChevronUpDown}" />
+                        </StackPanel>
+                    </Button>
+                    </Panel>
+                    <Button
+                        x:Name="btnSortType"
+                        Grid.Column="2"
+                        Padding="6,0"
+                        HorizontalAlignment="Left"
+                        Classes="ghost small"
+                        Tag="Network"
+                        Theme="{StaticResource V2Button}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Classes="muted" Text="{x:Static loc:L.ConnColType}" />
+                            <PathIcon
+                                Width="10"
+                                Height="10"
+                                Foreground="{DynamicResource V2Faint}"
+                                Data="{StaticResource SemiIconChevronUpDown}" />
+                        </StackPanel>
+                    </Button>
+                    <Button
+                        x:Name="btnSortTime"
+                        Grid.Column="3"
+                        Padding="6,0"
+                        HorizontalAlignment="Right"
+                        Classes="ghost small"
+                        Tag="Time"
+                        Theme="{StaticResource V2Button}">
+                        <StackPanel Orientation="Horizontal" Spacing="4">
+                            <TextBlock Classes="muted" Text="{x:Static loc:L.ConnColTime}" />
+                            <PathIcon
+                                Width="10"
+                                Height="10"
+                                Foreground="{DynamicResource V2Faint}"
+                                Data="{StaticResource SemiIconChevronUpDown}" />
+                        </StackPanel>
+                    </Button>
+                </Grid>
+                <Border Classes="hairline" DockPanel.Dock="Top" />
+
+                <Panel>
+                    <ListBox
+                        x:Name="lstConnections"
+                        Padding="0,6"
+                        AutomationProperties.Name="{x:Static loc:L.MenuClashConnections}"
+                        Background="Transparent"
+                        BorderThickness="0"
+                        ItemContainerTheme="{StaticResource V2RowItem}"
+                        ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                        <ListBox.ContextMenu>
+                            <ContextMenu>
+                                <MenuItem
+                                    x:Name="menuConnectionClose"
+                                    Header="{x:Static loc:L.ConnClose}"
+                                    InputGesture="Delete" />
+                                <MenuItem x:Name="menuConnectionCloseAll" Header="{x:Static loc:L.ConnCloseAll}" />
+                            </ContextMenu>
+                        </ListBox.ContextMenu>
+                        <ListBox.ItemTemplate>
+                            <DataTemplate x:DataType="dto:ClashConnectionModel">
+                                <Grid Height="52" ColumnDefinitions="*,Auto,120,84,40">
+                                    <StackPanel
+                                        Margin="6,0,12,0"
+                                        VerticalAlignment="Center"
+                                        Spacing="2">
+                                        <TextBlock
+                                            Classes="title"
+                                            Text="{Binding Host}"
+                                            TextTrimming="CharacterEllipsis"
+                                            ToolTip.Tip="{Binding Host}" />
+                                        <TextBlock
+                                            Classes="muted small"
+                                            Text="{Binding Chain, Converter={x:Static views:ClashConnectionsView.ChainText}}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <TextBlock
+                                        Grid.Column="1"
+                                        Width="150"
+                                        Padding="6,0,8,0"
+                                        Classes="small appcol"
+                                        VerticalAlignment="Center"
+                                        Foreground="{DynamicResource V2InkSoft}"
+                                        Text="{Binding ProcessPath, Converter={x:Static views:ClashConnectionsView.AppName}}"
+                                        TextTrimming="CharacterEllipsis"
+                                        ToolTip.Tip="{Binding ProcessPath}" />
+
+                                    <StackPanel
+                                        Grid.Column="2"
+                                        Margin="6,0,8,0"
+                                        VerticalAlignment="Center"
+                                        Orientation="Horizontal"
+                                        Spacing="6">
+                                        <Border Classes="tag">
+                                            <TextBlock Text="{Binding Network, Converter={x:Static views:ClashConnectionsView.Upper}}" />
+                                        </Border>
+                                        <TextBlock
+                                            VerticalAlignment="Center"
+                                            Classes="muted small"
+                                            Text="{Binding Type}"
+                                            TextTrimming="CharacterEllipsis" />
+                                    </StackPanel>
+
+                                    <TextBlock
+                                        Grid.Column="3"
+                                        Margin="0,0,6,0"
+                                        HorizontalAlignment="Right"
+                                        VerticalAlignment="Center"
+                                        Classes="small num"
+                                        Foreground="{DynamicResource V2InkSoft}"
+                                        Text="{Binding Elapsed}" />
+
+                                    <Button
+                                        Grid.Column="4"
+                                        HorizontalAlignment="Right"
+                                        AutomationProperties.Name="{x:Static loc:L.ConnClose}"
+                                        Classes="ghost small icon rowclose"
+                                        Click="RowClose_Click"
+                                        Theme="{StaticResource V2Button}"
+                                        ToolTip.Tip="{x:Static loc:L.ConnClose}">
+                                        <PathIcon
+                                            Classes="i14"
+                                            Data="{StaticResource SemiIconClose}"
+                                            Foreground="{DynamicResource V2Muted}" />
+                                    </Button>
+                                </Grid>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+
+                    <!--  Empty state  -->
+                    <StackPanel
+                        x:Name="panelEmpty"
+                        MaxWidth="420"
+                        Margin="24,64"
+                        HorizontalAlignment="Center"
+                        VerticalAlignment="Top"
+                        IsVisible="False"
+                        Spacing="10">
+                        <TextBlock
+                            x:Name="txtEmptyTitle"
+                            HorizontalAlignment="Center"
+                            Classes="display h2"
+                            Text="{x:Static loc:L.ConnEmptyTitle}" />
+                        <TextBlock
+                            x:Name="txtEmptyHint"
+                            HorizontalAlignment="Center"
+                            Classes="muted"
+                            TextAlignment="Center"
+                            TextWrapping="Wrap" />
+                    </StackPanel>
+                </Panel>
+            </DockPanel>
         </Border>
     </DockPanel>
 </UserControl>

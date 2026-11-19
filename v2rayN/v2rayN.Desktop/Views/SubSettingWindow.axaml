@@ -12,95 +12,151 @@
     xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
     xmlns:ent="clr-namespace:ServiceLib.Models.Entities;assembly=ServiceLib"
     Title="{x:Static loc:L.TlSubsTitle}"
-    Width="820"
-    Height="600"
+    Width="1000"
+    Height="720"
+    MinWidth="780"
+    MinHeight="500"
     x:DataType="vms:SubSettingViewModel"
     Design.DataContext="{x:Static dd:DesignData.SubSetting}"
     ShowInTaskbar="False"
     WindowStartupLocation="CenterScreen"
     mc:Ignorable="d">
+    <!--
+        Subscriptions as a list beside the chosen one, like the rule sets: v2rayN had a table with buttons that
+        acted on the selected row and a second window for each subscription.
+    -->
+    <Window.Styles>
+        <Style Selector="TextBlock.navsec">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+            <Setter Property="Margin" Value="10,2,10,6" />
+        </Style>
+        <Style Selector="Ellipse.subdot">
+            <Setter Property="Width" Value="8" />
+            <Setter Property="Height" Value="8" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Fill" Value="{DynamicResource V2BorderStrong}" />
+        </Style>
+        <Style Selector="Ellipse.subdot.on">
+            <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+        </Style>
+        <Style Selector="TextBlock.subname">
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="TextBlock.sublink">
+            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+            <Setter Property="Margin" Value="0,1,0,0" />
+        </Style>
+    </Window.Styles>
+
     <dialogHost:DialogHost
         CloseOnClickAway="True"
         DisableOpeningAnimation="True"
         Identifier="dialogHostSub">
-        <DockPanel>
-            <StackPanel Classes="spagehead" DockPanel.Dock="Top">
-                <TextBlock Classes="spagetitle" Text="{x:Static loc:L.TlSubsTitle}" />
-                <TextBlock Classes="spagehint" Text="{x:Static loc:L.TlSubsHint}" />
-            </StackPanel>
-            <!--  Toolbar and table line up with the title.  -->
-            <Menu Margin="28,14,28,2" DockPanel.Dock="Top">
-                <MenuItem x:Name="menuSubAdd" Header="{x:Static loc:L.TlSubAdd}" />
-                <MenuItem x:Name="menuSubEdit" Header="{x:Static loc:L.TlSubEdit}" />
-                <MenuItem x:Name="menuSubShare" Header="{x:Static loc:L.TlSubShare}" />
-                <MenuItem x:Name="menuSubDelete" Header="{x:Static loc:L.TlSubDelete}" />
-                <!--  The window has its own close button; kept for the code-behind.  -->
-                <MenuItem x:Name="menuClose" Header="{x:Static loc:L.TlSubClose}" IsVisible="False" />
-            </Menu>
-
-            <Border Margin="28,14,28,14" Classes="formcard table">
-                <DataGrid
-                x:Name="lstSubscription"
-                AutoGenerateColumns="False"
-                BorderThickness="1"
-                CanUserResizeColumns="True"
-                GridLinesVisibility="All"
-                HeadersVisibility="Column"
-                IsReadOnly="True"
-                ItemsSource="{Binding SubItems}">
-                <DataGrid.KeyBindings>
-                    <KeyBinding Command="{Binding SubDeleteCmd}" Gesture="Delete" />
-                </DataGrid.KeyBindings>
-                <DataGrid.ContextMenu>
-                    <ContextMenu>
-                        <MenuItem x:Name="menuSubAdd2" Header="{x:Static loc:L.TlSubAdd}" />
-                        <MenuItem x:Name="menuSubEdit2" Header="{x:Static loc:L.TlSubEdit}" />
-                        <MenuItem x:Name="menuSubShare2" Header="{x:Static loc:L.TlSubShare}" />
-                        <MenuItem x:Name="menuSubDelete2" Header="{x:Static loc:L.TlSubDelete}" />
-                    </ContextMenu>
-                </DataGrid.ContextMenu>
-                <DataGrid.Columns>
-                    <DataGridTextColumn
-                        Width="*"
-                        Binding="{Binding Remarks}"
-                        Header="{x:Static loc:L.TlColName}" />
-                    <DataGridTextColumn
-                        Width="2*"
-                        Binding="{Binding Converter={x:Static conv:V2pnConverters.SubLink}}"
-                        Header="{x:Static loc:L.TlColLink}" />
-                    <!--  Words, not a check box: the grid is read-only, and a box that ignores clicks reads as
-                          broken. Changing it is in the subscription's own window (Edit).  -->
-                    <DataGridTemplateColumn Width="180" Header="{x:Static loc:L.TlColAutoUpdate}">
-                        <DataGridTemplateColumn.CellTemplate>
-                            <DataTemplate x:DataType="ent:SubItem">
-                                <Panel Margin="12,0" VerticalAlignment="Center">
-                                    <TextBlock IsVisible="{Binding Enabled}" Text="{x:Static loc:L.TlYes}" />
-                                    <TextBlock
-                                        Classes="muted"
-                                        IsVisible="{Binding !Enabled}"
-                                        Text="{x:Static loc:L.TlNo}" />
-                                </Panel>
-                            </DataTemplate>
-                        </DataGridTemplateColumn.CellTemplate>
-                    </DataGridTemplateColumn>
-                    <DataGridTextColumn
-                        Width="150"
-                        Binding="{Binding AutoUpdateInterval}"
-                        Header="{x:Static resx:ResUI.LvAutoUpdateInterval}"
-                        IsVisible="False" />
-                    <DataGridTextColumn
-                        Width="150"
-                        Binding="{Binding UserAgent}"
-                        Header="{x:Static resx:ResUI.LvUserAgent}"
-                        IsVisible="False" />
-                    <DataGridTextColumn
-                        Width="80"
-                        Binding="{Binding Sort}"
-                        Header="{x:Static resx:ResUI.LvSort}"
-                        IsVisible="False" />
-                </DataGrid.Columns>
-            </DataGrid>
+        <Grid ColumnDefinitions="300,*">
+            <Border Classes="settingsnav">
+                <DockPanel Margin="12,16,12,12">
+                    <Button
+                        x:Name="btnNewSub"
+                        Margin="0,10,0,0"
+                        HorizontalAlignment="Stretch"
+                        DockPanel.Dock="Bottom"
+                        Theme="{StaticResource V2Button}">
+                        <StackPanel Orientation="Horizontal" Spacing="7">
+                            <PathIcon Classes="i12" Data="{StaticResource SemiIconPlus}" />
+                            <TextBlock Text="{x:Static loc:L.NewSubscription}" />
+                        </StackPanel>
+                    </Button>
+                    <TextBlock Classes="navsec" DockPanel.Dock="Top" Text="{x:Static loc:L.TlSubsTitle}" />
+                    <TextBlock
+                        x:Name="txtNoSubs"
+                        Margin="10,0"
+                        Classes="srowhint"
+                        DockPanel.Dock="Top"
+                        Text="{x:Static loc:L.SubsNone}"
+                        TextWrapping="Wrap" />
+                    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+                        <ListBox
+                            x:Name="lstSubscription"
+                            AutomationProperties.Name="{x:Static loc:L.TlSubsTitle}"
+                            Theme="{StaticResource V2NavList}">
+                            <ListBox.ItemTemplate>
+                                <DataTemplate x:DataType="ent:SubItem">
+                                    <Grid Margin="0,7" ColumnDefinitions="Auto,*">
+                                        <Ellipse Classes="subdot" Classes.on="{Binding Enabled}" />
+                                        <StackPanel Grid.Column="1" Margin="10,0,0,0">
+                                            <TextBlock Classes="subname" Text="{Binding Converter={x:Static conv:V2pnConverters.SubName}}" />
+                                            <TextBlock Classes="sublink" Text="{Binding Converter={x:Static conv:V2pnConverters.SubListLink}}" />
+                                        </StackPanel>
+                                    </Grid>
+                                </DataTemplate>
+                            </ListBox.ItemTemplate>
+                        </ListBox>
+                    </ScrollViewer>
+                </DockPanel>
             </Border>
-        </DockPanel>
+
+            <!--  The chosen subscription, or a new one.  -->
+            <DockPanel Grid.Column="1">
+                <Border Classes="dialogfooter" DockPanel.Dock="Bottom">
+                    <StackPanel Classes="footer">
+                        <Button
+                            x:Name="btnSave"
+                            MinWidth="100"
+                            Content="{x:Static loc:L.Save}"
+                            IsDefault="True" />
+                        <Button
+                            x:Name="btnCancelNew"
+                            MinWidth="100"
+                            Content="{x:Static resx:ResUI.TbCancel}" />
+                    </StackPanel>
+                </Border>
+                <Grid
+                    Margin="28,20,28,0"
+                    ColumnDefinitions="*,Auto,Auto"
+                    DockPanel.Dock="Top">
+                    <StackPanel>
+                        <TextBlock
+                            x:Name="txtTitle"
+                            Classes="spagetitle"
+                            FontSize="20"
+                            TextTrimming="CharacterEllipsis" />
+                        <TextBlock
+                            Margin="0,4,0,0"
+                            Classes="spagehint"
+                            Text="{x:Static loc:L.SubEditHint}" />
+                    </StackPanel>
+                    <Button
+                        x:Name="btnShare"
+                        Grid.Column="1"
+                        Margin="12,0,0,0"
+                        VerticalAlignment="Top"
+                        Content="{x:Static loc:L.TlSubShare}"
+                        Theme="{StaticResource V2Button}" />
+                    <Button
+                        x:Name="btnSubMenu"
+                        Grid.Column="2"
+                        Margin="8,0,0,0"
+                        VerticalAlignment="Top"
+                        AutomationProperties.Name="{x:Static loc:L.RtMoreActions}"
+                        Classes="icon"
+                        Theme="{StaticResource V2Button}"
+                        ToolTip.Tip="{x:Static loc:L.RtMoreActions}">
+                        <PathIcon Classes="i14" Data="{StaticResource SemiIconMore}" />
+                        <Button.Flyout>
+                            <MenuFlyout Placement="BottomEdgeAlignedRight">
+                                <MenuItem x:Name="menuSubDelete" Header="{x:Static loc:L.TlSubDelete}" />
+                            </MenuFlyout>
+                        </Button.Flyout>
+                    </Button>
+                </Grid>
+                <ScrollViewer x:Name="paneScroll" HorizontalScrollBarVisibility="Disabled">
+                    <ContentControl x:Name="formHost" />
+                </ScrollViewer>
+            </DockPanel>
+        </Grid>
     </dialogHost:DialogHost>
 </Window>

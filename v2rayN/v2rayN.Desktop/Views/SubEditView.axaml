@@ -13,7 +13,7 @@
     mc:Ignorable="d">
     <!--  One subscription: the provider's report, the link, updates and the expert fields. Shown beside the list
           in the subscriptions window and on its own in SubEditWindow (editing from the server list).  -->
-    <StackPanel Classes="spagebody">
+    <StackPanel x:Name="pageBody" Classes="spagebody">
         <TextBlock x:Name="txtPageTitle" Classes="spagetitle" Text="{x:Static loc:L.SubEditTitle}" />
         <TextBlock x:Name="txtPageHint" Classes="spagehint" Text="{x:Static loc:L.SubEditHint}" />
         <!--  What the provider's panel reported with the last update (Common/SubUsage.cs).  -->

@@ -69,6 +69,8 @@ public partial class SubEditView : ReactiveUserControl<SubEditViewModel>
         {
             txtPageTitle.IsVisible = value;
             txtPageHint.IsVisible = value;
+            // Under a header of its own the form starts right away.
+            pageBody.Margin = value ? new Thickness(28, 20, 28, 28) : new Thickness(28, 0, 28, 28);
         }
     }
 

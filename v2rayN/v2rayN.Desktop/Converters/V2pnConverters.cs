@@ -110,6 +110,14 @@ public static class V2pnConverters
     public static readonly IValueConverter SubLink = new FuncValueConverter<SubItem?, string>(s =>
         s == null ? string.Empty : V2pnLocks.Instance.ForSub(s.Id) is { HideUrl: true } locked ? string.Format(L.LockedUrl, locked.PartnerName) : s.Url);
 
+    /// <summary>A subscription's link for a list, or "servers added by hand" when it has none.</summary>
+    public static readonly IValueConverter SubListLink = new FuncValueConverter<SubItem?, string>(s =>
+        s == null ? string.Empty : s.Url.IsNullOrEmpty() ? L.SubManual : SubLink.Convert(s, typeof(string), null, CultureInfo.CurrentUICulture) as string ?? string.Empty);
+
+    /// <summary>A subscription's name for a list: its own, or the link's site, or "servers added by hand".</summary>
+    public static readonly IValueConverter SubName = new FuncValueConverter<SubItem?, string>(s =>
+        s == null ? string.Empty : s.Remarks.IsNotEmpty() ? s.Remarks : Utils.TryUri(s.Url)?.Host ?? L.SubManual);
+
     public static Bitmap? Flag(string? code)
     {
         if (code.IsNullOrEmpty() || code.Length != 2)

@@ -49,4 +49,11 @@ public static partial class L
         "Серверов пока нет. Добавьте подписку от провайдера или вставьте ссылку на сервер.");
     public static string NewSubscription => T("New subscription", "Новая подписка");
     public static string HotkeyNotSet => T("Not set", "Не задано");
+
+    // The subscriptions window as a list beside the chosen subscription.
+    public static string SubsNone => T("No subscriptions yet. Add the link your provider gave you.", "Подписок пока нет. Добавьте ссылку от провайдера.");
+    public static string SubManual => T("Servers added by hand", "Серверы, добавленные вручную");
+    public static string SubSaveAsk => T("Save the changes to “{0}”?", "Сохранить изменения в «{0}»?");
+    public static string SubDontSave => T("Don't save", "Не сохранять");
+    public static string SubDeleteAsk => T("Delete the subscription “{0}” and its servers?", "Удалить подписку «{0}» вместе с её серверами?");
 }

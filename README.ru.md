@@ -17,14 +17,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip"><img src="docs/images/badges/download-windows.svg" width="260" alt="Скачать для Windows"></a>
+  <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64-setup.exe"><img src="docs/images/badges/download-windows.svg" width="260" alt="Скачать для Windows"></a>
   &nbsp;
   <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-arm64.dmg"><img src="docs/images/badges/download-macos.svg" width="260" alt="Скачать для macOS"></a>
 </p>
 
 <p align="center">
   <sub>
-    Windows 10 и 11, x64 · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip">Windows на ARM</a>
+    Windows 10 и 11, x64 · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64-setup.exe">Windows на ARM</a>
     &nbsp;&nbsp;|&nbsp;&nbsp;
     macOS 13.6 и новее, Apple silicon · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-x64.dmg">Mac на Intel</a>
   </sub>
@@ -98,9 +98,13 @@ irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex
 
 **Вручную:**
 
-1. Скачайте [V2pn-windows-x64.zip](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip) ([ARM64](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip) для Windows на ARM).
-2. Распакуйте в папку, куда можно писать, например `C:\Users\<вы>\V2pn`. Не в `Program Files`: настройки и серверы лежат рядом с программой.
-3. Запустите `V2pn.exe`. Windows может показать «Система Windows защитила ваш компьютер»: у приложения нет платной подписи разработчика. Нажмите **Подробнее**, затем **Выполнить в любом случае**.
+1. Скачайте [V2pn-windows-x64-setup.exe](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64-setup.exe) ([ARM64](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64-setup.exe) для Windows на ARM).
+2. Запустите его. Windows может показать «Система Windows защитила ваш компьютер»: у приложения нет платной подписи разработчика. Нажмите **Подробнее**, затем **Выполнить в любом случае**.
+3. Установщик поставит V2pn в `%LOCALAPPDATA%\Programs\V2pn` для вашего пользователя Windows, без прав администратора, добавит его в меню «Пуск» (и на рабочий стол, если не снимать галочку) и предложит забрать серверы из v2rayN.
+
+Удалить V2pn: «Параметры» → «Приложения» → «Установленные приложения» → V2pn. Он спросит, сохранить ли серверы и настройки для следующей установки.
+
+Нужна портативная версия? [V2pn-windows-x64.zip](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip) ([ARM64](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip)) — то же приложение: распакуйте в папку, куда можно писать (не в `Program Files`: настройки и серверы лежат рядом с программой), и запустите `V2pn.exe`.
 
 Ставить .NET не нужно, он внутри.
 

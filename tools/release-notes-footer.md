@@ -3,15 +3,15 @@
 ## Download
 
 <p>
-  <a href="https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-windows-x64.zip"><img src="https://raw.githubusercontent.com/Piwqust/V2pn/v{version}/docs/images/badges/download-windows.svg" width="260" alt="Download for Windows"></a>
+  <a href="https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-windows-x64-setup.exe"><img src="https://raw.githubusercontent.com/Piwqust/V2pn/v{version}/docs/images/badges/download-windows.svg" width="260" alt="Download for Windows"></a>
   &nbsp;
   <a href="https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-macos-arm64.dmg"><img src="https://raw.githubusercontent.com/Piwqust/V2pn/v{version}/docs/images/badges/download-macos.svg" width="260" alt="Download for macOS"></a>
 </p>
 
 | System | File |
 | --- | --- |
-| Windows 10 and 11, x64 | [V2pn-windows-x64.zip](https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-windows-x64.zip) |
-| Windows 11 on ARM | [V2pn-windows-arm64.zip](https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-windows-arm64.zip) |
+| Windows 10 and 11, x64 | [V2pn-windows-x64-setup.exe](https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-windows-x64-setup.exe) |
+| Windows 11 on ARM | [V2pn-windows-arm64-setup.exe](https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-windows-arm64-setup.exe) |
 | macOS 13.6 or later, Apple silicon (M1 and later) | [V2pn-macos-arm64.dmg](https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-macos-arm64.dmg) |
 | macOS 13.6 or later, Intel | [V2pn-macos-x64.dmg](https://github.com/Piwqust/V2pn/releases/download/v{version}/V2pn-macos-x64.dmg) |
 
@@ -24,7 +24,7 @@ On the first launch of a downloaded file, Windows and macOS warn that they do no
 <details>
 <summary>The other files in the list below</summary>
 
-They are for the app, not for people. The updater reads `-update.zip`, the macOS `.zip`, `release.json` and `release.json.sig`; `-update.zip` has no cores, so it does not work as a first install. `.sha256` files are checksums: `sha256sum -c V2pn-windows-x64.zip.sha256`. `install.ps1` and `install.sh` are the one-command installers above. `V2pn-<provider>-….zip` are V2pn with a provider's tab, linked from each provider's download page; `partner-index.json` and `partner-<provider>.zip` are what V2pn reads for that tab, `partners.json` is for V2pn 1.2.1 and older.
+`V2pn-windows-<arch>.zip` is the same Windows app without an installer, for a portable copy: unpack it and run `V2pn.exe`. The rest are for the app, not for people. The updater reads `-update.zip`, the macOS `.zip`, `release.json` and `release.json.sig`; `-update.zip` has no cores, so it does not work as a first install. `.sha256` files are checksums: `sha256sum -c V2pn-windows-x64.zip.sha256`. `install.ps1` and `install.sh` are the one-command installers above. `V2pn-<provider>-….zip` are V2pn with a provider's tab, linked from each provider's download page; `partner-index.json` and `partner-<provider>.zip` are what V2pn reads for that tab, `partners.json` is for V2pn 1.2.1 and older.
 
 </details>
 

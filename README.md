@@ -17,14 +17,14 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip"><img src="docs/images/badges/download-windows.svg" width="260" alt="Download for Windows"></a>
+  <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64-setup.exe"><img src="docs/images/badges/download-windows.svg" width="260" alt="Download for Windows"></a>
   &nbsp;
   <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-arm64.dmg"><img src="docs/images/badges/download-macos.svg" width="260" alt="Download for macOS"></a>
 </p>
 
 <p align="center">
   <sub>
-    Windows 10 and 11, x64 · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip">Windows on ARM</a>
+    Windows 10 and 11, x64 · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64-setup.exe">Windows on ARM</a>
     &nbsp;&nbsp;|&nbsp;&nbsp;
     macOS 13.6 or later, Apple silicon · <a href="https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-x64.dmg">Intel Mac</a>
   </sub>
@@ -96,9 +96,13 @@ The script downloads the newest version, checks it against the release's list of
 
 **By hand:**
 
-1. Download [V2pn-windows-x64.zip](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip) ([ARM64](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip) for Windows on ARM).
-2. Unpack it into a folder you can write to, for example `C:\Users\<you>\V2pn`. Not `Program Files`: settings and servers are kept next to the program.
-3. Run `V2pn.exe`. Windows may show “Windows protected your PC”, because the app has no paid developer signature: press **More info**, then **Run anyway**.
+1. Download [V2pn-windows-x64-setup.exe](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64-setup.exe) ([ARM64](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64-setup.exe) for Windows on ARM).
+2. Run it. Windows may show “Windows protected your PC”, because the app has no paid developer signature: press **More info**, then **Run anyway**.
+3. The installer puts V2pn into `%LOCALAPPDATA%\Programs\V2pn` for your Windows user, with no administrator rights, adds it to the Start menu (and to the desktop, if you leave that ticked) and offers to take your servers from v2rayN.
+
+To remove V2pn: Settings → Apps → Installed apps → V2pn. It asks whether to keep your servers and settings for a later install.
+
+Prefer a portable copy? [V2pn-windows-x64.zip](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip) ([ARM64](https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip)) is the same app: unpack it into a folder you can write to (not `Program Files`: settings and servers are kept next to the program) and run `V2pn.exe`.
 
 .NET does not need to be installed; it is inside.
 

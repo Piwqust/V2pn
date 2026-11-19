@@ -200,7 +200,7 @@ To build the packages locally without committing anything:
 tools/release.ps1 -Version 1.0.1
 ```
 
-`dist/release/1.0.1/` then holds `V2pn-windows-x64.zip`, `V2pn-windows-arm64.zip`, their `-update.zip` variants, the `.sha256` files, `release.json` and `release.json.sig`. macOS packages are built only on a Mac: `tools/package-macos.sh 1.0.1 arm64`.
+`dist/release/1.0.1/` then holds `V2pn-windows-x64.zip`, `V2pn-windows-arm64.zip`, the installers made from the same files (`V2pn-windows-x64-setup.exe`, `V2pn-windows-arm64-setup.exe`: `tools/installer/V2pn.iss`, needs Inno Setup 6, `winget install JRSoftware.InnoSetup`), their `-update.zip` variants, the `.sha256` files, `release.json` and `release.json.sig`. macOS packages are built only on a Mac: `tools/package-macos.sh 1.0.1 arm64`.
 
 ### Cores
 

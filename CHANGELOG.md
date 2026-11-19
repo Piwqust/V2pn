@@ -4,6 +4,11 @@ What changes for the people who use the app. Each version's section becomes the 
 
 ## Unreleased
 
+### An installer for Windows
+
+- Windows gets `V2pn-windows-x64-setup.exe` (and `-arm64-setup.exe`) instead of a zip to unpack. It installs V2pn for your Windows user without administrator rights, adds it to the Start menu and the desktop, offers to take your servers from v2rayN, and puts V2pn into "Installed apps", where it can be removed; removing asks whether to keep your servers and settings. It is a third smaller than the zip.
+- It installs over a V2pn put there by the one-command installer, keeps the cores V2pn already has, and waits until you quit a running V2pn from the tray so that the system proxy is put back. The zip stays for a portable copy.
+
 ### A calmer Home tab
 
 - Home shows "Quick connect" with the fastest server, then your favorites and recent servers, each only when it has something. A server is listed once.

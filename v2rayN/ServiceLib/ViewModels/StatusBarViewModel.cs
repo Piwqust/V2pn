@@ -368,6 +368,15 @@ public partial class StatusBarViewModel : MyReactiveObject
         _runningProbe is { } probe && IsProbeCurrent(probe.Generation, probe.Target)
             ? Availability : AvailabilityCheckResult.Unchecked;
 
+    /// <summary>The running connection's check port as a proxy, for the bypass's own checks; null when not running.</summary>
+    public IWebProxy? CurrentProbeProxy() =>
+        _runningProbe is { Endpoint: { } endpoint } probe && IsProbeCurrent(probe.Generation, probe.Target)
+            ? new WebProxy($"socks5://{Global.Loopback}:{endpoint.Port}")
+            {
+                Credentials = new NetworkCredential(AvailabilityProbeEndpoint.User, endpoint.Password),
+            }
+            : null;
+
     internal long InvalidateAvailability()
     {
         var generation = Interlocked.Increment(ref _availabilityGeneration);

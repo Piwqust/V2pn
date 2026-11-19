@@ -354,6 +354,10 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
         await RefreshServersDispatcherAsync();
 
+        if (V2pnBypass.On(_config))
+        {
+            await V2pnNetworkId.RefreshAsync();
+        }
         await Reload();
         _networkWatch = new V2pnNetworkWatch(OnNetworkSettledAsync);
         _networkWatch.Start();
@@ -374,6 +378,10 @@ public partial class MainWindowViewModel : MyReactiveObject
         }
         Logging.SaveLog($"V2pn: {reason}; checking the connection again");
         V2pnDiagnostics.NoteNetworkEvent(reason);
+        if (await ApplyBypassForNetworkAsync())
+        {
+            return;
+        }
         var done = new TaskCompletionSource<AvailabilityCheckResult?>();
         RxSchedulers.MainThreadScheduler.Schedule(async () =>
         {
@@ -925,6 +933,7 @@ public partial class MainWindowViewModel : MyReactiveObject
                     IpInfo = result.Ip,
                     Delay = result.IsAvailable ? result.Time.ToString() : null
                 });
+                _ = Task.Run(() => AfterAvailabilityAsync(profileItem, result));
             });
 
             var showClashUI = AppManager.Instance.IsRunningCore(ECoreType.sing_box);

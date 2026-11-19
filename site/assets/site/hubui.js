@@ -147,21 +147,6 @@ export function confirmStep({ title, text, action, danger = false, field = null 
   });
 }
 
-/** Writes the hub's field errors ({field: message}) under the fields of <map> ({field: input}); returns how many. */
-export function showFieldErrors(fields, map) {
-  let n = 0;
-  let first = null;
-  for (const [key, message] of Object.entries(fields || {})) {
-    const input = map[key];
-    if (!input) continue;
-    setFieldError(input, message);
-    n++;
-    first ??= input;
-  }
-  if (first) first.focus();
-  return n;
-}
-
 export function setFieldError(input, message) {
   const field = input.closest('.field, .slot, .act');
   const err = field && $('.field__error', field);
@@ -207,12 +192,6 @@ export function checkHtml(check, { raw = false } = {}) {
     <div class="pings">${check.tcp.map(t => `<span>${esc(t.host)}:${t.port}</span><span class="proto">${esc(PROTO[t.protocol] || t.protocol || '')}</span>
       <span class="ms${t.ok ? '' : ' ms--off'}">${t.ok ? `${t.ms} мс` : 'не ответил'}</span>`).join('')}</div></div>` : '';
   return `<ul class="lines">${lines}</ul>${facts}${pings}`;
-}
-
-/** "3 замечания" etc. for a check: {fail, warn}. */
-export function checkCounts(check) {
-  const lines = check?.lines || [];
-  return { fail: lines.filter(l => l.level === 'fail').length, warn: lines.filter(l => l.level === 'warn').length };
 }
 
 // ---------------------------------------------------------------- V2pn's window as a preview
@@ -307,15 +286,6 @@ export function windowHtml({ root, mode = 'light', name = 'Провайдер', 
       <span class="v2-connect v2-connect--go"${tab && c.onAccent ? ` style="color: ${esc(c.onAccent)}"` : ''}>${POWER}Подключиться</span>${chips}</div>`;
   }
   return `${open}${head}<div class="v2w__body"><div class="v2-side">${side}</div>${main}</div></div>`;
-}
-
-/** Wires a light/dark switch (.seg buttons with data-mode) to a function that redraws. */
-export function wireModes(seg, draw) {
-  const buttons = $$('button[data-mode]', seg);
-  buttons.forEach(b => b.addEventListener('click', () => {
-    buttons.forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    draw(b.dataset.mode);
-  }));
 }
 
 export function prefersDark() {

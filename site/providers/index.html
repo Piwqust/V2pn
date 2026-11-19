@@ -4,10 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>V2pn для провайдеров: ваша подписка и своя вкладка в VPN-клиенте</title>
-<meta name="description" content="V2pn — один VPN-клиент для любых подписок. Ссылка VPN-провайдера работает в нём как есть, а по заявке у его людей появляется вкладка с его логотипом и цветами.">
+<meta name="description" content="V2pn — один VPN-клиент для любых подписок. Ссылка VPN-провайдера работает в нём как есть, а одна форма даёт его людям вкладку с его логотипом и цветами.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="V2pn для VPN-провайдеров">
-<meta property="og:description" content="Ваша подписка в V2pn как есть, а по заявке — своя вкладка, страница и кнопка «Подключить в V2pn» для бота.">
+<meta property="og:description" content="Ваша подписка в V2pn как есть, а после одной формы — своя вкладка, страница и кнопка «Подключить в V2pn» для бота.">
 <meta property="og:image" content="https://v2pn.angleford.co/providers/share.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../favicon.svg" type="image/svg+xml">
@@ -62,9 +62,9 @@
      no effect on this page (the site's one effect is on the home page).
      plan, screens at 1440x900:
        hero     triptych: the tab, the Scene and sign-in by code, set by set (UI)                                  1
-       #tiers   three cards: tier 0 Подписка, 1 Проверенный, 2 Интеграция, each with its piece of V2pn (use)    1
+       #tiers   three cards: the subscription as it is, the tab, the special rights, each with its piece of V2pn  1
        #panel   split: the headers a panel already sends for Happ and Hiddify (code); marquee-row of the headers 1
-       #way     split: the five steps; the application's check of the link, line by line (UI)                 1
+       #way     split: the five steps; the check of the link before publishing, line by line (UI)            1
        #people  three cards: the bot's button, with V2pn, without V2pn (UI)                                  1
        #faq     faq: what goes where, what V2pn never does, the cost (calm)                                    1
        #configra Configra in V2pn: a real capture across the wrap                                              1
@@ -83,7 +83,7 @@
       <div class="nav__item"><a class="nav__link" href="guide/">Руководство</a></div>
     </nav>
     <div class="nav__actions">
-      <a class="btn btn--primary" href="apply/">Подать заявку</a>
+      <a class="btn btn--primary" href="login/">Создать партнёра</a>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
       <svg width="18" height="18" viewBox="0 0 18 18" aria-hidden="true"><path d="M2 5h14M2 13h14" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg>
@@ -96,7 +96,7 @@
     <div class="wrap"><div class="hero-text grid hero__grid">
       <div class="span-3">
         <h1 id="hero-h">Ваша VPN-подписка в V2pn</h1>
-        <p class="hero__lead">V2pn бесплатен, работает на Windows и macOS и открывает вашу ссылку как есть. По заявке у ваших людей появится вкладка с вашим логотипом и цветами.</p>
+        <p class="hero__lead">V2pn бесплатен, работает на Windows и macOS и открывает вашу ссылку как есть. Заполните одну форму, и у ваших людей появится вкладка с вашим логотипом и цветами.</p>
       </div>
       <div class="ly-collage span-6 start-4" role="img" aria-label="Вкладка Configra в V2pn: заголовок окна с двумя вкладками, карточка тарифа, «Сцена» с 77 днями и вход по коду из Telegram-бота">
         <div class="ly-collage__set is-on">
@@ -153,19 +153,19 @@
           </div>
         </div>
       </div>
-      <div class="span-3 start-10 hero__cta"><a class="btn btn--primary" href="apply/">Подать заявку</a></div>
+      <div class="span-3 start-10 hero__cta"><a class="btn btn--primary" href="login/">Создать партнёра</a></div>
     </div></div>
   </section>
 
   <section class="section" id="tiers" aria-labelledby="tiers-h">
     <div class="wrap">
       <div class="section-head">
-        <h2 id="tiers-h">Три ступени. <span class="muted">Первая не требует ничего.</span></h2>
+        <h2 id="tiers-h">Подписка, вкладка, особые права. <span class="muted">Первое не требует ничего.</span></h2>
       </div>
       <div class="grid">
         <article class="card card--row card--open span-4 m-nolift">
-          <h3>0 · Подписка</h3>
-          <p>Ссылка работает как есть: название, трафик, срок и «Поддержка» берутся из заголовков, что вы уже отдаёте Happ и Hiddify. Нужно: ничего.</p>
+          <h3>Подписка как есть</h3>
+          <p>Ссылка работает как есть: название, трафик, срок и «Поддержка» берутся из заголовков, что вы уже отдаёте Happ и Hiddify. Делать ничего не нужно.</p>
           <div class="panel" role="img" aria-label="V2pn без вкладок: подписка Configra в списке подписок, 24 сервера">
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 340px; --ax: max(24px, 50% - 170px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true" style="padding: 0">
@@ -180,8 +180,8 @@
           </div>
         </article>
         <article class="card card--row card--open span-4 m-nolift">
-          <h3>1 · Проверенный</h3>
-          <p>Вкладка с логотипом и цветами, своя страница и кнопка «Подключить в V2pn» для бота. Нужно: заявка, без программирования.</p>
+          <h3>Своя вкладка</h3>
+          <p>Логотип, цвета, фон, своя страница и кнопка «Подключить в V2pn» для бота. Одна форма, публикуется сразу.</p>
           <div class="panel" role="img" aria-label="Вкладка Configra в заголовке V2pn и карточка тарифа">
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 340px; --ax: max(24px, 50% - 170px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true" style="padding: 0">
@@ -198,8 +198,8 @@
           </div>
         </article>
         <article class="card card--row card--open span-4 m-nolift">
-          <h3>2 · Интеграция</h3>
-          <p>Вход по коду из бота без ссылок, свои кнопки и скрытые адреса серверов. Нужно: два адреса API на вашем сервере.</p>
+          <h3>Особые права</h3>
+          <p>Вход по коду из бота, свои кнопки, скрытые адреса и свои правила маршрутизации. Включаются после одобрения модератора.</p>
           <div class="panel" role="img" aria-label="Вход в V2pn через Configra: шесть цифр 482 913 и кнопка «Открыть бота»">
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 320px; --ax: max(24px, 50% - 160px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
@@ -258,21 +258,21 @@
     <div class="wrap">
       <div class="grid">
         <div class="span-5 stack-6">
-          <h2 id="way-h">Как получить вкладку</h2>
+          <h2 id="way-h">Как сделать вкладку</h2>
           <ol class="way-list">
-            <li><b>Вход по почте</b><span>Код из шести цифр, без пароля.</span></li>
-            <li><b>Заявка</b><span>Название, домены подписки и тестовая ссылка. Сервер проверит её сразу.</span></li>
-            <li><b>Решение владельца V2pn</b><span>Обычно за один-два дня.</span></li>
-            <li><b>Кабинет</b><span>Логотип, цвета и фон с живым окном V2pn.</span></li>
+            <li><b>Логин и пароль</b><span>Любые. Почта и Telegram не нужны.</span></li>
+            <li><b>Одна форма</b><span>Название, ссылка на подписку, логотип и цвета. Рядом живое окно V2pn.</span></li>
+            <li><b>«Опубликовать»</b><span>Сервер проверит ссылку и сам найдёт домен. Ссылка работает сразу.</span></li>
             <li><b>Кнопка в боте</b><span>Одна ссылка для всех ваших людей.</span></li>
+            <li><b>Особые права</b><span>Если нужны, ждут модератора. Остальное в это время уже работает.</span></li>
           </ol>
-          <p><a class="link" href="apply/">Подать заявку</a></p>
+          <p><a class="link" href="login/">Создать партнёра</a></p>
         </div>
-        <div class="frame frame--split span-6 start-7" role="img" aria-label="Проверка тестовой ссылки в заявке: ссылка открывается, 14 серверов, название и трафик из заголовков, ссылка на поддержку, серверы отвечают, нет ссылки на кабинет">
+        <div class="frame frame--split span-6 start-7" role="img" aria-label="Проверка ссылки на подписку перед публикацией: ссылка открывается, 14 серверов, название и трафик из заголовков, ссылка на поддержку, серверы отвечают, нет ссылки на кабинет">
           <div class="stage stage--fade-br">
             <div class="at-corner to-edge" style="--ax: 48px; --ay: 48px">
               <div class="v2-note v2-check ui ui-v2pn" aria-hidden="true" style="width: 440px">
-                <div class="v2-note__head"><b>Проверка ссылки</b><span class="v2-pill">Можно отправлять</span></div>
+                <div class="v2-note__head"><b>Проверка ссылки</b><span class="v2-pill">Можно публиковать</span></div>
                 <div class="v2-note__line"><i>✓</i><span>Ссылка открывается</span><small>0,4 с</small></div>
                 <div class="v2-note__line"><i>✓</i><span>14 серверов: VLESS 8, Hysteria2 6</span><small>все</small></div>
                 <div class="v2-note__line"><i>✓</i><span>Название и трафик из заголовков</span><small>Configra</small></div>
@@ -295,7 +295,7 @@
       <div class="grid">
         <article class="card card--row card--open span-4 m-nolift">
           <h3>Человек жмёт кнопку</h3>
-          <p>«Подключить в V2pn» в боте или кабинете ведёт на вашу страницу с его подпиской в ссылке.</p>
+          <p>«Подключить в V2pn» в боте или в личном кабинете ведёт на вашу страницу с его подпиской в ссылке.</p>
           <div class="panel" role="img" aria-label="Сообщение бота Configra с кнопкой «Подключить в V2pn»">
             <div class="stage stage--fade-b"><div class="at-rise fit" style="--fit-max: 320px; --ax: max(24px, 50% - 160px); --ay: 40px; --ay-sm: 24px">
               <div class="v2w v2-piece ui ui-v2pn" aria-hidden="true">
@@ -349,14 +349,14 @@
       <div class="grid">
       <div class="faq span-6">
         <div class="faq__item"><h3>Сколько это стоит?</h3><p>Нисколько: и V2pn, и вкладка бесплатны. Ваши люди платят только вам.</p></div>
-        <div class="faq__item"><h3>Что уходит на сервер V2pn?</h3><p>Ваша заявка и оформление. Подписки ваших людей туда не попадают: в ссылке кнопки она стоит после <code>#</code>, а эту часть браузер не отправляет.</p></div>
+        <div class="faq__item"><h3>Что уходит на сервер V2pn?</h3><p>Ваша форма: название, оформление и ваша ссылка на подписку для проверки. Подписки ваших людей туда не попадают: в ссылке кнопки она стоит после <code>#</code>, а эту часть браузер не отправляет.</p></div>
         <div class="faq__item"><h3>Что V2pn никогда не делает?</h3><p>Не продаёт серверы, не собирает данные о людях и не показывает ваш бренд тем, кто пришёл не от вас.</p></div>
-        <div class="faq__item"><h3>Сколько ждать решения?</h3><p>Обычно один-два дня. Решение появится на странице заявки, а пока ссылка работает как обычная подписка.</p></div>
+        <div class="faq__item"><h3>Сколько ждать?</h3><p>Нисколько: партнёр публикуется сразу после «Опубликовать». Ждут только особые права, обычно день-два, и решение видно в форме.</p></div>
       </div>
       <div class="faq span-6">
         <div class="faq__item"><h3>Кто увидит мою вкладку?</h3><p>Только люди, которые пришли от вас: по кнопке в <a href="https://telegram.org"><img class="faq__icon" data-icon="telegram" src="../assets/icons/telegram.svg" alt="" width="16" height="16" loading="lazy"> Telegram</a>-боте или по коду из него. Кто вставил ссылку сам, получает обычную подписку.</p></div>
-        <div class="faq__item"><h3>Можно поменять оформление потом?</h3><p>Да, в кабинете в любой момент. Новая версия выходит к людям после проверки владельцем V2pn.</p></div>
-        <div class="faq__item"><h3>Что если я передумаю?</h3><p>Напишите владельцу V2pn, и он отзовёт вкладку. Подписка останется работать как обычная.</p></div>
+        <div class="faq__item"><h3>Можно поменять оформление потом?</h3><p>Да, в любой момент на странице «Мой партнёр». Изменения уходят к людям сразу после «Сохранить».</p></div>
+        <div class="faq__item"><h3>Что если я передумаю или забуду пароль?</h3><p>Напишите модератору V2pn: он снимет партнёра или сбросит пароль. Подписка останется работать как обычная.</p></div>
         <div class="faq__item"><h3>Где подробности для разработчика?</h3><p>В <a href="guide/">руководстве провайдера</a> и в коде V2pn на <a href="https://github.com/Piwqust/V2pn"><img class="faq__icon" data-icon="github" src="../assets/icons/github.svg" alt="" width="16" height="16" loading="lazy"> GitHub</a>.</p></div>
       </div>
       </div>
@@ -383,10 +383,10 @@
   <div class="wrap">
     <div class="closing__cta close--type">
       <div class="section-head">
-        <h2 id="close-h">Подайте заявку на вкладку</h2>
-        <p>Вход по почте, заявка за пять минут, проверка ссылки сразу.</p>
+        <h2 id="close-h">Сделайте свою вкладку</h2>
+        <p>Логин и пароль, одна форма, ссылка работает сразу.</p>
       </div>
-      <a class="btn btn--primary btn--xl btn--wide" href="apply/">Подать заявку<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
+      <a class="btn btn--primary btn--xl btn--wide" href="login/">Создать партнёра<svg class="m-arrow" viewBox="0 0 12 12" aria-hidden="true"><path class="m-arrow__stem" d="M1 6h8"/><path class="m-arrow__head" d="M4.5 2.5 8 6l-3.5 3.5"/></svg></a>
     </div>
     <div class="closing__links">
       <div class="grid">
@@ -395,7 +395,7 @@
           <p class="footer__lede">Бесплатный VPN-клиент с открытым кодом для Windows и macOS, на основе v2rayN.</p>
         </div>
         <div class="span-2 footer__col"><h3>Приложение</h3><ul><li><a href="../#app">Окно</a></li><li><a href="../#features">Возможности</a></li><li><a href="../#install">Установка</a></li><li><a href="../#faq">Вопросы</a></li></ul></div>
-        <div class="span-2 footer__col"><h3>Провайдерам</h3><ul><li><a href="./">Вкладка провайдера</a></li><li><a href="login/">Вход в кабинет</a></li><li><a href="guide/">Руководство</a></li><li><a href="../p/configra/">Configra</a></li></ul></div>
+        <div class="span-2 footer__col"><h3>Провайдерам</h3><ul><li><a href="./">Вкладка провайдера</a></li><li><a href="login/">Вход для провайдеров</a></li><li><a href="guide/">Руководство</a></li><li><a href="../p/configra/">Configra</a></li></ul></div>
         <div class="span-2 footer__col"><h3>Проект</h3><ul><li><a href="https://github.com/Piwqust/V2pn">Код на GitHub</a></li><li><a href="https://github.com/Piwqust/V2pn/blob/v2pn/CHANGELOG.md">Что нового</a></li><li><a href="https://github.com/Piwqust/V2pn/releases">Все релизы</a></li><li><a href="https://github.com/Piwqust/V2pn/issues/new/choose">Сообщить о проблеме</a></li></ul></div>
       </div>
       <div class="footer__legal">

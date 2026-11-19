@@ -41,7 +41,7 @@ internal sealed class TestSites
 
 /// <summary>
 /// The V2pn Hub (hub/) signs the partner index on V2pn's server with its own key; the owner still signs with the root key
-/// on his computer. A hub-signed index never grants what is reviewed by hand; V2pn asks the hub and the GitHub release
+/// on his computer. A hub-signed index may grant routing a hub moderator approved, never transport or core; V2pn asks the hub and the GitHub release
 /// and goes by the hub's index, the root-signed one adding only the partners the hub does not list. A provider's link
 /// (v2pn://add?…&amp;partner=&lt;id&gt;) makes the person come from it only when the subscription is on its domains.
 /// </summary>
@@ -107,21 +107,45 @@ public class V2pnPartnerHubTests
     }
 
     [Test]
-    public async Task HubSignedIndex_WithReviewedGrants_DropsThem_AndKeepsTheRest()
+    public async Task HubSignedIndex_KeepsApprovedRouting_DropsTransportAndCore()
     {
         var listing = TestPartner.Listing(grants: ["edition", "routing", "transport", "core"]) with
         {
-            Reviewed = new Dictionary<string, string> { ["routing.json"] = RoutingHash },
+            Reviewed = new Dictionary<string, string>
+            {
+                ["routing.json"] = RoutingHash,
+                ["transport.json"] = RoutingHash,
+                ["core.json"] = RoutingHash,
+            },
         };
         var (json, sig) = Signed(_hub, listing);
 
         var index = V2pnPartnerTrust.ReadIndex(json, sig, [_owner.RootPublic], [HubPublic], out _)!;
         var taken = index.Get("configra")!;
 
-        await string.Join(",", taken.Grants).Should().BeEqualTo("edition");
-        await taken.ReviewedFiles.Count.Should().BeEqualTo(0);
-        await index.Problems.Single().Contains("routing").Should().BeTrue();
-        await index.Problems.Single().Contains("only the root key").Should().BeTrue();
+        // A hub moderator approved this routing.json: it counts. Transport and core need the owner's root key.
+        await string.Join(",", taken.Grants).Should().BeEqualTo("edition,routing");
+        await string.Join(",", taken.ReviewedFiles.Keys).Should().BeEqualTo("routing.json");
+        await taken.ReviewedFiles["routing.json"].Should().BeEqualTo(RoutingHash);
+        await index.Problems.Single().Contains("transport").Should().BeTrue();
+        await index.Problems.Single().Contains("core.json").Should().BeTrue();
+        await index.Problems.Single().Contains("routing").Should().BeFalse();
+    }
+
+    [Test]
+    public async Task HubSignedIndex_WithApprovedRoutingOnly_HasNoProblems()
+    {
+        var listing = TestPartner.Listing(grants: ["edition", "routing"]) with
+        {
+            Reviewed = new Dictionary<string, string> { ["routing.json"] = RoutingHash },
+        };
+        var (json, sig) = Signed(_hub, listing);
+
+        var index = V2pnPartnerTrust.ReadIndex(json, sig, [_owner.RootPublic], [HubPublic], out _)!;
+
+        await index.Signer.Should().BeEqualTo(V2pnPartnerSigner.Hub);
+        await string.Join(",", index.Get("configra")!.Grants).Should().BeEqualTo("edition,routing");
+        await index.Problems.Count.Should().BeEqualTo(0);
     }
 
     [Test]

@@ -19,7 +19,7 @@ public sealed record V2pnPartnerListing(
 {
     public bool Allows(string grant) => Grants.Contains(grant);
 
-    /// <summary>Which key signed the index this listing came from: a hub-signed listing never carries a reviewed grant.</summary>
+    /// <summary>Which key signed the index this listing came from: a hub-signed listing never carries transport or core.</summary>
     public V2pnPartnerSigner Signer { get; init; } = V2pnPartnerSigner.Root;
 
     /// <summary>
@@ -89,7 +89,7 @@ public enum V2pnPartnerSigner
     /// <summary>The owner's root key (tools/partner.cs publish, on his computer): every grant counts.</summary>
     Root,
 
-    /// <summary>The V2pn Hub's key (on the server): the reviewed grants (<see cref="V2pnPartnerGrants.Reviewed"/>) are dropped.</summary>
+    /// <summary>The V2pn Hub's key (on the server): transport and core (<see cref="V2pnPartnerGrants.RootOnly"/>) are dropped.</summary>
     Hub,
 }
 
@@ -160,11 +160,15 @@ public static class V2pnPartnerGrants
 
     public static readonly IReadOnlyList<string> All = [Edition, Account, Actions, Lock, Routing, Transport, Core];
 
-    /// <summary>
-    /// The grants of files the owner of V2pn reads by hand (their hashes in "reviewed"): taken only from an index signed
-    /// with a root key, never from the hub's. The hub drops them too (hub/lib/publish.mjs REVIEWED_GRANTS).
-    /// </summary>
+    /// <summary>The grants of files read by hand before they count (their hashes in "reviewed").</summary>
     public static readonly IReadOnlyList<string> Reviewed = [Routing, Transport, Core];
+
+    /// <summary>
+    /// The reviewed grants a hub-signed index may give: routing, once a hub moderator approved exactly that routing.json
+    /// (a preset the person still picks; it cannot reach the core). Transport and core change how every server connects,
+    /// so only the root key on the owner's computer grants them.
+    /// </summary>
+    public static readonly IReadOnlyList<string> RootOnly = [Transport, Core];
 }
 
 /// <summary>Reads and checks the partner index and the packs it pins. Pure: no network, no files, no clock but the one passed in.</summary>
@@ -213,7 +217,7 @@ public static class V2pnPartnerTrust
 
     /// <summary>
     /// The index when its signature is one of <paramref name="rootKeys"/> (every grant counts) or one of
-    /// <paramref name="hubKeys"/> (the V2pn Hub's: the reviewed grants and the hashes of reviewed files are dropped and
+    /// <paramref name="hubKeys"/> (the V2pn Hub's: transport and core and the hashes of their files are dropped and
     /// named in <see cref="V2pnPartnerIndex.Problems"/>, the rest of each listing stands). A root key is tried first, so a
     /// key in both lists counts as a root key. <see cref="V2pnPartnerIndex.Signer"/> and every listing say which it was.
     /// </summary>
@@ -263,16 +267,18 @@ public static class V2pnPartnerTrust
                 }
                 if (signer == V2pnPartnerSigner.Hub)
                 {
-                    // The server's key may be taken from the server; what the owner reads by hand needs his own key.
-                    var dropped = listing.Grants.Where(V2pnPartnerGrants.Reviewed.Contains).ToList();
-                    if (dropped.Count > 0 || listing.ReviewedFiles.Count > 0)
+                    // The server's key may be taken from the server: what changes every connection needs the owner's own key.
+                    var dropped = listing.Grants.Where(V2pnPartnerGrants.RootOnly.Contains).ToList();
+                    var droppedFiles = listing.ReviewedFiles.Keys.Where(f => V2pnPartnerGrants.RootOnly.Contains(V2pnReviewedFiles.GrantOf(f))
+                                                                             || !V2pnReviewedFiles.All.Contains(f)).ToList();
+                    if (dropped.Count > 0 || droppedFiles.Count > 0)
                     {
-                        problems.Add($"{listing.Id}: {string.Join(", ", dropped.Concat(listing.ReviewedFiles.Keys).Distinct())} left out: only the root key grants what is reviewed by hand");
+                        problems.Add($"{listing.Id}: {string.Join(", ", dropped.Concat(droppedFiles).Distinct())} left out: only the root key grants transport and core");
                     }
                     listing = listing with
                     {
-                        Grants = listing.Grants.Where(g => !V2pnPartnerGrants.Reviewed.Contains(g)).ToList(),
-                        Reviewed = new Dictionary<string, string>(),
+                        Grants = listing.Grants.Where(g => !V2pnPartnerGrants.RootOnly.Contains(g)).ToList(),
+                        Reviewed = listing.ReviewedFiles.Where(f => !droppedFiles.Contains(f.Key)).ToDictionary(f => f.Key, f => f.Value),
                     };
                 }
                 partners.Add(listing with { Signer = signer });

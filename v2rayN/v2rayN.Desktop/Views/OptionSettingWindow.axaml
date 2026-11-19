@@ -960,7 +960,7 @@
                                             <StackPanel>
                                                 <TextBlock Classes="srowtitle" Text="{x:Static resx:ResUI.TbSettingsDestOverride}" />
                                             </StackPanel>
-                                            <ListBox x:Name="clbdestOverride" SelectionMode="Multiple,Toggle" Theme="{DynamicResource CardCheckGroupListBox}" />
+                                            <ListBox x:Name="clbdestOverride" SelectionMode="Multiple,Toggle" Classes="chips" />
                                         </StackPanel>
                                     </Border>
                                     <Border Classes="srow adv">

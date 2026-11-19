@@ -198,7 +198,7 @@
                                     </HyperlinkButton>
                                 </StackPanel>
                             </StackPanel>
-                            <ListBox x:Name="clbProtocol" SelectionMode="Multiple,Toggle" Theme="{DynamicResource CardCheckGroupListBox}" />
+                            <ListBox x:Name="clbProtocol" SelectionMode="Multiple,Toggle" Classes="chips" />
                         </StackPanel>
                     </Border>
                     <Border Classes="srow stack adv">
@@ -207,7 +207,7 @@
                                 <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtEntry}" />
                                 <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtEntryHint}" />
                             </StackPanel>
-                            <ListBox x:Name="clbInboundTag" SelectionMode="Multiple,Toggle" Theme="{DynamicResource CardCheckGroupListBox}" />
+                            <ListBox x:Name="clbInboundTag" SelectionMode="Multiple,Toggle" Classes="chips" />
                         </StackPanel>
                     </Border>
                     <Border Classes="srow adv">

@@ -1,57 +1,41 @@
-// /providers/cabinet/: an approved provider's own corner. The look of its tab (saved as a draft as it is edited, the
-// hub's review drawn at once: the colours V2pn will use, contrast notes, what blocks it), sent to the owner for
-// publication; the link for the bot's button; at tier 2 the sign-in API, its test and the provider's own buttons.
-import { api, me, wireAccount } from './api.js';
-import { $, $$, busy, checkHtml, date, esc, prefersDark, setFieldError, toast, windowHtml, wireCopy } from './hubui.js';
+// /providers/cabinet/ = «Мой партнёр»: one form (name, subscription link, logo, colours, background, layout, links, special
+// rights) beside V2pn's window that changes with it. «Опубликовать» saves and publishes at once (PUT /api/partner); the
+// special rights wait for a moderator while the rest is live. The link is checked from the server as it is typed.
+import { api, me, toSignIn, wireAccount } from './api.js';
+import { $, $$, busy, checkHtml, esc, plural, prefersDark, setFieldError, toast, windowHtml, wireCopy } from './hubui.js';
 
 const ROOT = '../../';
-const VIEWS = ['overview', 'look', 'share', 'api'];
-const SLOT_TEXT = {
-  logo: ['Логотип для тёмного фона', 'dark'],
-  logoOnLight: ['Логотип для светлого фона', 'light'],
-  mark: ['Знак', 'dark'],
-  backdrop: ['Фон «Сцены»', ''],
-};
-const ICONS = [['', 'Без значка'], ['bolt', 'Молния'], ['shield', 'Щит'], ['play', 'Видео'], ['game', 'Игры'], ['card', 'Карта'], ['chat', 'Чат'], ['globe', 'Глобус'],
-  ['star', 'Звезда'], ['refresh', 'Обновить'], ['check', 'Галочка'], ['info', 'Инфо'], ['gift', 'Подарок']];
-const DOS = [['connect.best', 'Подключить лучший сервер', 'strategy'], ['connect.recommend', 'Сервер под задачу (нужен API)', 'purpose'],
-  ['connect.server', 'Подключить сервер', 'server'], ['connect.group', 'Подключить группу', 'group'], ['open.cabinet', 'Открыть кабинет', ''],
-  ['open.renew', 'Продлить', ''], ['open.support', 'Поддержка', ''], ['open.link', 'Открыть ссылку', 'url'], ['subscription.update', 'Обновить подписку', ''],
-  ['check.services', 'Проверить сервисы', ''], ['info.card', 'Карточка с данными (нужен API)', '']];
-const PARAM = {
-  strategy: ['Как выбрать', [['ping', 'по пингу'], ['stable', 'самый стабильный'], ['load', 'наименее загруженный']]],
-  purpose: ['Для чего', [['youtube', 'YouTube'], ['games', 'игры'], ['mobile', 'мобильный интернет'], ['whitelist', 'белые списки'], ['streaming', 'стриминг'], ['ai', 'нейросети'], ['torrents', 'торренты']]],
-  server: ['Адрес сервера', null],
-  group: ['Группа', null],
-  url: ['Ссылка', null],
-};
+const MAX_BYTES = 1048576;
+const STARTER = '#2F6BFF';
+const RIGHT_NAMES = { routing: 'свои правила маршрутизации', lock: 'скрытые адреса серверов', actions: 'свои кнопки', account: 'API и вход по коду' };
+const ROUTING_EXAMPLE = 'domain:ru, geoip:ru → direct\ndomain:youtube.com, domain:openai.com → proxy';
+// What a button can do here; the hub knows more (V2pnPartnerCatalog), and a button that does one of those stays as it is.
+const KINDS = [['open.link', 'Открыть ссылку'], ['open.renew', 'Продлить (ссылка «Оплата»)'], ['open.support', 'Поддержка'], ['open.cabinet', 'Открыть кабинет'],
+  ['connect.best', 'Подключить самый быстрый'], ['subscription.update', 'Обновить подписку'], ['check.services', 'Проверить сервисы']];
+const STARTER_ACTIONS = [{ label: 'Продлить', do: 'open.renew' }, { label: 'Устройства', do: 'open.link', url: '' }];
 
 let account = null;
-let data = null;            // GET /api/cabinet
-let look = null;            // the draft being edited
+let data = null;      // GET /api/partner (and every PUT's answer)
+let form = null;      // what the page shows, edited in place
+let savedKey = '';    // payload() as last saved
 let mode = prefersDark() ? 'dark' : 'light';
-let saveTimer = null;
-let saving = Promise.resolve();
+let check = { state: 'idle' };
+let checkSeq = 0;
+let checkTimer = null;
 
-// ---------------------------------------------------------------- loading and the sections
+const partner = () => data && data.partner;
+const picUrl = sha => (sha ? `/api/partner/pictures/${sha}` : null);
 
-function showState(state, message) {
+// ---------------------------------------------------------------- loading
+
+function showState(state, title, message) {
   $('#view-loading').hidden = state !== 'loading';
   $('#view-error').hidden = state !== 'error';
-  $('#shell').hidden = state !== 'ready';
+  $('#editor').hidden = state !== 'ready';
+  $('#account').hidden = state !== 'ready';
+  if (title) $('[data-error-title]').textContent = title;
   if (message) $('[data-error-text]').textContent = message;
 }
-
-function route() {
-  let view = location.hash.slice(1);
-  if (!VIEWS.includes(view)) view = 'overview';
-  for (const v of VIEWS) $(`[data-view="${v}"]`).hidden = v !== view;
-  $$('.sidenav [data-tab]').forEach(a => {
-    if (a.dataset.tab === view) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current');
-  });
-  if (view === 'look') drawPreview();
-}
-window.addEventListener('hashchange', () => { route(); window.scrollTo({ top: 0 }); });
 
 async function load() {
   showState('loading');
@@ -59,468 +43,697 @@ async function load() {
     const who = await me(ROOT);
     account = who.account;
     wireAccount(ROOT, account);
-    if (!who.provider) {
-      location.replace(account.admin ? `${ROOT}admin/` : `${ROOT}providers/apply/`);
-      return;
-    }
-    data = await api.get('/api/cabinet');
-    look = structuredClone(data.look.draft);
+    data = await api.get('/api/partner');
+    fromServer();
     showState('ready');
     renderAll();
-    route();
   } catch (e) {
-    showState('error', e.message);
+    showState('error', e.code === 'offline' ? 'Нет связи' : 'Не загрузилось', e.message);
   }
 }
 $('[data-retry]').addEventListener('click', load);
 
-const tierName = t => (t >= 2 ? 'Интеграция' : 'Проверенный');
-const same = (a, b) => Boolean(a && b) && JSON.stringify(a) === JSON.stringify(b);
-const picUrl = sha => (sha ? `/api/cabinet/pictures/${sha}` : null);
-const revoked = () => data.provider.state === 'revoked';
+/** The form from the hub's answer: what is saved, with the special rights as asked. */
+function fromServer() {
+  const look = data.look || {};
+  const p = partner();
+  const r = (p && p.rights) || {};
+  form = {
+    name: look.name || '',
+    subscription: (p && p.subscription) || '',
+    brand: look.brand && look.brand.length ? [...look.brand] : [STARTER],
+    background: look.background === 'gradient' || look.background === 'image' ? look.background : 'none',
+    layout: look.layout === 'stickers' ? 'stickers' : 'v2pn',
+    logo: look.logo || null, logoOnLight: look.logoOnLight || null, mark: look.mark || null, backdrop: look.backdrop || null,
+    links: { support: (look.links && look.links.support) || '', cabinet: (look.links && look.links.cabinet) || '' },
+    rights: {
+      routing: { on: Boolean(r.routing), text: r.routing ? r.routing.text || '' : ROUTING_EXAMPLE },
+      lock: { on: Boolean(r.lock) },
+      actions: { on: Boolean(r.actions), list: r.actions ? r.actions.content.map(a => ({ ...a })) : STARTER_ACTIONS.map(a => ({ ...a })) },
+      account: { on: Boolean(r.account), api: r.account ? r.account.content.api : '', login: r.account ? r.account.content.login === true : true },
+    },
+  };
+  savedKey = p ? JSON.stringify(payload()) : '';
+  // The saved link's own check stands until the link changes.
+  if (p && p.check) check = { state: p.check.ok ? 'done' : 'fail', url: p.subscription, result: p.check, domain: (p.domains || [])[0] || '', taken: false };
+  else check = { state: 'idle' };
+}
+
+/** PUT /api/partner's body. */
+function payload() {
+  const rights = {};
+  const r = form.rights;
+  if (r.routing.on) rights.routing = r.routing.text;
+  if (r.lock.on) rights.lock = true;
+  if (r.actions.on) rights.actions = r.actions.list.map(a => ({ ...a, label: (a.label || '').trim(), url: (a.url || '').trim() }));
+  if (r.account.on) rights.account = { api: r.account.api.trim(), login: r.account.login };
+  return {
+    name: form.name.trim(), subscription: form.subscription.trim(), brand: form.brand, background: form.background, layout: form.layout,
+    logo: form.logo, logoOnLight: form.logoOnLight, mark: form.mark, backdrop: form.backdrop,
+    links: { support: form.links.support.trim(), cabinet: form.links.cabinet.trim() }, rights,
+  };
+}
+const dirty = () => !partner() || JSON.stringify(payload()) !== savedKey;
+
+// ---------------------------------------------------------------- drawing the form
 
 function renderAll() {
-  const p = data.provider;
-  document.title = `Кабинет ${p.name} | V2pn`;
-  $('#title').textContent = p.name;
-  $$('[data-page-link]').forEach(a => { a.href = data.share.page; });
-  $('[data-api-lock]').hidden = p.tier >= 2;
-  $('#revoked').hidden = !revoked();
-  if (revoked()) $('[data-revoke-reason]').textContent = p.revokeReason ? `Причина: «${p.revokeReason}».` : '';
-  renderOverview();
-  renderLookForm();
-  renderReview();
+  const p = partner();
+  document.title = p ? `${p.name}: мой партнёр | V2pn` : 'Мой партнёр | V2pn';
+  $('#f-name').value = form.name;
+  $('#f-sub').value = form.subscription;
+  $('#f-support').value = form.links.support;
+  $('#f-cabinet').value = form.links.cabinet;
+  $('#f-routing').value = form.rights.routing.text;
+  $('#f-api').value = form.rights.account.api;
+  $('#x-login').checked = form.rights.account.login;
+  for (const k of Object.keys(RIGHT_NAMES)) $(`#x-${k}`).checked = form.rights[k].on;
+  $('#first').hidden = Boolean(p);
+  $('#down').hidden = !(p && p.state === 'down');
+  if (p && p.state === 'down') $('[data-down-reason]').textContent = p.downReason ? `Причина: «${p.downReason}».` : '';
+  renderSwatches();
+  renderSegs();
+  renderPicks();
+  renderRights();
+  renderActions();
+  renderCheck();
+  renderState();
   renderShare();
-  renderApi();
-  $$('#look-form input, #look-form button, #api-tier2 input, #api-tier2 select, #api-tier2 button').forEach(el => { if (revoked()) el.disabled = true; });
+  draw();
 }
 
-// ---------------------------------------------------------------- overview
-
-function lookState() {
-  const p = data.provider;
-  if (p.queueState === 'queued') return ['info', 'Оформление ждёт проверки'];
-  if (p.queueState === 'returned') return ['warn', 'Оформление вернули'];
-  if (data.look.published && data.look.published.brand?.length) return ['ok', 'Оформление опубликовано'];
-  return ['', 'Оформление не настроено'];
+function renderState() {
+  const p = partner();
+  const pill = $('#pub-state');
+  pill.hidden = false;
+  if (!p) { pill.className = 'badge'; pill.textContent = 'Не опубликован'; }
+  else if (p.state === 'down') { pill.className = 'badge badge--fail'; pill.textContent = 'Снят модератором'; }
+  else { pill.className = 'badge badge--ok'; pill.textContent = 'Опубликован'; }
+  const btn = $('#publish');
+  if (!btn.hasAttribute('aria-busy')) {
+    btn.textContent = p ? 'Сохранить' : 'Опубликовать';
+    btn.disabled = Boolean(p) && !dirty();
+  }
+  $('#publish-hint').textContent = !p ? 'Ссылка заработает сразу.'
+    : dirty() ? (p.state === 'down' ? 'Есть изменения. Партнёр снят, поэтому пользователи их не увидят, пока модератор его не вернёт.' : 'Есть изменения. Они уйдут пользователям сразу после «Сохранить».')
+      : 'Изменений нет. Всё уже у пользователей.';
 }
 
-function renderOverview() {
-  const p = data.provider;
-  const [lvl, text] = lookState();
-  $('[data-name]').textContent = p.name;
-  $('#ov-badges').innerHTML = `${revoked() ? '<span class="badge badge--fail">Отозван</span>' : '<span class="badge badge--ok">Одобрен</span>'}
-    <span class="badge">Ступень ${p.tier}: ${tierName(p.tier)}</span><span class="badge${lvl ? ` badge--${lvl}` : ''}">${text}</span>`;
-  $('#ov-kv').innerHTML = `<dt>Страница</dt><dd><a href="${esc(data.share.page)}" target="_blank" rel="noopener">${esc(data.share.page.replace(/^https?:\/\//, ''))}</a></dd>
-    <dt>Домены подписки</dt><dd>${p.domains.map(esc).join(', ')}</dd>
-    <dt>Срок</dt><dd>до ${esc(date(p.until))}${p.expired ? ' — истёк, напишите владельцу V2pn' : ''}</dd>
-    <dt>Права</dt><dd>${p.grants.map(g => ({ edition: 'вкладка', account: 'вход по коду и тариф', actions: 'свои кнопки', lock: 'скрытые адреса' })[g] || g).join(', ')}</dd>
-    ${p.publishedAt ? `<dt>Опубликовано</dt><dd>${esc(date(p.publishedAt, { time: true }))}</dd>` : ''}`;
-  const designed = Boolean(data.look.published?.brand?.length);
-  const tick = '<svg viewBox="0 0 16 16"><path d="M3.5 8.5 6.5 11.5 12.5 4.5"/></svg>';
-  const item = (done, n, title, sub, href, action) => `<li class="${done ? 'is-done' : ''}"><span class="tick">${done ? tick : n}</span>
-    <div><b>${title}</b><span>${sub}</span></div>${href ? `<a class="btn btn--secondary btn--sm" href="${href}">${action}</a>` : ''}</li>`;
-  const ret = p.queueState === 'returned' ? ` Вернули: «${esc(p.returnReason || '')}».` : '';
-  $('#todo').innerHTML = [
-    item(designed, 1, 'Оформление', p.queueState === 'queued' ? 'Отправлено, ждёт проверки владельца V2pn.' : designed ? `Опубликовано. Меняйте когда угодно: изменения снова пройдут проверку.${ret}` : `Цвета и логотип. Минут пять.${ret}`, '#look', designed ? 'Изменить' : 'Настроить'),
-    item(false, 2, 'Кнопка для бота', 'Одна ссылка: по ней V2pn ставится и добавляет подписку с вашей вкладкой.', '#share', 'Взять ссылку'),
-    p.tier >= 2
-      ? item(Boolean(data.look.published?.login), 3, 'Вход по коду', 'Два адреса API на вашем сервере, и человек входит по коду из бота.', '#api', data.look.published?.login ? 'Открыть' : 'Подключить')
-      : item(false, 3, 'Вход по коду', p.tierRequest ? 'Запрос на ступень 2 у владельца V2pn.' : 'На ступени 2: вход по коду из бота и свои кнопки.', '#api', 'Подробнее'),
-  ].join('');
+function renderShare() {
+  const p = partner();
+  $('#published').hidden = !p;
+  if (!p) return;
+  const base = p.share.button;
+  $('#share-base').textContent = base;
+  $('#share-link').innerHTML = `${esc(base)}<mark>подписка человека</mark>`;
+  $('#page-link').href = p.share.page;
+  $('#snippet').innerHTML = `<span class="c">// Bot API: sendMessage с inline-кнопкой</span>
+<span class="k">const</span> url = <span class="s">'${esc(base)}'</span> + encodeURIComponent(subscriptionUrl);
+reply_markup: { inline_keyboard: [[
+  { text: <span class="s">'Подключить в V2pn'</span>, url }
+]] }`;
+  const pending = (p.pending || []).map(k => RIGHT_NAMES[k] || k);
+  $('#pending-note').hidden = !pending.length;
+  $('[data-pending-what]').textContent = pending.length ? `${cap(pending.join(', '))}. Пока модератор не ответит, всё остальное уже работает.` : '';
+  const denied = Object.entries(p.rights || {}).filter(([, r]) => r.state === 'denied');
+  $('#denied-note').hidden = !denied.length;
+  $('[data-denied-list]').innerHTML = denied.map(([k, r]) => `<li>${esc(cap(RIGHT_NAMES[k] || k))}${r.reason ? `: «${esc(r.reason)}»` : ''}</li>`).join('');
+  wireCopy();
 }
 
-// ---------------------------------------------------------------- the look form
+const cap = s => s.charAt(0).toUpperCase() + s.slice(1);
 
-const fieldOf = key => $(`[data-key="${key}"]`);
+// ---------------------------------------------------------------- colours
 
-function renderLookForm() {
-  $('#look-name').value = look.name || '';
-  $('#link-cabinet').value = look.links?.cabinet || '';
-  $('#link-support').value = look.links?.support || '';
-  $$('input[name="background"]').forEach(r => { r.checked = r.value === (look.background || 'none'); });
-  renderColours();
-  renderSlots();
+const lum = hex => {
+  const n = parseInt(hex.slice(1), 16);
+  const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4; });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+};
+const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); };
+const onColor = hex => (contrast(hex, '#FFFFFF') >= contrast(hex, '#0B0B0D') ? '#FFFFFF' : '#0B0B0D');
+function lighter(hex, k = 0.45) {
+  const n = parseInt(hex.slice(1), 16);
+  return `#${[n >> 16, (n >> 8) & 255, n & 255].map(c => Math.round(c + (255 - c) * k).toString(16).padStart(2, '0')).join('').toUpperCase()}`;
 }
 
-function renderColours() {
-  const box = $('#colours');
-  const list = look.brand.length ? look.brand : [''];
-  box.innerHTML = list.map((hex, i) => `<div class="colour">
-    <input type="color" value="${esc(/^#[0-9A-Fa-f]{6}$/.test(hex) ? hex : '#E8391B')}" aria-label="Цвет ${i + 1}" data-i="${i}">
-    <input type="text" value="${esc(hex)}" maxlength="7" spellcheck="false" placeholder="#RRGGBB" aria-label="Цвет ${i + 1}, код" data-i="${i}">
-    ${list.length > 1 || hex ? `<button class="btn btn--secondary" type="button" data-remove-colour="${i}" aria-label="Убрать цвет ${i + 1}"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>` : '<span></span>'}
-  </div>`).join('');
-  $('[data-add-colour]').hidden = look.brand.length >= 3 || !look.brand.length;
-  $$('input', box).forEach(input => input.addEventListener(input.type === 'color' ? 'input' : 'input', () => {
-    const i = Number(input.dataset.i);
-    let v = input.value.trim().toUpperCase();
-    if (input.type === 'text' && v && !v.startsWith('#')) v = `#${v}`;
-    const pair = $$(`input[data-i="${i}"]`, box);
-    if (/^#[0-9A-F]{6}$/.test(v)) {
-      pair.forEach(x => { if (x !== input) x.value = x.type === 'color' ? v.toLowerCase() : v; });
-      const brand = [...look.brand];
-      brand[i] = v;
-      look.brand = brand.filter(Boolean);
-      setFieldError(input, '');
-      $('[data-add-colour]').hidden = look.brand.length >= 3;
-      changed();
-    } else if (input.type === 'text') {
-      input.addEventListener('blur', () => { if (!/^#[0-9A-F]{6}$/i.test(input.value.trim().replace(/^([^#])/, '#$1'))) setFieldError(input, input.value ? 'Цвет в виде #RRGGBB, например #2E6BFF.' : ''); }, { once: true });
-    }
-  }));
-  $$('[data-remove-colour]', box).forEach(btn => btn.addEventListener('click', () => {
-    look.brand.splice(Number(btn.dataset.removeColour), 1);
-    renderColours();
-    changed();
-  }));
+function renderSwatches() {
+  const box = $('#swatches');
+  box.innerHTML = form.brand.map((c, i) => `<span class="swatch" style="background: ${esc(c)}"><input type="color" value="${esc(c.toLowerCase())}" data-i="${i}" aria-label="Цвет ${i + 1}, ${esc(c)}"></span>`).join('')
+    + (form.brand.length < 3 ? '<button type="button" class="chip-btn" data-colour="add">+ цвет</button>' : '')
+    + (form.brand.length > 1 ? '<button type="button" class="chip-btn" data-colour="remove">− цвет</button>' : '');
+  contrastHint();
 }
-$('[data-add-colour]').addEventListener('click', () => {
-  if (look.brand.length >= 3) return;
-  const base = look.brand[look.brand.length - 1] || '#E8391B';
-  look.brand.push(lighter(base));
-  renderColours();
-  $$('#colours input[type="text"]').at(-1).focus();
+
+function contrastHint() {
+  const b = form.brand[0];
+  const on = onColor(b);
+  $('#contrast-hint').textContent = `Надпись на кнопке будет ${on === '#FFFFFF' ? 'белой' : 'чёрной'}: контраст ${contrast(b, on).toFixed(1).replace('.', ',')}:1. V2pn подбирает её сам.`;
+}
+
+$('#swatches').addEventListener('input', e => {
+  const i = e.target.dataset.i;
+  if (i == null) return;
+  form.brand[Number(i)] = e.target.value.toUpperCase();
+  e.target.parentElement.style.background = e.target.value;
+  e.target.setAttribute('aria-label', `Цвет ${Number(i) + 1}, ${e.target.value.toUpperCase()}`);
+  contrastHint();
+  changed();
+});
+$('#swatches').addEventListener('click', e => {
+  const b = e.target.closest('[data-colour]');
+  if (!b) return;
+  if (b.dataset.colour === 'add' && form.brand.length < 3) form.brand.push(lighter(form.brand[form.brand.length - 1]));
+  if (b.dataset.colour === 'remove' && form.brand.length > 1) form.brand.pop();
+  renderSwatches();
   changed();
 });
 
-function lighter(hex) {
-  const n = parseInt(hex.slice(1), 16);
-  const mix = c => Math.round(c + (255 - c) * 0.45);
-  return `#${[n >> 16, (n >> 8) & 255, n & 255].map(mix).map(c => c.toString(16).padStart(2, '0')).join('').toUpperCase()}`;
-}
-
-function renderSlots() {
-  $('#slots').innerHTML = Object.entries(SLOT_TEXT).map(([key, [label, tile]]) => {
-    const sha = look[key];
-    const pic = sha ? data.pictures.find(p => p.sha256 === sha) : null;
-    const hint = data.slots?.[key]?.hint || '';
-    return `<div class="slot" data-slot="${key}">
-      <div class="slot__pic${tile ? ` slot__pic--${tile}` : ''}">${sha ? `<img src="${esc(picUrl(sha))}" alt="${esc(label)}">` : '<span class="empty">нет</span>'}</div>
-      <div class="slot__body"><b>${label}</b><small>${esc(hint.charAt(0).toUpperCase() + hint.slice(1))}${pic ? ` · сейчас ${pic.width}×${pic.height}` : ''}</small>
-        <span class="field__error" hidden></span>
-        <div class="slot__acts">
-          <label class="btn btn--secondary" for="file-${key}">${sha ? 'Заменить' : 'Загрузить'}</label>
-          <input type="file" id="file-${key}" accept="image/png" data-upload="${key}">
-          ${sha ? `<button class="btn btn--secondary" type="button" data-clear="${key}">Убрать</button>` : ''}
-        </div></div></div>`;
-  }).join('');
-  $$('[data-upload]').forEach(input => input.addEventListener('change', () => upload(input)));
-  $$('[data-clear]').forEach(btn => btn.addEventListener('click', () => {
-    look[btn.dataset.clear] = null;
-    renderSlots();
-    changed({ now: true });
-  }));
-  // A label styled as a button takes the keyboard too.
-  $$('.slot label.btn').forEach(l => {
-    l.tabIndex = 0;
-    l.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(`#${l.htmlFor}`).click(); } });
-  });
-}
-
-async function upload(input) {
-  const key = input.dataset.upload;
-  const file = input.files && input.files[0];
-  const slot = input.closest('.slot');
-  const label = $('label.btn', slot);
-  if (!file) return;
-  const err = message => {
-    const e = $('.field__error', slot);
-    e.textContent = message;
-    e.hidden = !message;
-  };
-  err('');
-  if (file.type && file.type !== 'image/png') { err('Нужен файл PNG.'); return; }
-  const max = data.slots?.[key]?.maxBytes || 1048576;
-  if (file.size > max) { err(`Картинка ${(file.size / 1048576).toFixed(1).replace('.', ',')} МБ, а можно до 1 МБ. Сожмите её.`); return; }
-  label.textContent = 'Загружаем…';
-  try {
-    const res = await api.upload(`/api/cabinet/upload?slot=${encodeURIComponent(key)}`, file);
-    const pic = res.picture;
-    data.pictures = data.pictures.filter(p => p.sha256 !== pic.sha256).concat(pic);
-    look[key] = pic.sha256;
-    if (key === 'backdrop' && look.background !== 'image') look.background = 'image';
-    renderLookForm();
-    changed({ now: true });
-    toast('Картинка загружена');
-  } catch (e) {
-    label.textContent = look[key] ? 'Заменить' : 'Загрузить';
-    err(e.fields?.file || e.fields?.slot || e.message);
-  } finally {
-    input.value = '';
+/** The colours the window draws: the hub's for the saved look; until the hub has seen the colours typed, close to them. */
+function colours() {
+  const look = data.look || {};
+  const same = JSON.stringify(look.brand || []) === JSON.stringify(form.brand) && look.background === form.background && (look.backdrop || null) === form.backdrop;
+  if (same && data.review && data.review.colours) return data.review.colours[mode];
+  const accent = form.brand[0];
+  const onAccent = onColor(accent);
+  let stage = null;
+  if (form.background === 'gradient') {
+    const stops = form.brand.length > 1 ? form.brand : [accent, lighter(accent, 0.35)];
+    const ink = mode === 'dark' ? '#FFFFFF' : onColor(stops[0]);
+    stage = { kind: 'gradient', stops, ink, soft: ink, scrim: mode === 'dark' ? 'rgba(0, 0, 0, .32)' : null,
+      solid: ink === '#FFFFFF' ? '#FFFFFF' : '#111111', onSolid: ink === '#FFFFFF' ? '#111111' : '#FFFFFF' };
+  } else if (form.background === 'image' && form.backdrop) {
+    stage = { kind: 'image', stops: [accent], ink: '#FFFFFF', soft: '#FFFFFF', scrim: 'rgba(0, 0, 0, .38)', solid: '#FFFFFF', onSolid: '#111111' };
   }
+  return { accent, onAccent, accentText: accent, stage };
 }
 
-$('#look-name').addEventListener('input', e => { look.name = e.target.value; changed(); });
-$('#link-cabinet').addEventListener('input', e => { look.links = { ...look.links, cabinet: e.target.value.trim() }; changed(); });
-$('#link-support').addEventListener('input', e => { look.links = { ...look.links, support: e.target.value.trim() }; changed(); });
-$$('input[name="background"]').forEach(r => r.addEventListener('change', () => { look.background = r.value; changed({ now: true }); }));
-
-// ---------------------------------------------------------------- saving and the review
-
-function changed({ now = false } = {}) {
-  clearTimeout(saveTimer);
-  $$('#saved, [data-saved]').forEach(el => { el.textContent = 'Сохраняем…'; });
-  drawPreview();
-  saveTimer = setTimeout(save, now ? 0 : 700);
-}
-
-function save() {
-  clearTimeout(saveTimer);
-  saving = saving.then(async () => {
-    try {
-      const res = await api.put('/api/cabinet/look', look);
-      data = { ...res, slots: res.slots || data.slots };
-      $$('#saved, [data-saved]').forEach(el => { el.textContent = 'Черновик сохранён'; });
-      renderReview();
-      renderOverview();
-    } catch (e) {
-      $$('#saved, [data-saved]').forEach(el => { el.textContent = e.code === 'offline' ? 'Нет связи: не сохранено' : 'Не сохранено'; });
-      if (e.fields) showProblems(e.fields);
-      else toast(e.message);
-    }
+function draw() {
+  if (!form) return;
+  const r = form.rights;
+  $('#preview').innerHTML = windowHtml({
+    root: ROOT, mode, name: form.name.trim() || 'Ваш партнёр', tab: true, colours: colours(),
+    mark: picUrl(form.mark), logo: picUrl(form.logo), logoOnLight: picUrl(form.logoOnLight), backdrop: picUrl(form.backdrop),
+    plan: { line: 'Тариф «Год» · 214 дней', traffic: '38 из 100 ГБ · до 21.06.2027' },
+    layout: form.layout, lock: r.lock.on,
+    actions: r.actions.on ? r.actions.list.map(a => (a.label || '').trim()).filter(Boolean) : [],
   });
-  return saving;
+  const look = data.look || {};
+  const same = JSON.stringify(look.brand || []) === JSON.stringify(form.brand) && look.background === form.background;
+  const notes = same && data.review ? data.review.notes || [] : [];
+  $('#notes-box').hidden = !notes.length;
+  $('#notes').innerHTML = notes.map(n => `<li>${esc(n)}</li>`).join('');
 }
 
-const PROBLEM_LABEL = {
-  name: 'Название', brand: 'Цвета', colours: 'Цвета', logo: 'Логотип для тёмного фона', logoOnLight: 'Логотип для светлого фона', mark: 'Знак',
-  backdrop: 'Фон', 'links.cabinet': 'Кабинет', 'links.support': 'Поддержка', api: 'Адрес API', login: 'Вход по коду', lock: 'Скрытые адреса', actions: 'Кнопки',
-};
-
-function showProblems(problems) {
-  // Clear what was marked, then mark what the hub says now.
-  $$('#look-form [aria-invalid], #api-tier2 [aria-invalid]').forEach(el => setFieldError(el, ''));
-  $$('[data-error-for]').forEach(el => { el.hidden = true; el.textContent = ''; });
-  $$('.slot .field__error').forEach(el => { if (!el.dataset.local) { el.hidden = true; el.textContent = ''; } });
-  for (const [key, message] of Object.entries(problems)) {
-    const input = fieldOf(key);
-    if (input) { setFieldError(input, message); continue; }
-    const slotErr = $(`[data-slot="${key}"] .field__error`);
-    if (slotErr) { slotErr.textContent = message; slotErr.hidden = false; continue; }
-    const m = /^actions\.(\d+)$/.exec(key);
-    const actErr = m && $(`.act[data-i="${m[1]}"] .field__error`);
-    if (actErr) { actErr.textContent = message; actErr.hidden = false; continue; }
-    const forKey = $(`[data-error-for="${key === 'colours' ? 'brand' : key}"]`);
-    if (forKey) { forKey.textContent = message; forKey.hidden = false; }
-  }
-  const list = Object.entries(problems);
-  $('#problems').hidden = !list.length;
-  $('#problems-list').innerHTML = list.map(([k, m]) => {
-    const a = /^actions\.(\d+)$/.exec(k);
-    return `<li>${esc(a ? `Кнопка ${Number(a[1]) + 1}` : PROBLEM_LABEL[k] || k)}: ${esc(m)}</li>`;
-  }).join('');
-}
-
-function renderReview() {
-  const r = data.review || { problems: {}, notes: [] };
-  showProblems(r.problems || {});
-  $('#notes-box').hidden = !(r.notes || []).length;
-  $('#notes').innerHTML = (r.notes || []).map(n => `<li>${esc(n)}</li>`).join('');
-  renderPublishBars();
-  drawPreview();
-}
-
-function drawPreview() {
-  if (!data || !look) return;
-  const colours = data.review?.colours?.[mode] || null;
-  // Until the hub has answered for the colours just typed, the window shows them as they are.
-  const typed = look.brand[0];
-  const exact = data.look.draft && same(data.look.draft.brand, look.brand) && data.look.draft.background === look.background;
-  const c = exact ? colours : (typed ? { accent: typed, accentText: typed, onAccent: '#0B0B0D', stage: look.background === 'gradient' && colours?.stage ? { ...colours.stage, stops: look.brand.length > 1 ? look.brand : colours.stage.stops } : colours?.stage } : colours);
-  $('#preview-light').innerHTML = windowHtml({
-    root: ROOT, mode, name: look.name || data.provider.name, tab: true, colours: c,
-    mark: picUrl(look.mark), logo: picUrl(look.logo), logoOnLight: picUrl(look.logoOnLight), backdrop: picUrl(look.backdrop),
-    plan: { line: 'Личный доступ · 77 дней', traffic: '12,4 из 50 ГБ · до 31.01.2027' },
-  });
-}
 $$('#modes button').forEach(b => {
   b.setAttribute('aria-pressed', String(b.dataset.mode === mode));
   b.addEventListener('click', () => {
     mode = b.dataset.mode;
     $$('#modes button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
-    drawPreview();
+    draw();
   });
 });
 
-// ---------------------------------------------------------------- sending for publication
+// ---------------------------------------------------------------- background and layout
 
-function publishState() {
-  const p = data.provider;
-  const draft = data.look.draft;
-  const problems = Object.keys(data.review?.problems || {}).length;
-  if (revoked()) return { text: 'Вкладка отозвана', sub: 'Оформление менять нельзя.', can: false };
-  if (problems) return { text: 'Есть что исправить', sub: 'Отмеченное красным не даёт отправить оформление.', can: false, label: 'Отправить на публикацию' };
-  if (p.queueState === 'queued' && same(draft, data.look.queued)) {
-    return { text: `Ждёт проверки владельца V2pn${p.queuedAt ? ` с ${date(p.queuedAt, { time: true })}` : ''}`, sub: 'Люди пока видят прошлую версию.', can: false, label: 'Отправлено', state: 'queued' };
+const BG_HINT = {
+  none: 'Карта мира в ваших цветах, как у обычного V2pn.',
+  gradient: 'Градиент из цветов бренда. С одним цветом V2pn добавит второй сам.',
+  image: 'Картинка от 640 px по каждой стороне, не шире 3:1. JPG тоже подойдёт: страница сама сделает из него PNG.',
+};
+const LAYOUT_HINT = {
+  v2pn: 'Боковая панель и главный экран, как у всех в V2pn.',
+  stickers: 'Наклейки поверх всего окна, всегда в ночных цветах: название, кнопка-наклейка, серверы карточками.',
+};
+
+function renderSegs() {
+  $$('#partner-form .seg[data-key] button').forEach(b => b.setAttribute('aria-pressed', String(form[b.parentElement.dataset.key] === b.dataset.v)));
+  $('[data-slot="backdrop"]').hidden = form.background !== 'image';
+  $('#bg-hint').textContent = BG_HINT[form.background];
+  $('#layout-hint').textContent = LAYOUT_HINT[form.layout];
+}
+
+$$('#partner-form .seg[data-key] button').forEach(b => b.addEventListener('click', () => {
+  form[b.parentElement.dataset.key] = b.dataset.v;
+  renderSegs();
+  changed();
+}));
+
+// ---------------------------------------------------------------- pictures: PNG or JPG in, a PNG that fits the slot out
+
+function renderPicks() {
+  for (const slot of ['mark', 'backdrop']) {
+    const box = $(`[data-slot="${slot}"]`);
+    const sha = form[slot];
+    const pic = $('[data-pic]', box);
+    if (sha) pic.innerHTML = `<img src="${esc(picUrl(sha))}" alt="">`;
+    else if (slot === 'mark') {
+      const b = form.brand[0];
+      pic.innerHTML = `<span class="pick__letter" style="background: ${esc(b)}; color: ${onColor(b)}">${esc((form.name.trim() || '?').charAt(0).toUpperCase())}</span>`;
+    } else pic.innerHTML = '<span class="pick__none">нет</span>';
+    $('[data-clear]', box).hidden = !sha;
+    const label = $('[data-pick-label]', box);
+    if (!label.dataset.busy) label.textContent = sha ? 'Заменить' : (slot === 'mark' ? 'Загрузить PNG или JPG' : 'Загрузить картинку');
   }
-  if (p.queueState === 'queued') return { text: 'Отправленная версия ждёт проверки', sub: 'После неё есть новые изменения: отправьте их, и в очереди будет новая версия.', can: true, label: 'Отправить заново' };
-  if (p.queueState === 'returned') return { text: 'Владелец V2pn вернул оформление', sub: `«${p.returnReason || ''}» Исправьте и отправьте снова.`, can: true, label: 'Отправить снова', level: 'warn' };
-  if (same(draft, data.look.published)) {
-    return { text: p.publishedAt ? `Опубликовано ${date(p.publishedAt, { time: true })}` : 'Опубликовано', sub: 'Изменений нет. V2pn у ваших людей подхватывает новое в течение часа.', can: false, label: 'Отправить на публикацию', state: 'published' };
+}
+
+function canvasPng(src, sx, sy, sw, sh, w, h) {
+  const canvas = document.createElement('canvas');
+  canvas.width = w;
+  canvas.height = h;
+  const ctx = canvas.getContext('2d');
+  ctx.imageSmoothingQuality = 'high';
+  ctx.drawImage(src, sx, sy, sw, sh, 0, 0, w, h);
+  return new Promise((resolve, reject) => canvas.toBlob(b => (b ? resolve(b) : reject(new Error('Не получилось сделать PNG.'))), 'image/png'));
+}
+
+/** A file the hub takes for <slot>: the PNG itself when it already fits, otherwise one drawn from the picture. */
+async function toPng(file, slot) {
+  if (file.size > 30 * MAX_BYTES) throw new Error('Файл больше 30 МБ. Возьмите картинку поменьше.');
+  let img;
+  try { img = await createImageBitmap(file); } catch { throw new Error('Не получилось открыть картинку. Нужен PNG или JPG.'); }
+  const { width: w, height: h } = img;
+  const png = file.type === 'image/png';
+  if (slot === 'mark') {
+    const side = Math.min(w, h);
+    if (side < 64) throw new Error(`Картинка ${w}×${h} px, а нужно от 64 px по меньшей стороне.`);
+    if (png && w <= 512 && Math.abs(w - h) <= Math.trunc(w / 20) && file.size <= MAX_BYTES) return file;
+    // The middle square, at most 512 px: a wide picture loses its sides rather than being squeezed.
+    const out = Math.min(side, 512);
+    const blob = await canvasPng(img, (w - side) / 2, (h - side) / 2, side, side, out, out);
+    if (blob.size > MAX_BYTES) throw new Error('Даже в 512 px картинка больше 1 МБ. Возьмите проще.');
+    return blob;
   }
-  return { text: 'Есть изменения, которых люди ещё не видят', sub: 'Черновик сохранён. Отправьте его владельцу V2pn: после проверки он появится у людей.', can: true, label: 'Отправить на публикацию' };
+  if (Math.max(w, h) > Math.min(w, h) * 3) throw new Error(`Картинка ${w}×${h} px: нужна не шире 3:1.`);
+  if (Math.min(w, h) < 640) throw new Error(`Картинка ${w}×${h} px, а нужно от 640 px по каждой стороне.`);
+  if (png && w <= 3200 && h <= 3200 && file.size <= MAX_BYTES) return file;
+  let scale = Math.min(1, 2400 / Math.max(w, h));
+  for (;;) {
+    const blob = await canvasPng(img, 0, 0, w, h, Math.round(w * scale), Math.round(h * scale));
+    if (blob.size <= MAX_BYTES) return blob;
+    scale *= 0.8;
+    if (Math.min(w, h) * scale < 640) throw new Error('В PNG до 1 МБ эта картинка не помещается. Возьмите картинку попроще.');
+  }
 }
 
-function renderPublishBars() {
-  const s = publishState();
-  $$('[data-publish-bar]').forEach((bar, i) => {
-    bar.innerHTML = `<div><b data-queue-state="${s.state || ''}">${esc(s.text)}</b><span>${esc(s.sub)}</span></div>
-      ${s.label ? `<button class="btn btn--primary" type="button" ${i === 0 ? 'id="send-look"' : ''} data-send ${s.can ? '' : 'disabled'}>${esc(s.label)}</button>` : ''}`;
-  });
-  $$('[data-send]').forEach(btn => btn.addEventListener('click', () => sendLook(btn)));
+function slotError(slot, message) {
+  const el = $(`[data-error-for="${slot}"]`);
+  el.textContent = message || '';
+  el.hidden = !message;
 }
 
-async function sendLook(btn) {
-  await busy(btn, async () => {
-    try {
-      await save();
-      const res = await api.post('/api/cabinet/look/submit');
-      data = { ...res, slots: res.slots || data.slots };
-      renderReview();
-      renderOverview();
-      toast('Отправлено владельцу V2pn');
-    } catch (e) {
-      if (e.fields) showProblems(e.fields);
-      toast(e.message);
-    }
-  }, 'Отправляем');
-  renderPublishBars();
+$$('[data-upload]').forEach(input => input.addEventListener('change', async () => {
+  const slot = input.dataset.upload;
+  const file = input.files && input.files[0];
+  input.value = '';
+  if (!file) return;
+  const label = $(`[data-slot="${slot}"] [data-pick-label]`);
+  slotError(slot, '');
+  label.dataset.busy = '1';
+  label.textContent = 'Загружаем…';
+  try {
+    const blob = await toPng(file, slot);
+    const res = await api.upload(`/api/partner/upload?slot=${slot}`, blob);
+    data.pictures = (data.pictures || []).filter(p => p.sha256 !== res.picture.sha256).concat(res.picture);
+    form[slot] = res.picture.sha256;
+    if (slot === 'backdrop') form.background = 'image';
+    toast('Картинка загружена. Она уйдёт пользователям после «Сохранить».');
+  } catch (e) {
+    slotError(slot, (e.fields && (e.fields.file || e.fields.slot)) || e.message);
+  } finally {
+    delete label.dataset.busy;
+    renderPicks();
+    renderSegs();
+    changed();
+  }
+}));
+$$('[data-clear]').forEach(btn => btn.addEventListener('click', () => {
+  form[btn.dataset.clear] = null;
+  if (btn.dataset.clear === 'backdrop' && form.background === 'image') form.background = 'gradient';
+  renderPicks();
+  renderSegs();
+  changed();
+}));
+// A label drawn as a button takes the keyboard too.
+$$('.pick label.btn').forEach(l => {
+  l.tabIndex = 0;
+  l.addEventListener('keydown', e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); $(`#${l.htmlFor}`).click(); } });
+});
+
+// ---------------------------------------------------------------- the subscription link, checked from the server
+
+function looksLikeLink(text) {
+  try { const u = new URL(text); return (u.protocol === 'https:' || u.protocol === 'http:') && Boolean(u.hostname); } catch { return false; }
 }
 
-// ---------------------------------------------------------------- share
-
-function renderShare() {
-  const base = data.share.button;
-  $('#share-base').textContent = base;
-  $('#share-link').innerHTML = `${esc(base)}<mark>&lt;подписка человека&gt;</mark>`;
-  $('#snippet').innerHTML = `<span class="c">// Bot API: sendMessage с inline-кнопкой</span>
-<span class="k">const</span> url = <span class="s">'${esc(base)}'</span> + encodeURIComponent(subscriptionUrl);
-reply_markup: { inline_keyboard: [[
-  { text: <span class="s">'💻 Подключить в V2pn'</span>, url }
-]] }`;
-  wireCopy();
-  const tryIn = $('#try-sub');
-  const tryOpen = $('#try-open');
-  tryIn.addEventListener('input', () => {
-    const v = tryIn.value.trim();
-    let ok = false;
-    try { ok = new URL(v).protocol === 'https:'; } catch { ok = false; }
-    tryOpen.href = ok ? base + encodeURIComponent(v) : '#';
-    tryOpen.setAttribute('aria-disabled', String(!ok));
-  });
-}
-
-// ---------------------------------------------------------------- integration
-
-function renderApi() {
-  const p = data.provider;
-  const tier2 = p.tier >= 2;
-  $('#api-tier1').hidden = tier2;
-  $('#api-tier2').hidden = !tier2;
-  if (!tier2) {
-    const asked = Boolean(p.tierRequest);
-    $('#tier-request').disabled = asked || revoked();
-    $('#tier-request').textContent = asked ? 'Запрос отправлен' : 'Запросить ступень 2';
-    $('#tier-request-state').textContent = asked ? 'Владелец V2pn ответит здесь: раздел откроется сам.' : '';
+function renderCheck() {
+  const box = $('#sub-found');
+  const text = $('[data-found-text]', box);
+  const more = $('#check-more');
+  const c = check;
+  box.className = 'found';
+  more.hidden = true;
+  if (c.state === 'checking') {
+    box.classList.add('found--wait');
+    text.innerHTML = '<span class="spin" aria-hidden="true"></span> Проверяем ссылку с сервера V2pn…';
     return;
   }
-  $('#api-url').value = look.api || '';
-  $('#opt-login').checked = look.login === true;
-  $('#opt-lock').checked = look.lock === true;
-  renderActions();
+  if (c.state === 'idle') {
+    box.classList.add('found--idle');
+    text.textContent = c.message || 'Вставьте ссылку, и сервер сам найдёт домен и проверит серверы.';
+    return;
+  }
+  if (c.state === 'error') {
+    box.classList.add('found--idle');
+    text.textContent = c.message;
+    return;
+  }
+  const r = c.result;
+  if (c.taken) {
+    box.classList.add('found--fail');
+    text.textContent = `Домен ${c.domain} уже у другого партнёра. Нужна ссылка на вашем домене.`;
+  } else if (!r.ok) {
+    const bad = (r.lines || []).find(l => l.level === 'fail');
+    box.classList.add('found--fail');
+    text.textContent = `Ссылка не прошла проверку: ${bad ? `${bad.text.toLowerCase()}${bad.detail ? `. ${bad.detail}` : ''}` : 'см. ниже'}`;
+  } else {
+    const total = (r.servers && r.servers.total) || 0;
+    const tcp = r.tcp || [];
+    const answered = tcp.filter(t => t.ok).length;
+    const servers = `${total} ${plural(total, 'сервер', 'сервера', 'серверов')}`;
+    box.classList.add(tcp.length && answered < tcp.length ? 'found--warn' : 'found--ok');
+    text.textContent = !tcp.length ? `Домен ${c.domain} найден, ${servers}. Ничего больше указывать не нужно.`
+      : answered === tcp.length && tcp.length === total ? `Домен ${c.domain} найден, ${servers} ${plural(total, 'отвечает', 'отвечают', 'отвечают')}. Ничего больше указывать не нужно.`
+        : answered === tcp.length ? `Домен ${c.domain} найден, ${servers}; проверили ${tcp.length}, все отвечают. Ничего больше указывать не нужно.`
+          : `Домен ${c.domain} найден, ${servers}; с сервера V2pn ответили ${answered} из ${tcp.length}. Опубликовать можно.`;
+  }
+  $('#check-lines').innerHTML = checkHtml(r);
+  more.hidden = false;
+  more.open = !r.ok;
 }
 
-$('#tier-request').addEventListener('click', async e => {
-  await busy(e.currentTarget, async () => {
-    try {
-      const res = await api.post('/api/cabinet/tier-request');
-      data.provider = { ...data.provider, ...res.provider };
-      renderApi();
-      renderOverview();
-      toast('Запрос отправлен владельцу V2pn');
-    } catch (err) {
-      toast(err.message);
-    }
-  });
-  renderApi();
-});
+function scheduleCheck() {
+  clearTimeout(checkTimer);
+  const url = form.subscription.trim();
+  if (check.url === url && check.state !== 'idle' && check.state !== 'error') { renderCheck(); return; }
+  checkSeq++;
+  if (!url) { check = { state: 'idle' }; renderCheck(); return; }
+  if (!looksLikeLink(url)) { check = { state: 'idle', message: 'Нужна ссылка целиком: https://…' }; renderCheck(); return; }
+  check = { state: 'idle', message: 'Проверим, как только вы закончите вставлять ссылку.' };
+  renderCheck();
+  checkTimer = setTimeout(() => runCheck(url), 900);
+}
 
-$('#api-url').addEventListener('input', e => { look.api = e.target.value.trim(); changed(); });
-$('#opt-login').addEventListener('change', e => { look.login = e.target.checked; changed({ now: true }); });
-$('#opt-lock').addEventListener('change', e => { look.lock = e.target.checked; changed({ now: true }); });
+async function runCheck(url) {
+  const seq = ++checkSeq;
+  check = { state: 'checking', url };
+  renderCheck();
+  try {
+    const res = await api.post('/api/partner/check', { subscription: url }, { timeout: 40000 });
+    if (seq !== checkSeq) return;
+    check = { state: res.check.ok && !res.taken ? 'done' : 'fail', url, result: res.check, domain: res.domain, taken: res.taken };
+    setFieldError($('#f-sub'), '');
+  } catch (e) {
+    if (seq !== checkSeq) return;
+    const field = e.fields && e.fields.subscription;
+    check = { state: 'error', url, message: field || (e.code === 'rate_limited' ? 'Проверок за час слишком много. Ссылку проверим при публикации.' : e.message) };
+  }
+  renderCheck();
+}
+
+// ---------------------------------------------------------------- special rights
+
+function renderRights() {
+  const p = partner();
+  const states = [];
+  for (const k of Object.keys(RIGHT_NAMES)) {
+    const box = $(`[data-right="${k}"]`);
+    const on = form.rights[k].on;
+    const body = $('.right__body', box);
+    if (body) body.hidden = !on;
+    const server = p && p.rights && p.rights[k];
+    const el = $('[data-state]', box);
+    let html = '';
+    if (server && on) {
+      if (server.state === 'pending') { html = '<span class="badge badge--warn">ждёт модератора</span>'; states.push('ждёт'); }
+      else if (server.state === 'approved') { html = '<span class="badge badge--ok">одобрено</span>'; states.push('одобрено'); }
+      else { html = `<span class="badge badge--fail">отказано</span>${server.reason ? `<span class="hint">«${esc(server.reason)}»</span>` : ''}`; states.push('отказано'); }
+      if (server.live && server.state !== 'approved') html += '<span class="hint">В V2pn пока прежняя одобренная версия.</span>';
+    } else if (on) {
+      html = '<span class="hint">После «Сохранить» уйдёт модератору.</span>';
+    } else if (server) {
+      html = '<span class="hint">После «Сохранить» право уберётся.</span>';
+    }
+    el.innerHTML = html;
+  }
+  const waiting = states.filter(s => s === 'ждёт').length;
+  $('[data-more-state]').textContent = waiting ? `${waiting} ${plural(waiting, 'ждёт', 'ждут', 'ждут')} модератора` : states.length ? states.join(', ') : '';
+}
+
+$$('[data-toggle]').forEach(input => input.addEventListener('change', () => {
+  form.rights[input.dataset.toggle].on = input.checked;
+  renderRights();
+  changed();
+}));
+$('#f-routing').addEventListener('input', e => { form.rights.routing.text = e.target.value; setFieldError(e.target, ''); changed(); });
+$('#f-api').addEventListener('input', e => { form.rights.account.api = e.target.value; setFieldError(e.target, ''); changed(); });
+$('#x-login').addEventListener('change', e => { form.rights.account.login = e.target.checked; changed(); });
+
+function renderActions() {
+  const list = form.rights.actions.list;
+  $('#actions').innerHTML = list.map((a, i) => {
+    const known = KINDS.some(([v]) => v === a.do);
+    const options = (known ? KINDS : KINDS.concat([[a.do, a.do]])).map(([v, t]) => `<option value="${esc(v)}"${a.do === v ? ' selected' : ''}>${esc(t)}</option>`).join('');
+    return `<div class="act" data-i="${i}">
+      <div class="field"><label for="act-${i}-l">Подпись</label><input id="act-${i}-l" type="text" maxlength="24" value="${esc(a.label || '')}" data-act="${i}" data-f="label"></div>
+      <div class="field"><label for="act-${i}-d">Что делает</label><select id="act-${i}-d" data-act="${i}" data-f="do">${options}</select></div>
+      ${a.do === 'open.link' ? `<div class="field act__url"><label for="act-${i}-u">Ссылка</label><input id="act-${i}-u" type="text" inputmode="url" spellcheck="false" placeholder="https://t.me/ваш_бот" value="${esc(a.url || '')}" data-act="${i}" data-f="url"></div>` : ''}
+      <button class="btn btn--secondary act__rm" type="button" data-remove-act="${i}" aria-label="Убрать кнопку ${i + 1}"><svg viewBox="0 0 16 16" aria-hidden="true"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
+      <span class="field__error" hidden></span></div>`;
+  }).join('') || '<p class="hint">Кнопок пока нет.</p>';
+  $('#add-action').hidden = list.length >= 4;
+}
+
+$('#actions').addEventListener('input', e => {
+  const el = e.target.closest('[data-act]');
+  if (!el || el.tagName === 'SELECT') return;
+  form.rights.actions.list[Number(el.dataset.act)][el.dataset.f] = el.value;
+  changed();
+});
+$('#actions').addEventListener('change', e => {
+  const el = e.target.closest('select[data-act]');
+  if (!el) return;
+  const a = form.rights.actions.list[Number(el.dataset.act)];
+  a.do = el.value;
+  if (a.do === 'connect.best' && !a.strategy) a.strategy = 'ping';
+  renderActions();
+  $(`#act-${el.dataset.act}-d`).focus();
+  changed();
+});
+$('#actions').addEventListener('click', e => {
+  const b = e.target.closest('[data-remove-act]');
+  if (!b) return;
+  form.rights.actions.list.splice(Number(b.dataset.removeAct), 1);
+  renderActions();
+  changed();
+});
+$('#add-action').addEventListener('click', () => {
+  if (form.rights.actions.list.length >= 4) return;
+  form.rights.actions.list.push({ label: '', do: 'open.link', url: '' });
+  renderActions();
+  $(`#act-${form.rights.actions.list.length - 1}-l`).focus();
+  changed();
+});
 
 $('#api-test').addEventListener('click', async e => {
   const out = $('#api-out');
-  const value = $('#api-url').value.trim();
+  const input = $('#f-api');
+  const value = input.value.trim();
   if (!value) {
-    setFieldError($('#api-url'), 'Напишите адрес API: https://ваш-домен/путь/.');
-    $('#api-url').focus();
+    setFieldError(input, 'Напишите адрес API: https://ваш-домен/путь/.');
+    input.focus();
     return;
   }
-  setFieldError($('#api-url'), '');
+  if (!partner()) {
+    out.innerHTML = '<p class="hint">Сначала опубликуйте партнёра: API проверяется на домене его подписки.</p>';
+    return;
+  }
+  setFieldError(input, '');
   out.innerHTML = '<div class="checking"><span class="spin" aria-hidden="true"></span><span>Сервер V2pn вызывает login/start и login/poll…</span></div>';
   await busy(e.currentTarget, async () => {
     try {
-      const res = await api.post('/api/cabinet/login-test', { api: value }, { timeout: 30000 });
+      const res = await api.post('/api/partner/login-test', { api: value }, { timeout: 30000 });
       const t = res.test;
-      out.innerHTML = `<div class="stack stack--sm">${t.ok ? '<span class="badge badge--ok">API отвечает как надо</span>' : '<span class="badge badge--fail">API пока не готов</span>'}${checkHtml({ lines: t.lines })}
-        ${t.ok ? '<p class="hint">Проверка не завершает вход: код ждёт подтверждения в боте и истечёт сам.</p>' : ''}</div>`;
+      out.innerHTML = `<div class="stack stack--sm">${t.ok ? '<span class="badge badge--ok">API отвечает как надо</span>' : '<span class="badge badge--fail">API пока не готов</span>'}${checkHtml({ lines: t.lines })}</div>`;
     } catch (err) {
-      if (err.fields?.api) setFieldError($('#api-url'), err.fields.api);
+      if (err.fields && err.fields.api) setFieldError(input, err.fields.api);
       out.innerHTML = `<p class="hint">${esc(err.code === 'rate_limited' ? 'Слишком много проверок за час. Попробуйте позже.' : err.message)}</p>`;
     }
   }, 'Проверяем');
 });
 
-function renderActions() {
-  const box = $('#actions');
-  box.innerHTML = look.actions.map((a, i) => {
-    const need = (DOS.find(d => d[0] === a.do) || [])[2] || '';
-    const param = PARAM[need];
-    const paramField = param
-      ? (param[1]
-        ? `<select id="act-${i}-p" data-act="${i}" data-f="${need}">${param[1].map(([v, t]) => `<option value="${v}"${a[need] === v ? ' selected' : ''}>${t}</option>`).join('')}</select>`
-        : `<input id="act-${i}-p" type="text" data-act="${i}" data-f="${need}" value="${esc(a[need] || '')}" spellcheck="false">`)
-      : '<input type="text" disabled value="—" aria-label="Не нужно">';
-    return `<div class="act" data-i="${i}">
-      <div class="field"><label for="act-${i}-l">Подпись</label><input id="act-${i}-l" type="text" maxlength="24" data-act="${i}" data-f="label" value="${esc(a.label)}"></div>
-      <div class="field"><label for="act-${i}-i">Значок</label><select id="act-${i}-i" data-act="${i}" data-f="icon">${ICONS.map(([v, t]) => `<option value="${v}"${a.icon === v ? ' selected' : ''}>${t}</option>`).join('')}</select></div>
-      <div class="field"><label for="act-${i}-d">Что делает</label><select id="act-${i}-d" data-act="${i}" data-f="do">${DOS.map(([v, t]) => `<option value="${v}"${a.do === v ? ' selected' : ''}>${t}</option>`).join('')}</select></div>
-      <div class="field"><label for="act-${i}-p">${param ? param[0] : 'Параметр'}</label>${paramField}</div>
-      <button class="btn btn--secondary" type="button" data-remove-act="${i}" aria-label="Убрать кнопку ${i + 1}"><svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8"/></svg></button>
-      <span class="field__error" hidden></span></div>`;
-  }).join('') || '<p class="hint">Кнопок пока нет. Без них во вкладке — «Подключиться», «Продлить» и «Поддержка».</p>';
-  $('#add-action').hidden = look.actions.length >= 4;
-  $$('[data-act]', box).forEach(el => el.addEventListener(el.tagName === 'SELECT' ? 'change' : 'input', () => {
-    const a = look.actions[Number(el.dataset.act)];
-    a[el.dataset.f] = el.value;
-    if (el.dataset.f === 'do') {
-      const need = (DOS.find(d => d[0] === el.value) || [])[2];
-      if (need && PARAM[need][1] && !a[need]) a[need] = PARAM[need][1][0][0];
-      renderActions();
-      $(`#act-${el.dataset.act}-d`).focus();
-    }
-    changed();
-  }));
-  $$('[data-remove-act]', box).forEach(btn => btn.addEventListener('click', () => {
-    look.actions.splice(Number(btn.dataset.removeAct), 1);
-    renderActions();
-    changed({ now: true });
-  }));
+// ---------------------------------------------------------------- the plain fields
+
+$('#f-name').addEventListener('input', e => { form.name = e.target.value; setFieldError(e.target, ''); renderPicks(); changed(); });
+$('#f-sub').addEventListener('input', e => { form.subscription = e.target.value; setFieldError(e.target, ''); scheduleCheck(); changed({ preview: false }); });
+$('#f-support').addEventListener('input', e => { form.links.support = e.target.value; setFieldError(e.target, ''); changed({ preview: false }); });
+$('#f-cabinet').addEventListener('input', e => { form.links.cabinet = e.target.value; setFieldError(e.target, ''); changed({ preview: false }); });
+
+function changed({ preview = true } = {}) {
+  if (preview) draw();
+  renderState();
 }
-$('#add-action').addEventListener('click', () => {
-  if (look.actions.length >= 4) return;
-  look.actions.push({ label: 'Самый быстрый', icon: 'bolt', do: 'connect.best', strategy: 'ping', purpose: '', server: '', group: '', url: '' });
-  renderActions();
-  $(`#act-${look.actions.length - 1}-l`).focus();
-  changed({ now: true });
+
+window.addEventListener('beforeunload', e => {
+  if (form && partner() && dirty()) { e.preventDefault(); e.returnValue = ''; }
 });
 
-matchMedia('(prefers-color-scheme: dark)').addEventListener('change', e => {
-  mode = e.matches ? 'dark' : 'light';
+// ---------------------------------------------------------------- publishing
+
+const PROBLEM_LABEL = {
+  name: 'Название', subscription: 'Ссылка на подписку', brand: 'Цвета', colours: 'Цвета', background: 'Фон', layout: 'Раскладка',
+  logo: 'Широкий логотип', logoOnLight: 'Логотип для светлого фона', mark: 'Логотип', backdrop: 'Картинка фона',
+  'links.cabinet': 'Оплата', 'links.support': 'Поддержка', rights: 'Особые права', 'rights.routing': 'Правила маршрутизации',
+  'rights.lock': 'Скрытые адреса', 'rights.actions': 'Свои кнопки', 'rights.account.api': 'Адрес API', 'rights.account.login': 'Вход по коду',
+};
+const FIELD_INPUT = {
+  name: '#f-name', subscription: '#f-sub', 'links.cabinet': '#f-cabinet', 'links.support': '#f-support', 'rights.routing': '#f-routing', 'rights.account.api': '#f-api',
+};
+const ERROR_SLOT = { brand: 'brand', colours: 'brand', logo: 'mark', logoOnLight: 'mark', mark: 'mark', backdrop: 'backdrop', background: 'backdrop', rights: 'rights.actions', 'rights.lock': 'rights.lock', 'rights.actions': 'rights.actions' };
+
+function clearProblems() {
+  $$('#partner-form [aria-invalid]').forEach(el => setFieldError(el, ''));
+  $$('[data-error-for]').forEach(el => { el.hidden = true; el.textContent = ''; });
+  $$('.act .field__error').forEach(el => { el.hidden = true; el.textContent = ''; });
+  $('#problems').hidden = true;
+}
+
+/** The hub's (or the page's) problems under their fields and in one list at the top; null fields = a message only. */
+function showProblems(fields, title = 'Не опубликовано.', message = '') {
+  clearProblems();
+  const entries = Object.entries(fields || {});
+  let first = null;
+  for (const [key, text] of entries) {
+    const m = /^rights\.actions\.(\d+)$/.exec(key);
+    if (m) {
+      const err = $(`.act[data-i="${m[1]}"] .field__error`);
+      if (err) { err.textContent = text; err.hidden = false; first ??= $(`.act[data-i="${m[1]}"] input`); }
+      continue;
+    }
+    if (FIELD_INPUT[key]) {
+      setFieldError($(FIELD_INPUT[key]), text);
+      first ??= $(FIELD_INPUT[key]);
+      continue;
+    }
+    const slot = ERROR_SLOT[key];
+    if (slot) slotError(slot, text);
+    if (key === 'rights.account.login') $('#api-out').innerHTML = `<p class="field__error">${esc(text)}</p>`;
+  }
+  if (entries.some(([k]) => k.startsWith('rights'))) $('#more').open = true;
+  $('[data-problems-title]').textContent = title;
+  $('#problems-list').innerHTML = message ? `<li>${esc(message)}</li>`
+    : entries.map(([k, t]) => {
+      const a = /^rights\.actions\.(\d+)$/.exec(k);
+      return `<li>${esc(a ? `Кнопка ${Number(a[1]) + 1}` : PROBLEM_LABEL[k] || k)}: ${esc(t)}</li>`;
+    }).join('');
+  $('#problems').hidden = false;
+  if (first) first.focus({ preventScroll: true });
+  $('#problems').scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+}
+
+function localProblems() {
+  const f = {};
+  if (!form.name.trim()) f.name = 'Напишите название.';
+  if (!form.subscription.trim()) f.subscription = 'Вставьте ссылку на подписку.';
+  else if (!looksLikeLink(form.subscription.trim())) f.subscription = 'Нужна ссылка целиком: https://…';
+  if (form.background === 'image' && !form.backdrop) f.backdrop = 'Загрузите картинку или выберите другой фон.';
+  if (form.rights.routing.on && !form.rights.routing.text.trim()) f['rights.routing'] = 'Напишите правила или снимите галочку.';
+  if (form.rights.account.on && !form.rights.account.api.trim()) f['rights.account.api'] = 'Напишите адрес API или снимите галочку.';
+  if (form.rights.actions.on) {
+    if (!form.rights.actions.list.length) f['rights.actions'] = 'Добавьте кнопку или снимите галочку.';
+    form.rights.actions.list.forEach((a, i) => {
+      if (!(a.label || '').trim()) f[`rights.actions.${i}`] = 'Напишите подпись.';
+      else if (a.do === 'open.link' && !(a.url || '').trim()) f[`rights.actions.${i}`] = 'Напишите ссылку.';
+    });
+  }
+  return f;
+}
+
+$('#partner-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const local = localProblems();
+  if (Object.keys(local).length) { showProblems(local, 'Пока нельзя опубликовать.'); return; }
+  const first = !partner();
+  const btn = $('#publish');
+  await busy(btn, async () => {
+    try {
+      const res = await api.put('/api/partner', payload(), { timeout: 45000 });
+      data = { ...res, slots: res.slots || (data && data.slots) };
+      fromServer();
+      if (res.check) check = { state: 'done', url: res.partner.subscription, result: res.check, domain: (res.partner.domains || [])[0] || '', taken: false };
+      clearProblems();
+      renderAll();
+      toast(first ? 'Опубликовано. Ссылка уже работает' : 'Сохранено и опубликовано');
+      if (first) $('#published').scrollIntoView({ block: 'start', behavior: 'smooth' });
+    } catch (err) {
+      if (err.code === 'unauthorized') { showProblems(null, 'Вход закончился.', 'Войдите снова: страница сейчас откроет вход.'); setTimeout(() => toSignIn(ROOT), 2500); return; }
+      if (err.code === 'check_failed' && err.detail) {
+        check = { state: 'fail', url: form.subscription.trim(), result: err.detail, domain: hostOf(form.subscription), taken: false };
+        renderCheck();
+        const bad = (err.detail.lines || []).find(l => l.level === 'fail');
+        showProblems({ subscription: bad ? `${bad.text}${bad.detail ? `. ${bad.detail}` : ''}` : err.message });
+        return;
+      }
+      if (err.fields) { showProblems(err.fields, err.code === 'domain_taken' ? 'Домен занят.' : 'Не опубликовано.'); return; }
+      showProblems(null, err.code === 'offline' ? 'Нет связи.' : 'Не опубликовано.', err.message);
+    }
+  }, first ? 'Публикуем' : 'Сохраняем');
+  renderState();
+});
+
+const hostOf = u => { try { return new URL(u.trim()).hostname; } catch { return ''; } };
+
+// ---------------------------------------------------------------- the account
+
+$('#password-form').addEventListener('submit', async e => {
+  e.preventDefault();
+  const old = $('#pw-old');
+  const neu = $('#pw-new');
+  setFieldError(old, '');
+  setFieldError(neu, '');
+  $('#pw-status').textContent = '';
+  if (!old.value) { setFieldError(old, 'Напишите текущий пароль.'); old.focus(); return; }
+  if (neu.value.length < 6) { setFieldError(neu, 'Новый пароль от 6 символов.'); neu.focus(); return; }
+  await busy($('#pw-save'), async () => {
+    try {
+      await api.post('/api/auth/password', { password: old.value, newPassword: neu.value });
+      old.value = '';
+      neu.value = '';
+      $('#pw-status').textContent = 'Пароль сменён. На других устройствах вход закончился.';
+    } catch (err) {
+      if (err.fields && err.fields.password) { setFieldError(old, err.fields.password); old.focus(); }
+      else if (err.fields && err.fields.newPassword) { setFieldError(neu, err.fields.newPassword); neu.focus(); }
+      else $('#pw-status').textContent = err.message;
+    }
+  });
+});
+
+// ---------------------------------------------------------------- the connection
+
+function online() {
+  $('#offline').hidden = navigator.onLine !== false;
+}
+window.addEventListener('offline', online);
+window.addEventListener('online', () => {
+  online();
+  if (!$('#view-error').hidden) load();
+});
+online();
+
+matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ev => {
+  mode = ev.matches ? 'dark' : 'light';
   $$('#modes button').forEach(x => x.setAttribute('aria-pressed', String(x.dataset.mode === mode)));
-  drawPreview();
+  draw();
 });
 
 load();

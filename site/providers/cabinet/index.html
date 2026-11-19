@@ -3,12 +3,12 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<title>Кабинет провайдера: вкладка в V2pn | V2pn</title>
-<meta name="description" content="Кабинет VPN-провайдера в V2pn: оформление вкладки, ссылка для кнопки в боте и вход по коду.">
+<title>Мой партнёр | V2pn</title>
+<meta name="description" content="Партнёр V2pn для VPN-провайдера: название, подписка, логотип и цвета, одна ссылка для бота.">
 <meta name="robots" content="noindex">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Кабинет провайдера V2pn">
-<meta property="og:description" content="Оформление вашей вкладки в V2pn и ссылка для кнопки в боте.">
+<meta property="og:title" content="Мой партнёр в V2pn">
+<meta property="og:description" content="Ваша вкладка в V2pn и ссылка для кнопки в боте.">
 <meta property="og:image" content="https://v2pn.angleford.co/providers/share.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="icon" href="../../favicon.svg" type="image/svg+xml">
@@ -34,7 +34,7 @@
       <div class="nav__item"><a class="nav__link" href="../guide/">Руководство</a></div>
     </nav>
     <div class="nav__actions">
-      <span class="who"><b data-email></b></span>
+      <span class="who"><b data-login></b></span>
       <button class="btn btn--secondary" type="button" data-signout>Выйти</button>
     </div>
     <button class="nav__toggle" type="button" aria-expanded="false" aria-label="Меню">
@@ -46,209 +46,228 @@
 <main id="top" class="app">
   <div class="wrap">
     <div class="app__head">
-      <p class="app__crumb"><a href="../">Провайдерам</a> · Кабинет</p>
-      <h1 id="title">Кабинет провайдера</h1>
+      <p class="app__crumb"><a href="../">Провайдерам</a> · Мой партнёр</p>
+      <div class="row"><h1 id="title">Мой партнёр</h1><span id="pub-state" class="badge" hidden></span></div>
     </div>
-    <noscript><p>Кабинет работает со включённым JavaScript: он загружает ваши данные с сервера и сохраняет оформление. Включите JavaScript и обновите страницу.</p></noscript>
+    <noscript><p>«Мой партнёр» работает со включённым JavaScript: страница загружает ваши данные с сервера и публикует их. Включите JavaScript и обновите страницу.</p></noscript>
 
-    <div id="view-loading" class="box" aria-busy="true" aria-label="Загружаем кабинет"><div class="skel"><i></i><i></i><i></i><i></i></div></div>
+    <div id="view-loading" class="editor" aria-busy="true" aria-label="Загружаем">
+      <div class="box"><div class="skel"><i></i><i></i><i></i><i></i></div><div class="skel"><i></i><i></i><i></i></div></div>
+      <div class="skel-win" aria-hidden="true"></div>
+    </div>
     <div id="view-error" class="state" hidden>
-      <h2>Кабинет не загрузился</h2>
+      <h2 data-error-title>Не загрузилось</h2>
       <p data-error-text>Сервер провайдеров сейчас недоступен.</p>
       <button class="btn btn--secondary" type="button" data-retry>Попробовать ещё раз</button>
     </div>
 
-    <div id="shell" class="shell" hidden>
-      <nav class="sidenav" aria-label="Разделы кабинета">
-        <a href="#overview" data-tab="overview">Обзор</a>
-        <a href="#look" data-tab="look">Оформление</a>
-        <a href="#share" data-tab="share">Как раздать</a>
-        <a href="#api" data-tab="api">Интеграция <span class="lock" data-api-lock hidden>ступень 2</span></a>
-        <div class="sidenav__foot"><a href="#" data-page-link target="_blank" rel="noopener">Ваша страница</a></div>
-      </nav>
+    <div class="note note--warn offline" id="offline" role="status" hidden>
+      <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+      <div><p><b>Нет связи с интернетом.</b> Изменения на странице не пропадут: опубликуйте их, когда связь вернётся.</p></div>
+    </div>
 
-      <div class="stack stack--lg">
-        <div class="note note--fail" id="revoked" hidden>
+    <div id="editor" class="editor" hidden>
+      <form id="partner-form" class="box stack--lg" novalidate aria-label="Мой партнёр">
+        <div class="note note--fail" id="down" hidden>
           <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <div><p><b>Вкладка отозвана.</b> <span data-revoke-reason></span></p><p>Ваша подписка работает в V2pn как обычная; оформление менять нельзя. Вопросы — владельцу V2pn.</p></div>
+          <div><p><b>Модератор снял партнёра.</b> <span data-down-reason></span></p><p>Ссылка не работает, у пользователей вкладка пропадёт. Править можно, но вернуть партнёра может только модератор.</p></div>
+        </div>
+        <div class="note note--info" id="first" hidden>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5M10 6.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div><p><b>Партнёра пока нет.</b> Заполните форму и нажмите «Опубликовать». Ссылка заработает сразу, без заявки и ожидания.</p></div>
+        </div>
+        <div class="note note--fail" id="problems" hidden tabindex="-1">
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div><p><b data-problems-title>Не опубликовано.</b></p><ul class="problems" id="problems-list"></ul></div>
         </div>
 
-        <!-- ================================================================ overview -->
-        <section data-view="overview" class="stack stack--lg" aria-labelledby="ov-h" hidden>
-          <div class="box">
-            <div class="box__head"><h2 id="ov-h" data-name>Провайдер</h2><div class="row" id="ov-badges"></div></div>
-            <dl class="kv" id="ov-kv"></dl>
-          </div>
-          <div class="box">
-            <h2>Что дальше</h2>
-            <ul class="todo" id="todo"></ul>
-          </div>
-        </section>
+        <div class="field">
+          <label for="f-name">Название</label>
+          <input id="f-name" type="text" maxlength="40" autocomplete="off" data-key="name" aria-describedby="f-name-hint">
+          <span class="field__hint" id="f-name-hint">Так будет называться ваша вкладка в V2pn. До 40 символов.</span>
+          <span class="field__error" hidden></span>
+        </div>
 
-        <!-- ================================================================ look -->
-        <section data-view="look" class="stack stack--lg" aria-labelledby="look-h" hidden>
-          <div class="publish-bar" data-publish-bar></div>
-          <div class="split2">
-            <form id="look-form" class="box stack--lg" novalidate aria-labelledby="look-h">
-              <div class="box__head"><h2 id="look-h">Оформление вкладки</h2><span class="hint" id="saved" aria-live="polite"></span></div>
-              <div class="note note--fail" id="problems" hidden>
-                <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-                <div><p><b>Пока нельзя отправить:</b></p><ul class="problems" id="problems-list"></ul></div>
-              </div>
-              <div class="field">
-                <label for="look-name">Название во вкладке</label>
-                <input id="look-name" type="text" maxlength="40" data-key="name">
+        <div class="field">
+          <label for="f-sub">Ссылка на подписку</label>
+          <input id="f-sub" type="url" inputmode="url" spellcheck="false" autocomplete="off" placeholder="https://" data-key="subscription" aria-describedby="sub-found">
+          <div class="found" id="sub-found" aria-live="polite"><span class="dot" aria-hidden="true"></span><span data-found-text>Вставьте ссылку, и сервер сам найдёт домен и проверит серверы.</span></div>
+          <details class="check-more" id="check-more" hidden><summary>Что нашла проверка</summary><div id="check-lines"></div></details>
+          <span class="field__error" hidden></span>
+        </div>
+
+        <div class="field">
+          <span class="field__label" id="l-mark">Логотип</span>
+          <div class="pick" data-slot="mark">
+            <span class="pick__pic pick__pic--mark" data-pic></span>
+            <div class="pick__acts">
+              <label class="btn btn--secondary btn--sm" for="file-mark" data-pick-label>Загрузить PNG или JPG</label>
+              <input type="file" id="file-mark" accept="image/png,image/jpeg,image/webp" data-upload="mark" aria-labelledby="l-mark">
+              <button class="btn btn--secondary btn--sm" type="button" data-clear="mark" hidden>Убрать</button>
+            </div>
+          </div>
+          <span class="field__hint">Квадратный знак. Без картинки V2pn нарисует знак из первой буквы.</span>
+          <span class="field__error" hidden data-error-for="mark"></span>
+        </div>
+
+        <div class="field">
+          <span class="field__label" id="l-colours">Цвета бренда</span>
+          <div class="swatches" id="swatches" role="group" aria-labelledby="l-colours"></div>
+          <span class="field__hint" id="contrast-hint"></span>
+          <span class="field__error" hidden data-error-for="brand"></span>
+        </div>
+
+        <div class="field">
+          <span class="field__label" id="l-bg">Фон за кнопкой</span>
+          <div class="seg seg--full" role="group" aria-labelledby="l-bg" data-key="background">
+            <button type="button" data-v="none">Карта мира</button>
+            <button type="button" data-v="gradient">Градиент</button>
+            <button type="button" data-v="image">Картинка</button>
+          </div>
+          <div class="pick" data-slot="backdrop" hidden>
+            <span class="pick__pic pick__pic--wide" data-pic></span>
+            <div class="pick__acts">
+              <label class="btn btn--secondary btn--sm" for="file-backdrop" data-pick-label>Загрузить картинку</label>
+              <input type="file" id="file-backdrop" accept="image/png,image/jpeg,image/webp" data-upload="backdrop" aria-label="Картинка фона">
+              <button class="btn btn--secondary btn--sm" type="button" data-clear="backdrop" hidden>Убрать</button>
+            </div>
+          </div>
+          <span class="field__hint" id="bg-hint"></span>
+          <span class="field__error" hidden data-error-for="backdrop"></span>
+        </div>
+
+        <div class="field">
+          <span class="field__label" id="l-layout">Раскладка</span>
+          <div class="seg seg--full" role="group" aria-labelledby="l-layout" data-key="layout">
+            <button type="button" data-v="v2pn">Обычная V2pn</button>
+            <button type="button" data-v="stickers">Наклейки</button>
+          </div>
+          <span class="field__hint" id="layout-hint"></span>
+        </div>
+
+        <div class="fields">
+          <div class="field">
+            <label for="f-support">Поддержка <span class="opt">необязательно</span></label>
+            <input id="f-support" type="text" inputmode="url" spellcheck="false" autocomplete="off" placeholder="t.me/ваш_бот" data-key="links.support">
+            <span class="field__hint">Кнопка «Поддержка» во вкладке.</span>
+            <span class="field__error" hidden></span>
+          </div>
+          <div class="field">
+            <label for="f-cabinet">Оплата <span class="opt">необязательно</span></label>
+            <input id="f-cabinet" type="text" inputmode="url" spellcheck="false" autocomplete="off" placeholder="https://" data-key="links.cabinet">
+            <span class="field__hint">Кнопка «Продлить» в карточке тарифа.</span>
+            <span class="field__error" hidden></span>
+          </div>
+        </div>
+
+        <details class="more" id="more">
+          <summary>Особые права <span class="more__state" data-more-state></span></summary>
+          <div class="more__inner stack">
+            <p class="hint">Всё выше публикуется сразу. Эти права меняют работу V2pn у ваших пользователей, поэтому их сначала одобряет модератор. Остальной партнёр в это время уже работает.</p>
+
+            <div class="right" data-right="routing">
+              <div class="right__head"><label class="check"><input type="checkbox" id="x-routing" data-toggle="routing"><span>Свои правила маршрутизации<small>Какие сайты идут через VPN, какие напрямую</small></span></label><span class="right__state" data-state></span></div>
+              <div class="right__body field" hidden>
+                <label for="f-routing" class="sr">Правила маршрутизации</label>
+                <textarea id="f-routing" rows="6" spellcheck="false" data-key="rights.routing" aria-describedby="routing-hint"></textarea>
+                <span class="field__hint" id="routing-hint">По строке на правило: сайты, стрелка и куда: <code>proxy</code>, <code>direct</code> или <code>block</code>. Строка <code>default → direct</code> пускает всё остальное напрямую.</span>
                 <span class="field__error" hidden></span>
               </div>
-              <div class="field">
-                <span class="field__label" id="colours-l">Цвета бренда</span>
-                <div class="colours" id="colours" role="group" aria-labelledby="colours-l"></div>
-                <button class="btn btn--secondary btn--sm" type="button" data-add-colour style="justify-self: start">Добавить цвет</button>
-                <span class="field__hint">От одного до трёх. Первый — на кнопке «Подключиться» и в карточке тарифа; остальные — для градиента. Цвета, похожие на «защищено» и «не защищено», V2pn сдвинет сам.</span>
-                <span class="field__error" hidden data-error-for="brand"></span>
-              </div>
-              <fieldset class="choices choices--compact" id="background">
-                <legend>Фон главного экрана</legend>
-                <label class="choice"><input type="radio" name="background" value="none"><b>Карта</b><span>«Акцент»: обычный V2pn в ваших цветах</span></label>
-                <label class="choice"><input type="radio" name="background" value="gradient"><b>Градиент</b><span>«Сцена» из ваших цветов</span></label>
-                <label class="choice"><input type="radio" name="background" value="image"><b>Картинка</b><span>«Сцена» с вашим фоном</span></label>
-              </fieldset>
-              <div class="field">
-                <span class="field__label">Картинки</span>
-                <div class="slots" id="slots"></div>
-                <span class="field__hint">Только PNG, до 1 МБ. Знак рисуется на тёмной плитке, как в заголовке V2pn.</span>
-              </div>
-              <div class="fields">
-                <div class="field">
-                  <label for="link-cabinet">Кабинет или оплата <span class="opt">— необязательно</span></label>
-                  <input id="link-cabinet" type="url" inputmode="url" spellcheck="false" placeholder="https://" data-key="links.cabinet">
-                  <span class="field__hint">Кнопка «Продлить» в карточке тарифа.</span>
-                  <span class="field__error" hidden></span>
-                </div>
-                <div class="field">
-                  <label for="link-support">Поддержка <span class="opt">— необязательно</span></label>
-                  <input id="link-support" type="url" inputmode="url" spellcheck="false" placeholder="https://t.me/…" data-key="links.support">
-                  <span class="field__hint">Кнопка «Поддержка». Бот в Telegram — ещё и кнопка на вашей странице.</span>
-                  <span class="field__error" hidden></span>
-                </div>
-              </div>
-            </form>
-            <aside class="aside" aria-label="Предпросмотр">
-              <section class="box box--tight preview" aria-labelledby="pv-h">
-                <div class="preview__bar">
-                  <h3 id="pv-h">Так увидят ваши люди</h3>
-                  <div class="seg" role="group" aria-label="Тема окна" id="modes">
-                    <button type="button" data-mode="light" aria-pressed="true">Светлая</button>
-                    <button type="button" data-mode="dark" aria-pressed="false">Тёмная</button>
-                  </div>
-                </div>
-                <div class="mini" id="preview-light"></div>
-                <div class="stack stack--sm" id="notes-box" hidden>
-                  <span class="hint">Как V2pn поправит цвета, чтобы всё читалось:</span>
-                  <ul class="notes-list" id="notes"></ul>
-                </div>
-                <p class="hint">Контраст проверяет сервер по правилам V2pn. Нечитаемый цвет он не пропустит.</p>
-              </section>
-            </aside>
-          </div>
-        </section>
-
-        <!-- ================================================================ share -->
-        <section data-view="share" class="stack stack--lg" aria-labelledby="share-h" hidden>
-          <div class="box">
-            <div class="stack stack--sm">
-              <h2 id="share-h">Кнопка «Подключить в V2pn»</h2>
-              <p>Добавьте в бота и в кабинет кнопку со ссылкой ниже. В конец ссылки подставьте подписку этого человека.</p>
             </div>
+
+            <div class="right" data-right="lock">
+              <div class="right__head"><label class="check"><input type="checkbox" id="x-lock" data-toggle="lock"><span>Скрыть адреса серверов<small>Пользователь видит только названия</small></span></label><span class="right__state" data-state></span></div>
+              <span class="field__error" hidden data-error-for="rights.lock"></span>
+            </div>
+
+            <div class="right" data-right="actions">
+              <div class="right__head"><label class="check"><input type="checkbox" id="x-actions" data-toggle="actions"><span>Свои кнопки<small>Например «Продлить» и «Устройства»: ведут на ваш сайт или в бота. До четырёх.</small></span></label><span class="right__state" data-state></span></div>
+              <div class="right__body stack" hidden>
+                <div class="acts" id="actions"></div>
+                <button class="btn btn--secondary btn--sm" type="button" id="add-action">Добавить кнопку</button>
+                <span class="field__error" hidden data-error-for="rights.actions"></span>
+              </div>
+            </div>
+
+            <div class="right" data-right="account">
+              <div class="right__head"><label class="check"><input type="checkbox" id="x-account" data-toggle="account"><span>API: данные аккаунта и вход по коду<small>V2pn берёт тариф с вашего сервера, а человек входит кодом из вашего бота</small></span></label><span class="right__state" data-state></span></div>
+              <div class="right__body stack" hidden>
+                <div class="field">
+                  <label for="f-api">Адрес API</label>
+                  <div class="input-row"><input id="f-api" type="url" inputmode="url" spellcheck="false" placeholder="https://ваш-домен/v2pn/" data-key="rights.account.api"><button class="btn btn--secondary" type="button" id="api-test">Проверить API</button></div>
+                  <span class="field__hint">На домене подписки. V2pn добавляет к нему <code>login/start</code> и <code>login/poll</code>. Подробно в <a href="../guide/#вход-по-коду">руководстве</a>.</span>
+                  <span class="field__error" hidden></span>
+                </div>
+                <label class="check"><input type="checkbox" id="x-login" data-key="rights.account.login"><span>Вход по коду<small>«У меня подписка от провайдера» в V2pn ведёт в ваш бот</small></span></label>
+                <div id="api-out" aria-live="polite"></div>
+              </div>
+            </div>
+            <p class="hint">Подписывать права корневым ключом на ПК владельца V2pn, как раньше, тоже можно: сервер этого не требует.</p>
+          </div>
+        </details>
+
+        <div class="publish">
+          <button class="btn btn--primary" type="submit" id="publish">Опубликовать</button>
+          <span class="hint" id="publish-hint" aria-live="polite">Ссылка заработает сразу.</span>
+        </div>
+
+        <section id="published" class="stack" hidden aria-labelledby="share-h">
+          <div class="note note--ok">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M6.5 10.2 9 12.6l4.6-5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+            <div><p><b>Опубликовано.</b> Пользователи уже могут подключаться. Любое изменение тоже публикуется сразу после «Сохранить».</p></div>
+          </div>
+          <div class="field">
+            <span class="field__label" id="share-h">Ваша ссылка</span>
             <div class="copy"><code id="share-link"></code><button class="btn btn--primary" type="button" data-copy-from="share-base">Копировать</button></div>
             <span id="share-base" hidden></span>
-            <p class="hint">Подписка идёт после <code>#</code>: эта часть остаётся в браузере человека, не уходит на сервер V2pn и не попадает в логи.</p>
+            <span class="field__hint">Поставьте её кнопкой в бота. Бот сам добавит в конец личную подписку человека: <code>#sub=…</code>. Эта часть не уходит на сервер.</span>
           </div>
-          <div class="box">
-            <h2>Пример для Telegram-бота</h2>
-            <p>Обычная inline-кнопка со ссылкой. Подписку закодируйте, как любой параметр ссылки.</p>
-            <pre class="snippet" id="snippet"></pre>
-            <button class="btn btn--secondary btn--sm" type="button" data-copy-from="snippet" style="justify-self: start">Копировать пример</button>
+          <details class="check-more"><summary>Пример кнопки для Telegram-бота</summary><pre class="snippet" id="snippet"></pre></details>
+          <div class="note note--warn" id="pending-note" hidden>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 6v4.5l2.6 1.6" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <div><p><b>Особые права ждут модератора.</b> <span data-pending-what></span></p></div>
           </div>
-          <div class="box">
-            <h2>Проверьте на своей подписке</h2>
-            <div class="field">
-              <label for="try-sub">Ссылка на подписку</label>
-              <div class="input-row"><input id="try-sub" type="url" inputmode="url" spellcheck="false" placeholder="https://"><a class="btn btn--secondary" id="try-open" href="#" target="_blank" rel="noopener" aria-disabled="true">Открыть страницу</a></div>
-              <span class="field__hint">Откроется ваша страница с этой подпиской, как у человека после кнопки в боте.</span>
-            </div>
+          <div class="note note--fail" id="denied-note" hidden>
+            <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+            <div><p><b>Модератор отказал.</b></p><ul class="problems" data-denied-list></ul><p>Исправьте и сохраните снова или снимите галочку.</p></div>
           </div>
-          <div class="box">
-            <h2>Что увидит человек</h2>
-            <div class="paths">
-              <div class="stack stack--sm"><h3>V2pn уже стоит</h3><ol><li>Жмёт кнопку в боте.</li><li>Открывается ваша страница, браузер спрашивает «Открыть V2pn?».</li><li>V2pn добавляет подписку и открывает вашу вкладку.</li></ol></div>
-              <div class="stack stack--sm"><h3>V2pn ещё нет</h3><ol><li>Жмёт кнопку в боте.</li><li>Страница предлагает скачать V2pn для его системы.</li><li>Он ставит V2pn и жмёт ту же кнопку ещё раз — дальше всё как в первом случае.</li></ol></div>
-            </div>
-          </div>
+          <p><a class="btn btn--secondary" id="page-link" href="#" target="_blank" rel="noopener">Открыть свою страницу</a></p>
         </section>
+      </form>
 
-        <!-- ================================================================ integration -->
-        <section data-view="api" class="stack stack--lg" aria-labelledby="api-h" hidden>
-          <div id="api-tier1" class="box" hidden>
-            <div class="stack stack--sm">
-              <h2>Интеграция — ступень 2</h2>
-              <p>На ступени 2 человек входит в V2pn по коду из вашего бота, ничего не копируя, а во вкладке появляются ваши кнопки. Для этого на вашем сервере нужны два адреса API.</p>
-            </div>
-            <ul class="tiers2">
-              <li><b>Вход по коду</b><span>V2pn показывает шесть цифр, человек подтверждает их в боте.</span></li>
-              <li><b>Свои кнопки</b><span>До четырёх: «Самый быстрый», «Для YouTube», «Продлить».</span></li>
-              <li><b>Скрытые адреса</b><span>Человек не видит адреса и ключи ваших серверов.</span></li>
-            </ul>
-            <div class="row"><button class="btn btn--primary" type="button" id="tier-request">Запросить ступень 2</button><span class="hint" id="tier-request-state" aria-live="polite"></span></div>
+      <aside class="stage" aria-label="Предпросмотр">
+        <div class="stage__cap">
+          <span>Так увидят ваши пользователи</span>
+          <div class="seg" role="group" aria-label="Тема окна" id="modes">
+            <button type="button" data-mode="light" aria-pressed="true">Светлая</button>
+            <button type="button" data-mode="dark" aria-pressed="false">Тёмная</button>
           </div>
-          <div id="api-tier2" class="stack stack--lg" hidden>
-            <div class="publish-bar" data-publish-bar></div>
-            <form class="box" id="api-form" novalidate>
-              <div class="box__head"><h2 id="api-h">Адрес API</h2><span class="hint" data-saved aria-live="polite"></span></div>
-              <div class="field">
-                <label for="api-url">Адрес вашего API</label>
-                <div class="input-row"><input id="api-url" type="url" inputmode="url" spellcheck="false" placeholder="https://example.com/v2pn/" data-key="api"><button class="btn btn--secondary" type="button" id="api-test">Проверить API</button></div>
-                <span class="field__hint">На одном из ваших доменов. V2pn добавляет к нему <code>login/start</code> и <code>login/poll</code>.</span>
-                <span class="field__error" hidden></span>
-              </div>
-              <div id="api-out" aria-live="polite"></div>
-              <label class="check"><input type="checkbox" id="opt-login" data-key="login"><span>Вход по коду<small>«У меня подписка от провайдера» в V2pn ведёт в ваш бот.</small></span></label>
-              <span class="field__error" hidden data-error-for="login"></span>
-              <label class="check"><input type="checkbox" id="opt-lock" data-key="lock"><span>Скрытые адреса<small>Человек не увидит адреса и ключи серверов вашей подписки.</small></span></label>
-              <span class="field__error" hidden data-error-for="lock"></span>
-            </form>
-            <div class="box">
-              <div class="stack stack--sm"><h2>Два адреса на вашем сервере</h2><p>V2pn обращается к ним сам, с User-Agent V2pn. Ответ — JSON с кодом 200.</p></div>
-              <div class="endpoint">
-                <h3>1. Начать вход <code>POST {api}login/start</code></h3>
-                <p class="hint">V2pn просит код, когда человек открывает вход. В теле — система и имя компьютера, чтобы бот сказал, кто входит.</p>
-                <pre class="snippet"><span class="c">// запрос</span>
-{ <span class="k">"device"</span>: <span class="s">"Windows · DESKTOP-7Q2"</span>, <span class="k">"app"</span>: <span class="s">"V2pn 1.2.2"</span> }
-<span class="c">// ответ</span>
-{ <span class="k">"code"</span>: <span class="s">"482913"</span>,
-  <span class="k">"token"</span>: <span class="s">"от 32 до 256 символов: A–Z a–z 0–9 - _ . ~"</span>,
-  <span class="k">"url"</span>: <span class="s">"https://t.me/kestrel_bot?start=v2pn-482913"</span>,
-  <span class="k">"expires"</span>: 600 }</pre>
-              </div>
-              <div class="endpoint">
-                <h3>2. Проверить вход <code>GET {api}login/poll?token=…</code></h3>
-                <p class="hint">V2pn спрашивает раз в 2 секунды, пока человек не подтвердит код в боте.</p>
-                <pre class="snippet">{ <span class="k">"state"</span>: <span class="s">"waiting"</span> }
-{ <span class="k">"state"</span>: <span class="s">"done"</span>, <span class="k">"subscription"</span>: <span class="s">"https://sub.example.com/s/…"</span>, <span class="k">"name"</span>: <span class="s">"Kestrel"</span> }
-{ <span class="k">"state"</span>: <span class="s">"expired"</span> }</pre>
-              </div>
-              <p class="hint">Подробно, с правилами для бота: <a href="../guide/#вход-по-коду">руководство, «Вход по коду»</a>.</p>
-            </div>
-            <div class="box">
-              <div class="box__head"><h2>Ваши кнопки</h2><span class="hint">до четырёх</span></div>
-              <div class="actions-list" id="actions"></div>
-              <span class="field__error" hidden data-error-for="actions"></span>
-              <button class="btn btn--secondary btn--sm" type="button" id="add-action" style="justify-self: start">Добавить кнопку</button>
-            </div>
-          </div>
-        </section>
-      </div>
+        </div>
+        <div class="mini" id="preview"></div>
+        <div class="stack stack--sm" id="notes-box" hidden>
+          <span class="hint">Как V2pn поправит цвета, чтобы всё читалось:</span>
+          <ul class="notes-list" id="notes"></ul>
+        </div>
+      </aside>
     </div>
+
+    <section id="account" class="box account" hidden aria-labelledby="acc-h">
+      <div class="box__head"><h2 id="acc-h">Аккаунт</h2><span class="hint">Логин <b data-login></b></span></div>
+      <form id="password-form" class="fields" novalidate>
+        <div class="field">
+          <label for="pw-old">Текущий пароль</label>
+          <input id="pw-old" type="password" autocomplete="current-password" maxlength="200">
+          <span class="field__error" hidden></span>
+        </div>
+        <div class="field">
+          <label for="pw-new">Новый пароль</label>
+          <input id="pw-new" type="password" autocomplete="new-password" maxlength="200" aria-describedby="pw-new-hint">
+          <span class="field__hint" id="pw-new-hint">От 6 символов. На других устройствах вход закончится.</span>
+          <span class="field__error" hidden></span>
+        </div>
+        <div class="row field--full"><button class="btn btn--secondary" type="submit" id="pw-save">Сменить пароль</button><button class="btn btn--secondary" type="button" data-signout>Выйти</button><span class="hint" id="pw-status" role="status"></span></div>
+      </form>
+    </section>
   </div>
 </main>
 

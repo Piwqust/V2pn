@@ -232,22 +232,57 @@ const SERVERS = [['de', 'Германия', 'VLESS Reality', 41], ['nl', 'Нид
  *   colours   the hub's review.colours[mode] ({accent, onAccent, accentText, stage}) or null (V2pn's own)
  *   mark, logo, logoOnLight, backdrop   picture URLs or null
  *   plan      {line, traffic, days} for the plan card
+ *   layout    'v2pn' (the sidebar and the stage) or 'stickers' (V2pn's sticker book, drawn at night)
+ *   actions   the labels of the partner's own buttons
+ *   lock      true: the servers show their names only
  */
-export function windowHtml({ root, mode = 'light', name = 'Провайдер', tab = true, colours = null, mark = null, logo = null, logoOnLight = null, backdrop = null, plan = {} }) {
-  const dark = mode === 'dark';
+export function windowHtml({ root, mode = 'light', name = 'Провайдер', tab = true, colours = null, mark = null, logo = null, logoOnLight = null, backdrop = null,
+  plan = {}, layout = 'v2pn', actions = [], lock = false }) {
+  const stickers = tab && layout === 'stickers';
+  const dark = mode === 'dark' || stickers;
   const c = colours || {};
   const style = [];
   if (c.accent) style.push(`--w-brand: ${c.accent}`);
   if (c.accentText) style.push(`--w-brand-text: ${c.accentText}`);
   const stage = tab && c.stage ? c.stage : null;
   const n = esc(name || 'Провайдер');
-  const letter = esc((name || 'P').trim().charAt(0).toUpperCase());
+  const letter = esc((name || 'P').trim().charAt(0).toUpperCase() || 'P');
   const markHtml = mark ? `<img src="${esc(mark)}" alt="">` : `<span class="mini__letter" style="background: ${esc(c.accent || '#E8391B')}; color: ${esc(c.onAccent || '#0B0B0D')}">${letter}</span>`;
   const bar = tab
     ? `<span class="v2-tabs-bar"><span class="v2-tab">${FORK}V2pn</span><span class="v2-tab is-on">${markHtml}${n}</span></span>`
     : `<span class="v2w__brand">${FORK}V2pn</span>`;
-  const rows = SERVERS.map(([cc, country, proto, ms], i) => `<div class="v2-row${i === 0 ? ' is-on' : ''}"><img src="${root}assets/v2pn/flags/${cc}.png" alt="" width="24" height="18"><span><b>${country}</b><small>${proto}</small></span><span class="v2-ping">${ms} мс</span></div>`).join('');
+  const proto = p => (lock ? 'адрес скрыт' : p);
+  const rows = SERVERS.map(([cc, country, p, ms], i) => `<div class="v2-row${i === 0 ? ' is-on' : ''}"><img src="${root}assets/v2pn/flags/${cc}.png" alt="" width="24" height="18"><span><b>${country}</b><small>${proto(p)}</small></span><span class="v2-ping">${ms} мс</span></div>`).join('');
   const traffic = esc(plan.traffic || '12 из 50 ГБ · до 31.01.2027');
+  const chips = actions.length ? `<div class="v2-chips">${actions.map(a => `<span>${esc(a)}</span>`).join('')}</div>` : '';
+  const scene = () => {
+    if (!stage) return null;
+    const bg = stage.kind === 'image' && backdrop
+      ? `${stage.scrim ? `linear-gradient(${stage.scrim}, ${stage.scrim}), ` : ''}url(${backdrop}) center / cover no-repeat, ${stage.solid}`
+      : `linear-gradient(135deg, ${(stage.stops || []).join(', ')})`;
+    const scrim = stage.kind !== 'image' && stage.scrim ? `linear-gradient(${stage.scrim}, ${stage.scrim}), ` : '';
+    return scrim + bg;
+  };
+  const head = `<div class="v2w__bar">${MENU}${bar}<span class="v2w__sp"></span></div>`;
+  const open = `<div class="v2w ui-v2pn${stickers ? ' v2w--stk' : ''}"${dark ? ' data-theme="dark"' : ''} style="${style.join('; ')}" aria-hidden="true">`;
+
+  if (stickers) {
+    // The sticker book: the partner's picture (or its colours) full height, the name as a meme caption, Connect as a
+    // die-cut sticker with the mark, the servers as cards and the plan as a ticket.
+    const bg = scene() || `linear-gradient(160deg, ${c.accent || '#E8391B'} 0%, #16161B 78%)`;
+    const cards = SERVERS.map(([cc, country]) => `<span class="v2-stk__card"><img src="${root}assets/v2pn/flags/${cc}.png" alt="" width="24" height="18">${country}</span>`).join('');
+    return `${open}${head}
+      <div class="v2w__body v2w__body--stk"><div class="v2-stk" style="--w-scene: ${bg}">
+        <span class="v2-stk__cap">${n}</span>
+        <span class="v2-pill v2-pill--off">Не защищено</span>
+        <span class="v2-stk__sticker"><span class="v2-stk__bubble">погнали!</span>${markHtml}
+          <span class="v2-stk__go" style="background: ${esc(c.accent || '#E8391B')}; color: ${esc(c.onAccent || '#0B0B0D')}">${POWER}Подключиться</span></span>
+        <span class="v2-stk__cards">${cards}</span>
+        ${actions.length ? `<span class="v2-stk__acts">${actions.map(a => `<span>${esc(a)}</span>`).join('')}</span>` : ''}
+        <span class="v2-stk__ticket">77 дней · ${traffic}</span>
+      </div></div></div>`;
+  }
+
   const side = tab
     ? `<div class="v2-seg"><span class="is-on">Главная</span><span>Страны</span><span>Подписки</span></div>
        ${stage ? '' : `<div class="v2-plan"><div class="v2-plan__head">${markHtml}<span><b>${n}</b><small>${esc(plan.line || 'Ваш тариф · 77 дней')}</small></span></div>
@@ -257,14 +292,10 @@ export function windowHtml({ root, mode = 'light', name = 'Провайдер', 
        <div class="v2-row is-on"><span class="v2-folder">${FOLDER}</span><span><b>${n}</b><small>${esc(plan.servers || '14 серверов')} · ${traffic}</small></span><span></span></div>${rows}`;
   let main;
   if (stage) {
-    const bg = stage.kind === 'image' && backdrop
-      ? `${stage.scrim ? `linear-gradient(${stage.scrim}, ${stage.scrim}), ` : ''}url(${backdrop}) center / cover no-repeat, ${stage.solid}`
-      : `linear-gradient(135deg, ${(stage.stops || []).join(', ')})`;
-    const scrim = stage.kind !== 'image' && stage.scrim ? `linear-gradient(${stage.scrim}, ${stage.scrim}), ` : '';
     const sceneLogo = stage.ink && stage.ink.toUpperCase() === '#FFFFFF' ? (logo || logoOnLight) : (logoOnLight || logo);
-    main = `<div class="v2-main v2-main--scene" style="--w-scene: ${scrim}${bg}">
+    main = `<div class="v2-main v2-main--scene" style="--w-scene: ${scene()}">
       <div class="v2-panel-dark"><div class="v2-head" style="margin-top: 10px"><span class="v2-pill v2-pill--off">Не защищено</span><span class="v2-title">Германия</span></div>
-      <span class="v2-connect v2-connect--go" style="color: ${esc(c.onAccent || '#0B0B0D')}">${POWER}Подключиться</span></div>
+      <span class="v2-connect v2-connect--go" style="color: ${esc(c.onAccent || '#0B0B0D')}">${POWER}Подключиться</span>${chips}</div>
       <div class="v2-scene-plan" style="color: ${esc(stage.ink)}">
         ${sceneLogo ? `<img src="${esc(sceneLogo)}" alt="">` : `<span class="v2-scene-name">${n}</span>`}
         <span class="days">77<small style="color: ${esc(stage.soft || stage.ink)}">осталось дней<br>${traffic}</small></span>
@@ -272,12 +303,10 @@ export function windowHtml({ root, mode = 'light', name = 'Провайдер', 
       </div></div>`;
   } else {
     main = `<div class="v2-main"><span class="v2-map"></span>
-      <div class="v2-head"><span class="v2-pill v2-pill--off">Не защищено</span><span class="v2-title"><img class="v2-flag" src="${root}assets/v2pn/flags/de.png" alt="" width="34" height="25">Германия</span><span class="v2-sub">VLESS Reality</span></div>
-      <span class="v2-connect v2-connect--go"${tab && c.onAccent ? ` style="color: ${esc(c.onAccent)}"` : ''}>${POWER}Подключиться</span></div>`;
+      <div class="v2-head"><span class="v2-pill v2-pill--off">Не защищено</span><span class="v2-title"><img class="v2-flag" src="${root}assets/v2pn/flags/de.png" alt="" width="34" height="25">Германия</span><span class="v2-sub">${proto('VLESS Reality')}</span></div>
+      <span class="v2-connect v2-connect--go"${tab && c.onAccent ? ` style="color: ${esc(c.onAccent)}"` : ''}>${POWER}Подключиться</span>${chips}</div>`;
   }
-  return `<div class="v2w ui-v2pn"${dark ? ' data-theme="dark"' : ''} style="${style.join('; ')}" aria-hidden="true">
-    <div class="v2w__bar">${MENU}${bar}<span class="v2w__sp"></span></div>
-    <div class="v2w__body"><div class="v2-side">${side}</div>${main}</div></div>`;
+  return `${open}${head}<div class="v2w__body"><div class="v2-side">${side}</div>${main}</div></div>`;
 }
 
 /** Wires a light/dark switch (.seg buttons with data-mode) to a function that redraws. */

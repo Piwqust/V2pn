@@ -73,6 +73,7 @@ public partial class MainWindow
         // A partner shown from the debug window brings its buttons too.
         RefreshPartnerActionBar();
         RefreshPartnerAccount();
+        RefreshScene();
 
         if (partner != null)
         {
@@ -350,6 +351,7 @@ public partial class MainWindow
             V2pnSubDefaults.Banner(info, DateTimeOffset.Now),
             usage?.DaysLeft ?? (api?.Until is { } end ? Math.Max(0, end.DayNumber - DateOnly.FromDateTime(DateTime.Today).DayNumber) : null));
         var shown = DebugOverrides.Apply(account.IsEmpty ? null : account);
+        _sceneAccount = shown;
         _partnerCard?.Update(shown, partner.Name);
         _planBlock?.Update(shown, partner.Name);
         QueuePlace();

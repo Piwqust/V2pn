@@ -1768,6 +1768,16 @@
                     </Panel>
                     </Border>
                 </Border>
+
+                <!--  A partner's screen of its own (theme.layout, e.g. the sticker book) over the sidebar and the stage;
+                      MainWindow.Scene.cs fills it and keeps it in step with the window.  -->
+                <ContentControl
+                    x:Name="editionHost"
+                    Grid.RowSpan="2"
+                    Grid.ColumnSpan="2"
+                    ClipToBounds="True"
+                    CornerRadius="{DynamicResource V2RadiusPanel}"
+                    IsVisible="False" />
             </Grid>
 
             <!--  V2pn: the first-start walkthrough, over everything under the title bar (MainWindow.Onboarding.cs).  -->

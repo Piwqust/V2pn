@@ -4,3 +4,5 @@ dist/
 .shots/
 static/providers/
 .shots-run.log
+.shots-home/
+.shots*/

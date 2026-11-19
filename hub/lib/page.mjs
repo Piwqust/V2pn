@@ -239,10 +239,16 @@ export function buildPage({ id, name, look, theme, pictures, origin, home = '/' 
   const logoFor = lightInk => (lightInk ? (logo || logoLight) : (logoLight || logo));
   const heroLogo = { light: logoFor(modes.light.heroLight), dark: logoFor(modes.dark.heroLight) };
   const barLogo = { light: logoLight || logo, dark: logo || logoLight };
+  // The pictures' own sizes on their <img>, so the page does not shift while they load.
+  const bytesOf = { 'logo-light.png': pictures.logo, 'logo-dark.png': pictures.logoOnLight };
+  const dims = file => {
+    const b = bytesOf[file];
+    return b && b.length > 24 && b.readUInt32BE(12) === 0x49484452 ? ` width="${b.readUInt32BE(16)}" height="${b.readUInt32BE(20)}"` : '';
+  };
   const pic = (cls, set, alt) => {
     if (!set.light && !set.dark) return `<span class="${cls} name">${esc(name)}</span>`;
-    if (set.light === set.dark) return `<img class="${cls}" src="${set.light}" alt="${alt}">`;
-    return `<picture><source srcset="${set.dark}" media="(prefers-color-scheme: dark)"><img class="${cls}" src="${set.light}" alt="${alt}"></picture>`;
+    if (set.light === set.dark) return `<img class="${cls}" src="${set.light}" alt="${alt}"${dims(set.light)}>`;
+    return `<picture><source srcset="${set.dark}" media="(prefers-color-scheme: dark)"><img class="${cls}" src="${set.light}" alt="${alt}"${dims(set.light)}></picture>`;
   };
   const keys = ['bg', 'card', 'mutedBg', 'line', 'ink', 'soft', 'muted', 'accent', 'onAccent', 'link', 'linkBg', 'focus', 'hero', 'scrim', 'heroInk', 'heroSoft', 'ghost', 'solid', 'onSolid'];
   const tokens = v => keys.map(k => `--${k}: ${v[k]}`).join('; ');
@@ -260,6 +266,14 @@ export function buildPage({ id, name, look, theme, pictures, origin, home = '/' 
 <title>${ru.title}</title>
 <meta name="description" content="${esc(name)} в V2pn, бесплатном VPN-клиенте для Windows и macOS: подписка со своей вкладкой в один клик.">
 <meta name="robots" content="noindex">
+<link rel="canonical" href="${esc(origin)}/p/${esc(id)}/">
+<meta property="og:type" content="website">
+<meta property="og:site_name" content="V2pn">
+<meta property="og:title" content="${ru.title}">
+<meta property="og:description" content="${esc(name)} в V2pn, бесплатном VPN-клиенте для Windows и macOS: подписка со своей вкладкой в один клик.">
+<meta property="og:url" content="${esc(origin)}/p/${esc(id)}/">
+<meta property="og:image" content="${esc(origin)}/share.png">
+<meta name="twitter:card" content="summary_large_image">
 <meta name="theme-color" content="${modes.light.bg}" media="(prefers-color-scheme: light)">
 <meta name="theme-color" content="${modes.dark.bg}" media="(prefers-color-scheme: dark)">
 <link rel="icon" href="/favicon.svg" type="image/svg+xml">

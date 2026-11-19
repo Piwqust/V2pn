@@ -34,7 +34,6 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
         InitializeComponent();
         btnCloseDialog.Click += (_, _) => DialogHostAvalonia.DialogHost.Close(null);
 
-        txtAppBase.Text = string.Format(L.UpdBasedOn, V2pnInfo.UpstreamVersion);
         cardApp.IsVisible = _updater.Supported;
         togAutoUpdate.IsChecked = AppUpdates.Auto(_config);
         // winget replaces a copy it installed; there is nothing to download here.

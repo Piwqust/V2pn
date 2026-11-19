@@ -92,9 +92,6 @@
                                 Classes="srowhint"
                                 TextWrapping="Wrap" />
                         </Grid>
-                        <TextBlock
-                            x:Name="txtAppBase"
-                            Classes="muted small" />
                     </StackPanel>
                     <StackPanel
                         Grid.Column="2"

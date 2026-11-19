@@ -38,5 +38,8 @@ public class Config
     // V2pn: the separately switched bypass of Russian blocking (V2pnBypass).
     public V2pnBypassItem? V2pnBypassItem { get; set; }
 
+    // V2pn: the kill switch (V2pnKillSwitch).
+    public V2pnKillSwitchItem? V2pnKillSwitchItem { get; set; }
+
     #endregion other entities
 }

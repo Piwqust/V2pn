@@ -374,6 +374,18 @@ public class V2pnBypassItem
     public List<V2pnBypassLearned>? Learned { get; set; }
 }
 
+/// <summary>
+/// V2pn: the kill switch. Off by default: when it is off, a connection that drops switches V2pn off and the internet
+/// goes on directly, as before.
+/// </summary>
+public class V2pnKillSwitchItem
+{
+    public bool Enabled { get; set; }
+
+    // Printers, a NAS and the router's page stay reachable while the block holds (VPN mode).
+    public bool AllowLan { get; set; } = true;
+}
+
 /// <summary>The way that made one server work on one network.</summary>
 public class V2pnBypassLearned
 {

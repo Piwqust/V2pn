@@ -770,7 +770,25 @@ public partial class MainWindowViewModel : MyReactiveObject
     private async Task StopAfterFailureAsync(EV2pnFailure failure, string? detail = null)
     {
         StatusBarViewModel.InvalidateAvailability();
+        // With the kill switch the internet stays closed instead (V2pnKillSwitch): the VPN-mode block stays in place,
+        // or the system proxy stays on V2pn's port with no core behind it. Disconnect or a new connection ends it.
+        var hold = V2pnKillSwitch.CanHold(_config, V2pnCoreWatch.FailureCause);
+        V2pnKillSwitch.SetHolding(hold);
         V2pnCoreWatch.MarkFailed(failure, detail);
+        if (hold)
+        {
+            Logging.SaveLog($"V2pn: the connection failed ({failure}) and the kill switch holds the internet closed: {V2pnCoreWatch.FailureDetail}");
+            await Task.Run(async () =>
+            {
+                await CoreManager.Instance.CoreStop();
+                V2pnKillSwitch.Sync(_config);
+                if (!_config.TunModeItem.EnableTun)
+                {
+                    await SysProxyHandler.UpdateSysProxy(_config, false);
+                }
+            });
+            return;
+        }
         Logging.SaveLog($"V2pn: switched off after a failure ({failure}): {V2pnCoreWatch.FailureDetail}");
         await Task.Run(async () => await CoreManager.Instance.CoreStop());
         RxSchedulers.MainThreadScheduler.Schedule(() =>
@@ -856,7 +874,9 @@ public partial class MainWindowViewModel : MyReactiveObject
                 {
                     await CoreManager.Instance.CoreStop();
                     await SysProxyHandler.UpdateSysProxy(_config, false);
+                    V2pnKillSwitch.Sync(_config);
                 });
+                V2pnKillSwitch.SetHolding(false);
                 V2pnCoreWatch.MarkStopped();
                 return;
             }
@@ -898,6 +918,8 @@ public partial class MainWindowViewModel : MyReactiveObject
             }
             await Task.Run(async () =>
             {
+                // The VPN-mode block goes up before the core starts: nothing leaves directly while the tunnel comes up.
+                V2pnKillSwitch.Sync(_config);
                 await LoadCore(context with { AvailabilityProbe = probe }, allResult.PreSocksResult?.Context);
                 // V2pn: a core that is not running gets no system proxy; a second look after the pause
                 // catches a core that started and exited at once (a config it rejects).
@@ -912,7 +934,10 @@ public partial class MainWindowViewModel : MyReactiveObject
                 await StopAfterFailureAsync(EV2pnFailure.StartFailed);
                 return;
             }
+            V2pnKillSwitch.SetHolding(false);
             V2pnCoreWatch.MarkRunning();
+            // The tunnel adapter is up now; the block lets traffic through it by the adapter as well as by address.
+            await Task.Run(() => V2pnKillSwitch.Sync(_config));
             _runningConnectionKey = await V2pnSubUpdate.ConnectionKey(profileItem);
             RxSchedulers.MainThreadScheduler.Schedule(async () =>
             {

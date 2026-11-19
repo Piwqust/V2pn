@@ -951,6 +951,109 @@
                                     </Grid>
                                 </Border>
                             </StackPanel>
+                            <StackPanel Classes="srowset" x:Name="gridTransportXdrive" IsVisible="False">
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveProvider}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdriveProviderHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <ComboBox x:Name="cmbProviderXdrive" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveService}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdriveServiceHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <ComboBox x:Name="cmbServiceXdrive" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveFolder}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdriveFolderHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtRemoteFolderXdrive" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveSecrets}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdriveSecretsHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtSecretsXdrive" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveEndpoint}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdriveEndpointHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtEndpointXdrive" PlaceholderText="https://s3.example.com" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveBucket}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdriveBucketHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtBucketXdrive" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveRegion}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdriveRegionHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <TextBox x:Name="txtRegionXdrive" PlaceholderText="auto" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow adv">
+                                    <Grid ColumnDefinitions="*,Auto">
+                                        <StackPanel Classes="srowtext">
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdrivePathStyle}" />
+                                            <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvXdrivePathStyleHint}" />
+                                        </StackPanel>
+                                        <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                            <ToggleSwitch x:Name="togPathStyleXdrive" />
+                                        </Panel>
+                                    </Grid>
+                                </Border>
+                                <Border Classes="srow stack adv">
+                                    <StackPanel Spacing="10">
+                                        <StackPanel>
+                                            <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SvXdriveExtra}" TextWrapping="Wrap" />
+                                        </StackPanel>
+                                        <Expander IsExpanded="False">
+                                            <Expander.Header>
+                                                <TextBlock FontWeight="Normal" Text="{x:Static loc:L.SvXdriveExtraTip}" />
+                                            </Expander.Header>
+                                            <views:JsonEditor x:Name="txtExtraXdrive" HorizontalAlignment="Stretch" />
+                                        </Expander>
+                                    </StackPanel>
+                                </Border>
+                            </StackPanel>
                         </StackPanel>
                     </Border>
                 </StackPanel>

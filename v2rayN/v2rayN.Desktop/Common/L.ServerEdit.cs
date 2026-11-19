@@ -103,7 +103,25 @@ public static partial class L
     public static string SvGrpcAuthorityHint => T("Usually empty.", "Обычно пусто.");
     public static string SvGrpcService => T("Service name", "Имя сервиса");
     public static string SvGrpcServiceHint => T("From the provider's settings.", "Из настроек провайдера.");
-    public static string SvFinalmask => T("Finalmask", "Finalmask");
+    public static string SvXdriveProvider => T("Cloud preset", "Шаблон облака");
+    public static string SvXdriveProviderHint => T("Fills in the usual values for the chosen cloud.", "Подставляет обычные значения для выбранного облака.");
+    public static string SvXdriveService => T("Storage type", "Тип хранилища");
+    public static string SvXdriveServiceHint => T("google-drive, s3 or local, as on the server.", "google-drive, s3 или local — как на сервере.");
+    public static string SvXdriveFolder => T("Folder in the storage", "Папка в хранилище");
+    public static string SvXdriveFolderHint => T("Traffic is exchanged through it. Must match the server.", "Через неё идёт обмен данными. Должна совпадать с сервером.");
+    public static string SvXdriveSecrets => T("Access keys", "Ключи доступа");
+    public static string SvXdriveSecretsHint => T("S3: access key and secret key, comma-separated. Google Drive: OAuth data.", "Для S3 — ключ и секрет через запятую, для Google Drive — данные OAuth.");
+    public static string SvXdriveEndpoint => T("S3 address", "Адрес S3");
+    public static string SvXdriveEndpointHint => T("The storage endpoint from your cloud account.", "Адрес хранилища (endpoint) из личного кабинета облака.");
+    public static string SvXdriveBucket => T("S3 bucket", "Бакет S3");
+    public static string SvXdriveBucketHint => T("The name of the bucket in the storage.", "Имя бакета в хранилище.");
+    public static string SvXdriveRegion => T("S3 region", "Регион S3");
+    public static string SvXdriveRegionHint => T("For example auto or eu-central-1.", "Например, auto или eu-central-1.");
+    public static string SvXdrivePathStyle => T("Bucket in the path", "Бакет в пути адреса");
+    public static string SvXdrivePathStyleHint => T("Path-style addresses. Needed by Cloudflare R2, MinIO and similar.", "Адреса в стиле path. Нужно для Cloudflare R2, MinIO и похожих.");
+    public static string SvXdriveExtra => T("Extra XDRIVE settings", "Дополнительные настройки XDRIVE");
+    public static string SvXdriveExtraTip => T("JSON object with XDRIVE settings", "JSON-объект с настройками XDRIVE");
+    public static string SvFinalmask =>T("Finalmask", "Finalmask");
     public static string SvFinalmaskHint => T("Xray traffic disguise, as JSON.", "Маскировка трафика Xray в формате JSON.");
 
     // Expert rows: TLS and Reality.

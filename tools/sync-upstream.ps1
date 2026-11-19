@@ -32,7 +32,16 @@ $repo = Split-Path -Parent $PSScriptRoot
 Set-Location $repo
 
 # PowerShell names are case-insensitive: a function called Git would shadow git.exe itself.
-function Invoke-Git { & git.exe @args; if ($LASTEXITCODE -ne 0) { throw "git $($args -join ' ') failed" } }
+# Windows PowerShell 5.1 turns anything git writes to stderr (a line-ending warning) into an error that
+# stops the script under ErrorActionPreference Stop; only the exit code says whether git failed.
+function Invoke-Git {
+    $previous = $ErrorActionPreference
+    $ErrorActionPreference = 'Continue'
+    & git.exe @args 2>&1 | ForEach-Object { if ($_ -is [System.Management.Automation.ErrorRecord]) { Write-Host $_ } else { $_ } }
+    $code = $LASTEXITCODE
+    $ErrorActionPreference = $previous
+    if ($code -ne 0) { throw "git $($args -join ' ') failed" }
+}
 
 if (git status --porcelain --untracked-files=no) { throw 'Commit or stash your changes first.' }
 

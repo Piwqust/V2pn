@@ -1,0 +1,239 @@
+<UserControl
+    x:Class="v2rayN.Desktop.Views.RuleEditorView"
+    xmlns="https://github.com/avaloniaui"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:loc="using:v2rayN.Desktop"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:dd="clr-namespace:v2rayN.Desktop.DesignData"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    xmlns:vms="clr-namespace:ServiceLib.ViewModels;assembly=ServiceLib"
+    x:DataType="vms:RoutingRuleDetailsViewModel"
+    Design.DataContext="{x:Static dd:DesignData.RoutingRuleDetails}"
+    mc:Ignorable="d">
+    <!--  One rule, edited in the rule-sets window beside the list (it used to be a third window on top
+          of two others). The rows are v2rayN's, so the code-behind binds the same names.  -->
+    <StackPanel>
+        <StackPanel Classes="sgroup">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.RtGrpAction}" />
+            <Border Classes="sgroupcard">
+                <StackPanel>
+                    <Border Classes="srow">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconRoute}" /></Border>
+                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtAction}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtActionHint}" />
+                            </StackPanel>
+                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                <ListBox
+                                    x:Name="lstAction"
+                                    Width="420"
+                                    Classes="mode"
+                                    Theme="{StaticResource V2Segmented}">
+                                    <ListBoxItem>
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconShieldStroked}" />
+                                            <TextBlock Text="{x:Static loc:L.RtThroughVpn}" />
+                                        </StackPanel>
+                                    </ListBoxItem>
+                                    <ListBoxItem>
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconArrowRight}" />
+                                            <TextBlock Text="{x:Static loc:L.RtDirect}" />
+                                        </StackPanel>
+                                    </ListBoxItem>
+                                    <ListBoxItem>
+                                        <StackPanel Orientation="Horizontal" Spacing="7">
+                                            <PathIcon Classes="i14" Data="{StaticResource SemiIconMinusCircleStroked}" />
+                                            <TextBlock Text="{x:Static loc:L.RtBlock}" />
+                                        </StackPanel>
+                                    </ListBoxItem>
+                                </ListBox>
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow">
+                        <Grid ColumnDefinitions="Auto,*,Auto">
+                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconPlayCircle}" /></Border>
+                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtEnabled}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtEnabledHint}" />
+                            </StackPanel>
+                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                <ToggleSwitch x:Name="togEnabled" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtOutbound}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtOutboundHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <StackPanel Orientation="Horizontal" Spacing="8">
+                                    <ComboBox Name="cmbOutboundTag" Width="200" IsEditable="True" />
+                                    <Button x:Name="btnSelectProfile" Content="{x:Static loc:L.RtChooseServer}" />
+                                </StackPanel>
+                            </Panel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+
+        <StackPanel Classes="sgroup">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.RtGrpMatch}" />
+            <Border Classes="sgroupcard">
+                <StackPanel>
+                    <Border Classes="srow stack">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconGlobeStroke}" /></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtSites}" />
+                                    <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtSitesHint}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBox
+                                Name="txtDomain"
+                                MinHeight="88"
+                                AcceptsReturn="True"
+                                Classes="TextArea"
+                                PlaceholderText="youtube.com&#10;geosite:youtube"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="srow stack">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconServerStroked}" /></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtAddresses}" />
+                                    <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtAddressesHint}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBox
+                                Name="txtIP"
+                                MinHeight="88"
+                                AcceptsReturn="True"
+                                Classes="TextArea"
+                                PlaceholderText="1.1.1.1/32&#10;geoip:telegram"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="srow stack">
+                        <StackPanel Spacing="10">
+                            <Grid ColumnDefinitions="Auto,*">
+                                <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconDesktop}" /></Border>
+                                <StackPanel Grid.Column="1" VerticalAlignment="Center">
+                                    <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtPrograms}" />
+                                    <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtProgramsHint}" />
+                                </StackPanel>
+                            </Grid>
+                            <TextBox
+                                Name="txtProcess"
+                                MinHeight="64"
+                                AcceptsReturn="True"
+                                Classes="TextArea"
+                                PlaceholderText="Telegram.exe"
+                                TextWrapping="Wrap" />
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </Border>
+            <TextBlock Classes="sgroupnote" Text="{x:Static loc:L.RtMatchNote}" />
+        </StackPanel>
+
+        <StackPanel Classes="sgroup">
+            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpMore}" />
+            <Border Classes="sgroupcard">
+                <StackPanel>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtName}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtNameHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtRemarks" PlaceholderText="{x:Static loc:L.RtNamePlaceholder}" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtPort}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtPortHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <TextBox x:Name="txtPort" PlaceholderText="443, 1000-2000" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtNetwork}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtNetworkHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ComboBox x:Name="cmbNetwork" MaxDropDownHeight="1000" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow stack adv">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtProtocol}" />
+                                <StackPanel Orientation="Horizontal" Spacing="6">
+                                    <TextBlock Classes="srowhint" VerticalAlignment="Center" Text="{x:Static loc:L.RtProtocolHint}" />
+                                    <HyperlinkButton
+                                        Margin="0,3,0,0"
+                                        Padding="0"
+                                        VerticalAlignment="Center"
+                                        Classes="WithIcon"
+                                        Click="linkRuleobjectDoc_Click">
+                                        <TextBlock FontSize="12" Text="{x:Static loc:L.RtLearnMore}" />
+                                    </HyperlinkButton>
+                                </StackPanel>
+                            </StackPanel>
+                            <ListBox x:Name="clbProtocol" SelectionMode="Multiple,Toggle" Theme="{DynamicResource CardCheckGroupListBox}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="srow stack adv">
+                        <StackPanel Spacing="10">
+                            <StackPanel>
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtEntry}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtEntryHint}" />
+                            </StackPanel>
+                            <ListBox x:Name="clbInboundTag" SelectionMode="Multiple,Toggle" Theme="{DynamicResource CardCheckGroupListBox}" />
+                        </StackPanel>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtRuleType}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.RtRuleTypeHint}" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ComboBox x:Name="cmbRuleType" MaxDropDownHeight="1000" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                    <Border Classes="srow adv">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.RtAutoSort}" />
+                            </StackPanel>
+                            <Panel Grid.Column="1" VerticalAlignment="Center">
+                                <ToggleSwitch x:Name="chkAutoSort" />
+                            </Panel>
+                        </Grid>
+                    </Border>
+                </StackPanel>
+            </Border>
+        </StackPanel>
+        <Button x:Name="btnMoreFields" Classes="morefields" Theme="{StaticResource V2Button}" />
+    </StackPanel>
+</UserControl>

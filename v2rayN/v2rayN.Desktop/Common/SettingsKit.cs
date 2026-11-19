@@ -152,8 +152,9 @@ internal static class SettingsKit
     /// The "Show more fields" pattern of V2pn forms: rows tagged "adv" stay hidden behind
     /// <paramref name="button"/>, and open by themselves when <paramref name="hasExtras"/> says the edited
     /// item already uses one of them (checked on Loaded and again after the bindings have landed).
+    /// Returns the switch, for a form that shows one item after another.
     /// </summary>
-    public static void InstallMoreFields(Window window, Button button, Func<bool> hasExtras)
+    public static Action<bool> InstallMoreFields(Control window, Button button, Func<bool> hasExtras)
     {
         var text = new TextBlock { Text = L.MoreFields, VerticalAlignment = Avalonia.Layout.VerticalAlignment.Center };
         var chevron = new PathIcon { Classes = { "i12" } };
@@ -185,6 +186,7 @@ internal static class SettingsKit
                 }
             }, DispatcherPriority.Background);
         };
+        return Show;
     }
 
     /// <summary>True when any of the values is filled in (empty, "0" and "False" count as not set).</summary>

@@ -350,3 +350,37 @@ public class HappyEyeballs4RayItem
     public int? Interleave { get; set; }
     public int? MaxConcurrentTry { get; set; }
 }
+
+/// <summary>
+/// V2pn: "Обход блокировок". Nothing here changes how V2pn connects until <see cref="Enabled"/> is on; the other
+/// switches only matter under it.
+/// </summary>
+public class V2pnBypassItem
+{
+    public bool Enabled { get; set; }
+
+    // Tests open few TLS handshakes at a time, cores get explicit multiplexing and a browser fingerprint.
+    public bool CalmTests { get; set; } = true;
+
+    // A server that stops answering gets the bypass ways tried on it, one by one, without asking.
+    public bool AutoTune { get; set; } = true;
+
+    // A way found for a server is kept for the network it was found on (home Wi-Fi, a phone's hotspot).
+    public bool PerNetwork { get; set; } = true;
+
+    // Sites that go direct get their TLS handshake split too, against slowdowns of sites inside Russia's filter.
+    public bool DirectFragment { get; set; }
+
+    public List<V2pnBypassLearned>? Learned { get; set; }
+}
+
+/// <summary>The way that made one server work on one network.</summary>
+public class V2pnBypassLearned
+{
+    public string Network { get; set; } = string.Empty;
+    public string ServerId { get; set; } = string.Empty;
+    public string Variant { get; set; } = string.Empty;
+
+    // Unix seconds.
+    public long At { get; set; }
+}

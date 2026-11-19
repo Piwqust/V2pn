@@ -35,5 +35,8 @@ public class Config
     public SimpleDNSItem SimpleDNSItem { get; set; }
     public HappyEyeballs4RayItem HappyEyeballs4RayItem { get; set; }
 
+    // V2pn: the separately switched bypass of Russian blocking (V2pnBypass).
+    public V2pnBypassItem? V2pnBypassItem { get; set; }
+
     #endregion other entities
 }

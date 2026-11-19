@@ -64,6 +64,7 @@ public partial class CoreConfigV2rayService(CoreConfigContext context)
             {
                 ApplyFinalFragment();
             }
+            ApplyV2pnDirectFragment();
 
             var finalRule = BuildFinalRule();
             if (context.AvailabilityProbe is { } probe)

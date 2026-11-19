@@ -53,6 +53,7 @@ public class CoreConfigContextBuilder
             HasGlobalIPv6Address = Utils.HasGlobalIPv6Address(),
             ProtectCoreTypeList = config.TunModeItem.EnableTun ? [ECoreType.Xray, ECoreType.sing_box] : [],
             V2pnPartnerSubs = await V2pnPartnerTraffics.SnapshotAsync(),
+            V2pnBypass = V2pnBypassPlan.From(config),
         };
         var validatorResult = NodeValidatorResult.Empty();
         var (actNode, nodeValidatorResult) = await ResolveNodeAsync(context, node);

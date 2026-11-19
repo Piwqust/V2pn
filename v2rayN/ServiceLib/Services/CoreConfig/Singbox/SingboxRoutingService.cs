@@ -134,7 +134,7 @@ public partial class CoreConfigSingboxService
                         ],
                     });
                 }
-                if (_config.CoreBasicItem.EnableFinalFragment)
+                if (_config.CoreBasicItem.EnableFinalFragment || context.V2pnBypass.DirectFragment)
                 {
                     _coreConfig.route.rules.Add(new()
                     {
@@ -154,7 +154,7 @@ public partial class CoreConfigSingboxService
                         action = "hijack-dns",
                     });
                 }
-                if (_config.CoreBasicItem.EnableFinalFragment)
+                if (_config.CoreBasicItem.EnableFinalFragment || context.V2pnBypass.DirectFragment)
                 {
                     _coreConfig.route.rules.Add(new()
                     {

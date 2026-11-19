@@ -171,6 +171,7 @@ public static class ConfigHandler
             Packets = "tlshello",
         };
         config.Fragment4RayItem.MaxSplit ??= "0";
+        config.V2pnBypassItem ??= new();
 
         config.HappyEyeballs4RayItem ??= new()
         {

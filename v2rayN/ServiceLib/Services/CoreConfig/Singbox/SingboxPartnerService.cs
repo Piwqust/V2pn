@@ -10,6 +10,10 @@ public partial class CoreConfigSingboxService
     private bool V2pnPartnerFragment =>
         context.V2pnTrafficFor(_node) is { Transport.Fragment: not null } traffic && traffic.CoreFor(ECoreType.sing_box)?.Dialer == null;
 
+    /// <summary>The way "Обход блокировок" found for this server; a partner's reviewed transport goes first.</summary>
+    private bool V2pnBypassFragment =>
+        context.V2pnBypass.For(_node) != null && context.V2pnTrafficFor(_node)?.Transport == null;
+
     /// <summary>Dials a partner's server through its core.json dialer.</summary>
     private void ApplyV2pnPartnerServer(BaseServer4Sbox outbound)
     {

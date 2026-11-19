@@ -63,6 +63,10 @@ public record CoreConfigContext
     // Shared by every copy of the context made while one config is generated.
     public HashSet<string> V2pnPartnersUsed { get; init; } = [];
 
+    // V2pn: what "Обход блокировок" adds to this config: the way found for each server on this network, the calm
+    // defaults, the fragmentation of direct sites (V2pnBypassPlan.From).
+    public V2pnBypassPlan V2pnBypass { get; init; } = V2pnBypassPlan.Off;
+
     public V2pnPartnerTraffic? V2pnTrafficFor(ProfileItem? node) =>
         node?.Subid is { Length: > 0 } subId && V2pnPartnerSubs.TryGetValue(subId, out var traffic) ? traffic : null;
 }

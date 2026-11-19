@@ -464,7 +464,7 @@ public partial class CoreConfigSingboxService
                 insecure = _node.GetAllowInsecure(),
                 alpn = _node.GetAlpn(),
             };
-            if (_config.CoreBasicItem.EnableFragment == true || V2pnPartnerFragment)
+            if (_config.CoreBasicItem.EnableFragment == true || V2pnPartnerFragment || V2pnBypassFragment)
             {
                 tls.fragment = true;
                 tls.record_fragment = true;
@@ -475,6 +475,15 @@ public partial class CoreConfigSingboxService
                 {
                     enabled = true,
                     fingerprint = _node.Fingerprint.IsNullOrEmpty() ? _config.CoreBasicItem.DefFingerprint : _node.Fingerprint
+                };
+            }
+            else if (context.V2pnBypass.Calm)
+            {
+                // V2pn: Go's own ClientHello gives a proxy away; the calm defaults use a browser's.
+                tls.utls = new Utls4Sbox()
+                {
+                    enabled = true,
+                    fingerprint = _config.CoreBasicItem.DefFingerprint.IsNullOrEmpty() ? CoreConfigV2rayService.CalmFingerprint : _config.CoreBasicItem.DefFingerprint
                 };
             }
             if (_node.StreamSecurity == Global.StreamSecurity)

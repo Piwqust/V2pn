@@ -1,8 +1,8 @@
-// The check of a provider's test subscription: opened from the server as V2pn opens it, every finding one line
-// (ok / warn / fail) with a short Russian text for the person and the raw values for the owner.
+// The check of a partner's subscription link: opened from the server as V2pn opens it, every finding one line
+// (ok / warn / fail) with a short Russian text for the person and the raw values. The hub takes the link's host as
+// the partner's domain, so there is no list of domains to check it against.
 import { NetError, safeFetch, tcpPing } from './net.mjs';
 import { parseBody, readHeaders, summarize, SUPPORTED, PROTOCOL_NAMES } from './subscription.mjs';
-import { domainAllowed } from './validate.mjs';
 
 export function plural(n, one, few, many) {
   const m10 = n % 10;
@@ -40,23 +40,14 @@ async function pool(items, limit, fn) {
 }
 
 /**
- * Checks <url>. <domains> are the application's subscription domains. <net> carries the fetch and ping options
+ * Checks <url>. <net> carries the fetch and ping options
  * (tests pass their resolver); <userAgent> is the one V2pn sends.
  */
-export async function checkSubscription(url, { domains = [], userAgent, net = {}, tcp = true } = {}) {
+export async function checkSubscription(url, { userAgent, net = {}, tcp = true } = {}) {
   const started = Date.now();
   const lines = [];
   const add = (id, level, text, detail = null, raw = null) => lines.push({ id, level, text, detail, raw });
   const result = { at: new Date().toISOString(), ok: false, http: null, headers: null, servers: null, tcp: [], lines };
-
-  let host = null;
-  try {
-    host = new URL(url).hostname.toLowerCase();
-  } catch { /* reported by the fetch */ }
-  if (host && domains.length) {
-    if (domainAllowed(domains, url)) add('domain', 'ok', 'Домен ссылки — среди доменов подписки', host);
-    else add('domain', 'fail', 'Домен ссылки не входит в домены подписки', `V2pn узнаёт подписку по домену. Добавьте ${host} в домены или дайте ссылку на одном из них.`, { host });
-  }
 
   let res;
   try {

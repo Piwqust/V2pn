@@ -1,4 +1,4 @@
-// The provider's whole way through the hub and the owner's decisions, over HTTP, with the files it publishes.
+// A provider's whole way through the hub and the moderators' decisions, over HTTP, with the files it publishes.
 import assert from 'node:assert/strict';
 import crypto from 'node:crypto';
 import fs from 'node:fs';
@@ -8,11 +8,12 @@ import { publicKeyOf, verify } from '../lib/keys.mjs';
 import { setQuiet } from '../lib/log.mjs';
 import { verifyPack } from '../lib/publish.mjs';
 import { readZip } from '../lib/zip.mjs';
-import { Client, makePng, serve, signIn, startHub } from './helpers.mjs';
+import { Client, makePng, register, serve, signIn, signInOwner, startHub } from './helpers.mjs';
 
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
+const configraFolder = new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
-function published(env) {
+export function published(env) {
   const dir = path.join(env.config.publicDir, 'partners', 'latest', 'download');
   const index = fs.readFileSync(path.join(dir, 'partner-index.json'));
   const sig = fs.readFileSync(path.join(dir, 'partner-index.json.sig'), 'utf8');
@@ -23,8 +24,10 @@ function published(env) {
   return { dir, index: parsed, files: fs.readdirSync(dir).sort() };
 }
 
-test('apply, get checked, be rejected and approved, design a look, get published, be revoked', async () => {
-  // Every log line of the run, to prove the test link and codes never reach the log.
+const packOf = (pub, id) => readZip(fs.readFileSync(path.join(pub.dir, `partner-${id}.zip`)));
+
+test('register, save = published, special rights wait for a moderator, take down, complaints, passwords', async () => {
+  // Every log line of the run, to prove subscription links, passwords and cookies never reach the log.
   const logged = [];
   const write = process.stdout.write.bind(process.stdout);
   const writeErr = process.stderr.write.bind(process.stderr);
@@ -35,9 +38,277 @@ test('apply, get checked, be rejected and approved, design a look, get published
   const servers = await serve((req, res) => res.end());
   let subBody = '';
   const sub = await serve((req, res) => {
-    res.writeHead(200, { 'profile-title': 'Kestrel', 'support-url': 'https://t.me/kestrel_support' });
+    res.writeHead(200, { 'profile-title': 'Nordline', 'support-url': 'https://t.me/nordline_support' });
     res.end(subBody);
   });
+  const env = await startHub();
+  const subUrl = `http://sub.nordline.test:${sub.port}/s/secret-token-123`;
+  try {
+    const provider = new Client(env.base);
+    const owner = new Client(env.base);
+    await register(provider, 'nordline', 'nord-pass-1');
+    const ownerPassword = await signInOwner(env, owner);
+
+    // ---- nothing yet
+    let r = await provider.get('/api/partner');
+    assert.equal(r.data.partner, null);
+    assert.equal(r.data.look.layout, 'v2pn');
+
+    // ---- pictures before the first save
+    const up = (slot, bytes, type = 'image/png') => provider.request('POST', `/api/partner/upload?slot=${slot}`, bytes, { 'content-type': type });
+    assert.equal((await up('logo', Buffer.from('GIF89a'), 'image/gif')).data.error.code, 'invalid');
+    assert.match((await up('mark', makePng(300, 96))).data.error.fields.file, /^Картинка 300×96; нужен квадратный знак/);
+    const mark = makePng(128, 128, [47, 107, 255]);
+    const logo = makePng(340, 96, [255, 255, 255]);
+    const ids = {};
+    for (const [slot, bytes] of [['mark', mark], ['logo', logo]]) {
+      r = await up(slot, bytes);
+      assert.equal(r.status, 200, slot);
+      ids[slot] = r.data.picture.sha256;
+      assert.equal(ids[slot], sha(bytes));
+    }
+    assert.deepEqual((await provider.get(`/api/partner/pictures/${ids.mark}`)).data, mark);
+
+    // ---- the form, checked field by field; the link is checked from the server
+    const form = {
+      name: 'Nordline', subscription: subUrl, brand: ['#2F6BFF', '#13C4B5'], background: 'gradient', layout: 'stickers', ...ids,
+      links: { support: 't.me/nordline_support' },
+    };
+    r = await provider.put('/api/partner', { ...form, name: 'Nordline V2pn', brand: [], layout: 'tiles' });
+    assert.equal(r.status, 422);
+    assert.deepEqual(Object.keys(r.data.error.fields), ['layout']);
+    r = await provider.put('/api/partner', { ...form, subscription: 'ftp://x' });
+    assert.deepEqual(Object.keys(r.data.error.fields), ['subscription']);
+    r = await provider.put('/api/partner', { ...form, subscription: `http://127.0.0.1:${sub.port}/s/x` });
+    assert.match(r.data.error.fields.subscription, /на домене/);
+    r = await provider.put('/api/partner', { ...form, name: 'My V2pn', brand: [] });
+    assert.equal(r.data.error.code, 'look_invalid');
+    assert.deepEqual(Object.keys(r.data.error.fields).sort(), ['brand', 'name']);
+
+    subBody = '<html>login</html>';
+    r = await provider.put('/api/partner', form);
+    assert.equal(r.status, 422);
+    assert.equal(r.data.error.code, 'check_failed');
+    assert.equal(r.data.error.detail.lines.find(l => l.id === 'servers').level, 'fail');
+    assert.equal((await provider.get('/api/partner')).data.partner, null, 'nothing saved');
+
+    subBody = Buffer.from([1, 2].map(i => `vless://id@s${i}.nordline.test:${servers.port}?security=reality#S${i}`).join('\n')).toString('base64');
+    r = await provider.post('/api/partner/check', { subscription: subUrl });
+    assert.deepEqual([r.data.check.ok, r.data.domain, r.data.taken], [true, 'sub.nordline.test', false]);
+    r = await provider.put('/api/partner', form);
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.equal(r.data.check.ok, true);
+    const mine = r.data.partner;
+    assert.deepEqual([mine.id, mine.state, mine.domains, mine.subscription], ['nordline', 'live', ['sub.nordline.test'], subUrl]);
+    assert.equal(mine.look.links.support, 'https://t.me/nordline_support');
+    assert.equal(mine.share.button, `${env.origin}/p/nordline/#sub=`);
+    assert.deepEqual((await provider.get('/api/me')).data.partner, { id: 'nordline', name: 'Nordline', state: 'live' });
+
+    // ---- published at once: the index, the pack with the layout, the page with «Пожаловаться» and no inline script
+    let pub = published(env);
+    assert.deepEqual(pub.index.partners.map(p => [p.id, p.name, p.domains.join(), p.grants.join(), p.reviewed]),
+      [['nordline', 'Nordline', 'sub.nordline.test', 'edition', undefined]]);
+    const year = new Date();
+    year.setUTCFullYear(year.getUTCFullYear() + 1);
+    assert.equal(pub.index.partners[0].until, year.toISOString().slice(0, 10), 'a hub partner has no term: a year on, renewed daily');
+    let pack = JSON.parse(packOf(pub, 'nordline').get('partner.json'));
+    assert.deepEqual(pack.theme, { palette: { brand: ['#2F6BFF', '#13C4B5'] }, background: { type: 'gradient', colors: ['#2F6BFF', '#13C4B5'] }, layout: 'stickers' });
+    assert.deepEqual(pack.links, { support: 'https://t.me/nordline_support' });
+    assert.equal(pack.api, undefined);
+    const pageDir = path.join(env.config.publicDir, 'p', 'nordline');
+    const page = fs.readFileSync(path.join(pageDir, 'index.html'), 'utf8');
+    assert.match(page, /<script src="page.js"><\/script>/);
+    assert.match(page, /id="report-open" data-t="report">Пожаловаться</);
+    assert.doesNotMatch(page.replace(/<script type="application\/json"[^]*?<\/script>/, ''), /<script>/, 'no inline script (CSP script-src self)');
+    assert.match(fs.readFileSync(path.join(pageDir, 'page.js'), 'utf8'), /\/api\/complaints/);
+
+    // ---- saving again with the same link does not check it again; the id stays when the name changes
+    subBody = '';
+    r = await provider.put('/api/partner', { ...form, name: 'Nordline Pro' });
+    assert.equal(r.status, 200);
+    assert.equal(r.data.check, null);
+    assert.equal(r.data.partner.id, 'nordline');
+    assert.equal(published(env).index.partners[0].name, 'Nordline Pro');
+    subBody = Buffer.from(`vless://id@s1.nordline.test:${servers.port}?security=reality#S1`).toString('base64');
+
+    // ---- special rights: asked, checked, pending; the partner stays live without them
+    const rights = {
+      routing: 'domain:ru, geoip:ru → direct\nyoutube.com → proxy\n# a comment\ndefault → proxy',
+      lock: true,
+      actions: [{ label: 'Продлить', icon: 'card', do: 'open.renew' }, { label: 'Тариф', icon: 'info', do: 'info.card' }],
+      account: { api: 'https://sub.nordline.test/v2pn/api/', login: true },
+    };
+    r = await provider.put('/api/partner', { ...form, rights: { ...rights, account: { api: 'https://evil.example/api/' }, routing: 'geoip:ru → block' } });
+    assert.equal(r.status, 422);
+    assert.match(r.data.error.fields['rights.account.api'], /на домене подписки/);
+    assert.match(r.data.error.fields['rights.routing'], /блокирует целую страну/);
+    r = await provider.put('/api/partner', { ...form, rights });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
+    assert.deepEqual(r.data.partner.pending, ['account', 'actions', 'lock', 'routing']);
+    assert.deepEqual(r.data.partner.rights.routing.content,
+      { schema: 1, default: 'proxy', rules: [{ domains: ['domain:ru'], ips: ['geoip:ru'], to: 'direct' }, { domains: ['domain:youtube.com'], to: 'proxy' }] });
+    assert.equal(r.data.partner.rights.routing.text, 'domain:ru, geoip:ru → direct\ndomain:youtube.com → proxy');
+    assert.deepEqual(published(env).index.partners[0].grants, ['edition'], 'nothing waiting goes out');
+
+    // ---- the moderator's queue; an approval names the content it saw
+    const queue = (await owner.get('/api/mod/rights')).data.rights;
+    assert.deepEqual(queue.map(q => [q.partner, q.right, q.login, q.state]),
+      [['nordline', 'account', 'nordline', 'pending'], ['nordline', 'actions', 'nordline', 'pending'], ['nordline', 'lock', 'nordline', 'pending'], ['nordline', 'routing', 'nordline', 'pending']]);
+    const hashOf = right => queue.find(q => q.right === right).hash;
+    assert.equal((await owner.post('/api/mod/partners/nordline/rights/routing/approve', { hash: 'f'.repeat(64) })).data.error.code, 'conflict');
+    assert.equal((await provider.post('/api/mod/partners/nordline/rights/routing/approve', { hash: hashOf('routing') })).status, 403);
+    for (const right of ['account', 'actions', 'lock', 'routing']) {
+      r = await owner.post(`/api/mod/partners/nordline/rights/${right}/approve`, { hash: hashOf(right) });
+      assert.equal(r.data.right.state, 'approved', right);
+    }
+    pub = published(env);
+    let entry = pub.index.partners[0];
+    assert.deepEqual(entry.grants, ['edition', 'account', 'actions', 'lock', 'routing']);
+    let zip = packOf(pub, 'nordline');
+    const routing1 = zip.get('routing.json');
+    assert.equal(routing1.toString(), '{\n  "schema": 1,\n  "default": "proxy",\n  "rules": [\n    {\n      "domains": [\n        "domain:ru"\n      ],\n'
+      + '      "ips": [\n        "geoip:ru"\n      ],\n      "to": "direct"\n    },\n    {\n      "domains": [\n        "domain:youtube.com"\n      ],\n      "to": "proxy"\n    }\n  ]\n}\n');
+    assert.deepEqual(entry.reviewed, { 'routing.json': sha(routing1) });
+    assert.equal(hashOf('routing'), sha(routing1), 'the approved hash is the reviewed file\'s');
+    pack = JSON.parse(zip.get('partner.json'));
+    assert.deepEqual([pack.api, pack.login, pack.lock], ['https://sub.nordline.test/v2pn/api/', true, true]);
+    assert.deepEqual(pack.actions, [{ id: 'button-1', label: 'Продлить', icon: 'card', do: 'open.renew' }, { id: 'button-2', label: 'Тариф', icon: 'info', do: 'info.card' }]);
+    assert.ok(pack.assets.some(a => a.name === 'routing.json' && a.sha256 === sha(routing1)));
+    const rawIndex = fs.readFileSync(path.join(pub.dir, 'partner-index.json'), 'utf8');
+    assert.ok(rawIndex.indexOf('"reviewed"') > rawIndex.indexOf('"grants"') && rawIndex.indexOf('"reviewed"') < rawIndex.indexOf('"until"'),
+      'reviewed sits between grants and until, as V2pnPartnerPublisher.IndexBytes writes it');
+
+    // ---- the provider changes the rules: pending again, the pack keeps what was approved
+    r = await provider.put('/api/partner', { ...form, rights: { ...rights, routing: 'domain:ru → direct' } });
+    assert.equal(r.data.partner.rights.routing.state, 'pending');
+    assert.equal(r.data.partner.rights.routing.live, true);
+    assert.equal(r.data.partner.rights.routing.approvedText, 'domain:ru, geoip:ru → direct\ndomain:youtube.com → proxy');
+    assert.equal(r.data.partner.rights.lock.state, 'approved', 'the others stay approved');
+    pub = published(env);
+    assert.deepEqual(pub.index.partners[0].reviewed, { 'routing.json': sha(routing1) });
+    assert.deepEqual(packOf(pub, 'nordline').get('routing.json'), routing1);
+
+    // ---- denied with a reason: the provider sees it; the older approved rules stay
+    const newHash = (await owner.get('/api/mod/rights')).data.rights.find(q => q.right === 'routing').hash;
+    assert.equal((await owner.post('/api/mod/partners/nordline/rights/routing/deny', { hash: newHash })).data.error.code, 'invalid');
+    r = await owner.post('/api/mod/partners/nordline/rights/routing/deny', { hash: newHash, reason: 'Слишком широко' });
+    assert.equal(r.data.right.state, 'denied');
+    let view = (await provider.get('/api/partner')).data.partner;
+    assert.deepEqual([view.rights.routing.state, view.rights.routing.reason], ['denied', 'Слишком широко']);
+    assert.deepEqual(published(env).index.partners[0].reviewed, { 'routing.json': sha(routing1) });
+
+    // ---- a right no longer asked for leaves the pack; denying an approved right takes it back
+    r = await provider.put('/api/partner', { ...form, rights: { ...rights, lock: false, routing: 'domain:ru → direct' } });
+    assert.equal(r.data.partner.rights.lock, undefined);
+    entry = published(env).index.partners[0];
+    assert.deepEqual(entry.grants, ['edition', 'account', 'actions', 'routing']);
+    r = await owner.post('/api/mod/partners/nordline/rights/account/deny', { hash: hashOf('account'), reason: 'API не отвечает' });
+    assert.equal(r.data.right.live, false);
+    pub = published(env);
+    pack = JSON.parse(packOf(pub, 'nordline').get('partner.json'));
+    assert.equal(pack.api, undefined);
+    assert.deepEqual(pack.actions.map(a => a.do), ['open.renew'], 'a button that needs the API goes with it');
+    assert.deepEqual(pub.index.partners[0].grants, ['edition', 'actions', 'routing']);
+
+    // ---- one domain, one partner
+    const rival = new Client(env.base);
+    await register(rival, 'rival');
+    r = await rival.put('/api/partner', { ...form, name: 'Rival', mark: null, logo: null, subscription: `http://sub.nordline.test:${sub.port}/other` });
+    assert.equal(r.data.error.code, 'domain_taken');
+    assert.equal((await rival.get(`/api/partner/pictures/${ids.mark}`)).status, 404, 'only the account and moderators see its pictures');
+    assert.deepEqual((await owner.get(`/api/mod/pictures/${ids.mark}`)).data, mark);
+
+    // ---- complaints: anonymous, limited, counted for moderators, cleared by them
+    const visitor = new Client(env.base);
+    assert.equal((await visitor.post('/api/complaints', { partner: 'nobody' })).status, 404);
+    assert.equal((await visitor.post('/api/complaints', { partner: 'nordline', text: 'x'.repeat(1001) })).data.error.code, 'invalid');
+    assert.equal((await visitor.post('/api/complaints', { partner: 'nordline', text: 'Не работает' })).status, 200);
+    assert.equal((await visitor.post('/api/complaints', { partner: 'nordline' })).status, 429, 'one a day per address and partner');
+    assert.equal((await visitor.request('POST', '/api/complaints', { partner: 'nordline' }, { 'x-forwarded-for': '203.0.113.9' })).status, 200);
+    let list = (await owner.get('/api/mod/partners')).data.partners;
+    assert.deepEqual(list.map(p => [p.id, p.login, p.complaints, p.state, p.layout, p.domains.join()]),
+      [['nordline', 'nordline', 2, 'live', 'stickers', 'sub.nordline.test']]);
+    assert.deepEqual(list[0].pending, []);
+    assert.equal(list[0].check.ok, true);
+    assert.equal(list[0].subscription, undefined, 'moderators do not see the subscription link');
+    const detail = (await owner.get('/api/mod/partners/nordline')).data.partner;
+    assert.deepEqual(detail.complaintList.map(c => c.text), ['', 'Не работает']);
+    assert.deepEqual((await owner.post('/api/mod/partners/nordline/complaints/clear')).data, { cleared: 2 });
+
+    // ---- taken down: out of the index, the zip gone, the page says so; restored: back
+    assert.equal((await owner.post('/api/mod/partners/nordline/down', {})).data.error.code, 'invalid');
+    r = await owner.post('/api/mod/partners/nordline/down', { reason: 'Жалобы пользователей' });
+    assert.equal(r.data.partner.state, 'down');
+    pub = published(env);
+    assert.deepEqual(pub.index.partners, []);
+    assert.ok(!pub.files.includes('partner-nordline.zip'));
+    const downPage = fs.readFileSync(path.join(pageDir, 'index.html'), 'utf8');
+    assert.match(downPage, /Nordline снят модератором V2pn/);
+    assert.doesNotMatch(downPage, /<script/);
+    assert.deepEqual(fs.readdirSync(pageDir), ['index.html']);
+    assert.equal((await visitor.request('POST', '/api/complaints', { partner: 'nordline' }, { 'x-forwarded-for': '203.0.113.10' })).status, 404);
+    view = (await provider.get('/api/partner')).data.partner;
+    assert.deepEqual([view.state, view.downReason], ['down', 'Жалобы пользователей']);
+    // Saving does not bring it back.
+    assert.equal((await provider.put('/api/partner', form)).data.partner.state, 'down');
+    assert.deepEqual(published(env).index.partners, []);
+    r = await owner.post('/api/mod/partners/nordline/restore');
+    assert.equal(r.data.partner.state, 'live');
+    assert.equal(published(env).index.partners.length, 1);
+    assert.match(fs.readFileSync(path.join(pageDir, 'index.html'), 'utf8'), /data-t="report"/);
+
+    // ---- moderators: only the owner adds and removes them
+    r = await owner.post('/api/mod/moderators', { login: 'damir' });
+    assert.equal(r.status, 200);
+    const modPassword = r.data.moderator.password;
+    assert.match(modPassword, /^[a-z2-9]{4}-[a-z2-9]{4}-[a-z2-9]{4}$/);
+    const mod = new Client(env.base);
+    await signIn(mod, 'damir', modPassword);
+    assert.equal((await mod.get('/api/mod/partners')).status, 200);
+    assert.equal((await mod.get('/api/mod/moderators')).status, 403);
+    assert.equal((await mod.post('/api/mod/moderators', { login: 'rival' })).status, 403);
+    r = await owner.post('/api/mod/moderators', { login: 'rival' });
+    assert.equal(r.data.moderator.password, null, 'an existing account keeps its password');
+    assert.deepEqual((await owner.get('/api/mod/moderators')).data.moderators.map(m => [m.login, m.role]),
+      [['owner', 'owner'], ['damir', 'moderator'], ['rival', 'moderator']]);
+
+    // ---- password resets: a moderator resets a provider's, not another moderator's nor the owner's
+    r = await mod.post('/api/mod/accounts/nordline/password');
+    assert.equal(r.status, 200);
+    assert.equal(r.data.login, 'nordline');
+    assert.equal((await provider.get('/api/me')).status, 401, 'the old sessions end');
+    await signIn(provider, 'nordline', r.data.password);
+    assert.equal((await mod.post('/api/mod/accounts/rival/password')).status, 403);
+    assert.equal((await mod.post('/api/mod/accounts/owner/password')).status, 403);
+    assert.equal((await owner.post('/api/mod/accounts/rival/password')).status, 200);
+    assert.equal((await owner.post('/api/mod/accounts/nobody/password')).status, 404);
+    assert.equal((await owner.post('/api/mod/moderators/rival/remove')).data.moderator.role, 'provider');
+    assert.equal((await owner.post('/api/mod/moderators/rival/remove')).status, 404);
+
+    // ---- the record of every decision
+    const audit = (await owner.get('/api/mod/audit')).data.audit.map(a => a.action);
+    for (const action of ['partner.create', 'partner.save', 'right.request', 'right.approve', 'right.deny', 'right.withdraw', 'complaints.clear',
+      'partner.down', 'partner.restore', 'moderator.add', 'moderator.remove', 'account.password']) {
+      assert.ok(audit.includes(action), action);
+    }
+    const all = logged.join('');
+    for (const secret of ['secret-token-123', 'sub.nordline.test', 'nord-pass-1', ownerPassword, modPassword, 'hub_s=']) {
+      assert.ok(!all.includes(secret), `the log never has ${secret}`);
+    }
+    assert.ok(all.includes('"msg":"request"'), 'requests are logged');
+  } finally {
+    process.stdout.write = write;
+    process.stderr.write = writeErr;
+    setQuiet(true);
+    await env.close();
+    await sub.close();
+    await servers.close();
+  }
+});
+
+test('the sign-in API test calls login/start and login/poll as V2pn would', async () => {
+  const servers = await serve((req, res) => res.end());
+  const sub = await serve((req, res) => res.end(Buffer.from(`vless://id@s1.kestrel.test:${servers.port}?security=reality#S1`).toString('base64')));
   let apiMode = 'good';
   const api = await serve((req, res) => {
     if (apiMode === 'down') { res.writeHead(500); res.end(); return; }
@@ -51,202 +322,25 @@ test('apply, get checked, be rejected and approved, design a look, get published
     res.end();
   });
   const env = await startHub();
-  const testUrl = `http://sub.kestrel.test:${sub.port}/s/secret-token-123`;
   try {
-    const provider = new Client(env.base);
-    const owner = new Client(env.base);
-    await signIn(env, provider, 'boss@kestrel.example');
-    const link = new URL(env.hub.auth.createAdminLink('owner@example.com'));
-    await owner.get(link.pathname + link.search);
-
-    // ---- the application: fields checked one by one
-    let r = await provider.put('/api/application', { providerId: 'V2PN', name: 'Kestrel V2pn', domains: 'kestrel.test, *.', testUrl: 'ftp://x' });
-    assert.equal(r.status, 422);
-    assert.deepEqual(Object.keys(r.data.error.fields).sort(), ['domains', 'name', 'providerId', 'testUrl']);
-    r = await provider.put('/api/application', { providerId: 'kestrel', name: 'Kestrel' });
-    assert.equal(r.data.application.state, 'draft');
-    r = await provider.post('/api/application/submit');
-    assert.equal(r.data.error.code, 'invalid', 'domains, link and contact are still missing');
-    r = await provider.put('/api/application', { domains: ['kestrel.test', '*.kestrel.test'], testUrl, contact: '@kestrel_admin', wantedTier: 2, note: 'Hi' });
-    assert.deepEqual(r.data.application.domains, ['kestrel.test', '*.kestrel.test']);
-
-    // ---- the check fails (no servers): the application stays a draft, the result is kept
-    subBody = '<html>login</html>';
-    r = await provider.post('/api/application/submit');
-    assert.equal(r.status, 422);
-    assert.equal(r.data.error.code, 'check_failed');
-    assert.equal(r.data.error.detail.lines.find(l => l.id === 'servers').level, 'fail');
-    assert.equal((await provider.get('/api/application')).data.application.state, 'draft');
-
-    // ---- a working link: submitted
-    subBody = Buffer.from([1, 2].map(i => `vless://id@s${i}.kestrel.test:${servers.port}?security=reality#S${i}`).join('\n')).toString('base64');
-    const check = await provider.post('/api/check', { url: testUrl, domains: ['*.kestrel.test'] });
-    assert.equal(check.data.check.ok, true);
-    r = await provider.post('/api/application/submit');
-    assert.equal(r.status, 200);
-    assert.equal(r.data.application.state, 'submitted');
-    assert.equal(r.data.application.check.ok, true);
-    assert.equal((await provider.put('/api/application', { note: 'later' })).data.error.code, 'state');
-
-    // ---- someone else cannot take the id, nor see the application
-    const rival = new Client(env.base);
-    await signIn(env, rival, 'rival@example.com');
-    assert.equal((await rival.put('/api/application', { providerId: 'kestrel' })).data.error.code, 'id_taken');
-    assert.equal((await rival.get('/api/application')).data.application, null);
-    assert.equal((await rival.get('/api/admin/applications')).status, 403);
-
-    // ---- the owner rejects, the provider fixes and sends again
-    const list = await owner.get('/api/admin/applications?state=submitted');
-    const appId = list.data.applications[0].id;
-    assert.equal(list.data.applications[0].testUrl, testUrl, 'the owner sees the test link');
-    assert.equal(list.data.applications[0].email, 'boss@kestrel.example');
-    assert.equal((await owner.post(`/api/admin/applications/${appId}/reject`, {})).data.error.code, 'invalid');
-    r = await owner.post(`/api/admin/applications/${appId}/reject`, { reason: 'Нет ссылки на кабинет' });
-    assert.equal(r.data.application.state, 'rejected');
-    const seen = (await provider.get('/api/application')).data.application;
-    assert.deepEqual([seen.state, seen.rejectReason], ['rejected', 'Нет ссылки на кабинет']);
-    await provider.put('/api/application', { note: 'Добавили кабинет' });
-    assert.equal((await provider.post('/api/application/submit')).data.application.state, 'submitted');
-
-    // ---- approved at tier 1: published at once with its name
-    r = await owner.post(`/api/admin/applications/${appId}/approve`, { tier: 1 });
-    assert.equal(r.status, 200);
-    assert.equal(r.data.provider.tier, 1);
-    let pub = published(env);
-    assert.deepEqual(pub.index.partners.map(p => [p.id, p.name, p.grants.join(',')]), [['kestrel', 'Kestrel', 'edition']]);
-    assert.ok(pub.files.includes('partners.json') && pub.files.includes('partners.json.sig'));
-    assert.deepEqual(JSON.parse(fs.readFileSync(path.join(pub.dir, 'partners.json'))).partners, []);
-    const page = fs.readFileSync(path.join(env.config.publicDir, 'p', 'kestrel', 'index.html'), 'utf8');
-    assert.match(page, /<script src="page.js"><\/script>/);
-    assert.doesNotMatch(page.replace(/<script type="application\/json"[^]*?<\/script>/, ''), /<script>/, 'no inline script (CSP script-src self)');
-    assert.ok(fs.existsSync(path.join(env.config.publicDir, 'p', 'kestrel', 'page.js')));
-
-    // ---- a second provider cannot claim the same domains
-    await rival.put('/api/application', { providerId: 'rival', name: 'Rival', domains: ['sub.kestrel.test'], testUrl, contact: '@rival' });
-    assert.equal((await rival.post('/api/application/submit')).data.error.code, 'domain_taken');
-
-    // ---- the cabinet: pictures
-    let cab = await provider.get('/api/cabinet');
-    assert.equal(cab.data.provider.id, 'kestrel');
-    assert.equal(cab.data.share.button, `${env.origin}/p/kestrel/#sub=`);
-    const up = (slot, bytes, type = 'image/png') => provider.request('POST', `/api/cabinet/upload?slot=${slot}`, bytes, { 'content-type': type });
-    assert.equal((await up('logo', Buffer.from('GIF89a'), 'image/gif')).data.error.code, 'invalid');
-    assert.equal((await up('logo', Buffer.from('not a png at all, not at all, not at all'))).data.error.fields.file, 'Нужен файл PNG.');
-    assert.match((await up('mark', makePng(300, 96))).data.error.fields.file, /^Картинка 300×96; нужен квадратный знак/);
-    const logo = makePng(340, 96, [255, 255, 255]);
-    const logoDark = makePng(340, 96, [20, 20, 20]);
-    const mark = makePng(128, 128);
-    const backdrop = makePng(1600, 1000, [30, 60, 200]);
-    const ids = {};
-    for (const [slot, bytes] of [['logo', logo], ['logoOnLight', logoDark], ['mark', mark], ['backdrop', backdrop]]) {
-      r = await up(slot, bytes);
-      assert.equal(r.status, 200, slot);
-      ids[slot] = r.data.picture.sha256;
-      assert.equal(ids[slot], sha(bytes));
-    }
-    assert.deepEqual((await provider.get(`/api/cabinet/pictures/${ids.mark}`)).data, mark);
-    assert.equal((await rival.get(`/api/cabinet/pictures/${ids.mark}`)).status, 404, 'only the provider and the owner see its pictures');
-    assert.deepEqual((await owner.get(`/api/admin/pictures/${ids.mark}`)).data, mark);
-
-    // ---- the look: tier 2 things are refused at tier 1, the rest goes to the queue
-    const look = {
-      name: 'Kestrel', brand: ['#2F7BFF', '#7C4DFF'], background: 'image', ...ids,
-      links: { cabinet: 'https://kestrel.test/cabinet', support: 'https://t.me/kestrel_support' },
-      api: 'https://api.kestrel.test/api/', login: true,
-      actions: [{ label: 'Самый быстрый', icon: 'bolt', do: 'connect.best', strategy: 'ping' }],
-    };
-    r = await provider.put('/api/cabinet/look', look);
-    assert.equal(r.status, 200);
-    assert.deepEqual(Object.keys(r.data.review.problems).sort(), ['actions', 'api', 'login']);
-    assert.ok(r.data.review.colours.dark.accent.startsWith('#'));
-    r = await provider.post('/api/cabinet/look/submit');
-    assert.equal(r.data.error.code, 'look_invalid');
-    await provider.put('/api/cabinet/look', { ...look, api: '', login: false, actions: [] });
-    r = await provider.post('/api/cabinet/look/submit');
-    assert.equal(r.data.provider.queueState, 'queued');
-
-    // ---- the owner returns it once, then publishes it
-    let queue = await owner.get('/api/admin/queue');
-    assert.equal(queue.data.queue.length, 1);
-    assert.deepEqual(queue.data.queue[0].review.problems, {});
-    r = await owner.post('/api/admin/queue/kestrel/return', { reason: 'Логотип мелковат' });
-    assert.equal(r.data.provider.queueState, 'returned');
-    cab = await provider.get('/api/cabinet');
-    assert.equal(cab.data.provider.returnReason, 'Логотип мелковат');
-    await provider.post('/api/cabinet/look/submit');
-    r = await owner.post('/api/admin/queue/kestrel/approve');
-    assert.equal(r.status, 200);
-    pub = published(env);
-    const entry = pub.index.partners[0];
-    const zip = readZip(fs.readFileSync(path.join(pub.dir, entry.pack.file)));
-    assert.deepEqual([...zip.keys()].sort(), ['background.png', 'logo-dark.png', 'logo-light.png', 'mark.png', 'partner.json']);
-    const pack = JSON.parse(zip.get('partner.json'));
-    assert.deepEqual(pack.brand, { accent: '#2F7BFF', logo: 'logo-light.png', logoOnLight: 'logo-dark.png', mark: 'mark.png' });
-    assert.deepEqual(pack.theme, { palette: { brand: ['#2F7BFF', '#7C4DFF'] }, background: { type: 'image', art: 'background.png' } });
-    assert.deepEqual(pack.links, { cabinet: 'https://kestrel.test/cabinet', support: 'https://t.me/kestrel_support' });
-    assert.equal(pack.api, undefined);
-    const pageDir = path.join(env.config.publicDir, 'p', 'kestrel');
-    assert.deepEqual(fs.readdirSync(pageDir).sort(), ['background.png', 'index.html', 'logo-dark.png', 'logo-light.png', 'mark.png', 'page.js']);
-
-    // ---- tier 2: asked for, given, the sign-in API tested, the look with API and buttons published
-    assert.equal((await provider.post('/api/cabinet/login-test', {})).data.error.code, 'tier');
-    r = await provider.post('/api/cabinet/tier-request');
-    assert.equal(r.data.provider.tierRequest, 2);
-    r = await owner.post('/api/admin/providers/kestrel/tier', { tier: 2 });
-    assert.deepEqual([r.data.provider.tier, r.data.provider.tierRequest], [2, null]);
+    const c = new Client(env.base);
+    await register(c, 'kestrel');
+    assert.equal((await c.post('/api/partner/login-test', {})).data.error.code, 'state');
+    const r = await c.put('/api/partner', { name: 'Kestrel', brand: ['#2F7BFF'], subscription: `http://api.kestrel.test:${sub.port}/s/1` });
+    assert.equal(r.status, 200, JSON.stringify(r.data));
     const apiUrl = `http://api.kestrel.test:${api.port}/api/`;
-    r = await provider.post('/api/cabinet/login-test', { api: apiUrl });
-    assert.equal(r.data.test.ok, true, JSON.stringify(r.data.test));
-    assert.deepEqual(r.data.test.lines.map(l => [l.id, l.level]), [['start', 'ok'], ['poll', 'ok']]);
+    let t = await c.post('/api/partner/login-test', { api: apiUrl });
+    assert.deepEqual(t.data.test.lines.map(l => [l.id, l.level]), [['start', 'ok'], ['poll', 'ok']]);
     apiMode = 'down';
-    r = await provider.post('/api/cabinet/login-test', { api: apiUrl });
-    assert.deepEqual(r.data.test.lines.map(l => [l.id, l.level]), [['start', 'fail']]);
-    assert.equal((await provider.post('/api/cabinet/login-test', { api: 'https://evil.example/api/' })).data.error.fields.api !== undefined, true);
-    await provider.put('/api/cabinet/look', look);
-    await provider.post('/api/cabinet/look/submit');
-    await owner.post('/api/admin/queue/kestrel/approve');
-    pub = published(env);
-    assert.deepEqual(pub.index.partners[0].grants, ['edition', 'account', 'actions']);
-    const pack2 = JSON.parse(readZip(fs.readFileSync(path.join(pub.dir, 'partner-kestrel.zip'))).get('partner.json'));
-    assert.deepEqual(pack2.actions, [{ id: 'button-1', label: 'Самый быстрый', icon: 'bolt', do: 'connect.best', strategy: 'ping' }]);
-    assert.equal(pack2.login, true);
-
-    // ---- term and revocation
-    assert.equal((await owner.post('/api/admin/providers/kestrel/until', { until: '2020-01-01' })).data.error.code, 'invalid');
-    r = await owner.post('/api/admin/providers/kestrel/until', { until: '2028-02-29' });
-    assert.equal(r.data.provider.until, '2028-02-29');
-    assert.equal(published(env).index.partners[0].until, '2028-02-29');
-    r = await owner.post('/api/admin/providers/kestrel/revoke', { reason: 'Договор закончился' });
-    assert.equal(r.data.provider.state, 'revoked');
-    pub = published(env);
-    assert.deepEqual(pub.index.partners, []);
-    assert.ok(!pub.files.includes('partner-kestrel.zip'));
-    assert.ok(!fs.existsSync(pageDir), 'the page goes with the partner');
-    r = await owner.post('/api/admin/providers/kestrel/restore');
-    assert.equal(published(env).index.partners.length, 1);
-
-    // ---- the record of every decision
-    const audit = (await owner.get('/api/admin/audit')).data.audit.map(a => a.action);
-    for (const action of ['application.submit', 'application.reject', 'application.approve', 'look.submit', 'look.return', 'look.approve',
-      'provider.tier_request', 'provider.tier', 'provider.until', 'provider.revoke', 'provider.restore']) {
-      assert.ok(audit.includes(action), action);
-    }
-    const providers = (await owner.get('/api/admin/providers')).data.providers;
-    assert.deepEqual(providers.map(p => [p.id, p.email, p.contact]), [['kestrel', 'boss@kestrel.example', '@kestrel_admin']]);
+    t = await c.post('/api/partner/login-test', { api: apiUrl });
+    assert.deepEqual(t.data.test.lines.map(l => [l.id, l.level]), [['start', 'fail']]);
+    assert.ok((await c.post('/api/partner/login-test', { api: 'https://evil.example/api/' })).data.error.fields.api);
   } finally {
-    process.stdout.write = write;
-    process.stderr.write = writeErr;
-    setQuiet(true);
     await env.close();
     await sub.close();
     await api.close();
     await servers.close();
   }
-  const all = logged.join('');
-  assert.ok(all.includes('"msg":"request"'), 'requests are logged');
-  assert.ok(!all.includes('secret-token-123') && !all.includes('sub.kestrel.test'), 'the test link is never logged');
-  assert.ok(!/\b\d{6}\b/.test(all.replace(/"ms":\d+/g, '').replace(/"t":"[^"]+"/g, '').replace(/"port":\d+/g, '')), 'no code in the log');
-  assert.ok(!all.includes('hub_s='), 'no cookie in the log');
 });
 
 test('downloads redirect to GitHub and are counted by day and name, without anything about the person', async () => {
@@ -277,9 +371,8 @@ test('downloads redirect to GitHub and are counted by day and name, without anyt
       assert.equal((await c.get(p)).status, 404, p);
     }
     const owner = new Client(env.base);
-    const link = new URL(env.hub.auth.createAdminLink('owner@example.com'));
-    await owner.get(link.pathname + link.search);
-    const stats = (await owner.get('/api/admin/downloads?days=7')).data.downloads;
+    await signInOwner(env, owner);
+    const stats = (await owner.get('/api/mod/downloads?days=7')).data.downloads;
     assert.deepEqual(stats.totals, { 'install.ps1': 1, 'install.sh': 1, 'macos-arm64': 1, 'macos-x64': 1, 'windows-arm64': 1, 'windows-x64': 2 });
     assert.deepEqual(Object.keys(env.hub.db.get('SELECT * FROM downloads')).sort(), ['count', 'day', 'name']);
   } finally {
@@ -287,11 +380,11 @@ test('downloads redirect to GitHub and are counted by day and name, without anyt
   }
 });
 
-test("import-partner takes partners/configra as an approved tier 2 provider with Configra's look", async () => {
+test("import-partner takes partners/configra as a live partner with Configra's look and its account right approved", async () => {
   const env = await startHub();
   try {
-    const result = env.hub.importPartner(new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'), { email: 'owner@configra.example' });
-    assert.deepEqual([result.id, result.tier, result.grants.join(',')], ['configra', 2, 'edition,account']);
+    const result = env.hub.importPartner(configraFolder);
+    assert.deepEqual([result.id, result.login, result.grants.join(',')], ['configra', 'configra', 'edition,account']);
     env.hub.publish('test');
     const pub = published(env);
     const entry = pub.index.partners.find(p => p.id === 'configra');
@@ -303,26 +396,35 @@ test("import-partner takes partners/configra as an approved tier 2 provider with
     // The pack is Configra's own: the same partner.json (line ends aside) and the same pictures.
     assert.equal(zip.get('partner.json').toString(), fs.readFileSync(new URL('partner.json', folder), 'utf8').replace(/\r\n/g, '\n'));
     for (const f of ['logo-dark.png', 'logo-light.png', 'mark.png']) assert.deepEqual(zip.get(f), fs.readFileSync(new URL(f, folder)));
-    // Imported again: updated in place, not doubled.
-    env.hub.importPartner(new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
-    assert.equal(env.hub.db.get('SELECT COUNT(*) AS n FROM providers').n, 1);
+    // Imported again: updated in place, not doubled; another login moves it to that account.
+    env.hub.importPartner(configraFolder, { login: 'configra-team' });
+    assert.equal(env.hub.db.get('SELECT COUNT(*) AS n FROM partners').n, 1);
+    assert.equal(env.hub.db.get("SELECT a.login FROM partners p JOIN accounts a ON a.id = p.account_id WHERE p.id = 'configra'").login, 'configra-team');
+    assert.equal(env.hub.db.get("SELECT password FROM accounts WHERE login = 'configra-team'").password, null, 'no password until a reset');
     const configraPage = fs.readFileSync(path.join(env.config.publicDir, 'p', 'configra', 'index.html'), 'utf8');
     assert.match(configraPage, /Configra на компьютере/);
     assert.match(configraPage, /irm http:\/\/127\.0\.0\.1:\d+\/r\/install\.ps1 \| iex/);
+
+    // Its provider signs in after a reset and edits it like any other; its domains stay while the link is on them.
+    const password = env.hub.auth.resetPassword(env.hub.db.get("SELECT id FROM accounts WHERE login = 'configra-team'").id);
+    const c = new Client(env.base);
+    await signIn(c, 'configra-team', password);
+    const view = (await c.get('/api/partner')).data.partner;
+    assert.deepEqual([view.id, view.source, view.rights.account.state], ['configra', 'import', 'approved']);
   } finally {
     await env.close();
   }
 });
 
-test('once a day the index is made again, and a provider whose term has ended drops out', async () => {
+test('once a day the index is made again, and an imported partner whose term has ended drops out', async () => {
   const env = await startHub();
   try {
     const { hub } = env;
-    hub.importPartner(new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1'));
+    hub.importPartner(configraFolder);
     hub.publish('test');
     assert.equal(published(env).index.partners.length, 1);
     // The term ends today; the last publication was yesterday.
-    hub.db.run('UPDATE providers SET until = ? WHERE id = ?', new Date().toISOString().slice(0, 10), 'configra');
+    hub.db.run('UPDATE partners SET until = ? WHERE id = ?', new Date().toISOString().slice(0, 10), 'configra');
     hub.db.setMeta('published_day', '2000-01-01');
     hub.maintain();
     assert.deepEqual(published(env).index.partners, []);

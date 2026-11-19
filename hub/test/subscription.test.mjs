@@ -91,10 +91,9 @@ test('the whole check: one line per finding, servers pinged', async () => {
   });
   try {
     const url = `http://sub.kestrel.test:${sub.port}/s/abc`;
-    const result = await checkSubscription(url, { domains: ['*.kestrel.test'], userAgent: 'v2rayN/7.25.6 V2pn/1.2.2', net: testNet });
+    const result = await checkSubscription(url, { userAgent: 'v2rayN/7.25.6 V2pn/1.2.2', net: testNet });
     const byId = Object.fromEntries(result.lines.map(l => [l.id, l]));
     assert.equal(result.ok, true);
-    assert.equal(byId.domain.level, 'ok');
     assert.equal(byId.open.level, 'ok');
     assert.equal(byId.servers.level, 'warn');
     assert.equal(byId.servers.text, '4 сервера');
@@ -106,14 +105,10 @@ test('the whole check: one line per finding, servers pinged', async () => {
     assert.equal(byId.tcp.level, 'ok');
     assert.equal(result.tcp.length, 3);
 
-    const wrong = await checkSubscription(url, { domains: ['other.example'], userAgent: 'v2rayN/7.25.6 V2pn/1.2.2', net: testNet });
-    assert.equal(wrong.ok, false);
-    assert.equal(wrong.lines.find(l => l.id === 'domain').level, 'fail');
-
-    const empty = await checkSubscription(`http://sub.kestrel.test:${sub.port}/empty`, { domains: ['*.kestrel.test'], userAgent: 'v2rayN/7.25.6 V2pn/1.2.2', net: testNet });
+    const empty = await checkSubscription(`http://sub.kestrel.test:${sub.port}/empty`, { userAgent: 'v2rayN/7.25.6 V2pn/1.2.2', net: testNet });
     assert.equal(empty.lines.find(l => l.id === 'servers').level, 'fail');
 
-    const forbidden = await checkSubscription(url, { domains: ['*.kestrel.test'], userAgent: 'curl/8', net: testNet });
+    const forbidden = await checkSubscription(url, { userAgent: 'curl/8', net: testNet });
     assert.equal(forbidden.lines.find(l => l.id === 'open').level, 'fail');
 
     const privateOne = await checkSubscription('https://10.0.0.1/sub', { userAgent: 'x' });

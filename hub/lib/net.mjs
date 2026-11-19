@@ -1,4 +1,4 @@
-// Requests the hub makes to providers' servers (the test subscription, the sign-in API, the TCP check), safe against
+// Requests the hub makes to providers' servers (the subscription, the sign-in API, the TCP check), safe against
 // SSRF: the host is resolved here, every address it has must be public, and the connection goes to the address that
 // was checked, with the original host name for TLS (SNI and the certificate) and the Host header, so a DNS answer that
 // changes between the check and the connection cannot redirect it. Redirects are followed only to https, each hop

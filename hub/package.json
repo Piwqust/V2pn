@@ -2,7 +2,7 @@
   "name": "v2pn-hub",
   "version": "1.0.0",
   "private": true,
-  "description": "The server side of V2pn's providers: applications, looks, the signed partner index, download redirects.",
+  "description": "The server side of V2pn's partners: accounts, partners published on save, moderation, the signed partner index, download redirects.",
   "license": "GPL-3.0-only",
   "type": "module",
   "engines": {

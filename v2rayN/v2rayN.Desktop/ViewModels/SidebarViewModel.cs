@@ -828,7 +828,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
                     AddFavorites(rows, favorites, look.HomeFavorites);
                     break;
                 case "recent":
-                    AddRecent(rows, favorites, byId, look.HomeRecent);
+                    // The server "Quick connect" offers is not listed again under it.
+                    var quickId = look.HomeSections.Contains("fastest") ? PickFastest(everything)?.IndexId : null;
+                    AddRecent(rows, favorites, byId, look.HomeRecent, quickId);
                     break;
                 case "quick":
                     AddQuick(rows, everything, look.HomeQuick);
@@ -854,20 +856,22 @@ public sealed partial class SidebarViewModel : ReactiveObject
         var fastest = PickFastest(everything);
         if (fastest == null)
         {
-            rows.Add(new SideActionRow(SideActionKind.Fastest, L.Fastest, L.FastestNone, ping: Ping));
+            rows.Add(new SideActionRow(SideActionKind.Fastest, L.QuickConnect, L.FastestNone, ping: Ping));
             return;
         }
-        // An old result is still shown, with a word that the click tests again first.
-        var age = LastPing is { } last ? Fmt.Ago(last) : null;
-        var subtitle = PingIsStale
-            ? $"{CountryResolver.ServerName(fastest)} · {string.Format(L.FastestRecheck, age ?? L.Ms(fastest.Delay))}"
-            : string.Format(L.FastestAge, CountryResolver.ServerName(fastest), L.Ms(fastest.Delay), age ?? L.JustNow);
-        rows.Add(new SideActionRow(SideActionKind.Fastest, L.Fastest, subtitle, fastest.IndexId, Ping));
+        // An old result still shows; the click tests again first when it is stale, without saying so here.
+        var subtitle = $"{CountryResolver.ServerName(fastest)} · {L.Ms(fastest.Delay)}";
+        rows.Add(new SideActionRow(SideActionKind.Fastest, L.QuickConnect, subtitle, fastest.IndexId, Ping));
     }
 
     // Favorites: the first few; the rest one click away, so the other sections stay in view. 0 shows all.
+    // Nothing starred: nothing shown. The star next to every server says how to add one.
     private void AddFavorites(List<SideRow> rows, List<ProfileItemModel> favorites, int limit)
     {
+        if (favorites.Count == 0)
+        {
+            return;
+        }
         var first = limit > 0 ? limit : int.MaxValue;
         rows.Add(new SideHeaderRow(Counted(L.TabFavorites, favorites.Count), favorites.Count > 0 ? Ping : null) { PingScope = favorites });
         var shown = _favoritesExpanded ? favorites : favorites.Take(first).ToList();
@@ -878,18 +882,17 @@ public sealed partial class SidebarViewModel : ReactiveObject
                 ? new SideActionRow(SideActionKind.ShowFewerFavorites, L.ShowFewer, string.Empty)
                 : new SideActionRow(SideActionKind.ShowAllFavorites, L.ShowAllFavorites, string.Format(L.MoreCount, favorites.Count - first)));
         }
-        if (favorites.Count == 0)
-        {
-            rows.Add(new SideHintRow(L.FavoritesEmpty));
-            // The home tab has no servers to star; Countries does.
-            rows.Add(new SideActionRow(SideActionKind.BrowseCountries, L.BrowseCountries, string.Empty));
-        }
     }
 
     // Recent connections, Proton-style: the last few servers, newest first, unless they are favorites already.
-    private static void AddRecent(List<SideRow> rows, List<ProfileItemModel> favorites, Dictionary<string, ProfileItemModel> byId, int limit)
+    private static void AddRecent(List<SideRow> rows, List<ProfileItemModel> favorites, Dictionary<string, ProfileItemModel> byId, int limit,
+        string? skip = null)
     {
         var favoriteIds = favorites.Select(m => m.IndexId).ToHashSet();
+        if (skip != null)
+        {
+            favoriteIds.Add(skip);
+        }
         var recent = (Ui.V2pnRecent ?? [])
             .Where(id => !favoriteIds.Contains(id) && byId.ContainsKey(id))
             .Take(Math.Max(1, limit))

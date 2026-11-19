@@ -98,6 +98,7 @@ public static partial class L
     public static string SearchServers => T("Search", "Поиск");
     public static string SearchResults => T("Results", "Найдено");
     public static string Fastest => T("Fastest server", "Самый быстрый сервер");
+    public static string QuickConnect => T("Quick connect", "Быстрое подключение");
     // The row is one line in a 300 px sidebar: the longer wording ended in "…".
     public static string FastestNone => Tk("Run a ping test to find it", "Test ping to find it", "Проверить пинг и найти его");
     public static string NoCountry => T("Unknown location", "Страна не определена");

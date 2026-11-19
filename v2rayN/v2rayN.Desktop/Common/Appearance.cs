@@ -53,7 +53,7 @@ public sealed class AppearanceSettings
     public List<string> TabOrder { get; set; } = [.. Appearance.TabIds];
 
     /// <summary>The home tab's sections in the order shown; one left out is hidden. Ids: <see cref="Appearance.HomeSectionIds"/>.</summary>
-    public List<string> HomeSections { get; set; } = [.. Appearance.HomeSectionIds];
+    public List<string> HomeSections { get; set; } = [.. Appearance.DefaultHomeSections];
 
     /// <summary>Favorites shown before "show all"; 0 shows them all.</summary>
     public int HomeFavorites { get; set; } = 5;
@@ -104,6 +104,10 @@ public static class Appearance
 
     /// <summary>The home tab's sections, in their default order.</summary>
     public static readonly string[] HomeSectionIds = ["fastest", "favorites", "recent", "quick", "stats"];
+
+    // A short home tab by default: one way to connect fast, the starred and the recent servers. The list of the
+    // quickest and the statistics are there to turn on (Appearance, or right-click the list).
+    public static readonly string[] DefaultHomeSections = ["fastest", "favorites", "recent"];
 
     /// <summary>The feature rail's buttons and the list's tabs, in their default order.</summary>
     public static readonly string[] RailIds = ["update", "dns", "settings"];

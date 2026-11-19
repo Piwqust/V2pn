@@ -2,6 +2,13 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### A calmer Home tab
+
+- Home shows "Quick connect" with the fastest server, then your favorites and recent servers, each only when it has something. A server is listed once.
+- The list of the quickest servers and the statistics are off by default; turn them on in Appearance or by right-clicking the list. The empty-favorites hint and "Browse countries" are gone: the star next to every server and the Countries tab do the same.
+
 ## 1.3.0
 
 V2pn now says "connected" only when it has checked that your connection works, and when something breaks it tells you what and offers the way out: another server, another country, a port, a retry. You can connect right after adding a subscription, a subscription tells you why it didn't update, and a provider you came from gets its own tab in the title bar instead of changing V2pn's look.

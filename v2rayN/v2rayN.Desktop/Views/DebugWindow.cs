@@ -200,6 +200,7 @@ public sealed class DebugWindow : Window
             Action("внимание", () => _main.DebugToast(ToastKind.Warning, "Проверка: на это стоит посмотреть.")),
             Action("ошибка", () => _main.DebugToast(ToastKind.Error, "Проверка: что-то сломалось."))),
         Row("Окна", Action("Карточка IP", _main.DebugOpenIp), Action("Оформление", _main.DebugOpenAppearance),
+            Action("Обход блокировок", _main.OpenBypass),
             // Partners whose pack says "login" (tools/demo/demo_partner.py answers login/start and login/poll).
             Action("Вход через провайдера", () => _main.OpenProviderLogin())));
 

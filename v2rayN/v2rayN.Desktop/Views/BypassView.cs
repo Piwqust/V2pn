@@ -184,7 +184,8 @@ public sealed class BypassView : UserControl
         var core = server != null ? AppManager.Instance.GetCoreType(server, server.ConfigType) : ECoreType.Xray;
         var canTune = connected && server != null && V2pnBypass.On(AppManager.Instance.Config)
                       && V2pnBypass.CandidatesFor(server, core).Count > 0;
-        if (canTune && report.Verdict is not (EV2pnBlockVerdict.NoInternet or EV2pnBlockVerdict.Whitelist))
+        // Splitting the handshake cannot reach an address that does not answer, or one a whitelist keeps out.
+        if (canTune && report.Verdict is not (EV2pnBlockVerdict.NoInternet or EV2pnBlockVerdict.Whitelist or EV2pnBlockVerdict.ServerBlocked))
         {
             var tune = TextButton(L.BypassTune, "SemiIconBolt", accent: report.Verdict is EV2pnBlockVerdict.Freeze or EV2pnBlockVerdict.ProxyCut);
             tune.Click += async (_, _) => await TuneAsync(tune);
@@ -224,6 +225,7 @@ public sealed class BypassView : UserControl
             return;
         }
         SetStatus(L.BypassChecking);
+        var idle = button.Content;
         button.Content = L.BypassTuneStop;
         using var progress = _vm.WhenAnyValue(v => v.BypassTune).Subscribe(p =>
         {
@@ -247,7 +249,7 @@ public sealed class BypassView : UserControl
         }
         else
         {
-            button.Content = TextOnly(L.BypassTune);
+            button.Content = idle;
         }
     }
 
@@ -424,8 +426,6 @@ public sealed class BypassView : UserControl
         AutomationProperties.SetName(button, name);
         return button;
     }
-
-    private static Control TextOnly(string text) => new TextBlock { Text = text, VerticalAlignment = VerticalAlignment.Center };
 
     private static Button TextButton(string text, string icon, bool accent = false)
     {

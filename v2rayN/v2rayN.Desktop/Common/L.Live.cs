@@ -36,4 +36,30 @@ public static partial class L
         }
         return n == 1 ? T("1 connection", "1 соединение") : string.Format(T("{0} connections", "{0} соединений"), n);
     }
+
+    // Proxy groups
+    public static string PxGroups => T("Groups", "Группы");
+    public static string PxMode => T("Mode", "Режим");
+    public static string PxModeRule => T("By rules", "По правилам");
+    public static string PxModeGlobal => T("All via proxy", "Всё через прокси");
+    public static string PxModeDirect => T("Direct", "Напрямую");
+    public static string PxSortPing => T("By ping", "По пингу");
+    public static string PxSortName => T("By name", "По имени");
+    public static string PxSortDefault => T("As listed", "Как в конфиге");
+    public static string PxReload => T("Reload", "Обновить");
+    public static string PxReloadTip => T("Read the groups from the core again (F5)", "Заново прочитать группы из ядра (F5)");
+    public static string PxTestGroupTip => T("Check how fast every proxy of this group answers", "Проверить, как быстро отвечает каждый прокси группы");
+    public static string PxUse => T("Use", "Выбрать");
+    public static string PxUseTip => T("Send this group's traffic through this proxy (Enter)", "Пустить трафик группы через этот прокси (Enter)");
+    public static string PxInUse => T("In use", "Используется");
+    public static string PxAuto => T("This group picks a proxy by itself.", "Эта группа выбирает прокси сама.");
+    public static string PxManual => T("Pick the proxy this group sends traffic through.", "Выберите прокси, через который пойдёт трафик группы.");
+    public static string PxEmptyTitle => T("No proxy groups yet", "Групп прокси пока нет");
+    public static string PxEmptyHint => T("Press Reload to read them from the core.", "Нажмите «Обновить», чтобы прочитать их из ядра.");
+    public static string PxGroupEmpty => T("This group has no proxies.", "В этой группе нет прокси.");
+    public static string PxTypeSelector => T("Manual", "Вручную");
+    public static string PxTypeUrlTest => T("Fastest", "Самый быстрый");
+    public static string PxTypeFallback => T("First that works", "Первый рабочий");
+    public static string PxTypeLoadBalance => T("Balanced", "Балансировка");
+    public static string PxTypeGlobal => T("All traffic", "Весь трафик");
 }

@@ -6,8 +6,10 @@ What changes for the people who use the app. Each version's section becomes the 
 
 ### An installer for Windows
 
-- Windows gets `V2pn-windows-x64-setup.exe` (and `-arm64-setup.exe`) instead of a zip to unpack. It installs V2pn for your Windows user without administrator rights, adds it to the Start menu and the desktop, offers to take your servers from v2rayN, and puts V2pn into "Installed apps", where it can be removed; removing asks whether to keep your servers and settings. It is a third smaller than the zip.
-- It installs over a V2pn put there by the one-command installer, keeps the cores V2pn already has, and waits until you quit a running V2pn from the tray so that the system proxy is put back. The zip stays for a portable copy.
+- Windows gets `V2pn-windows-x64-setup.exe` (and `-arm64-setup.exe`) instead of a zip to unpack: a window of V2pn's own, with the map of Europe on the left and one button on the right. It installs V2pn for your Windows user without administrator rights, adds it to the Start menu and, if you leave the box ticked, to the desktop, offers to take your servers from v2rayN, and shows the files going in with lines spreading from the pin on the map.
+- If V2pn is running, the window asks you to quit it from the tray, so that the system proxy is put back, and goes on by itself once you have. An update keeps the cores V2pn already has; an older version is installed only if you say so.
+- V2pn appears in "Installed apps". Removing it opens the same window, which asks whether to keep your servers and settings for the next install.
+- Inside is Inno Setup doing the work, hidden. The zip stays for a portable copy.
 
 ### A calmer Home tab
 

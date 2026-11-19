@@ -1,445 +1,585 @@
-<!doctype html>
-<html lang="ru">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Путь провайдера</title>
+<title>Партнёры V2pn</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono&family=Anton&display=swap">
 <style>
-@font-face{font-family:Geist;src:url(fonts/Geist-Regular.woff2) format("woff2");font-weight:400}
-@font-face{font-family:Geist;src:url(fonts/Geist-Medium.woff2) format("woff2");font-weight:500}
-@font-face{font-family:Geist;src:url(fonts/Geist-SemiBold.woff2) format("woff2");font-weight:600}
-@font-face{font-family:GeistMono;src:url(fonts/GeistMono-Regular.woff2) format("woff2")}
-:root{--bg:#ECEEF3;--ink:#16161B;--muted:#5C5F6B;--card:#fff;--line:#DCDFE7;--soft:#F5F6F9;--accent:#E8391B;--ok:#167A3E;--okbg:#E3F3E8;--warn:#9A5B00;--warnbg:#FFF1D9;--bad:#B3261E;--badbg:#FDE7E5;--r:14px}
-*{box-sizing:border-box}
-html,body{margin:0;background:var(--bg);color:var(--ink);font:400 15px/1.5 Geist,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit;color:inherit}
-code,.mono{font-family:GeistMono,ui-monospace,monospace;font-size:13px}
-a{color:inherit}
-/* prototype bar */
-.pbar{position:sticky;top:0;z-index:20;display:flex;gap:12px;align-items:center;flex-wrap:wrap;padding:10px 20px;background:#16161B;color:#fff;font-size:13px}
-.pbar b{font-weight:600;margin-right:6px}
-.seg{display:inline-flex;background:#2A2A31;border-radius:999px;padding:3px}
-.seg button{border:0;background:none;color:#C9CAD2;padding:6px 14px;border-radius:999px;cursor:pointer}
-.seg button[aria-pressed=true]{background:#fff;color:#16161B}
-.pbar .hint{color:#9C9DA8;margin-left:auto}
-.pbar .reset{border:1px solid #3a3a44;background:none;color:#C9CAD2;border-radius:999px;padding:6px 12px;cursor:pointer}
-/* site chrome */
-.site{max-width:1180px;margin:0 auto;padding:0 24px 80px}
-.nav{display:flex;align-items:center;gap:28px;height:64px;border-bottom:1px solid var(--line);margin-bottom:40px}
-.logo{display:flex;align-items:center;gap:8px;font-weight:600;font-size:18px}
-.fork{width:20px;height:20px;color:var(--accent)}
-.nav .links{display:flex;gap:22px;color:var(--muted);font-size:14px}
-.nav .me{margin-left:auto;font-size:14px;color:var(--muted)}
-h1{font-size:44px;line-height:1.08;letter-spacing:-.02em;font-weight:500;margin:0 0 14px}
-h2{font-size:26px;line-height:1.15;letter-spacing:-.01em;font-weight:500;margin:0 0 10px}
-h3{font-size:17px;font-weight:600;margin:0 0 6px}
-p{margin:0 0 12px}
-.muted{color:var(--muted)}
-.small{font-size:13px}
-.btn{display:inline-flex;align-items:center;gap:8px;border:0;border-radius:999px;padding:12px 22px;background:var(--accent);color:#111;font-weight:500;cursor:pointer;transition:transform .12s,filter .12s}
-.btn:hover{filter:brightness(1.05);transform:translateY(-1px)}
-.btn:active{transform:translateY(1px)}
-.btn.ghost{background:none;border:1px solid var(--line);color:var(--ink)}
-.btn.dark{background:var(--ink);color:#fff}
-.btn.sm{padding:8px 14px;font-size:14px}
-.btn[disabled]{opacity:.45;pointer-events:none}
-.card{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:22px}
-.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
-.grid2{display:grid;grid-template-columns:1fr 1fr;gap:20px}
-.tier{display:flex;flex-direction:column;gap:8px}
-.tier .n{font-family:GeistMono;font-size:12px;color:var(--muted)}
-.tier ul{margin:4px 0 0;padding-left:18px;color:var(--muted)}
-.tier .need{margin-top:auto;padding-top:10px;border-top:1px solid var(--line);font-size:13px}
-.pill{display:inline-flex;align-items:center;gap:6px;border-radius:999px;padding:3px 10px;font-size:12px;font-weight:500;background:var(--soft);border:1px solid var(--line)}
-.pill.ok{background:var(--okbg);color:var(--ok);border-color:transparent}
-.pill.warn{background:var(--warnbg);color:var(--warn);border-color:transparent}
-.pill.bad{background:var(--badbg);color:var(--bad);border-color:transparent}
-.field{display:flex;flex-direction:column;gap:6px;margin-bottom:16px}
-.field span{font-size:13px;font-weight:500}
-.field small{color:var(--muted);font-size:12px}
-input[type=text],input[type=email],textarea,select{border:1px solid var(--line);background:#fff;border-radius:10px;padding:10px 12px;width:100%;outline:none}
-input:focus,textarea:focus,select:focus{border-color:var(--ink)}
-textarea{min-height:64px;resize:vertical}
-.radio{display:flex;flex-direction:column;gap:8px}
-.radio label{display:flex;gap:10px;align-items:flex-start;border:1px solid var(--line);border-radius:10px;padding:10px 12px;cursor:pointer;background:#fff}
-.radio label:has(input:checked){border-color:var(--ink);box-shadow:0 0 0 1px var(--ink)}
-.radio input{margin-top:4px}
-.steps{display:flex;gap:6px;margin-bottom:24px;flex-wrap:wrap}
-.steps span{font-size:12px;padding:4px 10px;border-radius:999px;background:#fff;border:1px solid var(--line);color:var(--muted)}
-.steps span.on{background:var(--ink);color:#fff;border-color:var(--ink)}
-.steps span.done{color:var(--ok)}
-.checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
-.checks li{display:grid;grid-template-columns:22px 1fr;gap:10px;align-items:start}
-.ic{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;font-size:12px;font-weight:600}
-.ic.ok{background:var(--okbg);color:var(--ok)}.ic.warn{background:var(--warnbg);color:var(--warn)}.ic.bad{background:var(--badbg);color:var(--bad)}.ic.wait{background:var(--soft);color:var(--muted)}
-.layout{display:grid;grid-template-columns:220px 1fr;gap:28px}
-.side{display:flex;flex-direction:column;gap:4px}
-.side button{text-align:left;border:0;background:none;padding:9px 12px;border-radius:10px;cursor:pointer;color:var(--muted);display:flex;justify-content:space-between;align-items:center}
-.side button[aria-current=true]{background:#fff;color:var(--ink);font-weight:500}
-.side .lock{font-size:11px}
-.banner{display:flex;gap:12px;align-items:center;border-radius:12px;padding:12px 16px;margin-bottom:20px;font-size:14px}
-.banner.warn{background:var(--warnbg);color:#5a3a00}.banner.ok{background:var(--okbg);color:#0d4a26}.banner.info{background:#fff;border:1px solid var(--line)}
-pre{background:#16161B;color:#E7E8EE;border-radius:12px;padding:14px 16px;overflow:auto;margin:0 0 12px;font-family:GeistMono;font-size:12.5px;line-height:1.55}
-table{width:100%;border-collapse:collapse;font-size:14px}
-th{text-align:left;font-weight:500;color:var(--muted);font-size:12px;padding:8px 10px;border-bottom:1px solid var(--line)}
-td{padding:12px 10px;border-bottom:1px solid var(--line);vertical-align:top}
-.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
-.copyline{display:flex;gap:8px;align-items:center;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:8px 10px}
-.copyline code{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
-.swatch{width:36px;height:36px;border-radius:10px;border:1px solid var(--line);padding:0;cursor:pointer}
-.empty{padding:40px;text-align:center;color:var(--muted)}
-/* mini V2pn window */
-.win{border-radius:12px;overflow:hidden;border:1px solid #cfd2db;background:#F3F4F7;box-shadow:0 18px 40px -20px rgba(0,0,0,.35);font-size:12px;width:100%;max-width:520px}
-.win .tb{display:flex;align-items:center;gap:6px;height:34px;padding:0 10px;background:#fff;border-bottom:1px solid #e3e5eb}
-.win .tab{display:flex;align-items:center;gap:6px;padding:4px 10px;border-radius:7px;color:#666}
-.win .tab.on{background:#EEF0F4;color:#111;font-weight:500}
-.win .mk{width:14px;height:14px;border-radius:4px;display:grid;place-items:center;color:#fff;font-size:9px;font-weight:700}
-.win .body{display:grid;grid-template-columns:42% 1fr;min-height:250px}
-.win .list{background:#fff;margin:8px;border-radius:9px;padding:8px;display:flex;flex-direction:column;gap:6px}
-.win .plan{border-radius:8px;padding:8px;background:var(--soft)}
-.win .bar{height:4px;border-radius:2px;background:#e3e5eb;margin:6px 0 4px;overflow:hidden}
-.win .bar i{display:block;height:100%;width:24%}
-.win .srv{display:flex;justify-content:space-between;padding:4px 2px;color:#333}
-.win .srv b{font-weight:500;color:var(--ok);font-size:11px}
-.win .stage{margin:8px 8px 8px 0;border-radius:9px;background:#E6EBE7;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;padding:16px;position:relative;overflow:hidden}
-.win .stage .st{font-size:11px;color:var(--ok);background:#fff;border-radius:999px;padding:2px 8px}
-.win .stage .cty{font-size:16px;font-weight:600}
-.win .connect{border:0;border-radius:999px;padding:9px 28px;font-weight:600;font-size:12px;color:#fff}
-.win .acts{display:flex;gap:6px}
-.win .acts span{background:#fff;border-radius:999px;padding:3px 9px;font-size:10.5px}
-/* phone */
-.phone{width:320px;border-radius:34px;border:10px solid #16161B;background:#fff;overflow:hidden;min-height:560px;display:flex;flex-direction:column}
-.phone .ph-top{height:26px;background:#16161B}
-.phone .bot{padding:14px;display:flex;flex-direction:column;gap:10px;background:#E8EEF5;flex:1}
-.bubble{background:#fff;border-radius:14px;padding:10px 12px;font-size:13px;max-width:92%}
-.tgbtn{display:block;text-align:center;background:#fff;border-radius:10px;padding:9px;font-size:13px;color:#2B7BC0;font-weight:500;border:0;cursor:pointer;width:100%}
-.flow{display:grid;grid-template-columns:320px 1fr;gap:36px;align-items:start}
-.arrowlist{counter-reset:s;list-style:none;padding:0;margin:0;display:flex;flex-direction:column;gap:12px}
-.arrowlist li{counter-increment:s;display:grid;grid-template-columns:28px 1fr;gap:10px}
-.arrowlist li::before{content:counter(s);width:24px;height:24px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px}
-.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#16161B;color:#fff;padding:10px 16px;border-radius:999px;font-size:14px;opacity:0;transition:opacity .2s;pointer-events:none;z-index:50}
-.toast.on{opacity:1}
-@media (max-width:900px){.grid3,.grid2,.layout,.flow{grid-template-columns:1fr}h1{font-size:34px}.nav .links{display:none}}
+/* Layout: the site's own frame; a role bar on top, each role a two-column workspace (controls | live V2pn window). */
+:root {
+  --bg: #eceef3; --surface: #ffffff; --sunk: #f4f5f8; --ink: #16161b; --soft: #34343f; --muted: #5e5e6b;
+  --line: rgba(22,22,27,.1); --accent: #e8391b; --accent-ink: #111;
+  --ok: #046b39; --ok-soft: rgba(4,107,57,.12); --warn: #a86400; --warn-soft: rgba(168,100,0,.13);
+  --bad: #ae250d; --bad-soft: rgba(174,37,13,.1);
+  --win: #e3e4e9; --win-side: #fff; --win-content: #eceef3; --win-card: #fff;
+  --f: "Geist", system-ui, sans-serif; --mono: "Geist Mono", ui-monospace, Consolas, monospace;
+  --r: 14px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0e0e11; --surface: #1c1c23; --sunk: #16161b; --ink: #ececf1; --soft: #c9c9d3; --muted: #9b9ba8;
+  --line: #2a2a33; --accent: #ff3d1f; --accent-ink: #111;
+  --ok: #3dd68c; --ok-soft: rgba(61,214,140,.14); --warn: #f2b14e; --warn-soft: rgba(242,177,78,.14);
+  --bad: #ff5a3d; --bad-soft: rgba(255,90,61,.14);
+  --win: #0d0d10; --win-side: #1c1c23; --win-content: #121216; --win-card: #1e1e25; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #0e0e11; --surface: #1c1c23; --sunk: #16161b; --ink: #ececf1; --soft: #c9c9d3; --muted: #9b9ba8;
+  --line: #2a2a33; --accent: #ff3d1f; --accent-ink: #111;
+  --ok: #3dd68c; --ok-soft: rgba(61,214,140,.14); --warn: #f2b14e; --warn-soft: rgba(242,177,78,.14);
+  --bad: #ff5a3d; --bad-soft: rgba(255,90,61,.14);
+  --win: #0d0d10; --win-side: #1c1c23; --win-content: #121216; --win-card: #1e1e25; color-scheme: dark }
+
+* { box-sizing: border-box; }
+body { background: var(--bg); color: var(--ink); font: 14px/1.5 var(--f); margin: 0;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 48px; }
+.wrap { max-width: 1240px; margin: 0 auto; }
+h1, h2, h3 { font-weight: 500; letter-spacing: -.025em; margin: 0; text-wrap: balance; }
+h1 { font-size: 26px; } h2 { font-size: 19px; } h3 { font-size: 15px; letter-spacing: -.01em; }
+p { margin: 0; }
+.muted { color: var(--muted); }
+.mono { font-family: var(--mono); font-size: 12.5px; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+header.top { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 16px; padding-block: 28px 18px; }
+header.top .lead { max-width: 60ch; display: grid; gap: 6px; }
+.eyebrow { font-size: 11.5px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.roles { display: flex; gap: 4px; background: var(--surface); border: 1px solid var(--line); border-radius: 999px; padding: 4px; flex-wrap: wrap; }
+.roles button { border: 0; background: none; padding: 8px 14px; border-radius: 999px; cursor: pointer; color: var(--soft); display: flex; gap: 8px; align-items: center; }
+.roles button .n { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.roles button[aria-selected="true"] { background: var(--ink); color: var(--bg); }
+.roles button[aria-selected="true"] .n { color: inherit; opacity: .6; }
+
+.flow { display: flex; flex-wrap: wrap; gap: 6px 10px; align-items: center; font-size: 12.5px; color: var(--muted); margin-bottom: 18px; }
+.flow b { color: var(--ink); font-weight: 500; }
+.flow .arr { opacity: .5; }
+
+.grid { display: grid; grid-template-columns: minmax(0, 440px) minmax(0, 1fr); gap: 20px; align-items: start; }
+@media (max-width: 920px) { .grid { grid-template-columns: minmax(0, 1fr); } }
+.panel { background: var(--surface); border: 1px solid var(--line); border-radius: var(--r); padding: 20px; display: grid; gap: 18px; min-width: 0; }
+.stage { position: sticky; top: 12px; display: grid; gap: 10px; min-width: 0; }
+.stage .cap { font-size: 12.5px; color: var(--muted); display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+
+.field { display: grid; gap: 6px; min-width: 0; }
+.field > label, .field > .lbl { font-size: 12.5px; color: var(--soft); font-weight: 500; }
+.hint { font-size: 12px; color: var(--muted); }
+input[type=text], input[type=password], input[type=url], textarea, select {
+  width: 100%; border: 1px solid var(--line); background: var(--sunk); border-radius: 10px; padding: 9px 11px; min-width: 0; }
+textarea { font-family: var(--mono); font-size: 12px; min-height: 92px; resize: vertical; }
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.seg { display: flex; background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 3px; gap: 3px; flex-wrap: wrap; }
+.seg button { flex: 1; border: 0; background: none; padding: 7px 10px; border-radius: 7px; cursor: pointer; color: var(--soft); white-space: nowrap; }
+.seg button[aria-pressed="true"] { background: var(--surface); color: var(--ink); box-shadow: 0 1px 2px rgba(0,0,0,.12); }
+.swatches { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.swatch { position: relative; width: 40px; height: 40px; border-radius: 10px; border: 1px solid var(--line); overflow: hidden; }
+.swatch input { position: absolute; inset: -8px; width: 56px; height: 56px; border: 0; padding: 0; cursor: pointer; }
+.chipbtn { border: 1px dashed var(--line); background: none; border-radius: 10px; height: 40px; padding: 0 12px; cursor: pointer; color: var(--muted); }
+.logo-pick { display: flex; gap: 12px; align-items: center; }
+.logo-pick .mark { width: 48px; height: 48px; border-radius: 12px; display: grid; place-items: center; font-weight: 600; font-size: 20px; overflow: hidden; flex: none; }
+.logo-pick .mark img { width: 100%; height: 100%; object-fit: cover; }
+.filebtn { border: 1px solid var(--line); background: var(--sunk); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+.found { display: flex; gap: 8px; align-items: center; font-size: 12.5px; color: var(--ok); }
+.found.no { color: var(--muted); }
+.dot { width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+
+details.more { border-top: 1px solid var(--line); padding-top: 14px; }
+details.more summary { cursor: pointer; font-weight: 500; list-style: none; display: flex; justify-content: space-between; gap: 8px; }
+details.more summary::-webkit-details-marker { display: none; }
+details.more summary::after { content: "+"; color: var(--muted); font-family: var(--mono); }
+details.more[open] summary::after { content: "−"; }
+details.more .inner { display: grid; gap: 14px; margin-top: 14px; }
+.check { display: flex; gap: 10px; align-items: start; cursor: pointer; }
+.check input { margin-top: 3px; accent-color: var(--accent); }
+
+.btn { border: 0; border-radius: 11px; padding: 11px 16px; font-weight: 500; cursor: pointer; background: var(--ink); color: var(--bg); }
+.btn.accent { background: var(--accent); color: var(--accent-ink); }
+.btn.ghost { background: none; border: 1px solid var(--line); color: var(--ink); }
+.btn.small { padding: 7px 11px; font-size: 13px; border-radius: 9px; }
+.btn.danger { background: var(--bad-soft); color: var(--bad); }
+.btn:disabled { opacity: .45; cursor: default; }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; border-radius: 999px; padding: 3px 9px; white-space: nowrap; }
+.pill.ok { background: var(--ok-soft); color: var(--ok); }
+.pill.warn { background: var(--warn-soft); color: var(--warn); }
+.pill.bad { background: var(--bad-soft); color: var(--bad); }
+.pill.plain { background: var(--sunk); color: var(--muted); border: 1px solid var(--line); }
+
+.note { background: var(--sunk); border: 1px solid var(--line); border-radius: 11px; padding: 12px 14px; font-size: 13px; color: var(--soft); display: grid; gap: 4px; }
+.note.ok { background: var(--ok-soft); border-color: transparent; color: var(--ink); }
+.note.warn { background: var(--warn-soft); border-color: transparent; color: var(--ink); }
+.linkbox { display: flex; gap: 8px; align-items: center; background: var(--sunk); border: 1px solid var(--line); border-radius: 10px; padding: 6px 6px 6px 12px; min-width: 0; }
+.linkbox code { font-family: var(--mono); font-size: 12.5px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex: 1; min-width: 0; }
+
+/* the V2pn window mock */
+.win { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--win); box-shadow: 0 18px 50px -24px rgba(0,0,0,.35); }
+.win .bar { height: 38px; display: flex; align-items: end; gap: 2px; padding: 0 10px; background: var(--win); }
+.win .tab { height: 30px; padding: 0 14px; display: flex; gap: 8px; align-items: center; border-radius: 9px 9px 0 0; font-size: 12.5px; color: var(--muted); }
+.win .tab.on { background: var(--win-content); color: var(--ink); }
+.win .tab .tm { width: 16px; height: 16px; border-radius: 5px; display: grid; place-items: center; font-size: 10px; font-weight: 600; overflow: hidden; }
+.win .tab .tm img { width: 100%; height: 100%; object-fit: cover; }
+.win .tab.new { animation: pop .5s ease-out; }
+@keyframes pop { from { transform: translateY(8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.win .lights { margin-left: auto; display: flex; gap: 14px; align-self: center; color: var(--muted); font-size: 12px; }
+.win .body { display: grid; grid-template-columns: 200px minmax(0, 1fr); min-height: 380px; background: var(--win-content); }
+@media (max-width: 560px) { .win .body { grid-template-columns: minmax(0, 1fr); } .win .side { display: none; } }
+.win .side { background: var(--win-side); border-right: 1px solid var(--line); padding: 12px; display: grid; align-content: start; gap: 8px; }
+.win .subcard { border-radius: 11px; padding: 10px; display: grid; gap: 6px; color: #fff; }
+.win .subcard .t { display: flex; gap: 8px; align-items: center; font-weight: 600; font-size: 13px; }
+.win .subcard .t .tm { width: 22px; height: 22px; border-radius: 6px; overflow: hidden; display: grid; place-items: center; font-size: 11px; background: rgba(255,255,255,.25); }
+.win .subcard .t .tm img { width: 100%; height: 100%; object-fit: cover; }
+.win .subcard small { font-size: 11px; opacity: .85; }
+.win .subcard .bar2 { height: 4px; border-radius: 4px; background: rgba(255,255,255,.3); overflow: hidden; }
+.win .subcard .bar2 i { display: block; height: 100%; width: 38%; background: currentColor; }
+.win .srv { display: flex; justify-content: space-between; gap: 8px; padding: 7px 8px; border-radius: 8px; font-size: 12.5px; color: var(--soft); }
+.win .srv.sel { background: var(--sunk); color: var(--ink); }
+.win .srv span:last-child { font-family: var(--mono); font-size: 11px; color: var(--ok); }
+.win .main { position: relative; display: grid; place-items: center; padding: 28px 16px; overflow: hidden; }
+.win .scene { position: absolute; inset: 0; }
+.win .gl { position: relative; display: grid; justify-items: center; gap: 14px; background: color-mix(in srgb, var(--win-card) 78%, transparent); backdrop-filter: blur(14px); border-radius: 18px; padding: 22px 26px; border: 1px solid var(--line); min-width: 220px; }
+.win .state { font-size: 12px; padding: 3px 10px; border-radius: 999px; background: var(--bad-soft); color: var(--bad); }
+.win .state.on { background: var(--ok-soft); color: var(--ok); }
+.win .connect { border: 0; border-radius: 999px; padding: 12px 28px; font-weight: 600; cursor: pointer; }
+.win .where { font-size: 12px; color: var(--muted); }
+.win .acts { display: flex; gap: 6px; flex-wrap: wrap; justify-content: center; }
+.win .acts span { font-size: 11.5px; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--line); background: var(--win-card); }
+/* stickers layout */
+.stk { position: relative; display: grid; justify-items: center; gap: 12px; }
+.stk .cap { font-family: "Anton", Impact, sans-serif; font-size: 34px; letter-spacing: .02em; color: #fff; -webkit-text-stroke: 2px #111; paint-order: stroke fill; transform: rotate(-3deg); text-transform: uppercase; line-height: 1; }
+.stk .sticker { background: #fff; color: #111; border-radius: 16px; padding: 14px 20px; box-shadow: 0 0 0 5px #fff, 0 10px 24px rgba(0,0,0,.35); transform: rotate(2deg); display: grid; gap: 10px; justify-items: center; }
+.stk .bubble { position: absolute; top: -8px; right: -70px; background: #fff; color: #111; font-size: 11.5px; padding: 6px 10px; border-radius: 12px; transform: rotate(6deg); box-shadow: 0 4px 10px rgba(0,0,0,.25); }
+.map { position: absolute; inset: 0; opacity: .5; background:
+  radial-gradient(circle at 30% 40%, var(--line) 0 2px, transparent 3px) 0 0/18px 18px; }
+
+/* user role: a browser frame */
+.browser { border-radius: 14px; overflow: hidden; border: 1px solid var(--line); background: var(--surface); }
+.browser .url { display: flex; gap: 10px; align-items: center; padding: 9px 12px; background: var(--sunk); border-bottom: 1px solid var(--line); font-family: var(--mono); font-size: 12px; color: var(--muted); }
+.browser .url i { width: 9px; height: 9px; border-radius: 50%; background: var(--line); display: inline-block; }
+.ppage { padding: 30px 22px; display: grid; gap: 16px; justify-items: center; text-align: center; color: #fff; position: relative; }
+.ppage .big { width: 64px; height: 64px; border-radius: 18px; display: grid; place-items: center; font-weight: 600; font-size: 26px; background: rgba(255,255,255,.22); overflow: hidden; }
+.ppage .big img { width: 100%; height: 100%; object-fit: cover; }
+.ppage h2 { font-size: 24px; }
+.ppage .go { border: 0; border-radius: 12px; padding: 13px 22px; font-weight: 600; background: #fff; color: #111; cursor: pointer; }
+.ppage .small { font-size: 12.5px; opacity: .85; }
+.ppage .small a { color: inherit; }
+.ppage.down { background: var(--sunk); color: var(--ink); }
+.steps { display: grid; gap: 6px; }
+.steps div { display: flex; gap: 10px; align-items: center; font-size: 13px; color: var(--muted); }
+.steps div.done { color: var(--ink); }
+.steps div .s { width: 18px; height: 18px; border-radius: 50%; border: 1.5px solid var(--line); display: grid; place-items: center; font-size: 11px; flex: none; }
+.steps div.done .s { background: var(--ok); border-color: var(--ok); color: #fff; }
+.tgmsg { background: var(--sunk); border: 1px solid var(--line); border-radius: 14px 14px 14px 4px; padding: 12px 14px; display: grid; gap: 10px; font-size: 13px; }
+.tgmsg .tgbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 9px; padding: 8px; text-align: center; cursor: pointer; color: var(--accent); font-weight: 500; }
+
+/* moderator */
+.list { display: grid; gap: 10px; }
+.item { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 12px; align-items: center; padding: 12px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); }
+@media (max-width: 520px) { .item { grid-template-columns: 44px minmax(0, 1fr); } .item .act { grid-column: 1 / -1; } }
+.item .thumb { width: 44px; height: 44px; border-radius: 11px; display: grid; place-items: center; font-weight: 600; color: #fff; overflow: hidden; }
+.item .thumb img { width: 100%; height: 100%; object-fit: cover; }
+.item .meta { display: grid; gap: 3px; min-width: 0; }
+.item .meta .nm { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; font-weight: 500; }
+.item .meta .sub { font-size: 12px; color: var(--muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.item .act { display: flex; gap: 6px; flex-wrap: wrap; justify-content: end; }
+.item.off { opacity: .6; }
+.req { border: 1px solid var(--line); border-radius: 12px; padding: 14px; display: grid; gap: 10px; background: var(--surface); }
+.req pre { margin: 0; background: var(--sunk); border: 1px solid var(--line); border-radius: 9px; padding: 10px; font-family: var(--mono); font-size: 11.5px; overflow-x: auto; max-height: 160px; }
+.sec { display: grid; gap: 10px; }
+.sec > .hd { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+.toast { position: fixed; left: 50%; bottom: calc(18px + env(safe-area-inset-bottom, 0px)); transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 16px; border-radius: 10px; font-size: 13px; z-index: 20; }
+.empty { padding: 16px; text-align: center; color: var(--muted); font-size: 13px; border: 1px dashed var(--line); border-radius: 12px; }
+@media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
-</head>
-<body>
-<div class="pbar">
-  <b>Прототип</b>
-  <span>Смотреть как:</span>
-  <div class="seg" role="group" aria-label="Роль">
-    <button data-role="provider" aria-pressed="true">Провайдер</button>
-    <button data-role="admin" aria-pressed="false">Вы (владелец)</button>
-    <button data-role="sub" aria-pressed="false">Подписчик провайдера</button>
-  </div>
-  <span class="hint" id="hint"></span>
-  <button class="reset" id="reset">Сначала</button>
+
+<div class="wrap">
+  <header class="top">
+    <div class="lead">
+      <span class="eyebrow">Прототип · v2pn.angleford.co</span>
+      <h1>Партнёры V2pn: весь путь в трёх ролях</h1>
+      <p class="muted">Всё кликается. Провайдер создаёт партнёра, пользователь подключается одной ссылкой, модератор при необходимости снимает партнёра. Начните с провайдера: что он сделает, то увидят и пользователь, и модератор.</p>
+    </div>
+    <div class="roles" role="tablist" aria-label="Роль">
+      <button role="tab" id="r-provider" aria-selected="true" data-role="provider"><span class="n">1</span>Провайдер</button>
+      <button role="tab" id="r-user" aria-selected="false" data-role="user"><span class="n">2</span>Пользователь</button>
+      <button role="tab" id="r-mod" aria-selected="false" data-role="mod"><span class="n">3</span>Модератор</button>
+    </div>
+  </header>
+
+  <!-- PROVIDER -->
+  <section id="v-provider" role="tabpanel" aria-labelledby="r-provider">
+    <div class="flow"><b>Логин и пароль</b><span class="arr">→</span><b>Одна форма</b><span class="arr">→</span><b>«Опубликовать»</b><span class="arr">→</span>ссылка работает сразу</div>
+
+    <div class="grid" id="p-signin">
+      <form class="panel" id="f-signin" autocomplete="off">
+        <div style="display:grid;gap:6px"><h2>Вход для провайдеров</h2><p class="muted">Любой логин и пароль. Почта и Telegram не нужны.</p></div>
+        <div class="field"><label for="in-login">Логин</label><input type="text" id="in-login" value="nordline"></div>
+        <div class="field"><label for="in-pass">Пароль</label><input type="password" id="in-pass" value="nordline-2026"></div>
+        <div class="row"><button class="btn accent" type="submit">Создать аккаунт</button><button class="btn ghost" type="submit">Войти</button></div>
+        <p class="hint">Пароль забыт? Модератор сбрасывает его в списке партнёров. Восстановления по почте нет: почты нет.</p>
+      </form>
+      <div class="stage">
+        <div class="cap"><span>Что увидит провайдер дальше</span></div>
+        <div class="note"><b>Одна страница «Мой партнёр».</b> Слева поля, справа окно V2pn, которое меняется вместе с ними. Нет заявки, ступеней и ожидания. Нажал «Опубликовать», и ссылка уже работает.</div>
+      </div>
+    </div>
+
+    <div class="grid" id="p-editor" hidden>
+      <form class="panel" id="f-partner" autocomplete="off">
+        <div class="row" style="justify-content:space-between"><h2>Мой партнёр</h2><span id="pub-state" class="pill plain">Черновик</span></div>
+
+        <div class="field"><label for="in-name">Название</label><input type="text" id="in-name" value="Nordline"></div>
+
+        <div class="field">
+          <label for="in-sub">Ссылка на подписку</label>
+          <input type="url" id="in-sub" value="https://sub.nordline.net/s/demo">
+          <div class="found" id="sub-found"><span class="dot"></span><span></span></div>
+        </div>
+
+        <div class="field">
+          <span class="lbl">Логотип</span>
+          <div class="logo-pick">
+            <div class="mark" id="logo-prev"></div>
+            <label class="filebtn" for="in-logo">Загрузить PNG или JPG</label>
+            <input type="file" id="in-logo" accept="image/png,image/jpeg" hidden>
+            <button type="button" class="btn ghost small" id="logo-clear" hidden>Убрать</button>
+          </div>
+          <span class="hint">Без картинки V2pn нарисует знак из первой буквы.</span>
+        </div>
+
+        <div class="field">
+          <span class="lbl">Цвета бренда</span>
+          <div class="swatches" id="swatches"></div>
+          <span class="hint" id="contrast-hint"></span>
+        </div>
+
+        <div class="field">
+          <span class="lbl">Фон за кнопкой</span>
+          <div class="seg" data-key="bg">
+            <button type="button" data-v="map">Карта мира</button>
+            <button type="button" data-v="gradient" aria-pressed="true">Градиент</button>
+          </div>
+        </div>
+
+        <div class="field">
+          <span class="lbl">Раскладка</span>
+          <div class="seg" data-key="layout">
+            <button type="button" data-v="v2pn" aria-pressed="true">Обычная V2pn</button>
+            <button type="button" data-v="stickers">Наклейки</button>
+          </div>
+        </div>
+
+        <div class="field"><label for="in-support">Поддержка</label><input type="text" id="in-support" value="t.me/nordline_support"></div>
+
+        <details class="more" id="more">
+          <summary>Особые права</summary>
+          <div class="inner">
+            <p class="hint">Всё выше публикуется сразу. Эти права меняют работу клиента, поэтому их сначала одобряет модератор. Остальной партнёр в это время уже работает.</p>
+            <label class="check"><input type="checkbox" id="x-routing"><span><b>Свои правила маршрутизации</b><br><span class="muted">Какие сайты идут через VPN, какие напрямую</span></span></label>
+            <textarea id="x-rules" hidden>domain:ru → direct
+geoip:ru → direct
+domain:youtube.com → proxy
+domain:openai.com → proxy</textarea>
+            <label class="check"><input type="checkbox" id="x-hide"><span><b>Скрыть адреса серверов</b><br><span class="muted">Пользователь видит только названия</span></span></label>
+            <label class="check"><input type="checkbox" id="x-buttons"><span><b>Кнопки «Продлить» и «Устройства»</b><br><span class="muted">Ведут на ваш сайт или в бота</span></span></label>
+          </div>
+        </details>
+
+        <div class="row"><button class="btn accent" type="submit" id="b-publish">Опубликовать</button><span class="hint" id="pub-hint">Ссылка заработает сразу.</span></div>
+
+        <div id="published" class="sec" hidden>
+          <div class="note ok"><b>Опубликовано.</b> Пользователи уже могут подключаться. Любое изменение тоже публикуется сразу после «Сохранить».</div>
+          <div class="field">
+            <span class="lbl">Ваша ссылка</span>
+            <div class="linkbox"><code id="share-link"></code><button type="button" class="btn small" data-copy="share-link">Копировать</button></div>
+            <span class="hint">Поставьте её кнопкой в бота. Бот сам добавит в конец личную подписку человека: <span class="mono">#sub=…</span>. Эта часть не уходит на сервер.</span>
+          </div>
+          <div class="note warn" id="pending-note" hidden><b>Особые права ждут модератора.</b> <span id="pending-what"></span></div>
+          <button type="button" class="btn ghost" data-goto="user">Посмотреть глазами пользователя →</button>
+        </div>
+        <button type="button" class="btn ghost small" id="b-signout" style="justify-self:start">Выйти</button>
+      </form>
+
+      <div class="stage">
+        <div class="cap"><span>Так увидят ваши пользователи</span><span class="seg" data-key="theme" style="flex:none">
+          <button type="button" data-v="light" aria-pressed="true">Светлая</button><button type="button" data-v="dark">Тёмная</button></span></div>
+        <div id="prov-win"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- USER -->
+  <section id="v-user" role="tabpanel" aria-labelledby="r-user" hidden>
+    <div class="flow"><b>Нажал кнопку в боте</b><span class="arr">→</span><b>Страница провайдера</b><span class="arr">→</span><b>«Подключить в V2pn»</b><span class="arr">→</span>вкладка провайдера со всем оформлением</div>
+    <div class="grid">
+      <div class="panel">
+        <h2>Бот провайдера</h2>
+        <div class="tgmsg" id="tg"></div>
+        <div class="browser" id="browser" hidden>
+          <div class="url"><i></i><i></i><i></i><span id="b-url"></span></div>
+          <div id="ppage"></div>
+        </div>
+        <div class="note"><b>Что происходит при нажатии.</b> Сайт открывает V2pn ссылкой. V2pn сам скачивает с сервера подписанный пакет партнёра (логотип, цвета, фон, раскладку), проверяет подпись и добавляет подписку. Если V2pn нет, страница предлагает скачать его, и после установки достаточно нажать ещё раз.</div>
+        <button type="button" class="btn ghost small" id="u-reset" style="justify-self:start">Начать заново</button>
+      </div>
+      <div class="stage">
+        <div class="cap"><span>V2pn у пользователя</span></div>
+        <div id="user-win"></div>
+        <div class="steps" id="u-steps" hidden></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- MODERATOR -->
+  <section id="v-mod" role="tabpanel" aria-labelledby="r-mod" hidden>
+    <div class="flow"><b>Партнёры публикуются сами</b><span class="arr">→</span>модератор видит новых и жалобы<span class="arr">→</span><b>«Снять»</b> одной кнопкой</div>
+    <div class="grid">
+      <div class="panel">
+        <div class="sec">
+          <div class="hd"><h2>Ждут одобрения</h2><span class="muted" style="font-size:12.5px">только особые права</span></div>
+          <div id="m-reqs" class="list"></div>
+        </div>
+        <div class="sec">
+          <div class="hd"><h3>Модераторы</h3></div>
+          <div class="list" id="m-mods"></div>
+          <form class="row" id="f-mod"><input type="text" id="in-mod" placeholder="логин" style="flex:1;min-width:140px"><button class="btn small" type="submit">Добавить модератора</button></form>
+          <p class="hint">Добавлять модераторов может только владелец. Подписывать особые права корневым ключом на своём ПК, как раньше, тоже можно; сервер этого не требует.</p>
+        </div>
+      </div>
+      <div class="panel">
+        <div class="sec">
+          <div class="hd"><h2>Все партнёры</h2><span class="muted" id="m-count" style="font-size:12.5px"></span></div>
+          <div class="list" id="m-list"></div>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
-<div id="app"></div>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" hidden></div>
 
 <script>
-const FORK = '<svg class="fork" viewBox="0 0 24 24" fill="currentColor"><path d="M3 3h5l4 6 4-6h5l-7 10v8h-4v-8z"/></svg>';
-const S0 = () => ({
-  role: 'provider',
-  page: 'landing',          // landing | signup | code | apply | check | waiting | cabinet
-  email: '', name: 'Kestrel', domains: 'sub.kestrel.example', sub: 'https://sub.kestrel.example/s/9f2c…', contact: '@kestrel_support', want: '1',
-  checked: false,
-  app: 'none',              // none | pending | approved | rejected
-  tier: 0,                  // given by the owner
-  cab: 'overview',
-  look: { c1: '#2E6BFF', c2: '#7AA8FF', scene: false, logo: true },
-  pub: 'none',              // none | pending | live
-  api: 'https://kestrel.example/v2pn/api/', apiChecked: false, tier2ask: false,
-  installed: true, subStep: 0
-});
-let S = load();
-function load(){ try { return Object.assign(S0(), JSON.parse(localStorage.getItem('proto-provider') || '{}')); } catch { return S0(); } }
-function save(){ try { localStorage.setItem('proto-provider', JSON.stringify(S)); } catch {} }
-function set(p){ const jump = ['page','role','cab','subStep'].some(k => k in p && p[k] !== S[k]); Object.assign(S, p); save(); render(); if (jump) window.scrollTo({top:0}); }
-function toast(t){ const el = document.getElementById('toast'); el.textContent = t; el.classList.add('on'); clearTimeout(toast.t); toast.t = setTimeout(() => el.classList.remove('on'), 1800); }
-const esc = s => String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
-const tierName = t => ['Подписка','Проверенный','Интеграция'][t];
-const id = () => (S.name || 'provider').toLowerCase().replace(/[^a-z0-9]+/g,'-');
+(() => {
+  const $ = (s, r = document) => r.querySelector(s);
+  const $$ = (s, r = document) => [...r.querySelectorAll(s)];
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
-function nav(right){ return `<div class="nav"><div class="logo">${FORK}V2pn</div><div class="links"><span>Возможности</span><span>Установка</span><span style="color:var(--ink)">Провайдерам</span><span>Руководство</span></div><div class="me">${right || ''}</div></div>`; }
-
-function win({branded, scene, tabs = true}){
-  const c1 = S.look.c1, c2 = S.look.c2;
-  const mk = `<span class="mk" style="background:${c1}">${esc((S.name||'K')[0])}</span>`;
-  return `<div class="win">
-    <div class="tb">${FORK.replace('fork','fork" style="width:14px;height:14px')}
-      ${tabs ? `<span class="tab ${branded?'':'on'}">V2pn</span><span class="tab ${branded?'on':''}">${mk}${esc(S.name)}</span>` : `<span class="tab on">V2pn</span>`}
-    </div>
-    <div class="body">
-      <div class="list">
-        <div class="plan" ${branded ? `style="background:${c1}14"` : ''}>
-          <div style="display:flex;gap:6px;align-items:center;font-weight:500">${branded && S.look.logo ? mk : ''}${esc(S.name)}</div>
-          <div class="bar"><i style="background:${branded ? c1 : '#9aa0ad'}"></i></div>
-          <div class="muted" style="font-size:10.5px">12 из 50 ГБ · до 31.01.2027</div>
-          ${branded ? `<div style="font-size:10.5px;margin-top:4px;color:${c1};font-weight:500">Продлить · Поддержка</div>` : `<div style="font-size:10.5px;margin-top:4px" class="muted">Поддержка</div>`}
-        </div>
-        <div class="srv"><span>🇩🇪 Германия</span><b>41 мс</b></div>
-        <div class="srv"><span>🇳🇱 Нидерланды</span><b>48 мс</b></div>
-        <div class="srv"><span>🇫🇮 Финляндия</span><b>52 мс</b></div>
-      </div>
-      <div class="stage" style="${scene && branded ? `background:linear-gradient(135deg,${c1},${c2});` : ''}">
-        <span class="st">Защищено</span>
-        <span class="cty" style="${scene && branded ? 'color:#fff' : ''}">Германия</span>
-        <button class="connect" style="${scene && branded ? `background:#fff;color:${c1}` : `background:${branded ? c1 : '#16161B'}`}">Отключиться</button>
-        ${branded && S.tier >= 2 ? `<div class="acts"><span>Самый быстрый</span><span>Для YouTube</span></div>` : ''}
-      </div>
-    </div>
-  </div>`;
-}
-
-/* ---------------- provider ---------------- */
-function provider(){
-  const me = S.email ? esc(S.email) : `<button class="btn sm ghost" data-go="signup">Войти</button>`;
-  switch (S.page){
-  case 'landing': return nav(me) + `
-    <h1>Ваша подписка в V2pn</h1>
-    <p class="muted" style="max-width:640px;font-size:17px">V2pn — бесплатный VPN-клиент для Windows и macOS. Ваши клиенты вставляют ссылку на подписку, и всё работает. Если хотите своё оформление и вход из бота, подайте заявку.</p>
-    <div class="row" style="margin:22px 0 40px"><button class="btn" data-go="${S.email ? 'apply' : 'signup'}">Подать заявку</button><span class="muted small">Бесплатно. Рассмотрение — 1–2 дня.</span></div>
-    <div class="grid3">
-      <div class="card tier"><span class="n">Ступень 0</span><h3>Подписка</h3><p class="muted small">Ничего делать не нужно.</p>
-        <ul><li>Ссылка работает в V2pn как есть</li><li>Название, трафик, срок и «Поддержка» — из заголовков, которые вы уже отдаёте для Happ и Hiddify</li></ul>
-        <div class="need">Нужно: <b>ничего</b></div></div>
-      <div class="card tier" style="border-color:var(--ink)"><span class="n">Ступень 1</span><h3>Проверенный</h3><p class="muted small">Своя вкладка в V2pn.</p>
-        <ul><li>Вкладка с вашим логотипом и цветами</li><li>Страница v2pn.angleford.co/p/вы</li><li>Кнопка «Подключить в V2pn» для бота</li></ul>
-        <div class="need">Нужно: <b>заявка</b>. Без программирования.</div></div>
-      <div class="card tier"><span class="n">Ступень 2</span><h3>Интеграция</h3><p class="muted small">V2pn говорит с вашим ботом.</p>
-        <ul><li>Вход по коду из бота, без ссылок</li><li>Свои кнопки: «Продлить», «Для YouTube»</li><li>Свои правила маршрутизации, скрытые адреса</li></ul>
-        <div class="need">Нужно: <b>два адреса API</b> на вашем сервере</div></div>
-    </div>`;
-
-  case 'signup': return nav() + `
-    <div style="max-width:420px;margin:40px auto 0" class="card">
-      <h2>Вход для провайдеров</h2>
-      <p class="muted">Пришлём код на почту. Пароль не нужен.</p>
-      <label class="field"><span>Почта</span><input type="email" id="email" placeholder="you@kestrel.example" value="${esc(S.email)}"></label>
-      <button class="btn" id="sendcode" style="width:100%;justify-content:center">Получить код</button>
-    </div>`;
-
-  case 'code': return nav() + `
-    <div style="max-width:420px;margin:40px auto 0" class="card">
-      <h2>Код из письма</h2>
-      <p class="muted">Отправили на ${esc(S.email || 'вашу почту')}. В прототипе подойдёт любой.</p>
-      <label class="field"><span>Код</span><input type="text" id="code" inputmode="numeric" placeholder="6 цифр" value="482913"></label>
-      <button class="btn" data-go="apply" style="width:100%;justify-content:center">Войти</button>
-    </div>`;
-
-  case 'apply': return nav(me) + stepsBar(1) + `
-    <div class="grid2">
-      <div>
-        <h2>Заявка</h2>
-        <p class="muted">Пять полей. Тестовую ссылку сайт проверит сразу, до рассмотрения.</p>
-        <label class="field"><span>Название</span><input type="text" id="f-name" value="${esc(S.name)}"></label>
-        <label class="field"><span>Домены подписки</span><textarea id="f-dom">${esc(S.domains)}</textarea><small>По ним V2pn узнаёт ваши подписки. По одному в строке.</small></label>
-        <label class="field"><span>Тестовая ссылка на подписку</span><input type="text" id="f-sub" value="${esc(S.sub)}"><small>Рабочая ссылка на пробный аккаунт. Её видите только вы и владелец V2pn.</small></label>
-        <label class="field"><span>Контакт для связи</span><input type="text" id="f-contact" value="${esc(S.contact)}"></label>
-        <div class="field"><span>Что хотите</span>
-          <div class="radio">
-            <label><input type="radio" name="want" value="1" ${S.want==='1'?'checked':''}><div><b>Проверенный</b><div class="muted small">Своя вкладка, страница и кнопка для бота</div></div></label>
-            <label><input type="radio" name="want" value="2" ${S.want==='2'?'checked':''}><div><b>Интеграция</b><div class="muted small">То же плюс вход по коду и свои кнопки. Нужен API.</div></div></label>
-          </div></div>
-        <button class="btn" id="runcheck">Проверить ссылку</button>
-      </div>
-      <div><div class="card" style="position:sticky;top:70px"><h3>Как это будет</h3><p class="muted small">Сейчас, без заявки, ваша подписка выглядит в V2pn так:</p>${win({branded:false, tabs:false})}<p class="muted small" style="margin-top:12px">После одобрения у тех, кто пришёл от вас, появится своя вкладка.</p></div></div>
-    </div>`;
-
-  case 'check': return nav(me) + stepsBar(2) + `
-    <div class="grid2">
-      <div>
-        <h2>Проверка ссылки</h2>
-        <p class="muted">Сайт открыл вашу тестовую ссылку так же, как её откроет V2pn.</p>
-        <div class="card"><ul class="checks">
-          <li><span class="ic ok">✓</span><div><b>Ссылка открывается</b><div class="muted small">200 OK за 0,4 с</div></div></li>
-          <li><span class="ic ok">✓</span><div><b>14 серверов</b><div class="muted small">VLESS Reality — 8, Hysteria2 — 6. Все V2pn понимает.</div></div></li>
-          <li><span class="ic ok">✓</span><div><b>Название и трафик</b><div class="muted small"><code>profile-title</code>: Kestrel · <code>subscription-userinfo</code>: 12 из 50 ГБ, до 31.01.2027</div></div></li>
-          <li><span class="ic ok">✓</span><div><b>Поддержка</b><div class="muted small"><code>support-url</code>: t.me/kestrel_support</div></div></li>
-          <li><span class="ic warn">!</span><div><b>Нет ссылки на кабинет</b><div class="muted small">Добавьте заголовок <code>profile-web-page-url</code> — тогда в V2pn появится «Продлить». Не обязательно.</div></div></li>
-          <li><span class="ic ok">✓</span><div><b>Сервера отвечают</b><div class="muted small">Проверили 3 из 14 с нашего сервера: 38–61 мс</div></div></li>
-        </ul></div>
-        <div class="row" style="margin-top:18px"><button class="btn" id="submit">Отправить заявку</button><button class="btn ghost" data-go="apply">Исправить</button></div>
-      </div>
-      <div><div class="card"><h3>Так будет у ваших людей</h3><p class="muted small">Вкладка с вашим названием. Цвета и логотип настроите после одобрения.</p>${win({branded:true})}</div></div>
-    </div>`;
-
-  case 'waiting': return nav(me) + stepsBar(3) + `
-    <div class="card" style="max-width:640px">
-      ${S.app === 'rejected' ? `<span class="pill bad">Отклонена</span><h2 style="margin-top:12px">Заявку вернули</h2><p class="muted">Причина: «Тестовая ссылка перестала открываться». Исправьте и отправьте снова.</p><button class="btn" data-go="apply">Исправить заявку</button>`
-      : `<span class="pill warn">На рассмотрении</span><h2 style="margin-top:12px">Заявка у владельца V2pn</h2><p class="muted">Обычно 1–2 дня. Ответ придёт на ${esc(S.email || 'почту')}. Пока ждёте, ваша подписка уже работает в V2pn как обычная.</p>
-      <p class="small muted" style="margin-top:18px">В прототипе: переключитесь на «Вы (владелец)» вверху и одобрите заявку.</p>`}
-    </div>`;
-
-  case 'cabinet': return nav(me) + cabinet();
-  }
-}
-function stepsBar(n){
-  const L = ['Вход','Заявка','Проверка','Рассмотрение','Кабинет'];
-  return `<div class="steps">${L.map((t,i)=>`<span class="${i===n?'on':i<n?'done':''}">${i<n?'✓ ':''}${t}</span>`).join('')}</div>`;
-}
-
-function cabinet(){
-  const items = [['overview','Обзор'],['look','Оформление'],['share','Как раздать'],['api','Интеграция', S.tier < 2]];
-  const side = `<div class="side">${items.map(([k,t,lock])=>`<button data-cab="${k}" aria-current="${S.cab===k}">${t}${lock?'<span class="lock muted">ступень 2</span>':''}</button>`).join('')}</div>`;
-  let main = '';
-  if (S.cab === 'overview') main = `
-    <h2>${esc(S.name)}</h2>
-    <div class="row" style="margin-bottom:20px"><span class="pill ok">Одобрен</span><span class="pill">Ступень ${S.tier}: ${tierName(S.tier)}</span>${S.pub==='live'?'<span class="pill ok">Оформление опубликовано</span>':S.pub==='pending'?'<span class="pill warn">Оформление на проверке</span>':'<span class="pill">Оформление не опубликовано</span>'}</div>
-    <div class="grid3">
-      <div class="card"><h3>1. Оформление</h3><p class="muted small">Логотип и два цвета. Пять минут.</p><button class="btn sm ${S.pub==='none'?'':'ghost'}" data-cab="look">${S.pub==='none'?'Настроить':'Изменить'}</button></div>
-      <div class="card"><h3>2. Кнопка для бота</h3><p class="muted small">Одна ссылка: по ней V2pn ставится и добавляет подписку.</p><button class="btn sm ghost" data-cab="share">Взять ссылку</button></div>
-      <div class="card"><h3>3. Вход по коду</h3><p class="muted small">${S.tier>=2?'Два адреса API на вашем сервере.':'Доступно на ступени 2.'}</p><button class="btn sm ghost" data-cab="api">${S.tier>=2?'Подключить':'Подробнее'}</button></div>
-    </div>`;
-  if (S.cab === 'look') main = `
-    <h2>Оформление</h2>
-    ${S.pub==='pending'?'<div class="banner warn">На проверке у владельца V2pn. Люди пока видят прошлую версию.</div>':S.pub==='live'?'<div class="banner ok">Опубликовано. V2pn у ваших людей подхватит изменения в течение часа.</div>':''}
-    <div class="grid2">
-      <div>
-        <div class="field"><span>Логотип</span><div class="row"><span class="mk" style="width:40px;height:40px;border-radius:10px;display:grid;place-items:center;color:#fff;font-weight:700;background:${S.look.c1}">${esc(S.name[0])}</span><button class="btn sm ghost" id="logo">Загрузить PNG или SVG</button></div><small>Квадрат от 256 px. Светлый и тёмный варианты — по желанию.</small></div>
-        <div class="field"><span>Цвета</span><div class="row">
-          <input type="color" class="swatch" id="c1" value="${S.look.c1}"><input type="color" class="swatch" id="c2" value="${S.look.c2}">
-          <span class="muted small">Основной — на кнопке «Подключиться». Второй — для фона.</span></div></div>
-        <div class="field"><span>Вид</span><div class="radio">
-          <label><input type="radio" name="scene" value="0" ${!S.look.scene?'checked':''}><div><b>Акцент</b><div class="muted small">Обычный V2pn с вашим цветом и логотипом</div></div></label>
-          <label><input type="radio" name="scene" value="1" ${S.look.scene?'checked':''}><div><b>Сцена</b><div class="muted small">Ваш градиент вместо карты</div></div></label></div></div>
-        <div class="banner info small">Контраст текста проверяется сам. Если цвет нечитаем, сайт подскажет и не даст опубликовать.</div>
-        <button class="btn" id="publish">${S.pub==='live'?'Опубликовать изменения':'Отправить на публикацию'}</button>
-      </div>
-      <div style="position:sticky;top:70px;align-self:start">${win({branded:true, scene:S.look.scene})}</div>
-    </div>`;
-  if (S.cab === 'share') { const link = `https://v2pn.angleford.co/p/${id()}/#sub=<ссылка-подписки-человека>`; main = `
-    <h2>Как раздать V2pn своим людям</h2>
-    <p class="muted" style="max-width:640px">Добавьте в бота и в кабинет кнопку «💻 Подключить в V2pn». В ссылку подставьте подписку этого человека.</p>
-    <div class="field"><span>Ссылка для кнопки</span><div class="copyline"><code>${esc(link)}</code><button class="btn sm ghost" data-copy="${esc(link)}">Копировать</button></div>
-      <small>Подписка идёт после <code>#</code> — эта часть не уходит на наш сервер и не попадает в логи.</small></div>
-    <div class="grid2" style="margin-top:8px">
-      <div class="card"><h3>V2pn уже стоит</h3><ol class="arrowlist small"><li>Человек жмёт кнопку в боте</li><li>Страница открывает V2pn</li><li>V2pn добавляет подписку и вашу вкладку</li></ol></div>
-      <div class="card"><h3>V2pn ещё нет</h3><ol class="arrowlist small"><li>Страница предлагает скачать V2pn под его систему</li><li>Человек ставит и жмёт ту же кнопку ещё раз</li><li>Дальше — как слева</li></ol></div>
-    </div>
-    <p class="muted small" style="margin-top:16px">Ваша страница: <a href="#" data-role-go="sub">v2pn.angleford.co/p/${id()}</a>. Посмотреть глазами подписчика — «Подписчик провайдера» вверху.</p>`; }
-  if (S.cab === 'api') main = S.tier < 2 ? `
-    <h2>Интеграция</h2>
-    <p class="muted" style="max-width:620px">На ступени 2 человек входит в V2pn по коду из вашего бота, без ссылок. Для этого на вашем сервере нужны два адреса. Описание ниже.</p>
-    ${S.tier2ask?'<div class="banner warn">Запрос отправлен владельцу V2pn.</div>':'<button class="btn" id="ask2">Запросить ступень 2</button>'}
-    <div style="margin-top:22px">${apiDoc()}</div>` : `
-    <h2>Интеграция</h2>
-    <div class="field" style="max-width:560px"><span>Адрес вашего API</span><input type="text" id="api" value="${esc(S.api)}"></div>
-    ${apiDoc()}
-    <button class="btn" id="apicheck">Проверить API</button>
-    ${S.apiChecked?`<div class="card" style="margin-top:16px"><ul class="checks">
-      <li><span class="ic ok">✓</span><div><b>login/start</b> отвечает<div class="muted small">код 6 цифр, ссылка на бота, срок 600 с</div></div></li>
-      <li><span class="ic ok">✓</span><div><b>login/poll</b> отвечает «ждём»<div class="muted small">до подтверждения в боте</div></div></li>
-      <li><span class="ic wait">…</span><div><b>Подтвердите код в своём боте</b><div class="muted small">Код <code>482913</code>. После подтверждения проверка закончится сама.</div></div></li>
-    </ul></div>`:''}`;
-  return `<div class="layout">${side}<div>${main}</div></div>`;
-}
-function apiDoc(){ return `
-  <div class="grid2">
-    <div><h3>1. Начать вход</h3><p class="muted small">V2pn просит код.</p><pre>POST {api}login/start
-→ { "code": "482913",
-    "url": "https://t.me/kestrel_bot?start=v2pn-482913",
-    "token": "…", "expires": 600 }</pre></div>
-    <div><h3>2. Проверить вход</h3><p class="muted small">V2pn спрашивает раз в 2 секунды, пока человек не подтвердит в боте.</p><pre>GET {api}login/poll?token=…
-→ { "status": "waiting" }
-→ { "status": "done", "subscription": "https://…" }</pre></div>
-  </div>`; }
-
-/* ---------------- admin ---------------- */
-function admin(){
-  const rows = [];
-  if (S.app === 'pending') rows.push(`<tr><td><b>${esc(S.name)}</b><div class="muted small">${esc(S.email||'you@kestrel.example')} · ${esc(S.contact)}</div></td>
-    <td>Хочет: <b>${tierName(+S.want)}</b><div class="muted small">${esc(S.domains)}</div></td>
-    <td><span class="pill ok">14 серверов</span> <span class="pill ok">заголовки</span> <span class="pill warn">нет кабинета</span></td>
-    <td><div class="row"><select id="givetier"><option value="1" ${S.want==='1'?'selected':''}>Ступень 1</option><option value="2" ${S.want==='2'?'selected':''}>Ступень 2</option></select><button class="btn sm" id="approve">Одобрить</button><button class="btn sm ghost" id="reject">Отклонить</button></div></td></tr>`);
-  const pubs = [];
-  if (S.pub === 'pending') pubs.push(`<tr><td><b>${esc(S.name)}</b><div class="muted small">новое оформление</div></td><td style="width:300px">${win({branded:true, scene:S.look.scene})}</td><td><span class="pill ok">контраст в норме</span></td><td><div class="row"><button class="btn sm" id="pubok">Опубликовать</button><button class="btn sm ghost" id="pubno">Вернуть</button></div></td></tr>`);
-  if (S.tier2ask && S.tier < 2) pubs.push(`<tr><td><b>${esc(S.name)}</b><div class="muted small">просит ступень 2</div></td><td colspan="2" class="muted small">Сейчас ступень 1</td><td><button class="btn sm" id="give2">Дать ступень 2</button></td></tr>`);
-  const live = S.app === 'approved' ? `<tr><td><b>${esc(S.name)}</b></td><td>Ступень ${S.tier}: ${tierName(S.tier)}</td><td>${S.pub==='live'?'<span class="pill ok">оформление опубликовано</span>':'<span class="pill">оформление не опубликовано</span>'}</td><td><button class="btn sm ghost" id="revoke">Отозвать</button></td></tr>` : '';
-  return nav('Вы · владелец') + `
-    <h1 style="font-size:34px">Провайдеры</h1>
-    <p class="muted">Здесь всё, что ждёт вашего решения. Подпись и публикация происходят сами после кнопки.</p>
-    <h3 style="margin-top:28px">Новые заявки</h3>
-    <div class="card" style="padding:6px 12px">${rows.length?`<table><tr><th>Провайдер</th><th>Запрос</th><th>Автопроверка</th><th>Решение</th></tr>${rows.join('')}</table>`:`<div class="empty">Новых заявок нет${S.app==='none'?'. Подайте заявку от имени провайдера, чтобы увидеть её здесь.':''}</div>`}</div>
-    <h3 style="margin-top:28px">Ждут публикации</h3>
-    <div class="card" style="padding:6px 12px">${pubs.length?`<table><tr><th>Провайдер</th><th>Как выглядит</th><th>Проверка</th><th>Решение</th></tr>${pubs.join('')}</table>`:'<div class="empty">Ничего не ждёт</div>'}</div>
-    <h3 style="margin-top:28px">Партнёры</h3>
-    <div class="card" style="padding:6px 12px"><table><tr><th>Провайдер</th><th>Ступень</th><th>Оформление</th><th></th></tr>
-      <tr><td><b>Configra</b></td><td>Ступень 2: Интеграция</td><td><span class="pill ok">оформление опубликовано</span></td><td><button class="btn sm ghost" disabled>Отозвать</button></td></tr>${live}</table></div>`;
-}
-
-/* ---------------- subscriber ---------------- */
-function sub(){
-  const ok = S.app === 'approved';
-  const c1 = S.look.c1;
-  const steps = [
-    `<div class="bubble">Ваша подписка Kestrel активна до 31.01.2027.</div><button class="tgbtn" id="tg">💻 Подключить в V2pn</button><button class="tgbtn" disabled>📱 Подключить в Happ</button>`,
+  const me = {
+    id: 'nordline', name: 'Nordline', sub: 'https://sub.nordline.net/s/demo', logo: null,
+    colors: ['#2f6bff', '#13c4b5'], bg: 'gradient', layout: 'v2pn', support: 't.me/nordline_support',
+    special: { routing: false, hide: false, buttons: false }, published: false, down: false,
+    approved: { routing: false, hide: false, buttons: false }, complaints: 0, age: 'только что', login: 'nordline'
+  };
+  const others = [
+    { id: 'configra', name: 'Configra', colors: ['#e8391b', '#ff9a3d'], layout: 'v2pn', domain: 'angleford.co', down: false, complaints: 0, age: '2 дня назад', login: 'configra', special: 'маршрутизация (подписано на ПК)' },
+    { id: 'damir-vanya', name: 'Дамир и Ваня', colors: ['#ffcc00', '#ff4f9a'], layout: 'stickers', domain: 'vansss.pics', down: false, complaints: 0, age: 'вчера', login: 'damir', special: '' },
+    { id: 'free-vpn-max', name: 'FREE VPN 100% БЕСПЛАТНО', colors: ['#00ff66', '#00aa44'], layout: 'v2pn', domain: 'free-vpn-max.top', down: false, complaints: 3, age: '1 час назад', login: 'xx_free', special: '' }
   ];
-  let right = '';
-  if (!ok) right = `<div class="banner warn">Провайдер ещё не одобрен. Без одобрения его ссылка работает в V2pn как обычная подписка: вставил ссылку — подключился, без вкладки.</div>`;
-  if (S.subStep === 0) right += `<h2>Человек в боте провайдера</h2><p class="muted">Жмёт «Подключить в V2pn».</p>
-    <label class="row small" style="margin-top:14px"><input type="checkbox" id="inst" ${S.installed?'checked':''}> У человека уже стоит V2pn</label>`;
-  if (S.subStep === 1) right += S.installed ? `
-    <h2>Открылась страница провайдера</h2>
-    <p class="muted">v2pn.angleford.co/p/${id()} — на долю секунды, браузер спрашивает «Открыть V2pn?».</p>
-    <button class="btn" id="open">Открыть V2pn</button>` : `
-    <div class="card" style="max-width:520px;${ok?`background:linear-gradient(135deg,${c1},${S.look.c2});color:#fff;border:0`:''}">
-      <h2>${esc(S.name)} на компьютере</h2>
-      <p style="opacity:.85">Поставьте V2pn — бесплатный клиент для Windows и macOS. Потом нажмите кнопку ещё раз.</p>
-      <div class="row"><button class="btn dark" id="dl">Скачать для Windows</button><span class="small" style="opacity:.8">macOS · ARM</span></div>
-    </div>`;
-  if (S.subStep === 2) right += `
-    <h2>Готово</h2>
-    <p class="muted">${ok?'V2pn добавил подписку и вкладку провайдера. Вкладка V2pn рядом — обычный V2pn, без чужого оформления.':'V2pn добавил подписку. Вкладки нет: провайдер не одобрен.'}</p>
-    ${win({branded:ok, scene:S.look.scene && S.pub==='live', tabs:ok})}
-    ${ok && S.pub!=='live'?'<p class="muted small" style="margin-top:10px">Цвета пока стандартные: провайдер ещё не опубликовал оформление.</p>':''}
-    <button class="btn ghost sm" id="again" style="margin-top:16px">Ещё раз</button>`;
-  return `<div style="height:40px"></div><div class="flow"><div class="phone"><div class="ph-top"></div><div class="bot">${steps[0]}</div></div><div>${right}</div></div>`;
-}
+  let mods = [{ login: 'owner', who: 'владелец' }, { login: 'damir', who: 'модератор' }];
+  let theme = 'light';
 
-/* ---------------- render ---------------- */
-function render(){
-  document.querySelectorAll('[data-role]').forEach(b => b.setAttribute('aria-pressed', b.dataset.role === S.role));
-  const H = {provider:'Подайте заявку, как это сделает провайдер', admin:'Решения, которые ждут вас', sub:'Что видит человек из бота провайдера'};
-  document.getElementById('hint').textContent = H[S.role];
-  const app = document.getElementById('app');
-  app.innerHTML = `<div class="site">${S.role==='provider'?provider():S.role==='admin'?admin():sub()}</div>`;
-  bind();
-}
-function val(id){ const e = document.getElementById(id); return e ? e.value : ''; }
-function bind(){
-  const on = (id, f) => { const e = document.getElementById(id); if (e) e.addEventListener('click', f); };
-  document.querySelectorAll('[data-go]').forEach(b => b.onclick = () => set({page: b.dataset.go}));
-  document.querySelectorAll('[data-cab]').forEach(b => b.onclick = () => set({cab: b.dataset.cab}));
-  document.querySelectorAll('[data-role-go]').forEach(b => b.onclick = e => { e.preventDefault(); set({role: b.dataset.roleGo, subStep: 0}); });
-  document.querySelectorAll('[data-copy]').forEach(b => b.onclick = () => { try { navigator.clipboard.writeText(b.dataset.copy); } catch {} toast('Скопировано'); });
-  on('sendcode', () => set({email: val('email') || 'you@kestrel.example', page: 'code'}));
-  on('runcheck', () => { const w = document.querySelector('input[name=want]:checked'); set({name: val('f-name') || 'Kestrel', domains: val('f-dom'), sub: val('f-sub'), contact: val('f-contact'), want: w ? w.value : '1', page: 'check'}); });
-  on('submit', () => { set({app: 'pending', page: 'waiting'}); toast('Заявка отправлена'); });
-  on('approve', () => { set({app: 'approved', tier: +val('givetier'), page: 'cabinet', cab: 'overview'}); toast('Одобрено. Провайдеру ушло письмо'); });
-  on('reject', () => { set({app: 'rejected', page: 'waiting'}); toast('Отклонено с причиной'); });
-  on('publish', () => { set({pub: 'pending'}); toast('Отправлено владельцу V2pn'); });
-  on('pubok', () => { set({pub: 'live'}); toast('Подписано и опубликовано'); });
-  on('pubno', () => { set({pub: 'none'}); toast('Возвращено провайдеру'); });
-  on('give2', () => { set({tier: 2}); toast('Ступень 2 выдана'); });
-  on('revoke', () => { set({app: 'none', tier: 0, pub: 'none', page: 'landing'}); toast('Отозвано: вкладка пропадёт у людей при следующем обновлении'); });
-  on('ask2', () => { set({tier2ask: true}); toast('Запрос отправлен'); });
-  on('apicheck', () => set({api: val('api'), apiChecked: true}));
-  on('logo', () => toast('В прототипе логотип — первая буква названия'));
-  on('tg', () => set({subStep: 1}));
-  on('open', () => set({subStep: 2}));
-  on('dl', () => { set({installed: true, subStep: 0}); toast('V2pn установлен. Теперь кнопка ещё раз'); });
-  on('again', () => set({subStep: 0}));
-  const inst = document.getElementById('inst'); if (inst) inst.onchange = () => set({installed: inst.checked});
-  const c1 = document.getElementById('c1'), c2 = document.getElementById('c2');
-  if (c1) c1.onchange = () => set({look: {...S.look, c1: c1.value}});
-  if (c2) c2.onchange = () => set({look: {...S.look, c2: c2.value}});
-  document.querySelectorAll('input[name=scene]').forEach(r => r.onchange = () => set({look: {...S.look, scene: r.value === '1'}}));
-}
-document.querySelectorAll('[data-role]').forEach(b => b.onclick = () => set({role: b.dataset.role, subStep: 0}));
-document.getElementById('reset').onclick = () => { S = S0(); save(); render(); };
-render();
+  const lum = hex => { const n = parseInt(hex.slice(1), 16); const c = [n >> 16, (n >> 8) & 255, n & 255].map(v => { v /= 255; return v <= .03928 ? v / 12.92 : ((v + .055) / 1.055) ** 2.4; }); return .2126 * c[0] + .7152 * c[1] + .0722 * c[2]; };
+  const contrast = (a, b) => { const x = lum(a), y = lum(b); return (Math.max(x, y) + .05) / (Math.min(x, y) + .05); };
+  const onColor = hex => contrast(hex, '#ffffff') >= contrast(hex, '#111111') ? '#ffffff' : '#111111';
+  const domainOf = u => { try { return new URL(u).hostname; } catch { return ''; } };
+  const grad = cs => cs.length > 1 ? `linear-gradient(135deg, ${cs[0]}, ${cs[1]}${cs[2] ? ', ' + cs[2] : ''})` : cs[0];
+  const markHTML = (p, cls = 'tm') => p.logo ? `<span class="${cls}"><img src="${p.logo}" alt=""></span>`
+    : `<span class="${cls}" style="background:${p.colors[0]};color:${onColor(p.colors[0])}">${esc((p.name || '?').trim()[0] || '?')}</span>`;
+
+  function toast(t) { const el = $('#toast'); el.textContent = t; el.hidden = false; clearTimeout(toast.t); toast.t = setTimeout(() => el.hidden = true, 2400); }
+
+  /* ---------- the V2pn window ---------- */
+  function windowHTML(p, { tab = 'partner', showTab = true, connected = false, fresh = false, dark = false } = {}) {
+    const vars = dark ? '--win:#0d0d10;--win-side:#1c1c23;--win-content:#121216;--win-card:#1e1e25;--ink:#ececf1;--soft:#c9c9d3;--muted:#9b9ba8;--line:#2a2a33;--sunk:#16161b;--ok:#3dd68c;--ok-soft:rgba(61,214,140,.14);--bad:#ff5a3d;--bad-soft:rgba(255,90,61,.14);color:#ececf1'
+      : '--win:#e3e4e9;--win-side:#fff;--win-content:#eceef3;--win-card:#fff;--ink:#16161b;--soft:#34343f;--muted:#5e5e6b;--line:rgba(22,22,27,.1);--sunk:#f4f5f8;--ok:#046b39;--ok-soft:rgba(4,107,57,.12);--bad:#ae250d;--bad-soft:rgba(174,37,13,.1);color:#16161b';
+    const inPartner = showTab && tab === 'partner';
+    const brand = p.colors[0];
+    const tabs = `<div class="bar"><div class="tab ${inPartner ? '' : 'on'}"><span class="tm" style="background:#e8391b;color:#111">V</span>V2pn</div>
+      ${showTab ? `<div class="tab ${inPartner ? 'on' : ''} ${fresh ? 'new' : ''}">${markHTML(p)}${esc(p.name || 'Без названия')}</div>` : ''}
+      <div class="lights"><span>—</span><span>▢</span><span>✕</span></div></div>`;
+    const servers = inPartner
+      ? ['Германия · Франкфурт', 'Нидерланды', 'Финляндия', 'Казахстан'].map((s, i) => `<div class="srv ${i === 0 ? 'sel' : ''}"><span>${s}</span><span>${[38, 44, 51, 70][i]} мс</span></div>`).join('')
+      : ['Мой сервер DE-1', 'Работа · NL'].map((s, i) => `<div class="srv ${i === 0 ? 'sel' : ''}"><span>${s}</span><span>${[41, 58][i]} мс</span></div>`).join('');
+    const subcard = inPartner ? `<div class="subcard" style="background:${grad(p.colors)};color:${onColor(brand)}">
+        <div class="t">${markHTML(p)}${esc(p.name || '')}</div><small>Тариф «Год» · 214 дней</small><div class="bar2"><i></i></div><small>38 из 100 ГБ</small></div>` : '';
+    const btnStyle = inPartner ? `background:${brand};color:${onColor(brand)}` : 'background:#e8391b;color:#111';
+    const scene = inPartner && p.bg === 'gradient' ? `<div class="scene" style="background:${grad(p.colors)};${dark ? 'filter:brightness(.72)' : ''}"></div>` : '<div class="map"></div>';
+    const acts = inPartner && p.special && p.special.buttons && (p.approved ? p.approved.buttons : true) ? '<div class="acts"><span>Продлить</span><span>Устройства</span></div>' : '';
+    let center;
+    if (inPartner && p.layout === 'stickers') {
+      center = `<div class="stk"><div class="cap">${esc(p.name || '')}</div><div class="sticker"><span class="bubble">погнали!</span>
+        <span class="state ${connected ? 'on' : ''}">${connected ? 'Защищено' : 'Не защищено'}</span>
+        <button class="connect" type="button" style="${btnStyle}">${connected ? 'Отключиться' : 'Подключиться'}</button>
+        <span class="where" style="color:#555">Германия · Франкфурт</span></div>${acts}</div>`;
+    } else {
+      center = `<div class="gl"><span class="state ${connected ? 'on' : ''}">${connected ? 'Защищено' : 'Не защищено'}</span>
+        <button class="connect" type="button" style="${btnStyle}">${connected ? 'Отключиться' : 'Подключиться'}</button>
+        <span class="where">${inPartner ? 'Германия · Франкфурт · 38 мс' : 'Мой сервер DE-1 · 41 мс'}</span>${acts}</div>`;
+    }
+    return `<div class="win" style="${vars}">${tabs}<div class="body"><div class="side">${subcard}${servers}</div>
+      <div class="main">${scene}${center}</div></div></div>`;
+  }
+
+  /* ---------- provider ---------- */
+  function renderSwatches() {
+    const box = $('#swatches');
+    box.innerHTML = me.colors.map((c, i) => `<span class="swatch" style="background:${c}"><input type="color" value="${c}" data-i="${i}" aria-label="Цвет ${i + 1}"></span>`).join('')
+      + (me.colors.length < 3 ? '<button type="button" class="chipbtn" id="add-color">+ цвет</button>' : '')
+      + (me.colors.length > 1 ? '<button type="button" class="chipbtn" id="rm-color">− цвет</button>' : '');
+    const c = contrast(me.colors[0], onColor(me.colors[0]));
+    $('#contrast-hint').textContent = `Надпись на кнопке будет ${onColor(me.colors[0]) === '#ffffff' ? 'белой' : 'чёрной'}: контраст ${c.toFixed(1)}:1. V2pn подбирает её сам.`;
+  }
+  function renderProvider() {
+    const d = domainOf(me.sub);
+    const f = $('#sub-found');
+    f.className = 'found' + (d ? '' : ' no');
+    f.lastElementChild.textContent = d ? `Домен ${d} найден, 4 сервера отвечают. Ничего больше указывать не нужно.` : 'Вставьте ссылку, и сервер сам найдёт домен и проверит серверы.';
+    $('#logo-prev').outerHTML = me.logo ? `<div class="mark" id="logo-prev"><img src="${me.logo}" alt=""></div>`
+      : `<div class="mark" id="logo-prev" style="background:${me.colors[0]};color:${onColor(me.colors[0])}">${esc((me.name || '?')[0])}</div>`;
+    $('#logo-clear').hidden = !me.logo;
+    $$('#f-partner .seg[data-key]').forEach(s => $$('button', s).forEach(b => b.setAttribute('aria-pressed', String(me[s.dataset.key] === b.dataset.v))));
+    $$('.seg[data-key="theme"] button').forEach(b => b.setAttribute('aria-pressed', String(theme === b.dataset.v)));
+    $('#x-rules').hidden = !me.special.routing;
+    $('#prov-win').innerHTML = windowHTML(me, { dark: theme === 'dark' });
+    const st = $('#pub-state');
+    if (me.down) { st.className = 'pill bad'; st.textContent = 'Снят модератором'; }
+    else if (me.published) { st.className = 'pill ok'; st.textContent = 'Опубликован'; }
+    else { st.className = 'pill plain'; st.textContent = 'Черновик'; }
+    $('#b-publish').textContent = me.published ? 'Сохранить' : 'Опубликовать';
+    $('#pub-hint').textContent = me.published ? 'Изменения сразу уйдут пользователям.' : 'Ссылка заработает сразу.';
+    $('#published').hidden = !me.published;
+    $('#share-link').textContent = `https://v2pn.angleford.co/p/${me.id}`;
+    const pend = pendingList();
+    $('#pending-note').hidden = !pend.length;
+    $('#pending-what').textContent = pend.length ? `${pend.join(', ')}. Пока модератор не ответит, всё остальное уже работает.` : '';
+  }
+  const SPECIAL = { routing: 'свои правила маршрутизации', hide: 'скрытые адреса серверов', buttons: 'кнопки «Продлить» и «Устройства»' };
+  const pendingList = () => me.published ? Object.keys(SPECIAL).filter(k => me.special[k] && !me.approved[k]).map(k => SPECIAL[k]) : [];
+
+  $('#f-signin').addEventListener('submit', e => {
+    e.preventDefault();
+    const l = $('#in-login').value.trim(), p = $('#in-pass').value;
+    if (!l || p.length < 6) { toast('Нужен логин и пароль от 6 символов'); return; }
+    me.login = l; $('#p-signin').hidden = true; $('#p-editor').hidden = false; renderSwatches(); renderProvider();
+  });
+  $('#b-signout').addEventListener('click', () => { $('#p-signin').hidden = false; $('#p-editor').hidden = true; });
+  $('#in-name').addEventListener('input', e => { me.name = e.target.value; me.id = slug(me.name) || 'partner'; renderProvider(); });
+  $('#in-sub').addEventListener('input', e => { me.sub = e.target.value; renderProvider(); });
+  $('#in-support').addEventListener('input', e => { me.support = e.target.value; });
+  const slug = s => s.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '').slice(0, 32);
+  $('#swatches').addEventListener('input', e => { if (e.target.dataset.i != null) { me.colors[+e.target.dataset.i] = e.target.value; e.target.parentElement.style.background = e.target.value; renderProvider(); const c = contrast(me.colors[0], onColor(me.colors[0])); $('#contrast-hint').textContent = `Надпись на кнопке будет ${onColor(me.colors[0]) === '#ffffff' ? 'белой' : 'чёрной'}: контраст ${c.toFixed(1)}:1. V2pn подбирает её сам.`; } });
+  $('#swatches').addEventListener('click', e => {
+    if (e.target.id === 'add-color') me.colors.push(['#ff8a3d', '#9b5cff'][me.colors.length - 1] || '#888888');
+    else if (e.target.id === 'rm-color') me.colors.pop(); else return;
+    renderSwatches(); renderProvider();
+  });
+  $('#in-logo').addEventListener('change', e => {
+    const f = e.target.files[0]; if (!f) return;
+    if (f.size > 1024 * 1024) { toast('Картинка больше 1 МБ. Уменьшите её'); return; }
+    const r = new FileReader(); r.onload = () => { me.logo = r.result; renderProvider(); }; r.readAsDataURL(f);
+  });
+  $('#logo-clear').addEventListener('click', () => { me.logo = null; $('#in-logo').value = ''; renderProvider(); });
+  document.addEventListener('click', e => {
+    const b = e.target.closest('.seg[data-key] button'); if (!b) return;
+    const k = b.parentElement.dataset.key;
+    if (k === 'theme') theme = b.dataset.v; else me[k] = b.dataset.v;
+    renderProvider();
+  });
+  ['routing', 'hide', 'buttons'].forEach(k => $('#x-' + k).addEventListener('change', e => { me.special[k] = e.target.checked; if (!e.target.checked) me.approved[k] = false; renderProvider(); }));
+  $('#f-partner').addEventListener('submit', e => {
+    e.preventDefault();
+    if (!me.name.trim()) { toast('Укажите название'); return; }
+    if (!domainOf(me.sub)) { toast('Нужна ссылка на подписку'); return; }
+    const first = !me.published; me.published = true; me.age = 'только что';
+    renderProvider(); renderMod(); resetUser();
+    toast(first ? 'Опубликовано. Ссылка уже работает' : 'Сохранено и опубликовано');
+  });
+  document.addEventListener('click', async e => {
+    const b = e.target.closest('[data-copy]'); if (!b) return;
+    const t = $('#' + b.dataset.copy).textContent;
+    try { await navigator.clipboard.writeText(t); toast('Скопировано'); }
+    catch { const r = document.createRange(); r.selectNodeContents($('#' + b.dataset.copy)); getSelection().removeAllRanges(); getSelection().addRange(r); toast('Выделено: нажмите Ctrl+C'); }
+  });
+
+  /* ---------- user ---------- */
+  let uStage = 0;
+  function resetUser() { uStage = 0; renderUser(); }
+  function renderUser() {
+    const live = me.published && !me.down;
+    $('#tg').innerHTML = `<div><b>${esc(me.name || 'Провайдер')}</b> · бот</div>
+      <div>Ваша подписка активна до 21 июня. Подключите компьютер:</div>
+      <div class="tgbtn" role="button" tabindex="0" id="tg-go">💻 Подключить V2pn на компьютере</div>`;
+    $('#browser').hidden = uStage < 1;
+    $('#b-url').textContent = `v2pn.angleford.co/p/${me.id}#sub=…`;
+    if (uStage >= 1) {
+      $('#ppage').innerHTML = live
+        ? `<div class="ppage" style="background:${grad(me.colors)};color:${onColor(me.colors[0])}">
+            <div class="big">${me.logo ? `<img src="${me.logo}" alt="">` : esc((me.name || '?')[0])}</div>
+            <h2>${esc(me.name)} в V2pn</h2><p class="small">Ваша подписка добавится сама, вместе с оформлением ${esc(me.name)}.</p>
+            <button class="go" type="button" id="u-open">${uStage >= 2 ? 'Открыто в V2pn ✓' : 'Подключить в V2pn'}</button>
+            <p class="small">Нет V2pn? <a href="#" onclick="return false">Скачать для Windows</a> · <a href="#" onclick="return false">macOS</a> · <a href="#" onclick="return false">Пожаловаться</a></p></div>`
+        : `<div class="ppage down"><h2>${me.published ? 'Этот партнёр снят модератором' : 'Такого партнёра пока нет'}</h2>
+            <p class="muted">${me.published ? 'Ничего не будет добавлено. Обратитесь к провайдеру.' : 'Провайдер ещё не опубликовал его. Вернитесь в роль «Провайдер» и нажмите «Опубликовать».'}</p></div>`;
+    }
+    const steps = ['Подписка добавлена', 'Пакет оформления скачан, подпись V2pn верна', 'Логотип, цвета, фон, раскладка', `Вкладка «${me.name}» открыта`];
+    $('#u-steps').hidden = uStage < 2;
+    $('#u-steps').innerHTML = steps.map((s, i) => `<div class="${uStage >= 2 && i < (uStage - 1) ? 'done' : ''}"><span class="s">${uStage >= 2 && i < (uStage - 1) ? '✓' : ''}</span>${esc(s)}</div>`).join('');
+    const showTab = uStage >= 5;
+    $('#user-win').innerHTML = windowHTML({ ...me, approved: me.approved }, { showTab, tab: showTab ? 'partner' : 'v2pn', fresh: uStage === 5 });
+  }
+  document.addEventListener('click', e => {
+    if (e.target.closest('#tg-go')) { if (uStage < 1) { uStage = 1; renderUser(); } }
+    if (e.target.closest('#u-open') && uStage === 1) {
+      uStage = 2; renderUser();
+      const tick = () => { if (uStage < 5) { uStage++; renderUser(); if (uStage < 5) setTimeout(tick, 450); } };
+      setTimeout(tick, 450);
+    }
+  });
+  $('#u-reset').addEventListener('click', resetUser);
+
+  /* ---------- moderator ---------- */
+  function renderMod() {
+    const all = (me.published ? [{ ...me, domain: domainOf(me.sub), mine: true }] : []).concat(others);
+    $('#m-count').textContent = `${all.filter(p => !p.down).length} работают · ${all.filter(p => p.down).length} сняты`;
+    $('#m-list').innerHTML = all.map(p => `<div class="item ${p.down ? 'off' : ''}">
+        <div class="thumb" style="background:${grad(p.colors)}">${p.logo ? `<img src="${p.logo}" alt="">` : esc(p.name[0])}</div>
+        <div class="meta"><div class="nm">${esc(p.name)}
+          ${p.down ? '<span class="pill bad">снят</span>' : p.age === 'только что' || p.age.includes('час') ? '<span class="pill ok">новый</span>' : ''}
+          ${p.complaints ? `<span class="pill warn">${p.complaints} жалобы</span>` : ''}
+          ${p.layout === 'stickers' ? '<span class="pill plain">наклейки</span>' : ''}</div>
+          <div class="sub">${esc(p.domain)} · логин ${esc(p.login)} · ${esc(p.age)}${typeof p.special === 'string' && p.special ? ' · ' + esc(p.special) : ''}</div></div>
+        <div class="act">${p.down ? `<button class="btn small ghost" data-restore="${esc(p.id)}">Вернуть</button>` : `<button class="btn small danger" data-down="${esc(p.id)}">Снять</button>`}
+          <button class="btn small ghost" data-reset="${esc(p.login)}">Сбросить пароль</button></div></div>`).join('');
+    const reqs = me.published ? Object.keys(SPECIAL).filter(k => me.special[k] && !me.approved[k]) : [];
+    $('#m-reqs').innerHTML = reqs.length ? `<div class="req">
+        <div class="row" style="justify-content:space-between"><b>${esc(me.name)}</b><span class="pill warn">ждёт</span></div>
+        <div>${reqs.map(k => '· ' + SPECIAL[k]).join('<br>')}</div>
+        ${me.special.routing && !me.approved.routing ? `<pre>${esc($('#x-rules').value)}</pre>` : ''}
+        <div class="row"><button class="btn small accent" id="m-approve">Одобрить</button><button class="btn small ghost" id="m-deny">Отказать</button></div>
+        <p class="hint">Одобрение подписывает сервер. Партнёр остаётся опубликованным в любом случае.</p></div>`
+      : `<div class="empty">Пусто. Новые партнёры не ждут одобрения: они работают сразу. Сюда попадают только особые права.${me.published ? '' : ' Попробуйте в роли провайдера отметить «Особые права» и опубликовать.'}</div>`;
+    $('#m-mods').innerHTML = mods.map(m => `<div class="item" style="grid-template-columns:minmax(0,1fr) auto"><div class="meta"><div class="nm">${esc(m.login)}</div><div class="sub">${esc(m.who)}</div></div>
+      <div class="act">${m.who === 'владелец' ? '' : `<button class="btn small ghost" data-unmod="${esc(m.login)}">Убрать</button>`}</div></div>`).join('');
+  }
+  const find = id => id === me.id ? me : others.find(p => p.id === id);
+  document.addEventListener('click', e => {
+    const t = e.target;
+    if (t.dataset.down) { find(t.dataset.down).down = true; toast('Снят. У пользователей вкладка пропадёт при следующей проверке'); }
+    else if (t.dataset.restore) { find(t.dataset.restore).down = false; toast('Возвращён'); }
+    else if (t.dataset.reset) { toast(`Новый пароль для ${t.dataset.reset}: k7m-42q-ux9 (показан один раз)`); return; }
+    else if (t.dataset.unmod) { mods = mods.filter(m => m.login !== t.dataset.unmod); }
+    else if (t.id === 'm-approve') { Object.keys(SPECIAL).forEach(k => { if (me.special[k]) me.approved[k] = true; }); toast('Одобрено и подписано сервером'); }
+    else if (t.id === 'm-deny') { Object.keys(SPECIAL).forEach(k => { if (!me.approved[k]) { me.special[k] = false; $('#x-' + k).checked = false; } }); toast('Отказано. Провайдер увидит причину'); }
+    else return;
+    renderMod(); renderProvider(); renderUser();
+  });
+  $('#f-mod').addEventListener('submit', e => { e.preventDefault(); const l = $('#in-mod').value.trim(); if (!l) return; mods.push({ login: l, who: 'модератор' }); $('#in-mod').value = ''; renderMod(); toast(`${l} теперь модератор`); });
+
+  /* ---------- roles ---------- */
+  function go(role) {
+    $$('.roles button').forEach(b => b.setAttribute('aria-selected', String(b.dataset.role === role)));
+    ['provider', 'user', 'mod'].forEach(r => $('#v-' + r).hidden = r !== role);
+    if (role === 'user') renderUser(); if (role === 'mod') renderMod();
+    try { history.replaceState(null, '', '#' + role); } catch {}
+  }
+  $$('.roles button').forEach(b => b.addEventListener('click', () => go(b.dataset.role)));
+  document.addEventListener('click', e => { const g = e.target.closest('[data-goto]'); if (g) go(g.dataset.goto); });
+  renderSwatches(); renderProvider(); renderUser(); renderMod();
+  const h = location.hash.slice(1); if (['provider', 'user', 'mod'].includes(h)) go(h);
+})();
 </script>
-</body>
-</html>

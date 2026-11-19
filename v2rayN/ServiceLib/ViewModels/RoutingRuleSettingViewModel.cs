@@ -242,6 +242,124 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
         }
     }
 
+    #region V2pn: editing in place
+
+    // The rule-sets window shows one set beside the list and edits it in place: there is no Save
+    // button, every change below is written at once. The dialog flow above stays for v2rayN's WPF views.
+
+    /// <summary>Raised after a change was written, so the list of sets can show the new name and count.</summary>
+    public event EventHandler? Saved;
+
+    /// <summary>Imports save at once too (they wait for the Save button otherwise).</summary>
+    public bool SaveOnChange { get; set; }
+
+    public IReadOnlyList<RulesItem> Rules => _rules;
+
+    /// <summary>An editor for a copy of the rule, or for a new one when <paramref name="id"/> is empty; Cancel leaves the set as it was.</summary>
+    public RoutingRuleDetailsViewModel BeginRuleEdit(string? id)
+    {
+        var source = id.IsNullOrEmpty() ? null : _rules.FirstOrDefault(t => t.Id == id);
+        var copy = source is null ? new RulesItem() : JsonUtils.DeepCopy(source) ?? new RulesItem();
+        return new RoutingRuleDetailsViewModel(copy);
+    }
+
+    /// <summary>Puts an edited rule back in its place; a new one goes on top, where it wins over the rest.</summary>
+    public async Task<bool> CommitRuleEditAsync(RulesItem item)
+    {
+        var index = _rules.FindIndex(t => t.Id == item.Id);
+        if (index >= 0)
+        {
+            _rules[index] = item;
+        }
+        else
+        {
+            _rules.Insert(0, item);
+        }
+        return await SaveInPlaceAsync();
+    }
+
+    public async Task<bool> RemoveRuleAsync(string id)
+    {
+        _rules.RemoveAll(t => t.Id == id);
+        return await SaveInPlaceAsync();
+    }
+
+    public async Task<bool> MoveRuleAsync(string id, EMove eMove)
+    {
+        var index = _rules.FindIndex(t => t.Id == id);
+        if (index < 0 || await ConfigHandler.MoveRoutingRule(_rules, index, eMove) != 0)
+        {
+            return false;
+        }
+        return await SaveInPlaceAsync();
+    }
+
+    public async Task<bool> SetRuleEnabledAsync(string id, bool enabled)
+    {
+        var rule = _rules.FirstOrDefault(t => t.Id == id);
+        if (rule is null || rule.Enabled == enabled)
+        {
+            return false;
+        }
+        rule.Enabled = enabled;
+        return await SaveInPlaceAsync();
+    }
+
+    /// <summary>The rules as JSON for the clipboard, in the format the import reads back.</summary>
+    public string ExportRules(string? id = null)
+    {
+        var list = _rules.Where(t => id.IsNullOrEmpty() || t.Id == id)
+            .Select(t =>
+            {
+                var copy = JsonUtils.DeepCopy(t) ?? new RulesItem();
+                copy.Id = null;
+                return copy;
+            })
+            .ToList();
+        return JsonUtils.SerializeCamelCase(list);
+    }
+
+    public async Task<bool> SaveInPlaceAsync()
+    {
+        if (SelectedRouting.Remarks.IsNullOrEmpty())
+        {
+            NoticeManager.Instance.Enqueue(ResUI.PleaseFillRemarks);
+            return false;
+        }
+        // Ids stay as they are, so the rule the user is looking at stays selected; only missing or
+        // repeated ones (imports, copies) get new ones.
+        var seen = new HashSet<string>();
+        foreach (var it in _rules)
+        {
+            if (it.Id.IsNullOrEmpty() || !seen.Add(it.Id))
+            {
+                it.Id = Utils.GetGuid(false);
+                seen.Add(it.Id);
+            }
+        }
+        SelectedRouting.RuleNum = _rules.Count;
+        SelectedRouting.RuleSet = JsonUtils.Serialize(_rules, false);
+
+        var ok = await ConfigHandler.SaveRoutingItem(_config, SelectedRouting) == 0;
+        if (!ok)
+        {
+            NoticeManager.Instance.Enqueue(ResUI.OperationFailed);
+        }
+        RefreshRulesItems();
+        Saved?.Invoke(this, EventArgs.Empty);
+        return ok;
+    }
+
+    private async Task AfterImportAsync()
+    {
+        if (SaveOnChange)
+        {
+            await SaveInPlaceAsync();
+        }
+    }
+
+    #endregion V2pn: editing in place
+
     #region Import rules
 
     public async Task ImportRulesFromFileAsync(string fileName)
@@ -260,6 +378,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
         if (ret == 0)
         {
             RefreshRulesItems();
+            await AfterImportAsync();
             NoticeManager.Instance.Enqueue(ResUI.OperationSuccess);
         }
     }
@@ -281,6 +400,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
         if (ret == 0)
         {
             RefreshRulesItems();
+            await AfterImportAsync();
             NoticeManager.Instance.Enqueue(ResUI.OperationSuccess);
         }
     }
@@ -300,6 +420,7 @@ public partial class RoutingRuleSettingViewModel : MyReactiveObject, ICloseable
         if (ret == 0)
         {
             RefreshRulesItems();
+            await AfterImportAsync();
             NoticeManager.Instance.Enqueue(ResUI.OperationSuccess);
         }
     }

@@ -179,6 +179,67 @@ public partial class RoutingSettingViewModel : MyReactiveObject
         }
     }
 
+    #region V2pn: the list beside the set
+
+    // The rule-sets window edits a set beside the list, so these take the set by id and ask nothing:
+    // the window asks its own questions, in words that name the set.
+
+    public async Task<string?> CreateRoutingAsync(string remarks)
+    {
+        var item = new RoutingItem { Remarks = remarks, RuleSet = "[]", RuleNum = 0 };
+        if (await ConfigHandler.SaveRoutingItem(_config, item) != 0)
+        {
+            return null;
+        }
+        await RefreshRoutingItems();
+        IsModified = true;
+        return item.Id;
+    }
+
+    public async Task<string?> DuplicateRoutingAsync(string id, string remarks)
+    {
+        var source = await AppManager.Instance.GetRoutingItem(id);
+        var copy = source is null ? null : JsonUtils.DeepCopy(source);
+        if (copy is null)
+        {
+            return null;
+        }
+        copy.Id = string.Empty;
+        copy.IsActive = false;
+        copy.Remarks = remarks;
+        if (await ConfigHandler.SaveRoutingItem(_config, copy) != 0)
+        {
+            return null;
+        }
+        await RefreshRoutingItems();
+        IsModified = true;
+        return copy.Id;
+    }
+
+    public async Task RemoveRoutingAsync(string id)
+    {
+        var item = await AppManager.Instance.GetRoutingItem(id);
+        if (item is null || item.IsActive)
+        {
+            return;
+        }
+        await ConfigHandler.RemoveRoutingItem(item);
+        await RefreshRoutingItems();
+        IsModified = true;
+    }
+
+    public async Task UseRoutingAsync(string id)
+    {
+        var item = await AppManager.Instance.GetRoutingItem(id);
+        if (item != null && await ConfigHandler.SetDefaultRouting(_config, item) == 0)
+        {
+            await RefreshRoutingItems();
+            IsModified = true;
+        }
+    }
+
+    #endregion V2pn: the list beside the set
+
     private async Task RoutingAdvancedImportRules()
     {
         if (await ConfigHandler.InitRouting(_config, true) == 0)

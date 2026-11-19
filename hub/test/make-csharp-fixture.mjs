@@ -23,8 +23,7 @@ try {
   const { hub, config } = env;
   hub.importPartner(configra);
 
-  // Kestrel: a provider that went the whole way on the hub, every special right but routing approved (V2pn takes
-  // routing from a hub-signed index only after the client stage; until then it would be a problem of the index).
+  // Kestrel: a provider that went the whole way on the hub, every special right approved, routing included.
   const { account } = hub.auth.register('kestrel', 'fixture-password', '127.0.0.1');
   const pics = {
     logo: hub.upload(account.id, 'logo', makePng(340, 96, [255, 255, 255])).sha256,
@@ -38,6 +37,7 @@ try {
     rights: {
       account: { api: 'https://kestrel.example/v2pn/api/', login: true },
       lock: true,
+      routing: 'domain:ru, geoip:ru → direct\ndomain:youtube.com → proxy\ndefault → direct',
       actions: [
         { label: 'Самый быстрый', icon: 'bolt', do: 'connect.best', strategy: 'stable' },
         { label: 'Для YouTube', icon: 'play', do: 'connect.recommend', purpose: 'youtube' },

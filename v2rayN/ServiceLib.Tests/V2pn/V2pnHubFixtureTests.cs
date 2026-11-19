@@ -67,7 +67,11 @@ public class V2pnHubFixtureTests
         var fitted = V2pnPartnerSlots.Fit(pack, files.GetValueOrDefault, out _);
 
         await listing.Name.Should().BeEqualTo("Кестрел");
-        await string.Join(",", listing.Grants).Should().BeEqualTo("edition,account,actions,lock");
+        await string.Join(",", listing.Grants).Should().BeEqualTo("edition,account,actions,lock,routing");
+        // The routing a hub moderator approved is taken from the hub's signature and reads as V2pn's preset.
+        var features = V2pnPartnerFeatures.Read(listing, pack, files.GetValueOrDefault);
+        await features.File("routing.json")!.State.Should().BeEqualTo(V2pnReviewState.Ready);
+        await (features.Routing != null).Should().BeTrue();
         await fitted.Theme!.Background.Kind.Should().BeEqualTo(V2pnThemeBackgroundKinds.Image);
         await fitted.Theme.Background.Art.Should().BeEqualTo("background.png");
         await string.Join(",", fitted.Theme.Brand).Should().BeEqualTo("#2F7BFF,#7C4DFF,#FFD600");

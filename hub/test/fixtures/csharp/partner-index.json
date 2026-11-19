@@ -1,6 +1,6 @@
 {
   "schema": 1,
-  "published": "2026-11-19T15:47:46Z",
+  "published": "2026-11-19T16:19:49Z",
   "partners": [
     {
       "id": "configra",
@@ -30,13 +30,17 @@
         "edition",
         "account",
         "actions",
-        "lock"
+        "lock",
+        "routing"
       ],
+      "reviewed": {
+        "routing.json": "414cf548e9f8e17557843197080ef3a70870cfaf508c6b2c808b11ebad3cbc00"
+      },
       "until": "2027-11-19",
       "pack": {
         "file": "partner-kestrel.zip",
-        "size": 1853,
-        "sha256": "3f7f45cca1950d93f2f40288df45b0b0d2fdf4ac03131c6e3a68c459fb801aaa"
+        "size": 2138,
+        "sha256": "c4c86688ddd0ac44ba74ceefb08f0929b345bab63a70eef004fb8f788a1c9249"
       }
     }
   ]

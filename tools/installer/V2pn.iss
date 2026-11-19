@@ -1,7 +1,13 @@
-; The Windows installer, V2pn-windows-<arch>-setup.exe. tools/release.ps1 compiles it with Inno Setup 6
-; from the folder it packs into V2pn-windows-<arch>.zip, so both carry the same files:
+; The engine of the Windows installer. People do not see it: V2pn-windows-<arch>-setup.exe is V2pn's own
+; window (v2rayN/V2pnSetup) with this compiled script appended; the window runs it with /VERYSILENT and
+; it posts its progress back (/V2PNHWND=<window>, see Notify). tools/release.ps1 compiles it from the
+; folder it packs into V2pn-windows-<arch>.zip, so both carry the same files:
 ;
-;   ISCC.exe /DAppVersion=1.3.0 /DArch=x64 /DSourceDir=<folder with V2pn.exe> /DOutputDir=<dir> tools\installer\V2pn.iss
+;   ISCC.exe /DAppVersion=1.3.0 /DArch=x64 /DSourceDir=<folder with V2pn.exe> /DUninstaller=<V2pnSetup.exe> /DOutputDir=<dir> tools\installer\V2pn.iss
+;
+; The window goes next to V2pn as uninstall.exe, and "Installed apps" starts it instead of Inno's own
+; unins000.exe, which it then runs silently (/REMOVEDATA=1 removes servers and settings too). Started by
+; hand, the engine still works as an ordinary Inno Setup installer.
 ;
 ; It installs for the current Windows user, without administrator rights, into the folder install.ps1
 ; uses (%LOCALAPPDATA%\Programs\V2pn), so it also updates a copy installed by that script. V2pn keeps
@@ -102,6 +108,9 @@ Name: "importv2rayn"; Description: "{cm:ImportV2rayN}"; GroupDescription: "{cm:V
 [Files]
 Source: "{#SourceDir}\*"; Excludes: "\bin\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 Source: "{#SourceDir}\bin\*"; DestDir: "{app}\bin"; Flags: onlyifdoesntexist recursesubdirs createallsubdirs skipifsourcedoesntexist
+#ifdef Uninstaller
+Source: "{#Uninstaller}"; DestDir: "{app}"; DestName: "uninstall.exe"; Flags: ignoreversion
+#endif
 
 [Icons]
 Name: "{autoprograms}\V2pn"; Filename: "{app}\V2pn.exe"; WorkingDir: "{app}"
@@ -113,6 +122,31 @@ Filename: "{app}\V2pn.exe"; Description: "{cm:LaunchProgram,V2pn}"; Flags: nowai
 [Code]
 var
   WasInstalled: Boolean;
+
+// ---- Talking to V2pn's window -------------------------------------------------------------------
+// The messages V2pnSetup/Engine.cs reads: WM_APP+1 with per mille done, WM_APP+2 with a step.
+const
+  ProgressMessage = $8001;
+  StepMessage = $8002;
+  StepFiles = 1;
+  StepFinish = 2;
+  StepUninstall = 11;
+  StepUninstallFinish = 12;
+
+procedure Notify(Msg, Value: Integer);
+var
+  Window: Integer;
+begin
+  Window := StrToIntDef(ExpandConstant('{param:V2PNHWND|0}'), 0);
+  if Window <> 0 then
+    PostMessage(Window, Msg, Value, 0);
+end;
+
+procedure CurInstallProgressChanged(CurProgress, MaxProgress: Integer);
+begin
+  if MaxProgress > 0 then
+    Notify(ProgressMessage, Integer(Int64(CurProgress) * 1000 div MaxProgress));
+end;
 
 function AppDir(): String;
 begin
@@ -153,7 +187,8 @@ begin
       Path := Lowercase(Path);
       Name := Process.Name;
       // The uninstaller started from the folder waits there for its copy in %TEMP% to finish.
-      if (Path <> '') and (Pos(Prefix, Path) = 1) and not WildcardMatch(ExtractFileName(Path), 'unins*.exe') then
+      if (Path <> '') and (Pos(Prefix, Path) = 1) and not WildcardMatch(ExtractFileName(Path), 'unins*.exe')
+         and (CompareText(ExtractFileName(Path), 'uninstall.exe') <> 0) then
         Result := True
       else if (Path = '') and (CompareText(Name, 'V2pn.exe') = 0) then
         Result := True;
@@ -207,7 +242,9 @@ begin
     Result := CustomMessage('NotClosed');
     Exit;
   end;
-  if WasInstalled and GetPackedVersion(Exe, Installed) and StrToVersion('{#NumericVersion}', Own) then
+  // V2pn's window has already asked about an older version and passes /ALLOWDOWNGRADE=1 when the person agreed.
+  if WasInstalled and (ExpandConstant('{param:ALLOWDOWNGRADE|0}') <> '1')
+     and GetPackedVersion(Exe, Installed) and StrToVersion('{#NumericVersion}', Own) then
     if ComparePackedVersion(Installed, Own) > 0 then
       if SuppressibleMsgBox(FmtMessage(CustomMessage('Newer'), [GetVersionString(Exe), '{#AppVersion}']),
           mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) <> IDYES then
@@ -216,15 +253,31 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  Temps: String;
+  Temps, Uninstaller: String;
 begin
-  // Read by V2pn at its first start (V2pnImport.AutoMarker), as install.ps1 leaves it.
-  // Only on a first install: a silent run with /TASKS chooses the task before the folder is known.
-  if (CurStep = ssPostInstall) and WizardIsTaskSelected('importv2rayn') and not WasInstalled then
+  if CurStep = ssInstall then
+    Notify(StepMessage, StepFiles)
+  else if CurStep = ssPostInstall then
   begin
-    Temps := AppDir() + '\guiTemps';
-    ForceDirectories(Temps);
-    SaveStringToFile(Temps + '\V2pnImport.txt', 'auto', False);
+    Notify(StepMessage, StepFinish);
+    // Read by V2pn at its first start (V2pnImport.AutoMarker), as install.ps1 leaves it.
+    // Only on a first install: a silent run with /TASKS chooses the task before the folder is known.
+    if WizardIsTaskSelected('importv2rayn') and not WasInstalled then
+    begin
+      Temps := AppDir() + '\guiTemps';
+      ForceDirectories(Temps);
+      SaveStringToFile(Temps + '\V2pnImport.txt', 'auto', False);
+    end;
+  end
+  else if CurStep = ssDone then
+  begin
+    // "Installed apps" opens V2pn's own window, which runs unins000.exe silently itself.
+    Uninstaller := AppDir() + '\uninstall.exe';
+    if FileExists(Uninstaller) then
+    begin
+      RegWriteStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\V2pn_is1', 'UninstallString', '"' + Uninstaller + '"');
+      RegWriteStringValue(HKCU, 'Software\Microsoft\Windows\CurrentVersion\Uninstall\V2pn_is1', 'QuietUninstallString', '"' + Uninstaller + '" /S');
+    end;
   end;
 end;
 
@@ -304,10 +357,18 @@ procedure CurUninstallStepChanged(CurUninstallStep: TUninstallStep);
 begin
   if CurUninstallStep = usUninstall then
   begin
-    RemoveData := DirExists(AppDir() + '\guiConfigs') and
-      (SuppressibleMsgBox(CustomMessage('RemoveData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES);
+    Notify(StepMessage, StepUninstall);
+    // V2pn's window asks and passes the answer; started by hand, the uninstaller asks itself.
+    if ExpandConstant('{param:REMOVEDATA|}') <> '' then
+      RemoveData := ExpandConstant('{param:REMOVEDATA|}') = '1'
+    else
+      RemoveData := DirExists(AppDir() + '\guiConfigs') and
+        (SuppressibleMsgBox(CustomMessage('RemoveData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES);
     RemoveIntegration();
   end
   else if CurUninstallStep = usPostUninstall then
+  begin
+    Notify(StepMessage, StepUninstallFinish);
     RemoveLeftovers();
+  end;
 end;

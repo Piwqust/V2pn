@@ -6,7 +6,8 @@
 .DESCRIPTION
   Package (default): builds V2pn and AmazTool for each architecture as a release build, adds the
   cores pinned in tools/cores.lock.json, and writes dist/release/<version>/V2pn-windows-<arch>.zip and,
-  from the same files, the installer V2pn-windows-<arch>-setup.exe (tools/installer/V2pn.iss, Inno Setup 6).
+  from the same files, the installer V2pn-windows-<arch>-setup.exe: V2pn's own window (v2rayN/V2pnSetup)
+  with the Inno Setup 6 engine (tools/installer/V2pn.iss) appended, which it runs hidden.
   Then tools/manifest.cs lists the packages in release.json and signs it: an installed V2pn
   installs only what that signed manifest names.
 
@@ -107,6 +108,28 @@ function Test-V2pnZip([string]$Zip) {
     finally { $archive.Dispose() }
 }
 
+# The installer people download: the window, then the engine, then what the window reads about it
+# (v2rayN/V2pnSetup/Payload.cs): "key=value" lines, the two lengths and the magic "V2PNSTP1".
+function New-V2pnSetup([string]$Window, [string]$Engine, [string]$Out, [string]$Arch) {
+    $hash = (Get-FileHash -Algorithm SHA256 $Engine).Hash.ToLowerInvariant()
+    $header = [Text.Encoding]::UTF8.GetBytes("version=$Version`narch=$Arch`nsha256=$hash`n")
+    $engineLength = (Get-Item $Engine).Length
+    $output = [IO.File]::Create($Out)
+    try {
+        foreach ($part in $Window, $Engine) {
+            $source = [IO.File]::OpenRead($part)
+            try { $source.CopyTo($output) } finally { $source.Dispose() }
+        }
+        $output.Write($header, 0, $header.Length)
+        $output.Write([BitConverter]::GetBytes([long]$engineLength), 0, 8)
+        $output.Write([BitConverter]::GetBytes([long]$header.Length), 0, 8)
+        $magic = [Text.Encoding]::ASCII.GetBytes('V2PNSTP1')
+        $output.Write($magic, 0, $magic.Length)
+    }
+    finally { $output.Dispose() }
+    Remove-Item -Force $Engine
+}
+
 # The core bundle pinned for a target, downloaded once per pin and checked against the lock.
 function Get-Cores([string]$Target) {
     $lock = Get-Content (Join-Path $PSScriptRoot 'cores.lock.json') -Raw | ConvertFrom-Json
@@ -183,6 +206,7 @@ $appProperties = if ($NoReadyToRun) { @() } else { @('-p:PublishReadyToRun=true'
 if ($UpdateSources) { $properties += "-p:V2pnUpdateSources=$UpdateSources" }
 if ($UpdateKeys) { $properties += "-p:V2pnUpdateKeys=$UpdateKeys" }
 
+$setupWindow = $null
 foreach ($a in $Arch) {
     $rid = "win-$a"
     $stageRoot = Join-Path $work $a
@@ -235,13 +259,22 @@ foreach ($a in $Arch) {
     $size = [math]::Round((Get-Item $zip).Length / 1MB, 1)
     Write-Host "== $zipName  $size MB"
 
-    # What people download: the same files as the full zip, installed for the current user.
+    # What people download: V2pn's installer window with the Inno Setup engine inside, which installs
+    # the same files as the full zip for the current user.
     if ($iscc) {
-        $setupName = "V2pn-windows-$a-setup"
-        Invoke-Checked $iscc @('/Q', "/DAppVersion=$Version", "/DArch=$a", "/DSourceDir=$stage", "/DOutputDir=$OutDir",
-            "/DOutputName=$setupName", (Join-Path $PSScriptRoot 'installer/V2pn.iss'))
-        $size = [math]::Round((Get-Item (Join-Path $OutDir "$setupName.exe")).Length / 1MB, 1)
-        Write-Host "== $setupName.exe  $size MB"
+        if (-not $setupWindow) {
+            Write-Host '== installer window'
+            $setupOut = Join-Path $work 'setup-window'
+            Invoke-Checked $dotnet @('build', (Join-Path $src 'V2pnSetup/V2pnSetup.csproj'), '-c', 'Release', '-v', 'q', '-nologo',
+                '-o', $setupOut, "-p:V2pnVersion=$Version")
+            $setupWindow = Join-Path $setupOut 'V2pnSetup.exe'
+        }
+        $engineName = "V2pn-windows-$a-engine"
+        Invoke-Checked $iscc @('/Q', "/DAppVersion=$Version", "/DArch=$a", "/DSourceDir=$stage", "/DUninstaller=$setupWindow",
+            "/DOutputDir=$work", "/DOutputName=$engineName", (Join-Path $PSScriptRoot 'installer/V2pn.iss'))
+        $setup = Join-Path $OutDir "V2pn-windows-$a-setup.exe"
+        New-V2pnSetup -Window $setupWindow -Engine (Join-Path $work "$engineName.exe") -Out $setup -Arch $a
+        Write-Host "== $(Split-Path -Leaf $setup)  $([math]::Round((Get-Item $setup).Length / 1MB, 1)) MB"
     }
 }
 

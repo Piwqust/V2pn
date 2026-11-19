@@ -67,6 +67,7 @@ internal class Program
 
         AppManager.Instance.WindowDialog = new WindowDialog();
         V2pnDeepLink.RegisterScheme();
+        V2pnUninstallEntry.Refresh();
         return true;
     }
 

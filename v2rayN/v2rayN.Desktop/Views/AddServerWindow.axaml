@@ -1127,7 +1127,7 @@
                                             <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvFingerprintHint}" />
                                         </StackPanel>
                                         <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <ComboBox x:Name="cmbFingerprint" />
+                                            <ComboBox x:Name="cmbFingerprint" IsEditable="True" />
                                         </Panel>
                                     </Grid>
                                 </Border>
@@ -1138,7 +1138,7 @@
                                             <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvAlpnHint}" />
                                         </StackPanel>
                                         <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <ComboBox x:Name="cmbAlpn" />
+                                            <ComboBox x:Name="cmbAlpn" IsEditable="True" />
                                         </Panel>
                                     </Grid>
                                 </Border>
@@ -1235,7 +1235,7 @@
                                             <TextBlock Classes="srowhint" Text="{x:Static loc:L.SvFingerprintHint}" />
                                         </StackPanel>
                                         <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
-                                            <ComboBox x:Name="cmbFingerprint2" />
+                                            <ComboBox x:Name="cmbFingerprint2" IsEditable="True" />
                                         </Panel>
                                     </Grid>
                                 </Border>

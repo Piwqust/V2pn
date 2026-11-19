@@ -121,7 +121,7 @@ public static partial class L
     public static string SvXdrivePathStyleHint => T("Path-style addresses. Needed by Cloudflare R2, MinIO and similar.", "Адреса в стиле path. Нужно для Cloudflare R2, MinIO и похожих.");
     public static string SvXdriveExtra => T("Extra XDRIVE settings", "Дополнительные настройки XDRIVE");
     public static string SvXdriveExtraTip => T("JSON object with XDRIVE settings", "JSON-объект с настройками XDRIVE");
-    public static string SvFinalmask =>T("Finalmask", "Finalmask");
+    public static string SvFinalmask => T("Finalmask", "Finalmask");
     public static string SvFinalmaskHint => T("Xray traffic disguise, as JSON.", "Маскировка трафика Xray в формате JSON.");
 
     // Expert rows: TLS and Reality.
@@ -132,7 +132,7 @@ public static partial class L
     public static string SvFingerprint => T("Browser fingerprint", "Отпечаток браузера");
     public static string SvFingerprintHint => T("Which browser the connection looks like.", "На какой браузер похоже соединение.");
     public static string SvAlpn => T("ALPN", "ALPN");
-    public static string SvAlpnHint => T("Protocols offered over TLS. Usually empty.", "Протоколы, которые предлагаются в TLS. Обычно пусто.");
+    public static string SvAlpnHint => Tk("Protocols offered over TLS. Usually empty.", "Protocols offered over TLS. Pick one or type your own, like h3,h2. Usually empty.", "Протоколы, которые предлагаются в TLS. Выберите из списка или впишите свои, например h3,h2. Обычно пусто.");
     public static string SvInsecure => T("Skip the certificate check", "Не проверять сертификат");
     public static string SvInsecureHint => T("Unsafe. Only for self-signed certificates.", "Небезопасно. Только для самоподписанных сертификатов.");
     public static string SvEch => T("ECH config", "Настройка ECH");

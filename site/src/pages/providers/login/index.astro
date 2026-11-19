@@ -42,7 +42,7 @@ import Mark from '../../../components/Mark.astro';
 
 <style>
   .signin__glass { position: absolute; inset: 0; }
-  .signin__mark { position: absolute; width: 78%; left: 11%; top: 8%; fill: var(--signal); }
+  .signin__glass :global(.signin__mark) { position: absolute; width: 78%; left: 11%; top: 8%; fill: var(--signal); }
   .signin__glass::after {
     content: ''; position: absolute; inset: 0 0 0 54%;
     background: repeating-linear-gradient(90deg, rgb(255 255 255 / 0.18) 0, rgb(255 255 255 / 0.05) 3px, rgb(0 0 0 / 0) 50%, rgb(0 0 0 / 0.32) 20px, rgb(255 255 255 / 0.12) 22px);

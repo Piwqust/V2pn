@@ -197,9 +197,12 @@ export function fork() {
           c.restore();
         }
         if (light >= 1) continue;
+        // On the left road a name fades as it leaves the top of the mark, under the road's own label.
+        const out = p.left ? Math.max(0, Math.min(1, (8 - v) / 10)) : 0;
+        if (out >= 1) continue;
         const w = Math.round(p.w + pad * 2 + h * 0.5);
         const x0 = Math.round(px - w / 2), y0 = Math.round(py - h / 2);
-        c.globalAlpha = 1 - light;
+        c.globalAlpha = (1 - light) * (1 - out);
         c.fillStyle = TUNNEL;
         c.fillRect(x0, y0, w, h);
         // A square at the start: Signal while the name climbs, then the colour of its road.

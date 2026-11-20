@@ -75,11 +75,33 @@ function windowNarrative() {
   });
 }
 
+/** The docs' contents list marks the section being read (the last heading that passed the top third). */
+function tocSpy() {
+  onPage(() => {
+    const links = [...document.querySelectorAll<HTMLAnchorElement>('.docs__toc a[href^="#"]')];
+    if (!links.length) return;
+    const heads = links.map((a) => document.getElementById(decodeURIComponent(a.hash.slice(1)))).filter(Boolean) as HTMLElement[];
+    const set = (id: string) => links.forEach((a) => {
+      if (decodeURIComponent(a.hash.slice(1)) === id) a.setAttribute('aria-current', 'true');
+      else a.removeAttribute('aria-current');
+    });
+    const io = new IntersectionObserver((entries) => {
+      const above = heads.filter((h) => h.getBoundingClientRect().top < innerHeight * 0.33);
+      if (above.length) set(above[above.length - 1].id);
+      else if (entries.length) set(heads[0].id);
+    }, { rootMargin: '0px 0px -66% 0px', threshold: [0, 1] });
+    heads.forEach((h) => io.observe(h));
+    set(heads[0]?.id || '');
+    return () => io.disconnect();
+  });
+}
+
 export function setupMotion() {
   glassTransition();
   header();
   fork();
   windowNarrative();
+  tocSpy();
   onPage(() => {
     const a = initMenu(() => document.documentElement.classList.remove('hdr-away'));
     const b = initCopy();

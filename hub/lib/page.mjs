@@ -316,7 +316,7 @@ a { color: var(--linkBg); text-underline-offset: 3px; text-decoration-thickness:
 .pp-switch button { font: 600 13px/1 var(--font-text); border: 0; background: none; color: var(--muted); height: 40px; min-width: 48px; padding: 0 12px; cursor: pointer; transition: color 200ms var(--ease), background-color 200ms var(--ease); }
 .pp-switch button + button { border-left: 1px solid var(--line); }
 .pp-switch button[aria-pressed=true] { background: var(--ink); color: var(--bg); }
-@media (hover: hover) { .pp-switch button:hover { color: var(--ink); box-shadow: inset 0 -3px 0 #FF3D1F; } }
+@media (hover: hover) { .pp-switch button:not([aria-pressed=true]):hover { color: var(--ink); box-shadow: inset 0 -3px 0 #FF3D1F; } .pp-switch button[aria-pressed=true]:hover { box-shadow: inset 0 -3px 0 #FF3D1F; } }
 .pp-hero { position: relative; overflow: hidden; background: var(--hero); color: var(--heroInk); border-bottom: 1px solid var(--line); }
 .pp-hero::before { content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none; }
 .pp-hero__in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 72px; min-height: min(720px, calc(100svh - 68px)); }

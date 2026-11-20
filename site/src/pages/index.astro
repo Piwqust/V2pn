@@ -245,7 +245,7 @@ const first = presets[0];
   }
   @media (max-width: 767px) {
     .hero__grid { min-height: 0; grid-template-rows: auto auto; }
-    .fork { grid-column: 1 / -1; grid-row: 1; height: 54svh; min-height: 22rem; margin-top: var(--header-h); margin-inline: calc(-1 * var(--margin)); }
+    .fork { grid-column: 1 / -1; grid-row: 1; height: 44svh; min-height: 19rem; margin-top: var(--header-h); margin-inline: calc(-1 * var(--margin)); }
     .hero__text { grid-column: 1 / -1; grid-row: 2; padding-top: 1.75rem; }
     .presets { grid-template-columns: 1fr; }
     .presets button { border-right: 0; border-bottom: 1px solid var(--c-line); }
@@ -296,6 +296,7 @@ const first = presets[0];
   /* ------------------------------------------------------------ promise */
   .promise__label { padding-top: 0.9rem; }
   .promise__text { grid-column: 5 / -1; max-width: 26ch; font-weight: 500; }
+  @media (max-width: 767px) { .promise__text { grid-column: 1 / -1; margin-top: 1rem; } }
 
   /* ------------------------------------------------------------ tab */
   .tab .grid { align-items: center; }

@@ -77,7 +77,7 @@ html.lenis, html.lenis body { height: auto; }
 .on-right { grid-column: 10 / -1; }
 @media (max-width: 767px) { .on-left, .on-stem, .on-right { grid-column: 1 / -1; } }
 
-.section { padding-block: calc(var(--u) * 16); position: relative; }
+.section { padding-block: calc(var(--u) * 13); position: relative; }
 .section--tight { padding-block: calc(var(--u) * 8); }
 .section--airy { padding-block: calc(var(--u) * 24); }
 .rule { border-top: 1px solid var(--c-line); }
@@ -149,7 +149,7 @@ kbd { font-family: var(--f-mono); font-size: 0.8em; padding: 0.1em 0.4em; border
   cursor: pointer;
 }
 .btn { isolation: isolate; }
-.btn:not(.btn--ghost):not(.btn--text):not(.btn--secondary):not(.btn--danger)::before {
+.btn::before {
   content: ''; position: absolute; inset: 0; z-index: -1; background: var(--btn-flood, #ECECF1);
   translate: 0 101%; transition: translate 0.45s var(--e-standard);
 }
@@ -159,10 +159,13 @@ kbd { font-family: var(--f-mono); font-size: 0.8em; padding: 0.1em 0.4em; border
 @media (hover: hover) {
   .btn:hover { --cut-now: calc(var(--cut) * 2); color: var(--btn-flood-ink, var(--tunnel)); }
   .btn:hover::before { translate: 0 0; }
+  .btn--text:hover { color: var(--c-fg); }
   .btn:hover .btn__arr { translate: 3px -3px; }
 }
 .btn:focus-visible { --cut-now: calc(var(--cut) * 2); outline-offset: 4px; color: var(--btn-flood-ink, var(--tunnel)); }
 .btn:focus-visible::before { translate: 0 0; }
+.btn--text::before { display: none; }
+.btn--text:focus-visible { color: var(--c-fg); }
 .btn:focus-visible .btn__arr { translate: 3px -3px; }
 .btn:active { translate: 0 1px; }
 .btn[disabled], .btn[aria-disabled='true'] { opacity: 0.45; cursor: not-allowed; }
@@ -283,7 +286,7 @@ html.menu-open { overflow: hidden; }
 
 /* ---------------------------------------------------------------- footer */
 
-.ftr { position: relative; padding-top: calc(var(--u) * 14); padding-bottom: calc(var(--u) * 4); overflow: clip; }
+.ftr { position: relative; padding-top: calc(var(--u) * 9); padding-bottom: calc(var(--u) * 4); overflow: clip; }
 .ftr__cols { row-gap: 2.5rem; }
 .ftr__col h2 { font-size: var(--t-xs); font-weight: 500; color: var(--c-muted); margin-bottom: 1rem; }
 .ftr__col ul { list-style: none; padding: 0; display: grid; gap: 0.2rem; font-size: var(--t-s); }

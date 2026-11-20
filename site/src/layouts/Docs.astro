@@ -83,12 +83,13 @@ const en = lang === 'en';
   .docs__link[aria-current='page'] { color: var(--c-fg); font-weight: 600; }
   .docs__link[aria-current='page']::before { scale: 1 1; }
   .docs__article { grid-column: 5 / span 6; min-width: 0; }
+  .docs:not(:has(.docs__toc)) .docs__article { grid-column: 5 / -1; }
   .docs__head { display: grid; gap: 1rem; padding-bottom: calc(var(--u) * 4); margin-bottom: calc(var(--u) * 4); border-bottom: 1px solid var(--c-line); }
   .docs__desc { font-size: var(--t-m); line-height: 1.4; color: var(--c-muted); max-width: 40ch; }
   .docs__toc { grid-column: 11 / -1; position: sticky; top: calc(var(--header-h) + 1.5rem); font-size: var(--t-xs); display: grid; gap: 0.5rem; }
   .docs__toc li a { display: block; padding: 0.3rem 0 0.3rem 0.75rem; color: var(--c-muted); box-shadow: inset 1px 0 0 var(--c-line); transition: color 0.2s var(--e-standard), box-shadow 0.3s var(--e-standard); }
   @media (hover: hover) { .docs__toc li a:hover { color: var(--c-fg); box-shadow: inset 3px 0 0 var(--signal); } }
-  .docs__toc li a:focus-visible { color: var(--c-fg); box-shadow: inset 3px 0 0 var(--signal); }
+  .docs__toc li a:focus-visible, .docs__toc li a[aria-current='true'] { color: var(--c-fg); box-shadow: inset 3px 0 0 var(--signal); }
   .docs__pager { display: grid; grid-template-columns: 1fr 1fr; gap: var(--col-gap); margin-top: calc(var(--u) * 8); }
   .docs__pg { grid-template-columns: 1fr; gap: 0.3rem; }
   .docs__pg--next { grid-template-columns: 1fr auto; text-align: left; }

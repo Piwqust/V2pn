@@ -18,6 +18,7 @@
 .prose ul li::marker { color: var(--signal); content: '■  '; font-size: 0.7em; }
 .prose ul[role='list'] { list-style: none; padding-left: 0; }
 .prose ul[role='list'] li::marker { content: none; }
+.prose:has(.doc-index) { max-width: none; }
 .prose a.row-link { background-image: none; padding-block: 1.25rem; }
 .prose ol li::marker { color: var(--c-accent-text); font-weight: 600; font-variant-numeric: tabular-nums; }
 .prose code { font-family: var(--f-mono); font-size: 0.84em; padding: 0.08em 0.32em; background: rgb(11 11 13 / 0.07); overflow-wrap: anywhere; }

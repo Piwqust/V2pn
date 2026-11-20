@@ -6,6 +6,7 @@ import { site, downloads, commands, shots, links } from '../../data/site';
 import welcome from '../../assets/shots/welcome-dialog.png';
 import importShot from '../../assets/shots/import-dialog.png';
 import ready from '../../assets/shots/ru/connect-crop.png';
+import windowRu from '../../assets/shots/ru/disconnected.png';
 
 const steps = [
   {
@@ -40,12 +41,15 @@ const steps = [
       <div class="dl-hero__text">
         <h1 id="dl-h" class="t-mega dl-hero__title" data-split="lines" data-intro>Скачать V2pn</h1>
         <p class="lead">Клиент для Windows и macOS. Для подключения понадобится своя подписка или ссылка на сервер от провайдера: V2pn серверы не продаёт.</p>
-      </div>
       <div class="dl-pick">
         <a class="btn btn--lg" href="#files" data-dl-primary><span data-dl-label>Выбрать файл</span><Arrow class="btn__arr" down /></a>
         <p class="t-s muted"><span data-dl-detail>Windows 10 и 11, macOS 13.6 и новее</span>{site.version && <> · версия <span class="tnum">{site.version}</span></>}</p>
         <p class="dl-phone t-s">Вы на телефоне. V2pn работает на компьютерах с Windows и macOS: откройте эту страницу там.</p>
       </div>
+      </div>
+      <figure class="shot dl-hero__shot" data-reveal="branch" data-intro data-delay="0.15">
+        <Picture src={windowRu} formats={['avif', 'webp']} fallbackFormat="webp" widths={[640, 960, 1280, 1618]} sizes="(max-width: 767px) 92vw, 50vw" alt="Окно V2pn на русском до подключения: «Не защищено», Германия, Франкфурт, кнопка «Подключиться», режим и маршрут, карта Европы и список недавних серверов" />
+      </figure>
     </div>
   </section>
 
@@ -108,9 +112,12 @@ const steps = [
 
 <style>
   .dl-hero { padding-top: calc(var(--header-h) + var(--u) * 10); padding-bottom: calc(var(--u) * 8); }
-  .dl-hero__text { grid-column: 1 / span 8; display: grid; gap: 1.75rem; }
+  .dl-hero .grid { align-items: center; row-gap: 3rem; }
+  .dl-hero__text { grid-column: 1 / span 6; display: grid; gap: 1.75rem; }
   .dl-hero__title { max-width: 8ch; }
-  .dl-pick { grid-column: 10 / -1; align-self: end; display: grid; gap: 0.9rem; justify-items: start; }
+  .dl-pick { display: grid; gap: 0.9rem; justify-items: start; margin-top: 0.5rem; }
+  .dl-hero__shot { grid-column: 8 / -1; margin-right: calc((min(100vw - 2 * var(--margin), var(--max)) - 100vw) / 2); }
+  .dl-hero__shot :global(img) { border-radius: 14px 0 0 14px; }
   .dl-phone { display: none; padding: 0.85rem 1rem; box-shadow: inset 2px 0 0 var(--signal); background: var(--c-raised); }
   :global(html[data-os='phone']) .dl-phone { display: block; }
   :global(html[data-os='phone']) .dl-pick .btn { display: none; }
@@ -127,8 +134,8 @@ const steps = [
   .trust__text { grid-column: 5 / span 8; display: grid; gap: 1rem; }
   @media (max-width: 1023px) { .steps__list { grid-template-columns: 1fr; gap: calc(var(--u) * 7); } .step { grid-template-columns: 1fr; max-width: 44rem; } }
   @media (max-width: 767px) {
-    .dl-hero__text, .dl-pick, .files, .cmds, .trust__text { grid-column: 1 / -1; }
-    .dl-pick { margin-top: 2rem; }
+    .dl-hero__text, .files, .cmds, .trust__text { grid-column: 1 / -1; }
+    .dl-hero__shot { grid-column: 1 / -1; margin-right: calc(-1 * var(--margin)); }
     .files { margin-top: 1rem; }
     .files__row { grid-template-columns: 1fr 1.25rem; }
     .files__detail, .files__file { grid-column: 1; }

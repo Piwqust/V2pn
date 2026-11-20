@@ -87,7 +87,11 @@ export function fork() {
       // The two road names, in CSS pixels over the canvas: «Напрямую» above the left road, «Через сервер» on the
       // glass at the end of the right road. Text stays sharp on top of the glass (brand book, chapter 05).
       if (labels.direct) labels.direct.style.translate = `${X(16) / dpr}px ${Y(0) / dpr}px`;
-      if (labels.server) labels.server.style.translate = `${X(92) / dpr}px ${Y(0) / dpr}px`;
+      if (labels.server) {
+        const half = (labels.server.firstElementChild as HTMLElement | null)?.offsetWidth ?? 0;
+        const x = Math.min(X(92) / dpr, W / dpr - 16 - half / 2);
+        labels.server.style.translate = `${x}px ${Y(0) / dpr}px`;
+      }
     }
 
     /** A packet's point in units: up the stem, then its road. */

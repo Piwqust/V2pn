@@ -39,13 +39,15 @@
   --c-ok: var(--protected);
   --c-warn: var(--caution);
   --c-curtain: var(--tunnel);
+  --btn-flood: #ECECF1;
+  --btn-flood-ink: var(--tunnel);
 
   /* Type */
   --f-display: 'Inter Tight', 'Inter Tight Fallback', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --f-body: 'Inter', 'Inter Fallback', system-ui, -apple-system, 'Segoe UI', sans-serif;
   --f-mono: 'JetBrains Mono', ui-monospace, 'Cascadia Mono', Consolas, monospace;
 
-  --t-mega: clamp(3.4rem, 0.6rem + 11.2vw, 13rem);
+  --t-mega: clamp(3.4rem, 0.6rem + 11.2vw, 13rem); /* tracking: -0.045em (heavy Cyrillic touches at -0.06) */
   --t-num: clamp(5rem, 2rem + 12vw, 14rem);
   --t-xl: clamp(2.4rem, 1.2rem + 4.4vw, 5.6rem);
   --t-l: clamp(1.6rem, 1.2rem + 1.6vw, 2.6rem);
@@ -91,6 +93,8 @@
   --c-accent-text: var(--signal-deep);
   --c-ok: var(--protected-deep);
   --c-warn: var(--caution-deep);
+  --btn-flood: var(--tunnel);
+  --btn-flood-ink: var(--paper);
   color-scheme: light;
 }
 
@@ -104,6 +108,8 @@
   --c-accent-text: var(--signal);
   --c-ok: var(--protected);
   --c-warn: var(--caution);
+  --btn-flood: #ECECF1;
+  --btn-flood-ink: var(--tunnel);
   color-scheme: dark;
 }
 

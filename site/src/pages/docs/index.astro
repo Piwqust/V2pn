@@ -4,7 +4,7 @@ import Docs from '../../layouts/Docs.astro';
 import Arrow from '../../components/Arrow.astro';
 const docs = (await getCollection('docs')).sort((a, b) => a.data.order - b.data.order);
 ---
-<Docs title="Документация V2pn" description="Как поставить V2pn, подключиться, выбрать режим и маршрут, перенести серверы из другой программы и что делать, если что-то не так.">
+<Docs title="Документация" description="Как поставить V2pn, подключиться, выбрать режим и маршрут, перенести серверы из другой программы и что делать, если что-то не так.">
   <ul class="doc-index" role="list">
     {docs.map((d) => (
       <li>

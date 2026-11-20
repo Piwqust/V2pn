@@ -37,7 +37,7 @@ function splitTween(el: HTMLElement, isIntro: boolean) {
         delay,
         paused: isIntro && !s.requested,
         onComplete: () => { s.done = true; },
-        scrollTrigger: isIntro ? undefined : { trigger: el, start: 'top 90%', once: true },
+        scrollTrigger: isIntro ? undefined : { trigger: el, start: 'top 98%', once: true },
       });
       return s.tween;
     },
@@ -60,12 +60,12 @@ function blockTween(el: HTMLElement, paused: boolean) {
     x: 0,
     y: 0,
     autoAlpha: 1,
-    duration: kind === 'fade' ? 0.9 : 1.1,
+    duration: kind === 'fade' ? 0.8 : 0.95,
     ease: ease.out,
     delay,
     paused,
     clearProps: kind === 'clip' ? 'clipPath' : 'transform',
-    scrollTrigger: paused ? undefined : { trigger: el, start: 'top 92%', once: true },
+    scrollTrigger: paused ? undefined : { trigger: el, start: 'top bottom', once: true },
   });
 }
 

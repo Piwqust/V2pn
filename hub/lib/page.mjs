@@ -297,6 +297,9 @@ a { color: var(--linkBg); text-underline-offset: 3px; text-decoration-thickness:
 :focus-visible { outline: 2px solid var(--focus); outline-offset: 3px; }
 .pp-hero :focus-visible { outline-color: var(--heroInk); }
 [hidden] { display: none !important; }
+.pp-skip { position: fixed; left: 16px; top: 10px; z-index: 20; padding: 10px 16px; background: #FF3D1F; color: #0B0B0D; font-weight: 600; text-decoration: none; translate: 0 -200%; }
+.pp-skip:focus-visible { translate: none; }
+#pp-main:focus { outline: none; }
 ::selection { background: var(--accent); color: var(--onAccent); }
 .pp-wrap { width: min(100% - 2 * var(--margin), 1440px); margin-inline: auto; }
 .pp-bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
@@ -407,6 +410,7 @@ footer a { color: var(--muted); display: inline-block; padding-block: 4px; }
 </style>
 </head>
 <body class="os-any">
+<a class="pp-skip" href="#pp-main">К содержанию</a>
 <header class="pp-bar">
   <div class="pp-wrap pp-bar__in">
     <a class="pp-lockup" href="${esc(home)}"><svg class="fork" viewBox="0 0 104 112" aria-hidden="true"><path d="${FORK_PATH}"/></svg><span>v2pn</span><span class="pp-x" aria-hidden="true">×</span>${pic('pp-barlogo', barLogo, esc(name))}</a>
@@ -416,7 +420,7 @@ footer a { color: var(--muted); display: inline-block; padding-block: 4px; }
     </div>
   </div>
 </header>
-<main>
+<main id="pp-main" tabindex="-1">
   <section class="pp-hero" aria-labelledby="pp-h1">
     <div class="pp-wrap pp-hero__in">
       <div class="pp-text">

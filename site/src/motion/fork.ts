@@ -266,7 +266,7 @@ export function fork() {
       ctx!.drawImage(scene, 0, 0);
       const gx = Math.round(glassX());
       const band = W - gx;
-      ribbed(ctx!, scene, gx, W, { ribs: Math.max(6, Math.round(band / (19 * dpr))), refr: 0.5, soft: 0.022, grain: lowEnd ? 0 : 0.05 });
+      ribbed(ctx!, scene, gx, W, { ribs: Math.max(6, Math.round(band / (19 * dpr))), refr: 0.38, soft: 0.012, grain: lowEnd ? 0 : 0.05 });
       // The pane's edge: a glint and a shade, so the glass reads as an object over the road.
       ctx!.fillStyle = 'rgba(255,255,255,.35)';
       ctx!.fillRect(gx, 0, Math.max(1, dpr), H);

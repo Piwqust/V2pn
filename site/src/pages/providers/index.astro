@@ -199,7 +199,9 @@ const remnawave = `{
 
   .way { background: var(--c-bg); color: var(--c-fg); }
   .way__h { align-self: start; }
-  .way__list { grid-column: 5 / -1; list-style: none; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr)); gap: calc(var(--u) * 4) var(--col-gap); }
+  .way__list { grid-column: 5 / -1; list-style: none; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: calc(var(--u) * 5) var(--col-gap); }
+  @media (max-width: 1023px) { .way__list { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+  @media (max-width: 560px) { .way__list { grid-template-columns: 1fr; } }
   .way__list li { display: grid; gap: 0.5rem; align-content: start; }
   .way__n { font: 200 2.6rem/1 var(--f-display); color: var(--signal-deep); }
   .way__act { grid-column: 5 / -1; margin-top: calc(var(--u) * 7); display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; align-items: center; }

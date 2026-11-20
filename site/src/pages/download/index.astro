@@ -12,7 +12,7 @@ const steps = [
   {
     title: 'Откройте V2pn',
     text: [
-      'Windows: распакуйте ZIP в свою папку (не в Program Files: настройки лежат рядом с программой) и запустите V2pn.exe. Если Windows скажет, что защитила компьютер, нажмите «Подробнее», затем «Выполнить в любом случае».',
+      'Windows: запустите скачанный установщик и нажмите «Установить». Если Windows скажет, что защитила компьютер, нажмите «Подробнее», затем «Выполнить в любом случае». Права администратора не нужны.',
       'Mac: откройте DMG и перетащите V2pn в «Программы». В первый раз разрешите запуск: «Системные настройки», «Конфиденциальность и безопасность», «Всё равно открыть».',
       'На первом экране выберите язык.',
     ],
@@ -76,6 +76,7 @@ const steps = [
         <div class="cmd cmd--ps"><code id="cmd-win">{commands.win}</code><button class="copy" type="button" data-copy="cmd-win">Копировать</button></div>
         <p class="label">macOS: «Программы», «Утилиты», «Терминал»</p>
         <div class="cmd"><code id="cmd-mac">{commands.mac}</code><button class="copy" type="button" data-copy="cmd-mac">Копировать</button></div>
+        <p class="muted t-s measure">Нужна папка без установки? Портативный ZIP для Windows: <a href="/r/windows-x64-zip">x64</a> · <a href="/r/windows-arm64-zip">ARM64</a>. Распакуйте его не в Program Files и запустите V2pn.exe.</p>
       </div>
     </div>
   </section>

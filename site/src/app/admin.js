@@ -331,7 +331,7 @@ $('#mod-form').addEventListener('submit', async e => {
 // ---------------------------------------------------------------- downloads: stacked bars by day, three groups
 
 const GROUPS = [
-  { key: 'win', name: 'Windows', names: ['windows-x64', 'windows-arm64'] },
+  { key: 'win', name: 'Windows', names: ['windows-x64', 'windows-arm64', 'windows-x64-zip', 'windows-arm64-zip'] },
   { key: 'mac', name: 'macOS', names: ['macos-arm64', 'macos-x64'] },
   { key: 'cmd', name: 'Командой', names: ['install.ps1', 'install.sh'] },
 ];

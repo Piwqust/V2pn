@@ -3,9 +3,8 @@
 //
 // Assumptions (also in README.md):
 // - The version is the newest "## x.y.z" heading of CHANGELOG.md at build time.
-// - Downloads are the portable ZIP for Windows and the DMG for macOS, through the hub's /r/<name> (counted per day).
-//   When the Windows installer (Unreleased in CHANGELOG.md) ships, add its short names to hub/lib/downloads.mjs and
-//   point `downloads` here at them.
+// - Downloads are the installer (setup.exe) for Windows and the DMG for macOS, through the hub's /r/<name> (counted
+//   per day, short names in hub/lib/downloads.mjs). The portable Windows zip is /r/windows-<arch>-zip.
 // - The pings on the pages (38 мс and so on) are examples from the demo subscription in the screenshots, and say so.
 // - Some screenshots show the app in English, its default language (`placeholder: true` below): replace them with
 //   Russian captures from tools/sandbox.ps1 with the demo subscription (tools/demo/demo_sub.py).
@@ -45,8 +44,8 @@ export const nav = [
 
 export type Download = { key: string; os: 'win' | 'mac'; href: string; title: string; detail: string; file: string };
 export const downloads: Download[] = [
-  { key: 'windows-x64', os: 'win', href: '/r/windows-x64', title: 'Windows', detail: 'Windows 10 и 11, x64', file: 'V2pn-windows-x64.zip' },
-  { key: 'windows-arm64', os: 'win', href: '/r/windows-arm64', title: 'Windows на ARM', detail: 'Windows 11 на ARM64', file: 'V2pn-windows-arm64.zip' },
+  { key: 'windows-x64', os: 'win', href: '/r/windows-x64', title: 'Windows', detail: 'Windows 10 и 11, x64', file: 'V2pn-windows-x64-setup.exe' },
+  { key: 'windows-arm64', os: 'win', href: '/r/windows-arm64', title: 'Windows на ARM', detail: 'Windows 11 на ARM64', file: 'V2pn-windows-arm64-setup.exe' },
   { key: 'macos-arm64', os: 'mac', href: '/r/macos-arm64', title: 'macOS', detail: 'Apple silicon, M1 и новее, macOS 13.6+', file: 'V2pn-macos-arm64.dmg' },
   { key: 'macos-x64', os: 'mac', href: '/r/macos-x64', title: 'Mac с Intel', detail: 'macOS 13.6 и новее', file: 'V2pn-macos-x64.dmg' },
 ];

@@ -30,7 +30,7 @@ export function initDownloads(root: ParentNode = document) {
     'macos-arm64': 'Скачать для macOS', 'macos-x64': 'Скачать для Mac с Intel',
   })[key] || 'Скачать V2pn';
   const detail = (key: string) => ({
-    'windows-x64': 'Windows 10 и 11, x64 · ZIP', 'windows-arm64': 'Windows на ARM64 · ZIP',
+    'windows-x64': 'Windows 10 и 11, x64 · установщик', 'windows-arm64': 'Windows на ARM64 · установщик',
     'macos-arm64': 'Apple silicon, macOS 13.6+ · DMG', 'macos-x64': 'Intel, macOS 13.6+ · DMG',
   })[key] || '';
   function point(key: string) {

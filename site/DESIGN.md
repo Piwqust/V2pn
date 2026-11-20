@@ -111,7 +111,11 @@ of 120 ms.
 
 **Idle.** The fork keeps flowing while the visitor reads (names climb at a calm rate); it pauses off screen and
 holds a still frame under reduced motion. Elsewhere the page is still at rest by decision: the hovers and the
-transitions carry the life.
+transitions carry the life. Phones draw the fork at 30 fps from sprites (QA: 59 fps scroll, LCP 1.1 s on the
+throttled phone).
+
+**Removed in the last pass** (the skill's "remove one accessory"): the count-up of the 38 ms numeral. It is an
+example ping from the screenshot; animating it suggested a live measurement.
 
 **Continuity.** No loader (a product site; the brand forbids animating the mark while loading). The hero intro:
 the headline rises line by line while the first names climb. Page transition: a ribbed glass pane slides across the

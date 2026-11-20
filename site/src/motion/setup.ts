@@ -1,7 +1,7 @@
 // Global motion for the marketing pages: runs once on the client, before the first page initializes.
 import { gsap } from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { ease, onPage, onScroll, setTransition, isMobile, prefersReducedMotion } from '../engine';
+import { ease, onPage, onScroll, setTransition, isMobile } from '../engine';
 import { navDirection } from '../engine/astro';
 import { fork } from './fork';
 import { initCopy, initDownloads, initMenu } from './ui';
@@ -75,28 +75,11 @@ function windowNarrative() {
   });
 }
 
-/** Numerals that count up once, from 0 to their real value (data-count). */
-function counters() {
-  onPage(() => {
-    if (prefersReducedMotion()) return;
-    document.querySelectorAll<HTMLElement>('[data-count]').forEach((el) => {
-      const end = Number(el.dataset.count);
-      const o = { v: 0 };
-      gsap.to(o, {
-        v: end, duration: 1.6, ease: ease.out,
-        scrollTrigger: { trigger: el, start: 'top 85%', once: true },
-        onUpdate: () => { el.textContent = String(Math.round(o.v)); },
-      });
-    });
-  });
-}
-
 export function setupMotion() {
   glassTransition();
   header();
   fork();
   windowNarrative();
-  counters();
   onPage(() => {
     const a = initMenu(() => document.documentElement.classList.remove('hdr-away'));
     const b = initCopy();

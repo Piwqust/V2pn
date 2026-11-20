@@ -183,7 +183,7 @@ const ICON_MENU = '<svg class="ic" viewBox="0 0 24 24"><path d="M4 7h16M4 12h16M
  * V2pn's window in the provider's tab, as the app draws it (the site's .v2w, /assets/window.css): the plan card
  * and the map for Accent, the provider's background for Scene. Decorative: the hero says the same in words.
  */
-function windowHtml({ theme, dark, name, files }) {
+function windowHtml({ theme, dark, name, files, dims = () => '' }) {
   const d = C.derive(theme, dark);
   const st = C.stage(theme, dark);
   const n = esc(name);
@@ -205,7 +205,7 @@ function windowHtml({ theme, dark, name, files }) {
     main = `<div class="v2-main v2-main--scene" style="--w-scene: ${bg}">
       <div class="v2-panel-dark"><div class="v2-head" style="margin-top: 12px"><span class="v2-pill v2-pill--off">Не защищено</span><span class="v2-title">Германия</span></div>
       <span class="v2-connect v2-connect--go" style="color: ${onAccent}">${ICON_POWER}Подключиться</span></div>
-      <div class="v2-scene-plan" style="color: ${ink}">${logo ? `<img src="${logo}" alt="">` : `<span class="pp-scene-name">${n}</span>`}
+      <div class="v2-scene-plan" style="color: ${ink}">${logo ? `<img src="${logo}" alt=""${dims(logo)}>` : `<span class="pp-scene-name">${n}</span>`}
         <span class="days">77<small style="color: ${C.hex(st.soft)}">осталось дней<br>до 31 января 2027</small></span>
         <div class="v2-scene-plan__btns"><span style="background: ${C.hex(st.solid)}; color: ${C.hex(st.onSolid)}">Продлить</span><span style="background: ${C.rgba(st.ghost[0], st.ghost[1])}; color: ${ink}">Поддержка</span></div></div></div>`;
   } else {
@@ -255,8 +255,8 @@ export function buildPage({ id, name, look, theme, pictures, origin, home = '/' 
   const commands = { win: `irm ${origin}/r/install.ps1 | iex`, mac: `curl -fsSL ${origin}/r/install.sh | bash` };
   const botHtml = bot ? `<a class="pp-btn pp-btn--quiet pp-btn--small" href="${esc(bot)}" data-t="bot">${ru.bot}</a>` : '';
   const data = JSON.stringify({ id, name, text: { ru, en } }).replace(/</g, '\\u003c');
-  const winLight = windowHtml({ theme, dark: false, name, files });
-  const winDark = windowHtml({ theme, dark: true, name, files });
+  const winLight = windowHtml({ theme, dark: false, name, files, dims });
+  const winDark = windowHtml({ theme, dark: true, name, files, dims });
 
   const html = `<!doctype html>
 <html lang="ru">
@@ -302,7 +302,9 @@ a { color: var(--linkBg); text-underline-offset: 3px; text-decoration-thickness:
 .pp-bar { position: sticky; top: 0; z-index: 10; background: color-mix(in srgb, var(--bg) 90%, transparent); backdrop-filter: blur(12px); border-bottom: 1px solid var(--line); }
 .pp-bar__in { display: flex; align-items: center; gap: 14px; height: 68px; }
 .pp-lockup { display: flex; align-items: center; gap: 10px; min-width: 0; font: 700 21px/1 var(--font-display); letter-spacing: -0.04em; color: inherit; text-decoration: none; }
-.pp-lockup .fork { width: 19px; height: 20px; flex: none; fill: #FF3D1F; }
+.pp-lockup { padding-block: 8px; }
+.pp-lockup .fork { width: 19px; height: 20px; flex: none; fill: #FF3D1F; transition: translate 350ms var(--ease); }
+@media (hover: hover) { .pp-lockup:hover .fork { translate: 0 -3px; } }
 .pp-x { color: var(--muted); font-weight: 300; }
 .pp-barlogo { height: 22px; width: auto; max-width: 160px; object-fit: contain; object-position: left center; }
 .name { font-weight: 600; }
@@ -311,6 +313,7 @@ a { color: var(--linkBg); text-underline-offset: 3px; text-decoration-thickness:
 .pp-switch button { font: 600 13px/1 var(--font-text); border: 0; background: none; color: var(--muted); height: 40px; min-width: 48px; padding: 0 12px; cursor: pointer; transition: color 200ms var(--ease), background-color 200ms var(--ease); }
 .pp-switch button + button { border-left: 1px solid var(--line); }
 .pp-switch button[aria-pressed=true] { background: var(--ink); color: var(--bg); }
+@media (hover: hover) { .pp-switch button:hover { color: var(--ink); box-shadow: inset 0 -3px 0 #FF3D1F; } }
 .pp-hero { position: relative; overflow: hidden; background: var(--hero); color: var(--heroInk); border-bottom: 1px solid var(--line); }
 .pp-hero::before { content: ""; position: absolute; inset: 0; background: var(--scrim); pointer-events: none; }
 .pp-hero__in { position: relative; display: grid; grid-template-columns: minmax(0, 5fr) minmax(0, 7fr); gap: 56px; align-items: center; padding-block: 72px; min-height: min(720px, calc(100svh - 68px)); }
@@ -332,7 +335,8 @@ h1 { margin: 0; font: 600 clamp(40px, 3.6vw + 16px, 76px)/0.98 var(--font-displa
 .pp-btn:active { translate: 0 1px; }
 .pp-btn--small { min-height: 44px; padding: 0 18px; font-size: 15px; }
 .pp-note { font-size: 14px; line-height: 1.45; color: var(--heroSoft); max-width: 34em; }
-.pp-hero a:not(.pp-btn) { color: var(--heroInk); }
+.pp-hero a:not(.pp-btn) { color: var(--heroInk); display: inline-block; padding-block: 4px; transition: text-decoration-thickness 200ms var(--ease); }
+@media (hover: hover) { .pp-hero a:not(.pp-btn):hover { text-decoration-thickness: 3px; } }
 .pp-after { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; padding: 16px 18px; background: var(--ghost); color: var(--heroInk); max-width: 34em; box-shadow: inset 3px 0 0 var(--heroInk); }
 .pp-after svg { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: square; }
 .pp-after b { display: block; font-weight: 600; }
@@ -370,16 +374,19 @@ body.os-win [data-os=mac], body.os-mac [data-os=win] { display: none; }
 body.os-any .pp-osl, body.os-phone .pp-osl { display: inline; }
 .pp-what { margin: 88px 0 0; padding: 24px 0 0; border-top: 1px solid var(--line); display: flex; flex-wrap: wrap; gap: 10px 24px; align-items: baseline; justify-content: space-between; }
 .pp-what p { margin: 0; color: var(--soft); max-width: 62ch; }
-.pp-what a { color: var(--ink); font-weight: 600; }
+.pp-what a { color: var(--ink); font-weight: 600; display: inline-block; padding-block: 6px; }
+@media (hover: hover) { .pp-what a:hover { text-decoration-thickness: 3px; text-decoration-color: #FF3D1F; } }
 .pp-links { display: inline-flex; gap: 22px; align-items: baseline; }
-.pp-report-open { border: 0; background: none; padding: 0; font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.pp-report-open { border: 0; background: none; padding: 6px 0; font: inherit; color: var(--muted); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; transition: color 200ms var(--ease); }
+@media (hover: hover) { .pp-report-open:hover { color: var(--ink); text-decoration-thickness: 2px; } }
 .pp-report { margin: 16px 0 0; display: grid; gap: 8px; max-width: 34em; color: var(--soft); }
 .pp-report textarea { font: inherit; color: var(--ink); background: var(--card); border: 1px solid var(--line); padding: 10px 12px; resize: vertical; }
 .pp-report__row { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; }
 .pp-report .pp-btn--quiet { background: var(--accent); color: var(--onAccent); box-shadow: none; }
 .pp-report__state { font-size: 14px; color: var(--muted); }
 footer { padding: 32px 0 48px; color: var(--muted); font-size: 14px; }
-footer a { color: var(--muted); }
+footer a { color: var(--muted); display: inline-block; padding-block: 4px; }
+@media (hover: hover) { footer a:hover { color: var(--ink); text-decoration-thickness: 2px; } }
 @media (max-width: 1023px) {
   .pp-hero__in { grid-template-columns: minmax(0, 1fr); padding-block: 48px; min-height: 0; }
   .pp-steps ol { grid-template-columns: minmax(0, 1fr); gap: 28px; }

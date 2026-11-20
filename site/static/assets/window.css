@@ -9,7 +9,7 @@
 .v2w {
   --w-win: #E3E4E9; --w-side: #FFFFFF; --w-content: #ECEEF3; --w-card: #FFFFFF; --w-mbg: #F0F1F5;
   --w-line: rgba(22, 22, 27, .094); --w-line2: rgba(22, 22, 27, .15); --w-ink: #16161B; --w-soft: #34343F;
-  --w-muted: #666673; --w-accent: #E8391B; --w-safe: #046B39; --w-safe-soft: rgba(4, 107, 57, .13);
+  --w-muted: #55555F; --w-accent: #E8391B; --w-safe: #046B39; --w-safe-soft: rgba(4, 107, 57, .13);
   --w-ping: #046B39; --w-ping-soft: rgba(4, 107, 57, .12); --w-unsafe: #AE250D; --w-star: #A86400;
   --w-sel: rgba(22, 22, 27, .06); --w-map: url(/assets/v2pn/map-light.svg); --w-tint: rgba(201, 238, 219, .78);
   --w-btn: #FFFFFF; --w-btn-ink: #16161B; --w-r: 16px; --w-safe-ink: #034F2A; --w-unsafe-ink: #7E1B09;

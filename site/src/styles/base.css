@@ -107,7 +107,7 @@ kbd { font-family: var(--f-mono); font-size: 0.8em; padding: 0.1em 0.4em; border
   text-decoration: none;
   background: linear-gradient(var(--signal) 0 0) left 100% / 100% 1.5px no-repeat;
   transition: background-size 0.35s var(--e-standard);
-  padding-block: 0.18em 0.08em;
+  padding-block: 0.24em 0.1em;
 }
 @media (hover: hover) { .link:hover, .prose a:not(.row-link):hover { background-size: 100% 0.42em; } }
 .link:focus-visible, .prose a:not(.row-link):focus-visible { background-size: 100% 0.42em; }

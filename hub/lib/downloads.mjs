@@ -2,8 +2,11 @@
 // stored here: the server has little disk). /r/<name> is counted by day and name, with no IP and no cookie.
 
 export const SHORT_NAMES = {
-  'windows-x64': 'V2pn-windows-x64.zip',
-  'windows-arm64': 'V2pn-windows-arm64.zip',
+  // Windows downloads are the installer since 1.4.0; the zip stays as the portable copy.
+  'windows-x64': 'V2pn-windows-x64-setup.exe',
+  'windows-arm64': 'V2pn-windows-arm64-setup.exe',
+  'windows-x64-zip': 'V2pn-windows-x64.zip',
+  'windows-arm64-zip': 'V2pn-windows-arm64.zip',
   'macos-arm64': 'V2pn-macos-arm64.dmg',
   'macos-x64': 'V2pn-macos-x64.dmg',
   'install.ps1': 'install.ps1',
@@ -12,7 +15,7 @@ export const SHORT_NAMES = {
 
 // The files a V2pn release carries (tools/sign-release.ps1): packages, update packages, the signed manifest, the
 // installers, the partner index V2pn's own source signs and its zips.
-const RELEASE_FILE = /^(?:release\.json(?:\.sig)?|V2pn-windows-(?:x64|arm64)(?:-update)?\.zip|V2pn-macos-(?:x64|arm64)\.(?:zip|dmg)|install\.(?:ps1|sh)|partner-index\.json(?:\.sig)?|partners\.json(?:\.sig)?|partner-[a-z0-9][a-z0-9-]{1,31}\.zip)$/;
+const RELEASE_FILE = /^(?:release\.json(?:\.sig)?|V2pn-windows-(?:x64|arm64)(?:(?:-update)?\.zip|-setup\.exe)|V2pn-macos-(?:x64|arm64)\.(?:zip|dmg)|install\.(?:ps1|sh)|partner-index\.json(?:\.sig)?|partners\.json(?:\.sig)?|partner-[a-z0-9][a-z0-9-]{1,31}\.zip)$/;
 const VERSION = /^v\d{1,4}\.\d{1,4}\.\d{1,6}(?:-[0-9A-Za-z.-]{1,40})?$/;
 
 export function releaseUrl(repo, file, tag) {

@@ -349,13 +349,16 @@ test('downloads redirect to GitHub and are counted by day and name, without anyt
     const c = new Client(env.base);
     const gh = 'https://github.com/Piwqust/V2pn/releases';
     const cases = [
-      ['/r/windows-x64', `${gh}/latest/download/V2pn-windows-x64.zip`],
-      ['/r/windows-arm64', `${gh}/latest/download/V2pn-windows-arm64.zip`],
+      ['/r/windows-x64', `${gh}/latest/download/V2pn-windows-x64-setup.exe`],
+      ['/r/windows-arm64', `${gh}/latest/download/V2pn-windows-arm64-setup.exe`],
+      ['/r/windows-x64-zip', `${gh}/latest/download/V2pn-windows-x64.zip`],
+      ['/r/windows-arm64-zip', `${gh}/latest/download/V2pn-windows-arm64.zip`],
       ['/r/macos-arm64', `${gh}/latest/download/V2pn-macos-arm64.dmg`],
       ['/r/macos-x64', `${gh}/latest/download/V2pn-macos-x64.dmg`],
       ['/r/install.ps1', `${gh}/latest/download/install.ps1`],
       ['/r/install.sh', `${gh}/latest/download/install.sh`],
-      ['/r/windows-x64', `${gh}/latest/download/V2pn-windows-x64.zip`],
+      ['/r/windows-x64', `${gh}/latest/download/V2pn-windows-x64-setup.exe`],
+      ['/releases/latest/download/V2pn-windows-x64-setup.exe', `${gh}/latest/download/V2pn-windows-x64-setup.exe`],
       ['/releases/latest/download/release.json', `${gh}/latest/download/release.json`],
       ['/releases/latest/download/release.json.sig', `${gh}/latest/download/release.json.sig`],
       ['/releases/latest/download/V2pn-windows-arm64-update.zip', `${gh}/latest/download/V2pn-windows-arm64-update.zip`],
@@ -373,7 +376,7 @@ test('downloads redirect to GitHub and are counted by day and name, without anyt
     const owner = new Client(env.base);
     await signInOwner(env, owner);
     const stats = (await owner.get('/api/mod/downloads?days=7')).data.downloads;
-    assert.deepEqual(stats.totals, { 'install.ps1': 1, 'install.sh': 1, 'macos-arm64': 1, 'macos-x64': 1, 'windows-arm64': 1, 'windows-x64': 2 });
+    assert.deepEqual(stats.totals, { 'install.ps1': 1, 'install.sh': 1, 'macos-arm64': 1, 'macos-x64': 1, 'windows-arm64': 1, 'windows-arm64-zip': 1, 'windows-x64': 2, 'windows-x64-zip': 1 });
     assert.deepEqual(Object.keys(env.hub.db.get('SELECT * FROM downloads')).sort(), ['count', 'day', 'name']);
   } finally {
     await env.close();

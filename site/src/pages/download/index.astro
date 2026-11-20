@@ -135,7 +135,8 @@ const steps = [
   @media (max-width: 1023px) { .steps__list { grid-template-columns: 1fr; gap: calc(var(--u) * 7); } .step { grid-template-columns: 1fr; max-width: 44rem; } }
   @media (max-width: 767px) {
     .dl-hero__text, .files, .cmds, .trust__text { grid-column: 1 / -1; }
-    .dl-hero__shot { grid-column: 1 / -1; margin-right: calc(-1 * var(--margin)); }
+    /* On a phone the hero stays text: the window would be the slowest thing on the first screen, and the steps below show it. */
+    .dl-hero__shot { display: none; }
     .files { margin-top: 1rem; }
     .files__row { grid-template-columns: 1fr 1.25rem; }
     .files__detail, .files__file { grid-column: 1; }

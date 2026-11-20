@@ -120,6 +120,9 @@ v2pn.angleford.co {
   steps (`welcome`, `import`) are still English captures of the first-run walkthrough (`placeholder: true` in
   `src/data/site.ts`). New captures: `tools/sandbox.ps1 -Launch` with `tools/demo/demo_sub.py`, then `tools/shot.ps1`;
   open popups from code, not with UI Automation (it can take focus).
+- Configra's tab captures (`configra-*.webp`, home page and `/providers/`) are English; Russian ones would match the
+  pages. The partner tab needs `tools/sandbox.ps1 -Partner configra`.
+- The provider guide (`docs/partners/README*.md`) keeps its long dashes; the site renders it as written.
 - Downloads go to the ZIP for Windows. When the Windows installer (CHANGELOG, Unreleased) ships, add its short names to
   `hub/lib/downloads.mjs` and point `downloads` in `src/data/site.ts` at them.
 - The owner's contact for providers who forgot their password: `/providers/login/` says a moderator resets it but

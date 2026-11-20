@@ -1,0 +1,77 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="500" viewBox="0 0 1200 500" role="img" aria-labelledby="title desc">
+  <title id="title">Two ways out of one connection</title>
+  <desc id="desc">The V2pn mark as a road seen from above: you at the bottom, Russian sites leave by the left road directly, everything else by the right road through your server.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#17171C"/>
+      <stop offset="1" stop-color="#0B0B0D"/>
+    </linearGradient>
+    <radialGradient id="warm" cx="0.78" cy="0.12" r="0.7">
+      <stop offset="0" stop-color="#FF3D1F" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#FF3D1F" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="16" height="16" patternUnits="userSpaceOnUse">
+      <circle cx="8" cy="8" r="1.1" fill="#FFFFFF" fill-opacity="0.07"/>
+    </pattern>
+    <linearGradient id="light" x1="0" y1="0" x2="0.6" y2="1">
+      <stop offset="0" stop-color="#FFB46A"/>
+      <stop offset="0.45" stop-color="#FF8A2A"/>
+      <stop offset="1" stop-color="#FF3D1F"/>
+    </linearGradient>
+    <linearGradient id="ribShade" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0" stop-color="#FFFFFF" stop-opacity="0.30"/>
+      <stop offset="0.12" stop-color="#FFFFFF" stop-opacity="0.08"/>
+      <stop offset="0.5" stop-color="#000000" stop-opacity="0"/>
+      <stop offset="0.86" stop-color="#000000" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#000000" stop-opacity="0.45"/>
+    </linearGradient>
+    <pattern id="ribs" width="15" height="40" patternUnits="userSpaceOnUse" x="438.80">
+      <rect width="15" height="40" fill="url(#ribShade)"/>
+    </pattern>
+    <clipPath id="server"><polygon points="538.00,180.00 662.00,56.00 761.20,56.00 761.20,155.20 703.09,155.20 637.20,221.09"/></clipPath>
+  </defs>
+
+  <rect width="1200" height="500" rx="28" fill="url(#bg)"/>
+  <rect width="1200" height="500" rx="28" fill="url(#warm)"/>
+  <rect width="1200" height="500" rx="28" fill="url(#dots)"/>
+  <rect x="0.5" y="0.5" width="1199" height="499" rx="27.5" fill="none" stroke="#FFFFFF" stroke-opacity="0.08"/>
+
+  <text x="48" y="464" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="16" letter-spacing="1.4" fill="#8F8D99">WHAT GOES THROUGH THE VPN · RUSSIAN SITES DIRECT</text>
+
+  <g id="mark">
+    <polygon points="438.80,56.00 538.00,56.00 538.00,180.00 662.00,56.00 761.20,56.00 761.20,155.20 703.09,155.20 637.20,221.09 637.20,403.20 538.00,403.20 538.00,279.20 438.80,180.00" fill="#FF3D1F"/>
+    <g clip-path="url(#server)">
+      <rect x="436.8" y="54.0" width="326.4" height="208.3" fill="url(#light)"/>
+      <rect x="436.8" y="54.0" width="326.4" height="208.3" fill="url(#ribs)"/>
+    </g>
+  </g>
+
+  <g id="direct" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif" text-anchor="end">
+    <text x="398.8" y="90" font-size="38" font-weight="600" letter-spacing="-0.8" fill="#FFFFFF">Direct</text>
+    <text x="398.8" y="128" font-size="22" fill="#A9ABB6">Banks, Gosuslugi, .ru sites</text>
+  </g>
+  <g>
+    <rect x="231.6" y="152" width="167.2" height="36" rx="8" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="315.2" y="176" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19" fill="#D6D6DE">gosuslugi.ru</text>
+    <rect x="243.2" y="200" width="155.6" height="36" rx="8" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="321.0" y="224" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19" fill="#D6D6DE">sberbank.ru</text>
+    <rect x="312.8" y="248" width="86.0" height="36" rx="8" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="355.8" y="272" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19" fill="#D6D6DE">ya.ru</text>
+  </g>
+
+  <g id="through-server" font-family="Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif">
+    <text x="801.2" y="90" font-size="38" font-weight="600" letter-spacing="-0.8" fill="#FFFFFF">Through your server</text>
+    <text x="801.2" y="128" font-size="22" fill="#A9ABB6">Everything else, blocked .ru too</text>
+  </g>
+  <g>
+    <rect x="801.2" y="152" width="155.6" height="36" rx="8" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="879.0" y="176" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19" fill="#D6D6DE">youtube.com</text>
+    <rect x="801.2" y="200" width="155.6" height="36" rx="8" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="879.0" y="224" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19" fill="#D6D6DE">chatgpt.com</text>
+    <rect x="801.2" y="248" width="155.6" height="36" rx="8" fill="#FFFFFF" fill-opacity="0.06" stroke="#FFFFFF" stroke-opacity="0.12"/>
+    <text x="879.0" y="272" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="19" fill="#D6D6DE">discord.com</text>
+  </g>
+
+  <text x="587.6" y="443.2" text-anchor="middle" font-family="'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Consolas, monospace" font-size="18" letter-spacing="2"
+        fill="#ECECF1">YOU</text>
+</svg>

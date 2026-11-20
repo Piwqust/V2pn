@@ -1,6 +1,12 @@
 blank_issues_enabled: false
 
 contact_links:
+  - name: Как пользоваться V2pn / How to use V2pn
+    url: https://v2pn.angleford.co/docs/
+    about: Установка, первое подключение, режим и маршрут, статус, вопросы (по-русски). Install, first connection, modes, status, FAQ.
+  - name: Уязвимость / Security vulnerability
+    url: https://github.com/Piwqust/V2pn/security/advisories/new
+    about: Не открывайте публичный issue, сообщите закрыто. Please report privately, not in a public issue.
   - name: Вопрос о протоколах и ядрах / Protocols and cores
     url: https://github.com/2dust/v2rayN/wiki
     about: V2pn построен на v2rayN. Как устроены Xray, sing-box и форматы серверов, описано в вики v2rayN.

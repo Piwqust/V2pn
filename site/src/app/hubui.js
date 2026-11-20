@@ -200,7 +200,7 @@ const FORK = '<svg class="fork" viewBox="0 0 104 112" aria-hidden="true"><path d
 const POWER = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3v8M6.3 6.3a8 8 0 1 0 11.4 0"/></svg>';
 const MENU = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16M4 12h16M4 17h16"/></svg>';
 const FOLDER = '<svg class="ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/></svg>';
-const SERVERS = [['de', 'Германия', 'VLESS Reality', 41], ['nl', 'Нидерланды', 'VLESS Reality', 48], ['fi', 'Финляндия', 'Hysteria2', 52]];
+const SERVERS = [['de', 'Германия', 'VLESS Reality', 41], ['nl', 'Нидерланды', 'VLESS Reality', 48], ['fi', 'Финляндия', 'Hysteria2', 52], ['se', 'Швеция', 'Hysteria2', 57], ['pl', 'Польша', 'Trojan', 63]];
 
 /**
  * V2pn's window with a provider's subscription, drawn as the app draws it (site.css .v2w).

@@ -190,7 +190,7 @@ function windowHtml({ theme, dark, name, files, dims = () => '' }) {
   const accent = C.hex(d.accent), onAccent = C.hex(d.onAccent), accentText = C.hex(d.accentText);
   const mark = files.mark ? `<img src="${files.mark}" alt="" width="16" height="16">`
     : `<span class="pp-letter" style="background: ${accent}; color: ${onAccent}">${esc(name.trim().charAt(0).toUpperCase())}</span>`;
-  const rows = [['de', 'Германия', 'VLESS Reality', 41], ['nl', 'Нидерланды', 'VLESS Reality', 48], ['fi', 'Финляндия', 'Hysteria2', 52]]
+  const rows = [['de', 'Германия', 'VLESS Reality', 41], ['nl', 'Нидерланды', 'VLESS Reality', 48], ['fi', 'Финляндия', 'Hysteria2', 52], ['se', 'Швеция', 'Hysteria2', 57], ['pl', 'Польша', 'Trojan', 63]]
     .map(([cc, c, p, ms], i) => `<div class="v2-row${i ? '' : ' is-on'}"><img src="/assets/v2pn/flags/${cc}.png" alt="" width="24" height="18"><span><b>${c}</b><small>${p}</small></span><span class="v2-ping">${ms} мс</span></div>`).join('');
   const plan = `<div class="v2-plan"><div class="v2-plan__head">${files.mark ? `<img src="${files.mark}" alt="" width="30" height="30">` : mark}<span><b>${n}</b><small>Ваш тариф · 77 дней</small></span></div>
     <div class="v2-bar" style="--v: 24%"><i></i></div><small>12,4 из 50 ГБ · до 31.01.2027</small><div class="v2-plan__links"><span>Продлить</span><span>Поддержка</span></div></div>`;

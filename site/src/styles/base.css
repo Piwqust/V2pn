@@ -320,7 +320,7 @@ html.menu-open { overflow: hidden; }
 @media (max-width: 600px) {
   .cmd { flex-wrap: wrap; }
   .cmd code { flex-basis: 100%; }
-  .copy { flex: 1 1 100%; min-height: 2.75rem; border-left: 0; border-top: 1px solid var(--c-line); }
+  .cmd .copy { flex: 1 1 100%; min-height: 2.75rem; border-left: 0; border-top: 1px solid var(--c-line); }
 }
 .cmd code::before { content: '$ '; color: var(--c-muted); }
 .cmd--ps code::before { content: 'PS> '; }

@@ -5,7 +5,7 @@ import Arrow from '../../components/Arrow.astro';
 import { site, downloads, commands, shots, links } from '../../data/site';
 import welcome from '../../assets/shots/welcome-dialog.png';
 import importShot from '../../assets/shots/import-dialog.png';
-import ready from '../../assets/shots/ready-dialog.png';
+import ready from '../../assets/shots/ru/connect-crop.png';
 
 const steps = [
   {
@@ -30,7 +30,7 @@ const steps = [
     text: [
       'На том же шаге V2pn покажет выбранный сервер, режим и маршрут. Нажмите «Подключиться»: «Защищено» появится после проверки соединения.',
     ],
-    img: ready, alt: shots.ready.alt,
+    img: ready, alt: 'Окно V2pn перед подключением: «Не защищено», Германия, Франкфурт, оранжевая кнопка «Подключиться», под ней режим «Прокси» и маршрут «Всё через VPN»',
   },
 ];
 ---
@@ -91,7 +91,7 @@ const steps = [
           </li>
         ))}
       </ol>
-      <p class="steps__more t-s">Подробно: <a class="link" href="/docs/install/">установка</a>, <a class="link" href="/docs/start/">первое подключение</a>, <a class="link" href="/docs/move/">переезд с других программ</a>. Скриншоты на английском: так окно выглядит до выбора языка.</p>
+      <p class="steps__more t-s">Подробно: <a class="link" href="/docs/install/">установка</a>, <a class="link" href="/docs/start/">первое подключение</a>, <a class="link" href="/docs/move/">переезд с других программ</a>. Первые два скриншота на английском: так окно выглядит до выбора языка.</p>
     </div>
   </section>
 

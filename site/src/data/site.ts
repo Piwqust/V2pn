@@ -6,7 +6,7 @@
 // - Downloads are the portable ZIP for Windows and the DMG for macOS, through the hub's /r/<name> (counted per day).
 //   When the Windows installer (Unreleased in CHANGELOG.md) ships, add its short names to hub/lib/downloads.mjs and
 //   point `downloads` here at them.
-// - The pings on the pages (41 мс and so on) are examples from the demo subscription in the screenshots, and say so.
+// - The pings on the pages (38 мс and so on) are examples from the demo subscription in the screenshots, and say so.
 // - Some screenshots show the app in English, its default language (`placeholder: true` below): replace them with
 //   Russian captures from tools/sandbox.ps1 with the demo subscription (tools/demo/demo_sub.py).
 import fs from 'node:fs';
@@ -59,7 +59,8 @@ export const commands = {
 export { presets, traffic } from './routes';
 
 export const shots = {
-  connected: { src: 'connected', alt: 'Окно V2pn: слева список «Главная» с самым быстрым сервером, справа карта Европы с булавкой во Франкфурте, сверху «Отключиться», режим «Прокси» и маршрут, снизу пинг 10 мс и трафик', placeholder: true },
+  connected: { src: 'ru/connected', alt: 'Окно V2pn на русском: слева «Главная» с быстрым подключением и недавними серверами, на карте Европы подсвечена Германия и метка «Франкфурт 38 мс», сверху «Отключиться», режим «Прокси» и маршрут «Всё через VPN», внизу пинг, трафик за сессию и график скорости', placeholder: false },
+  routingRu: { src: 'ru/routing', alt: 'То же окно с открытым меню «Что идёт через VPN»: три пресета, переключатель блокировки рекламы и свои правила', placeholder: false },
   welcome: { src: 'welcome', alt: 'Первый запуск V2pn: выбор языка и кнопка «Начать»', placeholder: true },
   import: { src: 'import', alt: 'Шаг «Ваши серверы»: вставить ссылку, добавить подписку или перенести из другой программы', placeholder: true },
   ready: { src: 'ready', alt: 'Серверы готовы: выбранный сервер, режим и маршрут, кнопка «Подключиться» на том же шаге', placeholder: true },
@@ -74,25 +75,25 @@ export const decisions = [
     n: '1',
     title: 'Сервер',
     text: 'Страны с пингом в списке слева и на карте. Сверху самый быстрый сервер, избранное и недавние. Серии вроде «AUTO 1/34» собраны в одну строку.',
-    focus: { x: 0.02, y: 0.17, w: 0.22, h: 0.6 },
+    focus: { x: 0.016, y: 0.2, w: 0.228, h: 0.162 },
   },
   {
     n: '2',
     title: 'Прокси или VPN',
     text: '«Прокси» включает системный прокси: через сервер идут браузеры и программы, которые его слушают. VPN ведёт через сервер весь трафик компьютера, игры тоже.',
-    focus: { x: 0.455, y: 0.3, w: 0.165, h: 0.085 },
+    focus: { x: 0.476, y: 0.325, w: 0.157, h: 0.06 },
   },
   {
     n: '3',
     title: 'Что идёт через VPN',
     text: 'Три пресета вместо редактора правил. Менять можно когда угодно, с подключением и без: новое правило работает сразу.',
-    focus: { x: 0.625, y: 0.3, w: 0.165, h: 0.085 },
+    focus: { x: 0.535, y: 0.383, w: 0.34, h: 0.592 },
   },
 ];
 
 export const checkLog = [
   { text: 'Ядро Xray запущено', ok: true },
-  { text: 'Проверка соединения, HTTP 204', ok: true, value: '41 мс' },
+  { text: 'Проверка соединения, HTTP 204', ok: true, value: '38 мс' },
   { text: 'Системный прокси включён', ok: true },
 ];
 

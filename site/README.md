@@ -115,9 +115,11 @@ v2pn.angleford.co {
 
 ## Still to replace
 
-- Most screenshots show V2pn in English, its default language (`placeholder: true` in `src/data/site.ts`). Russian
-  captures of the current window (the refined map) would match the site better: `tools/sandbox.ps1 -Launch` with the
-  demo subscription (`tools/demo/demo_sub.py`), then `tools/shot.ps1`, into `src/assets/shots/` under the same names.
+- The window on the home page and the last download step are Russian captures of the current V2pn (2026-11-20,
+  `src/assets/shots/ru/`, demo subscription; the pings other than Frankfurt's were seeded). The first two download
+  steps (`welcome`, `import`) are still English captures of the first-run walkthrough (`placeholder: true` in
+  `src/data/site.ts`). New captures: `tools/sandbox.ps1 -Launch` with `tools/demo/demo_sub.py`, then `tools/shot.ps1`;
+  open popups from code, not with UI Automation (it can take focus).
 - Downloads go to the ZIP for Windows. When the Windows installer (CHANGELOG, Unreleased) ships, add its short names to
   `hub/lib/downloads.mjs` and point `downloads` in `src/data/site.ts` at them.
 - The owner's contact for providers who forgot their password: `/providers/login/` says a moderator resets it but

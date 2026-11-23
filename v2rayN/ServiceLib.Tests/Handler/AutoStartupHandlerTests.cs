@@ -19,8 +19,9 @@ public class AutoStartupHandlerTests
 
             var calls = await readCalls();
             await calls.Any(call => call.StartsWith("unload")).Should().BeFalse();
-            await calls.Should().HaveCount(2);
-            await calls[1].Should().BeEqualTo($"load -w {plistPath}");
+            // V2pn: the agent is written, not loaded: launchd reads it at the next sign-in, and loading it now would
+            // start a second V2pn at once (AutoStartupHandler.SetTaskOSX, V2pnMacAutostart).
+            await calls.Should().HaveCount(0);
             await File.ReadAllText(plistPath).Contains(Utils.GetExePath()).Should().BeTrue();
         });
     }

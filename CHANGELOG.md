@@ -2,6 +2,47 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## 1.4.2
+
+V2pn feels at home on a Mac: menus of its own in the menu bar, an icon there that tells the state by its shape, Mac keys, a Dock menu and notifications. On every system it is quieter when nothing happens and opens sooner, and buttons are drawn whole again.
+
+<p align="center"><img src="docs/images/changelog/1.4.2-hero.png" width="800" alt="V2pn 1.4.2: the main window on a Mac connected through Frankfurt, in front of the same window on Windows in the light theme"></p>
+
+### V2pn on a Mac
+
+<p align="center"><img src="docs/images/changelog/1.4.2-mac.png" width="800" alt="V2pn on a Mac: the main window with V2pn's own menu bar and its Connection menu open; below, the menu bar icon off, connected and needing attention, the new app icon and the Mac keys"></p>
+
+V2pn now behaves like a Mac app, not like a Windows app that also runs on a Mac.
+
+- **Menu bar.** V2pn has menus of its own: the app menu with About V2pn, Settings… (⌘,) and Check for Updates…, then File, Edit, Connection, Window and Help. Connection holds what the window does: connect or disconnect, the servers by country with your favourites and the ones used last, the mode, the route and the subscriptions. Before, the menu bar had "About Avalonia" and Quit, in English whatever the language.
+- **The icon in the menu bar** is a one-colour picture that macOS paints to suit a light or a dark bar. The state is told by its shape: an outline when V2pn is off, solid when connected, solid with a dot when the connection needs attention. Its menu has the same submenus: servers, mode, route, subscriptions.
+- **About V2pn** is the system's About panel: the version, the versions of the installed cores (Xray, sing-box), and links to the website, the guides, the source and the licence.
+- **Keys.** ⌘ wherever Windows has Ctrl, and the menus show ⌘. ⌘W closes the window and V2pn stays in the menu bar, ⌘Q quits, ⌘N adds a subscription, ⌘M minimizes, and ⌘0 goes from the settings or an editor back to the main window. The Edit menu copies, pastes and undoes in every field.
+- **The app icon** is V2pn's own: the white fork on a red tile, in the shape and size of a Mac icon. Until now the Mac build carried an older picture.
+- **Dock menu**: connect or disconnect, and the servers used last.
+- **Notifications** when the connection is lost, or comes back after a loss, while V2pn is not the app in front.
+- **Start with the system**: System Settings → Login Items lists the entry as V2pn, not as "sh". An entry made by an earlier version is rewritten the next time V2pn starts. Only the installed app writes it.
+- **Settings**: "Hide to the tray on close" is gone on a Mac, where closing the window always leaves V2pn in the menu bar; the other rows say "menu bar", not "tray". The Kill switch page says what it covers on a Mac: proxy mode. Holding the internet closed in VPN mode is still Windows only.
+
+### Lighter and quicker
+
+<p align="center"><img src="docs/images/changelog/1.4.2-speed.png" width="800" alt="1.4.0 against 1.4.2 on one Windows computer with a thousand servers: the processor with the window open and nothing happening falls from 1.8 to 0.55 percent of a core, the window is ready after 1.43 s instead of 1.65 s, and the world map is drawn by 3 shapes instead of about 600"></p>
+
+- **Quieter when nothing happens.** With the window open and V2pn idle, it used to redraw the whole window every second and a half to give the ping bar the colour it already had. It now uses less than a third of the processor time it did: 0.55 % of a core instead of 1.8 % on our test computer.
+- **Animations run only while you can see them.** A busy spinner hidden in the walkthrough kept V2pn waking 60 times a second, minimized too, and the map's waves would have done the same after a connection change while V2pn sat in the tray.
+- **Opens about 0.2 s sooner** with a thousand servers: the world map is three drawings instead of 600 separate shapes, and finding the city in a server's name no longer builds a large search table at start. The map looks exactly as before.
+- While the window is minimized and V2pn is connected, the speed graph no longer redraws every second; it catches up when you open the window.
+
+### Looks
+
+<p align="center"><img src="docs/images/changelog/1.4.2-buttons.png" width="800" alt="The search field, the add button and the tabs in the light theme: in 1.4.0 the add button's outline and shadow are cut along its straight edges, in 1.4.2 they are whole"></p>
+
+- **Buttons no longer look like two buttons.** The outline and the shadow of buttons, list rows and tabs were cut off along their straight edges and showed only in the corners, as if a squarer button sat under each one; the focus ring of a button or a field was cut the same way. They are whole now, in the light theme, where it showed most, and in the dark one.
+- **On a Mac the close, minimize and zoom buttons sit in the middle of V2pn's title bar**, on one line with the menu button and the name, and stay there when the window is resized or its title changes. In full screen the menu button moves to the edge.
+- The "Countries" header keeps its whole title and the count: the sort button beside the ping button is its icon alone, with the order in its tooltip. Before, the title was cut in the middle of a letter.
+- In the rule sets window "Add a program" moves to a second line instead of being cut off.
+- On a Mac, shortcuts in the window's menus are written the Mac way (⇧⌘R, not ⇧+⌘+R); the Appearance page says "System" and "System font" instead of naming Windows and Segoe UI, and shows which theme mode is chosen before one has been saved; "Motion: as in the system" follows Accessibility → Reduce motion.
+
 ## 1.4.0
 
 V2pn can now hold the internet closed when the connection drops, and keep the programs you choose, such as Claude, from ever going out past it. It tells you what Russian filtering blocks on your network and tries ways around it. Windows gets an installer of its own, the map zooms to the country and pins the city, and the windows V2pn took over from v2rayN (rule sets, subscriptions, connections, proxies, the log and the settings) now look and read like the rest of V2pn.

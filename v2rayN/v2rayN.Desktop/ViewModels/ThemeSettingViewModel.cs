@@ -119,8 +119,12 @@ public partial class ThemeSettingViewModel : MyReactiveObject
 
         try
         {
+<<<<<<< HEAD
             // The resource is consumed as a FontFamily; a bare string crashes DynamicResource bindings.
             Application.Current!.Resources["AppFontFamily"] = new FontFamily($"{currentFontFamily}, avares://V2pn/Assets/Fonts#Inter");
+=======
+            Application.Current!.Resources["AppFontFamily"] = new FontFamily(currentFontFamily);
+>>>>>>> 1e79384c (V2pn: v2rayN 8.0.1 (91c61b1f))
         }
         catch (Exception ex)
         {

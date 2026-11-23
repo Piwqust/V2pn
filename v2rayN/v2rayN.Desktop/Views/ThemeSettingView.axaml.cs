@@ -1,5 +1,8 @@
+<<<<<<< HEAD
 using Avalonia.Controls.Templates;
 using Avalonia.Data;
+=======
+>>>>>>> 1e79384c (V2pn: v2rayN 8.0.1 (91c61b1f))
 using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
@@ -19,8 +22,6 @@ public partial class ThemeSettingView : ReactiveUserControl<ThemeSettingViewMode
         cmbCurrentTheme.ItemTemplate = new FuncDataTemplate<string>((name, _) => new TextBlock { Text = L.ThemeName(name) });
         cmbCurrentFontSize.ItemsSource = Enumerable.Range(Global.MinFontSize, Global.MinFontSizeCount).ToList();
         cmbCurrentLanguage.ItemsSource = Global.LanguageOptions;
-        cmbCurrentLanguage.DisplayMemberBinding = new Binding(nameof(LanguageOption.Display));
-        cmbCurrentLanguage.SelectedValueBinding = new Binding(nameof(LanguageOption.Value));
 
         this.WhenActivated(disposables =>
         {

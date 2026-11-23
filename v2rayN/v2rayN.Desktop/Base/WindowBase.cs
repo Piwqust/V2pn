@@ -9,6 +9,7 @@ public class WindowBase<TViewModel> : ReactiveWindow<TViewModel> where TViewMode
         {
             Classes.Add("dialog");
             Common.DialogChrome.Attach(this);
+            Common.MacMenus.AttachBasic(this); // V2pn
         }
         Common.OffscreenMode.Attach(this); // V2pn
         Loaded += OnLoaded;

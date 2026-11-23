@@ -7,6 +7,24 @@ public partial class App : Application
 {
     public override void Initialize()
     {
+        if (OperatingSystem.IsMacOS())
+        {
+            // V2pn: a shortcut written as Ctrl+… is ⌘+… on a Mac. The handlers take either key; this makes the menus
+            // show the one a Mac user presses. Registered before any menu is built.
+            MenuItem.InputGestureProperty.Changed.AddClassHandler<MenuItem>((item, e) =>
+            {
+                if (e.NewValue is KeyGesture gesture && gesture.KeyModifiers.HasFlag(KeyModifiers.Control))
+                {
+                    item.InputGesture = new KeyGesture(gesture.Key, (gesture.KeyModifiers & ~KeyModifiers.Control) | KeyModifiers.Meta);
+                }
+                else
+                {
+                    MacShowGesture(item);
+                }
+            });
+            // And they are written the way macOS writes them, "⇧⌘R", where Avalonia would write "⇧+⌘+R".
+            MenuItem.TemplateAppliedEvent.AddClassHandler<MenuItem>((item, _) => Dispatcher.UIThread.Post(() => MacShowGesture(item), DispatcherPriority.Loaded));
+        }
         AvaloniaXamlLoader.Load(this);
         if (!OperatingSystem.IsWindows())
         {
@@ -20,6 +38,16 @@ public partial class App : Application
         if (OperatingSystem.IsWindows())
         {
             Common.TrayMenuPlacement.Install(); // V2pn
+        }
+        if (OperatingSystem.IsMacOS() && !Design.IsDesignMode)
+        {
+            // V2pn: the app menu's own items. Avalonia reads the menu right after this method and adds Services, Hide
+            // and Quit below them; without a menu here it would put "About Avalonia" in their place.
+            NativeMenu.SetMenu(this, MacMenus.Menu(
+                MacMenus.Item(L.MacAbout, () => TrayWindow?.MacShowAbout()),
+                MacMenus.Separator(),
+                MacMenus.Item(L.MacSettings, () => TrayWindow?.MacOpenSettings(), new KeyGesture(Key.OemComma, KeyModifiers.Meta)),
+                MacMenus.Item(L.MacCheckUpdates, () => TrayWindow?.MacCheckForUpdates())));
         }
 
         AppDomain.CurrentDomain.UnhandledException += CurrentDomain_UnhandledException;
@@ -55,11 +83,88 @@ public partial class App : Application
             if (OperatingSystem.IsMacOS())
             {
                 Current?.TryGetFeature<IActivatableLifetime>()?.Activated += OnMacOSActivated;
+                if (!Design.IsDesignMode)
+                {
+                    MacSetUpMenus(mainWindow);
+                }
             }
         }
 
         base.OnFrameworkInitializationCompleted();
     }
+
+    #region MacOS menus
+
+    private static void MacShowGesture(MenuItem item)
+    {
+        if (item.InputGesture is { } gesture
+            && Avalonia.VisualTree.VisualExtensions.GetVisualDescendants(item).OfType<TextBlock>().FirstOrDefault(t => t.Name == "PART_InputGestureText") is { } text)
+        {
+            text.Text = MacMenus.FormatGesture(gesture);
+        }
+    }
+
+    /// <summary>
+    /// V2pn: the menus that belong to the app on a Mac. The app menu gets its standard items in the person's
+    /// language, the status item its one-colour picture and a menu that the window fills (MainWindow.Mac.cs), and
+    /// the Dock a menu of its own.
+    /// </summary>
+    private void MacSetUpMenus(MainWindow mainWindow)
+    {
+        try
+        {
+            if (NativeMenu.GetMenu(this) is { } appMenu)
+            {
+                MacNameStandardItems(appMenu);
+            }
+            var dockMenu = new NativeMenu();
+            NativeDock.SetMenu(this, dockMenu);
+            if (TrayIcon.GetIcons(this)?.FirstOrDefault() is { Menu: { } statusMenu } statusItem)
+            {
+                MacOSProperties.SetIsTemplateIcon(statusItem, true);
+                statusItem.Icon = MacStatusIcons.Get(1);
+                // The menu object stays (Avalonia keeps the native menu tied to it); the items written for the tray
+                // of Windows and Linux in App.axaml go.
+                statusMenu.Items.Clear();
+                mainWindow.MacAdoptAppMenus(statusMenu, dockMenu);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(MacSetUpMenus), ex);
+        }
+    }
+
+    // Avalonia adds these in English whatever the language, and gives Hide Others the keys of Quit plus Option.
+    private static void MacNameStandardItems(NativeMenu appMenu)
+    {
+        foreach (var item in appMenu.Items.OfType<NativeMenuItem>())
+        {
+            if (item.Menu != null && item.Header == "Services")
+            {
+                item.Header = L.MacServices;
+            }
+            else if (item.Gesture is { Key: Key.H, KeyModifiers: KeyModifiers.Meta })
+            {
+                item.Header = L.MacHide;
+            }
+            else if (item.Header == "Hide Others")
+            {
+                item.Header = L.MacHideOthers;
+                item.Gesture = new KeyGesture(Key.H, KeyModifiers.Meta | KeyModifiers.Alt);
+            }
+            else if (item.Header == "Show All")
+            {
+                item.Header = L.MacShowAll;
+            }
+            else if (item.Gesture is { Key: Key.Q, KeyModifiers: KeyModifiers.Meta })
+            {
+                item.Header = L.MacQuit;
+            }
+        }
+    }
+
+    #endregion MacOS menus
 
     #region MacOS Activation
 

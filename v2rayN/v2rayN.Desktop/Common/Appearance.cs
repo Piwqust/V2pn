@@ -286,6 +286,8 @@ public static class Appearance
 
         var ui = settings.Font switch
         {
+            // "The system's font": Segoe UI on Windows; elsewhere the one the system itself uses for its interface.
+            "segoe" when !OperatingSystem.IsWindows() => new FontFamily($"{FontManager.Current.DefaultFontFamily.Name}, avares://V2pn/Assets/Fonts#Inter"),
             "segoe" => new FontFamily("Segoe UI Variable Text, Segoe UI, avares://V2pn/Assets/Fonts#Inter"),
             _ => null,
         };

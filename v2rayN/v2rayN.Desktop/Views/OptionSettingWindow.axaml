@@ -272,7 +272,8 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
-                                    <Border Classes="srow">
+                                    <!-- V2pn: on a Mac closing the window always leaves the app in the menu bar, as Mac apps do; there is nothing to choose. -->
+                                    <Border Classes="srow nonmac">
                                         <Grid ColumnDefinitions="Auto,*,Auto">
                                             <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconMinimize}" /></Border>
                                             <StackPanel Grid.Column="1" Classes="srowtext">
@@ -801,7 +802,7 @@
                                     </Border>
                                 </StackPanel>
                             </Border>
-                            <TextBlock Classes="spagehint" Margin="4,10,0,0" Text="{x:Static loc:L.KillSwitchAdminNote}" />
+                            <TextBlock x:Name="txtKillSwitchAdminNote" Classes="spagehint" Margin="4,10,0,0" Text="{x:Static loc:L.KillSwitchAdminNote}" />
                         </StackPanel>
                         <StackPanel Classes="sgroup">
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpAppKillSwitch}" />

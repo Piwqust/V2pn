@@ -60,7 +60,7 @@ internal class Program
         {
             // Keep the named mutex alive for the process lifetime. Discarding the handle lets
             // the runtime finalize it, so the next launch sees no running instance.
-            _instanceMutex = new Mutex(true, "V2pn", out var bOnlyOneInstance);
+            _instanceMutex = new Mutex(true, InstanceName(), out var bOnlyOneInstance);
             if (!bOnlyOneInstance)
             {
                 return false;
@@ -81,6 +81,14 @@ internal class Program
         return true;
     }
 
+    /// <summary>
+    /// V2pn: one V2pn per data folder, as on Windows, where the lock is named after the program's path. The installed
+    /// app keeps its data in the user's folder, so every copy of it is the same V2pn. A copy that keeps its data beside
+    /// itself (tools/mac-sandbox.sh, a test build) is its own and can run next to the one in use.
+    /// </summary>
+    private static string InstanceName() =>
+        Utils.HasWritePermission() ? $"V2pn_{Utils.GetMd5(Utils.GetBaseDirectory())}" : "V2pn";
+
     // Avalonia configuration, don't remove; also used by visual designer.
     public static AppBuilder BuildAvaloniaApp()
     {
@@ -97,7 +105,10 @@ internal class Program
         if (OperatingSystem.IsMacOS())
         {
             var showInDock = Design.IsDesignMode || ConfigTextHandler.Config.UiItem.MacOSShowInDock;
-            builder = builder.With(new MacOSPlatformOptions { ShowInDock = showInDock });
+            // V2pn: the process keeps the name its bundle gives it (V2pn; V2pnSandbox for the copy tools/mac-sandbox.sh
+            // makes, so the menu bar, the Dock and UI scripting tell it from the installed one). Avalonia would name
+            // every copy after Application.Name.
+            builder = builder.With(new MacOSPlatformOptions { ShowInDock = showInDock, DisableSetProcessName = true });
         }
 
         // V2pn: in background mode menus and flyouts are drawn inside their parked window; as separate

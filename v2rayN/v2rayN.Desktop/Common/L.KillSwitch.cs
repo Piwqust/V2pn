@@ -9,9 +9,13 @@ public static partial class L
         "Если соединение оборвётся, интернет останется закрытым, пока V2pn не переподключится или вы не нажмёте «Отключиться». Так ничего не уйдёт мимо VPN. Пока переключатель выключен, V2pn при обрыве отключается сам, и интернет идёт напрямую.");
     public static string GrpKillSwitch => T("Kill switch", "Kill switch");
     public static string KillSwitchEnable => T("Turn on the kill switch", "Включить kill switch");
-    public static string KillSwitchEnableHint => T(
-        "In VPN mode Windows lets only V2pn and the tunnel out. In proxy mode the system proxy stays on V2pn, so programs that use it get no connection instead of a direct one.",
-        "В режиме VPN Windows выпускает наружу только V2pn и туннель. В режиме прокси системный прокси остаётся на V2pn: программы, которые им пользуются, не получат соединения вместо прямого.");
+    // The VPN-mode block is a Windows firewall filter (V2pnFirewall); macOS and Linux have the proxy-mode hold only,
+    // and the page says so instead of promising what V2pnKillSwitch.CanHold will not do there.
+    public static string KillSwitchEnableHint => OperatingSystem.IsWindows()
+        ? T("In VPN mode Windows lets only V2pn and the tunnel out. In proxy mode the system proxy stays on V2pn, so programs that use it get no connection instead of a direct one.",
+            "В режиме VPN Windows выпускает наружу только V2pn и туннель. В режиме прокси системный прокси остаётся на V2pn: программы, которые им пользуются, не получат соединения вместо прямого.")
+        : T("Works in proxy mode: the system proxy stays on V2pn, so programs that use it get no connection instead of a direct one. In VPN mode on this system the kill switch does not hold the internet closed yet.",
+            "Работает в режиме «Прокси»: системный прокси остаётся на V2pn, и программы, которые им пользуются, не получат соединения вместо прямого. В режиме VPN на этой системе kill switch пока не удерживает интернет закрытым.");
     public static string KillSwitchLan => T("Allow the local network", "Разрешить локальную сеть");
     public static string KillSwitchLanHint => T(
         "Printers, a NAS and the router's page stay reachable while the internet is closed. VPN mode only.",

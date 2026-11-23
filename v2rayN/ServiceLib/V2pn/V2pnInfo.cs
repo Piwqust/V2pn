@@ -46,6 +46,14 @@ public static class V2pnInfo
     /// <summary>The releases page for people ("What's new").</summary>
     public static string ReleasesUrl => $"{Global.GithubUrl}/{Repo}/releases";
 
+    /// <summary>V2pn's website and its guides (site/ in the repository).</summary>
+    public const string SiteUrl = "https://v2pn.angleford.co";
+
+    public const string DocsUrl = SiteUrl + "/docs/";
+
+    /// <summary>The repository page: the source code, the licence and the issues.</summary>
+    public static string RepoUrl => $"{Global.GithubUrl}/{Repo}";
+
     /// <summary>Places that serve releases, in the order they are tried. Set at build time.</summary>
     public static IReadOnlyList<string> UpdateSources { get; } = Split(Metadata("V2pnUpdateSources")).Select(s => s.TrimEnd('/')).ToList();
 

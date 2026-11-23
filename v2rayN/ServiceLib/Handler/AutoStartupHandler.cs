@@ -35,10 +35,16 @@ public static class AutoStartupHandler
         else if (Utils.IsMacOS())
         {
             // V2pn: started from the disk image or a quarantine copy, the path will not exist at the next sign-in.
-            var exePath = Utils.GetExePath();
-            if (exePath.Contains("/AppTranslocation/") || exePath.StartsWith("/Volumes/"))
+            if (V2pnMacAutostart.IsTemporaryCopy(Utils.GetExePath()))
             {
                 Logging.SaveLog("V2pn: this copy runs from a disk image; move it to Applications to start at sign-in");
+                return true;
+            }
+            // V2pn: a copy with its data beside itself is not the installed app; the sign-in agent is not its to
+            // write or to remove.
+            if (!V2pnMacAutostart.MayOwnAgent())
+            {
+                Logging.SaveLog("V2pn: this copy keeps its data beside itself; the sign-in entry is left to the installed V2pn");
                 return true;
             }
             await ClearTaskOSX();
@@ -79,6 +85,12 @@ public static class AutoStartupHandler
     /// </summary>
     public static async Task<bool> MigrateAutostartArg(Config config)
     {
+        if (Utils.IsMacOS())
+        {
+            // V2pn: an agent written by an older build becomes one that starts V2pn itself.
+            await V2pnMacAutostart.TidyAsync(config);
+            return true;
+        }
         if (!Utils.IsWindows())
         {
             return false;
@@ -334,12 +346,10 @@ public static class AutoStartupHandler
     {
         try
         {
-            var plistContent = GenerateLaunchAgentPlist();
-            var launchAgentPath = GetLaunchAgentPathMacOS();
-            await File.WriteAllTextAsync(launchAgentPath, plistContent);
-
-            var args = new[] { "-c", $"launchctl load -w \"{launchAgentPath}\"" };
-            await Utils.GetCliWrapOutput(Global.LinuxBash, args);
+            // V2pn: the agent starts V2pn itself, so System Settings lists it under V2pn's name, not "sh"
+            // (V2pnMacAutostart). It is not loaded now: launchd reads the folder at the next sign-in, and loading it
+            // would start a second V2pn at once.
+            await File.WriteAllTextAsync(GetLaunchAgentPathMacOS(), V2pnMacAutostart.Plist(Utils.GetExePath()));
         }
         catch (Exception ex)
         {
@@ -350,35 +360,9 @@ public static class AutoStartupHandler
     [SupportedOSPlatform("macos")]
     private static string GetLaunchAgentPathMacOS()
     {
-        var homePath = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        var launchAgentPath = Path.Combine(homePath, "Library", "LaunchAgents", $"{Global.AppName}-LaunchAgent.plist");
+        var launchAgentPath = V2pnMacAutostart.AgentPath();
         Directory.CreateDirectory(Path.GetDirectoryName(launchAgentPath));
         return launchAgentPath;
-    }
-
-    [SupportedOSPlatform("macos")]
-    private static string GenerateLaunchAgentPlist()
-    {
-        var exePath = Utils.GetExePath();
-        var appName = Path.GetFileNameWithoutExtension(exePath);
-        return $@"<?xml version=""1.0"" encoding=""UTF-8""?>
-<!DOCTYPE plist PUBLIC ""-//Apple//DTD PLIST 1.0//EN"" ""http://www.apple.com/DTDs/PropertyList-1.0.dtd"">
-<plist version=""1.0"">
-<dict>
-    <key>Label</key>
-    <string>{Global.AppName}-LaunchAgent</string>
-    <key>ProgramArguments</key>
-    <array>
-        <string>/bin/sh</string>
-        <string>-c</string>
-        <string>if ! pgrep -x ""{appName}"" > /dev/null; then ""{exePath}"" {Global.AutostartArg}; fi</string>
-    </array>
-    <key>RunAtLoad</key>
-    <true/>
-    <key>KeepAlive</key>
-    <false/>
-</dict>
-</plist>";
     }
 
     #endregion macOS

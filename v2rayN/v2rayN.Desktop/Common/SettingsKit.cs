@@ -7,7 +7,7 @@ namespace v2rayN.Desktop.Common;
 /// Shared behaviour of the V2pn settings layouts: pages (StackPanel.spage) made of groups
 /// (StackPanel.sgroup) made of rows (Border.srow).
 /// <list type="bullet">
-/// <item>Rows tagged win / nonwin / linux / mac are hidden on other platforms.</item>
+/// <item>Rows tagged win / nonwin / linux / mac are hidden on other platforms; nonmac rows are hidden on a Mac.</item>
 /// <item>Search hides rows whose texts don't match, then empty groups and pages.</item>
 /// </list>
 /// Visibility goes through style classes (.hidden, .nomatch) so both rules combine without
@@ -22,7 +22,8 @@ internal static class SettingsKit
             var visible = !(row.Classes.Contains("win") && !Utils.IsWindows())
                           && !(row.Classes.Contains("nonwin") && Utils.IsWindows())
                           && !(row.Classes.Contains("linux") && !Utils.IsLinux())
-                          && !(row.Classes.Contains("mac") && !Utils.IsMacOS());
+                          && !(row.Classes.Contains("mac") && !Utils.IsMacOS())
+                          && !(row.Classes.Contains("nonmac") && Utils.IsMacOS());
             row.Classes.Set("hidden", !visible);
         }
         QueueMarkFirst(root);

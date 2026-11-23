@@ -300,7 +300,8 @@ public sealed class AppearanceView : UserControl
     {
         string[] themes = [nameof(ETheme.FollowSystem), nameof(ETheme.Light), nameof(ETheme.Dark)];
         var box = SegmentBox([L.ApModeSystem, L.ApModeLight, L.ApModeDark]);
-        box.SelectedIndex = Array.IndexOf(themes, _theme.CurrentTheme);
+        // No theme saved yet means the system's, which is what the app shows then.
+        box.SelectedIndex = Math.Max(0, Array.IndexOf(themes, _theme.CurrentTheme));
         box.SelectionChanged += (_, _) =>
         {
             if (box.SelectedIndex >= 0)

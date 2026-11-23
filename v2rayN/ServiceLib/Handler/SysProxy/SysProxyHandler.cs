@@ -7,14 +7,15 @@ public static class SysProxyHandler
 
     public static async Task<bool> UpdateSysProxy(Config config, bool forceDisable)
     {
-#if DEBUG
         // V2pn: screenshots and UI checks run a sandbox in the everyday mode (system proxy) next to the
-        // V2pn in use. With this set the sandbox shows that mode but never touches the real proxy.
-        if (Environment.GetEnvironmentVariable("V2PN_KEEP_SYSTEM_PROXY") == "1")
+        // V2pn in use. With this set the sandbox shows that mode but never touches the real proxy. Every build
+        // that is not a release honours it: a sandbox on a Mac is a Release build of the working tree
+        // (tools/mac-sandbox.sh sets it in the bundle), and one that took over v2rayN's settings, port included,
+        // switched off the system proxy of the V2pn in use when it quit.
+        if (!V2pnInfo.IsRelease && Environment.GetEnvironmentVariable("V2PN_KEEP_SYSTEM_PROXY") == "1")
         {
             return true;
         }
-#endif
         var type = config.SystemProxyItem.SysProxyType;
 
         if (forceDisable && type != ESysProxyType.Unchanged)

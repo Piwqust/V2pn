@@ -166,6 +166,11 @@ internal static class Motion
             case "off":
                 return false;
         }
+        if (OperatingSystem.IsMacOS())
+        {
+            // System Settings > Accessibility > Display > Reduce motion.
+            return !MacAppUtils.ReduceMotion();
+        }
         if (!OperatingSystem.IsWindows())
         {
             return true;

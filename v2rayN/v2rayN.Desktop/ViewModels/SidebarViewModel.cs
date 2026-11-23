@@ -96,6 +96,12 @@ public sealed class SideHeaderRow(string title, PingState? ping = null, BusyStat
     public SortState? Sort { get; init; }
     public bool ShowSort => Sort != null;
 
+    /// <summary>
+    /// Beside the ping button the sort button is its icon alone, with the order in its tooltip: with both labels
+    /// the sidebar had no room left for the title, which was cut in the middle of a letter ("Странь").
+    /// </summary>
+    public bool ShowSortLabel => Sort != null && Ping == null;
+
     /// <summary>A link on the right ("All statistics"), opening another view.</summary>
     public string? Link { get; init; }
     public SideActionKind LinkKind { get; init; }
@@ -1039,15 +1045,42 @@ public sealed partial class SidebarViewModel : ReactiveObject
         }
     }
 
+    // V2pn: a partner's own country for a server wins over a guess from its name.
+    private static List<(string Code, string Name, List<ProfileItemModel> Items)> CountryGroups(IEnumerable<ProfileItemModel> servers, SideSort sort) =>
+        SortCountries(ServerNames.DistinctConnections(servers)
+            .GroupBy(m => V2pnPartnerLive.Instance.Describe(m.Subid, m.Remarks, m.Address)?.Country ?? CountryResolver.Resolve(m.Remarks) ?? string.Empty)
+            .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: SortServers(g, sort == SideSort.Usage ? SideSort.Usage : SideSort.Ping).ToList())), sort)
+            .ToList();
+
+    #region The Mac's menus
+
+    // The menus of the menu bar, the status item and the Dock list the same servers as the window, in its order
+    // and within the open tab's subscriptions (MainWindow.Mac.cs).
+
+    /// <summary>The servers by country as the Countries tab has them; pools are listed with the country in their name.</summary>
+    public List<(string Code, string Name, List<ProfileItemModel> Items)> MenuCountries() =>
+        CountryGroups(Scoped(_profiles.ProfileItems), CountrySort == SideSort.Usage && !StatsEnabled ? SideSort.Name : CountrySort);
+
+    public List<ProfileItemModel> MenuFavorites() => Favorites;
+
+    /// <summary>The servers last connected through, newest first.</summary>
+    public List<ProfileItemModel> MenuRecent(int limit)
+    {
+        var byId = Scoped(_profiles.ProfileItems).Concat(Favorites).GroupBy(m => m.IndexId).ToDictionary(g => g.Key, g => g.First());
+        return (Ui.V2pnRecent ?? []).Where(byId.ContainsKey).Take(limit).Select(id => byId[id]).ToList();
+    }
+
+    /// <summary>The subscriptions of the open tab, as the Subscriptions tab lists them.</summary>
+    public List<SubItem> MenuSubscriptions() =>
+        _profiles.SubNavItems.Where(s => s.Id.IsNotEmpty() && (_scope == null || _scope.Contains(s.Id))).Select(s => s.Item).ToList();
+
+    #endregion The Mac's menus
+
     private void BuildCountries(List<SideRow> rows, List<ProfileItemModel> all)
     {
         var (series, rest) = ServerNames.SplitSeries(all);
         var sort = CountrySort == SideSort.Usage && !StatsEnabled ? SideSort.Name : CountrySort;
-        // V2pn: a partner's own country for a server wins over a guess from its name.
-        var groups = SortCountries(ServerNames.DistinctConnections(rest)
-            .GroupBy(m => V2pnPartnerLive.Instance.Describe(m.Subid, m.Remarks, m.Address)?.Country ?? CountryResolver.Resolve(m.Remarks) ?? string.Empty)
-            .Select(g => (Code: g.Key, Name: CountryName(g.Key), Items: SortServers(g, sort == SideSort.Usage ? SideSort.Usage : SideSort.Ping).ToList())), sort)
-            .ToList();
+        var groups = CountryGroups(rest, sort);
 
         _pingScope = all;
         if (series.Count > 0)

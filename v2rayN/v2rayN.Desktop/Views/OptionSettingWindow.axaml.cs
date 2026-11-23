@@ -12,6 +12,8 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         InitializeComponent();
 
         SettingsKit.ApplyPlatform(this);
+        // V2pn: administrator rights and the VPN-mode block are Windows' (the rows are tagged "win"; this line is not a row).
+        txtKillSwitchAdminNote.IsVisible = Utils.IsWindows();
         _advanced = ConfigTextHandler.Config.UiItem.V2pnSettingsAdvanced;
         togAdvanced.IsChecked = _advanced;
         SettingsKit.ApplyAdvanced(this, _advanced);

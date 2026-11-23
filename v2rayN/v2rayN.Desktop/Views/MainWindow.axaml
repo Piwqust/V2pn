@@ -387,7 +387,8 @@
                                         <TextBlock
                                             VerticalAlignment="Center"
                                             Classes="muted small"
-                                            Text="{Binding Title}" />
+                                            Text="{Binding Title}"
+                                            TextTrimming="CharacterEllipsis" />
                                         <StackPanel
                                             Grid.Column="1"
                                             Margin="0,0,-2,0"
@@ -434,7 +435,7 @@
                                             ToolTip.Tip="{Binding Sort.Tip, FallbackValue=''}">
                                             <StackPanel Orientation="Horizontal" Spacing="5">
                                                 <PathIcon Classes="i12" Data="{StaticResource SemiIconSort}" />
-                                                <TextBlock VerticalAlignment="Center" Text="{Binding Sort.Label, FallbackValue=''}" />
+                                                <TextBlock VerticalAlignment="Center" IsVisible="{Binding ShowSortLabel}" Text="{Binding Sort.Label, FallbackValue=''}" />
                                             </StackPanel>
                                         </Button>
                                         <Button

@@ -7,7 +7,7 @@ public static partial class L
     public static string ApHint => T("Changes show up at once.", "Изменения видны сразу.");
     public static string ApGrpTheme => T("Theme", "Тема");
     public static string ApMode => T("Mode", "Режим");
-    public static string ApModeSystem => T("System", "Как в Windows");
+    public static string ApModeSystem => OperatingSystem.IsWindows() ? T("System", "Как в Windows") : T("System", "Как в системе");
     public static string ApModeLight => T("Light", "Светлая");
     public static string ApModeDark => T("Dark", "Тёмная");
     public static string ApPalette => T("Palette", "Палитра");
@@ -24,7 +24,8 @@ public static partial class L
     public static string ApCornersRound => T("Round", "Круглые");
     public static string ApFont => T("Font", "Шрифт");
     public static string ApFontInter => T("Inter", "Inter");
-    public static string ApFontSegoe => T("Segoe UI", "Segoe UI");
+    // The second font is the system's own: Segoe UI on Windows, San Francisco on a Mac (Appearance.cs).
+    public static string ApFontSegoe => OperatingSystem.IsWindows() ? T("Segoe UI", "Segoe UI") : T("System font", "Системный");
     public static string ApHeadings => T("Headings", "Заголовки");
     public static string ApHeadingsSans => T("Like the text", "Как текст");
     public static string ApHeadingsSerif => T("Serif", "С засечками");
@@ -107,7 +108,7 @@ public static partial class L
     public static string ApGrpMotion =>T("Motion and language", "Движение и язык");
     public static string ApMotion => T("Animations", "Анимации");
     public static string ApMotionHint => T("Applies right away.", "Применяется сразу.");
-    public static string ApMotionSystem => T("As in Windows", "Как в Windows");
+    public static string ApMotionSystem => OperatingSystem.IsWindows() ? T("As in Windows", "Как в Windows") : T("As in the system", "Как в системе");
     public static string ApMotionOn => T("On", "Включены");
     public static string ApMotionOff => T("Off", "Выключены");
     public static string ApLanguage => T("Language", "Язык");

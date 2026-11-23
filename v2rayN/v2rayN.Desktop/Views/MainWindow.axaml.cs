@@ -100,6 +100,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         InitScene();
         InitProviderLogin();
         InitDebug();
+        InitMacMenus();
         btnWelcomeSub.Click += (_, _) => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe();
         btnWelcomeQr.Click += (_, _) => ViewModel?.AddServerViaScanCmd.Execute().Subscribe();
         btnWelcomeQr.IsVisible = Utils.IsWindows();
@@ -119,7 +120,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             // moves clear of them.
             WindowDecorations = WindowDecorations.Full;
             btnMinimize.IsVisible = btnMaximize.IsVisible = btnCloseWindow.IsVisible = false;
-            btnAppMenu.Margin = new Thickness(78, 0, 2, 0);
+            InitMacWindowButtons();
         }
         btnMinimize.Click += (_, _) => WindowState = WindowState.Minimized;
         btnMaximize.Click += (_, _) => WindowState = WindowState == WindowState.Maximized ? WindowState.Normal : WindowState.Maximized;
@@ -456,6 +457,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             _sidebar = new SidebarViewModel(vm.ProfilesViewModel);
             _sidebar.Rebuilt += RestoreRowFocus;
+            _sidebar.Rebuilt += QueueMacDockMenu;
             // Appearance → Opens on.
             SelectTab(StartTab());
         }
@@ -951,6 +953,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _ = Motion.Enter(pillState, dy: 0, ms: 180, scale: 0.96);
         }
         _pillKind = kind;
+        MacNoteVerdict(kind, label, lost: faulted || (enabled && kind == "warn"));
         // The button says what a click does now: while the core is coming up it is still "connecting".
         if (state != ProtectionState.Unprotected)
         {
@@ -1038,6 +1041,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             status.TrayToolTipText = Utils.IsLinux() ? Global.AppName : Shorten(title, 127);
             status.TrayConnectText = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect;
         }
+        QueueMacDockMenu();
     }
     /// <summary>Connect/Disconnect from the tray menu: the window's button, without opening the window.</summary>
     public void ToggleConnectionFromTray()

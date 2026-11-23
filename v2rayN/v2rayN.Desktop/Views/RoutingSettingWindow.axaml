@@ -200,15 +200,18 @@
                             Classes="srowhint"
                             Text="{x:Static loc:L.PinEmpty}"
                             TextWrapping="Wrap" />
-                        <StackPanel Margin="4,4,0,0" Orientation="Horizontal" Spacing="4">
+                        <!--  A WrapPanel: side by side the two do not fit the panel in every language, and the second was cut off.  -->
+                        <WrapPanel Margin="4,4,0,0" Orientation="Horizontal">
                             <Button
                                 x:Name="btnPinClaude"
+                                Margin="0,0,4,6"
                                 Classes="ghost small"
                                 Content="{x:Static loc:L.PinAddClaude}"
                                 Theme="{StaticResource V2Button}"
                                 ToolTip.Tip="{x:Static loc:L.PinAddClaudeTip}" />
                             <Button
                                 x:Name="btnPinAdd"
+                                Margin="0,0,4,6"
                                 Classes="ghost small"
                                 Theme="{StaticResource V2Button}">
                                 <StackPanel Orientation="Horizontal" Spacing="6">
@@ -216,7 +219,7 @@
                                     <TextBlock Text="{x:Static loc:L.PinAdd}" />
                                 </StackPanel>
                             </Button>
-                        </StackPanel>
+                        </WrapPanel>
                     </StackPanel>
                 </ScrollViewer>
             </DockPanel>

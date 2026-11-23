@@ -11,6 +11,12 @@ public static partial class L
 
     private static string T(string en, string ru) => Ru ? ru : LTranslations.Get(CultureInfo.CurrentUICulture, en) ?? en;
 
+    // V2pn on a Mac: the icon lives in the menu bar, not in a tray, and shortcuts use ⌘ (L.Mac.cs).
+    private static bool Mac => OperatingSystem.IsMacOS();
+
+    /// <summary>A text that names a shortcut as "Ctrl+B": on a Mac it names the key a Mac has.</summary>
+    private static string Keys(string text) => Mac ? text.Replace("Ctrl+", "⌘") : text;
+
     // A reworded string: the other languages keep their translation of the earlier English text (key).
     private static string Tk(string key, string en, string ru) =>
         Ru ? ru : CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "en" ? en : LTranslations.Get(CultureInfo.CurrentUICulture, key) ?? en;
@@ -105,9 +111,9 @@ public static partial class L
     public static string Back => T("Back", "Назад");
     public static string UpdateAll => T("Update all subscriptions", "Обновить все подписки");
     public static string ServersCount => T("servers", "серверов");
-    public static string FavoritesEmpty => Tk("Hover a server and click ☆ to keep it here. Favorites survive subscription updates.",
+    public static string FavoritesEmpty => Keys(Tk("Hover a server and click ☆ to keep it here. Favorites survive subscription updates.",
         "Click ☆ next to a server (or press Ctrl+B) to keep it here. Favorites survive subscription updates.",
-        "Нажмите ☆ у сервера (или Ctrl+B), чтобы закрепить его здесь. Избранное не пропадает при обновлении подписок.");
+        "Нажмите ☆ у сервера (или Ctrl+B), чтобы закрепить его здесь. Избранное не пропадает при обновлении подписок."));
     public static string NothingFound => T("Nothing found", "Ничего не найдено");
     // The settings search shares NothingFound; this one says what the server search looks at.
     public static string NothingFoundServers => Tk("Nothing found", "Nothing found. Search looks at names, addresses and countries.", "Ничего не найдено. Поиск идёт по названию, адресу и стране.");
@@ -307,7 +313,9 @@ public static partial class L
     public static string SetAutoRun => T("Start with the system", "Запускать вместе с системой");
     // Whether the sign-in start shows the window is the next row's choice, so this hint promises no tray.
     public static string SetAutoRunHint => T("V2pn starts when you sign in.", "V2pn запустится при входе в систему.");
-    public static string SetStartHidden => Tk("Start minimized", "Start in the tray at sign-in", "При входе в систему — только значок в трее");
+    public static string SetStartHidden => Mac
+        ? MacStartHidden
+        : Tk("Start minimized", "Start in the tray at sign-in", "При входе в систему — только значок в трее");
     public static string SetStartHiddenHint => Tk("Only the tray icon appears; the window stays closed.",
         "The window stays closed at sign-in. Opening V2pn yourself shows it as usual.",
         "Окно не откроется само. Если запустить V2pn вручную, оно появится как обычно.");
@@ -398,7 +406,9 @@ public static partial class L
     public static string GrpGeo => T("Geo files and rule sets", "Геофайлы и наборы правил");
     public static string GrpNetwork => T("Network requests", "Сетевые запросы");
     public static string ProxyExceptions => T("Addresses that bypass the proxy", "Адреса в обход прокси");
-    public static string HintAutoHide => T("Start in the tray without opening the window.", "Запускаться в трее, не открывая окно.");
+    public static string HintAutoHide => Mac
+        ? T("Start in the menu bar without opening the window.", "Запускаться в строке меню, не открывая окно.")
+        : T("Start in the tray without opening the window.", "Запускаться в трее, не открывая окно.");
     public static string HintGridOrientation => T("Layout of the server table page.", "Расположение на странице таблицы серверов.");
     public static string HintKeepOlder => T("When a subscription brings duplicates, keep the server you already had.", "Если подписка приносит дубликаты, оставлять сервер, который уже был.");
     public static string HintSecondPort => T("Opens one more port next to the main one.", "Открывает ещё один порт рядом с основным.");

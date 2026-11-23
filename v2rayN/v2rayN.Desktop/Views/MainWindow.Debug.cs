@@ -36,6 +36,63 @@ public partial class MainWindow
                 e.Handled = true;
             }
         };
+        InitDebugShots();
+    }
+
+    // V2PN_SHOTS=<folder>, where debugging is allowed: when a file named "shoot" appears in the folder, every open
+    // window is drawn into <folder>/window-<n>-<its class>.png and the status item's three pictures into
+    // status-<n>.png, then the file goes. For checks on a Mac over ssh, where the screen cannot be captured
+    // (tools/mac-sandbox.sh): the windows draw themselves, as tools/shot.ps1 has Windows do.
+    private void InitDebugShots()
+    {
+        var folder = Environment.GetEnvironmentVariable("V2PN_SHOTS");
+        if (folder.IsNullOrEmpty() || !V2pnPartnerTrust.DebugAllowed)
+        {
+            return;
+        }
+        var trigger = Path.Combine(folder, "shoot");
+        var timer = new DispatcherTimer(TimeSpan.FromMilliseconds(300), DispatcherPriority.Background, (_, _) =>
+        {
+            if (!File.Exists(trigger))
+            {
+                return;
+            }
+            try
+            {
+                var windows = (Application.Current?.ApplicationLifetime as IClassicDesktopStyleApplicationLifetime)?.Windows ?? [];
+                var n = 0;
+                foreach (var window in windows.Where(w => w.IsVisible && w.Bounds.Width > 0 && w.Bounds.Height > 0))
+                {
+                    // At the display's own scale the dialogs' shadows and blur are drawn out of place; one pixel a point is enough to check a layout.
+                    const double scale = 1;
+                    var size = new PixelSize((int)(window.Bounds.Width * scale), (int)(window.Bounds.Height * scale));
+                    using var bitmap = new RenderTargetBitmap(size, new Vector(96 * scale, 96 * scale));
+                    bitmap.Render(window);
+                    bitmap.Save(Path.Combine(folder, $"window-{++n}-{window.GetType().Name}.png"));
+                }
+                if (OperatingSystem.IsMacOS())
+                {
+                    // What Avalonia draws is not all a person sees on a Mac: the title bar's buttons, the popups'
+                    // own windows and the way macOS puts them together come only in the system's picture.
+                    var real = MacAppUtils.CaptureOwnWindows(folder);
+                    Logging.SaveLog($"V2pn debug shots: {real} window(s) as macOS shows them");
+                    for (var index = 1; index <= 3; index++)
+                    {
+                        using var picture = MacStatusIcons.Render(index);
+                        picture.Save(Path.Combine(folder, $"status-{index}.png"));
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                Logging.SaveLog(nameof(InitDebugShots), ex);
+            }
+            finally
+            {
+                File.Delete(trigger);
+            }
+        });
+        timer.Start();
     }
 
     internal void OpenDebugWindow()

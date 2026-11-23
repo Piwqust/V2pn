@@ -383,7 +383,8 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
             var icons = TrayIcon.GetIcons(Application.Current);
             if (icons?.Count > 0)
             {
-                icons[0].Icon = desktop.MainWindow.Icon;
+                // V2pn: the Mac's menu bar takes a one-colour picture and tells the state by its shape.
+                icons[0].Icon = OperatingSystem.IsMacOS() ? MacStatusIcons.Get(index) : desktop.MainWindow.Icon;
                 TrayIcon.SetIcons(Application.Current, icons);
             }
         }

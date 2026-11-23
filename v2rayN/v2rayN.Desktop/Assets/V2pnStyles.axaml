@@ -5,6 +5,16 @@
     xmlns:common="using:v2rayN.Desktop.Common"
     xmlns:views="using:v2rayN.Desktop.Views">
 
+    <!--
+        Avalonia clips every templated control to its own rectangle by default. The outline, the shadow and the focus
+        ring that these controls' templates draw lie outside that rectangle: they were cut off along the straight
+        edges and survived only in the corners, where the rectangle is wider than the rounded shape, so a second,
+        squarer button seemed to sit under each button. None of these controls relies on the clip for its content.
+    -->
+    <Style Selector="Button, ToggleButton, ListBoxItem, TabItem, TextBox, ComboBox, ToggleSwitch">
+        <Setter Property="ClipToBounds" Value="False" />
+    </Style>
+
     <!--  Surfaces  -->
     <Style Selector="Border.card">
         <Setter Property="Background" Value="{DynamicResource V2CardBackground}" />

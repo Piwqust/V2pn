@@ -559,7 +559,11 @@
         <Setter Property="Height" Value="12" />
     </Style>
 
-    <!--  Busy indicator: an arc that turns, only while it is shown (like the map pin halo in V2pnMotion.axaml).  -->
+    <!--
+        Busy indicator: an arc that turns, only while it is on screen (like the map pin ripple in V2pnMotion.axaml).
+        Its own IsVisible is not enough: a spinner inside a hidden panel or a window in the tray kept the frame
+        clock running; .spin comes and goes with what is really shown (Common/ShownMotion.cs).
+    -->
     <Style Selector="Path.spinner">
         <Setter Property="Width" Value="12" />
         <Setter Property="Height" Value="12" />
@@ -569,8 +573,9 @@
         <Setter Property="StrokeLineCap" Value="Round" />
         <Setter Property="VerticalAlignment" Value="Center" />
         <Setter Property="RenderTransform" Value="rotate(0deg)" />
+        <Setter Property="common:ShownMotion.Class" Value="spin" />
     </Style>
-    <Style Selector="Path.spinner[IsVisible=True]">
+    <Style Selector="Path.spinner.spin">
         <Style.Animations>
             <Animation IterationCount="Infinite" Duration="0:0:0.9">
                 <Animation.Easing>

@@ -117,19 +117,33 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         }
     }
 
-    /// <summary>Pauses the clock while the window is minimized or in the tray; nobody reads it there.</summary>
+    /// <summary>
+    /// Pauses the clock and the speed graph while the window is minimized or in the tray; nobody reads them there.
+    /// The samples keep coming in, so the graph and the totals are whole again the moment the window is shown.
+    /// </summary>
     public void SetSeen(bool seen)
     {
+        _seen = seen;
         if (seen)
         {
             UpdateClock();
             _clock.Start();
+            if (_samplesUnseen)
+            {
+                _samplesUnseen = false;
+                ShowSpeed();
+            }
         }
         else
         {
             _clock.Stop();
         }
     }
+
+    private bool _seen = true;
+    private bool _samplesUnseen;
+    private double _lastDown;
+    private double _lastUp;
 
     /// <summary>
     /// The card uses the label and severity already shown in the main window and tray.
@@ -271,8 +285,21 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         {
             _sessionBytes += down + up;
         }
-        txtSpeedDown.Text = Fmt.Speed(down);
-        txtSpeedUp.Text = Fmt.Speed(up);
+        _lastDown = down;
+        _lastUp = up;
+        // A minimized window still gets a sample a second while connected; the graph is drawn when it is seen.
+        if (!_seen)
+        {
+            _samplesUnseen = true;
+            return;
+        }
+        ShowSpeed();
+    }
+
+    private void ShowSpeed()
+    {
+        txtSpeedDown.Text = Fmt.Speed(_lastDown);
+        txtSpeedUp.Text = Fmt.Speed(_lastUp);
         txtStatTotal.Text = Fmt.Bytes(_sessionBytes);
         DrawChart();
     }
@@ -409,9 +436,19 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         return password;
     }
 
-    // A resource binding rather than a looked-up brush, so the colour follows a theme switch.
-    private static void SetBrush(Control control, AvaloniaProperty property, string key) =>
+    // A resource binding rather than a looked-up brush, so the colour follows a theme switch. Made again only when
+    // the colour changes: the card is refreshed every second and a half, mostly with what it already shows.
+    private readonly Dictionary<(Control, AvaloniaProperty), string> _brushKeys = [];
+
+    private void SetBrush(Control control, AvaloniaProperty property, string key)
+    {
+        if (_brushKeys.TryGetValue((control, property), out var bound) && bound == key)
+        {
+            return;
+        }
+        _brushKeys[(control, property)] = key;
         control.Bind(property, control.GetResourceObservable(key));
+    }
 }
 
 internal sealed class ActionDisposable(Action action) : IDisposable

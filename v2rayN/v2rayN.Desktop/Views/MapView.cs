@@ -1,5 +1,4 @@
 using Avalonia.Controls.Shapes;
-using Path = Avalonia.Controls.Shapes.Path;
 using Avalonia.Layout;
 using v2rayN.Desktop.Common;
 using v2rayN.Desktop.Converters;
@@ -49,8 +48,7 @@ public sealed class MapView : UserControl
 
     private readonly WorldMap _map = WorldMap.Instance;
     private readonly Canvas _world;
-    private readonly Path[] _grids = new Path[3];
-    private readonly Path[] _outlines = new Path[3];
+    private readonly WorldLayer?[] _layers = new WorldLayer?[3];
     private readonly Panel _countries;
     private readonly Canvas _dots = new() { HorizontalAlignment = HorizontalAlignment.Stretch, VerticalAlignment = VerticalAlignment.Stretch };
     private readonly Canvas _overlay = new() { IsHitTestVisible = false };
@@ -64,7 +62,6 @@ public sealed class MapView : UserControl
     private readonly Image _chipFlag;
     private readonly TextBlock _chipTitle;
     private readonly TextBlock _chipSub;
-    private readonly Dictionary<string, List<Path>> _paths = new(StringComparer.OrdinalIgnoreCase);
     private readonly Dictionary<string, Geometry> _geometry = new(StringComparer.OrdinalIgnoreCase);
     private readonly List<DotItem> _dotItems = [];
     private bool _built;
@@ -326,34 +323,15 @@ public sealed class MapView : UserControl
                 Logging.SaveLog($"MapView {code}", ex);
             }
         }
-        var grid = Graticule();
+        _gridGeometry = Graticule();
         // Three copies side by side, sharing the parsed outlines: the middle one and one on each side, so a
         // country near the date line (Japan, Alaska, New Zealand) has land beyond the edge, not empty ocean.
         for (var i = 0; i < 3; i++)
         {
-            var copy = new Canvas { Width = _map.Width, Height = _map.Height };
-            Canvas.SetLeft(copy, (i - 1) * _map.Width);
-            _grids[i] = new Path { Data = grid, IsHitTestVisible = false };
-            copy.Children.Add(_grids[i]);
-            foreach (var (code, geometry) in _geometry)
-            {
-                var path = new Path
-                {
-                    Data = geometry,
-                    StrokeThickness = 0.7,
-                    StrokeJoin = PenLineJoin.Round,
-                    IsHitTestVisible = false,
-                };
-                if (!_paths.TryGetValue(code, out var list))
-                {
-                    _paths[code] = list = new List<Path>(3);
-                }
-                list.Add(path);
-                copy.Children.Add(path);
-            }
-            _outlines[i] = new Path { StrokeJoin = PenLineJoin.Round, Opacity = 0.75, IsHitTestVisible = false };
-            copy.Children.Add(_outlines[i]);
-            _world.Children.Add(copy);
+            var layer = new WorldLayer(this) { Width = _map.Width, Height = _map.Height };
+            Canvas.SetLeft(layer, (i - 1) * _map.Width);
+            _layers[i] = layer;
+            _world.Children.Add(layer);
         }
         Paint();
         Apply(animate: false);
@@ -390,23 +368,14 @@ public sealed class MapView : UserControl
     private void Paint()
     {
         _root.Background = Brush("V2MapOcean");
-        var land = Brush("V2MapLand");
-        var border = Brush("V2MapBorder");
-        var active = Brush(_state switch
+        _landBrush = Brush("V2MapLand");
+        _borderPen = new Pen(Brush("V2MapBorder"), 0.7, lineJoin: PenLineJoin.Round);
+        _activeBrush = Brush(_state switch
         {
             ProtectionState.Protected => "V2MapActiveSafe",
             ProtectionState.LocalOnly => "V2MapActiveLocal",
             _ => "V2MapActiveUnsafe",
         });
-        foreach (var (code, paths) in _paths)
-        {
-            var fill = string.Equals(code, _highlight, StringComparison.OrdinalIgnoreCase) ? active : land;
-            foreach (var path in paths)
-            {
-                path.Fill = fill;
-                path.Stroke = border;
-            }
-        }
 
         var accent = Brush(_mode switch
         {
@@ -419,20 +388,10 @@ public sealed class MapView : UserControl
                 _ => "V2Unsafe",
             },
         });
-        var outline = _highlight != null && _geometry.TryGetValue(_highlight, out var g) ? g : null;
-        var grid = Brush("V2MapGrid");
-        for (var i = 0; i < 3; i++)
-        {
-            if (_outlines[i] != null)
-            {
-                _outlines[i].Data = outline;
-                _outlines[i].Stroke = accent;
-            }
-            if (_grids[i] != null)
-            {
-                _grids[i].Stroke = grid;
-            }
-        }
+        _outlineGeometry = _highlight != null && _geometry.TryGetValue(_highlight, out var g) ? g : null;
+        _accentBrush = accent;
+        _gridBrush = Brush("V2MapGrid");
+        InvalidateWorld();
 
         var beacon = _mode is PinMode.Active or PinMode.Home;
         var color = (accent as ISolidColorBrush)?.Color ?? Colors.Gray;
@@ -498,13 +457,27 @@ public sealed class MapView : UserControl
     private void Ripple()
     {
         _ripple.Classes.Remove("play");
-        if (!Common.Motion.Enabled || !_pin.IsVisible)
+        var run = ++_rippleRun;
+        // Nobody sees waves on a map in the tray or behind a page: they would only hold the frame clock.
+        if (!Common.Motion.Enabled || !_pin.IsEffectivelyVisible)
         {
             return;
         }
-        // Re-adding the class in a later dispatcher pass starts the animation over.
+        // Re-adding the class in a later dispatcher pass starts the animation over. It comes off once the two
+        // waves are done, so a window opened from the tray later does not replay old news.
         Dispatcher.UIThread.Post(() => _ripple.Classes.Add("play"), DispatcherPriority.Background);
+        DispatcherTimer.RunOnce(() =>
+        {
+            if (run == _rippleRun)
+            {
+                _ripple.Classes.Remove("play");
+            }
+        }, RippleLength);
     }
+
+    // The two 1.5 s waves of Ellipse.mapripple.play (Assets/V2pnMotion.axaml), and a little more.
+    private static readonly TimeSpan RippleLength = TimeSpan.FromSeconds(3.2);
+    private int _rippleRun;
 
     private double Slice(double w, double h)
     {
@@ -636,14 +609,7 @@ public sealed class MapView : UserControl
         if (Math.Abs(v.S - _strokeScale) > _strokeScale * 0.03)
         {
             _strokeScale = v.S;
-            for (var i = 0; i < 3; i++)
-            {
-                if (_grids[i] != null)
-                {
-                    _grids[i].StrokeThickness = 1 / v.S;
-                    _outlines[i].StrokeThickness = 1.4 / v.S;
-                }
-            }
+            InvalidateWorld();
         }
         PlaceDots();
         PlacePin();
@@ -748,6 +714,64 @@ public sealed class MapView : UserControl
         "bad" => 2,
         _ => 3,
     };
+
+    // What the world layers draw, set by Paint and the zoom (SetMatrix).
+    private Geometry? _gridGeometry;
+    private Geometry? _outlineGeometry;
+    private IBrush? _landBrush;
+    private IBrush? _activeBrush;
+    private IBrush? _accentBrush;
+    private IBrush? _gridBrush;
+    private Pen? _borderPen;
+
+    private void InvalidateWorld()
+    {
+        foreach (var layer in _layers)
+        {
+            layer?.InvalidateVisual();
+        }
+    }
+
+    // The grid, every country, then the highlighted country's outline on top, as the Path controls drew them before.
+    private void RenderWorld(DrawingContext context)
+    {
+        // Constant on-screen widths: the zoom sits on the canvas above.
+        var grid = _strokeScale > 0 ? 1 / _strokeScale : 1;
+        var outline = _strokeScale > 0 ? 1.4 / _strokeScale : 1;
+        if (_gridGeometry != null && _gridBrush != null)
+        {
+            context.DrawGeometry(null, new Pen(_gridBrush, grid), _gridGeometry);
+        }
+        foreach (var (code, geometry) in _geometry)
+        {
+            var fill = string.Equals(code, _highlight, StringComparison.OrdinalIgnoreCase) ? _activeBrush : _landBrush;
+            context.DrawGeometry(fill, _borderPen, geometry);
+        }
+        if (_outlineGeometry != null && _accentBrush != null)
+        {
+            using (context.PushOpacity(0.75))
+            {
+                context.DrawGeometry(null, new Pen(_accentBrush, outline, lineJoin: PenLineJoin.Round), _outlineGeometry);
+            }
+        }
+    }
+
+    /// <summary>
+    /// One copy of the world drawn by one control. As a Path control per country, the three copies were some 600
+    /// controls, and adding them took about 70 ms of styling on the UI thread right after the window appeared.
+    /// </summary>
+    private sealed class WorldLayer : Control
+    {
+        private readonly MapView _owner;
+
+        public WorldLayer(MapView owner)
+        {
+            _owner = owner;
+            IsHitTestVisible = false;
+        }
+
+        public override void Render(DrawingContext context) => _owner.RenderWorld(context);
+    }
 
     // Colours come from the theme dictionaries, so the lookup needs the variant this view renders in.
     private object? Resource(string key) =>

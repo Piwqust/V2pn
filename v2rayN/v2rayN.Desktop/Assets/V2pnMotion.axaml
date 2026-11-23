@@ -1,6 +1,7 @@
 <Styles
     xmlns="https://github.com/avaloniaui"
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:common="using:v2rayN.Desktop.Common"
     xmlns:views="using:v2rayN.Desktop.Views">
     <!--
         Style-driven motion, loaded only while motion is on (Common/Motion.cs adds and removes it live).
@@ -166,12 +167,15 @@
     <!--
         Map pin ripple: two waves when the pin lands or the protection changes, then nothing moves.
         Every frame of it redraws the map under the pin; pulsing for as long as V2pn stays
-        connected cost a third of a CPU core, minimized too. MapView adds .play to replay it.
+        connected cost a third of a CPU core, minimized too. MapView adds .play to replay it; .shown is
+        there only while the map is on screen (Common/ShownMotion.cs), so waves started with the window
+        in the tray do not hold the frame clock until it is opened.
     -->
     <Style Selector="Ellipse.mapripple">
         <Setter Property="Opacity" Value="0" />
+        <Setter Property="common:ShownMotion.Class" Value="shown" />
     </Style>
-    <Style Selector="Ellipse.mapripple.play[IsVisible=True]">
+    <Style Selector="Ellipse.mapripple.play.shown">
         <Style.Animations>
             <Animation IterationCount="2" Duration="0:0:1.5" Easing="CubicEaseOut">
                 <KeyFrame Cue="0%">

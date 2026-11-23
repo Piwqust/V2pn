@@ -1,5 +1,3 @@
-using System.Text.RegularExpressions;
-
 namespace v2rayN.Desktop.Common;
 
 /// <summary>A point on the map with a name to show beside it, e.g. a server's city or the person's own.</summary>
@@ -85,35 +83,57 @@ public static class MapCities
         ["ID"] = (-6.21, 106.85),
     };
 
-    private static readonly Lazy<(Regex Regex, Dictionary<string, City> Lookup)> _index = new(() =>
-    {
-        var lookup = new Dictionary<string, City>(StringComparer.Ordinal);
-        foreach (var city in _cities)
-        {
-            foreach (var alias in city.Aliases)
-            {
-                lookup[alias] = city;
-            }
-        }
-        var pattern = string.Join("|", lookup.Keys.OrderByDescending(k => k.Length).Select(Regex.Escape));
-        var regex = new Regex($@"(?<![\p{{L}}])(?:{pattern})(?![\p{{L}}])", RegexOptions.IgnoreCase | RegexOptions.CultureInvariant | RegexOptions.Compiled);
-        return (regex, lookup);
-    });
+    // Aliases by their first letter, longest first. A regex alternation of the 130 aliases took 13-25 ms to build on
+    // the UI thread at start (case-insensitive multi-string search tables) and about 40 µs per name after that.
+    private static readonly Lazy<Dictionary<char, (string Alias, City City)[]>> _index = new(() =>
+        _cities
+            .SelectMany(city => city.Aliases.Select(alias => (Alias: alias, City: city)))
+            .GroupBy(entry => entry.Alias[0])
+            .ToDictionary(g => g.Key, g => g.OrderByDescending(entry => entry.Alias.Length).ToArray()));
 
     /// <summary>The city a server's name mentions, when it lies in the country the server was placed in.</summary>
+    /// <remarks>
+    /// An alias counts as a whole word: no letter right before or after it ("Rome" is not found in "Romeo"). Names are
+    /// read left to right, the longest alias wins at a place, and the first city in the server's country is taken.
+    /// </remarks>
     public static MapPlace? Find(string? remarks, string? code)
     {
         if (remarks.IsNullOrEmpty() || code.IsNullOrEmpty())
         {
             return null;
         }
-        var (regex, lookup) = _index.Value;
-        foreach (Match match in regex.Matches(remarks))
+        var index = _index.Value;
+        var text = remarks.ToLowerInvariant();
+        var i = 0;
+        while (i < text.Length)
         {
-            if (lookup.TryGetValue(match.Value.ToLowerInvariant(), out var city)
-                && string.Equals(city.Code, code, StringComparison.OrdinalIgnoreCase))
+            var match = i > 0 && char.IsLetter(text[i - 1]) ? null : MatchAt(index, text, i);
+            if (match is not { } found)
             {
-                return new MapPlace(city.Lat, city.Lon, Name(city), city.Code);
+                i++;
+                continue;
+            }
+            if (string.Equals(found.City.Code, code, StringComparison.OrdinalIgnoreCase))
+            {
+                return new MapPlace(found.City.Lat, found.City.Lon, Name(found.City), found.City.Code);
+            }
+            i += found.Alias.Length;
+        }
+        return null;
+    }
+
+    private static (string Alias, City City)? MatchAt(Dictionary<char, (string Alias, City City)[]> index, string text, int at)
+    {
+        if (!index.TryGetValue(text[at], out var candidates))
+        {
+            return null;
+        }
+        foreach (var entry in candidates)
+        {
+            var end = at + entry.Alias.Length;
+            if (text.AsSpan(at).StartsWith(entry.Alias, StringComparison.Ordinal) && (end == text.Length || !char.IsLetter(text[end])))
+            {
+                return entry;
             }
         }
         return null;

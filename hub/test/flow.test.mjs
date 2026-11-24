@@ -108,9 +108,8 @@ test('register, save = published, special rights wait for a moderator, take down
     let pub = published(env);
     assert.deepEqual(pub.index.partners.map(p => [p.id, p.name, p.domains.join(), p.grants.join(), p.reviewed]),
       [['nordline', 'Nordline', 'sub.nordline.test', 'edition', undefined]]);
-    const year = new Date();
-    year.setUTCFullYear(year.getUTCFullYear() + 1);
-    assert.equal(pub.index.partners[0].until, year.toISOString().slice(0, 10), 'a hub partner has no term: a year on, renewed daily');
+    const term = new Date(Date.now() + 60 * 86400000);
+    assert.equal(pub.index.partners[0].until, term.toISOString().slice(0, 10), 'a hub partner has no term: 60 days on, renewed daily');
     let pack = JSON.parse(packOf(pub, 'nordline').get('partner.json'));
     assert.deepEqual(pack.theme, { palette: { brand: ['#2F6BFF', '#13C4B5'] }, background: { type: 'gradient', colors: ['#2F6BFF', '#13C4B5'] }, layout: 'stickers' });
     assert.deepEqual(pack.links, { support: 'https://t.me/nordline_support' });
@@ -406,7 +405,7 @@ test("import-partner takes partners/configra as a live partner with Configra's l
     assert.equal(env.hub.db.get("SELECT password FROM accounts WHERE login = 'configra-team'").password, null, 'no password until a reset');
     const configraPage = fs.readFileSync(path.join(env.config.publicDir, 'p', 'configra', 'index.html'), 'utf8');
     assert.match(configraPage, /Configra на компьютере/);
-    assert.match(configraPage, /irm http:\/\/127\.0\.0\.1:\d+\/r\/install\.ps1 \| iex/);
+    assert.match(configraPage, /irm https:\/\/github\.com\/Piwqust\/V2pn\/releases\/latest\/download\/install\.ps1 \| iex/);
 
     // Its provider signs in after a reset and edits it like any other; its domains stay while the link is on them.
     const password = env.hub.auth.resetPassword(env.hub.db.get("SELECT id FROM accounts WHERE login = 'configra-team'").id);

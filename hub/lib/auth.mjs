@@ -2,6 +2,7 @@
 // moderator or the owner's command line gives a new password. Session tokens are stored hashed.
 import crypto from 'node:crypto';
 import { HubError } from './errors.mjs';
+import { ipKey } from './ip.mjs';
 import { log } from './log.mjs';
 
 export const COOKIE = 'hub_s';
@@ -13,8 +14,17 @@ const SCRYPT = { N: 2 ** 15, r: 8, p: 1, maxmem: 64 * 1024 * 1024 };
 const LOGIN = /^[a-z0-9._-]{3,32}$/;
 // eslint-disable-next-line no-control-regex
 const CONTROL = /[\u0000-\u001f\u007f-\u009f]/;
-const MIN_PASSWORD = 6;
+// For a new password; an account made when six were enough still signs in with its own.
+const MIN_PASSWORD = 8;
 const MAX_PASSWORD = 200;
+// Password hashes at once, each off the main thread on libuv's pool (four threads, which DNS and files share too) and
+// with its 32 MB. A sign-in beyond them is turned away (rate_limited) instead of waiting in a queue anyone could fill.
+export const MAX_HASHING = 2;
+// Failed sign-ins in an hour: from one network (an IPv4 address or an IPv6 /64) to one login, after which that network
+// waits; and to one login from everywhere, a ceiling far above it against guessing from many networks at once. A
+// stranger elsewhere cannot close a login to its owner short of that ceiling.
+export const FAILS_PER_NETWORK = 10;
+export const FAILS_PER_LOGIN = 100;
 
 /** Sliding-window counters in memory (they reset with the process, the database ones do not). */
 export class RateLimiter {
@@ -74,18 +84,33 @@ export function validLogin(text) {
   return t && LOGIN.test(t) ? t : null;
 }
 
-export function hashPassword(password) {
+const scrypt = (password, salt, params) => new Promise((resolve, reject) => {
+  crypto.scrypt(password, salt, 32, params, (e, key) => (e ? reject(e) : resolve(key)));
+});
+
+const encode = (salt, hash) => `scrypt$${SCRYPT.N}$${SCRYPT.r}$${SCRYPT.p}$${salt.toString('base64')}$${hash.toString('base64')}`;
+
+/** The stored form of <password>, hashed off the main thread. */
+export async function hashPassword(password) {
   const salt = crypto.randomBytes(16);
-  const hash = crypto.scryptSync(password, salt, 32, SCRYPT);
-  return `scrypt$${SCRYPT.N}$${SCRYPT.r}$${SCRYPT.p}$${salt.toString('base64')}$${hash.toString('base64')}`;
+  return encode(salt, await scrypt(password, salt, SCRYPT));
 }
 
-/** Whether <password> is the one <stored> was made of; an unknown account costs the same work as a wrong password. */
-export function checkPassword(stored, password) {
+/** The same on the main thread: the command line and a moderator's reset (a random password, one at a time). */
+export function hashPasswordSync(password) {
+  const salt = crypto.randomBytes(16);
+  return encode(salt, crypto.scryptSync(password, salt, 32, SCRYPT));
+}
+
+/**
+ * Whether <password> is the one <stored> was made of, hashed off the main thread. An unknown account, or one without
+ * a password, costs the same work against a made-up hash, so the time of the answer does not tell which logins exist.
+ */
+export async function checkPassword(stored, password) {
   const m = /^scrypt\$(\d+)\$(\d+)\$(\d+)\$([A-Za-z0-9+/=]+)\$([A-Za-z0-9+/=]+)$/.exec(stored || '');
   const salt = m ? Buffer.from(m[4], 'base64') : crypto.randomBytes(16);
   const params = m ? { N: Number(m[1]), r: Number(m[2]), p: Number(m[3]), maxmem: SCRYPT.maxmem } : SCRYPT;
-  const actual = crypto.scryptSync(String(password), salt, 32, params);
+  const actual = await scrypt(String(password), salt, params);
   const expected = m ? Buffer.from(m[5], 'base64') : crypto.randomBytes(32);
   return Boolean(m) && expected.length === actual.length && crypto.timingSafeEqual(expected, actual);
 }
@@ -104,11 +129,24 @@ function passwordProblem(password) {
 }
 
 export class Auth {
-  constructor({ db, config, limiter, now = Date.now }) {
+  constructor({ db, config, limiter, now = Date.now, maxHashing = MAX_HASHING }) {
     this.db = db;
     this.config = config;
     this.limiter = limiter;
     this.now = now;
+    this.maxHashing = maxHashing;
+    this.hashing = 0;
+  }
+
+  /** Runs <fn> (password hashing) as one of at most maxHashing at a time; rate_limited when all are busy. */
+  async withHashSlot(fn) {
+    if (this.hashing >= this.maxHashing) throw new HubError('rate_limited');
+    this.hashing++;
+    try {
+      return await fn();
+    } finally {
+      this.hashing--;
+    }
   }
 
   accountByLogin(login) {
@@ -116,34 +154,49 @@ export class Auth {
   }
 
   /** A new provider account and its session: {token, account}. */
-  register(loginText, password, ip) {
-    if (!this.limiter.hit(`register-ip:${ip}`, 10, HOUR)) throw new HubError('rate_limited');
+  async register(loginText, password, ip) {
+    if (!this.limiter.hit(`register-ip:${ipKey(ip)}`, 10, HOUR)) throw new HubError('rate_limited');
     const fields = {};
     const login = validLogin(loginText);
     if (!login) fields.login = 'Логин: от 3 до 32 латинских букв, цифр и знаков . _ -';
     const why = passwordProblem(password);
     if (why) fields.password = why;
     if (Object.keys(fields).length) throw new HubError('invalid', { fields });
+    const taken = () => new HubError('login_taken', { fields: { login: 'Такой логин уже занят.' } });
+    if (this.accountByLogin(login)) throw taken();
+    const hash = await this.withHashSlot(() => hashPassword(password));
     const now = new Date(this.now()).toISOString();
     const id = this.db.tx(() => {
-      if (this.accountByLogin(login)) throw new HubError('login_taken', { fields: { login: 'Такой логин уже занят.' } });
+      if (this.accountByLogin(login)) throw taken();
       return Number(this.db.run("INSERT INTO accounts (login, role, password, password_at, created_at) VALUES (?, 'provider', ?, ?, ?)",
-        login, hashPassword(password), now, now).lastInsertRowid);
+        login, hash, now, now).lastInsertRowid);
     });
     log.info('account registered');
     return this.startSession(id);
   }
 
-  /** Sign-in by login and password: {token, account}. */
-  signIn(loginText, password, ip) {
-    if (!this.limiter.hit(`signin-ip:${ip}`, 30, HOUR)) throw new HubError('rate_limited');
+  /**
+   * Sign-in by login and password: {token, account}. Failures close the login to the network they come from
+   * (FAILS_PER_NETWORK), and to everyone only past FAILS_PER_LOGIN.
+   */
+  async signIn(loginText, password, ip) {
+    const network = ipKey(ip);
+    if (!this.limiter.hit(`signin-ip:${network}`, 30, HOUR)) throw new HubError('rate_limited');
     const login = normalizeLogin(loginText);
-    const failKey = `signin-fail:${login}`;
-    if (login && this.limiter.count(failKey, HOUR) >= 10) throw new HubError('rate_limited');
+    const failHere = `signin-fail:${login}|${network}`;
+    const failAll = `signin-fail:${login}`;
+    if (login && (this.limiter.count(failHere, HOUR) >= FAILS_PER_NETWORK || this.limiter.count(failAll, HOUR) >= FAILS_PER_LOGIN)) {
+      throw new HubError('rate_limited');
+    }
     const account = this.accountByLogin(login);
-    const ok = checkPassword(account?.password, typeof password === 'string' ? password.slice(0, MAX_PASSWORD) : '');
-    if (!ok) {
-      if (login) this.limiter.hit(failKey, Infinity, HOUR);
+    const typed = typeof password === 'string' ? password.slice(0, MAX_PASSWORD) : '';
+    const ok = await this.withHashSlot(() => checkPassword(account?.password, typed));
+    // A password reset while this one was being checked wins.
+    if (!ok || this.accountByLogin(login)?.password !== account.password) {
+      if (login) {
+        this.limiter.hit(failHere, Infinity, HOUR);
+        this.limiter.hit(failAll, Infinity, HOUR);
+      }
       log.info('sign-in refused');
       throw new HubError('password_invalid');
     }
@@ -197,22 +250,26 @@ export class Auth {
   }
 
   /** The person's own new password; the other sessions of the account end. */
-  changePassword(session, oldPassword, newPassword) {
+  async changePassword(session, oldPassword, newPassword) {
     if (!this.limiter.hit(`password:${session.account.id}`, 10, HOUR)) throw new HubError('rate_limited');
-    const row = this.db.get('SELECT password FROM accounts WHERE id = ?', session.account.id);
-    if (!checkPassword(row?.password, typeof oldPassword === 'string' ? oldPassword.slice(0, MAX_PASSWORD) : '')) {
-      throw new HubError('password_invalid', { message: 'Старый пароль не подходит.', fields: { password: 'Старый пароль не подходит.' } });
-    }
     const why = passwordProblem(newPassword);
-    if (why) throw new HubError('invalid', { fields: { newPassword: why } });
-    this.db.run('UPDATE accounts SET password = ?, password_at = ? WHERE id = ?', hashPassword(newPassword), new Date(this.now()).toISOString(), session.account.id);
+    const row = this.db.get('SELECT password FROM accounts WHERE id = ?', session.account.id);
+    const typed = typeof oldPassword === 'string' ? oldPassword.slice(0, MAX_PASSWORD) : '';
+    const hash = await this.withHashSlot(async () => {
+      if (!await checkPassword(row?.password, typed)) {
+        throw new HubError('password_invalid', { message: 'Старый пароль не подходит.', fields: { password: 'Старый пароль не подходит.' } });
+      }
+      if (why) throw new HubError('invalid', { fields: { newPassword: why } });
+      return hashPassword(newPassword);
+    });
+    this.db.run('UPDATE accounts SET password = ?, password_at = ? WHERE id = ?', hash, new Date(this.now()).toISOString(), session.account.id);
     this.db.run('DELETE FROM sessions WHERE account_id = ? AND token_hash != ?', session.account.id, session.tokenHash);
   }
 
   /** A new random password for <accountId>, returned once (only its hash is kept); its sessions end. */
   resetPassword(accountId) {
     const password = randomPassword();
-    this.db.run('UPDATE accounts SET password = ?, password_at = ? WHERE id = ?', hashPassword(password), new Date(this.now()).toISOString(), accountId);
+    this.db.run('UPDATE accounts SET password = ?, password_at = ? WHERE id = ?', hashPasswordSync(password), new Date(this.now()).toISOString(), accountId);
     this.db.run('DELETE FROM sessions WHERE account_id = ?', accountId);
     return password;
   }

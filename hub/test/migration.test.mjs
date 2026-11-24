@@ -13,7 +13,7 @@ import { tempDir, testNet } from './helpers.mjs';
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const configra = new URL('../../partners/configra/', import.meta.url);
 
-test('a v1 database: providers stay partners with their look and their tier-2 parts approved; logins from ids and emails', () => {
+test('a v1 database: providers stay partners with their look and their tier-2 parts approved; logins from ids and emails', async () => {
   const root = tempDir();
   const config = loadConfig({ HUB_DATA: path.join(root, 'data'), HUB_PUBLIC_DIR: path.join(root, 'www'), HUB_ORIGIN: 'https://hub.example' });
   try {
@@ -100,7 +100,7 @@ test('a v1 database: providers stay partners with their look and their tier-2 pa
 
       // The provider gets in once a password is set (hub.mjs reset-password).
       const password = hub.auth.resetPassword(hub.auth.accountByLogin('configra').id);
-      assert.equal(hub.auth.signIn('configra', password, '127.0.0.1').account.login, 'configra');
+      assert.equal((await hub.auth.signIn('configra', password, '127.0.0.1')).account.login, 'configra');
     } finally {
       hub.db.close();
     }

@@ -24,7 +24,7 @@ try {
   hub.importPartner(configra);
 
   // Kestrel: a provider that went the whole way on the hub, every special right approved, routing included.
-  const { account } = hub.auth.register('kestrel', 'fixture-password', '127.0.0.1');
+  const { account } = await hub.auth.register('kestrel', 'fixture-password', '127.0.0.1');
   const pics = {
     logo: hub.upload(account.id, 'logo', makePng(340, 96, [255, 255, 255])).sha256,
     logoOnLight: hub.upload(account.id, 'logoOnLight', makePng(340, 96, [17, 17, 20])).sha256,

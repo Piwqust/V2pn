@@ -1,9 +1,15 @@
-// The hub's settings, from the environment (documented in hub/README.md).
+// The hub's settings, from the environment (documented in hub/README.md; the root partners' in
+// deploy/v2pn-hub.env.example).
 import path from 'node:path';
+import { parseRootList } from './roots.mjs';
 
 // The User-Agent V2pn sends for a subscription (V2pnSubs.SubscriptionUserAgent: v2rayN's agent, by which panels pick
 // the format, then V2pn's own name). Remnawave and Marzban answer it with share links.
 export const DEFAULT_CHECK_UA = 'v2rayN/7.25.6 V2pn/1.3.0';
+
+// V2pn's root key for partner indexes: the plain key of V2pnPartnerKeys in v2rayN/Directory.Build.targets, with which
+// the owner signs partner-index.json on his computer.
+export const ROOT_PARTNER_KEY = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4LVjtb8RY7TUlzR32OpH1Tn5FPKp5B+m2Zb72/cQzjOSuBvYnBWdHnZ7PnPoFhmNKSeCj5shwtmJD1JIVtCGCg==';
 
 function int(value, fallback, min, max) {
   const n = Number.parseInt(value ?? '', 10);
@@ -34,5 +40,10 @@ export function loadConfig(env = process.env) {
     secureCookies: originUrl.protocol === 'https:',
     githubRepo: repo,
     checkUserAgent: env.HUB_CHECK_UA || DEFAULT_CHECK_UA,
+    // The root-signed index the hub keeps ids and domains for (lib/roots.mjs), its copy, its keys, and a fixed list.
+    rootIndexUrl: env.HUB_ROOT_INDEX_URL || `https://github.com/${repo}/releases/latest/download/partner-index.json`,
+    rootIndexFile: path.join(data, 'root-partner-index.json'),
+    rootKeys: (env.HUB_ROOT_KEYS || ROOT_PARTNER_KEY).split('|').map(k => k.trim()).filter(Boolean),
+    rootPartners: parseRootList(env.HUB_ROOT_PARTNERS),
   };
 }

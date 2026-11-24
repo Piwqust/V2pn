@@ -3,25 +3,37 @@ name: V2pn upstream sync
 # Every Monday, brings the latest v2rayN onto a sync branch as one commit, builds, tests and opens a pull request
 # with the report from tools/sync-upstream.ps1. A red build or test run still opens the pull
 # request (as a draft) so the breakage is visible; the main branch never changes on its own.
+#
+# Two jobs, because building and testing runs v2rayN's code as it came from upstream:
+#  - sync merges, builds and tests with a read-only token that is not left in the checkout, and
+#    hands the sync branch on as a git bundle;
+#  - publish runs nothing from the merged tree, only git and gh on that bundle: it checks the
+#    branch name, pushes the branch and opens or updates the pull request.
 on:
   schedule:
     - cron: '0 6 * * 1'
   workflow_dispatch:
 
 permissions:
-  contents: write
-  pull-requests: write
+  contents: read
 
 jobs:
   sync:
+    name: Merge, build and test (read-only)
     runs-on: windows-latest
     timeout-minutes: 40
+    permissions:
+      contents: read
+    outputs:
+      code: ${{ steps.sync.outputs.code }}
+      branch: ${{ steps.sync.outputs.branch }}
     steps:
       - name: Checkout
         uses: actions/checkout@v7
         with:
           submodules: recursive
           fetch-depth: 0
+          persist-credentials: false
 
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
@@ -36,30 +48,88 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           ./tools/sync-upstream.ps1
           $code = $LASTEXITCODE
-          "code=$code" >> $env:GITHUB_OUTPUT
           $branch = git branch --list 'sync/v2rayN-*' --format='%(refname:short)' | Select-Object -First 1
-          "branch=$branch" >> $env:GITHUB_OUTPUT
-          $report = Get-ChildItem docs/upstream-sync -Filter *.md | Sort-Object LastWriteTime | Select-Object -Last 1
-          "report=$($report.FullName)" >> $env:GITHUB_OUTPUT
-          exit 0
-
-      - name: Open pull request
-        if: steps.sync.outputs.branch != ''
-        shell: pwsh
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          $branch = '${{ steps.sync.outputs.branch }}'
-          $code = [int]'${{ steps.sync.outputs.code }}'
-          if ($code -ne 0) {
+          if ($branch -and $code -ne 0) {
             # Keep what the merge produced so the failure can be fixed on the branch.
             git switch $branch
             git add -A
             git commit -q -m "V2pn: v2rayN merge needs work (sync exit code $code)" 2>$null
           }
-          git push --force origin $branch
-          $existing = gh pr list --head $branch --json number --jq '.[0].number'
-          if ($existing) { gh pr edit $existing --body-file '${{ steps.sync.outputs.report }}'; exit 0 }
-          $title = Get-Content '${{ steps.sync.outputs.report }}' -TotalCount 1
-          $draft = if ($code -ne 0) { '--draft' } else { '' }
-          gh pr create --head $branch --base ${{ github.ref_name }} --title ($title -replace '^# ', '') --body-file '${{ steps.sync.outputs.report }}' $draft
+          if ($branch) {
+            # The sync branch's commits on top of the commit this run started from.
+            $out = Join-Path $env:RUNNER_TEMP 'upstream-sync'
+            New-Item -ItemType Directory -Force $out | Out-Null
+            git bundle create (Join-Path $out 'sync.bundle') "refs/heads/$branch" "^$env:GITHUB_SHA"
+            if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          }
+          "code=$code" >> $env:GITHUB_OUTPUT
+          "branch=$branch" >> $env:GITHUB_OUTPUT
+          exit 0
+
+      - name: Hand the branch to the publish job
+        if: steps.sync.outputs.branch != ''
+        uses: actions/upload-artifact@v7
+        with:
+          name: upstream-sync
+          path: ${{ runner.temp }}/upstream-sync/sync.bundle
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Push the branch and open the pull request
+    needs: sync
+    if: needs.sync.outputs.branch != ''
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+
+      - name: Download the branch
+        uses: actions/download-artifact@v8
+        with:
+          name: upstream-sync
+          path: ${{ runner.temp }}/upstream-sync
+
+      # Everything that comes from the sync job is data here: the branch name and the exit code
+      # are checked before use and reach the shell only through the environment.
+      - name: Push the branch and open the pull request
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BRANCH: ${{ needs.sync.outputs.branch }}
+          CODE: ${{ needs.sync.outputs.code }}
+          BASE: ${{ github.ref_name }}
+          BUNDLE: ${{ runner.temp }}/upstream-sync/sync.bundle
+        run: |
+          set -euo pipefail
+          if ! [[ "$BRANCH" =~ ^sync/v2rayN-[0-9a-f]{8}$ ]]; then
+            echo "::error::The sync job named a branch that is not sync/v2rayN-<commit>; nothing is pushed."
+            exit 1
+          fi
+          if ! [[ "$CODE" =~ ^[0-9]+$ ]]; then
+            echo "::error::The sync job's exit code is not a number; nothing is pushed."
+            exit 1
+          fi
+          git bundle verify "$BUNDLE"
+          git fetch --no-tags "$BUNDLE" "+refs/heads/$BRANCH:refs/heads/$BRANCH"
+          report="$(git diff --name-only --diff-filter=AM "$GITHUB_SHA" "refs/heads/$BRANCH" -- docs/upstream-sync | tail -n 1)"
+          if [ -z "$report" ]; then
+            echo "::error::$BRANCH has no report in docs/upstream-sync; nothing is pushed."
+            exit 1
+          fi
+          git show "refs/heads/$BRANCH:$report" >"$RUNNER_TEMP/report.md"
+          git push --force origin "refs/heads/$BRANCH:refs/heads/$BRANCH"
+          existing="$(gh pr list --head "$BRANCH" --json number --jq '.[0].number')"
+          if [ -n "$existing" ]; then
+            gh pr edit "$existing" --body-file "$RUNNER_TEMP/report.md"
+            exit 0
+          fi
+          title="$(head -n 1 "$RUNNER_TEMP/report.md")"
+          draft=()
+          if [ "$CODE" != 0 ]; then draft=(--draft); fi
+          gh pr create --head "$BRANCH" --base "$BASE" --title "${title#\# }" --body-file "$RUNNER_TEMP/report.md" "${draft[@]}"

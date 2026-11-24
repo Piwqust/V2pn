@@ -326,7 +326,7 @@ Why it works like this: the windows V2pn redrew are marked `merge=ours` in `v2ra
 
 Exit codes: `0`: merged or nothing to merge; `2`: conflicts; `3`: does not build; `4`: tests failed. On any error `v2pn` stays as it was.
 
-Once a week `.github/workflows/v2pn-upstream.yml` does the same and opens a pull request with the report. If something broke, the pull request is a draft.
+Once a week `.github/workflows/v2pn-upstream.yml` does the same and opens a pull request with the report. If something broke, the pull request is a draft. The build and the tests run v2rayN's code as it came, so that job has a read-only token that is not kept in the checkout; it hands the sync branch over as a git bundle to a second job, which runs nothing from the merged tree, checks the branch name, pushes the branch and opens the pull request.
 
 ### Rules that keep merges from breaking
 

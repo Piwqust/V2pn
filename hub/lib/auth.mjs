@@ -2,7 +2,7 @@
 // moderator or the owner's command line gives a new password. Session tokens are stored hashed.
 import crypto from 'node:crypto';
 import { HubError } from './errors.mjs';
-import { ipKey } from './ip.mjs';
+import { ipKey, wideIpKey } from './ip.mjs';
 import { log } from './log.mjs';
 
 export const COOKIE = 'hub_s';
@@ -20,11 +20,22 @@ const MAX_PASSWORD = 200;
 // Password hashes at once, each off the main thread on libuv's pool (four threads, which DNS and files share too) and
 // with its 32 MB. A sign-in beyond them is turned away (rate_limited) instead of waiting in a queue anyone could fill.
 export const MAX_HASHING = 2;
-// Failed sign-ins in an hour: from one network (an IPv4 address or an IPv6 /64) to one login, after which that network
-// waits; and to one login from everywhere, a ceiling far above it against guessing from many networks at once. A
-// stranger elsewhere cannot close a login to its owner short of that ceiling.
+// A network is an IPv4 address or an IPv6 /64; an IPv6 /64 also counts toward its /48 (the wide network), so a site
+// cannot walk round a limit from /64 to /64. Per hour:
+// - sign-ins and registrations from one network, and from one /48;
+export const SIGNINS_PER_NETWORK = 30;
+export const SIGNINS_PER_WIDE_NETWORK = 60;
+export const REGISTRATIONS_PER_NETWORK = 10;
+export const REGISTRATIONS_PER_WIDE_NETWORK = 30;
+// - failed sign-ins to one login: from one network, after which that network waits; from one /48; and from
+//   everywhere, a ceiling far above them against guessing from many networks at once.
 export const FAILS_PER_NETWORK = 10;
+export const FAILS_PER_WIDE_NETWORK = 20;
 export const FAILS_PER_LOGIN = 100;
+// A network a login signed in from in the last 30 days is trusted for that login: there only that network's own
+// limits apply, so a stranger elsewhere cannot close the login to the owner or a moderator, not even at the ceiling.
+// Kept in memory, like the counters: a restart forgets both.
+export const TRUST_MS = 30 * 24 * HOUR;
 
 /** Sliding-window counters in memory (they reset with the process, the database ones do not). */
 export class RateLimiter {
@@ -136,6 +147,14 @@ export class Auth {
     this.now = now;
     this.maxHashing = maxHashing;
     this.hashing = 0;
+    // "<login>|<network>" → when that login last signed in from that network.
+    this.trusted = new Map();
+  }
+
+  /** Whether <login> signed in from <network> (ipKey) in the last TRUST_MS. */
+  trusts(login, network) {
+    const at = this.trusted.get(`${login}|${network}`);
+    return at !== undefined && this.now() - at < TRUST_MS;
   }
 
   /** Runs <fn> (password hashing) as one of at most maxHashing at a time; rate_limited when all are busy. */
@@ -155,7 +174,9 @@ export class Auth {
 
   /** A new provider account and its session: {token, account}. */
   async register(loginText, password, ip) {
-    if (!this.limiter.hit(`register-ip:${ipKey(ip)}`, 10, HOUR)) throw new HubError('rate_limited');
+    if (!this.limiter.hit(`register-ip:${ipKey(ip)}`, REGISTRATIONS_PER_NETWORK, HOUR)) throw new HubError('rate_limited');
+    const wide = wideIpKey(ip);
+    if (wide && !this.limiter.hit(`register-ip:${wide}`, REGISTRATIONS_PER_WIDE_NETWORK, HOUR)) throw new HubError('rate_limited');
     const fields = {};
     const login = validLogin(loginText);
     if (!login) fields.login = 'Логин: от 3 до 32 латинских букв, цифр и знаков . _ -';
@@ -177,29 +198,31 @@ export class Auth {
 
   /**
    * Sign-in by login and password: {token, account}. Failures close the login to the network they come from
-   * (FAILS_PER_NETWORK), and to everyone only past FAILS_PER_LOGIN.
+   * (FAILS_PER_NETWORK), to its /48 past FAILS_PER_WIDE_NETWORK, and to everyone past FAILS_PER_LOGIN; never to a
+   * network the login signed in from lately (TRUST_MS), where only that network's own limits apply.
    */
   async signIn(loginText, password, ip) {
     const network = ipKey(ip);
-    if (!this.limiter.hit(`signin-ip:${network}`, 30, HOUR)) throw new HubError('rate_limited');
+    const wide = wideIpKey(ip);
     const login = normalizeLogin(loginText);
-    const failHere = `signin-fail:${login}|${network}`;
-    const failAll = `signin-fail:${login}`;
-    if (login && (this.limiter.count(failHere, HOUR) >= FAILS_PER_NETWORK || this.limiter.count(failAll, HOUR) >= FAILS_PER_LOGIN)) {
-      throw new HubError('rate_limited');
-    }
+    const trusted = Boolean(login) && this.trusts(login, network);
+    if (!this.limiter.hit(`signin-ip:${network}`, SIGNINS_PER_NETWORK, HOUR)) throw new HubError('rate_limited');
+    if (wide && !trusted && !this.limiter.hit(`signin-ip:${wide}`, SIGNINS_PER_WIDE_NETWORK, HOUR)) throw new HubError('rate_limited');
+    // [counter, the limit it closes the login at here]; the wider ones do not close a trusted network.
+    const fails = [[`signin-fail:${login}|${network}`, FAILS_PER_NETWORK]];
+    if (wide) fails.push([`signin-fail:${login}|${wide}`, trusted ? Infinity : FAILS_PER_WIDE_NETWORK]);
+    fails.push([`signin-fail:${login}`, trusted ? Infinity : FAILS_PER_LOGIN]);
+    if (login && fails.some(([key, limit]) => this.limiter.count(key, HOUR) >= limit)) throw new HubError('rate_limited');
     const account = this.accountByLogin(login);
     const typed = typeof password === 'string' ? password.slice(0, MAX_PASSWORD) : '';
     const ok = await this.withHashSlot(() => checkPassword(account?.password, typed));
     // A password reset while this one was being checked wins.
     if (!ok || this.accountByLogin(login)?.password !== account.password) {
-      if (login) {
-        this.limiter.hit(failHere, Infinity, HOUR);
-        this.limiter.hit(failAll, Infinity, HOUR);
-      }
+      if (login) for (const [key] of fails) this.limiter.hit(key, Infinity, HOUR);
       log.info('sign-in refused');
       throw new HubError('password_invalid');
     }
+    this.trusted.set(`${login}|${network}`, this.now());
     return this.startSession(account.id);
   }
 
@@ -291,9 +314,10 @@ export class Auth {
     return this.resetPassword(id);
   }
 
-  /** Drops expired sessions and old counters. */
+  /** Drops expired sessions, old counters and networks trusted no longer. */
   sweep() {
     this.db.run('DELETE FROM sessions WHERE expires_at < ?', this.now());
     this.limiter.sweep();
+    for (const [key, at] of this.trusted) if (this.now() - at >= TRUST_MS) this.trusted.delete(key);
   }
 }

@@ -36,8 +36,8 @@ public static partial class L
     public static string AppKillSwitchClaude => T("Add Claude", "Добавить Claude");
     public static string AppKillSwitchPick => T("Choose a program…", "Выбрать программу…");
     public static string AppKillSwitchCodeNote => T(
-        "Claude Code ignores the system proxy: in proxy mode it works only with HTTPS_PROXY set to V2pn's port; VPN mode needs nothing.",
-        "Claude Code не смотрит на системный прокси: в режиме прокси он заработает, только если задать HTTPS_PROXY на порт V2pn; в режиме VPN ничего не нужно.");
+        "Claude Code ignores the system proxy: in proxy mode it works only with HTTPS_PROXY set to V2pn's port; VPN mode needs nothing. Installed with npm, it runs as node.exe: add node.exe to close it too. The names these programs look up go through Windows' own DNS service, which this does not close, so your internet provider can see which sites they ask for while V2pn is off.",
+        "Claude Code не смотрит на системный прокси: в режиме прокси он заработает, только если задать HTTPS_PROXY на порт V2pn; в режиме VPN ничего не нужно. Установленный через npm, он работает как node.exe: добавьте node.exe, чтобы закрыть и его. Имена сайтов эти программы узнают через службу DNS самой Windows, её это не закрывает, поэтому, пока V2pn выключен, интернет-провайдер видит, какие сайты они запрашивают.");
     public static string AppKillSwitchNow(string names) => T($"Closed now: {names}", $"Сейчас закрыты: {names}");
     public static string AppKillSwitchNone => T("Nothing is closed now.", "Сейчас ничего не закрыто.");
     public static string AppKillSwitchFailed => T(

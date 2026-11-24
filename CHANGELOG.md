@@ -2,9 +2,9 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
+## 1.5.0
 
-V2pn moves to a working server by itself when the one you use stops answering, and lets you send chosen sites one way whatever the route says. It is safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API needs a secret, updates and installs check signatures everywhere, and a provider's tab on the hub can no longer pose as another provider. Subscriptions from panels with a device limit work, and several quiet failures now either recover or say what happened.
+V2pn moves to a working server by itself when the one you use stops answering, sends chosen sites and programs one way whatever the route says, and can be run from a terminal or by an AI assistant. It is safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API needs a secret, updates and installs check signatures everywhere, and a provider's tab on the hub can no longer pose as another provider. Subscriptions from panels with a device limit work, and several quiet failures now either recover or say what happened.
 
 ### A working server by itself
 
@@ -31,6 +31,7 @@ V2pn moves to a working server by itself when the one you use stops answering, a
 - **IPv6 stays in the tunnel in VPN mode.** On a network with IPv6 (many mobile and some home providers) the sing-box tunnel, the default one, now takes IPv6 too, as Xray's already did. Before, IPv6 went past the VPN on a Mac and was cut off on Windows.
 - **The cores' control API has a secret.** Any program on the computer could switch the core to "direct" with one request (all traffic then went past the server, and the kill switch let it out) or read which sites every program visits. Now the API answers only V2pn, with a new secret on every start.
 - **Updates come from the newest signed release of any source**, not from the first that answers, so a source stuck on an old release cannot hold V2pn back. The updater also checks the package against the signed manifest itself, right before it installs, holding it so that nothing can swap it in between.
+- **A spare signing key.** V2pn now also trusts a second release key, kept offline, so a lost or stolen key can no longer cut installed copies off from updates.
 - **The install commands check the signature** of the release before using it (`install.ps1` on Windows PowerShell 5.1 and 7, `install.sh` with the Mac's own openssl), also from a mirror. The commands on the site and on providers' pages lead straight to GitHub.
 - **Cores from the Updates window are checked.** A new Xray, sing-box or mihomo must match the SHA-256 GitHub keeps for that release file before it replaces the one in use. A download cut short or changed on the way is thrown away; before, it became the program that carries all traffic. When GitHub's API does not answer, the core is taken as before and the log says so.
 - **The rule lists of the Russian ways get through a blocked GitHub.** runetfreedom's geoip.dat and geosite.dat are checked against the SHA-256 their publisher gives. When the release does not come, or comes changed, they are taken from the release branch on raw.githubusercontent.com, from V2pn's own copy on its server or from jsDelivr, directly or through the connection, and only with a hash the publisher gave. Before, a blocked GitHub left these ways on old lists or none.

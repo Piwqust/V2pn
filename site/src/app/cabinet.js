@@ -792,7 +792,7 @@ $('#password-form').addEventListener('submit', async e => {
   setFieldError(neu, '');
   $('#pw-status').textContent = '';
   if (!old.value) { setFieldError(old, 'Напишите текущий пароль.'); old.focus(); return; }
-  if (neu.value.length < 6) { setFieldError(neu, 'Новый пароль от 6 символов.'); neu.focus(); return; }
+  if (neu.value.length < 8) { setFieldError(neu, 'Новый пароль от 8 символов.'); neu.focus(); return; }
   await busy($('#pw-save'), async () => {
     try {
       await api.post('/api/auth/password', { password: old.value, newPassword: neu.value });

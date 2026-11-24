@@ -42,5 +42,15 @@ jobs:
           }
           ./tools/winget-manifest.ps1 -Version $version
           winget validate --manifest "dist/winget/$version" 2>$null
-          Invoke-WebRequest -UseBasicParsing https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          # wingetcreate gets WINGET_TOKEN, so it is a fixed release checked by its hash, never
+          # whatever aka.ms/wingetcreate/latest points at today. To move to a newer one, take the
+          # hash from its release page (or Get-FileHash) and change both lines.
+          $wingetcreate = 'https://github.com/microsoft/winget-create/releases/download/v1.28.1.0/wingetcreate.exe'
+          $wingetcreateSha256 = '63d980ba79e97042395bd6eb5992c2db9e01e9e7a8a22958a95c288f27310413'
+          Invoke-WebRequest -UseBasicParsing $wingetcreate -OutFile wingetcreate.exe
+          $got = (Get-FileHash -Algorithm SHA256 wingetcreate.exe).Hash.ToLowerInvariant()
+          if ($got -ne $wingetcreateSha256) {
+            "::error::wingetcreate.exe has SHA-256 $got, not $wingetcreateSha256; it does not run."
+            exit 1
+          }
           ./wingetcreate.exe submit --token $env:WINGET_TOKEN --prtitle "New version: Piwqust.V2pn version $version" "dist/winget/$version"

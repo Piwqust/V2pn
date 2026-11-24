@@ -14,6 +14,7 @@ import { NetError, safeFetch } from './net.mjs';
 import { pageTheme } from './page.mjs';
 import { GRANT_ORDER, ROOT_ONLY_GRANTS, buildPublication, publishedStamp, writePublication } from './publish.mjs';
 import { RIGHTS, contentHash, parseRights, rightState, rightView } from './rights.mjs';
+import { RootPartners } from './roots.mjs';
 import { parseRouting } from './routing.mjs';
 import { RESERVED_IDS, domainAllowed, domainsOverlap, httpsUrl, multiLine, normalizeDomain, oneLine, validId, validName } from './validate.mjs';
 
@@ -49,6 +50,9 @@ export class Hub {
     this.checksRunning = 0;
     this.lastPublishError = null;
     fs.mkdirSync(config.uploadsDir, { recursive: true, mode: 0o700 });
+    // The partners the owner signs with the root key: their ids and domains are not the hub's to give.
+    this.roots = new RootPartners({ file: config.rootIndexFile, url: config.rootIndexUrl, keys: config.rootKeys, fixed: config.rootPartners, net });
+    if (this.roots.loadCached() || config.rootPartners.length) this.rootCollisions();
   }
 
   /**
@@ -172,12 +176,47 @@ export class Hub {
     return { url, domain };
   }
 
-  /** The live partner other than <id> that already claims one of <domains>, or null. */
+  /**
+   * The partner other than <id> that already claims one of <domains>, or null: a live one of the hub's, or one the
+   * owner signs with the root key ({root: true}).
+   */
   domainOwner(domains, id) {
     for (const p of this.db.all("SELECT id, name, domains FROM partners WHERE state = 'live' AND id != ?", id || '')) {
       if (domainsOverlap(domains, parseJson(p.domains, []))) return p;
     }
-    return null;
+    const root = this.roots.owner(domains, id);
+    return root ? { ...root, root: true } : null;
+  }
+
+  /** "domain_taken" for <domain>, which <owner> (as domainOwner gives it) claims. */
+  domainTaken(owner, domain) {
+    const message = owner.root
+      ? `Домен ${domain} принадлежит партнёру ${owner.name}, которого V2pn подписал сам.`
+      : `Домен ${domain} уже у другого партнёра.`;
+    return new HubError('domain_taken', { message: owner.root ? message : undefined, fields: { subscription: message } });
+  }
+
+  /**
+   * Hub partners in the way of a root partner, logged as warnings: one with a root partner's id that was not imported
+   * from it, or one on a root partner's domain. V2pn would take the hub's and leave the root one out.
+   */
+  rootCollisions() {
+    const found = [];
+    for (const p of this.db.all('SELECT id, domains, source FROM partners ORDER BY id')) {
+      const domains = parseJson(p.domains, []);
+      if (p.source !== 'import' && this.roots.has(p.id)) found.push({ partner: p.id, root: p.id, why: 'id' });
+      const root = this.roots.owner(domains, p.id);
+      if (root) found.push({ partner: p.id, root: root.id, why: 'domain', clash: domainsOverlap(domains, root.domains) });
+    }
+    for (const c of found) log.warn('a hub partner collides with a root partner', c);
+    return found;
+  }
+
+  /** Reads the root-signed index again (startServer: at start and every six hours); the last good copy stays on failure. */
+  async refreshRoots() {
+    const ok = await this.roots.refresh();
+    if (ok) this.rootCollisions();
+    return ok;
   }
 
   /** POST /api/partner/check: a link checked without saving, with the domain the hub would take from it. */
@@ -194,7 +233,7 @@ export class Hub {
     if (base.length < 2) base = 'partner';
     for (let i = 1; ; i++) {
       const id = i === 1 ? base : `${base.slice(0, 31 - String(i).length).replace(/-+$/, '')}-${i}`;
-      if (validId(id) && !RESERVED_IDS.has(id) && !this.db.get('SELECT 1 FROM partners WHERE id = ?', id)) return id;
+      if (validId(id) && !RESERVED_IDS.has(id) && !this.roots.has(id) && !this.db.get('SELECT 1 FROM partners WHERE id = ?', id)) return id;
     }
   }
 
@@ -216,7 +255,8 @@ export class Hub {
     const rights = parseRights(asked, { domains });
     const { problems } = this.lookReview(look, accountId);
     if (Object.keys(problems).length) throw new HubError('look_invalid', { fields: problems });
-    if (this.domainOwner(domains, row?.id)) throw new HubError('domain_taken', { fields: { subscription: `Домен ${domain} уже у другого партнёра.` } });
+    const taken = this.domainOwner(domains, row?.id);
+    if (taken) throw this.domainTaken(taken, domain);
 
     let check = null;
     if (!row || row.subscription !== url || !row.check_json) {
@@ -228,7 +268,8 @@ export class Hub {
     const id = this.db.tx(() => {
       const now = nowIso();
       let current = this.ownPartner(accountId);
-      if (this.domainOwner(domains, current?.id)) throw new HubError('domain_taken', { fields: { subscription: `Домен ${domain} уже у другого партнёра.` } });
+      const owner = this.domainOwner(domains, current?.id);
+      if (owner) throw this.domainTaken(owner, domain);
       if (!current) {
         const newId = this.freeId(look.name);
         this.db.run(`INSERT INTO partners (id, account_id, name, domains, subscription, check_json, checked_at, look, state, source, created_at, updated_at)
@@ -462,7 +503,10 @@ export class Hub {
   restore(id, actor) {
     const row = this.partnerRow(id);
     if (row.state !== 'down') throw new HubError('state', { message: 'Партнёр не снят.' });
-    if (this.domainOwner(parseJson(row.domains, []), id)) throw new HubError('domain_taken', { message: 'Его домен уже у другого партнёра.' });
+    const owner = this.domainOwner(parseJson(row.domains, []), id);
+    if (owner) {
+      throw new HubError('domain_taken', { message: owner.root ? `Его домен у партнёра ${owner.name}, которого V2pn подписал сам.` : 'Его домен уже у другого партнёра.' });
+    }
     this.db.run("UPDATE partners SET state = 'live', down_reason = NULL, updated_at = ? WHERE id = ?", nowIso(), id);
     this.db.audit(actor, 'partner.restore', id);
     this.publishSafely(actor);
@@ -726,7 +770,8 @@ export class Hub {
     const result = this.db.tx(() => {
       const existing = this.db.get('SELECT * FROM partners WHERE id = ?', listing.id);
       if (existing && existing.source !== 'import') throw new Error(`${listing.id} is a partner made on the hub; not replaced`);
-      if (this.domainOwner(domains, listing.id)) throw new Error(`a domain of ${listing.id} belongs to another live partner`);
+      const owner = this.domainOwner(domains, listing.id);
+      if (owner) throw new Error(`a domain of ${listing.id} belongs to ${owner.root ? 'the root-signed partner' : 'another live partner'} ${owner.id}`);
       let accountId = existing?.account_id;
       if (login || !accountId) {
         const wanted = normalizeLogin(login ?? listing.id);

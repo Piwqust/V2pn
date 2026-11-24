@@ -4,6 +4,7 @@ import { createHandler } from './api.mjs';
 import { Db } from './db.mjs';
 import { loadKey, ensureKey } from './keys.mjs';
 import { log } from './log.mjs';
+import { ROOT_REFRESH_MS, ROOT_RETRY_MS } from './roots.mjs';
 import { Hub } from './service.mjs';
 
 export function createHub(config, { net } = {}) {
@@ -25,6 +26,19 @@ export function startServer(hub) {
   flush.unref();
   maintain.unref();
   setImmediate(() => hub.maintain());
+  // The root-signed partner index: now, then every six hours (half an hour after a failure).
+  let roots = null;
+  const refreshRoots = async () => {
+    let ok = false;
+    try {
+      ok = await hub.refreshRoots();
+    } catch (e) {
+      log.error('root partner index failed', { error: String(e.message || e) });
+    }
+    roots = setTimeout(refreshRoots, ok ? ROOT_REFRESH_MS : ROOT_RETRY_MS);
+    roots.unref();
+  };
+  setImmediate(refreshRoots);
 
   let stopping = false;
   const stop = signal => {
@@ -33,6 +47,7 @@ export function startServer(hub) {
     log.info('stopping', { signal });
     clearInterval(flush);
     clearInterval(maintain);
+    clearTimeout(roots);
     server.close(() => {
       try {
         hub.counter.flush();

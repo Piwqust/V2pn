@@ -65,11 +65,18 @@ internal sealed class Installer
     /// </summary>
     public void Stage(string zip)
     {
+        using var stream = File.OpenRead(zip);
+        Stage(stream);
+    }
+
+    /// <summary><see cref="Stage(string)"/> from a package already open, the very stream that was checked.</summary>
+    public void Stage(Stream zip)
+    {
         DeleteWork();
         Directory.CreateDirectory(_stage);
         var stageFull = _stage + Path.DirectorySeparatorChar;
 
-        using (var archive = ZipFile.OpenRead(zip))
+        using (var archive = new ZipArchive(zip, ZipArchiveMode.Read, leaveOpen: true))
         {
             foreach (var entry in archive.Entries)
             {
@@ -94,11 +101,7 @@ internal sealed class Installer
                     File.CreateSymbolicLink(target, reader.ReadToEnd());
                     continue;
                 }
-                entry.ExtractToFile(target, true);
-                if (new FileInfo(target).Length != entry.Length)
-                {
-                    throw new IOException($"{entry.FullName} was not written completely.");
-                }
+                ExtractChecked(entry, target, name);
                 if (!OperatingSystem.IsWindows() && (mode & 0x1FF) != 0)
                 {
                     File.SetUnixFileMode(target, (UnixFileMode)(mode & 0x1FF));
@@ -121,6 +124,44 @@ internal sealed class Installer
             throw new InvalidDataException($"The package has no {Utils.V2rayN} program.");
         }
         _stagedRoot = top[0];
+    }
+
+    /// <summary>Called after each file is unpacked; tests use it to make a file vanish the way it did on a Mac.</summary>
+    internal Action<string>? Extracted { get; init; }
+
+    /// <summary>
+    /// Unpacks one file and checks it is all there. On a Mac (1.3.0 to 1.4.0) the mihomo core was gone right after it was
+    /// written, and the whole update failed for good. A file that does not come out whole is written once more; a core
+    /// (under bin/) that still does not is taken from the installed copy, which the app keeps up to date on its own
+    /// anyway, rather than leave the person on the old version.
+    /// </summary>
+    private void ExtractChecked(ZipArchiveEntry entry, string target, string name)
+    {
+        for (var attempt = 1; attempt <= 2; attempt++)
+        {
+            entry.ExtractToFile(target, true);
+            Extracted?.Invoke(target);
+            var info = new FileInfo(target);
+            if (info.Exists && info.Length == entry.Length)
+            {
+                return;
+            }
+            _log($"{entry.FullName}: {(info.Exists ? $"{info.Length} of {entry.Length} bytes" : "gone right after it was written")} (try {attempt})");
+            if (attempt == 1)
+            {
+                Thread.Sleep(TimeSpan.FromSeconds(1));
+            }
+        }
+        var inside = name.IndexOf('/') is var slash and > 0 ? name[(slash + 1)..] : name;
+        var installed = Path.Combine(_root, inside.Replace('/', Path.DirectorySeparatorChar));
+        var core = inside.StartsWith("bin/", StringComparison.Ordinal) || inside.StartsWith("Contents/MacOS/bin/", StringComparison.Ordinal);
+        if (core && File.Exists(installed))
+        {
+            File.Copy(installed, target, true);
+            _log($"{entry.FullName}: the installed core is kept instead");
+            return;
+        }
+        throw new IOException($"{entry.FullName} was not written completely.");
     }
 
     /// <summary>Moves the staged version into place. On failure everything is put back and this throws.</summary>

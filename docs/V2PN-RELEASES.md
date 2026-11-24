@@ -308,7 +308,8 @@ The upload and the `v2pn-mirror.yml` workflow are written but have not run again
 
 | Workflow | When | What it does |
 | --- | --- | --- |
-| `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run; the installers' signature check (`tools/check-install-scripts.*`); the hub's tests and a check that `hub/test/fixtures/csharp` is what the hub makes now; the website's build with its CSP check |
+| `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run; packages the Windows app and starts it in background mode for 30 seconds with a log free of exceptions (`tools/app-check.ps1`), screenshot and logs attached; the installers' signature check (`tools/check-install-scripts.*`); the hub's tests and a check that `hub/test/fixtures/csharp` is what the hub makes now; the website's build with its CSP check |
+| `v2pn-e2e.yml` | nightly, and by hand (Run workflow) | the Windows package adds a subscription whose servers really work, connects and carries a request through them (`tools/app-check.ps1 -Connect`, below) |
 | `v2pn-release.yml` | a `v1.2.3` tag (a `v1.2.3-beta.1` tag: a pre-release) | packages, signature, draft release |
 | `v2pn-mirror.yml` | a release is published | a copy on your own server, if set up (a pre-release: its files only, `latest` stays) |
 | `v2pn-winget.yml` | a release is published | a pull request to `microsoft/winget-pkgs`, if `WINGET_TOKEN` is set |
@@ -345,6 +346,18 @@ tools/sandbox.ps1 -From v2rayN/v2rayN.Desktop/bin/Release/net10.0 -Dest $env:TEM
 ```powershell
 tools/sandbox.ps1 -Dest $env:TEMP/v2pn-try -Stop
 ```
+
+## Does the app start and connect
+
+```powershell
+tools/release.ps1 -Version 0.0.1 -Arch x64 -NoCores -NoInstaller -UpdateOnly -NoManifest -OutDir $env:TEMP/v2pn-pkg -UpdateSources http://127.0.0.1:9/releases
+tools/app-check.ps1 -From $env:TEMP/v2pn-pkg/V2pn-windows-x64-update.zip            # starts, runs 30 s, no exception in the log
+tools/app-check.ps1 -From $env:TEMP/v2pn-pkg/V2pn-windows-x64-update.zip -Connect   # and connects
+```
+
+The package runs in a sandbox in background mode: its own folder and ports, the system proxy untouched, no window on the screen. With `-Connect`, xray from `tools/cores.lock.json` runs a local VLESS server and `tools/demo/demo_sub.py` serves its subscription; the sandbox gets it as a preset (`v2pn-preset.txt`) with control from the command line on, and `v2pnctl` chooses a server, sets Proxy mode and the route "everything" and connects. Then curl asks for `http://demo.v2pn-e2e:<port>/sub` through V2pn's SOCKS port: only the demo server resolves that name, so the answer proves the request went through the server. The system proxy must be as before. The screenshot, V2pn's logs and the demo server's output go to `<Work>/evidence`. CI runs the first on every push (`v2pn-ci.yml`) and the second nightly (`v2pn-e2e.yml`).
+
+Xray 26.10 and newer refuse private addresses for traffic from a VLESS inbound, so the demo server allows 127.0.0.1 with a `finalRules` entry.
 
 ## Pulling in a new v2rayN
 

@@ -172,27 +172,6 @@ function New-V2pnSetup([string]$Window, [string]$Engine, [string]$Out, [string]$
     Remove-Item -Force $Engine
 }
 
-# The core bundle pinned for a target, downloaded once per pin and checked against the lock.
-function Get-Cores([string]$Target) {
-    $lock = Get-Content (Join-Path $PSScriptRoot 'cores.lock.json') -Raw | ConvertFrom-Json
-    $entry = $lock.targets.$Target
-    if (-not $entry) { throw "tools/cores.lock.json has no cores for $Target; run tools/update-cores.ps1" }
-    $cache = Join-Path ([IO.Path]::GetTempPath()) "v2pn-cores-$($lock.commit)"
-    New-Item -ItemType Directory -Force $cache | Out-Null
-    $zip = Join-Path $cache (Split-Path -Leaf $entry.url)
-    if (-not (Test-Path $zip)) {
-        Write-Host "   downloading $($entry.url)"
-        Invoke-WebRequest -UseBasicParsing -Uri $entry.url -OutFile "$zip.part"
-        Move-Item -Force "$zip.part" $zip
-    }
-    $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
-    if ($hash -ne $entry.sha256) {
-        Remove-Item -Force $zip
-        throw "The core bundle for $Target does not match tools/cores.lock.json (got $hash). Nothing was packaged."
-    }
-    return $zip
-}
-
 function New-Manifest {
     $arguments = @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $OutDir, $Version, '--repo', $repo)
     if ($SigningKey) { $arguments += @('--key', $SigningKey) }
@@ -294,7 +273,8 @@ foreach ($a in $Arch) {
 
     if (-not $NoCores) {
         Write-Host "== ${rid}: cores"
-        $coreZip = Get-Cores $rid
+        # Pinned in tools/cores.lock.json and checked against its hash (_common.ps1); a mismatch packages nothing.
+        $coreZip = Get-PinnedCores $rid
         $coreDir = Join-Path $work "cores-$a"
         if (Test-Path $coreDir) { Remove-Item -Recurse -Force $coreDir }
         Expand-Archive -Path $coreZip -DestinationPath $coreDir

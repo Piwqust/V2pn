@@ -27,6 +27,28 @@ function Find-Iscc {
     return $candidates | Where-Object { Test-Path $_ } | Select-Object -First 1
 }
 
+# The core bundle pinned in tools/cores.lock.json for a target (win-x64, osx-arm64...): downloaded once per pin into
+# the temp folder and checked against the lock's SHA-256. Returns the path of the zip.
+function Get-PinnedCores([string]$Target) {
+    $lock = Get-Content (Join-Path $PSScriptRoot 'cores.lock.json') -Raw | ConvertFrom-Json
+    $entry = $lock.targets.$Target
+    if (-not $entry) { throw "tools/cores.lock.json has no cores for $Target; run tools/update-cores.ps1" }
+    $cache = Join-Path ([IO.Path]::GetTempPath()) "v2pn-cores-$($lock.commit)"
+    New-Item -ItemType Directory -Force $cache | Out-Null
+    $zip = Join-Path $cache (Split-Path -Leaf $entry.url)
+    if (-not (Test-Path $zip)) {
+        Write-Host "   downloading $($entry.url)"
+        Invoke-WebRequest -UseBasicParsing -Uri $entry.url -OutFile "$zip.part"
+        Move-Item -Force "$zip.part" $zip
+    }
+    $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
+    if ($hash -ne $entry.sha256) {
+        Remove-Item -Force $zip
+        throw "The core bundle for $Target does not match tools/cores.lock.json (got $hash)."
+    }
+    return $zip
+}
+
 function Invoke-Checked([string]$exe, [string[]]$arguments) {
     & $exe @arguments
     if ($LASTEXITCODE -ne 0) { throw "$exe $($arguments -join ' ') failed with exit code $LASTEXITCODE" }

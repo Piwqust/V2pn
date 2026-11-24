@@ -175,7 +175,7 @@ curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh |
 > [!TIP]
 > **Провайдерам.** Провайдер, который работает с V2pn, получает свою вкладку в заголовке окна: со своим знаком, цветами, тарифом и только своими серверами. Одна форма, без ключей, хостинга и отдельной сборки: [v2pn.angleford.co/providers](https://v2pn.angleford.co/providers/) · [руководство](docs/partners/README.ru.md).
 
-**Из терминала и ИИ-ассистентов.** Вместе с V2pn ставится `v2pnctl`, а установщик для Windows, winget и Homebrew добавляют его в PATH: `v2pnctl status`, `v2pnctl servers`, `v2pnctl use Frankfurt`, `v2pnctl connect`, `v2pnctl route all`, остальное в `v2pnctl --help`. `v2pnctl mcp` — MCP-сервер для Claude Code, Claude Desktop, Cursor и других: `claude mcp add v2pn -- v2pnctl mcp`. Он выключен, пока вы не включите его в «Настройки → Общие → Управление из командной строки и ИИ» (только чтение или с управлением). О каждом изменении V2pn говорит в окне, а ссылки, адреса и ключи не выдаёт никогда.
+**Из терминала и ИИ-ассистентов.** Вместе с V2pn ставится `v2pnctl`, а установленный V2pn для Windows, winget и Homebrew добавляют его в PATH: `v2pnctl status`, `v2pnctl servers`, `v2pnctl use Frankfurt`, `v2pnctl connect`, `v2pnctl route all`, остальное в `v2pnctl --help`. `v2pnctl mcp` — MCP-сервер для Claude Code, Claude Desktop, Cursor и других: `claude mcp add v2pn -- v2pnctl mcp`. Он выключен, пока вы не включите его в «Настройки → Общие → Управление из командной строки и ИИ» (только чтение или с управлением). О каждом изменении V2pn говорит в окне, а ссылки, адреса и ключи не выдаёт никогда.
 
 ## Переезд с v2rayN
 

@@ -2,6 +2,12 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### Fixes
+
+- `v2pnctl` works in a new terminal after V2pn updated itself to 1.5.0. Only the installer put V2pn's folder on the PATH, so a copy that came by an update had `v2pnctl` in its folder and no terminal found it. The installed V2pn now adds its folder to your user's PATH once, at its next start, the way the installer does; if you take it off again, V2pn leaves it off. Portable copies are left alone.
+
 ## 1.5.0
 
 V2pn moves to a working server by itself when the one you use stops answering, sends chosen sites and programs one way whatever the route says, and can be run from a terminal or by an AI assistant. It is safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API needs a secret, updates and installs check signatures everywhere, and a provider's tab on the hub can no longer pose as another provider. Subscriptions from panels with a device limit work, and several quiet failures now either recover or say what happened.

@@ -87,6 +87,8 @@ internal class Program
         AppManager.Instance.WindowDialog = new WindowDialog();
         V2pnDeepLink.RegisterScheme();
         V2pnUninstallEntry.Refresh();
+        // V2pn: v2pnctl on the PATH for a copy that came by an update, not only by the installer.
+        V2pnUserPath.Refresh();
         return true;
     }
 

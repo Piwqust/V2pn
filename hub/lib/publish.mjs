@@ -32,10 +32,15 @@ export function publishedStamp(date = new Date()) {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-/** The until of a partner without a term of its own: a year on, renewed by every publication. */
+// How long a partner without a term of its own stays in the index after a publication. The hub publishes again every
+// day, so a partner lives on while the hub does; if the hub stops (or its key is taken and the hub shut down), its
+// partners drop out of V2pn within two months. V2pn caps a hub-signed listing at published + 60 days as well.
+export const HUB_TERM_DAYS = 60;
+
+/** The until of a partner without a term of its own: HUB_TERM_DAYS on, renewed by every publication. */
 export function rollingUntil(today) {
   const d = new Date(`${today}T00:00:00Z`);
-  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(d.getUTCDate() + HUB_TERM_DAYS);
   return d.toISOString().slice(0, 10);
 }
 

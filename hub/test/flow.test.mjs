@@ -108,9 +108,8 @@ test('register, save = published, special rights wait for a moderator, take down
     let pub = published(env);
     assert.deepEqual(pub.index.partners.map(p => [p.id, p.name, p.domains.join(), p.grants.join(), p.reviewed]),
       [['nordline', 'Nordline', 'sub.nordline.test', 'edition', undefined]]);
-    const year = new Date();
-    year.setUTCFullYear(year.getUTCFullYear() + 1);
-    assert.equal(pub.index.partners[0].until, year.toISOString().slice(0, 10), 'a hub partner has no term: a year on, renewed daily');
+    const term = new Date(Date.now() + 60 * 86400000);
+    assert.equal(pub.index.partners[0].until, term.toISOString().slice(0, 10), 'a hub partner has no term: 60 days on, renewed daily');
     let pack = JSON.parse(packOf(pub, 'nordline').get('partner.json'));
     assert.deepEqual(pack.theme, { palette: { brand: ['#2F6BFF', '#13C4B5'] }, background: { type: 'gradient', colors: ['#2F6BFF', '#13C4B5'] }, layout: 'stickers' });
     assert.deepEqual(pack.links, { support: 'https://t.me/nordline_support' });

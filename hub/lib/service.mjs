@@ -815,12 +815,25 @@ export class Hub {
 
   // ---------------------------------------------------------------- housekeeping
 
-  /** Every few minutes: expired sessions out, counters in; once a day a fresh index (terms run on). */
+  /**
+   * Whether the index is due to be signed and written again: not yet today, or the last one is a day old. Every
+   * publication moves the term of the hub's own partners 60 days on (rollingUntil).
+   */
+  publishDue(now = Date.now()) {
+    if (this.db.meta('published_day') !== today()) return true;
+    const at = Date.parse(parseJson(this.db.meta('published'), null)?.at ?? '');
+    return !(at > now - 24 * HOUR);
+  }
+
+  /**
+   * Every ten minutes and right after start (startServer): expired sessions out, counters in; once a day a fresh index
+   * (terms run on), retried at the next round while it fails.
+   */
   maintain() {
     try {
       this.auth.sweep();
       this.counter.flush();
-      if (this.db.meta('published_day') !== today()) {
+      if (this.publishDue()) {
         const due = this.db.get('SELECT 1 FROM partners LIMIT 1');
         if (due || this.db.meta('published_day')) this.publishSafely('system');
         this.collectUploads();

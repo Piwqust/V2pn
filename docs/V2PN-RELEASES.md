@@ -187,6 +187,13 @@ dotnet run tools/manifest.cs -- --new-key $HOME/.v2pn/release-signing-key-2.pem
 
 The command prints the public key. Add it to `V2pnUpdateKeys` after a `|`, **without removing the old one**, and the same way to `$releaseKeys` in `tools/install.ps1` and `V2PN_RELEASE_KEYS` in `tools/install.sh` (`tools/check-install-scripts.ps1` fails while they differ), and release a version signed with the old key. Once everyone has updated to it, later versions can be signed with the new key, and the old one can go one release after that.
 
+### The spare keys
+
+Since 24 November 2026 a second release key and a second hub key are built in (the second entries of `V2pnUpdateKeys`, of `hub:` in `V2pnPartnerKeys`, and of the install scripts' keys). Their private halves are not on any computer that builds or serves V2pn: they are kept offline. Every copy released after that trusts them, so losing the main key no longer means a release nobody's V2pn accepts.
+
+- **The release key is lost or stolen:** sign with the spare (`V2PN_SIGNING_KEY=<the spare .pem>`, or copy it to `~/.v2pn/release-signing-key.pem`). If the main key was stolen, take it out of `V2pnUpdateKeys` and the install scripts in that same release, and make a new spare.
+- **The hub's key is lost or stolen:** put the spare in place of `HUB_DATA/keys/hub-partner-key.pem` on the server (owner `v2pn-hub`, mode 600) and restart the hub; it signs the next index with it. If the old key was stolen, take its `hub:` entry out of `V2pnPartnerKeys` in the next release.
+
 ## How to release a version
 
 You need: the `Piwqust/V2pn` repository on GitHub with the main branch `v2pn`, and the signing key on this computer.

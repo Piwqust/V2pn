@@ -40,7 +40,7 @@
       from V2PN_SIGNING_KEY or ~/.v2pn/release-signing-key.pem. A second key here lets the old
       one be retired without stranding installed copies.
     -->
-    <V2pnUpdateKeys Condition="'$(V2pnUpdateKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig==</V2pnUpdateKeys>
+    <V2pnUpdateKeys Condition="'$(V2pnUpdateKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig==|MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHBaFnsqLLFh36v+skklrJmKGzJ4OG5Lsqx1LrsIP4zifl88jz4CUYqntZo9rVy8P3daqVOj3Kpc1vkrgAnA3Dw==</V2pnUpdateKeys>
 
     <!--
       Public keys (ECDSA P-256, SubjectPublicKeyInfo in base64, "|" between several) that sign
@@ -52,7 +52,7 @@
       the V2pn Hub's (hub/, on v2pn.angleford.co): it signs what providers publish there, and V2pn
       drops those reviewed grants from an index it signs (V2pnPartnerTrust.ReadIndex).
     -->
-    <V2pnPartnerKeys Condition="'$(V2pnPartnerKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4LVjtb8RY7TUlzR32OpH1Tn5FPKp5B+m2Zb72/cQzjOSuBvYnBWdHnZ7PnPoFhmNKSeCj5shwtmJD1JIVtCGCg==|hub:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXiLGsFVHz/rlCFoS8ya/U2TmHc4wdxMJMC6Ti04ONqVlPiGI8WygOlCWPdSApROtsnIF43NdldvSsVm+gsDfYg==</V2pnPartnerKeys>
+    <V2pnPartnerKeys Condition="'$(V2pnPartnerKeys)' == ''">MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE4LVjtb8RY7TUlzR32OpH1Tn5FPKp5B+m2Zb72/cQzjOSuBvYnBWdHnZ7PnPoFhmNKSeCj5shwtmJD1JIVtCGCg==|hub:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXiLGsFVHz/rlCFoS8ya/U2TmHc4wdxMJMC6Ti04ONqVlPiGI8WygOlCWPdSApROtsnIF43NdldvSsVm+gsDfYg==|hub:MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAER6AgMcrKcWxJY4Vj6hyq6Wq9UaoLJ4m2X7bSLIk/wPZodFXJnGfQpC9TigC8CnFBnA4ICfKJ/Ing17b4ANygvQ==</V2pnPartnerKeys>
 
     <!--
       Where the partner index and the packs are published, in order, separated by "|"; each laid out

@@ -181,7 +181,7 @@
     # v2rayN/Directory.Build.targets; tools/check-install-scripts.ps1 fails CI when they differ).
     # release.json is used only when release.json.sig is valid for one of them, wherever both came
     # from: a mirror set with V2PN_SOURCE is held to the same check.
-    $releaseKeys = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig=='
+    $releaseKeys = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig==|MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEHBaFnsqLLFh36v+skklrJmKGzJ4OG5Lsqx1LrsIP4zifl88jz4CUYqntZo9rVy8P3daqVOj3Kpc1vkrgAnA3Dw=='
 
     # True when $signature (the text of release.json.sig: ECDSA P-256 over SHA-256, DER, base64) is
     # valid for $data with one of $keys (SubjectPublicKeyInfo, base64, separated by |), as V2pn checks

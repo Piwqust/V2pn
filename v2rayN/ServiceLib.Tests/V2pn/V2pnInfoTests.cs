@@ -54,10 +54,13 @@ public class V2pnInfoTests
     public async Task PartnerKeys_AreTheRootKeys_TheHubsKeyIsMarked_AndTheHubIsAskedFirst()
     {
         await V2pnInfo.PartnerKeys.Count.Should().BeEqualTo(1);
-        await V2pnInfo.PartnerHubKeys.Count.Should().BeEqualTo(1);
+        // The hub's key and its spare, kept offline for the day the hub's key is lost.
+        await V2pnInfo.PartnerHubKeys.Count.Should().BeEqualTo(2);
         await V2pnInfo.PartnerKeys.Intersect(V2pnInfo.PartnerHubKeys).Any().Should().BeFalse();
         await V2pnInfo.PartnerHubKeys[0].Should().BeEqualTo(
             "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEXiLGsFVHz/rlCFoS8ya/U2TmHc4wdxMJMC6Ti04ONqVlPiGI8WygOlCWPdSApROtsnIF43NdldvSsVm+gsDfYg==");
+        await V2pnInfo.PartnerHubKeys[1].Should().BeEqualTo(
+            "MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAER6AgMcrKcWxJY4Vj6hyq6Wq9UaoLJ4m2X7bSLIk/wPZodFXJnGfQpC9TigC8CnFBnA4ICfKJ/Ing17b4ANygvQ==");
         await string.Join("|", V2pnInfo.PartnerSources).Should().BeEqualTo("https://v2pn.angleford.co/partners|" + V2pnInfo.ReleasesUrl);
 
         await string.Join(",", V2pnInfo.PartnerKeyList("a| hub:b |hub:|c", hub: false)).Should().BeEqualTo("a,c");

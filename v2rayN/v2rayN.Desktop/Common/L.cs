@@ -563,8 +563,8 @@ public static partial class L
     public static string AppsNotAProgramMac => T("That is not an app. Choose it in Applications.", "Это не приложение. Выберите его в папке «Программы».");
     public static string AppsVpnOff => T("Now in Proxy mode: the list starts working when you switch to VPN.",
         "Сейчас режим «Прокси»: список заработает, когда вы переключитесь на VPN.");
-    public static string AppsOwnRules => T("Your own rule set is in use: the list works with the three ways under Connect.",
-        "Сейчас включён свой набор правил: список работает с тремя режимами под «Подключиться».");
+    public static string AppsOwnRules => T("Another rule set is in use now: the list works with the three ways under Connect.",
+        "Сейчас включён другой набор правил: список работает с тремя режимами под «Подключиться».");
     public static string AppsMacXrayTunnel => T(
         "\"Legacy TUN protection\" is off, so with most servers Xray runs the tunnel, and on a Mac it may not tell programs apart. For the list to work, turn the setting back on in Settings → VPN mode (TUN).",
         "«Старая защита TUN» выключена, поэтому с большинством серверов туннель ведёт Xray, а он на Mac может не различать программы. Чтобы список работал, включите её обратно в «Настройки → Режим VPN (TUN)».");

@@ -63,3 +63,18 @@ hub publish   # функция hub() из hub/README.md: заново подпи
 архива тот же, V2pn ему доверяет, новый релиз не нужен.
 
 Посмотреть архив, ничего не трогая: `tar -tzvf /var/backups/v2pn-hub/v2pn-hub-….tar.gz`.
+
+## Если хаб не отвечает
+
+`deploy/Caddyfile` — блок сайта для Caddy. Пока хаб лежит, Caddy сам отправляет кнопки скачивания (`/r/…`) и файлы
+релиза (`/releases/…`: проверки обновлений V2pn, индекс партнёров с GitHub) прямо на GitHub, а `/api/` отвечает 503.
+Индекс и страницы партнёров хаба (`/partners/`, `/p/`) — обычные файлы, их Caddy отдаёт и так. Блок встаёт вместо
+прежнего в `/etc/caddy/Caddyfile`, затем `caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy`.
+Проверка: `systemctl stop v2pn-hub`, `curl -sI https://v2pn.angleford.co/r/windows-x64` даёт `302` на `github.com`,
+потом `systemctl start v2pn-hub`.
+
+Чтобы узнать о падении сразу, нужен внешний монитор на другой машине (UptimeRobot, Healthchecks.io, Uptime Kuma): раз в
+5 минут `GET https://v2pn.angleford.co/api/health`, ждать `200` и `"ok":true`, оповещение в Telegram или на почту. В
+ответе есть `publication`, время последней публикации индекса. Хаб публикует его раз в сутки, а партнёры хаба живут
+60 дней от неё, так что тревога нужна и тогда, когда `publication` старше двух суток (в Uptime Kuma это монитор
+«HTTP(s) — JSON Query»).

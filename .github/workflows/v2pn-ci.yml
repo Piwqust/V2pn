@@ -2,7 +2,9 @@ name: V2pn CI
 
 # Every push and pull request: the tests and a Release build on Windows and macOS, then the
 # macOS app is packaged, started on a real Mac and photographed, because nobody on the project
-# has one. The screenshot and the app's logs are attached to the run.
+# has one. The screenshot and the app's logs are attached to the run. Next to that: the
+# installers' release signature check (Windows PowerShell 5.1, PowerShell 7 and a Mac's own
+# LibreSSL), the hub's tests and its C# fixture, and the website's build.
 on:
   push:
     branches: [v2pn]
@@ -36,6 +38,24 @@ jobs:
         with:
           submodules: recursive
 
+      # The release keys in tools/install.ps1 and install.sh are V2pnUpdateKeys, and each script's
+      # signature check accepts the signed release in tools/install-test/ and refuses it changed.
+      # The installers themselves do not run. Windows PowerShell 5.1 is what most people run
+      # install.ps1 with; a Mac is checked with its own tools only (LibreSSL, not Homebrew's openssl).
+      - name: Installers' signature check (Windows PowerShell 5.1)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: ./tools/check-install-scripts.ps1
+
+      - name: Installers' signature check (PowerShell 7)
+        if: runner.os == 'Windows'
+        shell: pwsh
+        run: ./tools/check-install-scripts.ps1
+
+      - name: Installers' signature check (macOS)
+        if: runner.os == 'macOS'
+        run: PATH=/usr/bin:/bin:/usr/sbin:/sbin /bin/bash tools/check-install-scripts.sh
+
       - name: Setup .NET
         uses: actions/setup-dotnet@v6
         with:
@@ -46,6 +66,64 @@ jobs:
 
       - name: Build
         run: dotnet build v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj -c Release -v q -nologo
+
+  hub:
+    name: Hub tests and its C# fixture
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          # engines.node there
+          node-version-file: hub/package.json
+
+      - name: Test
+        working-directory: hub
+        run: node --test test/
+
+      # v2rayN/ServiceLib.Tests reads hub/test/fixtures/csharp/ with V2pn's own code, so it must be
+      # what the hub makes now. The generator signs with a new throwaway key at the current time and
+      # ECDSA signatures are randomised: the key, the signatures and the "published" and "until"
+      # lines differ on every run and are left out. Everything else must come out byte for byte.
+      # A failure here means: run `node hub/test/make-csharp-fixture.mjs` and commit the result.
+      - name: The C# fixture is up to date
+        run: |
+          node hub/test/make-csharp-fixture.mjs
+          git diff --exit-code -I '"(published|until)": ' -- hub/test/fixtures/csharp \
+            ':(exclude)hub/test/fixtures/csharp/hub-public-key.txt' ':(exclude)hub/test/fixtures/csharp/*.sig'
+          new="$(git ls-files --others --exclude-standard -- hub/test/fixtures/csharp)"
+          if [ -n "$new" ]; then
+            echo "::error::The generator writes files that are not committed: $new"
+            exit 1
+          fi
+
+  site:
+    name: Website builds
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: site
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup Node
+        uses: actions/setup-node@v7
+        with:
+          node-version: 24
+
+      - name: Install
+        run: npm ci --no-audit --no-fund
+
+      # npm run build ends with scripts/check-build.mjs, the site's own check: it fails the build on
+      # any inline script, inline handler or file from another origin that the server's CSP would block.
+      - name: Build
+        run: npm run build
 
   macos-app:
     name: macOS app starts

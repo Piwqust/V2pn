@@ -78,7 +78,7 @@ If V2pn is already in that folder, the script just starts it: from there V2pn up
 
 Options are environment variables set before the command: `V2PN_DIR` (another folder), `V2PN_NO_IMPORT`, `V2PN_NO_SHORTCUTS`, `V2PN_NO_START`, `V2PN_SOURCE` (another releases page or a mirror). To test without publishing: put the package, `release.json`, `release.json.sig` and the script in `<folder>/<version>/`, serve it with `tools/fake_releases.py`, and run the command with `V2PN_SOURCE=http://127.0.0.1:<port>/releases`. The script trusts only the release keys, so the manifest has to be signed with the real key (`tools/manifest.cs`); there is deliberately no switch for another key.
 
-The keys in both scripts must equal `V2pnUpdateKeys`. `tools/check-install-scripts.ps1` checks that and runs the scripts' signature check alone (taken out of the script, the installer itself never runs) on a published release in `tools/install-test/`: valid, one byte changed, a changed signature, no signature, another key. `tools/check-install-scripts.sh` does the same for `install.sh`. When a key is replaced, add it to both scripts together with `V2pnUpdateKeys`.
+The keys in both scripts must equal `V2pnUpdateKeys`. `tools/check-install-scripts.ps1` checks that and runs the scripts' signature check alone (taken out of the script, the installer itself never runs) on a published release in `tools/install-test/`: valid, one byte changed, a changed signature, no signature, another key. `tools/check-install-scripts.sh` does the same for `install.sh`. CI (`v2pn-ci.yml`) runs the first with Windows PowerShell 5.1 and PowerShell 7, the second on macOS with the system's own LibreSSL. When a key is replaced, add it to both scripts together with `V2pnUpdateKeys`.
 
 ### The `install.sh` script (macOS)
 
@@ -275,7 +275,7 @@ The upload and the `v2pn-mirror.yml` workflow are written but have not run again
 
 | Workflow | When | What it does |
 | --- | --- | --- |
-| `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run |
+| `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run; the installers' signature check (`tools/check-install-scripts.*`); the hub's tests and a check that `hub/test/fixtures/csharp` is what the hub makes now; the website's build with its CSP check |
 | `v2pn-release.yml` | a `v1.2.3` tag | packages, signature, draft release |
 | `v2pn-mirror.yml` | a release is published | a copy on your own server, if set up |
 | `v2pn-winget.yml` | a release is published | a pull request to `microsoft/winget-pkgs`, if `WINGET_TOKEN` is set |

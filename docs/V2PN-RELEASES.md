@@ -137,7 +137,7 @@ To set up the tap: create the public repository `Piwqust/homebrew-tap` and put `
 Installing changes that are not in a release yet needs neither a release nor a sandbox. The installed V2pn does it itself (Windows only).
 
 1. Updates → "Developer mode" → "Choose…" → the repository folder that holds `tools/release.ps1`.
-2. "Build and install". V2pn runs `tools/release.ps1 -UpdateOnly -NoCores -NoManifest` for its own architecture. It builds the working tree as it is, uncommitted changes included. The connection keeps working during the build, and the window can be closed. It needs the .NET 10 SDK, like any build.
+2. "Build and install". V2pn runs `tools/release.ps1 -UpdateOnly -NoCores -NoManifest` for its own architecture. It builds the working tree as it is, uncommitted changes included. The connection keeps working during the build, and the window can be closed. It needs the .NET 10 SDK, like any build: 10.0.400 or newer, as `global.json` asks.
 3. When the build is ready, V2pn installs it through AmazTool: a restart of a few seconds, and a rollback if the new version does not start. The build and install logs are in `guiTemps/V2pnDevBuild/` (`build.log`, `update.log`); the "Log" button opens the right one.
 
 The version of such a build is the next patch with a timestamp: `1.0.1-local.202611141320`. So:

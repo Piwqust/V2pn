@@ -303,7 +303,7 @@ examples of the settings). Then, as root:
 ```sh
 useradd --system --home /var/lib/v2pn-hub --shell /usr/sbin/nologin v2pn-hub
 install -d -o v2pn-hub -g v2pn-hub -m 0700 /var/lib/v2pn-hub
-install -d -o v2pn-hub -g v2pn-hub -m 0755 /var/www/v2pn.angleford.co/partners /var/www/v2pn.angleford.co/p
+install -d -o v2pn-hub -g v2pn-hub -m 0755 /var/www/v2pn.angleford.co/partners /var/www/v2pn.angleford.co/p /var/www/v2pn.angleford.co/geo
 install -m 0640 -o root -g v2pn-hub /opt/v2pn-hub/deploy/v2pn-hub.env.example /etc/v2pn-hub.env   # then fill it in
 hub() { sudo -u v2pn-hub bash -c "set -a; . /etc/v2pn-hub.env; set +a; node /opt/v2pn-hub/hub.mjs $*"; }
 hub keygen                                    # prints the public key for V2pnPartnerKeys
@@ -324,7 +324,7 @@ HUB_GITHUB_REPO=Piwqust/V2pn
 ```
 
 `deploy/v2pn-hub.service` runs the hub as `v2pn-hub` with 256 MB at most, a read-only system and writes only to
-`/var/lib/v2pn-hub` and the site's `partners/` and `p/`. An update migrates the database at start (back up `hub.db`
+`/var/lib/v2pn-hub` and the site's `partners/`, `p/` and `geo/`. An update migrates the database at start (back up `hub.db`
 first; the daily backup does). The old `keys/hub-secret` and `keys/admin-passwords.json` are not read any more and may
 be deleted.
 
@@ -335,7 +335,7 @@ be deleted.
 errors keep their status. It replaces the old block
 in `/etc/caddy/Caddyfile`; then `caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy`.
 
-The site's own upload must leave `partners/` and `p/` alone (no `rsync --delete` over them): the hub owns them, `p/configra/`
+The site's own upload must leave `partners/`, `p/` and `geo/` alone (no `rsync --delete` over them): the hub owns them, `p/configra/`
 included once Configra is imported.
 
 **Backups** (`deploy/BACKUP.md`): `v2pn-hub-backup.timer` runs `deploy/v2pn-hub-backup.sh` daily at about 03:30 UTC: an

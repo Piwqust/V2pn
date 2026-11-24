@@ -27,7 +27,8 @@ RestrictNamespaces=true
 RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
 LockPersonality=true
 SystemCallArchitectures=native
-ReadWritePaths=/var/lib/v2pn-hub /var/www/v2pn.angleford.co/partners /var/www/v2pn.angleford.co/p
+# geo/ holds the copy of the rule lists (lib/geo.mjs); "-" lets the hub start without it when HUB_GEO_MIRROR=0.
+ReadWritePaths=/var/lib/v2pn-hub /var/www/v2pn.angleford.co/partners /var/www/v2pn.angleford.co/p -/var/www/v2pn.angleford.co/geo
 
 [Install]
 WantedBy=multi-user.target

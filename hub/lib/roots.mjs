@@ -142,6 +142,11 @@ export class RootPartners {
     return this.list().some(p => p.id === id);
   }
 
+  /** The root partner <id> ({id, name, domains}), or null. */
+  get(id) {
+    return this.list().find(p => p.id === id) ?? null;
+  }
+
   /**
    * The root partner whose domains overlap <domains>, or null. The hub partner <id> may keep the domains of the root
    * partner with its own id: that is the same partner (partners/configra imported on the hub and signed at home).

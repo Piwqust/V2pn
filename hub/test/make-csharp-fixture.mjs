@@ -8,7 +8,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { colors as C } from '../lib/colors.mjs';
 import { publicKeyOf } from '../lib/keys.mjs';
-import { makePng, serve, startHub, testNet } from './helpers.mjs';
+import { makePng, serve, startHub, testNet, txtRecords } from './helpers.mjs';
 
 const out = fileURLToPath(new URL('./fixtures/csharp/', import.meta.url));
 const configra = fileURLToPath(new URL('../../partners/configra', import.meta.url));
@@ -25,6 +25,8 @@ try {
 
   // Kestrel: a provider that went the whole way on the hub, every special right approved, routing included.
   const { account } = await hub.auth.register('kestrel', 'fixture-password', '127.0.0.1');
+  // Its domain proved by the DNS record, so it is published at once.
+  txtRecords.set('_v2pn.kestrel.example', [[`v2pn-verify=${hub.proofToken(account.id)}`]]);
   const pics = {
     logo: hub.upload(account.id, 'logo', makePng(340, 96, [255, 255, 255])).sha256,
     logoOnLight: hub.upload(account.id, 'logoOnLight', makePng(340, 96, [17, 17, 20])).sha256,

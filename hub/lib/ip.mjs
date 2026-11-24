@@ -97,6 +97,18 @@ export function ipKey(ip) {
   return `${g.slice(0, 4).map(x => x.toString(16)).join(':')}::/64`;
 }
 
+/**
+ * The wider network of an IPv6 address, its /48 (a site's usual share: 65 536 /64s), or null for IPv4 (an IPv4-mapped
+ * address included). A limit by /64 alone would let one site walk round it from /64 to /64.
+ */
+export function wideIpKey(ip) {
+  const text = String(ip ?? '');
+  if (net.isIPv4(text)) return null;
+  const g = v6Groups(text);
+  if (!g || (g.slice(0, 5).every(x => x === 0) && g[5] === 0xffff)) return null;
+  return `${g.slice(0, 3).map(x => x.toString(16)).join(':')}::/48`;
+}
+
 /** True for a public unicast IPv4 or IPv6 address. */
 export function isPublicIp(ip) {
   if (net.isIPv4(ip)) return isPublicV4(ip);

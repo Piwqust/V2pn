@@ -75,10 +75,13 @@ What V2pn never takes from headers: routes, fragmentation, noise and other setti
 
 ## Make a partner
 
-1. On [v2pn.angleford.co/providers/login/](https://v2pn.angleford.co/providers/login/) pick a login and a password and press «Создать аккаунт» (create an account). A login is 3 to 32 Latin letters, digits and `. _ -`; a password is at least 6 characters. No email, no Telegram. There is no recovery by email: a V2pn moderator resets a forgotten password.
+1. On [v2pn.angleford.co/providers/login/](https://v2pn.angleford.co/providers/login/) pick a login and a password and press «Создать аккаунт» (create an account). A login is 3 to 32 Latin letters, digits and `. _ -`; a password is at least 8 characters. No email, no Telegram. There is no recovery by email: a V2pn moderator resets a forgotten password.
 2. «Мой партнёр» (my partner) opens: one form, with a live V2pn window showing your tab on the right. The fields are in the next section.
-3. Press «Опубликовать» (publish). V2pn's server checks the subscription link the way V2pn will open it: the address must be public, the answer must fit in 8 seconds and 2 MB. The server reads the headers, counts the servers by protocol and opens a connection to five of them. It takes the subscription's domain from the link itself. If the check fails, the form says what to fix and nothing is published.
-4. Once published, the partner works at once: your page, the link for your bot and the tab for your people. A moderator can take the partner down later, for example after complaints, and bring it back.
+3. Prove that the subscription's domain is yours. Under the link the form shows a DNS TXT record: the name `_v2pn.<subscription domain>`, the value `v2pn-verify=<code>`; each account has its own code. Instead of the record you can put a file `https://<subscription domain>/.well-known/v2pn-verify.txt` with that code on the site (V2pn's server follows no redirects). Press «Проверить» (check).
+4. Press «Опубликовать» (publish). V2pn's server checks the subscription link the way V2pn will open it: the address must be public, the answer must fit in 8 seconds and 2 MB. The server reads the headers, counts the servers by protocol and opens a connection to five of them. It takes the subscription's domain from the link itself. If the check fails, the form says what to fix and nothing is published. If the domain is not proved yet, the partner is saved and waits: add the record, press «Проверить», and it goes out at once.
+5. Once published, the partner works at once: your page, the link for your bot and the tab for your people. A moderator can take the partner down later, for example after complaints, and bring it back.
+
+Moving to another subscription domain works the same way: first the record for the new domain and «Проверить», then the new link and «Сохранить» (save). Until the new domain is proved, the partner stays on the old one. Partners published before domain proof work as before; the form only asks for the record. If a record is not an option, write to a moderator: a moderator can mark the domain proved.
 
 The server makes the page's address `/p/<id>/` from the name at the first publication (Cyrillic spelled out in Latin) and never changes it. One domain, one partner: the form does not take a link on a domain another partner already has.
 
@@ -90,7 +93,7 @@ The server makes the page's address `/p/<id>/` from the name at the first public
 - **Brand colours**: one to three. The first is the Connect button, links and the subscription card.
 - **Background**: the world map in your colours ("Accent"), a gradient of the brand colours, or a picture. A gradient or a picture gives the tab the "Scene": your background instead of the map, with the plan large on it. One colour is enough for a gradient; V2pn adds a second.
 - **Layout**: V2pn's usual one (the sidebar and the main screen) or «Наклейки» (stickers): a sticker-book screen over the whole window, always in night colours.
-- **Support** and **Payment**: links for the "Support" and "Renew" buttons when the subscription headers have none. `t.me/…` works without `https://`.
+- **Support** and **Payment**: links for the "Support" and "Renew" buttons when the subscription headers have none. `t.me/…` works without `https://`. A link leads to Telegram or to your site: the subscription's domain, its parent domain and the names under them. For a subscription on `sub.example.com`, `example.com`, `lk.example.com` and `sub.example.com` all do. Shared zones such as `co.uk`, `com.ru` or `workers.dev` never count as a parent domain.
 - **Special rights**: below, in their own section.
 
 | Picture | Size |

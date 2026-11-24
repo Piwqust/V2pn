@@ -41,6 +41,7 @@ import Tool from '../../layouts/Tool.astro';
           <div class="seg" role="group" aria-label="Какие партнёры" id="partners-filter">
             <button type="button" data-filter="all" aria-pressed="true">Все</button>
             <button type="button" data-filter="complaints" aria-pressed="false">С жалобами</button>
+            <button type="button" data-filter="pending" aria-pressed="false">Ждут домена</button>
             <button type="button" data-filter="down" aria-pressed="false">Снятые</button>
           </div>
           <div id="partners-list" class="plist" aria-live="polite"></div>
@@ -76,6 +77,11 @@ import Tool from '../../layouts/Tool.astro';
           </div>
           <div id="ck-out"></div>
           <p class="hint">Сколько раз V2pn спросила о новой версии: после запуска и потом раз в 6 часов, по дням и версиям. Это запросы, а не люди: один компьютер даёт от одного до четырёх и больше в день. Адреса и cookie не хранятся.</p>
+          <div class="box__head box__head--next">
+            <h2 id="uf-h">Сбои обновлений</h2>
+          </div>
+          <div id="uf-out"></div>
+          <p class="hint">Отчёты V2pn о неудачном обновлении: по дням, версии, на которую обновлялись, этапу и коду ошибки. Их шлют только те, кто включил отчёты в настройках V2pn, поэтому сбоев на деле больше. Адреса, cookie и идентификаторы не хранятся.</p>
         </section>
 
         <section data-view="audit" class="box" aria-labelledby="audit-h" hidden>

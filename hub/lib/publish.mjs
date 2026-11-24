@@ -32,16 +32,25 @@ export function publishedStamp(date = new Date()) {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-// How long a partner without a term of its own stays in the index after a publication. The hub publishes again every
-// day, so a partner lives on while the hub does; if the hub stops (or its key is taken and the hub shut down), its
-// partners drop out of V2pn within two months. V2pn caps a hub-signed listing at published + 60 days as well.
+// How long a partner stays in the index after a publication. The hub publishes again every day, so a partner lives on
+// while the hub does; if the hub stops (or its key is taken and the hub shut down), its partners drop out of V2pn
+// within two months. V2pn caps a hub-signed listing at published + 60 days, so the index says what V2pn will use.
 export const HUB_TERM_DAYS = 60;
 
-/** The until of a partner without a term of its own: HUB_TERM_DAYS on, renewed by every publication. */
+/** HUB_TERM_DAYS on from <today>: the until of a partner made on the hub, renewed by every publication. */
 export function rollingUntil(today) {
   const d = new Date(`${today}T00:00:00Z`);
   d.setUTCDate(d.getUTCDate() + HUB_TERM_DAYS);
   return d.toISOString().slice(0, 10);
+}
+
+/**
+ * The until a listing gets on <today>: HUB_TERM_DAYS on, or the partner's own term (<until>, an imported partner's)
+ * when that ends sooner.
+ */
+export function listingUntil(until, today) {
+  const rolling = rollingUntil(today);
+  return until && until < rolling ? until : rolling;
 }
 
 /** partner-index.json for <listings> ({id, name, domains, grants, until, reviewed?, pack: {file, size, sha256}}), by id. */
@@ -109,7 +118,7 @@ export function buildPack(partner, readUpload, today) {
     domains: [...partner.domains],
     grants: GRANT_ORDER.filter(g => grants.includes(g)),
     reviewed,
-    until: partner.until || rollingUntil(today),
+    until: listingUntil(partner.until, today),
     pack: { file: `partner-${partner.id}.zip`, size: zip.length, sha256: sha256(zip) },
   };
   return { listing, zip, packBytes, look: full, pictures, dropped };

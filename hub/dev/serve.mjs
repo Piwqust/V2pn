@@ -3,7 +3,7 @@
 // files on one origin, under the live Content-Security-Policy. Development only: it is not deployed (hub/README.md).
 //
 //   node dev/serve.mjs [--port 8790] [--site ../site/dist] [--data <dir>] [--owner owner]
-//                      [--fixture] [--configra] [--downloads]
+//                      [--fixture [--unproved]] [--configra] [--downloads]
 //
 // --site      the built site (cd site && npm run build); unknown paths get its 404.html, as Caddy serves them.
 // --data      where the hub keeps its database and keys (default: a new temporary folder). The hub's public folder
@@ -11,10 +11,13 @@
 // --owner     the owner's login; it is made (or given a new password) at start and the password is printed.
 // --fixture   a stand-in subscription on this computer, so the subscription check has something to open: the hub
 //             refuses private addresses and plain http, so here (and only here) names under .test resolve to
-//             127.0.0.1 and http is allowed. The test link is printed at start.
+//             127.0.0.1 and http is allowed. The test link is printed at start. Their domains prove themselves (every
+//             account's DNS record is there), so a partner goes live on save; with --unproved they have none, and a
+//             partner waits for its domain as on the server without the record.
 // --configra  imports ../partners/configra as a live partner with its account right approved (login: configra).
-// --downloads fills the download and update-check counters of the last 30 days with made-up numbers for the
-//             moderators' charts.
+// --downloads fills the download, update-check and failed-update counters of the last 30 days with made-up numbers
+//             for the moderators' charts.
+import dns from 'node:dns';
 import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
@@ -105,10 +108,17 @@ async function startFixture() {
 }
 
 const fixture = opt('fixture', false) ? await startFixture() : null;
+let hub = null;
 const devNet = fixture ? {
   allowHttp: true,
   allow: ip => ip === '127.0.0.1' || isPublicIp(ip),
   resolve: async host => (host.endsWith('.test') ? [{ address: '127.0.0.1', family: 4 }] : defaultResolve(host)),
+  // Every account's proof record under .test (none with --unproved); real names ask real DNS.
+  resolveTxt: async name => {
+    if (!name.endsWith('.test')) return dns.promises.resolveTxt(name);
+    if (opt('unproved', false)) throw Object.assign(new Error('not found'), { code: 'ENOTFOUND' });
+    return hub.db.all('SELECT proof_token FROM accounts WHERE proof_token IS NOT NULL').map(r => [`v2pn-verify=${r.proof_token}`]);
+  },
 } : {};
 
 const config = loadConfig({
@@ -117,7 +127,7 @@ const config = loadConfig({
   HUB_ORIGIN: origin,
   HUB_PORT: String(port),
 });
-const hub = createHub(config, { net: devNet });
+hub = createHub(config, { net: devNet });
 
 if (opt('configra', false)) {
   const folder = path.join(here, '..', '..', 'partners', 'configra');
@@ -144,6 +154,16 @@ if (opt('downloads', false)) {
     for (const [version, base] of Object.entries(versions)) {
       const n = Math.round(base * (0.9 + 0.01 * (29 - d)) * (0.85 + rand() * 0.3));
       if (n > 0) hub.db.run('INSERT INTO checks (day, version, count) VALUES (?, ?, ?) ON CONFLICT (day, version) DO UPDATE SET count = excluded.count', day, version, n);
+    }
+    // Failed updates, from the few who turned the reports on: mostly downloads cut short, now and then a swap.
+    const failures = [['1.4.0', 'windows', 'x64', 'download', 'timeout', 3], ['1.4.0', 'windows', 'x64', 'swap', 'access_denied', 1],
+      ['1.4.0', 'macos', 'arm64', 'verify', 'bad_signature', 0.3], ['1.3.2', 'windows', 'arm64', 'start', 'exit_code_1', 0.5]];
+    for (const [version, os, arch, stage, code, base] of failures) {
+      const n = Math.round(base * share * 2 * rand());
+      if (n > 0) {
+        hub.db.run(`INSERT INTO update_failures (day, version, os, arch, stage, code, count) VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT (day, version, os, arch, stage, code) DO UPDATE SET count = excluded.count`, day, version, os, arch, stage, code, n);
+      }
     }
   }
 }

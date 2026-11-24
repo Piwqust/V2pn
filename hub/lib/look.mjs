@@ -3,7 +3,10 @@
 // partner.json built from them as docs/partners/partner.schema.json describes it.
 import { colors as C } from './colors.mjs';
 import { HubError } from './errors.mjs';
-import { COLOUR, TELEGRAM_HOSTS, httpsUrl, oneLine, partnerLink, validName } from './validate.mjs';
+import { COLOUR, httpsUrl, linkAllowed, oneLine, partnerLink, partnerSite, validName } from './validate.mjs';
+
+// The rule of cabinet and support links lives in validate.mjs, with the list V2pn mirrors.
+export { linkAllowed };
 
 export const ICONS = ['bolt', 'shield', 'play', 'game', 'card', 'chat', 'globe', 'star', 'refresh', 'check', 'info', 'gift'];
 export const DOS = ['connect.best', 'connect.recommend', 'connect.server', 'connect.group', 'open.cabinet', 'open.renew', 'open.support',
@@ -115,12 +118,11 @@ export function actionProblem(a, api, domains) {
 
 export const needsApi = a => NEEDS_API.has(a.do);
 
-/**
- * Whether the cabinet or support link <url> may go out for a partner on <domains>: https on Telegram or on the
- * subscription's domain, a name under it included (the button rule, a little wider). V2pn itself would open any https
- * link there; the hub keeps a provider from sending people to someone else's site under its name.
- */
-export const linkAllowed = (url, domains) => partnerLink(url, domains, { telegram: TELEGRAM_HOSTS, subdomains: true });
+/** Where a cabinet or support link of a partner on <domains> may lead, in the words of the refusal. */
+function linkPlaces(domains) {
+  const sites = [...new Set(domains.map(d => partnerSite(d) ?? d.replace(/^\*\./, '')))];
+  return sites.length === 1 ? `${sites[0]} или его поддомен` : `${sites.join(', ')} или их поддомены`;
+}
 
 /**
  * What keeps <look> from being published; <pictures> maps a sha256 to its upload {slot, width, height, size} (only
@@ -144,7 +146,7 @@ export function lookProblems(look, { pictures, domains }) {
     const link = look.links[key];
     if (!link) continue;
     if (!httpsUrl(link)) p[`links.${key}`] = 'Ссылка должна начинаться с https://.';
-    else if (domains && !linkAllowed(link, domains)) p[`links.${key}`] = `Ссылка должна вести на домен подписки (${domains.join(', ')}), его поддомен или t.me.`;
+    else if (domains && !linkAllowed(link, domains)) p[`links.${key}`] = `Ссылка должна вести на ${linkPlaces(domains)}, либо на t.me.`;
   }
   return p;
 }

@@ -60,7 +60,7 @@ test('a v1 database: providers stay partners with their look and their tier-2 pa
     const hub = createHub(config, { net: testNet });
     try {
       const { db } = hub;
-      assert.deepEqual(db.all('SELECT version FROM migrations ORDER BY version').map(r => r.version), [1, 2, 3]);
+      assert.deepEqual(db.all('SELECT version FROM migrations ORDER BY version').map(r => r.version), [1, 2, 3, 4, 5]);
       const tables = db.all("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").map(r => r.name);
       for (const gone of ['applications', 'providers', 'login_codes', 'admin_links', 'outbox']) assert.ok(!tables.includes(gone), gone);
       assert.equal(db.get('SELECT COUNT(*) AS n FROM sessions').n, 0, 'sessions made by codes end');
@@ -83,6 +83,10 @@ test('a v1 database: providers stay partners with their look and their tier-2 pa
       assert.deepEqual(rights.map(r => [r.partner_id, r.name, r.approved]), [['configra', 'account', 1], ['kestrel', 'actions', 1], ['kestrel', 'lock', 1]]);
       assert.deepEqual(JSON.parse(rights[0].content), { api: 'https://configra.angleford.co/v2pn/api/', login: true });
       assert.equal(db.get("SELECT COUNT(*) AS n FROM uploads u JOIN partners p ON p.account_id = u.account_id WHERE p.id = 'configra'").n, 3);
+      // Their domains need no proof: imported ones were reviewed by the owner, the others were partners before proofs.
+      assert.deepEqual(db.all('SELECT a.login, r.domain, r.how FROM proofs r JOIN accounts a ON a.id = r.account_id ORDER BY a.login, r.domain').map(r => [r.login, r.domain, r.how]), [
+        ['configra', '*.angleford.co', 'import'], ['configra', 'angleford.co', 'import'], ['kestrel', 'kestrel.example', 'grandfathered'], ['orphan', 'orphan.example', 'import'],
+      ]);
 
       // Published as before: Configra's own pack, Kestrel's page saying it was taken down.
       hub.publish('test');

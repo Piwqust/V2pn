@@ -9,7 +9,7 @@ import { publicKeyOf, signature } from '../lib/keys.mjs';
 import { setQuiet } from '../lib/log.mjs';
 import { parseRootList, readRootIndex } from '../lib/roots.mjs';
 import { createHub } from '../lib/server.mjs';
-import { Client, fixture, register, serve, startHub, testNet } from './helpers.mjs';
+import { Client, fixture, proveDomain, register, serve, startHub, testNet } from './helpers.mjs';
 
 const configraFolder = new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
@@ -66,7 +66,7 @@ test("the index on GitHub verifies with V2pn's root key; a changed byte, another
   }
 });
 
-test('root partners keep their ids and domains: new ids skip them, saving on their domain fails, clashes are logged', async () => {
+test('root partners keep their ids and domains: new ids skip them, saving on their domain fails, clashes are logged, a hub partner with their id is taken down', async () => {
   const key = crypto.generateKeyPairSync('ec', { namedCurve: 'P-256' }).privateKey;
   const roots = rootIndex(key, [
     { id: 'falcon', name: 'Falcon', domains: ['falcon.test', '*.falcon.test'] },
@@ -88,6 +88,7 @@ test('root partners keep their ids and domains: new ids skip them, saving on the
   const save = async (login, name, host) => {
     const c = new Client(env.base);
     await register(c, login);
+    await proveDomain(c, host);
     return { c, r: await c.put('/api/partner', { name, subscription: `http://${host}:${sub.port}/s/${login}`, brand: ['#2F6BFF'] }) };
   };
   try {
@@ -101,11 +102,31 @@ test('root partners keep their ids and domains: new ids skip them, saving on the
     assert.equal(early.r.data.partner.id, 'falcon');
     hub.importPartner(configraFolder);
 
+    const pages = path.join(env.config.publicDir, 'p');
+    assert.ok(fs.existsSync(path.join(pages, 'falcon', 'index.html')));
     const lines = await logged(async () => assert.equal(await hub.refreshRoots(), true));
     assert.deepEqual(hub.roots.list().map(p => p.id), ['falcon', 'kestrel', 'configra']);
-    const warnings = lines.filter(l => l.level === 'warn').map(l => [l.partner, l.root, l.why]);
+    const clash = 'a hub partner collides with a root partner';
+    const warnings = lines.filter(l => l.msg === clash).map(l => [l.partner, l.root, l.why]);
     assert.deepEqual(warnings, [['falcon', 'falcon', 'id'], ['sokol', 'falcon', 'domain']],
       'configra, imported from the root partner itself, is no clash');
+
+    // The one with Falcon's id is taken down by a publication at once: kept with its work, out of the index, its page
+    // gone (/p/falcon/ is the root partner's address), with the reason for its provider and a line in the audit log.
+    assert.deepEqual(lines.filter(l => l.level === 'warn' && l.msg !== clash).map(l => [l.msg, l.partner]),
+      [["a hub partner holds a root partner's id: taken down", 'falcon']]);
+    const falcon = (await early.c.get('/api/partner')).data.partner;
+    assert.deepEqual([falcon.id, falcon.state, falcon.downReason],
+      ['falcon', 'down', 'Id «falcon» принадлежит партнёру Falcon, которого V2pn подписал сам. Напишите модераторам V2pn.']);
+    const index = JSON.parse(fs.readFileSync(path.join(env.config.publicDir, 'partners', 'latest', 'download', 'partner-index.json')));
+    assert.deepEqual(index.partners.map(p => p.id), ['configra', 'sokol']);
+    assert.ok(!fs.existsSync(path.join(pages, 'falcon')));
+    assert.ok(fs.existsSync(path.join(pages, 'configra', 'index.html')), 'the imported Configra (source import) is not touched');
+    const entry = hub.auditLog().find(a => a.action === 'partner.down' && a.target === 'falcon');
+    assert.deepEqual([entry.actor, entry.detail.root], ['system', 'falcon']);
+    assert.throws(() => hub.restore('falcon', 'owner'), e => e.code === 'state', 'a moderator cannot bring it back');
+    assert.equal((await early.c.put('/api/partner', { name: 'Falcon', brand: ['#2F6BFF'] })).data.partner.state, 'down', 'saving keeps it down');
+    assert.ok(!fs.existsSync(path.join(pages, 'falcon')));
 
     // A new partner never gets a root id.
     const kestrel = await save('kestrel-team', 'Kestrel', 'sub.k-team.test');

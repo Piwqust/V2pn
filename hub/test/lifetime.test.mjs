@@ -3,11 +3,12 @@ import assert from 'node:assert/strict';
 import fs from 'node:fs';
 import path from 'node:path';
 import { test } from 'node:test';
-import { HUB_TERM_DAYS, rollingUntil } from '../lib/publish.mjs';
+import { HUB_TERM_DAYS, listingUntil, rollingUntil } from '../lib/publish.mjs';
 import { startServer } from '../lib/server.mjs';
-import { Client, register, serve, startHub, testNet } from './helpers.mjs';
+import { Client, proveDomain, register, serve, startHub, testNet } from './helpers.mjs';
 
 const today = () => new Date().toISOString().slice(0, 10);
+const configraFolder = new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 const indexOf = env => JSON.parse(fs.readFileSync(path.join(env.config.publicDir, 'partners', 'latest', 'download', 'partner-index.json')));
 
 async function withPartner(fn) {
@@ -16,6 +17,7 @@ async function withPartner(fn) {
   try {
     const c = new Client(env.base);
     await register(c, 'nordline');
+    await proveDomain(c, 'sub.nordline.test');
     const r = await c.put('/api/partner', { name: 'Nordline', subscription: `http://sub.nordline.test:${sub.port}/s/x`, brand: ['#2F6BFF'] });
     assert.equal(r.status, 200, JSON.stringify(r.data));
     await fn(env);
@@ -33,6 +35,23 @@ test('a partner without a term of its own is in the index for 60 days from the p
     const index = indexOf(env);
     assert.equal(index.partners[0].until, rollingUntil(today()));
     assert.ok(Date.parse(`${index.partners[0].until}T00:00:00Z`) - Date.parse(index.published) <= 60 * 86400000);
+  });
+});
+
+test('an imported partner with its own term is capped at 60 days from each publication too, and keeps a sooner end', async () => {
+  const day = n => new Date(Date.now() + n * 86400000).toISOString().slice(0, 10);
+  assert.equal(listingUntil(null, '2026-11-24'), '2027-01-23');
+  assert.equal(listingUntil('2027-11-16', '2026-11-24'), '2027-01-23', 'V2pn takes a hub-signed listing for 60 days at most');
+  assert.equal(listingUntil('2026-12-10', '2026-11-24'), '2026-12-10', 'a term that ends sooner stays');
+  await withPartner(async env => {
+    env.hub.importPartner(configraFolder);
+    env.hub.publish('test');
+    const until = id => indexOf(env).partners.find(p => p.id === id).until;
+    assert.equal(until('configra'), rollingUntil(today()), 'listing.json says 2027-11-16');
+    env.hub.db.run("UPDATE partners SET until = ? WHERE id = 'configra'", day(10));
+    env.hub.publish('test');
+    assert.equal(until('configra'), day(10));
+    assert.equal(until('nordline'), rollingUntil(today()));
   });
 });
 

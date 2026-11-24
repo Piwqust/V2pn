@@ -6,9 +6,9 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { publicKeyOf, verify } from '../lib/keys.mjs';
 import { setQuiet } from '../lib/log.mjs';
-import { verifyPack } from '../lib/publish.mjs';
+import { rollingUntil, verifyPack } from '../lib/publish.mjs';
 import { readZip } from '../lib/zip.mjs';
-import { Client, makePng, register, serve, signIn, signInOwner, startHub } from './helpers.mjs';
+import { Client, makePng, register, serve, signIn, signInOwner, startHub, txtRecords } from './helpers.mjs';
 
 const sha = b => crypto.createHash('sha256').update(b).digest('hex');
 const configraFolder = new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -95,9 +95,26 @@ test('register, save = published, special rights wait for a moderator, take down
     subBody = Buffer.from([1, 2].map(i => `vless://id@s${i}.nordline.test:${servers.port}?security=reality#S${i}`).join('\n')).toString('base64');
     r = await provider.post('/api/partner/check', { subscription: subUrl });
     assert.deepEqual([r.data.check.ok, r.data.domain, r.data.taken], [true, 'sub.nordline.test', false]);
+    const token = r.data.proof.token;
+    assert.match(token, /^[0-9a-f]{32}$/);
+    assert.deepEqual([r.data.proof.record, r.data.proof.proved], [{ name: '_v2pn.sub.nordline.test', type: 'TXT', value: `v2pn-verify=${token}` }, null]);
+
+    // ---- saved before the domain is proved: kept, but waiting, out of the index, with the record to add
     r = await provider.put('/api/partner', form);
     assert.equal(r.status, 200, JSON.stringify(r.data));
     assert.equal(r.data.check.ok, true);
+    assert.deepEqual([r.data.partner.id, r.data.partner.state, r.data.proofCheck.ok], ['nordline', 'pending', false]);
+    assert.equal(r.data.proofCheck.dns.text, 'Записи TXT _v2pn.sub.nordline.test пока нет.');
+    assert.deepEqual(r.data.proof.file, { url: 'https://sub.nordline.test/.well-known/v2pn-verify.txt', text: token });
+    assert.deepEqual(published(env).index.partners, []);
+    assert.ok(!fs.existsSync(path.join(env.config.publicDir, 'p', 'nordline')));
+    assert.deepEqual((await provider.get('/api/me')).data.partner, { id: 'nordline', name: 'Nordline', state: 'pending' });
+    assert.equal((await new Client(env.base).post('/api/complaints', { partner: 'nordline' })).status, 404, 'nobody sees it yet');
+
+    // ---- «Проверить» once the record is in DNS (a long value comes in pieces): proved, live, published
+    txtRecords.set('_v2pn.sub.nordline.test', [['v2pn-verify=', token], ['some-other-record']]);
+    r = await provider.post('/api/partner/proof', {});
+    assert.deepEqual([r.data.proofCheck.ok, r.data.proofCheck.how, r.data.partner.state, r.data.proof.proved.how], [true, 'dns', 'live', 'dns']);
     const mine = r.data.partner;
     assert.deepEqual([mine.id, mine.state, mine.domains, mine.subscription], ['nordline', 'live', ['sub.nordline.test'], subUrl]);
     assert.equal(mine.look.links.support, 'https://t.me/nordline_support');
@@ -286,7 +303,7 @@ test('register, save = published, special rights wait for a moderator, take down
 
     // ---- the record of every decision
     const audit = (await owner.get('/api/mod/audit')).data.audit.map(a => a.action);
-    for (const action of ['partner.create', 'partner.save', 'right.request', 'right.approve', 'right.deny', 'right.withdraw', 'complaints.clear',
+    for (const action of ['partner.create', 'domain.proof', 'partner.live', 'partner.save', 'right.request', 'right.approve', 'right.deny', 'right.withdraw', 'complaints.clear',
       'partner.down', 'partner.restore', 'moderator.add', 'moderator.remove', 'account.password']) {
       assert.ok(audit.includes(action), action);
     }
@@ -428,8 +445,10 @@ test("import-partner takes partners/configra as a live partner with Configra's l
     env.hub.publish('test');
     const pub = published(env);
     const entry = pub.index.partners.find(p => p.id === 'configra');
+    // Its own term (2027-11-16) is further off than V2pn takes a hub-signed listing: 60 days on, as a hub partner.
     assert.deepEqual({ ...entry, pack: undefined }, {
-      id: 'configra', name: 'Configra', domains: ['angleford.co', '*.angleford.co'], grants: ['edition', 'account'], until: '2027-11-16', pack: undefined,
+      id: 'configra', name: 'Configra', domains: ['angleford.co', '*.angleford.co'], grants: ['edition', 'account'],
+      until: rollingUntil(new Date().toISOString().slice(0, 10)), pack: undefined,
     });
     const zip = readZip(fs.readFileSync(path.join(pub.dir, entry.pack.file)));
     const folder = new URL('../../partners/configra/', import.meta.url);

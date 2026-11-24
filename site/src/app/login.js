@@ -38,7 +38,7 @@ function localProblems(kind) {
   if (!l) fields.login = 'Напишите логин.';
   else if (kind === 'register' && !LOGIN.test(l)) fields.login = 'Логин: от 3 до 32 латинских букв, цифр и знаков . _ -';
   if (!password.value) fields.password = 'Напишите пароль.';
-  else if (kind === 'register' && password.value.length < 6) fields.password = 'Пароль от 6 символов.';
+  else if (kind === 'register' && password.value.length < 8) fields.password = 'Пароль от 8 символов.';
   return fields;
 }
 

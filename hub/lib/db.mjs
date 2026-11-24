@@ -156,6 +156,31 @@ function migrateToV2(db) {
   db.audit('migration', 'hub.v2', null, { partners: providers.length, accounts: newAccounts.length });
 }
 
+/**
+ * Version 3 to 4: domain proof (lib/proof.mjs). Each account gets a proof token when it first needs one; the domains it
+ * proved are kept with how. Partners already there keep theirs: an imported one's as "import", the others' as
+ * "grandfathered" (live without a record; the cabinet asks gently for one).
+ */
+function addDomainProof(db) {
+  db.db.exec(`
+    ALTER TABLE accounts ADD COLUMN proof_token TEXT;
+    CREATE TABLE proofs (
+      account_id INTEGER NOT NULL REFERENCES accounts (id) ON DELETE CASCADE,
+      domain TEXT NOT NULL,
+      how TEXT NOT NULL,
+      at TEXT NOT NULL,
+      by TEXT,
+      PRIMARY KEY (account_id, domain)
+    );
+  `);
+  const now = new Date().toISOString();
+  for (const p of db.all('SELECT account_id, domains, source FROM partners')) {
+    for (const domain of parseJson(p.domains, [])) {
+      db.run('INSERT OR IGNORE INTO proofs (account_id, domain, how, at) VALUES (?, ?, ?, ?)', p.account_id, domain, p.source === 'import' ? 'import' : 'grandfathered', now);
+    }
+  }
+}
+
 const MIGRATIONS = [
   // 1: everything the first version needs.
   `
@@ -276,6 +301,21 @@ const MIGRATIONS = [
     version TEXT NOT NULL,
     count INTEGER NOT NULL,
     PRIMARY KEY (day, version)
+  );
+  `,
+  // 4: domain proof; the partners already there keep their domains.
+  addDomainProof,
+  // 5: reports of failed updates (lib/reports.mjs), counted by day, the version updated to, os, arch, stage and code.
+  `
+  CREATE TABLE update_failures (
+    day TEXT NOT NULL,
+    version TEXT NOT NULL,
+    os TEXT NOT NULL,
+    arch TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    code TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (day, version, os, arch, stage, code)
   );
   `,
 ];

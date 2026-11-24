@@ -726,7 +726,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private async Task RefreshConnectionAsync()
     {
+        // Several triggers call this; a call whose lookup finishes after a newer one's must not put the older server
+        // back in the header (and in the usage time and Recent, which follow _activeIndexId).
+        var generation = ++_refreshGeneration;
         var item = await ConfigDbQuery.GetProfileItem(_config.IndexId);
+        if (generation != _refreshGeneration)
+        {
+            return;
+        }
         try
         {
             _hasServer = item != null;
@@ -774,6 +781,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (empty)
             {
                 await SwitchOffWhenNoServersAsync();
+                if (generation != _refreshGeneration)
+                {
+                    return;
+                }
             }
             // The first server just arrived. Nothing is awaited from here on: three triggers re-enter this
             // method, and a second pass must not see the welcome card still up and start the handoff again.
@@ -838,8 +849,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
         // V2pn: the partner's buttons under Connect while a server of its subscription is in use.
         RefreshPartnerActionBar(item?.Subid);
-        ShowServerDelay(item, FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId));
+        var delay = FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId);
+        if (generation == _refreshGeneration)
+        {
+            ShowServerDelay(item, delay);
+        }
     }
+
+    private int _refreshGeneration;
 
     /// <summary>
     /// First paint: the header and whichever card is showing appear together, once they have content.
@@ -2414,11 +2431,34 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 Dispatcher.UIThread.Post(() => ShowHideWindow(null));
                 break;
 
+            // V2pn: the keys go through Connect and Disconnect, so they keep their rules: VPN mode, the chosen way of
+            // the proxy, admin rights. Setting the system proxy directly put it over the tunnel in VPN mode, and
+            // "clear" did nothing there.
             case EGlobalHotkey.SystemProxyClear:
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (CurrentState() != ProtectionState.Unprotected)
+                    {
+                        ToggleConnection(false);
+                    }
+                });
+                break;
+
             case EGlobalHotkey.SystemProxySet:
             case EGlobalHotkey.SystemProxyUnchanged:
             case EGlobalHotkey.SystemProxyPac:
-                AppEvents.SysProxyChangeRequested.Publish((ESysProxyType)((int)e - 1));
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (CurrentState() == ProtectionState.Unprotected)
+                    {
+                        ToggleConnection(true);
+                    }
+                    else if (ViewModel?.StatusBarViewModel.EnableTun != true)
+                    {
+                        // In proxy mode the key still picks how the system proxy is set.
+                        AppEvents.SysProxyChangeRequested.Publish((ESysProxyType)((int)e - 1));
+                    }
+                });
                 break;
         }
     }

@@ -625,25 +625,27 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     #region Connection
 
-    private ProtectionState CurrentState()
+    /// <summary>Everything the verdict on the connection depends on, read now (V2pnConnectionVerdict).</summary>
+    private V2pnConnectionSnapshot Snapshot()
     {
         var status = ViewModel?.StatusBarViewModel;
         // Without a server the core is not running: "proxy on port N" would describe nothing.
-        if (status == null || !_hasServer)
-        {
-            return ProtectionState.Unprotected;
-        }
-        if (status.EnableTun)
-        {
-            return ProtectionState.Protected;
-        }
-        return (ESysProxyType)status.SystemProxySelected switch
-        {
-            ESysProxyType.ForcedChange or ESysProxyType.Pac => ProtectionState.Protected,
-            ESysProxyType.Unchanged => ProtectionState.LocalOnly,
-            _ => ProtectionState.Unprotected,
-        };
+        return new V2pnConnectionSnapshot(
+            HasServer: status != null && _hasServer,
+            EnableTun: status?.EnableTun == true,
+            SystemProxy: status == null ? ESysProxyType.ForcedClear : (ESysProxyType)status.SystemProxySelected,
+            Core: V2pnCoreWatch.State,
+            Failure: V2pnCoreWatch.Failure,
+            KillSwitchHolding: V2pnKillSwitch.Holding,
+            Check: (status?.CurrentAvailability ?? AvailabilityCheckResult.Unchecked).State);
     }
+
+    private ProtectionState CurrentState() => V2pnConnectionVerdict.Protection(Snapshot()) switch
+    {
+        EV2pnProtection.Protected => ProtectionState.Protected,
+        EV2pnProtection.LocalOnly => ProtectionState.LocalOnly,
+        _ => ProtectionState.Unprotected,
+    };
 
     /// <summary>
     /// Server statistics: the connection counts as up while the core runs, the state is not "Unprotected"
@@ -907,28 +909,30 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private void RefreshStatePill()
     {
+        var snapshot = Snapshot();
         var state = CurrentState();
         var status = ViewModel?.StatusBarViewModel;
         var check = status?.CurrentAvailability ?? AvailabilityCheckResult.Unchecked;
         var enabled = state != ProtectionState.Unprotected;
-        var core = V2pnCoreWatch.State;
-        var fault = !enabled || core == EV2pnCoreState.Failed ? V2pnCoreWatch.Failure : EV2pnFailure.None;
-        var restarting = enabled && core == EV2pnCoreState.Restarting;
-        var starting = enabled && core is EV2pnCoreState.Starting or EV2pnCoreState.Stopped;
-        var holding = fault != EV2pnFailure.None && V2pnKillSwitch.Holding;
-        var (kind, label) = (fault, enabled, restarting, starting, check.State, state) switch
+        var (verdictKind, verdict) = V2pnConnectionVerdict.Of(snapshot);
+        var kind = verdictKind.ToString().ToLowerInvariant();
+        var label = verdict switch
         {
-            _ when holding => ("unsafe", L.StateKillSwitch),
-            (EV2pnFailure.KeepsStopping, _, _, _, _, _) => ("warn", L.StateCoreStopped),
-            (not EV2pnFailure.None, _, _, _, _, _) => ("warn", L.StateCoreFailed),
-            (_, false, _, _, _, _) => ("unsafe", L.Unprotected),
-            (_, _, true, _, _, _) => ("checking", L.StateReconnecting),
-            (_, _, _, true, _, _) => ("checking", L.StateConnecting),
-            (_, _, _, _, AvailabilityState.Checking, _) => ("checking", L.StateChecking),
-            (_, _, _, _, AvailabilityState.Available, ProtectionState.LocalOnly) => ("safe", L.LocalOnly),
-            (_, _, _, _, AvailabilityState.Available, _) => ("safe", status?.EnableTun == true ? L.StateVpnConnected : L.StateProxyConnected),
-            _ => ("warn", L.CheckStatus(check)),
+            EV2pnVerdict.KillSwitch => L.StateKillSwitch,
+            EV2pnVerdict.CoreStopped => L.StateCoreStopped,
+            EV2pnVerdict.CoreFailed => L.StateCoreFailed,
+            EV2pnVerdict.Off => L.Unprotected,
+            EV2pnVerdict.Reconnecting => L.StateReconnecting,
+            EV2pnVerdict.Connecting => L.StateConnecting,
+            EV2pnVerdict.Checking => L.StateChecking,
+            EV2pnVerdict.LocalOnly => L.LocalOnly,
+            EV2pnVerdict.VpnConnected => L.StateVpnConnected,
+            EV2pnVerdict.ProxyConnected => L.StateProxyConnected,
+            _ => L.CheckStatus(check),
         };
+        var holding = verdict == EV2pnVerdict.KillSwitch;
+        var starting = verdict == EV2pnVerdict.Connecting;
+        var restarting = verdict == EV2pnVerdict.Reconnecting;
         foreach (var c in new[] { "safe", "unsafe", "warn", "checking" })
         {
             pillState.Classes.Set(c, c == kind);
@@ -940,7 +944,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _spokenState = label;
             Avalonia.Automation.AutomationProperties.SetName(txtStatePill, label);
         }
-        var faulted = fault != EV2pnFailure.None;
+        var faulted = V2pnConnectionVerdict.Faulted(snapshot);
         var faultTip = !faulted ? null
             : holding ? L.KillSwitchHoldTip
             : V2pnCoreWatch.FailureDetail.IsNullOrEmpty() ? L.StateCoreFailedTip

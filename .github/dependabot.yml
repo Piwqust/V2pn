@@ -3,7 +3,9 @@ updates:
   # V2pn's own workflows. NuGet packages are not listed on purpose: their versions live in
   # v2rayN's Directory.Packages.props and arrive with merges from v2rayN
   # (tools/sync-upstream.ps1); bumping them here would conflict with every merge.
+  # Every action is pinned to a commit with its version in a comment (uses: x@<sha> # v1.2.3);
+  # Dependabot moves the commit and the comment together.
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "monthly"
+      interval: "weekly"

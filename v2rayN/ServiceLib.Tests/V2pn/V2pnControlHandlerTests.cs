@@ -55,17 +55,38 @@ public class V2pnControlHandlerTests
             return Task.FromResult(V2pnControlResult.Done(message, detail));
         }
 
-        public Task<V2pnControlResult> ConnectAsync() => Change(State with { Connected = true }, "Connecting.");
+        /// <summary>The words the last change was asked to answer in.</summary>
+        public V2pnControlText? AskedIn;
 
-        public Task<V2pnControlResult> DisconnectAsync() => Change(State with { Connected = false }, "Disconnected.");
+        public Task<V2pnControlResult> ConnectAsync(V2pnControlText t)
+        {
+            AskedIn = t;
+            return Change(State with { Connected = true }, V2pnControlMessages.Connecting(t));
+        }
 
-        public Task<V2pnControlResult> UseAsync(string? server, bool fastest, string? country) =>
-            Change(State with { Server = fastest ? "fastest" : server }, "Switched.", server);
+        public Task<V2pnControlResult> DisconnectAsync(V2pnControlText t)
+        {
+            AskedIn = t;
+            return Change(State with { Connected = false }, V2pnControlMessages.Disconnected(t));
+        }
 
-        public Task<V2pnControlResult> SetModeAsync(bool tun) => Change(State with { Tun = tun }, "Mode.", tun ? "vpn" : "proxy");
+        public Task<V2pnControlResult> UseAsync(string? server, bool fastest, string? country, V2pnControlText t)
+        {
+            AskedIn = t;
+            return Change(State with { Server = fastest ? "fastest" : server }, "Switched.", server);
+        }
 
-        public Task<V2pnControlResult> SetRouteAsync(EV2pnPreset preset) =>
-            Change(State with { Route = V2pnControlData.RouteId(preset) }, "Route.", V2pnControlData.RouteName(V2pnControlData.RouteId(preset)));
+        public Task<V2pnControlResult> SetModeAsync(bool tun, V2pnControlText t)
+        {
+            AskedIn = t;
+            return Change(State with { Tun = tun }, "Mode.", tun ? "vpn" : "proxy");
+        }
+
+        public Task<V2pnControlResult> SetRouteAsync(EV2pnPreset preset, V2pnControlText t)
+        {
+            AskedIn = t;
+            return Change(State with { Route = V2pnControlData.RouteId(preset) }, "Route.", V2pnControlData.RouteName(V2pnControlData.RouteId(preset)));
+        }
 
         public Task<V2pnControlState> CaptureAsync() => Task.FromResult(State);
 
@@ -94,8 +115,69 @@ public class V2pnControlHandlerTests
         return (new V2pnControlHandler(app, () => clock.Now, log.Add), app, clock, log);
     }
 
-    private static Task<V2pnControlAnswer> Send(V2pnControlHandler handler, string command, JsonObject? args = null, string source = "cli") =>
-        handler.HandleAsync(new V2pnControlRequest(1, command, args ?? new JsonObject(), source));
+    private static Task<V2pnControlAnswer> Send(V2pnControlHandler handler, string command, JsonObject? args = null, string source = "cli",
+        string? lang = null) =>
+        handler.HandleAsync(new V2pnControlRequest(1, command, args ?? new JsonObject(), source, lang));
+
+    private static string? Message(V2pnControlAnswer answer) => answer.Ok ? V2pnControlJson.String(answer.Data?["message"]) : answer.ErrorMessage;
+
+    [Test]
+    public async Task ARussianRequest_GetsRussianWords_AndOneWithoutLanguageEnglish()
+    {
+        var (off, _, _, _) = Make(EV2pnControlLevel.Off);
+        var (readOnly, _, _, _) = Make(EV2pnControlLevel.ReadOnly);
+
+        await Message(await Send(off, "status", lang: "ru"))!.Should().Contain("Настройки → Общие → «Управление из командной строки и ИИ»");
+        await Message(await Send(off, "status"))!.Should().Contain("Settings > General");
+        await Message(await Send(readOnly, "disconnect", lang: "ru"))!.Should().Contain("выберите «Управление»");
+        await Message(await Send(readOnly, "disconnect"))!.Should().Contain("choose Control");
+
+        var (handler, app, _, _) = Make();
+        await Message(await Send(handler, "open", lang: "ru")).Should().BeEqualTo("Окно V2pn открыто.");
+        await Message(await Send(handler, "open")).Should().BeEqualTo("V2pn's window is shown.");
+        await Message(await Send(handler, "mode", new JsonObject { ["mode"] = "warp" }, lang: "ru")).Should().BeEqualTo("mode — это proxy или vpn.");
+        await Message(await Send(handler, "sub-add", lang: "ru")).Should().BeEqualTo("V2pn не знает команду sub-add.");
+        await Message(await Send(handler, "confirm", lang: "ru")).Should().BeEqualTo("Подтверждать нечего.");
+        app.State = app.State with { Connected = false };
+        await Message(await Send(handler, "check", lang: "ru")).Should().BeEqualTo("V2pn не подключён, проверять нечего.");
+        await Message(await Send(handler, "check")).Should().BeEqualTo("V2pn is not connected, so there is nothing to check.");
+    }
+
+    [Test]
+    public async Task AChange_AnswersInTheAskersLanguage_WithTheNoteToConfirm()
+    {
+        var (handler, app, _, _) = Make();
+
+        var ru = await Send(handler, "disconnect", new JsonObject { ["confirmWithin"] = 30 }, lang: "ru");
+        await app.AskedIn.Should().BeEqualTo(V2pnControlText.Russian);
+        await Message(ru).Should().BeEqualTo("Отключено. Чтобы оставить изменение, выполните v2pnctl confirm в течение 30 сек, иначе V2pn вернёт как было.");
+        await Message(await Send(handler, "confirm", lang: "ru")).Should().BeEqualTo("Изменение оставлено: V2pn не будет его возвращать.");
+
+        var en = await Send(handler, "connect", new JsonObject { ["confirmWithin"] = 30 });
+        await app.AskedIn.Should().BeEqualTo(V2pnControlText.English);
+        await Message(en).Should().BeEqualTo("Connecting. Run \"v2pnctl confirm\" within 30 s to keep it; otherwise V2pn puts back what was there before.");
+
+        // MCP sends no language: English, with its own way to confirm.
+        var mcp = await Send(handler, "disconnect", new JsonObject { ["confirmWithin"] = 60 }, "mcp");
+        await app.AskedIn.Should().BeEqualTo(V2pnControlText.English);
+        await Message(mcp)!.Should().Contain("Call v2pn_confirm within 60 s");
+        // The keys and codes are the same whatever the language.
+        await V2pnControlJson.Long(ru.Data?["confirmWithin"]).Should().BeEqualTo(30L);
+        await (ru.Data?["status"] is JsonObject).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task AFailedChange_KeepsItsCodeInRussianToo()
+    {
+        var (handler, app, _, _) = Make();
+        app.Next = V2pnControlResult.Fail(V2pnControlProtocol.ErrNoServer, V2pnControlMessages.NoServer(V2pnControlText.Russian));
+        app.State = app.State with { Connected = false };
+
+        var answer = await Send(handler, "connect", lang: "ru");
+
+        await answer.ErrorCode.Should().BeEqualTo(V2pnControlProtocol.ErrNoServer);
+        await answer.ErrorMessage.Should().BeEqualTo("Сервер не выбран. Выберите его: v2pnctl use <название>.");
+    }
 
     [Test]
     public async Task Off_AnswersEveryCommandWithHowToTurnItOn()

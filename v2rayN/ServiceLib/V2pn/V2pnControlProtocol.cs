@@ -108,17 +108,67 @@ public static class V2pnControlProtocol
     };
 }
 
-/// <summary>One request on the channel. <see cref="Source"/> says who asked: "cli" or "mcp", for the log and the toast.</summary>
-public sealed record V2pnControlRequest(long Id, string Command, JsonObject Args, string Source)
+/// <summary>
+/// V2pn: the language of the words people read in v2pnctl and in V2pn's answers to it: English, or Russian when asked.
+/// Only words: commands, options, route names, JSON keys and error codes are the same in both. <c>default</c> is English.
+/// </summary>
+public readonly record struct V2pnControlText(bool Ru)
 {
-    public string ToLine() => new JsonObject
+    /// <summary>The value of a request's <c>lang</c> for Russian. English is no <c>lang</c> at all.</summary>
+    public const string RussianCode = "ru";
+
+    public static readonly V2pnControlText English = new(false);
+
+    public static readonly V2pnControlText Russian = new(true);
+
+    /// <summary>The words for <paramref name="lang"/> ("ru", "ru-RU", "ru_RU.UTF-8"); English for anything else or nothing.</summary>
+    public static V2pnControlText Of(string? lang) =>
+        lang?.Trim().StartsWith(RussianCode, StringComparison.OrdinalIgnoreCase) == true ? Russian : English;
+
+    /// <summary>What a request carries as <c>lang</c>: "ru", or null for English.</summary>
+    public string? Code => Ru ? RussianCode : null;
+
+    public string T(string en, string ru) => Ru ? ru : en;
+
+    /// <summary>
+    /// The Russian word for <paramref name="n"/> things: <paramref name="one"/> for 1, 21, 31…, <paramref name="few"/>
+    /// for 2–4, 22–24…, <paramref name="many"/> for the rest ("1 день", "3 дня", "11 дней").
+    /// </summary>
+    public static string Plural(long n, string one, string few, string many)
     {
-        ["v"] = V2pnControlProtocol.Version,
-        ["id"] = Id,
-        ["cmd"] = Command,
-        ["args"] = Args.DeepClone(),
-        ["src"] = Source,
-    }.ToJsonString(V2pnControlProtocol.Compact);
+        var (m10, m100) = (Math.Abs(n) % 10, Math.Abs(n) % 100);
+        return m10 == 1 && m100 != 11 ? one
+            : m10 is >= 2 and <= 4 && m100 is < 12 or > 14 ? few
+            : many;
+    }
+}
+
+/// <summary>
+/// One request on the channel. <see cref="Source"/> says who asked: "cli" or "mcp", for the log and the toast.
+/// <see cref="Lang"/> is "ru" when the answer's words should be Russian; a request without it (MCP, an older v2pnctl)
+/// gets English. An older V2pn reads only the keys it knows, so the extra key costs nothing there.
+/// </summary>
+public sealed record V2pnControlRequest(long Id, string Command, JsonObject Args, string Source, string? Lang = null)
+{
+    /// <summary>The words of the answer.</summary>
+    public V2pnControlText Text => V2pnControlText.Of(Lang);
+
+    public string ToLine()
+    {
+        var json = new JsonObject
+        {
+            ["v"] = V2pnControlProtocol.Version,
+            ["id"] = Id,
+            ["cmd"] = Command,
+            ["args"] = Args.DeepClone(),
+            ["src"] = Source,
+        };
+        if (Text.Code is { } lang)
+        {
+            json["lang"] = lang;
+        }
+        return json.ToJsonString(V2pnControlProtocol.Compact);
+    }
 
     /// <summary>The request in <paramref name="line"/>, or the answer that refuses it.</summary>
     public static V2pnControlRequest? Parse(string line, out V2pnControlAnswer? refusal)
@@ -139,16 +189,19 @@ public sealed record V2pnControlRequest(long Id, string Command, JsonObject Args
             return null;
         }
         var id = V2pnControlJson.Long(json["id"]) ?? 0;
+        // Read first, so even a refusal is in the asker's language.
+        var lang = V2pnControlText.Of(V2pnControlJson.String(json["lang"]));
         var version = V2pnControlJson.Long(json["v"]);
         if (version != V2pnControlProtocol.Version)
         {
-            refusal = V2pnControlAnswer.Failure(id, V2pnControlProtocol.ErrVersion,
-                $"This V2pn speaks version {V2pnControlProtocol.Version} of the control channel and the request is version {version?.ToString() ?? "unknown"}. Use the v2pnctl that came with this V2pn.");
+            refusal = V2pnControlAnswer.Failure(id, V2pnControlProtocol.ErrVersion, lang.T(
+                $"This V2pn speaks version {V2pnControlProtocol.Version} of the control channel and the request is version {version?.ToString() ?? "unknown"}. Use the v2pnctl that came with this V2pn.",
+                $"Этот V2pn знает версию {V2pnControlProtocol.Version} канала управления, а запрос пришёл {(version == null ? "без версии" : $"в версии {version}")}. Используйте v2pnctl из папки этого V2pn."));
             return null;
         }
         if (V2pnControlJson.String(json["cmd"]) is not { Length: > 0 } command)
         {
-            refusal = V2pnControlAnswer.Failure(id, V2pnControlProtocol.ErrBadRequest, "The request names no command.");
+            refusal = V2pnControlAnswer.Failure(id, V2pnControlProtocol.ErrBadRequest, lang.T("The request names no command.", "В запросе нет команды."));
             return null;
         }
         var args = json["args"] switch
@@ -159,11 +212,11 @@ public sealed record V2pnControlRequest(long Id, string Command, JsonObject Args
         };
         if (args == null)
         {
-            refusal = V2pnControlAnswer.Failure(id, V2pnControlProtocol.ErrBadRequest, "The arguments are not a JSON object.");
+            refusal = V2pnControlAnswer.Failure(id, V2pnControlProtocol.ErrBadRequest, lang.T("The arguments are not a JSON object.", "Аргументы — не объект JSON."));
             return null;
         }
         var source = V2pnControlJson.String(json["src"]) == V2pnControlProtocol.SourceMcp ? V2pnControlProtocol.SourceMcp : V2pnControlProtocol.SourceCli;
-        return new V2pnControlRequest(id, command, args, source);
+        return new V2pnControlRequest(id, command, args, source, lang.Code);
     }
 }
 
@@ -190,8 +243,11 @@ public sealed record V2pnControlAnswer(long Id, bool Ok, JsonNode? Data, string?
 
     public string ToLine() => ToJson().ToJsonString(V2pnControlProtocol.Compact);
 
-    /// <summary>The answer in <paramref name="line"/>. A line V2pn could not have meant is a failure, never an exception.</summary>
-    public static V2pnControlAnswer Parse(string line, long expectedId)
+    /// <summary>
+    /// The answer in <paramref name="line"/>. A line V2pn could not have meant is a failure, never an exception, told
+    /// in <paramref name="t"/>'s words.
+    /// </summary>
+    public static V2pnControlAnswer Parse(string line, long expectedId, V2pnControlText t = default)
     {
         JsonObject? json;
         try
@@ -204,13 +260,14 @@ public sealed record V2pnControlAnswer(long Id, bool Ok, JsonNode? Data, string?
         }
         if (json == null)
         {
-            return Failure(expectedId, V2pnControlProtocol.ErrFailed, "V2pn's answer is not a JSON object.");
+            return Failure(expectedId, V2pnControlProtocol.ErrFailed, t.T("V2pn's answer is not a JSON object.", "Ответ V2pn — не объект JSON."));
         }
         var version = V2pnControlJson.Long(json["v"]);
         if (version != V2pnControlProtocol.Version)
         {
-            return Failure(expectedId, V2pnControlProtocol.ErrVersion,
-                $"This v2pnctl speaks version {V2pnControlProtocol.Version} of the control channel and V2pn answered in version {version?.ToString() ?? "unknown"}. Use the v2pnctl that came with this V2pn.");
+            return Failure(expectedId, V2pnControlProtocol.ErrVersion, t.T(
+                $"This v2pnctl speaks version {V2pnControlProtocol.Version} of the control channel and V2pn answered in version {version?.ToString() ?? "unknown"}. Use the v2pnctl that came with this V2pn.",
+                $"Этот v2pnctl знает версию {V2pnControlProtocol.Version} канала управления, а V2pn ответил {(version == null ? "без версии" : $"в версии {version}")}. Используйте v2pnctl из папки этого V2pn."));
         }
         var id = V2pnControlJson.Long(json["id"]) ?? 0;
         if (V2pnControlJson.Bool(json["ok"]) == true)
@@ -219,7 +276,7 @@ public sealed record V2pnControlAnswer(long Id, bool Ok, JsonNode? Data, string?
         }
         var error = json["error"] as JsonObject;
         return Failure(id, V2pnControlJson.String(error?["code"]) ?? V2pnControlProtocol.ErrFailed,
-            V2pnControlJson.String(error?["message"]) ?? "V2pn gave no reason.");
+            V2pnControlJson.String(error?["message"]) ?? t.T("V2pn gave no reason.", "V2pn не назвал причину."));
     }
 }
 

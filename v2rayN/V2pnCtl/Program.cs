@@ -1,5 +1,6 @@
 using System.Diagnostics;
 using System.Reflection;
+using System.Runtime.InteropServices;
 using System.Text;
 using ServiceLib;
 
@@ -15,28 +16,41 @@ internal static class Program
     private static string Version =>
         typeof(Program).Assembly.GetCustomAttribute<AssemblyInformationalVersionAttribute>()?.InformationalVersion ?? "0";
 
+    // The words v2pnctl prints. MCP and --json stay English: assistants and scripts read them.
+    private static V2pnControlText s_text;
+
     private static async Task<int> Main(string[] args)
     {
-        var line = V2pnControlCli.Parse(args, out var error);
+        s_text = SystemLanguage();
+        var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
+        // A pipe gets UTF-8 (a server's name, and the Russian words, are in Cyrillic); a console keeps its own code page.
+        // The error output too, so one pipe does not carry two encodings.
+        TextWriter Stdout() => Console.IsOutputRedirected ? new StreamWriter(Console.OpenStandardOutput(), utf8) : Console.Out;
+        if (Console.IsErrorRedirected)
+        {
+            Console.SetError(new StreamWriter(Console.OpenStandardError(), utf8) { AutoFlush = true });
+        }
+
+        var line = V2pnControlCli.Parse(args, out var error, s_text);
         if (error != null)
         {
             Console.Error.WriteLine(error);
             return V2pnControlProtocol.ExitError;
         }
-        if (line.Command == V2pnControlCli.Help)
+        if (line.Command is V2pnControlCli.Help or V2pnControlCli.VersionCommand)
         {
-            Console.Out.WriteLine(V2pnControlCli.Usage);
+            var help = Stdout();
+            await help.WriteLineAsync(line.Command == V2pnControlCli.Help ? V2pnControlCli.Usage(s_text) : $"v2pnctl {Version}");
+            await help.FlushAsync();
             return V2pnControlProtocol.ExitOk;
         }
-        if (line.Command == V2pnControlCli.VersionCommand)
+        if (line.Command == V2pnControlCli.Mcp || line.Json)
         {
-            Console.Out.WriteLine($"v2pnctl {Version}");
-            return V2pnControlProtocol.ExitOk;
+            s_text = V2pnControlText.English;
         }
 
         var folder = V2pnControlAddress.ResolveFolder(line.Instance ?? Environment.GetEnvironmentVariable("V2PN_INSTANCE"), AppContext.BaseDirectory);
         var link = new V2pnControlLink(V2pnControlEndpoint.For(folder), () => StartV2pn(folder)) { Folder = folder };
-        var utf8 = new UTF8Encoding(encoderShouldEmitUTF8Identifier: false);
 
         if (line.Command == V2pnControlCli.Mcp)
         {
@@ -48,9 +62,8 @@ internal static class Program
             return V2pnControlProtocol.ExitOk;
         }
 
-        var answer = await link.CallAsync(line.Command, line.Args, V2pnControlProtocol.SourceCli);
-        // A pipe gets UTF-8 (a server's name may be in Cyrillic); a console keeps its own code page.
-        var stdout = Console.IsOutputRedirected ? new StreamWriter(Console.OpenStandardOutput(), utf8) : Console.Out;
+        var answer = await link.CallAsync(line.Command, line.Args, V2pnControlProtocol.SourceCli, s_text);
+        var stdout = Stdout();
         try
         {
             if (line.Json)
@@ -59,7 +72,7 @@ internal static class Program
             }
             else if (answer.Ok)
             {
-                var text = V2pnControlCli.Format(line.Command, answer, DateTime.UtcNow);
+                var text = V2pnControlCli.Format(line.Command, answer, DateTime.UtcNow, s_text);
                 if (text.Length > 0)
                 {
                     await stdout.WriteLineAsync(text);
@@ -67,7 +80,7 @@ internal static class Program
             }
             else
             {
-                await Console.Error.WriteLineAsync(V2pnControlCli.Format(line.Command, answer, DateTime.UtcNow));
+                await Console.Error.WriteLineAsync(V2pnControlCli.Format(line.Command, answer, DateTime.UtcNow, s_text));
             }
         }
         finally
@@ -125,8 +138,54 @@ internal static class Program
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"Could not start V2pn: {ex.Message}");
+            Console.Error.WriteLine(s_text.T($"Could not start V2pn: {ex.Message}", $"Не удалось запустить V2pn: {ex.Message}"));
             return false;
+        }
+    }
+
+    /// <summary>The language v2pnctl speaks here: V2PN_LANG, then the system's (<see cref="V2pnControlCli.Language"/>).</summary>
+    private static V2pnControlText SystemLanguage() => V2pnControlCli.Language(
+        Environment.GetEnvironmentVariable(V2pnControlCli.LanguageVariable),
+        OperatingSystem.IsWindows(),
+        OperatingSystem.IsWindows() ? WindowsUiLanguage() : 0,
+        Environment.GetEnvironmentVariable("LC_ALL"),
+        Environment.GetEnvironmentVariable("LC_MESSAGES"),
+        Environment.GetEnvironmentVariable("LANG"),
+        ConsoleShowsCyrillic());
+
+    [DllImport("kernel32.dll")]
+    private static extern ushort GetUserDefaultUILanguage();
+
+    private static int WindowsUiLanguage()
+    {
+        try
+        {
+            return GetUserDefaultUILanguage();
+        }
+        catch (Exception)
+        {
+            return 0;
+        }
+    }
+
+    /// <summary>
+    /// Whether the console can print Cyrillic. A Windows console keeps its own code page (866 on a Russian system, 437
+    /// on an English one, where Russian would come out as question marks); a pipe gets UTF-8, which can.
+    /// </summary>
+    private static bool ConsoleShowsCyrillic()
+    {
+        if (!OperatingSystem.IsWindows() || Console.IsOutputRedirected)
+        {
+            return true;
+        }
+        try
+        {
+            var encoding = Console.OutputEncoding;
+            return encoding.GetString(encoding.GetBytes("Ёё")) == "Ёё";
+        }
+        catch (Exception)
+        {
+            return true;
         }
     }
 }

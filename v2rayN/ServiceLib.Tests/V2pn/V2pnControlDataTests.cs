@@ -173,4 +173,57 @@ public class V2pnControlDataTests
         await ambiguous.Message.Should().Contain("Frankfurt 1 (a1)");
         await V2pnControlData.FindServer(servers, "Tokyo").Code.Should().BeEqualTo(V2pnControlProtocol.ErrNotFound);
     }
+
+    [Test]
+    public async Task AServerNotFoundOrNotOne_IsSaidInRussianWhenAsked()
+    {
+        var servers = new List<(string Id, string Name)> { ("a1", "Frankfurt 1"), ("a2", "Frankfurt 2") };
+
+        var missing = V2pnControlData.FindServer(servers, "Tokyo", V2pnControlText.Russian);
+        var two = V2pnControlData.FindServer(servers, "Frank", V2pnControlText.Russian);
+        var found = V2pnControlData.FindServer(servers, "frankfurt 2", V2pnControlText.Russian);
+
+        await missing.Code.Should().BeEqualTo(V2pnControlProtocol.ErrNotFound);
+        await missing.Message.Should().BeEqualTo("Сервера «Tokyo» нет. Список серверов: v2pnctl servers.");
+        await two.Code.Should().BeEqualTo(V2pnControlProtocol.ErrAmbiguous);
+        await two.Message.Should().BeEqualTo("Под «Frank» подходят несколько серверов (2): Frankfurt 1 (a1), Frankfurt 2 (a2). Укажите id или полное название.");
+        // A name is a name: the server found is told by it, in any language.
+        await found.Message.Should().BeEqualTo("Frankfurt 2");
+    }
+
+    [Test]
+    public async Task TheAppsMessages_ComeInBothLanguages()
+    {
+        var ru = V2pnControlText.Russian;
+        var en = V2pnControlText.English;
+        string[] Both(V2pnControlText t) =>
+        [
+            V2pnControlMessages.VpnRights(t), V2pnControlMessages.AlreadyConnected(t), V2pnControlMessages.NoServer(t),
+            V2pnControlMessages.Connecting(t), V2pnControlMessages.DidNotConnect(t), V2pnControlMessages.AlreadyOff(t),
+            V2pnControlMessages.Disconnected(t), V2pnControlMessages.NoServers(null, t), V2pnControlMessages.NoServers("DE", t),
+            V2pnControlMessages.NoneAnswered(t), V2pnControlMessages.AlreadyInUse("Frankfurt", t), V2pnControlMessages.DidNotSwitch("Frankfurt", t),
+            V2pnControlMessages.Switched("Frankfurt", true, t), V2pnControlMessages.Switched("Frankfurt", false, t),
+            V2pnControlMessages.ModeAlready(true, t), V2pnControlMessages.ModeAlready(false, t),
+            V2pnControlMessages.ModeSet(true, true, t), V2pnControlMessages.ModeSet(false, false, t),
+            V2pnControlMessages.RouteAlready("ru-direct", t), V2pnControlMessages.RouteSet("ru-direct", t), V2pnControlMessages.RouteFailed(t),
+            V2pnControlHandler.DisabledMessage(t), V2pnControlHandler.ReadOnlyMessage(t), V2pnControlHandler.ConfirmNote("Done.", 60, "cli", t),
+        ];
+
+        var russian = Both(ru);
+        var english = Both(en);
+
+        for (var i = 0; i < russian.Length; i++)
+        {
+            await russian[i].Should().NotBeEqualTo(english[i]);
+            await russian[i].Any(c => c is >= 'А' and <= 'я' or 'ё' or 'Ё').Should().BeTrue();
+            await english[i].Any(c => c is >= 'А' and <= 'я').Should().BeFalse();
+        }
+        await V2pnControlMessages.Switched("Франкфурт", true, ru).Should().BeEqualTo("Переключено на Франкфурт.");
+        await V2pnControlMessages.ModeSet(true, false, ru).Should().BeEqualTo("Выбран режим VPN: так V2pn подключится в следующий раз.");
+        await V2pnControlMessages.ModeAlready(false, ru).Should().BeEqualTo("Режим прокси уже включён.");
+        await V2pnControlMessages.VpnRights(ru).Should().Contain("v2pnctl mode proxy");
+        // English stays as it was.
+        await V2pnControlMessages.Switched("Frankfurt", false, en).Should().BeEqualTo("Frankfurt is chosen; V2pn uses it on the next connect.");
+        await V2pnControlMessages.ModeSet(true, true, en).Should().BeEqualTo("VPN mode.");
+    }
 }

@@ -102,40 +102,37 @@ public sealed class V2pnControlApp(Config config, StatusBarViewModel status, V2p
         return Task.FromResult(true);
     });
 
-    private const string VpnRightsMessage =
-        "VPN mode needs administrator rights, and V2pn does not take them without the person: it asks on the screen now. Answer there, or use proxy mode (\"v2pnctl mode proxy\").";
-
-    public Task<V2pnControlResult> ConnectAsync() => ui.InvokeAsync(async () =>
+    public Task<V2pnControlResult> ConnectAsync(V2pnControlText t) => ui.InvokeAsync(async () =>
     {
         if (connection.IsConnected)
         {
-            return V2pnControlResult.Already("V2pn is already connected.");
+            return V2pnControlResult.Already(V2pnControlMessages.AlreadyConnected(t));
         }
         if (config.IndexId.IsNullOrEmpty() || await ConfigDbQuery.GetProfileItem(config.IndexId) == null)
         {
-            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNoServer, "No server is chosen. Choose one with \"v2pnctl use <name>\".");
+            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNoServer, V2pnControlMessages.NoServer(t));
         }
         if (config.UiItem.V2pnPreferTun && !status.AllowEnableTun())
         {
             ui.AskForTunRights(connect: true);
-            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNeedsConfirmation, VpnRightsMessage);
+            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNeedsConfirmation, V2pnControlMessages.VpnRights(t));
         }
         return await connection.ConnectAsync()
-            ? V2pnControlResult.Done("Connecting.")
-            : V2pnControlResult.Fail(V2pnControlProtocol.ErrFailed, "V2pn did not connect.");
+            ? V2pnControlResult.Done(V2pnControlMessages.Connecting(t))
+            : V2pnControlResult.Fail(V2pnControlProtocol.ErrFailed, V2pnControlMessages.DidNotConnect(t));
     });
 
-    public Task<V2pnControlResult> DisconnectAsync() => ui.InvokeAsync(() =>
+    public Task<V2pnControlResult> DisconnectAsync(V2pnControlText t) => ui.InvokeAsync(() =>
     {
         if (!connection.IsConnected)
         {
-            return Task.FromResult(V2pnControlResult.Already("V2pn is already off."));
+            return Task.FromResult(V2pnControlResult.Already(V2pnControlMessages.AlreadyOff(t)));
         }
         connection.Disconnect();
-        return Task.FromResult(V2pnControlResult.Done("Disconnected."));
+        return Task.FromResult(V2pnControlResult.Done(V2pnControlMessages.Disconnected(t)));
     });
 
-    public Task<V2pnControlResult> UseAsync(string? server, bool fastest, string? country) => ui.InvokeAsync(async () =>
+    public Task<V2pnControlResult> UseAsync(string? server, bool fastest, string? country, V2pnControlText t) => ui.InvokeAsync(async () =>
     {
         var servers = await VisibleServersAsync();
         string? id;
@@ -145,17 +142,17 @@ public sealed class V2pnControlApp(Config config, StatusBarViewModel status, V2p
                 .Select(s => s.IndexId).ToList();
             if (candidates.Count == 0)
             {
-                return V2pnControlResult.Fail(V2pnControlProtocol.ErrNotFound, country == null ? "There are no servers." : $"There are no servers in {country}.");
+                return V2pnControlResult.Fail(V2pnControlProtocol.ErrNotFound, V2pnControlMessages.NoServers(country, t));
             }
             id = await ui.FastestAsync(candidates);
             if (id == null)
             {
-                return V2pnControlResult.Fail(V2pnControlProtocol.ErrNoAnswer, "None of the servers answered the test.");
+                return V2pnControlResult.Fail(V2pnControlProtocol.ErrNoAnswer, V2pnControlMessages.NoneAnswered(t));
             }
         }
         else
         {
-            var (found, code, message) = V2pnControlData.FindServer(servers.Select(s => (s.IndexId, V2pnControlData.ServerName(s))).ToList(), server ?? string.Empty);
+            var (found, code, message) = V2pnControlData.FindServer(servers.Select(s => (s.IndexId, V2pnControlData.ServerName(s))).ToList(), server ?? string.Empty, t);
             if (found == null)
             {
                 return V2pnControlResult.Fail(code ?? V2pnControlProtocol.ErrNotFound, message);
@@ -165,51 +162,49 @@ public sealed class V2pnControlApp(Config config, StatusBarViewModel status, V2p
         var name = V2pnControlData.ServerName(servers.First(s => s.IndexId == id));
         if (id == config.IndexId)
         {
-            return V2pnControlResult.Already($"{name} is already in use.");
+            return V2pnControlResult.Already(V2pnControlMessages.AlreadyInUse(name, t));
         }
         await ui.SelectServerAsync(id);
         if (config.IndexId != id)
         {
-            return V2pnControlResult.Fail(V2pnControlProtocol.ErrFailed, $"V2pn did not switch to {name}.");
+            return V2pnControlResult.Fail(V2pnControlProtocol.ErrFailed, V2pnControlMessages.DidNotSwitch(name, t));
         }
-        return V2pnControlResult.Done(connection.IsConnected ? $"Switched to {name}." : $"{name} is chosen; V2pn uses it on the next connect.", name);
+        return V2pnControlResult.Done(V2pnControlMessages.Switched(name, connection.IsConnected, t), name);
     });
 
-    public Task<V2pnControlResult> SetModeAsync(bool tun) => ui.InvokeAsync(async () =>
+    public Task<V2pnControlResult> SetModeAsync(bool tun, V2pnControlText t) => ui.InvokeAsync(async () =>
     {
         var connected = connection.IsConnected;
         var now = connected ? status.EnableTun : config.UiItem.V2pnPreferTun;
-        var word = tun ? "VPN mode" : "Proxy mode";
         if (now == tun && config.UiItem.V2pnPreferTun == tun)
         {
-            return V2pnControlResult.Already($"{word} is already on.");
+            return V2pnControlResult.Already(V2pnControlMessages.ModeAlready(tun, t));
         }
         if (tun && connected && !status.AllowEnableTun())
         {
             ui.AskForTunRights(connect: false);
-            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNeedsConfirmation, VpnRightsMessage);
+            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNeedsConfirmation, V2pnControlMessages.VpnRights(t));
         }
         if (!await connection.SetModeAsync(tun))
         {
-            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNeedsConfirmation, VpnRightsMessage);
+            return V2pnControlResult.Fail(V2pnControlProtocol.ErrNeedsConfirmation, V2pnControlMessages.VpnRights(t));
         }
-        return V2pnControlResult.Done(connected ? $"{word}." : $"{word}: V2pn connects so next time.", tun ? "vpn" : "proxy");
+        return V2pnControlResult.Done(V2pnControlMessages.ModeSet(tun, connected, t), tun ? "vpn" : "proxy");
     });
 
-    public Task<V2pnControlResult> SetRouteAsync(EV2pnPreset preset) => ui.InvokeAsync(async () =>
+    public Task<V2pnControlResult> SetRouteAsync(EV2pnPreset preset, V2pnControlText t) => ui.InvokeAsync(async () =>
     {
         var id = V2pnControlData.RouteId(preset);
         var name = V2pnControlData.RouteName(id);
         if (status.SelectedRouting?.Id == id)
         {
-            return V2pnControlResult.Already($"The route is already {name}.");
+            return V2pnControlResult.Already(V2pnControlMessages.RouteAlready(name, t));
         }
         if (!await ui.SelectPresetAsync(preset) || status.SelectedRouting?.Id != id)
         {
-            return V2pnControlResult.Fail(V2pnControlProtocol.ErrFailed,
-                "The route did not change. The Russian routes need their lists downloaded first; V2pn's window says why.");
+            return V2pnControlResult.Fail(V2pnControlProtocol.ErrFailed, V2pnControlMessages.RouteFailed(t));
         }
-        return V2pnControlResult.Done($"Route: {name}.", name);
+        return V2pnControlResult.Done(V2pnControlMessages.RouteSet(name, t), name);
     });
 
     private V2pnControlState Capture() => new(connection.IsConnected,
@@ -246,6 +241,67 @@ public sealed class V2pnControlApp(Config config, StatusBarViewModel status, V2p
     });
 
     public void Announce(EV2pnControlNotice notice, string source, string? detail) => ui.Announce(notice, source, detail);
+}
+
+/// <summary>
+/// V2pn: what <see cref="V2pnControlApp"/> says about a change, in the asker's words (<see cref="V2pnControlText"/>):
+/// English for MCP and older v2pnctl, Russian for a v2pnctl that asked for it. Commands and route names stay as they
+/// are typed. Kept apart from the app, which needs the window, so the tests read them.
+/// </summary>
+public static class V2pnControlMessages
+{
+    public static string VpnRights(V2pnControlText t) => t.T(
+        "VPN mode needs administrator rights, and V2pn does not take them without the person: it asks on the screen now. Answer there, or use proxy mode (\"v2pnctl mode proxy\").",
+        "Для режима VPN нужны права администратора, а сам V2pn их не берёт: он спрашивает на экране. Ответьте там или включите режим прокси: v2pnctl mode proxy.");
+
+    public static string AlreadyConnected(V2pnControlText t) => t.T("V2pn is already connected.", "V2pn уже подключён.");
+
+    public static string NoServer(V2pnControlText t) => t.T(
+        "No server is chosen. Choose one with \"v2pnctl use <name>\".",
+        "Сервер не выбран. Выберите его: v2pnctl use <название>.");
+
+    public static string Connecting(V2pnControlText t) => t.T("Connecting.", "V2pn подключается.");
+
+    public static string DidNotConnect(V2pnControlText t) => t.T("V2pn did not connect.", "V2pn не подключился.");
+
+    public static string AlreadyOff(V2pnControlText t) => t.T("V2pn is already off.", "V2pn уже отключён.");
+
+    public static string Disconnected(V2pnControlText t) => t.T("Disconnected.", "Отключено.");
+
+    public static string NoServers(string? country, V2pnControlText t) => country == null
+        ? t.T("There are no servers.", "Серверов нет.")
+        : t.T($"There are no servers in {country}.", $"Серверов в стране {country} нет.");
+
+    public static string NoneAnswered(V2pnControlText t) => t.T("None of the servers answered the test.", "Ни один сервер не ответил на проверку.");
+
+    public static string AlreadyInUse(string name, V2pnControlText t) => t.T($"{name} is already in use.", $"Сервер {name} уже выбран.");
+
+    public static string DidNotSwitch(string name, V2pnControlText t) => t.T($"V2pn did not switch to {name}.", $"V2pn не переключился на {name}.");
+
+    public static string Switched(string name, bool connected, V2pnControlText t) => connected
+        ? t.T($"Switched to {name}.", $"Переключено на {name}.")
+        : t.T($"{name} is chosen; V2pn uses it on the next connect.", $"Выбран сервер {name}; V2pn подключится через него в следующий раз.");
+
+    public static string ModeAlready(bool tun, V2pnControlText t) => tun
+        ? t.T("VPN mode is already on.", "Режим VPN уже включён.")
+        : t.T("Proxy mode is already on.", "Режим прокси уже включён.");
+
+    public static string ModeSet(bool tun, bool connected, V2pnControlText t)
+    {
+        var (en, ru) = tun ? ("VPN mode", "режим VPN") : ("Proxy mode", "режим прокси");
+        return connected
+            ? t.T($"{en}.", $"Включён {ru}.")
+            : t.T($"{en}: V2pn connects so next time.", $"Выбран {ru}: так V2pn подключится в следующий раз.");
+    }
+
+    // The route by its command-line name (ru-direct, blocked-only, all), the one people type.
+    public static string RouteAlready(string name, V2pnControlText t) => t.T($"The route is already {name}.", $"Маршрут {name} уже выбран.");
+
+    public static string RouteSet(string name, V2pnControlText t) => t.T($"Route: {name}.", $"Маршрут: {name}.");
+
+    public static string RouteFailed(V2pnControlText t) => t.T(
+        "The route did not change. The Russian routes need their lists downloaded first; V2pn's window says why.",
+        "Маршрут не изменился. Для российских маршрутов сначала нужно скачать списки сайтов; причина — в окне V2pn.");
 }
 
 /// <summary>

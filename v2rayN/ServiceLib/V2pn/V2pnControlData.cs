@@ -218,9 +218,11 @@ public static class V2pnControlData
 
     /// <summary>
     /// The server a person means by <paramref name="query"/>: its id, its whole name, or a part of the name that only one
-    /// server has. Two or more that fit are named in the answer, so the next try can be exact.
+    /// server has. Two or more that fit are named in the answer, so the next try can be exact. The message is in
+    /// <paramref name="t"/>'s words.
     /// </summary>
-    public static (string? Id, string? Code, string Message) FindServer(IReadOnlyList<(string Id, string Name)> servers, string query)
+    public static (string? Id, string? Code, string Message) FindServer(IReadOnlyList<(string Id, string Name)> servers, string query,
+        V2pnControlText t = default)
     {
         var q = query.Trim();
         if (servers.FirstOrDefault(s => s.Id == q) is { Id: not null } byId)
@@ -229,12 +231,19 @@ public static class V2pnControlData
         }
         var exact = servers.Where(s => string.Equals(s.Name, q, StringComparison.OrdinalIgnoreCase)).ToList();
         var found = exact.Count > 0 ? exact : servers.Where(s => s.Name.Contains(q, StringComparison.OrdinalIgnoreCase)).ToList();
-        return found.Count switch
+        if (found.Count == 1)
         {
-            0 => (null, V2pnControlProtocol.ErrNotFound, $"No server is called \"{q}\". \"v2pnctl servers\" lists them."),
-            1 => (found[0].Id, null, found[0].Name),
-            _ => (null, V2pnControlProtocol.ErrAmbiguous,
-                $"{found.Count} servers fit \"{q}\": {string.Join(", ", found.Take(5).Select(s => $"{s.Name} ({s.Id})"))}{(found.Count > 5 ? ", …" : string.Empty)}. Give the id or the whole name."),
-        };
+            return (found[0].Id, null, found[0].Name);
+        }
+        if (found.Count == 0)
+        {
+            return (null, V2pnControlProtocol.ErrNotFound, t.T(
+                $"No server is called \"{q}\". \"v2pnctl servers\" lists them.",
+                $"Сервера «{q}» нет. Список серверов: v2pnctl servers."));
+        }
+        var some = $"{string.Join(", ", found.Take(5).Select(s => $"{s.Name} ({s.Id})"))}{(found.Count > 5 ? ", …" : string.Empty)}";
+        return (null, V2pnControlProtocol.ErrAmbiguous, t.T(
+            $"{found.Count} servers fit \"{q}\": {some}. Give the id or the whole name.",
+            $"Под «{q}» подходят несколько серверов ({found.Count}): {some}. Укажите id или полное название."));
     }
 }

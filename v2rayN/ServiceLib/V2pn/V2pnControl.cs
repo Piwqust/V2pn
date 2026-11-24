@@ -54,15 +54,17 @@ public interface IV2pnControlApp
 
     Task ShowWindowAsync();
 
-    Task<V2pnControlResult> ConnectAsync();
+    // A change answers in the asker's words: Russian for a v2pnctl that asked for it, English for the rest.
 
-    Task<V2pnControlResult> DisconnectAsync();
+    Task<V2pnControlResult> ConnectAsync(V2pnControlText t);
 
-    Task<V2pnControlResult> UseAsync(string? server, bool fastest, string? country);
+    Task<V2pnControlResult> DisconnectAsync(V2pnControlText t);
 
-    Task<V2pnControlResult> SetModeAsync(bool tun);
+    Task<V2pnControlResult> UseAsync(string? server, bool fastest, string? country, V2pnControlText t);
 
-    Task<V2pnControlResult> SetRouteAsync(EV2pnPreset preset);
+    Task<V2pnControlResult> SetModeAsync(bool tun, V2pnControlText t);
+
+    Task<V2pnControlResult> SetRouteAsync(EV2pnPreset preset, V2pnControlText t);
 
     Task<V2pnControlState> CaptureAsync();
 
@@ -85,11 +87,23 @@ public interface IV2pnControlApp
 /// </summary>
 public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNow, Action<string> log)
 {
-    public const string DisabledMessage =
-        "Control from the command line is off in V2pn. To turn it on, open V2pn: Settings > General > Control from the command line and AI, and choose Read only or Control.";
+    // The Russian names are the window's: the settings page, the setting and its choices.
+    public static string DisabledMessage(V2pnControlText t) => t.T(
+        "Control from the command line is off in V2pn. To turn it on, open V2pn: Settings > General > Control from the command line and AI, and choose Read only or Control.",
+        "Управление из командной строки в V2pn выключено. Чтобы включить его, откройте V2pn: Настройки → Общие → «Управление из командной строки и ИИ» и выберите «Только чтение» или «Управление».");
 
-    public const string ReadOnlyMessage =
-        "V2pn lets the command line only read. To let it change the connection, open V2pn: Settings > General > Control from the command line and AI, and choose Control.";
+    public static string ReadOnlyMessage(V2pnControlText t) => t.T(
+        "V2pn lets the command line only read. To let it change the connection, open V2pn: Settings > General > Control from the command line and AI, and choose Control.",
+        "V2pn разрешает командной строке только чтение. Чтобы она могла менять подключение, откройте V2pn: Настройки → Общие → «Управление из командной строки и ИИ» и выберите «Управление».");
+
+    /// <summary>What a change made with <c>confirmWithin</c> adds to its message: how to keep it, and what happens otherwise.</summary>
+    public static string ConfirmNote(string message, int seconds, string source, V2pnControlText t)
+    {
+        var mcp = source == V2pnControlProtocol.SourceMcp;
+        return t.T(
+            $"{message} {(mcp ? "Call v2pn_confirm" : "Run \"v2pnctl confirm\"")} within {seconds} s to keep it; otherwise V2pn puts back what was there before.",
+            $"{message} Чтобы оставить изменение, {(mcp ? "вызовите v2pn_confirm" : "выполните v2pnctl confirm")} в течение {seconds} сек, иначе V2pn вернёт как было.");
+    }
 
     private sealed record Pending(V2pnControlState Before, V2pnControlState After, DateTime Deadline, string Source);
 
@@ -126,7 +140,8 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
         catch (Exception ex)
         {
             log($"V2pn control: {request.Command} from {request.Source} failed: {ex.Message}");
-            answer = V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrFailed, $"V2pn could not do it: {ex.Message}");
+            answer = V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrFailed,
+                request.Text.T($"V2pn could not do it: {ex.Message}", $"V2pn не смог это сделать: {ex.Message}"));
         }
         // Every command reaches the log with its source, so a change nobody remembers making can be traced.
         log($"V2pn control: {request.Source} {request.Command}{Describe(request.Args)}: {(answer.Ok ? "done" : answer.ErrorCode)}");
@@ -137,20 +152,25 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
     private static string Describe(JsonObject args) => args.Count == 0 ? string.Empty
         : " " + string.Join(", ", args.Select(a => $"{a.Key}={a.Value?.ToJsonString(V2pnControlProtocol.Compact)}"));
 
+    private static string Unknown(V2pnControlRequest r) =>
+        r.Text.T($"V2pn does not know the command {r.Command}.", $"V2pn не знает команду {r.Command}.");
+
     private async Task<V2pnControlAnswer> RunAsync(V2pnControlRequest r)
     {
+        // The words of the answer: Russian when v2pnctl asked for them, English for MCP and older v2pnctl.
+        var t = r.Text;
         var level = app.Level;
         if (level == EV2pnControlLevel.Off)
         {
-            return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrDisabled, DisabledMessage);
+            return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrDisabled, DisabledMessage(t));
         }
         if (!V2pnControlProtocol.IsKnown(r.Command))
         {
-            return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrUnknownCommand, $"V2pn does not know the command {r.Command}.");
+            return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrUnknownCommand, Unknown(r));
         }
         if (V2pnControlProtocol.ControlCommands.Contains(r.Command) && level != EV2pnControlLevel.Control)
         {
-            return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrForbidden, ReadOnlyMessage);
+            return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrForbidden, ReadOnlyMessage(t));
         }
         int? within = null;
         if (r.Args["confirmWithin"] is { } node)
@@ -158,7 +178,9 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
             if (!V2pnControlProtocol.RevertibleCommands.Contains(r.Command) || V2pnControlJson.Long(node) is not { } seconds
                 || seconds < V2pnControlProtocol.MinConfirmWithin || seconds > V2pnControlProtocol.MaxConfirmWithin)
             {
-                return BadRequest(r, $"confirmWithin is a number of seconds from {V2pnControlProtocol.MinConfirmWithin} to {V2pnControlProtocol.MaxConfirmWithin}, for connect, disconnect, use, mode and route.");
+                return BadRequest(r, t.T(
+                    $"confirmWithin is a number of seconds from {V2pnControlProtocol.MinConfirmWithin} to {V2pnControlProtocol.MaxConfirmWithin}, for connect, disconnect, use, mode and route.",
+                    $"confirmWithin — число секунд от {V2pnControlProtocol.MinConfirmWithin} до {V2pnControlProtocol.MaxConfirmWithin}, только для connect, disconnect, use, mode и route."));
             }
             within = (int)seconds;
         }
@@ -180,42 +202,43 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
 
             case V2pnControlProtocol.Open:
                 await app.ShowWindowAsync();
-                return V2pnControlAnswer.Success(r.Id, new JsonObject { ["message"] = "V2pn's window is shown." });
+                return V2pnControlAnswer.Success(r.Id, new JsonObject { ["message"] = t.T("V2pn's window is shown.", "Окно V2pn открыто.") });
 
             case V2pnControlProtocol.Check:
                 if (!await app.CheckAsync())
                 {
-                    return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrNotConnected, "V2pn is not connected, so there is nothing to check.");
+                    return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrNotConnected,
+                        t.T("V2pn is not connected, so there is nothing to check.", "V2pn не подключён, проверять нечего."));
                 }
-                return V2pnControlAnswer.Success(r.Id, new JsonObject { ["message"] = "Checked.", ["status"] = await StatusAsync() });
+                return V2pnControlAnswer.Success(r.Id, new JsonObject { ["message"] = t.T("Checked.", "Проверено."), ["status"] = await StatusAsync() });
 
             case V2pnControlProtocol.Confirm:
                 return await ConfirmAsync(r);
 
             case V2pnControlProtocol.Connect:
-                return await ChangeAsync(r, within, app.ConnectAsync, EV2pnControlNotice.Connected, settle: true);
+                return await ChangeAsync(r, within, () => app.ConnectAsync(t), EV2pnControlNotice.Connected, settle: true);
 
             case V2pnControlProtocol.Disconnect:
-                return await ChangeAsync(r, within, app.DisconnectAsync, EV2pnControlNotice.Disconnected, settle: false);
+                return await ChangeAsync(r, within, () => app.DisconnectAsync(t), EV2pnControlNotice.Disconnected, settle: false);
 
             case V2pnControlProtocol.Use:
                 var fastest = V2pnControlJson.Bool(r.Args["fastest"]) == true;
                 var server = V2pnControlJson.String(r.Args["server"])?.Trim();
                 if (fastest == server is { Length: > 0 })
                 {
-                    return BadRequest(r, "use needs either a server (an id or a name) or fastest.");
+                    return BadRequest(r, t.T("use needs either a server (an id or a name) or fastest.", "Для use нужен либо сервер (id или название), либо fastest."));
                 }
                 var near = V2pnControlJson.String(r.Args["country"])?.Trim().ToUpperInvariant();
-                return await ChangeAsync(r, within, () => app.UseAsync(server, fastest, near is { Length: > 0 } ? near : null),
+                return await ChangeAsync(r, within, () => app.UseAsync(server, fastest, near is { Length: > 0 } ? near : null, t),
                     EV2pnControlNotice.ServerChanged, settle: true);
 
             case V2pnControlProtocol.Mode:
                 var mode = V2pnControlJson.String(r.Args["mode"]);
                 if (mode is not ("proxy" or "vpn"))
                 {
-                    return BadRequest(r, "mode is proxy or vpn.");
+                    return BadRequest(r, t.T("mode is proxy or vpn.", "mode — это proxy или vpn."));
                 }
-                return await ChangeAsync(r, within, () => app.SetModeAsync(mode == "vpn"), EV2pnControlNotice.ModeChanged, settle: true);
+                return await ChangeAsync(r, within, () => app.SetModeAsync(mode == "vpn", t), EV2pnControlNotice.ModeChanged, settle: true);
 
             case V2pnControlProtocol.Route:
                 var route = V2pnControlJson.String(r.Args["route"]);
@@ -228,11 +251,11 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
                 };
                 if (preset is not { } chosen)
                 {
-                    return BadRequest(r, "route is ru-direct, blocked-only or all.");
+                    return BadRequest(r, t.T("route is ru-direct, blocked-only or all.", "route — это ru-direct, blocked-only или all."));
                 }
-                return await ChangeAsync(r, within, () => app.SetRouteAsync(chosen), EV2pnControlNotice.RouteChanged, settle: true);
+                return await ChangeAsync(r, within, () => app.SetRouteAsync(chosen, t), EV2pnControlNotice.RouteChanged, settle: true);
         }
-        return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrUnknownCommand, $"V2pn does not know the command {r.Command}.");
+        return V2pnControlAnswer.Failure(r.Id, V2pnControlProtocol.ErrUnknownCommand, Unknown(r));
     }
 
     private static V2pnControlAnswer BadRequest(V2pnControlRequest r, string message) =>
@@ -273,8 +296,7 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
         if (waiting && within is { } wait)
         {
             data["confirmWithin"] = wait;
-            var how = r.Source == V2pnControlProtocol.SourceMcp ? "Call v2pn_confirm" : "Run \"v2pnctl confirm\"";
-            data["message"] = $"{result.Message} {how} within {wait} s to keep it; otherwise V2pn puts back what was there before.";
+            data["message"] = ConfirmNote(result.Message, wait, r.Source, r.Text);
         }
         data["status"] = settle && result.Changed ? await SettledStatusAsync() : await StatusAsync();
         return V2pnControlAnswer.Success(r.Id, data);
@@ -296,7 +318,9 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
         return V2pnControlAnswer.Success(r.Id, new JsonObject
         {
             ["confirmed"] = had,
-            ["message"] = had ? "Kept: V2pn will not put the change back." : "Nothing was waiting for a confirmation.",
+            ["message"] = had
+                ? r.Text.T("Kept: V2pn will not put the change back.", "Изменение оставлено: V2pn не будет его возвращать.")
+                : r.Text.T("Nothing was waiting for a confirmation.", "Подтверждать нечего."),
         });
     }
 

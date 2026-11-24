@@ -389,9 +389,13 @@ public sealed class V2pnControlLink(V2pnControlEndpoint endpoint, Func<bool> sta
 
     public string Folder { get; init; } = string.Empty;
 
-    public async Task<V2pnControlAnswer> CallAsync(string command, JsonObject args, string source)
+    /// <summary>
+    /// Sends one command. <paramref name="t"/> is the language of every word in the answer: V2pn's (the request asks
+    /// for it) and this end's own. MCP leaves it English.
+    /// </summary>
+    public async Task<V2pnControlAnswer> CallAsync(string command, JsonObject args, string source, V2pnControlText t = default)
     {
-        var request = new V2pnControlRequest(Interlocked.Increment(ref _nextId), command, args, source);
+        var request = new V2pnControlRequest(Interlocked.Increment(ref _nextId), command, args, source, t.Code);
         // A connect waits for the check, and the fastest server is found by testing them all.
         var answerTimeout = command == V2pnControlProtocol.Use ? TimeSpan.FromMinutes(6) : TimeSpan.FromMinutes(2);
         try
@@ -401,8 +405,9 @@ public sealed class V2pnControlLink(V2pnControlEndpoint endpoint, Func<bool> sta
             {
                 if (!startV2pn())
                 {
-                    return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrNotRunning,
-                        $"V2pn is not running, and there is no V2pn to start in {Folder}.");
+                    return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrNotRunning, t.T(
+                        $"V2pn is not running, and there is no V2pn to start in {Folder}.",
+                        $"V2pn не запущен, и в папке {Folder} нет V2pn, чтобы его запустить."));
                 }
                 var waited = System.Diagnostics.Stopwatch.StartNew();
                 while (line == null && waited.Elapsed < StartWait)
@@ -413,20 +418,24 @@ public sealed class V2pnControlLink(V2pnControlEndpoint endpoint, Func<bool> sta
                 }
                 if (line == null)
                 {
-                    return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrNotRunning,
-                        $"V2pn was started but did not answer within {(int)StartWait.TotalSeconds} seconds. If it is running, it may be a version without the command line.");
+                    var seconds = (int)StartWait.TotalSeconds;
+                    return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrNotRunning, t.T(
+                        $"V2pn was started but did not answer within {seconds} seconds. If it is running, it may be a version without the command line.",
+                        $"V2pn запущен, но не ответил за {seconds} {V2pnControlText.Plural(seconds, "секунду", "секунды", "секунд")}. Если он работает, возможно, это версия без управления из командной строки."));
                 }
             }
-            return V2pnControlAnswer.Parse(line, request.Id);
+            return V2pnControlAnswer.Parse(line, request.Id, t);
         }
         catch (UnauthorizedAccessException)
         {
-            return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrFailed,
-                "The channel is not owned by this user, so v2pnctl did not use it.");
+            return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrFailed, t.T(
+                "The channel is not owned by this user, so v2pnctl did not use it.",
+                "Канал принадлежит другому пользователю, поэтому v2pnctl не стал через него работать."));
         }
         catch (Exception ex) when (ex is IOException or OperationCanceledException or InvalidDataException)
         {
-            return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrFailed, $"The exchange with V2pn failed: {ex.Message}");
+            return V2pnControlAnswer.Failure(request.Id, V2pnControlProtocol.ErrFailed,
+                t.T($"The exchange with V2pn failed: {ex.Message}", $"Связь с V2pn прервалась: {ex.Message}"));
         }
     }
 }

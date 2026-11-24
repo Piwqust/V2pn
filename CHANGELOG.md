@@ -4,7 +4,16 @@ What changes for the people who use the app. Each version's section becomes the 
 
 ## Unreleased
 
-Safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API needs a secret, updates and installs check signatures everywhere, and a provider's tab on the hub can no longer pose as another provider. Subscriptions from panels with a device limit work, and several quiet failures now either recover or say what happened.
+V2pn moves to a working server by itself when the one you use stops answering, and lets you send chosen sites one way whatever the route says. It is safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API needs a secret, updates and installs check signatures everywhere, and a provider's tab on the hub can no longer pose as another provider. Subscriptions from panels with a device limit work, and several quiet failures now either recover or say what happened.
+
+### A working server by itself
+
+- When the server stops answering two checks in a row, V2pn moves to the quickest working server of the same country and says so: "Frankfurt stopped answering. V2pn switched to Berlin in the same country." Another country is never chosen without asking, and two such switches are at least 10 minutes apart. Settings → General → "Switch to a working server by itself" turns it off.
+- A connection that works is checked again every 5 minutes, quietly: nothing changes on screen unless the check fails, so a server that dies in the middle of a session no longer stays "connected".
+
+### Sites that always go one way
+
+- In the menu under Connect, **Sites that always go one way…** sends a site directly or through the server whatever the chosen way says: your bank directly while everything else goes through the server, or one site through the server in "Only blocked". With or without its subdomains; Cyrillic names work too. A change applies at once, and removing a site puts it back under the route.
 
 ### Safety
 
@@ -17,6 +26,7 @@ Safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API 
 - **VPN mode on a Mac writes no scripts for sudo**: the administrator password no longer goes through a file in V2pn's folder.
 - The PAC script is served on 127.0.0.1 only. Signing in with a provider no longer sends a computer name someone chose (a Mac is usually named after its owner). A `v2pn://` link to a plain http subscription says the address is not encrypted.
 - Kill switch: "Programs only through V2pn" says what it does not close (Windows' own DNS lookups; Claude Code from npm runs as node.exe).
+- A whole core config that came with a subscription stays filtered after you move it to another group or to "no group"; before, moving it let it run with its own listeners and API.
 
 ### Subscriptions with a device limit
 
@@ -34,6 +44,7 @@ Safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API 
 - An update on a Mac no longer fails for good when a core file is gone right after unpacking: the installed core is kept instead.
 - An error nothing else caught is said on screen instead of only in the log.
 - Diagnostics: "Report on GitHub…" opens a bug report with the diagnostics already in it; nothing is sent until you submit it.
+- Updates → "Tell V2pn when an update fails" (off unless you turn it on): only which version failed to replace which, the system and the step, once per version and step. Nothing about you, your servers or your settings.
 
 ### Also
 

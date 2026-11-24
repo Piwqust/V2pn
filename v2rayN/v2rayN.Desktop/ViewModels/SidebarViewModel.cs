@@ -651,11 +651,8 @@ public sealed partial class SidebarViewModel : ReactiveObject
     /// The quickest server by the last results. With statistics on, a server that failed most of its
     /// tests is passed over even when its last answer was quick: it is likely to drop again.
     /// </summary>
-    public static ProfileItemModel? PickFastest(IEnumerable<ProfileItemModel> items)
-    {
-        var answered = items.Where(m => m.Delay > 0).ToList();
-        return answered.Where(m => !Unreliable(m)).MinBy(m => m.Delay) ?? answered.MinBy(m => m.Delay);
-    }
+    public static ProfileItemModel? PickFastest(IEnumerable<ProfileItemModel> items) =>
+        V2pnServerPicker.PickFastest(items, m => m.Delay, Unreliable);
 
     private static bool Unreliable(ProfileItemModel m) =>
         StatsEnabled && ServerUsageManager.Instance.Get(m.IndexId) is { Tests: >= 4 } u && u.AnswerRate < 0.5;
@@ -671,18 +668,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
     /// What a quick recheck before "fastest" tests: the servers that were quickest last time, plus
     /// favorites and recent ones. A couple of dozen answer in seconds; a big subscription takes a minute.
     /// </summary>
-    public List<ProfileItemModel> FastestCandidates()
-    {
-        var all = Scoped(_profiles.ProfileItems);
-        var recent = (Ui.V2pnRecent ?? []).ToHashSet();
-        return ServerNames.DistinctConnections(all.Where(m => m.Delay > 0).OrderBy(m => m.Delay).Take(12)
-                .Concat(Favorites)
-                .Concat(all.Where(m => recent.Contains(m.IndexId))))
-            .GroupBy(m => m.IndexId)
-            .Select(g => g.First())
-            .Take(24)
-            .ToList();
-    }
+    public List<ProfileItemModel> FastestCandidates() =>
+        V2pnServerPicker.Candidates(Scoped(_profiles.ProfileItems), Favorites, (Ui.V2pnRecent ?? []).ToHashSet(),
+            m => m.IndexId, m => m.Delay, ServerNames.DistinctConnections);
 
     /// <summary>Starts a ping of every server in the list; does nothing while a run is already going.</summary>
     public Task PingAllAsync() => Ping.IsTesting ? Task.CompletedTask : _profiles.PingProfilesAsync(Scoped(_profiles.ProfileItems));

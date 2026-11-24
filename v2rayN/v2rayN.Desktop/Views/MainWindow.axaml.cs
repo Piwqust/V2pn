@@ -676,22 +676,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
     // Servers the user actually connected through, newest first, for the "Recent" section.
     private void Remember(string? indexId, ProtectionState state)
     {
-        if (indexId.IsNullOrEmpty() || state == ProtectionState.Unprotected)
+        if (state != ProtectionState.Unprotected && V2pnServerPicker.Remember(_config.UiItem.V2pnRecent ??= [], indexId))
         {
-            return;
+            _sidebar?.QueueRebuild();
         }
-        var recent = _config.UiItem.V2pnRecent ??= [];
-        if (recent.FirstOrDefault() == indexId)
-        {
-            return;
-        }
-        recent.Remove(indexId);
-        recent.Insert(0, indexId);
-        if (recent.Count > 8)
-        {
-            recent.RemoveRange(8, recent.Count - 8);
-        }
-        _sidebar?.QueueRebuild();
     }
 
     private bool _shownOnce;

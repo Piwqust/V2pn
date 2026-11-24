@@ -54,6 +54,21 @@ public class V2pnDeepLinkTests
     }
 
     [Test]
+    [NotInParallel("v2pn-link-stash")]
+    public async Task TwoQuickClicks_BothLinksReachTheRunningCopy_InOrder()
+    {
+        V2pnDeepLink.TakeStashed();
+
+        V2pnDeepLink.Stash("v2pn://add?url=https%3A%2F%2Fone.example.com%2Fs");
+        V2pnDeepLink.Stash("v2pn://add?url=https%3A%2F%2Ftwo.example.com%2Fs");
+        var links = V2pnDeepLink.TakeStashed();
+
+        await string.Join(",", links.Select(l => l.SubscriptionUrl))
+            .Should().BeEqualTo("https://one.example.com/s,https://two.example.com/s");
+        await V2pnDeepLink.TakeStashed().Count.Should().BeEqualTo(0);
+    }
+
+    [Test]
     public async Task FromArgs_FindsTheLinkAmongOtherArguments()
     {
         var link = V2pnDeepLink.FromArgs(["--autostart", "v2pn://add?url=https%3A%2F%2Fsub.example.com%2Fs"]);

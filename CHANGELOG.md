@@ -11,6 +11,14 @@ V2pn moves to a working server by itself when the one you use stops answering, a
 - When the server stops answering two checks in a row, V2pn moves to the quickest working server of the same country and says so: "Frankfurt stopped answering. V2pn switched to Berlin in the same country." Another country is never chosen without asking, and two such switches are at least 10 minutes apart. Settings → General → "Switch to a working server by itself" turns it off.
 - A connection that works is checked again every 5 minutes, quietly: nothing changes on screen unless the check fails, so a server that dies in the middle of a session no longer stays "connected".
 
+### V2pn from the command line and from AI assistants
+
+- **`v2pnctl`** comes with V2pn: `status`, `servers`, `subs`, `use`, `connect`, `disconnect`, `mode`, `route`, `check`, `diag`, `open`, all with `--json`. If V2pn is not running, it starts in the tray first.
+- **`v2pnctl mcp`** is an MCP server for Claude Code, Claude Desktop, Cursor and the like (`claude mcp add v2pn -- v2pnctl mcp`): the assistant can see the status and the servers and switch the server, the mode or the route.
+- It is off until you turn it on in Settings → General → "Control from the command line and AI", as read only or with control. It talks only to programs of your own Windows user, over a local channel, never over the network; it never shows subscription links, server addresses or keys.
+- A change can be made to undo itself: with `--confirm-within 60` (always, for an assistant) V2pn puts the server, the mode, the route or the connection back unless `v2pnctl confirm` comes in time, so an assistant that cut its own network off gets it back. VPN mode never restarts V2pn as administrator without asking on screen, and every command shows a short note in the window.
+- On a Mac it is built but not yet tried.
+
 ### Sites that always go one way
 
 - In the menu under Connect, **Sites that always go one way…** sends a site directly or through the server whatever the chosen way says: your bank directly while everything else goes through the server, or one site through the server in "Only blocked". With or without its subdomains; Cyrillic names work too. A change applies at once, and removing a site puts it back under the route.

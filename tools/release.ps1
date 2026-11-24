@@ -4,7 +4,7 @@
   the version for GitHub to publish.
 
 .DESCRIPTION
-  Package (default): builds V2pn and AmazTool for each architecture as a release build, adds the
+  Package (default): builds V2pn, AmazTool and v2pnctl for each architecture as a release build, adds the
   cores pinned in tools/cores.lock.json, and writes dist/release/<version>/V2pn-windows-<arch>.zip and,
   from the same files, the installer V2pn-windows-<arch>-setup.exe: V2pn's own window (v2rayN/V2pnSetup)
   with the Inno Setup 6 engine (tools/installer/V2pn.iss) appended, which it runs hidden.
@@ -94,14 +94,15 @@ function New-V2pnZip([string]$Folder, [string]$Zip) {
     finally { $archive.Dispose() }
 }
 
-# What the installer (AmazTool) relies on: one top folder, "/" separators, the app and the updater inside.
+# What the installer (AmazTool) relies on: one top folder, "/" separators, the app and the updater inside;
+# and v2pnctl, the command line that comes with the app.
 function Test-V2pnZip([string]$Zip) {
     $archive = [IO.Compression.ZipFile]::OpenRead($Zip)
     try {
         $names = $archive.Entries | ForEach-Object { $_.FullName }
         $bad = $names | Where-Object { $_ -match '\\' -or $_ -notmatch '^V2pn/' }
         if ($bad) { throw "Package entries the installer cannot place: $($bad | Select-Object -First 3)" }
-        foreach ($required in 'V2pn/V2pn.exe', 'V2pn/AmazTool.exe') {
+        foreach ($required in 'V2pn/V2pn.exe', 'V2pn/AmazTool.exe', 'V2pn/v2pnctl.exe') {
             if ($names -notcontains $required) { throw "Package lacks $required" }
         }
     }
@@ -201,7 +202,7 @@ if ($commit) {
 # A developer-mode build remembers its source folder, so the next build needs no folder chosen.
 # Published versions never carry it: it is a path on the building computer.
 if ($Version.Contains('-local.')) { $properties += "-p:V2pnSourceDir=$repo" }
-# Only V2pn itself: AmazTool runs for a few seconds during an update.
+# Only V2pn itself: AmazTool runs for a few seconds during an update, v2pnctl for one command.
 $appProperties = if ($NoReadyToRun) { @() } else { @('-p:PublishReadyToRun=true') }
 if ($UpdateSources) { $properties += "-p:V2pnUpdateSources=$UpdateSources" }
 if ($UpdateKeys) { $properties += "-p:V2pnUpdateKeys=$UpdateKeys" }
@@ -217,6 +218,11 @@ foreach ($a in $Arch) {
 
     Write-Host "== ${rid}: AmazTool"
     Invoke-Checked $dotnet (@('publish', (Join-Path $src 'AmazTool/AmazTool.csproj'), '-c', 'Release', '-r', $rid,
+        '-p:PublishTrimmed=true', '-v', 'q', '-nologo', '-o', $stage) + $properties)
+
+    # The command line and MCP server for the running app, next to V2pn.exe (v2rayN/V2pnCtl).
+    Write-Host "== ${rid}: v2pnctl"
+    Invoke-Checked $dotnet (@('publish', (Join-Path $src 'V2pnCtl/V2pnCtl.csproj'), '-c', 'Release', '-r', $rid,
         '-p:PublishTrimmed=true', '-v', 'q', '-nologo', '-o', $stage) + $properties)
 
     Write-Host "== ${rid}: V2pn $Version"

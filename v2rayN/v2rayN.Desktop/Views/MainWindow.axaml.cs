@@ -282,6 +282,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
 
             BuildViews();
             V2pnConnectionService.Instance.Attach(_config, vm.StatusBarViewModel, this);
+            InitControl();
             InitConnectionBar();
             StartConnectionRecheck();
             vm.SubUpdateCmd.IsExecuting
@@ -430,7 +431,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         }
 
         // V2pn: right after a move from v2rayN the window shows, whatever "start hidden" came over with it.
-        _startHidden = AutoStartupHandler.StartsHidden(_config, Program.StartedAtSignIn) && V2pnImport.Imported == null;
+        _startHidden = (AutoStartupHandler.StartsHidden(_config, Program.StartedAtSignIn) || Program.StartedInTray) && V2pnImport.Imported == null;
         if (_startHidden && Utils.IsWindows())
         {
             WindowState = WindowState.Minimized;
@@ -1413,12 +1414,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         RefreshRouteUi();
     }
 
-    private async Task SelectPresetAsync(RoutingPresetKind kind)
+    /// <summary>Switches to a preset; false when it did not (another switch running, the lists not downloaded, an error).</summary>
+    private async Task<bool> SelectPresetAsync(RoutingPresetKind kind)
     {
         var vm = ViewModel;
         if (_routeBusy || vm == null)
         {
-            return;
+            return false;
         }
         _routeBusy = true;
         string? failure = null;
@@ -1435,17 +1437,19 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
                     failure = L.RouteDownloadFailed;
                     await vm.StatusBarViewModel.RefreshRoutingsMenu();
                     ShowToast(ToastKind.Error, failure);
-                    return;
+                    return false;
                 }
             }
             await RoutingPresets.EnsureAsync(_config);
             await ActivateRoutingAsync(RoutingPresets.Id(kind), sourcesChanged);
             btnRoute.Flyout?.Hide();
+            return true;
         }
         catch (Exception ex)
         {
             Logging.SaveLog("V2pn routing presets", ex);
             NoticeManager.Instance.Enqueue(L.RouteFailed);
+            return false;
         }
         finally
         {
@@ -2834,6 +2838,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
             _blCloseByUser = b;
         }
         StorageUI();
+        StopControl();
         if (Application.Current?.ApplicationLifetime is IClassicDesktopStyleApplicationLifetime desktop)
         {
             HotkeyManager.Instance.Dispose();
@@ -2858,8 +2863,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
             {
                 WindowState = _restoreState;
             }
-            Activate();
-            Focus();
+            // V2pn: a test copy in background mode never takes the focus from the person at the computer.
+            if (!OffscreenMode.IsOn)
+            {
+                Activate();
+                Focus();
+            }
         }
         else
         {

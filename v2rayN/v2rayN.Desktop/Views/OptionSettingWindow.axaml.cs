@@ -86,6 +86,7 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
 
         _ = InitSettingFont();
         InitConnectionModes();
+        InitControlLevel();
 
         this.WhenActivated(disposables =>
         {
@@ -432,6 +433,14 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         txtTunAdminState.Text = admin ? L.TunAdminYes : L.TunAdminNo;
         btnTunRestartAdmin.IsVisible = !admin;
         btnTunRestartAdmin.Click += async (_, _) => await AppManager.Instance.RebootAsAdmin();
+    }
+
+    // V2pn: Off, Read only, Control, in the order of EV2pnControlLevel. Saved with the rest by the Save command.
+    private void InitControlLevel()
+    {
+        cmbControl.ItemsSource = new[] { L.ControlOff, L.ControlReadOnly, L.ControlFull };
+        cmbControl.SelectedIndex = Math.Clamp((int)_config.UiItem.V2pnControl, 0, 2);
+        btnSave.Click += (_, _) => _config.UiItem.V2pnControl = (EV2pnControlLevel)Math.Max(0, cmbControl.SelectedIndex);
     }
 
     // Connected in Proxy mode, the live mode switches too, so the change shows right away (V2pnConnectionService).

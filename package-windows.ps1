@@ -558,9 +558,20 @@ try {
                 '-p:EnableWindowsTargeting=true',
                 '-o', $out
             )
+            # V2pn: v2pnctl, the command line and MCP server, next to the app.
+            Run 'dotnet' @(
+                'publish', './v2rayN/V2pnCtl/V2pnCtl.csproj',
+                '-c', 'Release',
+                '-r', $map.Rid,
+                '-p:SelfContained=true',
+                '-p:PublishTrimmed=true',
+                '-p:EnableWindowsTargeting=true',
+                '-o', $out
+            )
             Copy-Item -LiteralPath (Join-Path $root 'LICENSE') -Destination (Join-Path $out 'LICENSE.txt') -Force
             Assert-Machine (Join-Path $out 'v2rayN.exe') $map.Machine
             Assert-Machine (Join-Path $out 'AmazTool.exe') $map.Machine
+            Assert-Machine (Join-Path $out 'v2pnctl.exe') $map.Machine
             $binDest = Join-Path $out 'bin'
             New-Item -ItemType Directory -Force -Path $binDest | Out-Null
             Copy-Item -Path (Join-Path $binSource '*') -Destination $binDest -Recurse -Force

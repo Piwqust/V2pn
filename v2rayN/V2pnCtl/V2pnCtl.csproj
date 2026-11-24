@@ -1,0 +1,26 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+	<!--
+		V2pn: v2pnctl, the command line and MCP server for a running V2pn. A console program of its own: V2pn.exe has no
+		console, and an MCP server speaks over standard input and output. Named v2pnctl, not v2pn, because a v2pn.exe next
+		to V2pn.exe is the same file on Windows and on a Mac. Published trimmed into the app's folder, like AmazTool.
+	-->
+	<PropertyGroup>
+		<OutputType>Exe</OutputType>
+		<AssemblyName>v2pnctl</AssemblyName>
+		<RootNamespace>V2pnCtl</RootNamespace>
+		<InvariantGlobalization>true</InvariantGlobalization>
+	</PropertyGroup>
+
+	<!--
+		The channel's language, its two ends, the arguments and the MCP tools are ServiceLib's own files: V2pn and v2pnctl
+		read and write the same lines, and ServiceLib.Tests covers them. They use nothing else of ServiceLib.
+	-->
+	<ItemGroup>
+		<Compile Include="..\ServiceLib\V2pn\V2pnControlProtocol.cs" Link="Shared\V2pnControlProtocol.cs" />
+		<Compile Include="..\ServiceLib\V2pn\V2pnControlChannel.cs" Link="Shared\V2pnControlChannel.cs" />
+		<Compile Include="..\ServiceLib\V2pn\V2pnControlCli.cs" Link="Shared\V2pnControlCli.cs" />
+		<Compile Include="..\ServiceLib\V2pn\V2pnControlMcp.cs" Link="Shared\V2pnControlMcp.cs" />
+	</ItemGroup>
+
+</Project>

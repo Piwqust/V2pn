@@ -11,6 +11,9 @@ internal class Program
     // V2pn: started by the sign-in entry (Global.AutostartArg), not by the user.
     public static bool StartedAtSignIn { get; private set; }
 
+    // V2pn: started by v2pnctl (Global.TrayArg): the window stays in the tray whatever "start hidden" says.
+    public static bool StartedInTray { get; private set; }
+
     // V2pn: a v2pn:// (or happ://, v2raytun://, hiddify://) link V2pn was started with; the window asks about it once shown.
     public static V2pnAddLink? StartupLink { get; private set; }
 
@@ -46,6 +49,11 @@ internal class Program
             ProgramStarted = new EventWaitHandle(false, EventResetMode.AutoReset, exePathKey, out var bCreatedNew);
             if (!rebootas && !bCreatedNew)
             {
+                // v2pnctl found no channel, yet V2pn runs (one that predates it): its window must not come up.
+                if ((Args ?? []).Any(t => t == Global.TrayArg))
+                {
+                    return false;
+                }
                 // A click on a v2pn:// link while V2pn runs: hand the link to the running copy, then wake it.
                 if ((Args ?? []).FirstOrDefault(a => V2pnDeepLink.Parse(a) != null) is { } link)
                 {
@@ -68,6 +76,7 @@ internal class Program
         }
 
         StartedAtSignIn = (Args ?? []).Any(t => t == Global.AutostartArg);
+        StartedInTray = (Args ?? []).Any(t => t == Global.TrayArg);
         StartupLink = V2pnDeepLink.FromArgs(Args);
 
         if (!AppManager.Instance.InitApp())

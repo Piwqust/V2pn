@@ -33,6 +33,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "GitHub Action", "GitHub Act
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceLib.Tests", "ServiceLib.Tests\ServiceLib.Tests.csproj", "{E0B6C5C7-ED48-42EB-947A-877779E9F555}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "V2pnCtl", "V2pnCtl\V2pnCtl.csproj", "{7B3E2A51-9C4D-4E8F-A1B6-2D5C8E9F0A13}"
+EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServiceLib.UdpTest", "ServiceLib.UdpTest\ServiceLib.UdpTest.csproj", "{CE9D9298-0289-4718-2522-B236489F2912}"
 EndProject
 Global
@@ -69,6 +71,10 @@ Global
 		{CE9D9298-0289-4718-2522-B236489F2912}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CE9D9298-0289-4718-2522-B236489F2912}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CE9D9298-0289-4718-2522-B236489F2912}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7B3E2A51-9C4D-4E8F-A1B6-2D5C8E9F0A13}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7B3E2A51-9C4D-4E8F-A1B6-2D5C8E9F0A13}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7B3E2A51-9C4D-4E8F-A1B6-2D5C8E9F0A13}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7B3E2A51-9C4D-4E8F-A1B6-2D5C8E9F0A13}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

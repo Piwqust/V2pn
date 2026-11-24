@@ -10,7 +10,7 @@
 # V2PN_NO_CORES=1 leaves the cores out (CI's smoke test: the app must start, not connect).
 #
 # For a Mac without the .NET SDK (testing a build made elsewhere):
-#   V2PN_PUBLISH_DIR=<folder>  the output of "dotnet publish -r osx-<arch>" for AmazTool and V2pn,
+#   V2PN_PUBLISH_DIR=<folder>  the output of "dotnet publish -r osx-<arch>" for AmazTool, v2pnctl and V2pn,
 #                              published into one folder; nothing is built here
 #   V2PN_CORES_ZIP=<file>      the core bundle, already downloaded; it is still checked against
 #                              tools/cores.lock.json
@@ -51,6 +51,9 @@ if [[ -n "${V2PN_PUBLISH_DIR:-}" ]]; then
 else
     echo "== $RID: AmazTool"
     dotnet publish "$REPO/v2rayN/AmazTool/AmazTool.csproj" -c Release -r "$RID" -p:PublishTrimmed=true "${PROPS[@]}" -v q -nologo -o "$MACOS"
+    # The command line and MCP server, in Contents/MacOS next to V2pn (v2rayN/V2pnCtl).
+    echo "== $RID: v2pnctl"
+    dotnet publish "$REPO/v2rayN/V2pnCtl/V2pnCtl.csproj" -c Release -r "$RID" -p:PublishTrimmed=true "${PROPS[@]}" -v q -nologo -o "$MACOS"
     echo "== $RID: V2pn $VERSION"
     dotnet publish "$REPO/v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj" -c Release -r "$RID" "${PROPS[@]}" -v q -nologo -o "$MACOS"
 fi
@@ -78,7 +81,7 @@ cp "$MACOS/v2rayN.icns" "$APP/Contents/Resources/AppIcon.icns"
 # With this file next to the program, V2pn keeps settings, logs and cores in
 # ~/Library/Application Support/V2pn, so replacing the bundle (an update) never touches them.
 echo "When this file exists, the app does not store its data in this folder." > "$MACOS/NotStoreConfigHere.txt"
-chmod +x "$MACOS/V2pn" "$MACOS/AmazTool"
+chmod +x "$MACOS/V2pn" "$MACOS/AmazTool" "$MACOS/v2pnctl"
 
 cat > "$APP/Contents/Info.plist" <<EOF
 <?xml version="1.0" encoding="UTF-8"?>

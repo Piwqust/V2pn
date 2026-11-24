@@ -105,7 +105,7 @@ async function loadRights() {
         ${rightContent(r)}
         <div class="row"><button class="btn btn--primary btn--sm" type="button" data-approve>Одобрить</button><button class="btn btn--secondary btn--sm" type="button" data-deny>Отказать</button></div>
       </article>`).join('')
-      : empty('Пусто', 'Новые партнёры не ждут одобрения: они работают сразу. Сюда попадают только особые права.');
+      : empty('Пусто', 'Новые партнёры не ждут одобрения модератора: они работают, как только подтвердят домен. Сюда попадают только особые права.');
     $$('[data-approve]', box).forEach(b => b.addEventListener('click', () => decide(b, true)));
     $$('[data-deny]', box).forEach(b => b.addEventListener('click', () => decide(b, false)));
   } catch (e) {
@@ -346,7 +346,7 @@ const GROUPS = [
 
 const versionName = v => (v === 'other' ? 'прочие' : v);
 // Where a failed update stopped (lib/reports.mjs on the hub), in the order an update goes.
-const STAGES = [['download', 'Загрузка'], ['verify', 'Подпись'], ['stage', 'Распаковка'], ['swap', 'Замена'], ['start', 'Запуск'], ['rollback', 'Откат']];
+const STAGES = [['download', 'Загрузка'], ['verify', 'Проверка'], ['stage', 'Распаковка'], ['swap', 'Замена'], ['start', 'Запуск'], ['rollback', 'Откат']];
 const SYSTEMS = { windows: 'Windows', macos: 'macOS' };
 
 /** The failed updates by version (rows, newest first) and stage (columns), then every kind with its code. */

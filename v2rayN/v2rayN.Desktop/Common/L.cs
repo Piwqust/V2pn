@@ -23,6 +23,8 @@ public static partial class L
 
     public static string AppName => "V2pn";
 
+    public static string UnexpectedError => T("Something did not work: {0}. V2pn keeps running.",
+        "Что-то не сработало: {0}. V2pn продолжает работать.");
     public static string NavServers => T("Servers", "Серверы");
     public static string NavLog => T("Log", "Журнал");
     public static string NavProxies => T("Proxies", "Прокси");

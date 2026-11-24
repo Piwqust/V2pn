@@ -2991,6 +2991,23 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         ShowNotice(Toasts.Message(kind, null, message), Toasts.TypeOf(kind), TimeSpan.FromSeconds(6));
     }
 
+    private DateTime _lastUnexpectedToast = DateTime.MinValue;
+
+    /// <summary>
+    /// An error nothing above caught (a click, a timer, an "async void" handler): V2pn keeps running, and the person
+    /// hears that something did not work instead of nothing happening at all. At most one such note a minute.
+    /// </summary>
+    public void ShowUnexpectedError(Exception ex)
+    {
+        if (DateTime.UtcNow - _lastUnexpectedToast < TimeSpan.FromMinutes(1))
+        {
+            return;
+        }
+        _lastUnexpectedToast = DateTime.UtcNow;
+        var what = ex.GetBaseException().Message;
+        ShowToast(ToastKind.Error, string.Format(L.UnexpectedError, what.Length > 160 ? what[..160] + "…" : what));
+    }
+
     // The normal bounds and the maximized flag: a maximized window reopens maximized, and restores to its
     // own size instead of a screen-sized normal one.
     private void StorageUI(string? key = null)

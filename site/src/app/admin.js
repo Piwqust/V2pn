@@ -1,6 +1,6 @@
 // /admin/ = moderation, for the owner and the moderators: the special rights waiting (with their content, the routing
-// rules as lines), every partner newest first (take down, restore, reset the password, complaints), the moderators
-// (the owner only), downloads and the audit log.
+// rules as lines), every partner newest first (take down, restore, mark its domain proved, reset the password,
+// complaints), the moderators (the owner only), downloads and the audit log.
 import { api, isMod, me, wireAccount } from './api.js';
 import { $, $$, busy, confirmStep, copyText, date, esc, plural, toast } from './hubui.js';
 
@@ -148,7 +148,8 @@ function thumb(p) {
 
 function partnerItem(p) {
   const pills = [
-    p.state === 'down' ? '<span class="badge badge--fail">снят</span>' : isNew(p) ? '<span class="badge badge--ok">новый</span>' : '',
+    p.state === 'down' ? '<span class="badge badge--fail">снят</span>' : p.state === 'pending' ? '<span class="badge badge--warn">ждёт подтверждения домена</span>'
+      : isNew(p) ? '<span class="badge badge--ok">новый</span>' : '',
     p.complaints ? `<span class="badge badge--warn">${p.complaints} ${plural(p.complaints, 'жалоба', 'жалобы', 'жалоб')}</span>` : '',
     p.pending.length ? `<a class="badge badge--info" href="#rights">ждут права: ${p.pending.length}</a>` : '',
     p.layout === 'stickers' ? '<span class="badge">наклейки</span>' : '',
@@ -159,7 +160,7 @@ function partnerItem(p) {
     <div class="pitem__meta"><div class="pitem__name"><b>${esc(p.name)}</b>${pills}</div>
       <span class="pitem__sub">${(p.domains || []).map(esc).join(', ')} · логин ${esc(p.login)} · ${esc(date(p.createdAt, { time: true }))} · <a href="${esc(p.page)}" target="_blank" rel="noopener">/p/${esc(p.id)}/</a></span>
       ${p.state === 'down' && p.downReason ? `<span class="pitem__sub">Причина: ${esc(p.downReason)}</span>` : ''}</div>
-    <div class="pitem__act">${p.state === 'down'
+    <div class="pitem__act">${p.state === 'pending' ? '<button class="btn btn--secondary btn--sm" type="button" data-prove>Подтвердить домен</button>' : ''}${p.state === 'down'
     ? '<button class="btn btn--secondary btn--sm" type="button" data-restore>Вернуть</button>'
     : '<button class="btn btn--danger btn--sm" type="button" data-down>Снять</button>'}
       <button class="btn btn--secondary btn--sm" type="button" data-reset>Сбросить пароль</button>
@@ -170,11 +171,12 @@ function partnerItem(p) {
 
 function drawPartners() {
   const box = $('#partners-list');
-  const list = partners.filter(p => (filter === 'down' ? p.state === 'down' : filter === 'complaints' ? p.complaints > 0 : true));
-  const live = partners.filter(p => p.state !== 'down').length;
-  $('#partners-count').textContent = `${live} ${plural(live, 'работает', 'работают', 'работают')} · ${partners.length - live} ${plural(partners.length - live, 'снят', 'снято', 'снято')}`;
+  const list = partners.filter(p => (filter === 'all' ? true : filter === 'complaints' ? p.complaints > 0 : p.state === filter));
+  const n = state => partners.filter(p => p.state === state).length;
+  const waiting = n('pending');
+  $('#partners-count').textContent = `${n('live')} ${plural(n('live'), 'работает', 'работают', 'работают')}${waiting ? ` · ${waiting} ${plural(waiting, 'ждёт', 'ждут', 'ждут')} домена` : ''} · ${n('down')} ${plural(n('down'), 'снят', 'снято', 'снято')}`;
   box.innerHTML = list.length ? list.map(partnerItem).join('')
-    : empty({ all: 'Партнёров пока нет', complaints: 'Жалоб нет', down: 'Снятых нет' }[filter], filter === 'all' ? 'Провайдер публикует партнёра сам, и он появится здесь.' : '');
+    : empty({ all: 'Партнёров пока нет', complaints: 'Жалоб нет', pending: 'Никто не ждёт', down: 'Снятых нет' }[filter], filter === 'all' ? 'Провайдер публикует партнёра сам, и он появится здесь.' : '');
 }
 
 async function loadPartners() {
@@ -207,7 +209,12 @@ $('#partners-list').addEventListener('click', async e => {
     if (!reason) return;
     await act(btn, () => api.post(`/api/mod/partners/${id}/down`, { reason }), 'Снят. У пользователей вкладка пропадёт при следующей проверке');
   } else if (btn.hasAttribute('data-restore')) {
-    await act(btn, () => api.post(`/api/mod/partners/${id}/restore`), 'Возвращён и опубликован');
+    await act(btn, () => api.post(`/api/mod/partners/${id}/restore`), 'Возвращён');
+  } else if (btn.hasAttribute('data-prove')) {
+    const domain = (partners.find(p => p.id === id)?.proof?.missing || []).join(', ');
+    const ok = await confirmStep({ title: `Подтвердить домен ${domain}?`, text: `Записи в DNS или файла от провайдера не будет: подтвердите, только если знаете, что ${esc(domain)} его. Партнёр ${esc(name)} сразу опубликуется, решение попадёт в журнал.`, action: 'Подтвердить' });
+    if (!ok) return;
+    await act(btn, () => api.post(`/api/mod/partners/${id}/proof`, {}), 'Домен подтверждён');
   } else if (btn.hasAttribute('data-reset')) {
     const ok = await confirmStep({ title: `Сбросить пароль ${login}?`, text: 'Старый пароль перестанет работать, все входы этого аккаунта закончатся.', action: 'Сбросить', danger: true });
     if (!ok) return;
@@ -466,6 +473,7 @@ const ACTIONS = {
   'partner.create': 'опубликовал партнёра', 'partner.save': 'сохранил партнёра', 'partner.import': 'перенёс партнёра', 'partner.down': 'снял', 'partner.restore': 'вернул',
   'right.request': 'попросил право', 'right.withdraw': 'убрал право', 'right.approve': 'одобрил право', 'right.deny': 'отказал в праве',
   'complaints.clear': 'очистил жалобы', 'account.password': 'сбросил пароль', 'moderator.add': 'добавил модератора', 'moderator.remove': 'убрал модератора',
+  'domain.proof': 'подтвердил домен', 'partner.live': 'опубликовал после подтверждения домена',
 };
 
 async function loadAudit() {

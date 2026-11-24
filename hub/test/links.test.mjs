@@ -8,7 +8,7 @@ import { setQuiet } from '../lib/log.mjs';
 import { actionProblem, defaultLook, lookProblems } from '../lib/look.mjs';
 import { PUBLIC_SUFFIXES, linkAllowed, normalizeDomain, partnerLink, partnerSite } from '../lib/validate.mjs';
 import { readZip } from '../lib/zip.mjs';
-import { Client, register, serve, startHub, testNet } from './helpers.mjs';
+import { Client, proveDomain, register, serve, startHub, testNet } from './helpers.mjs';
 
 test('the site of a domain: up to the last parent that is no public suffix', () => {
   assert.equal(partnerSite('sub.nordline.com'), 'nordline.com');
@@ -72,6 +72,7 @@ test('saving refuses a link off the domain; a partner saved earlier with one goe
   try {
     const provider = new Client(env.base);
     await register(provider, 'nordline');
+    await proveDomain(provider, 'sub.nordline.test');
     const form = { name: 'Nordline', subscription: `http://sub.nordline.test:${sub.port}/s/x`, brand: ['#2F6BFF'], links: { support: 't.me/nordline' } };
     let r = await provider.put('/api/partner', { ...form, links: { ...form.links, cabinet: 'https://nordline-pay.example/' } });
     assert.equal(r.status, 422);

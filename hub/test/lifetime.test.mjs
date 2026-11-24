@@ -5,7 +5,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { HUB_TERM_DAYS, listingUntil, rollingUntil } from '../lib/publish.mjs';
 import { startServer } from '../lib/server.mjs';
-import { Client, register, serve, startHub, testNet } from './helpers.mjs';
+import { Client, proveDomain, register, serve, startHub, testNet } from './helpers.mjs';
 
 const today = () => new Date().toISOString().slice(0, 10);
 const configraFolder = new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
@@ -17,6 +17,7 @@ async function withPartner(fn) {
   try {
     const c = new Client(env.base);
     await register(c, 'nordline');
+    await proveDomain(c, 'sub.nordline.test');
     const r = await c.put('/api/partner', { name: 'Nordline', subscription: `http://sub.nordline.test:${sub.port}/s/x`, brand: ['#2F6BFF'] });
     assert.equal(r.status, 200, JSON.stringify(r.data));
     await fn(env);

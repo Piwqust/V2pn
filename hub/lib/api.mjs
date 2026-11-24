@@ -111,6 +111,7 @@ function routes(hub) {
     ['GET', /^\/api\/partner$/, ({ session }) => hub.myPartner(session.account.id), 'user'],
     ['PUT', /^\/api\/partner$/, async ({ req, session, actor }) => hub.savePartner(session.account.id, await readJson(req), actor), 'user'],
     ['POST', /^\/api\/partner\/check$/, async ({ req, session }) => hub.check(session.account.id, await readJson(req)), 'user'],
+    ['POST', /^\/api\/partner\/proof$/, async ({ req, session, actor }) => hub.proof(session.account.id, await readJson(req), actor), 'user'],
     ['POST', /^\/api\/partner\/upload$/, async ({ req, url, session }) => {
       const type = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
       if (type !== 'image/png') throw new HubError('invalid', { fields: { file: 'Нужен файл PNG (Content-Type: image/png).' } });
@@ -124,6 +125,7 @@ function routes(hub) {
     ['GET', new RegExp(`^/api/mod/partners/${ID}$`), ({ match }) => ({ partner: hub.modPartner(match[1]) }), 'mod'],
     ['POST', new RegExp(`^/api/mod/partners/${ID}/down$`), async ({ req, match, actor }) => ({ partner: hub.takeDown(match[1], await readJson(req), actor) }), 'mod'],
     ['POST', new RegExp(`^/api/mod/partners/${ID}/restore$`), ({ match, actor }) => ({ partner: hub.restore(match[1], actor) }), 'mod'],
+    ['POST', new RegExp(`^/api/mod/partners/${ID}/proof$`), async ({ req, match, actor }) => ({ partner: hub.markProved(match[1], await readJson(req), actor) }), 'mod'],
     ['POST', new RegExp(`^/api/mod/partners/${ID}/rights/([a-z]{2,16})/(approve|deny)$`), async ({ req, match, actor }) => (
       { right: hub.decideRight(match[1], match[2], match[3] === 'approve', await readJson(req), actor) }), 'mod'],
     ['GET', new RegExp(`^/api/mod/partners/${ID}/complaints$`), ({ match }) => ({ complaints: hub.complaintsOf(hub.partnerRow(match[1]).id) }), 'mod'],

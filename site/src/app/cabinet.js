@@ -1,6 +1,8 @@
 // /providers/cabinet/ = «Мой партнёр»: one form (name, subscription link, logo, colours, background, layout, links, special
-// rights) beside V2pn's window that changes with it. «Опубликовать» saves and publishes at once (PUT /api/partner); the
-// special rights wait for a moderator while the rest is live. The link is checked from the server as it is typed.
+// rights) beside V2pn's window that changes with it. «Опубликовать» saves and publishes at once (PUT /api/partner) once
+// the subscription's domain is proved to be the provider's (a DNS record or a file, «Проверить»: POST
+// /api/partner/proof); till then a new partner is saved and waits. The special rights wait for a moderator while the rest
+// is live. The link is checked from the server as it is typed.
 import { api, me, toSignIn, wireAccount } from './api.js';
 import { $, $$, busy, checkHtml, esc, plural, prefersDark, setFieldError, toast, windowHtml, wireCopy } from './hubui.js';
 
@@ -119,6 +121,7 @@ function renderAll() {
   renderRights();
   renderActions();
   renderCheck();
+  renderProof();
   renderState();
   renderShare();
   draw();
@@ -130,21 +133,23 @@ function renderState() {
   pill.hidden = false;
   if (!p) { pill.className = 'badge'; pill.textContent = 'Не опубликован'; }
   else if (p.state === 'down') { pill.className = 'badge badge--fail'; pill.textContent = 'Снят модератором'; }
+  else if (p.state === 'pending') { pill.className = 'badge badge--warn'; pill.textContent = 'Ждёт подтверждения домена'; }
   else { pill.className = 'badge badge--ok'; pill.textContent = 'Опубликован'; }
   const btn = $('#publish');
   if (!btn.hasAttribute('aria-busy')) {
     btn.textContent = p ? 'Сохранить' : 'Опубликовать';
     btn.disabled = Boolean(p) && !dirty();
   }
-  $('#publish-hint').textContent = !p ? 'Ссылка заработает сразу.'
-    : dirty() ? (p.state === 'down' ? 'Есть изменения. Партнёр снят, поэтому пользователи их не увидят, пока модератор его не вернёт.' : 'Есть изменения. Они уйдут пользователям сразу после «Сохранить».')
-      : 'Изменений нет. Всё уже у пользователей.';
+  $('#publish-hint').textContent = !p ? 'Ссылка заработает сразу, если домен подтверждён. Если нет, партнёр сохранится и подождёт.'
+    : p.state === 'pending' ? (dirty() ? 'Есть изменения. Партнёр опубликуется, когда домен будет подтверждён.' : 'Партнёр сохранён и ждёт подтверждения домена.')
+      : dirty() ? (p.state === 'down' ? 'Есть изменения. Партнёр снят, поэтому пользователи их не увидят, пока модератор его не вернёт.' : 'Есть изменения. Они уйдут пользователям сразу после «Сохранить».')
+        : 'Изменений нет. Всё уже у пользователей.';
 }
 
 function renderShare() {
   const p = partner();
-  $('#published').hidden = !p;
-  if (!p) return;
+  $('#published').hidden = !p || p.state === 'pending';
+  if (!p || p.state === 'pending') return;
   const base = p.share.button;
   $('#share-base').textContent = base;
   $('#share-link').innerHTML = `${esc(base)}<mark>подписка человека</mark>`;
@@ -423,11 +428,13 @@ function renderCheck() {
     const tcp = r.tcp || [];
     const answered = tcp.filter(t => t.ok).length;
     const servers = `${total} ${plural(total, 'сервер', 'сервера', 'серверов')}`;
+    // The domain proof, when it is still to come, is the one thing left (the box under the field).
+    const left = c.proof && !c.proof.proved ? 'Осталось подтвердить, что домен ваш: ниже.' : 'Ничего больше указывать не нужно.';
     box.classList.add(tcp.length && answered < tcp.length ? 'found--warn' : 'found--ok');
-    text.textContent = !tcp.length ? `Домен ${c.domain} найден, ${servers}. Ничего больше указывать не нужно.`
-      : answered === tcp.length && tcp.length === total ? `Домен ${c.domain} найден, ${servers} ${plural(total, 'отвечает', 'отвечают', 'отвечают')}. Ничего больше указывать не нужно.`
-        : answered === tcp.length ? `Домен ${c.domain} найден, ${servers}; проверили ${tcp.length}, все отвечают. Ничего больше указывать не нужно.`
-          : `Домен ${c.domain} найден, ${servers}; с сервера V2pn ответили ${answered} из ${tcp.length}. Опубликовать можно.`;
+    text.textContent = !tcp.length ? `Домен ${c.domain} найден, ${servers}. ${left}`
+      : answered === tcp.length && tcp.length === total ? `Домен ${c.domain} найден, ${servers} ${plural(total, 'отвечает', 'отвечают', 'отвечают')}. ${left}`
+        : answered === tcp.length ? `Домен ${c.domain} найден, ${servers}; проверили ${tcp.length}, все отвечают. ${left}`
+          : `Домен ${c.domain} найден, ${servers}; с сервера V2pn ответили ${answered} из ${tcp.length}. ${c.proof && !c.proof.proved ? left : 'Опубликовать можно.'}`;
   }
   $('#check-lines').innerHTML = checkHtml(r);
   more.hidden = false;
@@ -453,7 +460,7 @@ async function runCheck(url) {
   try {
     const res = await api.post('/api/partner/check', { subscription: url }, { timeout: 40000 });
     if (seq !== checkSeq) return;
-    check = { state: res.check.ok && !res.taken ? 'done' : 'fail', url, result: res.check, domain: res.domain, taken: res.taken };
+    check = { state: res.check.ok && !res.taken ? 'done' : 'fail', url, result: res.check, domain: res.domain, taken: res.taken, proof: res.proof };
     setFieldError($('#f-sub'), '');
   } catch (e) {
     if (seq !== checkSeq) return;
@@ -461,7 +468,77 @@ async function runCheck(url) {
     check = { state: 'error', url, message: field || (e.code === 'rate_limited' ? 'Проверок за час слишком много. Ссылку проверим при публикации.' : e.message) };
   }
   renderCheck();
+  renderProof();
 }
+
+// ---------------------------------------------------------------- the domain proved: a DNS record or a file
+
+/** The proof the page is about: the typed link's domain once the server has checked it, otherwise the saved one's. */
+function proofNow() {
+  const url = form.subscription.trim();
+  if (check.proof && check.url === url && check.proof.domain) return check.proof;
+  return data.proof && data.proof.domain ? data.proof : null;
+}
+
+/** The box under the link: the record and the file to add, and what the last «Проверить» found (<result>). */
+function renderProof(result) {
+  const box = $('#proof');
+  const p = partner();
+  const proof = proofNow();
+  const how = proof && proof.proved && proof.proved.how;
+  const savedDomain = p && (p.domains || [])[0];
+  const other = Boolean(p && proof && proof.domain !== savedDomain);
+  let kind = null;
+  if (proof && !how) kind = !p ? 'new' : p.state === 'pending' ? 'pending' : p.state === 'down' ? 'down' : other ? 'move' : 'old';
+  else if (how === 'grandfathered' && p && p.state === 'live' && !other) kind = 'old';
+  box.hidden = !kind;
+  if (!kind) { $('#proof-out').innerHTML = ''; return; }
+  const d = proof.domain;
+  const say = {
+    new: ['note--info', `Подтвердите, что домен ${d} ваш.`, 'Тогда партнёр опубликуется сразу после «Опубликовать». Без этого он сохранится и будет ждать подтверждения.'],
+    pending: ['note--warn', 'Партнёр сохранён, но ещё не опубликован.', `Подтвердите, что домен ${d} ваш, и нажмите «Проверить»: партнёр опубликуется сразу.`],
+    move: ['note--warn', `Новый домен ${d} ещё не подтверждён.`, 'Пока его нет, «Сохранить» не переведёт партнёра на этот домен: он останется на прежнем.'],
+    down: ['note--info', `Домен ${d} ещё не подтверждён.`, 'Подтвердите его, иначе после возвращения модератором партнёр будет ждать подтверждения.'],
+    old: ['note--info', `Подтвердите домен ${d}, когда будет минутка.`, 'Партнёр работает и без этого: он опубликован до проверки доменов. Запись покажет, что домен ваш.'],
+  }[kind];
+  box.className = `note ${say[0]}`;
+  $('#proof-title').textContent = say[1];
+  $('[data-proof-lead]', box).textContent = say[2];
+  $('#proof-name').textContent = proof.record.name;
+  $('#proof-value').textContent = proof.record.value;
+  $('#proof-file').textContent = proof.file.url;
+  $('#proof-text').textContent = proof.file.text;
+  wireCopy(box);
+  if (result !== undefined) {
+    const lines = result && !result.already ? [result.dns, result.https].filter(Boolean).map((l, i) => ({ id: i ? 'https' : 'dns', level: l.ok ? 'ok' : 'warn', text: l.text })) : [];
+    $('#proof-out').innerHTML = lines.length ? checkHtml({ lines }) : '';
+  }
+}
+
+$('#proof-check').addEventListener('click', async e => {
+  const url = form.subscription.trim();
+  const wasWaiting = partner() && partner().state === 'pending';
+  $('#proof-out').innerHTML = '<div class="checking"><span class="spin" aria-hidden="true"></span><span>Сервер V2pn ищет запись в DNS, потом файл на сайте…</span></div>';
+  await busy(e.currentTarget, async () => {
+    try {
+      const res = await api.post('/api/partner/proof', looksLikeLink(url) ? { subscription: url } : {}, { timeout: 30000 });
+      // The form stays as typed: only the partner's state and the proof come from the answer.
+      data = { ...data, partner: res.partner, proof: res.proof };
+      const pc = res.proofCheck;
+      if (pc && pc.ok && check.proof && check.proof.domain === pc.domain) check.proof = { ...check.proof, proved: { how: pc.how } };
+      renderState();
+      renderShare();
+      renderCheck();
+      renderProof(pc);
+      $('#first').hidden = Boolean(partner());
+      if (res.taken) toast('Домен подтверждён, но он уже у другого партнёра.');
+      else if (wasWaiting && partner().state === 'live') toast('Домен подтверждён. Партнёр опубликован');
+      else if (pc && pc.ok) toast('Домен подтверждён');
+    } catch (err) {
+      $('#proof-out').innerHTML = `<p class="hint">${esc(err.code === 'rate_limited' ? 'Слишком много проверок за час. Попробуйте позже.' : (err.fields && err.fields.subscription) || err.message)}</p>`;
+    }
+  }, 'Проверяем');
+});
 
 // ---------------------------------------------------------------- special rights
 
@@ -577,7 +654,7 @@ $('#api-test').addEventListener('click', async e => {
 // ---------------------------------------------------------------- the plain fields
 
 $('#f-name').addEventListener('input', e => { form.name = e.target.value; setFieldError(e.target, ''); renderPicks(); changed(); });
-$('#f-sub').addEventListener('input', e => { form.subscription = e.target.value; setFieldError(e.target, ''); scheduleCheck(); changed({ preview: false }); });
+$('#f-sub').addEventListener('input', e => { form.subscription = e.target.value; setFieldError(e.target, ''); scheduleCheck(); renderProof(); changed({ preview: false }); });
 $('#f-support').addEventListener('input', e => { form.links.support = e.target.value; setFieldError(e.target, ''); changed({ preview: false }); });
 $('#f-cabinet').addEventListener('input', e => { form.links.cabinet = e.target.value; setFieldError(e.target, ''); changed({ preview: false }); });
 
@@ -675,8 +752,11 @@ $('#partner-form').addEventListener('submit', async e => {
       if (res.check) check = { state: 'done', url: res.partner.subscription, result: res.check, domain: (res.partner.domains || [])[0] || '', taken: false };
       clearProblems();
       renderAll();
-      toast(first ? 'Опубликовано. Ссылка уже работает' : 'Сохранено и опубликовано');
-      if (first) $('#published').scrollIntoView({ block: 'start', behavior: 'smooth' });
+      if (res.proofCheck && !res.proofCheck.ok) renderProof(res.proofCheck);
+      const waiting = res.partner.state === 'pending';
+      toast(waiting ? 'Сохранено. Подтвердите домен, и партнёр опубликуется' : first ? 'Опубликовано. Ссылка уже работает' : 'Сохранено и опубликовано');
+      if (waiting) $('#proof').scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+      else if (first) $('#published').scrollIntoView({ block: 'start', behavior: 'smooth' });
     } catch (err) {
       if (err.code === 'unauthorized') { showProblems(null, 'Вход закончился.', 'Войдите снова: страница сейчас откроет вход.'); setTimeout(() => toSignIn(ROOT), 2500); return; }
       if (err.code === 'check_failed' && err.detail) {
@@ -684,6 +764,13 @@ $('#partner-form').addEventListener('submit', async e => {
         renderCheck();
         const bad = (err.detail.lines || []).find(l => l.level === 'fail');
         showProblems({ subscription: bad ? `${bad.text}${bad.detail ? `. ${bad.detail}` : ''}` : err.message });
+        return;
+      }
+      if (err.code === 'domain_unproved' && err.detail && err.detail.proof) {
+        // A live partner moving to a domain it has not proved: it stays where it was; the box says what to add.
+        check = { ...check, url: form.subscription.trim(), domain: err.detail.proof.domain, proof: err.detail.proof };
+        renderProof(err.detail.proofCheck);
+        showProblems(null, 'Не сохранено: новый домен не подтверждён.', err.message);
         return;
       }
       if (err.fields) { showProblems(err.fields, err.code === 'domain_taken' ? 'Домен занят.' : 'Не опубликовано.'); return; }

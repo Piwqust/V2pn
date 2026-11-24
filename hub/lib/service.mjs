@@ -13,6 +13,7 @@ import { log } from './log.mjs';
 import { defaultLook, lookProblems, parseLook, themeOf, PICTURES, SLOT_OF } from './look.mjs';
 import { NetError, safeFetch } from './net.mjs';
 import { pageTheme } from './page.mjs';
+import { checkProof, proofPlaces } from './proof.mjs';
 import { GRANT_ORDER, ROOT_ONLY_GRANTS, buildPublication, publishedStamp, writePublication } from './publish.mjs';
 import { RIGHTS, contentHash, parseRights, rightState, rightView } from './rights.mjs';
 import { RootPartners } from './roots.mjs';
@@ -139,12 +140,16 @@ export class Hub {
     };
   }
 
-  /** GET /api/partner: the account's partner (null before the first save), the review of its look, the pictures. */
+  /**
+   * GET /api/partner: the account's partner (null before the first save), the proof of its domain (the token before
+   * the first save), the review of its look, the pictures.
+   */
   myPartner(accountId) {
     const row = this.ownPartner(accountId);
     const look = row ? parseJson(row.look, defaultLook(row.name)) : defaultLook('');
     return {
       partner: row ? this.partnerView(row) : null,
+      proof: this.proofView(accountId, row ? parseJson(row.domains, [])[0] ?? null : null),
       look,
       review: this.lookReview(look, accountId, row ? parseJson(row.domains, []) : undefined),
       pictures: [...this.pictureMap(accountId).values()].map(p => ({ sha256: p.sha256, slot: p.slot, width: p.width, height: p.height, size: p.size })),
@@ -251,13 +256,138 @@ export class Hub {
     return ok;
   }
 
-  /** POST /api/partner/check: a link checked without saving, with the domain the hub would take from it. */
+  /**
+   * POST /api/partner/check: a link checked without saving, with the domain the hub would take from it and whether
+   * the account has proved that domain (the record to add when not).
+   */
   async check(accountId, input) {
     if (!this.limiter.hit(`check:${accountId}`, 20, HOUR)) throw new HubError('rate_limited');
     const { url, domain } = this.subscriptionOf(input?.subscription);
     const own = this.ownPartner(accountId);
+    const domains = this.domainsOf(own, url, domain);
     const check = await this.runCheck(url);
-    return { check, domain, taken: Boolean(this.domainOwner([domain], own?.id)) };
+    return { check, domain, taken: Boolean(this.domainOwner([domain], own?.id)), proof: this.proofView(accountId, this.unproved(accountId, domains)[0] ?? domains[0]) };
+  }
+
+  /** The domains a partner (<row>, or none yet) has with the link <url> on <domain>: an imported one keeps its own while the link stays on them. */
+  domainsOf(row, url, domain) {
+    const kept = row ? parseJson(row.domains, []) : [];
+    return kept.length && domainAllowed(kept, url) ? kept : [domain];
+  }
+
+  // ---------------------------------------------------------------- domain proof (lib/proof.mjs)
+
+  /** The account's proof token, made the first time it is asked for. */
+  proofToken(accountId) {
+    const token = this.db.get('SELECT proof_token FROM accounts WHERE id = ?', accountId)?.proof_token;
+    if (token) return token;
+    this.db.run('UPDATE accounts SET proof_token = ? WHERE id = ? AND proof_token IS NULL', crypto.randomBytes(16).toString('hex'), accountId);
+    return this.db.get('SELECT proof_token FROM accounts WHERE id = ?', accountId).proof_token;
+  }
+
+  /** Of <domains>, those <accountId> has not proved. */
+  unproved(accountId, domains) {
+    return domains.filter(d => !this.db.get('SELECT 1 FROM proofs WHERE account_id = ? AND domain = ?', accountId, d));
+  }
+
+  /**
+   * What the cabinet shows for <domain>: the token, the TXT record and the file to add, and how the domain was proved
+   * ({how: dns | https | moderator | import | grandfathered, at}) or null.
+   */
+  proofView(accountId, domain) {
+    const token = this.proofToken(accountId);
+    const proved = domain ? this.db.get('SELECT how, at FROM proofs WHERE account_id = ? AND domain = ?', accountId, domain) ?? null : null;
+    return { domain, token, ...proofPlaces(domain, token), proved: proved ? { how: proved.how, at: proved.at } : null };
+  }
+
+  /** Keeps <domain> as proved by <accountId> (<how>, <by> a moderator's login). */
+  keepProof(accountId, domain, how, by = null) {
+    this.db.run(`INSERT INTO proofs (account_id, domain, how, at, by) VALUES (?, ?, ?, ?, ?)
+      ON CONFLICT (account_id, domain) DO UPDATE SET how = excluded.how, at = excluded.at, by = excluded.by`, accountId, domain, how, nowIso(), by);
+  }
+
+  /**
+   * Looks for the account's token on <domain> (DNS, then the file) and keeps a proof found, with an audit line on
+   * <target>. 30 an hour per account; past them it throws, or with <soft> answers that nothing was checked.
+   */
+  async proveDomain(accountId, domain, actor, target, { soft = false } = {}) {
+    if (!this.limiter.hit(`proof:${accountId}`, 30, HOUR)) {
+      if (!soft) throw new HubError('rate_limited');
+      const later = { ok: false, text: 'Проверим позже: проверок за час было слишком много.' };
+      return { domain, ok: false, how: null, dns: later, https: null };
+    }
+    const result = await checkProof(domain, this.proofToken(accountId), this.net);
+    if (result.ok) {
+      this.keepProof(accountId, domain, result.how);
+      this.db.audit(actor, 'domain.proof', target, { domain, how: result.how });
+    }
+    return { domain, ...result };
+  }
+
+  /**
+   * A partner waiting for its domain goes live once every domain of it is proved and nobody else went live there
+   * meanwhile; then it is published. True when it did.
+   */
+  goLiveIfProved(id, actor) {
+    const row = this.partnerRow(id);
+    const domains = parseJson(row.domains, []);
+    if (row.state !== 'pending' || this.unproved(row.account_id, domains).length || this.domainOwner(domains, id)) return false;
+    this.db.run("UPDATE partners SET state = 'live', updated_at = ? WHERE id = ? AND state = 'pending'", nowIso(), id);
+    this.db.audit(actor, 'partner.live', id, { domains });
+    this.publishSafely(actor);
+    log.info('partner live', { partner: id });
+    return true;
+  }
+
+  /**
+   * POST /api/partner/proof ({subscription?}): «Проверить» in the cabinet. Checks the domain of the link given (one the
+   * provider wants to move to) or of the saved one; a partner waiting for it goes live. The answer is GET /api/partner's
+   * with {proofCheck: {domain, ok, how, dns, https}, taken}.
+   */
+  async proof(accountId, input, actor) {
+    const row = this.ownPartner(accountId);
+    let domains;
+    if (typeof input?.subscription === 'string' && input.subscription.trim()) {
+      const { url, domain } = this.subscriptionOf(input.subscription);
+      domains = this.domainsOf(row, url, domain);
+    } else if (row) {
+      domains = parseJson(row.domains, []);
+    } else {
+      throw new HubError('invalid', { fields: { subscription: 'Вставьте ссылку на подписку: домен берётся из неё.' } });
+    }
+    // A domain proved only by being live before proofs is checked as well: its record replaces the grandfathering.
+    const missing = [...this.unproved(accountId, domains),
+      ...domains.filter(d => this.db.get("SELECT 1 FROM proofs WHERE account_id = ? AND domain = ? AND how = 'grandfathered'", accountId, d))];
+    let proofCheck = { domain: domains[0], ok: true, how: null, already: true, dns: null, https: null };
+    for (const domain of missing) {
+      proofCheck = await this.proveDomain(accountId, domain, actor, row?.id ?? actor);
+      if (!proofCheck.ok) break;
+    }
+    const live = row ? this.goLiveIfProved(row.id, actor) : false;
+    const taken = Boolean(row && !live && this.ownPartner(accountId).state === 'pending' && this.domainOwner(domains, row.id));
+    return { ...this.myPartner(accountId), proofCheck, taken };
+  }
+
+  /**
+   * POST /api/mod/partners/<id>/proof ({domain?}): a moderator marks the partner's domains (or <domain>, one it wants
+   * to move to) proved by hand; a partner waiting for them goes live.
+   */
+  markProved(id, input, actor) {
+    const row = this.partnerRow(id);
+    let domains = parseJson(row.domains, []);
+    if (input?.domain != null) {
+      const domain = normalizeDomain(input.domain);
+      if (!domain) throw new HubError('invalid', { fields: { domain: 'Домен вида example.com.' } });
+      domains = [domain];
+    }
+    this.db.tx(() => {
+      for (const domain of domains) {
+        this.keepProof(row.account_id, domain, 'moderator', actor);
+        this.db.audit(actor, 'domain.proof', id, { domain, how: 'moderator' });
+      }
+    });
+    this.goLiveIfProved(id, actor);
+    return this.modView(this.modRow(id));
   }
 
   freeId(name) {
@@ -272,15 +402,16 @@ export class Hub {
   /**
    * PUT /api/partner: checks and saves the partner and publishes it at once. The subscription link is checked from
    * the server when it is new or changed; its host becomes the partner's domain (an imported partner keeps its own
-   * domains while the link stays on them). Special rights wait for a moderator; what was approved stays out meanwhile.
+   * domains while the link stays on them). The domain must be proved (lib/proof.mjs; checked here when it is not):
+   * till then a new partner is saved as "pending", out of the index, and a live one is not moved to it (the save is
+   * refused, the partner stays as it was). Special rights wait for a moderator; what was approved stays out meanwhile.
    */
   async savePartner(accountId, input, actor) {
     if (!input || typeof input !== 'object' || Array.isArray(input)) throw new HubError('bad_request');
     const look = parseLook(input);
     const row = this.ownPartner(accountId);
     const { url, domain } = this.subscriptionOf(input.subscription === undefined && row ? row.subscription ?? '' : input.subscription);
-    const kept = row ? parseJson(row.domains, []) : [];
-    const domains = kept.length && domainAllowed(kept, url) ? kept : [domain];
+    const domains = this.domainsOf(row, url, domain);
     // Rights not sent stay as asked, but are checked again: the domain may have changed under them.
     const asked = input.rights !== undefined ? input.rights
       : row ? Object.fromEntries(this.rightRows(row.id).map(r => [r.name, JSON.parse(r.content)])) : null;
@@ -297,6 +428,17 @@ export class Hub {
       if (!check.ok) throw new HubError('check_failed', { detail: check });
     }
 
+    let proofCheck = null;
+    for (const d of this.unproved(accountId, domains)) {
+      // A partner not live yet waits for the proof (and a taken-down one till it is restored); a live one cannot move
+      // without it.
+      proofCheck = await this.proveDomain(accountId, d, actor, row?.id ?? actor, { soft: row?.state !== 'live' });
+      if (proofCheck.ok) continue;
+      if (row?.state === 'live') throw this.domainUnproved(accountId, d, proofCheck);
+      break;
+    }
+    const proved = this.unproved(accountId, domains).length === 0;
+
     const id = this.db.tx(() => {
       const now = nowIso();
       let current = this.ownPartner(accountId);
@@ -304,23 +446,40 @@ export class Hub {
       if (owner) throw this.domainTaken(owner, domain);
       if (!current) {
         const newId = this.freeId(look.name);
+        const state = proved ? 'live' : 'pending';
         this.db.run(`INSERT INTO partners (id, account_id, name, domains, subscription, check_json, checked_at, look, state, source, created_at, updated_at)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'live', 'hub', ?, ?)`,
-        newId, accountId, look.name, JSON.stringify(domains), url, JSON.stringify(check), now, JSON.stringify(look), now, now);
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'hub', ?, ?)`,
+        newId, accountId, look.name, JSON.stringify(domains), url, JSON.stringify(check), now, JSON.stringify(look), state, now, now);
         current = this.partnerRow(newId);
-        this.db.audit(actor, 'partner.create', newId, { domains });
+        this.db.audit(actor, 'partner.create', newId, { domains, state });
       } else {
-        this.db.run(`UPDATE partners SET name = ?, domains = ?, subscription = ?, look = ?, updated_at = ?,
+        // A partner waiting for its domain goes live once it is proved; a live or taken-down one keeps its state.
+        const state = current.state === 'pending' && proved ? 'live' : current.state;
+        this.db.run(`UPDATE partners SET name = ?, domains = ?, subscription = ?, look = ?, state = ?, updated_at = ?,
           check_json = COALESCE(?, check_json), checked_at = COALESCE(?, checked_at) WHERE id = ?`,
-        look.name, JSON.stringify(domains), url, JSON.stringify(look), now, check ? JSON.stringify(check) : null, check ? now : null, current.id);
+        look.name, JSON.stringify(domains), url, JSON.stringify(look), state, now, check ? JSON.stringify(check) : null, check ? now : null, current.id);
         this.db.audit(actor, 'partner.save', current.id, { domains });
+        if (state !== current.state) this.db.audit(actor, 'partner.live', current.id, { domains });
       }
       this.syncRights(current.id, rights, actor, now);
       return current.id;
     });
     this.publishSafely(actor);
     log.info('partner saved', { partner: id });
-    return { ...this.myPartner(accountId), check };
+    return { ...this.myPartner(accountId), check, proofCheck };
+  }
+
+  /** "domain_unproved" for a live partner that would move to <domain>: what to add, and what the check found. */
+  domainUnproved(accountId, domain, proofCheck) {
+    const view = this.proofView(accountId, domain);
+    return new HubError('domain_unproved', {
+      message: `Домен ${domain} ещё не подтверждён. Партнёр остался на прежнем домене.`,
+      fields: {
+        subscription: `Подтвердите, что ${domain} ваш: добавьте в DNS запись TXT ${view.record.name} со значением ${view.record.value} `
+          + `или положите файл ${view.file.url} с текстом ${view.file.text}. Потом сохраните снова.`,
+      },
+      detail: { proof: view, proofCheck },
+    });
   }
 
   /** Makes the rights table say what <rights> asks: a changed content waits again, a right not asked is dropped. */
@@ -465,6 +624,18 @@ export class Hub {
 
   // ---------------------------------------------------------------- moderation
 
+  /**
+   * How the partner's domains are proved, for moderators: {state: proved | grandfathered | missing, how, missing}.
+   * "grandfathered": live before domain proof, without a record yet.
+   */
+  proofSummary(row) {
+    const domains = parseJson(row.domains, []);
+    const missing = this.unproved(row.account_id, domains);
+    if (missing.length) return { state: 'missing', how: null, missing };
+    const hows = domains.map(d => this.db.get('SELECT how FROM proofs WHERE account_id = ? AND domain = ?', row.account_id, d).how);
+    return { state: hows.includes('grandfathered') ? 'grandfathered' : 'proved', how: hows[0] ?? null, missing: [] };
+  }
+
   checkSummary(row) {
     const check = parseJson(row.check_json, null);
     if (!check) return null;
@@ -490,6 +661,7 @@ export class Hub {
       pictures: { logo: look.logo ?? null, logoOnLight: look.logoOnLight ?? null, mark: look.mark ?? null },
       rights,
       pending: Object.keys(rights).filter(k => rights[k] === 'pending'),
+      proof: this.proofSummary(row),
       check: this.checkSummary(row),
       page: `${this.config.origin}/p/${row.id}/`,
       createdAt: row.created_at,
@@ -543,8 +715,10 @@ export class Hub {
     if (owner) {
       throw new HubError('domain_taken', { message: owner.root ? `Его домен у партнёра ${owner.name}, которого V2pn подписал сам.` : 'Его домен уже у другого партнёра.' });
     }
-    this.db.run("UPDATE partners SET state = 'live', down_reason = NULL, updated_at = ? WHERE id = ?", nowIso(), id);
-    this.db.audit(actor, 'partner.restore', id);
+    // Back live, or back to waiting for its domain when that is not proved (it moved while it was down).
+    const state = this.unproved(row.account_id, parseJson(row.domains, [])).length ? 'pending' : 'live';
+    this.db.run('UPDATE partners SET state = ?, down_reason = NULL, updated_at = ? WHERE id = ?', state, nowIso(), id);
+    this.db.audit(actor, 'partner.restore', id, state === 'live' ? undefined : { state });
     this.publishSafely(actor);
     return this.modView(this.modRow(id));
   }
@@ -839,6 +1013,8 @@ export class Hub {
         this.db.run(`INSERT INTO partners (id, account_id, name, domains, look, state, source, until, created_at, updated_at)
           VALUES (?, ?, ?, ?, ?, 'live', 'import', ?, ?, ?)`, listing.id, accountId, name, JSON.stringify(domains), JSON.stringify(look), until, now, now);
       }
+      // The owner reviewed the partner and its domains on his computer.
+      for (const d of domains) this.keepProof(accountId, d, 'import', 'cli');
       this.db.run('DELETE FROM rights WHERE partner_id = ?', listing.id);
       for (const [right, content] of Object.entries(rights)) {
         const text = JSON.stringify(content);

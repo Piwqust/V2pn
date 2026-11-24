@@ -52,7 +52,11 @@ export function serve(handler) {
   });
 }
 
-// Test names that resolve to this computer; "everything allowed" stands in for public addresses.
+// The providers' DNS TXT records, by name, as the tests put them (proveDomain); every other name has none.
+export const txtRecords = new Map();
+
+// Test names that resolve to this computer; "everything allowed" stands in for public addresses. The proof file is
+// asked of a name that does not resolve unless a test points it at its own server.
 export const testNet = {
   allowHttp: true,
   allow: () => true,
@@ -60,7 +64,19 @@ export const testNet = {
     if (host.endsWith('.test')) return [{ address: '127.0.0.1', family: 4 }];
     throw Object.assign(new Error('not found'), { code: 'ENOTFOUND' });
   },
+  resolveTxt: async name => {
+    if (txtRecords.has(name)) return txtRecords.get(name);
+    throw Object.assign(new Error('not found'), { code: 'ENOTFOUND' });
+  },
+  proofUrl: () => 'http://proof.invalid/.well-known/v2pn-verify.txt',
 };
+
+/** Puts the proof record of <client>'s account for <host> into the test DNS: what a provider adds before saving. */
+export async function proveDomain(client, host) {
+  const r = await client.get('/api/partner');
+  if (r.status !== 200) throw new Error('proof: ' + JSON.stringify(r.data));
+  txtRecords.set(`_v2pn.${host}`, [[`v2pn-verify=${r.data.proof.token}`]]);
+}
 
 /** A hub with its own data and public folders, on a free port; <env> adds settings. {hub, base, origin, close, dirs}. */
 export async function startHub({ net = testNet, env = {} } = {}) {

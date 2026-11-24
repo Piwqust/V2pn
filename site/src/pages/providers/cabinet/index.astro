@@ -32,7 +32,7 @@ import Tool from '../../../layouts/Tool.astro';
         </div>
         <div class="note note--info" id="first" hidden>
           <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5M10 6.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
-          <div><p><b>Партнёра пока нет.</b> Заполните форму и нажмите «Опубликовать». Ссылка заработает сразу, без заявки и ожидания.</p></div>
+          <div><p><b>Партнёра пока нет.</b> Заполните форму, подтвердите, что домен подписки ваш, и нажмите «Опубликовать». Ссылка заработает сразу, без заявки и ожидания модератора.</p></div>
         </div>
         <div class="note note--fail" id="problems" hidden tabindex="-1">
           <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 5.8v5.2M10 13.8v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
@@ -52,6 +52,20 @@ import Tool from '../../../layouts/Tool.astro';
           <div class="found" id="sub-found" aria-live="polite"><span class="dot" aria-hidden="true"></span><span data-found-text>Вставьте ссылку, и сервер сам найдёт домен и проверит серверы.</span></div>
           <details class="check-more" id="check-more" hidden><summary>Что нашла проверка</summary><div id="check-lines"></div></details>
           <span class="field__error" hidden></span>
+        </div>
+
+        <div class="note note--info" id="proof" hidden>
+          <svg viewBox="0 0 20 20" aria-hidden="true"><circle cx="10" cy="10" r="8" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="M10 9v5M10 6.2v.3" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+          <div class="stack stack--sm">
+            <p><b id="proof-title"></b> <span data-proof-lead></span></p>
+            <span class="hint">Добавьте в DNS запись TXT с именем</span>
+            <div class="copyline"><code id="proof-name"></code><button class="btn btn--secondary" type="button" data-copy-from="proof-name">Копировать</button></div>
+            <span class="hint">и значением</span>
+            <div class="copyline"><code id="proof-value"></code><button class="btn btn--secondary" type="button" data-copy-from="proof-value">Копировать</button></div>
+            <p class="hint">Или положите на сайт файл <code id="proof-file"></code> с текстом <code id="proof-text"></code>, без перенаправлений. Новая запись в DNS бывает видна не сразу: если проверка её не нашла, попробуйте через несколько минут.</p>
+            <div class="row"><button class="btn btn--secondary btn--sm" type="button" id="proof-check">Проверить</button></div>
+            <div id="proof-out" aria-live="polite"></div>
+          </div>
         </div>
 
         <div class="field">

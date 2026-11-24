@@ -9,7 +9,7 @@ import { publicKeyOf, signature } from '../lib/keys.mjs';
 import { setQuiet } from '../lib/log.mjs';
 import { parseRootList, readRootIndex } from '../lib/roots.mjs';
 import { createHub } from '../lib/server.mjs';
-import { Client, fixture, register, serve, startHub, testNet } from './helpers.mjs';
+import { Client, fixture, proveDomain, register, serve, startHub, testNet } from './helpers.mjs';
 
 const configraFolder = new URL('../../partners/configra', import.meta.url).pathname.replace(/^\/([A-Za-z]:)/, '$1');
 
@@ -88,6 +88,7 @@ test('root partners keep their ids and domains: new ids skip them, saving on the
   const save = async (login, name, host) => {
     const c = new Client(env.base);
     await register(c, login);
+    await proveDomain(c, host);
     return { c, r: await c.put('/api/partner', { name, subscription: `http://${host}:${sub.port}/s/${login}`, brand: ['#2F6BFF'] }) };
   };
   try {

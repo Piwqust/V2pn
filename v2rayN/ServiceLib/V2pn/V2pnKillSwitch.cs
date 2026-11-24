@@ -95,7 +95,7 @@ public static class V2pnKillSwitch
         {
             tunnel.Add(v4);
         }
-        if (config.TunModeItem.EnableIPv6Address
+        if (V2pnTun.UsesIPv6(config, Utils.HasGlobalIPv6Address())
             && V2pnFirewall.ParseNetwork(config.TunModeItem.IPv6Address.NullIfEmpty() ?? Global.TunIPv6Address.First()) is { } v6)
         {
             tunnel.Add(v6);

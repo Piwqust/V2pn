@@ -138,7 +138,7 @@ export function verifyPack(listing, zip) {
  * them, with their state: a partner taken down gets a page that says so instead of its pack. <notes> name what went
  * out without a part ({partner, links}).
  */
-export function buildPublication(partners, { readUpload, today, published, origin }) {
+export function buildPublication(partners, { readUpload, today, published, origin, repo }) {
   const problems = [];
   const notes = [];
   const built = [];
@@ -155,7 +155,7 @@ export function buildPublication(partners, { readUpload, today, published, origi
       verifyPack(pack.listing, pack.zip);
       if (pack.dropped.length) notes.push({ partner: partner.id, links: pack.dropped });
       const pics = Object.fromEntries(pack.pictures.map(p => [p.key, p.content]));
-      const page = buildPage({ id: partner.id, name: pack.listing.name, look: pack.look, theme: themeOf(pack.look), pictures: pics, origin });
+      const page = buildPage({ id: partner.id, name: pack.listing.name, look: pack.look, theme: themeOf(pack.look), pictures: pics, origin, repo });
       built.push({ ...pack, page });
     } catch (e) {
       problems.push(String(e.message || e));

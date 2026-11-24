@@ -649,7 +649,7 @@ export class Hub {
   /** Rebuilds and re-signs everything; throws with the problems when nothing could be written. */
   publish(actor = 'system') {
     const publication = buildPublication(this.publicationPartners(), {
-      readUpload: h => this.readUpload(h), today: today(), published: publishedStamp(), origin: this.config.origin,
+      readUpload: h => this.readUpload(h), today: today(), published: publishedStamp(), origin: this.config.origin, repo: this.config.githubRepo,
     });
     if (publication.problems.length) {
       this.lastPublishError = { at: nowIso(), problems: publication.problems };

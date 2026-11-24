@@ -5,6 +5,7 @@
 // /assets/window.css) in the provider's colours.
 import fs from 'node:fs';
 import { colors as C } from './colors.mjs';
+import { releaseUrl } from './downloads.mjs';
 
 const SCRIPT = fs.readFileSync(new URL('./page-script.js', import.meta.url), 'utf8');
 
@@ -223,8 +224,10 @@ function windowHtml({ theme, dark, name, files, dims = () => '' }) {
  * The files of /p/<id>/: index.html, page.js and the pictures it shows. <pictures> maps logo / logoOnLight / mark /
  * backdrop to their PNG bytes (only those the pack carries). Throws when a pair of text and ground would not read.
  * The page takes the site's fonts, its window styles (/assets/window.css), V2pn's flags and map from the site.
+ * The one-line install commands name the release files on GitHub (<repo>) themselves, not the hub's /r/: what a
+ * person pipes into a shell must not depend on this server.
  */
-export function buildPage({ id, name, look, theme, pictures, origin, home = '/' }) {
+export function buildPage({ id, name, look, theme, pictures, origin, repo = 'Piwqust/V2pn', home = '/' }) {
   const { modes, failures } = pageTheme(theme);
   if (failures.length) throw new Error(`text would not read: ${failures.map(f => `${f.what} ${f.ratio.toFixed(2)}`).join('; ')}`);
   const logo = pictures.logo ? 'logo-light.png' : null;
@@ -252,7 +255,7 @@ export function buildPage({ id, name, look, theme, pictures, origin, home = '/' 
   };
   const keys = ['bg', 'card', 'mutedBg', 'line', 'ink', 'soft', 'muted', 'accent', 'onAccent', 'link', 'linkBg', 'focus', 'hero', 'scrim', 'heroInk', 'heroSoft', 'ghost', 'solid', 'onSolid'];
   const tokens = v => keys.map(k => `--${k}: ${v[k]}`).join('; ');
-  const commands = { win: `irm ${origin}/r/install.ps1 | iex`, mac: `curl -fsSL ${origin}/r/install.sh | bash` };
+  const commands = { win: `irm ${releaseUrl(repo, 'install.ps1')} | iex`, mac: `curl -fsSL ${releaseUrl(repo, 'install.sh')} | bash` };
   const botHtml = bot ? `<a class="pp-btn pp-btn--quiet pp-btn--small" href="${esc(bot)}" data-t="bot">${ru.bot}</a>` : '';
   const data = JSON.stringify({ id, name, text: { ru, en } }).replace(/</g, '\\u003c');
   const winLight = windowHtml({ theme, dark: false, name, files, dims });

@@ -405,7 +405,7 @@ test("import-partner takes partners/configra as a live partner with Configra's l
     assert.equal(env.hub.db.get("SELECT password FROM accounts WHERE login = 'configra-team'").password, null, 'no password until a reset');
     const configraPage = fs.readFileSync(path.join(env.config.publicDir, 'p', 'configra', 'index.html'), 'utf8');
     assert.match(configraPage, /Configra на компьютере/);
-    assert.match(configraPage, /irm http:\/\/127\.0\.0\.1:\d+\/r\/install\.ps1 \| iex/);
+    assert.match(configraPage, /irm https:\/\/github\.com\/Piwqust\/V2pn\/releases\/latest\/download\/install\.ps1 \| iex/);
 
     // Its provider signs in after a reset and edits it like any other; its domains stay while the link is on them.
     const password = env.hub.auth.resetPassword(env.hub.db.get("SELECT id FROM accounts WHERE login = 'configra-team'").id);

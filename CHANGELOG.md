@@ -6,12 +6,18 @@ What changes for the people who use the app. Each version's section becomes the 
 
 V2pn moves to a working server by itself when the one you use stops answering, sends chosen sites and programs one way whatever the route says, and can be run from a terminal or by an AI assistant. It is safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API needs a secret, updates and installs check signatures everywhere, and a provider's tab on the hub can no longer pose as another provider. Subscriptions from panels with a device limit work, and several quiet failures now either recover or say what happened.
 
+<p align="center"><img src="docs/images/changelog/1.5.0-hero.png" width="800" alt="V2pn 1.5.0: the main window connected through Berlin, with the route menu open on its two new rows, Sites that always go one way and Programs that always go directly"></p>
+
 ### A working server by itself
+
+<p align="center"><img src="docs/images/changelog/1.5.0-switch.png" width="800" alt="Frankfurt stops answering two checks in a row; the message says V2pn switched to Berlin in the same country, and the map shows Berlin connected. Below, the setting Switch to a working server by itself in Settings, General"></p>
 
 - When the server stops answering two checks in a row, V2pn moves to the quickest working server of the same country and says so: "Frankfurt stopped answering. V2pn switched to Berlin in the same country." Another country is never chosen without asking, and two such switches are at least 10 minutes apart. Settings → General → "Switch to a working server by itself" turns it off.
 - A connection that works is checked again every 5 minutes, quietly: nothing changes on screen unless the check fails, so a server that dies in the middle of a session no longer stays "connected".
 
 ### V2pn from the command line and from AI assistants
+
+<p align="center"><img src="docs/images/changelog/1.5.0-terminal.png" width="800" alt="A terminal: v2pnctl use --fastest --country DE switches to Berlin and prints the status, v2pnctl servers lists the German servers with their delay, and claude mcp add v2pn -- v2pnctl mcp adds V2pn to Claude Code. Beside it what keeps it safe, below the setting Control from the command line and AI"></p>
 
 - **`v2pnctl`** comes with V2pn: `status`, `servers`, `subs`, `use`, `connect`, `disconnect`, `mode`, `route`, `check`, `diag`, `open`, all with `--json`. If V2pn is not running, it starts in the tray first.
 - **`v2pnctl mcp`** is an MCP server for Claude Code, Claude Desktop, Cursor and the like (`claude mcp add v2pn -- v2pnctl mcp`): the assistant can see the status and the servers and switch the server, the mode or the route.
@@ -23,10 +29,14 @@ V2pn moves to a working server by itself when the one you use stops answering, s
 
 ### Sites that always go one way
 
+<p align="center"><img src="docs/images/changelog/1.5.0-rules.png" width="800" alt="The route menu with Sites that always go one way (3 sites) and Programs that always go directly (2 programs); the sites window with gosuslugi.ru and mybank.ru directly and youtube.com through the server, and the programs window with steam.exe and Telegram.exe"></p>
+
 - In the menu under Connect, **Sites that always go one way…** sends a site directly or through the server whatever the chosen way says: your bank directly while everything else goes through the server, or one site through the server in "Only blocked". With or without its subdomains; Cyrillic names work too. A change applies at once, and removing a site puts it back under the route.
 - **Programs that always go directly…**, the row under it, does the same for programs in VPN mode: a bank's app, a game or a work program goes past the server whatever the route and the sites say. Add one that is running now (from a list with icons, without system processes) or choose its file (an .exe on Windows, an app on a Mac). In Proxy mode programs decide for themselves whether to use the proxy, so the list changes nothing there, and the window says so. Like the sites, it works with V2pn's three ways, not with your own rule sets. On a Mac with "Legacy TUN protection" turned off, Xray runs the tunnel and may not tell programs apart; the window says so too.
 
 ### Safety
+
+<p align="center"><img src="docs/images/changelog/1.5.0-safety.png" width="800" alt="What is safer in 1.5.0: IPv6 in the tunnel, a secret for the cores' API, signatures checked everywhere, cores and rule lists checked against their SHA-256, a spare signing key, device limits, no links in the log. Beside it the Updates window with Get beta versions and Tell V2pn when an update fails"></p>
 
 - **IPv6 stays in the tunnel in VPN mode.** On a network with IPv6 (many mobile and some home providers) the sing-box tunnel, the default one, now takes IPv6 too, as Xray's already did. Before, IPv6 went past the VPN on a Mac and was cut off on Windows.
 - **The cores' control API has a secret.** Any program on the computer could switch the core to "direct" with one request (all traffic then went past the server, and the kill switch let it out) or read which sites every program visits. Now the API answers only V2pn, with a new secret on every start.

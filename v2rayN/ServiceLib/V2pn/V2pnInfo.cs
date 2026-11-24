@@ -68,6 +68,16 @@ public static class V2pnInfo
     /// <summary>Places that serve releases, in the order they are tried. Set at build time.</summary>
     public static IReadOnlyList<string> UpdateSources { get; } = Split(Metadata("V2pnUpdateSources")).Select(s => s.TrimEnd('/')).ToList();
 
+    /// <summary>
+    /// Sources that also serve the beta channel (<see cref="BetaManifestUrl"/>), asked only when the person takes beta
+    /// versions. Set at build time: V2pn's server, which finds the newest pre-release on GitHub; GitHub has no such address.
+    /// </summary>
+    public static IReadOnlyList<string> BetaSources { get; } = Split(Metadata("V2pnBetaSources")).Select(s => s.TrimEnd('/')).ToList();
+
+    /// <summary>A beta version: a release with a "-" part ("1.5.0-beta.2"), other than a build of the developer mode.</summary>
+    public static bool IsBetaVersion(string? version) =>
+        version?.IndexOf('-') is int dash and > 0 && dash < version.Length - 1 && !IsLocalVersion(version);
+
     /// <summary>Public keys a release manifest may be signed with. Set at build time.</summary>
     public static IReadOnlyList<string> UpdateKeys { get; } = Split(Metadata("V2pnUpdateKeys"));
 
@@ -127,6 +137,9 @@ public static class V2pnInfo
         manifest.File(UpdatePackageName()) ?? manifest.File(PackageName());
 
     public static string ManifestUrl(string source) => $"{source}/latest/download/{ManifestName}";
+
+    /// <summary>The manifest of the newest release with the pre-releases, where a source has a beta channel.</summary>
+    public static string BetaManifestUrl(string source) => $"{source}/beta/download/{ManifestName}";
 
     public static string PackageUrl(string source, string version, string packageName) => $"{source}/download/v{version}/{packageName}";
 

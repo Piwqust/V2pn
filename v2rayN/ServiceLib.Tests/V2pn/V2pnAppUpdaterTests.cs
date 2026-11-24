@@ -351,6 +351,127 @@ public class V2pnAppUpdaterTests
         await Updater.InstallFailed.Should().BeFalse();
     }
 
+    [Test]
+    public async Task Manifests_WithoutBeta_AreTheLatestReleaseOfEachSource()
+    {
+        var settings = new V2pnUpdateSettings(["https://hub.example/releases", "https://github.com/o/r/releases"], ["key"], true, "1.0.0",
+            BetaSources: ["https://hub.example/releases"]);
+
+        await Lines(settings.Manifests(beta: false)).Should().BeEqualTo(
+            "https://hub.example/releases https://hub.example/releases/latest/download/release.json\n" +
+            "https://github.com/o/r/releases https://github.com/o/r/releases/latest/download/release.json");
+    }
+
+    private static string Lines(IEnumerable<(string Source, string Manifest)> manifests) =>
+        string.Join("\n", manifests.Select(m => $"{m.Source} {m.Manifest}"));
+
+    [Test]
+    public async Task Manifests_WithBeta_AskTheBetaChannelFirst_ThenEveryLatestRelease()
+    {
+        var settings = new V2pnUpdateSettings(["https://hub.example/releases", "https://github.com/o/r/releases"], ["key"], true, "1.0.0",
+            BetaSources: ["https://hub.example/releases"]);
+
+        // GitHub stays last: the source asked last is the one waited on longest.
+        await Lines(settings.Manifests(beta: true)).Should().BeEqualTo(
+            "https://hub.example/releases https://hub.example/releases/beta/download/release.json\n" +
+            "https://hub.example/releases https://hub.example/releases/latest/download/release.json\n" +
+            "https://github.com/o/r/releases https://github.com/o/r/releases/latest/download/release.json");
+        // A build without a beta source has nothing more to ask.
+        await (settings with { BetaSources = null }).Manifests(beta: true).Count.Should().BeEqualTo(2);
+    }
+
+    [Test]
+    public async Task BuildSources_TheBetaChannelIsOnV2pnsServerOnly()
+    {
+        var settings = V2pnUpdateSettings.FromBuild();
+
+        await string.Join("|", settings.BetaSources ?? []).Should().BeEqualTo("https://v2pn.angleford.co/releases");
+        await settings.Manifests(beta: true)[0].Manifest.Should().BeEqualTo("https://v2pn.angleford.co/releases/beta/download/release.json");
+        await settings.Manifests(beta: false).Any(m => m.Manifest.Contains("/beta/", StringComparison.Ordinal)).Should().BeFalse();
+    }
+
+    private FakeReleases ServeChannels(string latest, string beta)
+    {
+        var latestManifest = TestRelease.Manifest(latest, (Name, Package));
+        var betaManifest = TestRelease.Manifest(beta, (Name, Package));
+        return FakeReleases.StartChannels(
+            ("latest", latest, latestManifest, _release.Sign(latestManifest), Package, Name),
+            ("beta", beta, betaManifest, _release.Sign(betaManifest), Package, Name));
+    }
+
+    private void TrustWithBeta(FakeReleases server, bool beta)
+    {
+        Updater.Settings = new V2pnUpdateSettings([server.Source], [_release.PublicKey], true, "1.0.0", BetaSources: [server.Source]);
+        ConfigTextHandler.Config.UiItem.V2pnBeta = beta;
+    }
+
+    [Test]
+    public async Task WithBeta_TheNewerBetaIsDownloaded()
+    {
+        await using var server = ServeChannels(latest: "2.0.0", beta: "2.1.0-beta.1");
+        TrustWithBeta(server, beta: true);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.Ready);
+        await Updater.FindPending()!.Value.Version.Should().BeEqualTo("2.1.0-beta.1");
+        await server.Requests.Contains("/releases/download/v2.1.0-beta.1/" + Name).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task WithBeta_AReleaseNewerThanTheBetaWins()
+    {
+        // The release that follows its betas: 2.1.0 is above 2.1.0-beta.3.
+        await using var server = ServeChannels(latest: "2.1.0", beta: "2.1.0-beta.3");
+        TrustWithBeta(server, beta: true);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.FindPending()!.Value.Version.Should().BeEqualTo("2.1.0");
+    }
+
+    [Test]
+    public async Task WithoutBeta_TheBetaChannelIsNotAsked_AndTheReleaseIsTaken()
+    {
+        await using var server = ServeChannels(latest: "2.0.0", beta: "2.1.0-beta.1");
+        TrustWithBeta(server, beta: false);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.FindPending()!.Value.Version.Should().BeEqualTo("2.0.0");
+        await server.Requests.Any(r => r.Contains("/beta/", StringComparison.Ordinal)).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task ABetaDownloadedBeforeBetasWereTurnedOff_IsNotInstalled_AndGoes()
+    {
+        await using var server = ServeChannels(latest: "1.0.0", beta: "2.1.0-beta.1");
+        TrustWithBeta(server, beta: true);
+        await Updater.CheckAsync(download: true);
+        await Updater.FindPending()!.Value.Version.Should().BeEqualTo("2.1.0-beta.1");
+
+        ConfigTextHandler.Config.UiItem.V2pnBeta = false;
+
+        await Updater.FindPending().HasValue.Should().BeFalse();
+        await (await Updater.InstallAsync()).Should().BeFalse();
+        await Updater.CheckAsync(download: true);
+        await Updater.State.Should().BeEqualTo(EV2pnUpdateState.UpToDate);
+        await File.Exists(Path.Combine(PendingDir, "V2pn-2.1.0-beta.1.zip")).Should().BeFalse();
+    }
+
+    [Test]
+    public async Task BetaVersions_AreReleasesWithADashPart_NotLocalBuilds()
+    {
+        await V2pnInfo.IsBetaVersion("1.5.0-beta.2").Should().BeTrue();
+        await V2pnInfo.IsBetaVersion("1.5.0-rc.1").Should().BeTrue();
+        await V2pnInfo.IsBetaVersion("1.5.0").Should().BeFalse();
+        await V2pnInfo.IsBetaVersion(LocalBuild).Should().BeFalse();
+        await V2pnInfo.IsBetaVersion("1.5.0-").Should().BeFalse();
+        await V2pnInfo.IsBetaVersion(null).Should().BeFalse();
+        await (new SemanticVersion("1.5.0-beta.2") < new SemanticVersion("1.5.0-beta.10")).Should().BeTrue();
+        await (new SemanticVersion("1.5.0-beta.10") < new SemanticVersion("1.5.0")).Should().BeTrue();
+    }
+
     /// <summary>A server that answers every request with a 302 to the same path under <c>target</c>, as V2pn's server does with GitHub.</summary>
     private sealed class Redirector : IAsyncDisposable
     {
@@ -417,9 +538,19 @@ public class V2pnAppUpdaterTests
 
         public static FakeReleases StartEmpty() => Start(null, [], string.Empty, []);
 
-        public static FakeReleases Start(string? version, byte[] manifest, string signature, byte[] package, string? packageName = null)
+        public static FakeReleases Start(string? version, byte[] manifest, string signature, byte[] package, string? packageName = null) =>
+            version == null ? StartChannels() : StartChannels(("latest", version, manifest, signature, package, packageName ?? Name));
+
+        /// <summary>A releases page with a release in each named channel ("latest", "beta"), and their packages.</summary>
+        public static FakeReleases StartChannels(params (string Channel, string Version, byte[] Manifest, string Signature, byte[] Package, string PackageName)[] releases)
         {
-            packageName ??= Name;
+            var files = new Dictionary<string, byte[]>();
+            foreach (var (channel, version, manifest, signature, package, packageName) in releases)
+            {
+                files[$"/releases/{channel}/download/release.json"] = manifest;
+                files[$"/releases/{channel}/download/release.json.sig"] = Encoding.ASCII.GetBytes(signature);
+                files[$"/releases/download/v{version}/{packageName}"] = package;
+            }
             var port = FreePort();
             var listener = new HttpListener();
             var prefix = $"http://127.0.0.1:{port}/";
@@ -442,17 +573,7 @@ public class V2pnAppUpdaterTests
                     var path = ctx.Request.Url!.AbsolutePath;
                     server.Requests.Enqueue(path);
                     var response = ctx.Response;
-                    byte[]? body = null;
-                    if (version != null)
-                    {
-                        body = path switch
-                        {
-                            "/releases/latest/download/release.json" => manifest,
-                            "/releases/latest/download/release.json.sig" => Encoding.ASCII.GetBytes(signature),
-                            _ when path == $"/releases/download/v{version}/{packageName}" => package,
-                            _ => null,
-                        };
-                    }
+                    var body = files.GetValueOrDefault(path);
                     try
                     {
                         if (body == null)

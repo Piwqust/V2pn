@@ -15,6 +15,7 @@ V2pn moves to a working server by itself when the one you use stops answering, a
 
 - **`v2pnctl`** comes with V2pn: `status`, `servers`, `subs`, `use`, `connect`, `disconnect`, `mode`, `route`, `check`, `diag`, `open`, all with `--json`. If V2pn is not running, it starts in the tray first.
 - **`v2pnctl mcp`** is an MCP server for Claude Code, Claude Desktop, Cursor and the like (`claude mcp add v2pn -- v2pnctl mcp`): the assistant can see the status and the servers and switch the server, the mode or the route.
+- `v2pnctl` works in any new terminal: the Windows installer puts V2pn's folder on your user's PATH (no administrator rights; the uninstall takes it off), winget declares the command, and Homebrew links it from the app.
 - It is off until you turn it on in Settings → General → "Control from the command line and AI", as read only or with control. It talks only to programs of your own Windows user, over a local channel, never over the network; it never shows subscription links, server addresses or keys.
 - A change can be made to undo itself: with `--confirm-within 60` (always, for an assistant) V2pn puts the server, the mode, the route or the connection back unless `v2pnctl confirm` comes in time, so an assistant that cut its own network off gets it back. VPN mode never restarts V2pn as administrator without asking on screen, and every command shows a short note in the window.
 - **v2pnctl speaks Russian** on a Russian system: help, mistakes in the command line, the status, the server and subscription tables, and V2pn's answers to it. `V2PN_LANG=en` forces English; the MCP server and `--json` stay English.
@@ -60,6 +61,7 @@ V2pn moves to a working server by itself when the one you use stops answering, a
 
 ### Also
 
+- Updates → **"Get beta versions"** (off unless you turn it on): V2pn also takes the beta of the next version, a few days before everyone else, signed and checked like any release. The release that follows replaces the beta by itself; turned off, V2pn keeps the beta it has until then and never installs one it had downloaded.
 - V2pn takes in v2rayN 8.0.1: raw transport with an HTTP header works with Xray again, and the server form says when the chosen core cannot carry a transport (sing-box with XDRIVE, kcp or xhttp) instead of saving a server that will not connect.
 
 ## 1.4.2

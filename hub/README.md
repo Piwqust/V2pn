@@ -196,8 +196,21 @@ and is counted per day and name (no IP, no cookie). `GET /releases/latest/downlo
 `/releases/download/v<version>/<file>` answer 302 to the same paths on GitHub, for release file names only, so the hub
 can be V2pn's first update source without storing anything.
 
+**Beta channel** (`lib/beta.mjs`). `GET /releases/beta/download/<file>` answers 302 to
+`https://github.com/<repo>/releases/download/<tag>/<file>`, where `<tag>` is the newest published release with the
+pre-releases (`v1.5.0-beta.2` comes after `v1.4.3` and before `v1.5.0`). Only a V2pn whose person turned on "Get beta
+versions" asks for it, next to the latest release; `/releases/latest/...` is unchanged and never leads to a
+pre-release, because GitHub's `releases/latest` does not. GitHub has no address for "newest, pre-releases too", so the
+hub reads `api.github.com/repos/<repo>/releases?per_page=20` at start and every five minutes, without a token: it takes
+the highest version among the releases that are not drafts and carry `release.json` and `release.json.sig`. It asks
+with the last ETag, and an unchanged list (304) does not count against GitHub's 60 requests an hour. The tag is kept in
+memory; when GitHub fails the last one stays, and until the hub has one the channel leads to `releases/latest`, as
+Caddy does while the hub is down. Nothing here is trusted: V2pn checks the signature of the manifest and every package.
+`/api/health` shows the tag as `beta`.
+
 **Update checks.** A running V2pn asks for `/releases/latest/download/release.json` shortly after its start and every
-six hours after, naming itself `V2pn/<version>` in the User-Agent. Each such request is counted per day and version (no
+six hours after (one that takes betas asks `/releases/beta/download/release.json` as well), naming itself
+`V2pn/<version>` in the User-Agent. Each such request is counted per day and version (no
 IP, no cookie, no id of the copy): the moderators' chart of how many copies are in use and on which versions. These are
 requests, not people: one computer gives one to four or more a day. A local build counts as `<version>-local`; any
 other User-Agent is redirected and not counted; a day keeps 40 versions, the rest add up as `other`. A check that
@@ -220,7 +233,8 @@ hub never answers. Only counts are kept: by day, `to`, `os`, `arch`, `stage` and
 User-Agent, no id of the copy); a day keeps 200 kinds, the rest add up with `to` and `code` as `other`. Moderators see
 them as «Сбои обновлений» under the update checks.
 
-**Health.** `GET /api/health`: `{ok, version, publication}`, `publication` the time of the last one. An outside monitor
+**Health.** `GET /api/health`: `{ok, version, publication, beta}`, `publication` the time of the last one, `beta` the
+beta channel's tag (null before the hub has read it). An outside monitor
 should alert when it does not answer or when `publication` is more than two days old (`deploy/BACKUP.md`).
 
 **Timers.** The download, check and failure counters go to the database every minute and at stop; every ten minutes
@@ -244,7 +258,7 @@ updates (`update_failures`).
 
 | Method and path | Who | Body → answer |
 | --- | --- | --- |
-| `GET /api/health` | anyone | `{ok, version, publication}` |
+| `GET /api/health` | anyone | `{ok, version, publication, beta}` |
 | `POST /api/auth/register` | anyone | `{login, password}` → `{account: {login, role}}` + cookie |
 | `POST /api/auth/login` | anyone | `{login, password}` → `{account}` + cookie |
 | `POST /api/auth/signout` | anyone | |
@@ -316,8 +330,9 @@ be deleted.
 
 **Caddy.** `deploy/Caddyfile` is the site's block: the hub's paths (`/api/*` with a 3 MB body limit, `/r/*`,
 `/releases/*`) in front of the static files, the site's Content-Security-Policy, and what happens while the hub is down:
-`/r/<name>` and the release files go straight to the same files on GitHub (`test/caddy.test.mjs` keeps them in step with
-`lib/downloads.mjs`), `/api/` answers 503 in the hub's own JSON, other errors keep their status. It replaces the old block
+`/r/<name>` and the release files go straight to the same files on GitHub, the beta channel's to the latest release's
+(`test/caddy.test.mjs` keeps them in step with `lib/downloads.mjs`), `/api/` answers 503 in the hub's own JSON, other
+errors keep their status. It replaces the old block
 in `/etc/caddy/Caddyfile`; then `caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy`.
 
 The site's own upload must leave `partners/` and `p/` alone (no `rsync --delete` over them): the hub owns them, `p/configra/`

@@ -23,6 +23,10 @@ public static partial class L
 
     public static string UpdAuto => T("Update V2pn automatically", "Обновлять V2pn автоматически");
     public static string UpdAutoHint => T("New versions download in the background and install the next time V2pn starts.", "Новые версии скачиваются в фоне и ставятся при следующем запуске V2pn.");
+    public static string UpdBeta => T("Get beta versions", "Получать бета-версии");
+    public static string UpdBetaHint => T(
+        "Try new versions a few days before everyone else and help find what breaks. A beta may have bugs. Turned off, V2pn keeps the beta it has until a newer release replaces it.",
+        "Пробовать новые версии на несколько дней раньше всех и помогать найти, что сломалось. В бете бывают ошибки. Если выключить, V2pn останется на своей бете, пока её не заменит более новый релиз.");
     public static string UpdReport => T("Tell V2pn when an update fails", "Сообщать V2pn о неудачных обновлениях");
     public static string UpdReportHint => T(
         "Only which version failed to replace which, the system and the step, such as \"download\" or \"start\". Nothing about you, your servers or your settings. Off unless you turn it on.",

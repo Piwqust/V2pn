@@ -173,6 +173,8 @@ At the first start V2pn asks for the language (English or Russian) and walks you
 > [!TIP]
 > **For providers.** A provider who works with V2pn gets a tab of their own in the title bar, with their mark, colours, plan and only their servers. One form, no keys, no hosting, no separate build: [v2pn.angleford.co/providers](https://v2pn.angleford.co/providers/) · [the guide](docs/partners/README.md).
 
+**From the terminal and AI assistants.** `v2pnctl` comes with V2pn, and the Windows installer, winget and Homebrew put it on the PATH: `v2pnctl status`, `v2pnctl servers`, `v2pnctl use Frankfurt`, `v2pnctl connect`, `v2pnctl route all`, `v2pnctl --help` for the rest. `v2pnctl mcp` is an MCP server for Claude Code, Claude Desktop, Cursor and the like: `claude mcp add v2pn -- v2pnctl mcp`. It is off until you turn it on in Settings → General → “Control from the command line and AI”, as read only or with control; V2pn shows every change it makes and never gives out links, addresses or keys.
+
 ## Moving from v2rayN
 
 V2pn keeps its data in the same files as v2rayN, so moving takes one button. When a v2rayN with servers is on the computer, V2pn offers **Move from v2rayN** at its first start: servers, subscriptions, routing and settings. Later it is in the ☰ menu → **Tools** → **Move from v2rayN…**. The one-command install moves them by itself.

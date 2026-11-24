@@ -40,7 +40,9 @@ param(
     # Keeps guiConfigs/ when -From refreshes the app files.
     [switch]$KeepData,
     # The partner the person came from: added to UiItem.V2pnCameFrom (ServiceLib/V2pn/V2pnEdition.cs).
-    [ValidatePattern('^[a-z0-9][a-z0-9-]{1,31}$')][string]$Partner
+    [ValidatePattern('^[a-z0-9][a-z0-9-]{1,31}$')][string]$Partner,
+    # Turns on Settings > General > "Control from the command line and AI" (Control), so v2pnctl --instance <Dest> drives it.
+    [switch]$Control
 )
 
 $ErrorActionPreference = 'Stop'
@@ -106,6 +108,14 @@ if ($Partner) {
     $json.UiItem | Add-Member -Force -NotePropertyName V2pnCameFrom -NotePropertyValue $from
     $json | ConvertTo-Json -Depth 32 | Set-Content -Encoding utf8 $configFile
     Write-Host "Sandbox person came from partner $Partner"
+}
+if ($Control) {
+    $json = Get-Content -Raw -Encoding utf8 $configFile | ConvertFrom-Json
+    if (-not $json.UiItem) { $json | Add-Member -NotePropertyName UiItem -NotePropertyValue ([pscustomobject]@{}) }
+    # EV2pnControlLevel.Control
+    $json.UiItem | Add-Member -Force -NotePropertyName V2pnControl -NotePropertyValue 2
+    $json | ConvertTo-Json -Depth 32 | Set-Content -Encoding utf8 $configFile
+    Write-Host 'Sandbox control from the command line: on'
 }
 
 if ($Launch) {

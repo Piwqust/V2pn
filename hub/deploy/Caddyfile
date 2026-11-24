@@ -43,6 +43,9 @@ v2pn.angleford.co {
 			redir /r/install.sh https://github.com/Piwqust/V2pn/releases/latest/download/install.sh 302
 			@release path_regexp ^/releases/(latest/download|download/v[0-9][0-9A-Za-z.-]*)/[A-Za-z0-9._-]+$
 			redir @release https://github.com/Piwqust/V2pn{path} 302
+			# The beta channel has no address on GitHub: without the hub it is the latest release.
+			@beta path_regexp beta ^/releases/beta/download/([A-Za-z0-9._-]+)$
+			redir @beta https://github.com/Piwqust/V2pn/releases/latest/download/{re.beta.1} 302
 			header /api/* Content-Type "application/json; charset=utf-8"
 			respond /api/* `{"error":{"code":"unavailable","message":"Сервер V2pn сейчас недоступен. Попробуйте через минуту."}}` 503
 			respond "Сервер V2pn сейчас недоступен. Попробуйте через минуту." 503

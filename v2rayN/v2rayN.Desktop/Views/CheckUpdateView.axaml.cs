@@ -43,6 +43,16 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
             _config.UiItem.V2pnAutoUpdate = togAutoUpdate.IsChecked == true;
             await ConfigTextHandler.SaveConfig();
         };
+        // winget offers only releases.
+        rowBeta.IsVisible = lineBeta.IsVisible = !_updater.ByWinGet;
+        togBeta.IsChecked = _config.UiItem.V2pnBeta;
+        togBeta.IsCheckedChanged += async (_, _) =>
+        {
+            _config.UiItem.V2pnBeta = togBeta.IsChecked == true;
+            await ConfigTextHandler.SaveConfig();
+            // Turned on, the beta channel is asked at once; turned off, a beta already downloaded is dropped.
+            await AppUpdates.CheckAsync(_config);
+        };
         rowReportFailures.IsVisible = !_updater.ByWinGet;
         togReportFailures.IsChecked = _config.UiItem.V2pnReportUpdateFailures;
         togReportFailures.IsCheckedChanged += async (_, _) =>

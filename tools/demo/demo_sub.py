@@ -26,6 +26,11 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 
 USER_ID = str(uuid.uuid5(uuid.NAMESPACE_DNS, "v2pn-demo"))
 
+# A name only the demo server resolves (to 127.0.0.1): a request for http://demo.v2pn-e2e:<sub_port>/ through V2pn
+# is answered only when it went through the server, never straight from V2pn (tools/app-check.ps1 -Connect). Not
+# under .test or .local: V2pn sends geosite:private, which holds those, directly.
+SERVER_ONLY_HOST = "demo.v2pn-e2e"
+
 # Flag plus city: V2pn takes the country from the flag and shows the city under it.
 SERVERS = [
     ("DE", "Frankfurt"), ("DE", "Berlin"), ("NL", "Amsterdam"), ("NL", "Rotterdam"),
@@ -61,7 +66,14 @@ def server_config(server_port):
             "settings": {"clients": [{"id": USER_ID}], "decryption": "none"},
             "streamSettings": {"network": "tcp", "security": "none"},
         }],
-        "outbounds": [{"protocol": "freedom"}],
+        # Names go through xray's own DNS, which knows SERVER_ONLY_HOST and asks the system for the rest. Xray 26.10
+        # blocks private addresses for traffic from a VLESS inbound unless a final rule lets them through.
+        "dns": {"hosts": {SERVER_ONLY_HOST: "127.0.0.1"}},
+        "outbounds": [{
+            "protocol": "freedom",
+            "settings": {"finalRules": [{"action": "allow", "network": "tcp", "ip": ["127.0.0.1/32"]}]},
+            "streamSettings": {"sockopt": {"domainStrategy": "UseIP"}},
+        }],
     }
 
 

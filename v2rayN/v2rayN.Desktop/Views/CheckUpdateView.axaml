@@ -125,6 +125,21 @@
                         OffContent=""
                         OnContent="" />
                 </Grid>
+                <!-- V2pn: beta versions too (the beta channel of V2pn's server), off by default. -->
+                <Border x:Name="lineBeta" Height="1" Background="{DynamicResource V2PanelBorder}" />
+                <Grid x:Name="rowBeta" ColumnDefinitions="*,Auto">
+                    <StackPanel Classes="srowtext">
+                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.UpdBeta}" />
+                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.UpdBetaHint}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Name="togBeta"
+                        Grid.Column="1"
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        OffContent=""
+                        OnContent="" />
+                </Grid>
                 <!-- V2pn: the opt-in note about a failed update (V2pnUpdateReport), off by default. -->
                 <Border Height="1" Background="{DynamicResource V2PanelBorder}" />
                 <Grid x:Name="rowReportFailures" ColumnDefinitions="*,Auto">

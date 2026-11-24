@@ -84,7 +84,7 @@ function routes(hub) {
   const ID = '([a-z0-9][a-z0-9-]{1,31})';
   const login = m => { try { return decodeURIComponent(m); } catch { throw new HubError('not_found'); } };
   return [
-    ['GET', /^\/api\/health$/, () => ({ ok: true, version: VERSION, publication: hub.publicationState().last?.at ?? null }), 'public'],
+    ['GET', /^\/api\/health$/, () => ({ ok: true, version: VERSION, publication: hub.publicationState().last?.at ?? null, beta: hub.beta.tag }), 'public'],
 
     ['POST', /^\/api\/auth\/register$/, async ({ req, ip, res }) => {
       const body = await readJson(req);
@@ -181,7 +181,7 @@ export function createHandler(hub) {
     });
     try {
       if (!url.pathname.startsWith('/api/')) {
-        const download = method === 'GET' ? resolveDownload(url.pathname, hub.config.githubRepo) : null;
+        const download = method === 'GET' ? resolveDownload(url.pathname, hub.config.githubRepo, hub.beta.tag) : null;
         if (!download) throw new HubError('not_found');
         if (download.count && req.method === 'GET') hub.counter.count(download.count);
         // A running V2pn asking for its update manifest: the version it names is all that is kept.

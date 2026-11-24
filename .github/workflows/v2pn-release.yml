@@ -11,14 +11,19 @@ name: V2pn release
 #
 # Either way the release is a DRAFT. Look it over and press Publish: only a published release
 # is what installed copies of V2pn see as the newest version.
+#
+# A beta tag (v1.2.3-beta.1, tools/release.ps1 -Beta -Tag) becomes a draft PRE-RELEASE: GitHub's
+# "latest" never names it, so only copies with "Get beta versions" on take it, through the hub's
+# beta channel (hub/lib/beta.mjs). winget, Homebrew and the mirror's "latest" skip it.
 on:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
+      - 'v[0-9]+.[0-9]+.[0-9]+-beta.[0-9]+'
   workflow_dispatch:
     inputs:
       tag:
-        description: Existing tag to build again, e.g. v1.2.3 (only while its release is still a draft)
+        description: Existing tag to build again, e.g. v1.2.3 or v1.2.3-beta.1 (only while its release is still a draft)
         required: true
         type: string
 
@@ -165,9 +170,12 @@ jobs:
           version="${TAG#v}"
           git tag -l --format='%(contents:body)' "$TAG" > notes.md
           [ -s notes.md ] || echo "V2pn $version" > notes.md
+          # A version with a "-" part is a beta: a pre-release, which GitHub's "latest" never names.
+          kind=()
+          case "$version" in *-*) kind=(--prerelease) ;; esac
           if gh release view "$TAG" > /dev/null 2>&1; then
             gh release upload "$TAG" packages/* --clobber
           else
-            gh release create "$TAG" packages/* --draft --verify-tag --title "V2pn $version" --notes-file notes.md
+            gh release create "$TAG" packages/* --draft "${kind[@]}" --verify-tag --title "V2pn $version" --notes-file notes.md
           fi
-          echo "Draft release $TAG is ready: check it, then press Publish." >> "$GITHUB_STEP_SUMMARY"
+          echo "Draft ${kind:+pre-}release $TAG is ready: check it, then press Publish." >> "$GITHUB_STEP_SUMMARY"

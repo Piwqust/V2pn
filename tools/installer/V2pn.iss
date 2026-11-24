@@ -15,6 +15,9 @@
 ;
 ; Cores (bin\) are put only where there are none: an update never replaces cores either, and the ones
 ; installed may be newer than the ones this installer carries.
+;
+; The install folder goes on the user's PATH (HKCU\Environment, no administrator rights), so v2pnctl,
+; V2pn's command line and MCP server, works in any new terminal; the uninstall takes it off again.
 
 #ifndef AppVersion
   #error Pass /DAppVersion=x.y.z
@@ -58,6 +61,8 @@ DisableProgramGroupPage=yes
 DisableReadyPage=yes
 DisableWelcomePage=yes
 UsedUserAreasWarning=no
+; Tells Explorer, and so every terminal started after the install, that PATH changed (see AddToPath).
+ChangesEnvironment=yes
 #if Arch == "arm64"
 ArchitecturesAllowed=arm64
 ArchitecturesInstallIn64BitMode=arm64
@@ -223,6 +228,83 @@ begin
     WasInstalled := FileExists(AddBackslash(WizardDirValue) + 'V2pn.exe');
 end;
 
+// ---- v2pnctl on the PATH ------------------------------------------------------------------------
+// The user's own PATH (HKCU\Environment), read and written as it is stored: entries such as
+// %USERPROFILE%\bin stay unexpanded. Only the entries that are this folder are added or taken off.
+
+function SamePath(A, B: String): Boolean;
+begin
+  Result := CompareText(RemoveBackslash(Trim(A)), RemoveBackslash(Trim(B))) = 0;
+end;
+
+// The PATH without this folder; Found says whether it was there.
+function PathWithout(Paths, Dir: String; var Found: Boolean): String;
+var
+  Rest, Item: String;
+  P: Integer;
+begin
+  Result := '';
+  Found := False;
+  Rest := Paths;
+  while Rest <> '' do
+  begin
+    P := Pos(';', Rest);
+    if P = 0 then
+    begin
+      Item := Rest;
+      Rest := '';
+    end
+    else
+    begin
+      Item := Copy(Rest, 1, P - 1);
+      Rest := Copy(Rest, P + 1, Length(Rest));
+    end;
+    if SamePath(Item, Dir) then
+      Found := True
+    else if Trim(Item) <> '' then
+    begin
+      if Result <> '' then
+        Result := Result + ';';
+      Result := Result + Item;
+    end;
+  end;
+end;
+
+procedure AddToPath();
+var
+  Paths: String;
+  Found: Boolean;
+begin
+  if not RegQueryStringValue(HKCU, 'Environment', 'Path', Paths) then
+    Paths := '';
+  PathWithout(Paths, AppDir(), Found);
+  if Found then
+    Exit;
+  if (Paths <> '') and (Copy(Paths, Length(Paths), 1) <> ';') then
+    Paths := Paths + ';';
+  if RegWriteExpandStringValue(HKCU, 'Environment', 'Path', Paths + AppDir()) then
+    Log('Added to the user''s PATH: ' + AppDir())
+  else
+    Log('Could not add the install folder to the user''s PATH');
+end;
+
+procedure RemoveFromPath();
+var
+  Paths, Kept: String;
+  Found: Boolean;
+begin
+  if not RegQueryStringValue(HKCU, 'Environment', 'Path', Paths) then
+    Exit;
+  Kept := PathWithout(Paths, AppDir(), Found);
+  if not Found then
+    Exit;
+  if Kept = '' then
+    RegDeleteValue(HKCU, 'Environment', 'Path')
+  else
+    RegWriteExpandStringValue(HKCU, 'Environment', 'Path', Kept);
+  Log('Taken off the user''s PATH: ' + AppDir());
+end;
+
 function GetVersionString(Exe: String): String;
 begin
   if not GetVersionNumbersString(Exe, Result) then
@@ -260,6 +342,7 @@ begin
   else if CurStep = ssPostInstall then
   begin
     Notify(StepMessage, StepFinish);
+    AddToPath();
     // Read by V2pn at its first start (V2pnImport.AutoMarker), as install.ps1 leaves it.
     // Only on a first install: a silent run with /TASKS chooses the task before the folder is known.
     if WizardIsTaskSelected('importv2rayn') and not WasInstalled then
@@ -380,6 +463,7 @@ begin
       RemoveData := DirExists(AppDir() + '\guiConfigs') and
         (SuppressibleMsgBox(CustomMessage('RemoveData'), mbConfirmation, MB_YESNO or MB_DEFBUTTON2, IDNO) = IDYES);
     RemoveIntegration();
+    RemoveFromPath();
   end
   else if CurUninstallStep = usPostUninstall then
   begin

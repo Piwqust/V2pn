@@ -1,6 +1,7 @@
 // Wiring: configuration, database, key, the HTTP server, the housekeeping timers and a graceful stop.
 import http from 'node:http';
 import { createHandler } from './api.mjs';
+import { BETA_REFRESH_MS } from './beta.mjs';
 import { Db } from './db.mjs';
 import { loadKey, ensureKey } from './keys.mjs';
 import { log } from './log.mjs';
@@ -73,6 +74,14 @@ export function startServer(hub) {
     geo.unref();
   };
   if (mirror) setImmediate(refreshGeo);
+  // The beta channel's tag: now, then every five minutes (refresh never throws; a failure keeps the last tag).
+  let beta = null;
+  const refreshBeta = async () => {
+    await hub.beta.refresh();
+    beta = setTimeout(refreshBeta, BETA_REFRESH_MS);
+    beta.unref();
+  };
+  setImmediate(refreshBeta);
 
   let stopping = false;
   const stop = signal => {
@@ -83,6 +92,7 @@ export function startServer(hub) {
     clearInterval(maintain);
     clearTimeout(roots);
     clearTimeout(geo);
+    clearTimeout(beta);
     server.close(() => {
       try {
         hub.counter.flush();

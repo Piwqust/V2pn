@@ -20,9 +20,15 @@
   one). Pushing the tag (git push origin HEAD v<version>) makes
   .github/workflows/v2pn-release.yml build every package and open a draft release.
 
+  -Beta: a beta version, <version>-beta.<n> (-Version 1.5.0 takes the next free n). Its GitHub
+  release is a pre-release, still a draft until you publish it: GitHub's "latest" never names it,
+  so only copies with Updates -> "Get beta versions" on take it (the hub's beta channel). The
+  release after the betas (1.5.0) is a newer version for them, and replaces the beta by itself.
+
 .EXAMPLE
   tools/release.ps1 -Version 1.0.1                  # packages + manifest, nothing is committed
   tools/release.ps1 -Version 1.0.1 -Tag             # the same, then bump, commit and tag
+  tools/release.ps1 -Version 1.1.0 -Beta -Tag       # the next beta of 1.1.0 (v1.1.0-beta.1, then .2 ...)
   tools/release.ps1 -Version 1.0.1 -Arch x64 -NoCores -NoInstaller -OutDir $env:TEMP/rel   # quick test build
   tools/release.ps1 -Version 1.0.1 -ManifestOnly    # re-list and re-sign what is in the folder
   tools/release.ps1 -Version 1.0.1-local.202611141320 -Arch x64 -UpdateOnly -NoManifest -OutDir <dir>
@@ -46,6 +52,8 @@ param(
     # x64 update zip grows from 64 to 76 MB (v2rayN.Desktop.csproj keeps what a start never loads as IL).
     [switch]$NoReadyToRun,
     [switch]$Tag,
+    # A beta, <version>-beta.<n>: a pre-release for the copies that take betas (see above).
+    [switch]$Beta,
     # Release notes for -Tag; by default the CHANGELOG.md section, else the commits since the last tag.
     [string]$Notes,
     # For tools/update-e2e.ps1 only: packages that look for updates somewhere else and trust a test key.
@@ -64,6 +72,16 @@ $ProgressPreference = 'SilentlyContinue'
 $repo = Split-Path -Parent $PSScriptRoot
 $src = Join-Path $repo 'v2rayN'
 if ($Preset -and ($Tag -or $UpdateOnly)) { throw '-Preset makes a special build: not with -Tag or -UpdateOnly' }
+if ($Beta) {
+    if ($Preset -or $UpdateOnly) { throw '-Beta makes a beta release: not with -Preset or -UpdateOnly' }
+    if ($Version -match '^\d+\.\d+\.\d+$') {
+        # The next beta of that version: 1.5.0-beta.1, then 1.5.0-beta.2 ...
+        $taken = @(& git.exe -C $repo tag --list "v$Version-beta.*" 2>$null) | ForEach-Object { if ($_ -match '-beta\.(\d+)$') { [int]$Matches[1] } }
+        $Version = "$Version-beta.$(1 + (@($taken) + 0 | Measure-Object -Maximum).Maximum)"
+    }
+    elseif ($Version -notmatch '^\d+\.\d+\.\d+-beta\.\d+$') { throw "A beta version looks like 1.5.0-beta.1 (or give 1.5.0 for its next beta), not $Version." }
+    Write-Host "Beta $Version"
+}
 if (-not $OutDir) { $OutDir = Join-Path $repo "dist/release/$Version" }
 # Relative to where the script was called from, which .NET's own current directory may not be.
 $OutDir = $ExecutionContext.SessionState.Path.GetUnresolvedProviderPathFromPSPath($OutDir)
@@ -79,6 +97,29 @@ function Get-GitOutput {
     $ErrorActionPreference = 'Continue'
     try { return (& git.exe -C $repo @args 2>$null) }
     finally { $ErrorActionPreference = $previous }
+}
+
+# Orders versions as V2pn does (SemanticVersion): by the numbers, then a version with a "-" part before the same one
+# without it (1.5.0-beta.2 < 1.5.0), the parts after "-" piece by piece, numbers as numbers (beta.2 < beta.10).
+function Compare-Version([string]$A, [string]$B) {
+    $a1, $a2 = $A.Split('-', 2)
+    $b1, $b2 = $B.Split('-', 2)
+    $c = ([version]$a1).CompareTo([version]$b1)
+    if ($c -ne 0) { return [Math]::Sign($c) }
+    if (-not $a2 -or -not $b2) { return [int][bool]$b2 - [int][bool]$a2 }
+    $p = $a2.Split('.')
+    $q = $b2.Split('.')
+    for ($i = 0; $i -lt [Math]::Max($p.Count, $q.Count); $i++) {
+        if ($i -ge $p.Count) { return -1 }
+        if ($i -ge $q.Count) { return 1 }
+        $pn = $p[$i] -match '^\d+$'
+        $qn = $q[$i] -match '^\d+$'
+        if ($pn -and $qn) { $c = ([long]$p[$i]).CompareTo([long]$q[$i]) }
+        elseif ($pn -ne $qn) { $c = if ($pn) { -1 } else { 1 } }
+        else { $c = [string]::CompareOrdinal($p[$i], $q[$i]) }
+        if ($c -ne 0) { return [Math]::Sign($c) }
+    }
+    return 0
 }
 
 # Windows PowerShell's ZipFile.CreateFromDirectory writes "V2pn\V2pn.exe"; the installer wants "/".
@@ -131,27 +172,6 @@ function New-V2pnSetup([string]$Window, [string]$Engine, [string]$Out, [string]$
     Remove-Item -Force $Engine
 }
 
-# The core bundle pinned for a target, downloaded once per pin and checked against the lock.
-function Get-Cores([string]$Target) {
-    $lock = Get-Content (Join-Path $PSScriptRoot 'cores.lock.json') -Raw | ConvertFrom-Json
-    $entry = $lock.targets.$Target
-    if (-not $entry) { throw "tools/cores.lock.json has no cores for $Target; run tools/update-cores.ps1" }
-    $cache = Join-Path ([IO.Path]::GetTempPath()) "v2pn-cores-$($lock.commit)"
-    New-Item -ItemType Directory -Force $cache | Out-Null
-    $zip = Join-Path $cache (Split-Path -Leaf $entry.url)
-    if (-not (Test-Path $zip)) {
-        Write-Host "   downloading $($entry.url)"
-        Invoke-WebRequest -UseBasicParsing -Uri $entry.url -OutFile "$zip.part"
-        Move-Item -Force "$zip.part" $zip
-    }
-    $hash = (Get-FileHash -Algorithm SHA256 $zip).Hash.ToLowerInvariant()
-    if ($hash -ne $entry.sha256) {
-        Remove-Item -Force $zip
-        throw "The core bundle for $Target does not match tools/cores.lock.json (got $hash). Nothing was packaged."
-    }
-    return $zip
-}
-
 function New-Manifest {
     $arguments = @('run', (Join-Path $PSScriptRoot 'manifest.cs'), '--', $OutDir, $Version, '--repo', $repo)
     if ($SigningKey) { $arguments += @('--key', $SigningKey) }
@@ -176,14 +196,22 @@ if ($ManifestOnly) {
 }
 
 if ($Tag) {
-    if ($Version.Contains('-')) { throw "Releases have plain versions like 1.0.1; $Version is for local builds." }
+    if ($Version.Contains('-') -and -not $Beta) { throw "Releases have plain versions like 1.0.1; $Version is for local builds (a beta takes -Beta)." }
     if (Get-GitOutput status --porcelain) { throw 'The working tree has uncommitted changes; commit them before tagging a release.' }
     $branch = Get-GitOutput rev-parse --abbrev-ref HEAD
     if ($branch -ne 'v2pn') { throw "Releases are tagged on the v2pn branch; this is $branch." }
     if (Get-GitOutput tag --list "v$Version") { throw "Tag v$Version already exists." }
-    $lastTag = Get-GitOutput describe --tags --abbrev=0 --match 'v[0-9]*.[0-9]*.[0-9]*'
-    if ($lastTag -and ([version]$Version -le [version]$lastTag.TrimStart('v'))) {
-        throw "Version $Version is not newer than the last release, $lastTag. Installed copies would never take it."
+    # The tag before this one, for the notes: the last release; for a beta, the last release or beta.
+    $describe = @('describe', '--tags', '--abbrev=0', '--match', 'v[0-9]*.[0-9]*.[0-9]*')
+    if (-not $Beta) { $describe += @('--exclude', 'v*-*') }
+    $lastTag = Get-GitOutput @describe
+    # A release must be newer than every release before it, a beta newer than every release and beta: the copies it is
+    # for take only a higher version. A release of an older line (1.4.3 after 1.5.0-beta.1) is fine.
+    $before = @(Get-GitOutput tag --list 'v*') | Where-Object { $_ -match '^v\d+\.\d+\.\d+(-[0-9A-Za-z.]+)?$' -and ($Beta -or -not $_.Contains('-')) }
+    foreach ($other in $before) {
+        if ((Compare-Version $Version $other.TrimStart('v')) -le 0) {
+            throw "Version $Version is not newer than $other. Installed copies would never take it."
+        }
     }
     Write-Host 'Running tests before tagging...'
     Invoke-Checked $dotnet @('test', '--project', (Join-Path $src 'ServiceLib.Tests/ServiceLib.Tests.csproj'), '-c', 'Release')
@@ -204,7 +232,8 @@ if ($commit) {
 if ($Version.Contains('-local.')) { $properties += "-p:V2pnSourceDir=$repo" }
 # Only V2pn itself: AmazTool runs for a few seconds during an update, v2pnctl for one command.
 $appProperties = if ($NoReadyToRun) { @() } else { @('-p:PublishReadyToRun=true') }
-if ($UpdateSources) { $properties += "-p:V2pnUpdateSources=$UpdateSources" }
+# Test packages ask their own sources for the beta channel too, never V2pn's server.
+if ($UpdateSources) { $properties += "-p:V2pnUpdateSources=$UpdateSources", "-p:V2pnBetaSources=$UpdateSources" }
 if ($UpdateKeys) { $properties += "-p:V2pnUpdateKeys=$UpdateKeys" }
 
 $setupWindow = $null
@@ -244,7 +273,8 @@ foreach ($a in $Arch) {
 
     if (-not $NoCores) {
         Write-Host "== ${rid}: cores"
-        $coreZip = Get-Cores $rid
+        # Pinned in tools/cores.lock.json and checked against its hash (_common.ps1); a mismatch packages nothing.
+        $coreZip = Get-PinnedCores $rid
         $coreDir = Join-Path $work "cores-$a"
         if (Test-Path $coreDir) { Remove-Item -Recurse -Force $coreDir }
         Expand-Archive -Path $coreZip -DestinationPath $coreDir
@@ -294,7 +324,10 @@ if ($Tag) {
     if (-not $Notes) {
         $changelog = Join-Path $repo 'CHANGELOG.md'
         if (Test-Path $changelog) {
-            $section = [regex]::Match((Get-Content $changelog -Raw -Encoding UTF8), "(?ms)^## \[?$([regex]::Escape($Version))\]?[^\n]*\n(.*?)(?=^## |\z)")
+            $text = Get-Content $changelog -Raw -Encoding UTF8
+            $section = [regex]::Match($text, "(?ms)^## \[?$([regex]::Escape($Version))\]?[^\n]*\n(.*?)(?=^## |\z)")
+            # A beta tells what is coming: the section that is not released yet.
+            if (-not $section.Success -and $Beta) { $section = [regex]::Match($text, "(?ms)^## Unreleased[^\n]*\n(.*?)(?=^## |\z)") }
             if ($section.Success) { $Notes = $section.Groups[1].Value.Trim() }
         }
     }
@@ -311,6 +344,9 @@ if ($Tag) {
     # own title, so the notes must not repeat the name. The v2rayN version is added only when the
     # notes do not already say what the release is built on.
     $message = "V2pn $Version`n`n$Notes"
+    if ($Beta) {
+        $message = "V2pn $Version`n`nA beta: V2pn installs it only where Updates, ""Get beta versions"" is on; everyone else stays on the latest release.`n`n$Notes"
+    }
     if ($Notes -notmatch 'v2rayN') { $message += "`n`nBased on v2rayN $upstreamVersion." }
     # Every release page ends the same way: which file is for whom. Without it a visitor faces
     # eighteen files and may take the smaller update package, which has no cores.
@@ -343,6 +379,7 @@ if ($Tag) {
     Write-Host ''
     Write-Host "Tagged v$Version. Publish it with:"
     Write-Host "  git push --atomic origin HEAD v$Version"
+    if ($Beta) { Write-Host 'GitHub builds it and opens a draft pre-release: published, it goes only to copies that take betas.' }
 }
 
 Write-Host "Packages: $OutDir"

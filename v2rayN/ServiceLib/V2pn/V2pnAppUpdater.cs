@@ -13,10 +13,22 @@ public enum EV2pnUpdateState
 
 /// <summary>What the updater trusts and where it looks. Comes from the build; tests swap it.</summary>
 /// <param name="ByWinGet">winget installed this copy and replaces it; V2pn only reports new versions.</param>
-public sealed record V2pnUpdateSettings(IReadOnlyList<string> Sources, IReadOnlyList<string> Keys, bool Supported, string CurrentVersion, bool ByWinGet = false)
+/// <param name="BetaSources">Sources that also serve the beta channel, asked only when the person takes beta versions.</param>
+public sealed record V2pnUpdateSettings(IReadOnlyList<string> Sources, IReadOnlyList<string> Keys, bool Supported, string CurrentVersion, bool ByWinGet = false,
+    IReadOnlyList<string>? BetaSources = null)
 {
     public static V2pnUpdateSettings FromBuild() =>
-        new(V2pnInfo.UpdateSources, V2pnInfo.UpdateKeys, V2pnInfo.SelfUpdateSupported, V2pnInfo.Version, V2pnWinGet.IsInstall());
+        new(V2pnInfo.UpdateSources, V2pnInfo.UpdateKeys, V2pnInfo.SelfUpdateSupported, V2pnInfo.Version, V2pnWinGet.IsInstall(), V2pnInfo.BetaSources);
+
+    /// <summary>
+    /// The manifests the updater asks, in order, each with the source its packages come from: with <paramref name="beta"/>
+    /// the beta channel of every source that has one, then the latest release of every source. The highest signed
+    /// version among them wins, so a beta replaces a release only when it is newer, and a release replaces a beta.
+    /// </summary>
+    public IReadOnlyList<(string Source, string Manifest)> Manifests(bool beta) =>
+        (beta ? (BetaSources ?? []).Select(s => (s, V2pnInfo.BetaManifestUrl(s))) : [])
+            .Concat(Sources.Select(s => (s, V2pnInfo.ManifestUrl(s))))
+            .ToList();
 }
 
 /// <summary>
@@ -67,6 +79,12 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
 
     /// <summary>winget replaces this copy: nothing is downloaded or installed here, the window offers winget instead.</summary>
     public bool ByWinGet => Settings.ByWinGet;
+
+    /// <summary>
+    /// The person takes beta versions (Updates → "Get beta versions"). Off: a beta is neither looked for nor installed,
+    /// not even one downloaded while it was on; the beta already running stays until a newer release replaces it.
+    /// </summary>
+    public static bool Beta => ConfigTextHandler.Config?.UiItem?.V2pnBeta == true;
 
     private static string PendingDir => Utils.GetTempPath("V2pnUpdate");
 
@@ -326,15 +344,15 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
     {
         var proxy = await V2pnHttp.LocalProxyAsync(cancellationToken);
-        foreach (var (source, i) in Settings.Sources.Select((s, i) => (s, i)))
+        var manifests = Settings.Manifests(Beta);
+        foreach (var ((source, url), i) in manifests.Select((m, i) => (m, i)))
         {
             var host = Uri.TryCreate(source, UriKind.Absolute, out var uri) ? uri.Host : source;
             // V2pn's server comes first and GitHub after it: a source with a fallback is not waited on for long.
-            var limits = i < Settings.Sources.Count - 1 ? V2pnHttp.Quick : null;
+            var limits = i < manifests.Count - 1 ? V2pnHttp.Quick : null;
             foreach (var viaProxy in Routes(preferProxy, proxy != null))
             {
                 var route = viaProxy ? proxy : null;
-                var url = V2pnInfo.ManifestUrl(source);
                 var json = await V2pnHttp.GetAsync(url, route, V2pnManifest.MaxBytes, cancellationToken, limits: limits);
                 if (json.NotFound)
                 {
@@ -379,7 +397,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         var proxyRuns = await V2pnHttp.LocalProxyAsync(cancellationToken) != null;
 
         // The source and route that just served the manifest go first.
-        var attempts = Settings.Sources.OrderBy(s => s == release.Source ? 0 : 1)
+        var attempts = Settings.Sources.Where(s => s != release.Source).Prepend(release.Source)
             .SelectMany(s => Routes(release.ViaProxy, proxyRuns).Select(viaProxy => (Source: s, ViaProxy: viaProxy)));
         var error = "The download did not finish.";
         var done = false;
@@ -434,12 +452,12 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
     private static string ManifestPath(string package) => Path.ChangeExtension(package, ".json");
 
     /// <summary>
-    /// Whether a version should replace this one: a newer one always; an older published release
-    /// only when the person asked to leave a developer-mode build for it.
+    /// Whether a version should replace this one: a newer one always, a beta only while the person takes betas; an older
+    /// published release only when the person asked to leave a developer-mode build for it.
     /// </summary>
     private bool IsWanted(string version)
     {
-        if (!SemanticVersion.TryParse(version, out var candidate) || candidate == null)
+        if (!SemanticVersion.TryParse(version, out var candidate) || candidate == null || (V2pnInfo.IsBetaVersion(version) && !Beta))
         {
             return false;
         }

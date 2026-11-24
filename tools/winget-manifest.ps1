@@ -14,6 +14,8 @@
   The package is a zip with a portable app inside. ArchiveBinariesDependOnPath keeps winget from
   starting V2pn through a link in another folder: V2pn needs the DLLs next to its exe. In a WinGet
   folder V2pn keeps its data in %LOCALAPPDATA%\V2pn and leaves updates to winget (V2pnWinGet.cs).
+  The same setting puts the app's folder on the PATH, so both declared commands work as they are
+  named in it: v2pn and v2pnctl, V2pn's command line and MCP server.
 
   Then check and submit (the first version as a pull request to microsoft/winget-pkgs):
 
@@ -85,6 +87,11 @@ NestedInstallerType: portable
 NestedInstallerFiles:
 - RelativeFilePath: V2pn\V2pn.exe
   PortableCommandAlias: v2pn
+- RelativeFilePath: V2pn\v2pnctl.exe
+  PortableCommandAlias: v2pnctl
+Commands:
+- v2pn
+- v2pnctl
 ArchiveBinariesDependOnPath: true
 MinimumOSVersion: 10.0.17763.0
 ReleaseDate: $((Get-Date $manifest.published).ToString('yyyy-MM-dd'))

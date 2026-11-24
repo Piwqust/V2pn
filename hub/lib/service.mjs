@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import fs from 'node:fs';
 import path from 'node:path';
 import { Auth, RateLimiter, normalizeLogin, validLogin } from './auth.mjs';
+import { BetaChannel } from './beta.mjs';
 import { checkSubscription } from './check.mjs';
 import { colors as C } from './colors.mjs';
 import { DownloadCounter } from './downloads.mjs';
@@ -49,6 +50,8 @@ export class Hub {
     this.limiter = new RateLimiter();
     this.auth = new Auth({ db, config, limiter: this.limiter });
     this.counter = new DownloadCounter(db);
+    // /releases/beta/...: the newest release with the pre-releases, as GitHub's list names it (refreshed by server.mjs).
+    this.beta = new BetaChannel({ repo: config.githubRepo });
     this.checksRunning = 0;
     this.lastPublishError = null;
     fs.mkdirSync(config.uploadsDir, { recursive: true, mode: 0o700 });

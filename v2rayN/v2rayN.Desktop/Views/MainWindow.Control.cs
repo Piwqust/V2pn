@@ -10,20 +10,36 @@ namespace v2rayN.Desktop.Views;
 public partial class MainWindow : IV2pnControlUi
 {
     private V2pnControlService? _control;
+    private bool _controlStarted;
+    private bool _controlStopped;
 
     /// <summary>Once the window has its view model: the channel answers "off" until the setting allows more.</summary>
     private void InitControl()
     {
-        if (_control != null || ViewModel is not { } vm)
+        if (_controlStarted || ViewModel is not { } vm)
         {
             return;
         }
-        _control = V2pnControlService.Start(new V2pnControlApp(_config, vm.StatusBarViewModel, V2pnConnectionService.Instance, this),
-            Utils.GetBaseDirectory());
+        _controlStarted = true;
+        _ = StartControlAsync(new V2pnControlApp(_config, vm.StatusBarViewModel, V2pnConnectionService.Instance, this));
+    }
+
+    // Right after a restart as administrator the V2pn before it may still hold the pipe for a moment.
+    private async Task StartControlAsync(V2pnControlApp app)
+    {
+        for (var attempt = 0; attempt < 10 && !_controlStopped; attempt++)
+        {
+            if ((_control = V2pnControlService.Start(app, Utils.GetBaseDirectory())) != null)
+            {
+                return;
+            }
+            await Task.Delay(TimeSpan.FromSeconds(2));
+        }
     }
 
     private void StopControl()
     {
+        _controlStopped = true;
         _control?.Dispose();
         _control = null;
     }

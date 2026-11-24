@@ -89,61 +89,14 @@ public static class RoutingPresets
     public static bool NeedsRussianSources(Config config, RoutingPresetKind kind) =>
         kind != RoutingPresetKind.All && config.ConstItem.GeoSourceUrl != Global.GeoFilesSources[1];
 
-    private static RulesItem Rule(string outbound, string[]? domain = null, string[]? ip = null, string? port = null,
-        string? network = null, string[]? protocol = null) => new()
+    /// <summary>The rules of a preset, with the person's sites first (V2pnPresetRules, in ServiceLib with its tests).</summary>
+    public static List<RulesItem> Rules(RoutingPresetKind kind, bool blockAds, IReadOnlyList<V2pnSiteRule>? sites = null) =>
+        V2pnPresetRules.Rules(kind switch
         {
-            OutboundTag = outbound,
-            Domain = domain?.ToList(),
-            Ip = ip?.ToList(),
-            Port = port,
-            Network = network,
-            Protocol = protocol?.ToList(),
-        };
-
-    private static readonly string[] RussianDomains =
-    [
-        "geosite:ru-available-only-inside", "geosite:category-gov-ru", "geosite:category-bank-ru",
-        "geosite:category-ru", "domain:ru", "domain:su", "domain:xn--p1ai",
-    ];
-
-    public static List<RulesItem> Rules(RoutingPresetKind kind, bool blockAds)
-    {
-        var rules = new List<RulesItem>();
-        if (blockAds)
-        {
-            rules.Add(Rule(Global.BlockTag, domain: ["geosite:category-ads-all"]));
-        }
-        rules.Add(Rule(Global.DirectTag, ip: ["geoip:private"]));
-        rules.Add(Rule(Global.DirectTag, domain: ["geosite:private"]));
-
-        switch (kind)
-        {
-            case RoutingPresetKind.All:
-                rules.Add(Rule(Global.ProxyTag, port: "0-65535"));
-                break;
-
-            case RoutingPresetKind.RussiaDirect:
-                rules.Add(Rule(Global.DirectTag, protocol: ["bittorrent"]));
-                // Blocked .ru sites still go through the server, so this comes before the Russian rules.
-                rules.Add(Rule(Global.ProxyTag, domain: ["geosite:ru-blocked"]));
-                rules.Add(Rule(Global.DirectTag, domain: RussianDomains));
-                rules.Add(Rule(Global.DirectTag, ip: ["geoip:ru"]));
-                rules.Add(Rule(Global.ProxyTag, port: "0-65535"));
-                break;
-
-            case RoutingPresetKind.BlockedOnly:
-                rules.Add(Rule(Global.DirectTag, protocol: ["bittorrent"]));
-                // Remote DNS servers have to be reachable through the server too.
-                rules.Add(Rule(Global.ProxyTag, ip: ["1.1.1.1", "1.0.0.1", "8.8.8.8", "8.8.4.4"]));
-                rules.Add(Rule(Global.ProxyTag, domain: ["geosite:ru-blocked", "geosite:youtube", "geosite:discord", "geosite:telegram", "geosite:category-ai-!cn"]));
-                rules.Add(Rule(Global.ProxyTag, ip: ["geoip:ru-blocked", "geoip:telegram"]));
-                // Discord voice.
-                rules.Add(Rule(Global.ProxyTag, port: "50000-65535", network: "udp"));
-                rules.Add(Rule(Global.DirectTag, port: "0-65535"));
-                break;
-        }
-        return rules;
-    }
+            RoutingPresetKind.RussiaDirect => EV2pnPreset.RussiaDirect,
+            RoutingPresetKind.BlockedOnly => EV2pnPreset.BlockedOnly,
+            _ => EV2pnPreset.All,
+        }, blockAds, sites);
 
     /// <summary>
     /// Creates the preset items or refreshes their names and rules; keeps which one is active.
@@ -159,7 +112,7 @@ public static class RoutingPresets
         {
             var id = Id(kind);
             var item = existing.FirstOrDefault(t => t.Id == id);
-            var rules = JsonUtils.Serialize(Rules(kind, config.UiItem.V2pnBlockAds), false);
+            var rules = JsonUtils.Serialize(Rules(kind, config.UiItem.V2pnBlockAds, config.UiItem.V2pnSiteRules), false);
             var strategy = kind == RoutingPresetKind.All ? Global.AsIs : Global.IPOnDemand;
             if (item != null && item.Remarks == Title(kind) && item.DomainStrategy == strategy && SameRules(item.RuleSet, rules))
             {

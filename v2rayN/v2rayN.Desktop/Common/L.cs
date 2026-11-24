@@ -531,6 +531,21 @@ public static partial class L
     public static string CheckOtherCountries => T("Check other countries in this subscription", "Проверить другие страны этой подписки");
     public static string NoServersInCountryResponded => T("No other server in this country answered the check.", "Другие серверы этой страны не ответили на проверку.");
     public static string UnknownServerCountry => T("unknown country", "страна неизвестна");
+    public static string SitesTitle => T("Sites that always go one way", "Сайты-исключения");
+    public static string SitesMenu => T("Sites that always go one way…", "Сайты-исключения…");
+    public static string SitesMenuCount => T("{0} sites", "Сайтов: {0}");
+    public static string SitesLead => T(
+        "These sites go the way you choose, whatever is chosen under Connect: a bank directly while the rest goes through the server, or one site through the server in \"Only blocked\". Works with the three ways above, not with your own rule sets.",
+        "Эти сайты идут так, как вы выберете, что бы ни было выбрано под «Подключиться»: банк напрямую, когда остальное идёт через сервер, или один сайт через сервер в режиме «Только заблокированное». Работает с тремя режимами выше, но не со своими наборами правил.");
+    public static string SitesInputHint => T("example.com or a link to the site", "example.com или ссылка на сайт");
+    public static string SitesSubdomains => T("With subdomains", "С поддоменами");
+    public static string SitesWithSubdomains => T("with subdomains (www., m. and the rest)", "с поддоменами (www., m. и другими)");
+    public static string SitesExactly => T("only this address", "только этот адрес");
+    public static string SitesDirect => T("Directly", "Напрямую");
+    public static string SitesProxy => T("Through the server", "Через сервер");
+    public static string SitesNone => T("No sites yet. Type a site above and choose how it goes.", "Пока сайтов нет. Введите сайт выше и выберите, как ему идти.");
+    public static string SitesNotADomain => T("That is not a site's address. Type it like example.com.", "Это не адрес сайта. Введите его так: example.com.");
+    public static string SitesRemove => T("Remove {0}", "Убрать {0}");
     public static string AutoSwitched => T("{0} stopped answering. V2pn switched to {1} in the same country.",
         "{0} перестал отвечать. V2pn переключился на {1} в той же стране.");
     public static string SetAutoSwitch => T("Switch to a working server by itself", "Переключаться на рабочий сервер самому");

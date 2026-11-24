@@ -1173,6 +1173,13 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         InitPartnerRoutes();
         togBlockAds.IsChecked = _config.UiItem.V2pnBlockAds;
         togBlockAds.IsCheckedChanged += async (_, _) => await SetBlockAdsAsync(togBlockAds.IsChecked == true);
+        RefreshSiteRulesCount();
+        btnSiteRules.Click += async (_, _) =>
+        {
+            btnRoute.Flyout?.Hide();
+            await ShowRoomyDialog(new SiteRulesView(_config, ApplyPresetRulesAsync));
+            RefreshSiteRulesCount();
+        };
         lstCustomRoutes.SelectionChanged += async (_, _) =>
         {
             if (!_routeSync && lstCustomRoutes.SelectedItem is RoutingItem item)
@@ -1481,12 +1488,28 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         }
         _config.UiItem.V2pnBlockAds = on;
         await ConfigTextHandler.SaveConfig();
+        await ApplyPresetRulesAsync();
+    }
+
+    /// <summary>Rewrites the presets' rules (ads, the person's sites) and reloads the core when a preset is in use.</summary>
+    private async Task ApplyPresetRulesAsync()
+    {
+        if (ViewModel?.StatusBarViewModel is not { } status)
+        {
+            return;
+        }
         var changed = await RoutingPresets.EnsureAsync(_config);
         await status.RefreshRoutingsMenu();
         if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id))
         {
             status.ReloadRequested.Publish();
         }
+    }
+
+    private void RefreshSiteRulesCount()
+    {
+        var count = _config.UiItem.V2pnSiteRules?.Count ?? 0;
+        txtSiteRulesCount.Text = count > 0 ? string.Format(L.SitesMenuCount, count) : string.Empty;
     }
 
     #endregion Mode and routing

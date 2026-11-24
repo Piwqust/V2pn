@@ -1521,6 +1521,32 @@
                                                     <!--  Opens a window, so it reads as a way out of the menu rather than one more setting.  -->
                                                     <StackPanel Spacing="6">
                                                         <Border Classes="hairline" />
+                                                        <!--  V2pn: sites that always go one way (SiteRulesView).  -->
+                                                        <Button
+                                                            x:Name="btnSiteRules"
+                                                            AutomationProperties.Name="{x:Static loc:L.SitesMenu}"
+                                                            Classes="routelink"
+                                                            Theme="{StaticResource V2SideRow}">
+                                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                                                                <Border Classes="routeicon plain">
+                                                                    <PathIcon Data="{StaticResource SemiIconGlobe}" />
+                                                                </Border>
+                                                                <TextBlock
+                                                                    Grid.Column="1"
+                                                                    VerticalAlignment="Center"
+                                                                    Classes="routetitle"
+                                                                    Text="{x:Static loc:L.SitesMenu}" />
+                                                                <TextBlock
+                                                                    x:Name="txtSiteRulesCount"
+                                                                    Grid.Column="2"
+                                                                    VerticalAlignment="Center"
+                                                                    Classes="routehint" />
+                                                                <PathIcon
+                                                                    Grid.Column="3"
+                                                                    Classes="i12 routechevron"
+                                                                    Data="{StaticResource SemiIconChevronRight}" />
+                                                            </Grid>
+                                                        </Button>
                                                         <Button
                                                             x:Name="btnRoutingSettings"
                                                             AutomationProperties.Name="{x:Static loc:L.RoutingSettings}"

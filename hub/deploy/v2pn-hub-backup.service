@@ -1,0 +1,28 @@
+[Unit]
+Description=V2pn Hub backup (deploy/BACKUP.md)
+After=v2pn-hub.service
+
+[Service]
+Type=oneshot
+User=v2pn-hub
+Group=v2pn-hub
+EnvironmentFile=/etc/v2pn-hub.env
+EnvironmentFile=-/etc/v2pn-hub-backup.env
+ExecStart=/bin/sh /opt/v2pn-hub/deploy/v2pn-hub-backup.sh
+Nice=10
+IOSchedulingClass=idle
+UMask=0077
+NoNewPrivileges=true
+CapabilityBoundingSet=
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictNamespaces=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+LockPersonality=true
+# hub.db is read through SQLite, which writes its -shm file next to it.
+ReadWritePaths=/var/lib/v2pn-hub /var/backups/v2pn-hub

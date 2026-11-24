@@ -141,6 +141,9 @@ public class UIItem
     /// <summary>V2pn: the failures already told, "version|step".</summary>
     public List<string>? V2pnReportedFailures { get; set; }
 
+    /// <summary>V2pn: what v2pnctl and AI assistants may do over the control channel (V2pnControlHandler); off by default.</summary>
+    public EV2pnControlLevel V2pnControl { get; set; }
+
     // Developer mode (Windows): the Updates window builds V2pn from this source folder and installs it.
     public bool V2pnDevMode { get; set; }
 

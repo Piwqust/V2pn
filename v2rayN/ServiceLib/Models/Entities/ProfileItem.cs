@@ -1,6 +1,6 @@
 namespace ServiceLib.Models.Entities;
 
-public class ProfileItem
+public partial class ProfileItem
 {
     private ProtocolExtraItem? _protocolExtraCache;
     private TransportExtraItem? _transportExtraCache;

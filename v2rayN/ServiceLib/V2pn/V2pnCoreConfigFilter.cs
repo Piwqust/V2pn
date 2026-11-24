@@ -12,8 +12,11 @@ namespace ServiceLib;
 /// </summary>
 public static class V2pnCoreConfigFilter
 {
-    /// <summary>A node whose config came with a subscription update, not from the person's own file.</summary>
-    public static bool FromSubscription(ProfileItem node) => node.IsSub && node.Subid.IsNotEmpty();
+    /// <summary>
+    /// A node whose config came with a subscription update, not from the person's own file: still in its subscription,
+    /// or moved out of it (<see cref="ProfileItem.V2pnFromSub"/>).
+    /// </summary>
+    public static bool FromSubscription(ProfileItem node) => node.IsSub && (node.Subid.IsNotEmpty() || node.V2pnFromSub);
 
     /// <summary>
     /// A whole Xray or sing-box config from a subscription, ready to run, or null when V2pn does not run it:

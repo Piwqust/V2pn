@@ -205,6 +205,7 @@ public class SubscriptionHandler(
 
         // Add servers to configuration
         var ret = await ConfigDbHandler.AddBatchServers(result, id, true);
+        await V2pnSubProvenance.MarkAsync(id);
         if (ret <= 0)
         {
             Logging.SaveLog($"FailedImportSubscription: {V2pnLimits.Body(result)}");

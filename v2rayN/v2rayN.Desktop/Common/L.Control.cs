@@ -6,8 +6,8 @@ public static partial class L
     public static string GrpControl => T("Command line and AI", "Командная строка и ИИ");
     public static string SetControl => T("Control from the command line and AI", "Управление из командной строки и ИИ");
     public static string SetControlHint => T(
-        "Lets the v2pnctl command and AI assistants (over MCP) read V2pn's state, or also connect, disconnect and switch servers, the mode and the route. Every change shows a note here, and a change sent with a confirmation window is undone by itself unless it is confirmed in time. Links, addresses and keys are never given out.",
-        "Команда v2pnctl и ИИ-ассистенты (через MCP) смогут читать состояние V2pn или ещё и подключать, отключать, менять сервер, режим и маршрут. О каждом изменении V2pn скажет здесь, а изменение с окном подтверждения откатится само, если его не подтвердят вовремя. Ссылки, адреса и ключи не выдаются никогда.");
+        "Lets the v2pnctl command and AI assistants (over MCP) read V2pn's state, or also connect, disconnect and switch the server, mode and route. V2pn shows every change they make. Links, addresses and keys are never given out.",
+        "Команда v2pnctl и ИИ-ассистенты (через MCP) смогут читать состояние V2pn или ещё и подключать, отключать, менять сервер, режим и маршрут. О каждом их изменении V2pn скажет в окне. Ссылки, адреса и ключи не выдаются никогда.");
     public static string ControlOff => T("Off", "Выключено");
     public static string ControlReadOnly => T("Read only", "Только чтение");
     public static string ControlFull => T("Control", "Управление");

@@ -55,7 +55,7 @@ internal static class Program
         {
             if (line.Json)
             {
-                await stdout.WriteLineAsync(answer.ToJson().ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+                await stdout.WriteLineAsync(answer.ToJson().ToJsonString(V2pnControlProtocol.Indented));
             }
             else if (answer.Ok)
             {

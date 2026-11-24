@@ -148,14 +148,30 @@ public class V2pnControlHandlerTests
     }
 
     [Test]
-    public async Task NothingChanged_NothingIsAnnounced()
+    public async Task NothingChanged_NothingIsAnnounced_AndNothingWaits()
     {
         var (handler, app, _, _) = Make();
 
-        var answer = await Send(handler, "connect");
+        var answer = await Send(handler, "connect", new JsonObject { ["confirmWithin"] = 30 });
 
         await answer.Ok.Should().BeTrue();
         await app.Notices.Count.Should().BeEqualTo(0);
+        await handler.Waiting.Should().BeFalse();
+        await (answer.Data?["confirmWithin"] == null).Should().BeTrue();
+        await V2pnControlJson.String(answer.Data?["message"])!.Should().NotContain("confirm");
+    }
+
+    [Test]
+    public async Task TheHintToConfirm_NamesWhatTheAskerCalls()
+    {
+        var (handler, app, _, _) = Make();
+
+        var cli = await Send(handler, "disconnect", new JsonObject { ["confirmWithin"] = 30 });
+        var mcp = await Send(handler, "connect", new JsonObject { ["confirmWithin"] = 30 }, "mcp");
+
+        await V2pnControlJson.String(cli.Data?["message"])!.Should().Contain("v2pnctl confirm");
+        await V2pnControlJson.String(mcp.Data?["message"])!.Should().Contain("v2pn_confirm");
+        await app.State.Connected.Should().BeTrue();
     }
 
     [Test]

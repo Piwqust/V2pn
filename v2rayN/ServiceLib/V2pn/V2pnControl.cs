@@ -242,6 +242,7 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
         EV2pnControlNotice notice, bool settle)
     {
         V2pnControlResult result;
+        var waiting = false;
         await _gate.WaitAsync();
         try
         {
@@ -252,9 +253,11 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
             {
                 return V2pnControlAnswer.Failure(r.Id, result.Code ?? V2pnControlProtocol.ErrFailed, result.Message);
             }
-            if (within is { } seconds)
+            // A change that changed nothing has nothing to put back, unless an earlier one waits.
+            if (within is { } seconds && (result.Changed || _pending != null))
             {
                 _pending = new Pending(before, await app.CaptureAsync(), utcNow().AddSeconds(seconds), r.Source);
+                waiting = true;
             }
             if (result.Changed)
             {
@@ -267,10 +270,11 @@ public sealed class V2pnControlHandler(IV2pnControlApp app, Func<DateTime> utcNo
         }
 
         var data = new JsonObject { ["message"] = result.Message };
-        if (within is { } wait)
+        if (waiting && within is { } wait)
         {
             data["confirmWithin"] = wait;
-            data["message"] = $"{result.Message} Run \"v2pnctl confirm\" within {wait} s to keep it; otherwise V2pn puts back what was there before.";
+            var how = r.Source == V2pnControlProtocol.SourceMcp ? "Call v2pn_confirm" : "Run \"v2pnctl confirm\"";
+            data["message"] = $"{result.Message} {how} within {wait} s to keep it; otherwise V2pn puts back what was there before.";
         }
         data["status"] = settle && result.Changed ? await SettledStatusAsync() : await StatusAsync();
         return V2pnControlAnswer.Success(r.Id, data);

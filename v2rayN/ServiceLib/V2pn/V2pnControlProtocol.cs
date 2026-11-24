@@ -96,9 +96,16 @@ public static class V2pnControlProtocol
         _ => ExitError,
     };
 
-    internal static readonly JsonSerializerOptions Compact = new() { WriteIndented = false };
+    /// <summary>The channel's lines: anything beyond ASCII escaped, so no code page can garble them.</summary>
+    public static readonly JsonSerializerOptions Compact = new() { WriteIndented = false };
 
-    internal static readonly JsonSerializerOptions Indented = new() { WriteIndented = true };
+    /// <summary>JSON a person or an assistant reads: Cyrillic names and quotes as they are, one kind of line end.</summary>
+    public static readonly JsonSerializerOptions Indented = new()
+    {
+        WriteIndented = true,
+        NewLine = "\n",
+        Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping,
+    };
 }
 
 /// <summary>One request on the channel. <see cref="Source"/> says who asked: "cli" or "mcp", for the log and the toast.</summary>

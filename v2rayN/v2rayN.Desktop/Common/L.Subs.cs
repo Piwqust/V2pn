@@ -31,6 +31,8 @@ public static partial class L
         EV2pnSubUpdateResult.Unreachable => T("site unreachable", "сайт недоступен"),
         EV2pnSubUpdateResult.Empty => T("no servers sent", "серверов не прислали"),
         EV2pnSubUpdateResult.Invalid => T("not a subscription", "это не подписка"),
+        EV2pnSubUpdateResult.DeviceLimit => T("device limit reached", "лимит устройств"),
+        EV2pnSubUpdateResult.DeviceNotAccepted => T("device not accepted", "устройство не принято"),
         _ => T("update failed", "не обновилась"),
     };
 
@@ -44,6 +46,10 @@ public static partial class L
         EV2pnSubUpdateResult.Empty => T("The provider's site answered with no servers.", "Сайт провайдера ответил, но не прислал серверов."),
         EV2pnSubUpdateResult.Invalid => T("The provider's site answered, but not with servers. Check the link.",
             "Сайт провайдера ответил, но не списком серверов. Проверьте ссылку."),
+        EV2pnSubUpdateResult.DeviceLimit => T("This subscription is already on as many devices as your plan allows. Remove a device you no longer use in your account with the provider (its bot or site), or ask the provider to raise the limit.",
+            "Подписка уже работает на стольких устройствах, сколько позволяет тариф. Удалите устройство, которым не пользуетесь, в личном кабинете провайдера (в боте или на сайте) или попросите провайдера поднять лимит."),
+        EV2pnSubUpdateResult.DeviceNotAccepted => T("The provider's panel did not accept this device. Ask the provider to allow it.",
+            "Панель провайдера не приняла это устройство. Попросите провайдера разрешить его."),
         _ => detail.IsNotEmpty()
             ? string.Format(T("The update failed: {0}", "Обновление не удалось: {0}"), detail)
             : T("The update failed.", "Обновление не удалось."),

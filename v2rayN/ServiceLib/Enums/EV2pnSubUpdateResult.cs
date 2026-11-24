@@ -20,4 +20,10 @@ public enum EV2pnSubUpdateResult
 
     /// <summary>Something else went wrong (for example the subscription's request headers).</summary>
     Failed = 5,
+
+    /// <summary>The provider's panel counts devices, and this subscription has as many as its plan allows.</summary>
+    DeviceLimit = 6,
+
+    /// <summary>The provider's panel counts devices and did not take this device's id.</summary>
+    DeviceNotAccepted = 7,
 }

@@ -65,7 +65,7 @@ public class SubscriptionHandler(
                 // V2pn: name, traffic, expiry and the Happ/INCY values from the panel's headers and the body's "#key: value" lines.
                 await SubInfoManager.Instance.ApplyAsync(_config, item, downloadHandle.ResponseHeaders, imported, result);
                 var (outcome, detail) = Classify(imported, result, downloadHandle.ResponseHeaders != null,
-                    downloadHandle.LastStatus, downloadHandle.LastError);
+                    downloadHandle.LastStatus, downloadHandle.LastError, downloadHandle.DeviceRefusal);
                 await SubInfoManager.Instance.RecordAttemptAsync(item.Id, outcome, detail);
                 if (imported)
                 {
@@ -136,11 +136,16 @@ public class SubscriptionHandler(
     /// servers. <paramref name="answered"/>: a successful HTTP response came back.
     /// </summary>
     internal static (EV2pnSubUpdateResult Result, string? Detail) Classify(bool imported, string? body, bool answered,
-        int? lastStatus, string? lastError)
+        int? lastStatus, string? lastError, EV2pnDeviceRefusal refusal = EV2pnDeviceRefusal.None)
     {
         if (imported)
         {
             return (EV2pnSubUpdateResult.Ok, null);
+        }
+        // V2pn: the panel said why: this device is one too many, or its id was not taken.
+        if (refusal != EV2pnDeviceRefusal.None)
+        {
+            return (refusal == EV2pnDeviceRefusal.LimitReached ? EV2pnSubUpdateResult.DeviceLimit : EV2pnSubUpdateResult.DeviceNotAccepted, null);
         }
         if (body.IsNotEmpty())
         {
@@ -249,7 +254,8 @@ public class SubscriptionHandler(
             var handler = _handler._blProxy || CoreManager.Instance.IsCoreAlive
                 ? HttpClientHelper.Instance.CreateFallbackHandler(_handler._blProxy, new())
                 : HttpClientHelper.CreateSocketsHttpHandler(false, new());
-            var headersHandler = HttpRequestHeadersHelper.CreateHandler(handler, userAgent, "*/*", requestHeaders);
+            // V2pn: the device headers panels with a device limit need (V2pnDevice); the subscription's own win.
+            var headersHandler = HttpRequestHeadersHelper.CreateHandler(handler, userAgent, "*/*", V2pnDevice.Headers(requestHeaders));
             // V2pn: keeps the response headers, where panels put a subscription's name, traffic and expiry.
             var downloadHandle = new DownloadService
             {

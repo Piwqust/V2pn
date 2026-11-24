@@ -3,9 +3,10 @@
 #
 #   curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh | bash
 #
-# Downloads the newest release for this Mac (Apple silicon or Intel), checks it against the
-# release's list of files (size and SHA-256), puts V2pn.app into /Applications (or ~/Applications
-# when /Applications is not writable) and opens it. At that first start V2pn moves over a v2rayN
+# Downloads the newest release for this Mac (Apple silicon or Intel), checks the signature of the
+# release's list of files (release.json.sig, made with V2pn's release key, whose public half is
+# built into this script) and then the package against that list (size and SHA-256), puts V2pn.app
+# into /Applications (or ~/Applications when /Applications is not writable) and opens it. At that first start V2pn moves over a v2rayN
 # with servers found on this Mac: servers, subscriptions, routing and settings. v2rayN is closed
 # and stops starting at login; its own files are left as they are.
 #
@@ -16,11 +17,42 @@
 #   V2PN_DIR=~/Apps        install somewhere else
 #   V2PN_NO_IMPORT=1       do not move anything from v2rayN
 #   V2PN_NO_START=1        do not open V2pn
-#   V2PN_SOURCE=<url>      another releases page or mirror (same layout as GitHub's)
+#   V2PN_SOURCE=<url>      another releases page or mirror (same layout as GitHub's; its
+#                          release.json must carry V2pn's signature all the same)
 #   NO_COLOR=1             no colours
 #
 # Everything is inside main, so a download cut short runs nothing. Written for the bash 3.2 that
 # macOS has in /bin.
+
+# The public halves of V2pn's release keys, separated by | (V2pnUpdateKeys in
+# v2rayN/Directory.Build.targets; tools/check-install-scripts.ps1 fails CI when they differ).
+# release.json is used only when release.json.sig is valid for one of them, wherever both came from:
+# a mirror set with V2PN_SOURCE is held to the same check.
+V2PN_RELEASE_KEYS='MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig=='
+
+# Succeeds when the signature in the file $2 (release.json.sig: ECDSA P-256 over SHA-256, DER,
+# base64) is valid for the file $1 with one of V2PN_RELEASE_KEYS, as V2pn checks it
+# (V2pnManifest.VerifySignature); $3 is a folder for the key and the decoded signature. The
+# signature is DER already, which is what openssl takes, so the openssl of a stock Mac (LibreSSL)
+# checks it with nothing else installed.
+v2pn_verify() {
+    local data="$1" signature="$2" work="$3" key n=0
+    base64 --decode <"$signature" >"$work/release.json.sig.der" 2>/dev/null || return 1
+    [ -s "$work/release.json.sig.der" ] || return 1
+    local IFS='|'
+    for key in $V2PN_RELEASE_KEYS; do
+        n=$((n + 1))
+        {
+            printf '%s\n' '-----BEGIN PUBLIC KEY-----'
+            printf '%s\n' "$key" | fold -w 64
+            printf '%s\n' '-----END PUBLIC KEY-----'
+        } >"$work/release-key-$n.pem"
+        if openssl dgst -sha256 -verify "$work/release-key-$n.pem" -signature "$work/release.json.sig.der" "$data" >/dev/null 2>&1; then
+            return 0
+        fi
+    done
+    return 1
+}
 
 # Runs however the script ends: stops a download or unpacking still going, removes the temporary
 # files and gives the cursor back.
@@ -231,9 +263,19 @@ main() {
 
     step=Release
     temp "   ${BRAND}${spin[2]}${OFF} ${DIM}Looking for the newest V2pn…${OFF}"
-    local manifest
-    manifest="$(curl -fsSL --retry 3 "$source/latest/download/release.json" 2>"$work/error")" ||
+    # Into files: the signature covers the exact bytes, which a shell variable would not keep.
+    curl -fsSL --retry 3 -o "$work/release.json" "$source/latest/download/release.json" 2>"$work/error" ||
         fail "could not read the list of files of the newest release: $(sed 's/^curl: ([0-9]*) //' "$work/error" | tail -n 1)"
+    # Nothing in release.json is used, not even the version, until its signature is checked.
+    step=Signature
+    curl -fsSL --retry 3 -o "$work/release.json.sig" "$source/latest/download/release.json.sig" 2>"$work/error" ||
+        fail "could not read release.json.sig, the signature of the newest release, so it cannot be checked: $(sed 's/^curl: ([0-9]*) //' "$work/error" | tail -n 1)"
+    command -v openssl >/dev/null 2>&1 || fail "openssl, which checks the signature of the release, is not on this Mac's PATH."
+    v2pn_verify "$work/release.json" "$work/release.json.sig" "$work" ||
+        fail "the newest release's list of files (release.json) is not signed with V2pn's release key, so it is not used."
+    step=Release
+    local manifest
+    manifest="$(cat "$work/release.json")"
     # macOS has no jq; JavaScript for Automation is always there.
     local found
     found="$(osascript -l JavaScript -e '
@@ -252,6 +294,7 @@ main() {
     fact Version "${BOLD}$version${OFF}${published:+   ${DIM}published $published${OFF}}"
     fact Package "$name   ${DIM}$(mb "$size"), $kind${OFF}"
     fact From "${source#https://}"
+    fact Signature "checked, V2pn's release key"
     fact Into "$app"
     fact macOS "the download flag is taken off, so it opens without a warning"
     say
@@ -289,9 +332,9 @@ main() {
     got_size="$(stat -f %z "$zip")"
     got_sha="$(shasum -a 256 "$zip" | cut -d' ' -f1)"
     if [ "$got_size" != "$size" ] || [ "$got_sha" != "$sha256" ]; then
-        fail "the download does not match the release (size or SHA-256)."
+        fail "the download does not match the signed release (size or SHA-256)."
     fi
-    ok Check "size and SHA-256 match the release   ${DIM}${got_sha:0:8}…${got_sha:56}${OFF}"
+    ok Check "size and SHA-256 match the signed release   ${DIM}${got_sha:0:8}…${got_sha:56}${OFF}"
 
     # ditto keeps the execute bits and the app's signature, which unzip can break. The bar follows
     # the unpacked size against the package's own list.

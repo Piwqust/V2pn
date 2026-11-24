@@ -47,11 +47,12 @@ public sealed record V2pnPartnerIndex(IReadOnlyList<V2pnPartnerListing> Partners
     public DateTimeOffset Published { get; init; } = DateTimeOffset.MinValue;
 
     /// <summary>
-    /// The partners V2pn goes by when it has the hub's index and a root-signed one. The hub's index is the main one: every
-    /// partner it lists comes from it, whatever the root-signed index says of the same id, so a root-signed copy attached
-    /// to an older GitHub release can never shadow what a provider changed on the hub since. The root-signed index adds
-    /// the partners the hub does not list, unless one claims a domain of a hub partner (one domain, one partner): those
-    /// are the partners the owner signs on his computer, the only way to the grants he reviews by hand. Either index
+    /// The partners V2pn goes by when it has the hub's index and a root-signed one. For one id the hub's entry stands,
+    /// whatever the root-signed index says, so a root-signed copy attached to an older GitHub release can never shadow
+    /// what a provider changed on the hub since. A domain, though, belongs to the partner the owner signed: anyone can
+    /// make a partner on the hub, so a hub partner under another id that claims a domain of a root-signed one is left
+    /// out (one domain, one partner), and a stolen or misused hub key cannot push a partner the owner reviewed by hand
+    /// off its own subscriptions. The root-signed index then adds the partners the hub does not keep. Either index
     /// alone is taken as it is.
     /// </summary>
     public static V2pnPartnerIndex? Merge(V2pnPartnerIndex? hub, V2pnPartnerIndex? root)
@@ -60,21 +61,19 @@ public sealed record V2pnPartnerIndex(IReadOnlyList<V2pnPartnerListing> Partners
         {
             return hub ?? root;
         }
-        var partners = hub.Partners.ToList();
         var problems = hub.Problems.Concat(root.Problems).ToList();
-        foreach (var listing in root.Partners)
+        var partners = new List<V2pnPartnerListing>();
+        foreach (var listing in hub.Partners)
         {
-            if (hub.Get(listing.Id) != null)
+            if (root.Partners.FirstOrDefault(r => r.Id != listing.Id && V2pnPartnerTrust.DomainsOverlap(r.Domains, listing.Domains)) is { } owner)
             {
-                continue;
-            }
-            if (hub.Partners.FirstOrDefault(h => V2pnPartnerTrust.DomainsOverlap(h.Domains, listing.Domains)) is { } clash)
-            {
-                problems.Add($"{listing.Id}: the root-signed index gives it a domain of {clash.Id}, which the hub lists; left out");
+                problems.Add($"{listing.Id}: the hub gives it a domain of {owner.Id}, which the owner of V2pn signed; left out");
                 continue;
             }
             partners.Add(listing);
         }
+        var kept = partners.Select(p => p.Id).ToHashSet(StringComparer.Ordinal);
+        partners.AddRange(root.Partners.Where(listing => !kept.Contains(listing.Id)));
         return new V2pnPartnerIndex(partners, problems)
         {
             Signer = V2pnPartnerSigner.Hub,
@@ -209,6 +208,24 @@ public static class V2pnPartnerTrust
     public static string ZipName(string id) => $"partner-{id}.zip";
 
     /// <summary>
+    /// How long a hub-signed listing lasts after the index was published. The hub signs its index again every day, so
+    /// a partner it still lists never runs out; one it took down, or an index signed with a stolen hub key, is gone
+    /// within this term instead of the year a listing may name.
+    /// </summary>
+    public static readonly TimeSpan HubTerm = TimeSpan.FromDays(60);
+
+    private static List<V2pnPartnerListing> HubTerms(List<V2pnPartnerListing> partners, DateTimeOffset published, List<string> problems)
+    {
+        if (published == DateTimeOffset.MinValue)
+        {
+            problems.AddRange(partners.Select(p => $"{p.Id}: the hub's index does not say when it was published; left out"));
+            return [];
+        }
+        var term = DateOnly.FromDateTime(published.UtcDateTime.Add(HubTerm));
+        return partners.Select(p => p.Until > term ? p with { Until = term } : p).ToList();
+    }
+
+    /// <summary>
     /// The index when its signature is one of <paramref name="rootKeys"/> over these exact bytes and it parses. An entry
     /// that does not parse is left out and named in <see cref="V2pnPartnerIndex.Problems"/>; one partner twice refuses the whole index.
     /// </summary>
@@ -288,6 +305,10 @@ public static class V2pnPartnerTrust
                             && DateTimeOffset.TryParse(text, System.Globalization.CultureInfo.InvariantCulture, System.Globalization.DateTimeStyles.AssumeUniversal, out var time)
                 ? time
                 : DateTimeOffset.MinValue;
+            if (signer == V2pnPartnerSigner.Hub)
+            {
+                partners = HubTerms(partners, published, problems);
+            }
             return new V2pnPartnerIndex(partners, problems) { Signer = signer, Published = published };
         }
         catch (Exception ex) when (ex is JsonException or InvalidOperationException or FormatException)
@@ -613,6 +634,12 @@ public static class V2pnPartnerTrust
                 : null;
 
             var links = root["links"] as JsonObject;
+            // Anyone can make a partner on the hub, so its cabinet and support links stay on its own domains or Telegram,
+            // like its buttons: a tab with a provider's name must not send people to someone else's sign-in page.
+            // A partner the owner signed with the root key was read by hand and keeps any https link.
+            string? Link(string? url) => listing.Signer == V2pnPartnerSigner.Hub
+                ? V2pnPartnerCatalog.ActionLink(listing, url)
+                : Https(url);
             var api = Https(Text(root["api"]));
             if (api != null && (!listing.Allows(V2pnPartnerGrants.Account) || !DomainAllowed(listing, api)))
             {
@@ -633,8 +660,8 @@ public static class V2pnPartnerTrust
                 accent?.ToUpperInvariant(),
                 AssetRef(brand?["logo"]),
                 AssetRef(brand?["logoOnLight"]),
-                Https(Text(links?["cabinet"])),
-                Https(Text(links?["support"])),
+                Link(Text(links?["cabinet"])),
+                Link(Text(links?["support"])),
                 api,
                 assets,
                 AssetRef(brand?["mark"]),

@@ -107,6 +107,51 @@ public class V2pnPartnerHubTests
     }
 
     [Test]
+    [Arguments("https://evil.example.org/login", null)]
+    [Arguments("https://config.example.com/cabinet", "https://config.example.com/cabinet")]
+    [Arguments("https://t.me/configra_support", "https://t.me/configra_support")]
+    public async Task HubPartner_CabinetAndSupportLinks_StayOnItsDomainsOrTelegram(string link, string? expected)
+    {
+        var json = TestPartner.Pack(more: p => p["links"] = new JsonObject { ["cabinet"] = link, ["support"] = link });
+        var hubListing = TestPartner.Listing() with { Signer = V2pnPartnerSigner.Hub };
+
+        var hubPack = V2pnPartnerTrust.ReadPack(json, hubListing, out _)!;
+        var rootPack = V2pnPartnerTrust.ReadPack(json, TestPartner.Listing(), out _)!;
+
+        await hubPack.CabinetUrl.Should().BeEqualTo(expected);
+        await hubPack.SupportUrl.Should().BeEqualTo(expected);
+        // A partner the owner signed was read by hand and keeps any https link.
+        await rootPack.CabinetUrl.Should().BeEqualTo(link);
+    }
+
+    [Test]
+    public async Task HubSignedIndex_LastsSixtyDaysFromPublishing_RootSignedKeepsItsTerm()
+    {
+        var listing = TestPartner.Listing(until: "2027-11-01");
+        var (hubJson, hubSig) = Signed(_hub, listing);
+        var (rootJson, rootSig) = Signed(_owner.Root, listing);
+
+        var hub = V2pnPartnerTrust.ReadIndex(hubJson, hubSig, [_owner.RootPublic], [HubPublic], out _)!;
+        var root = V2pnPartnerTrust.ReadIndex(rootJson, rootSig, [_owner.RootPublic], [HubPublic], out _)!;
+
+        await hub.Get("configra")!.Until.Should().BeEqualTo(DateOnly.FromDateTime(T.UtcDateTime.AddDays(60)));
+        await root.Get("configra")!.Until.Should().BeEqualTo(new DateOnly(2027, 11, 1));
+    }
+
+    [Test]
+    public async Task HubSignedIndex_WithoutAPublishingTime_ListsNobody()
+    {
+        var node = JsonNode.Parse(V2pnPartnerPublisher.IndexBytes([TestPartner.Listing()], T))!.AsObject();
+        node.Remove("published");
+        var json = Encoding.UTF8.GetBytes(node.ToJsonString());
+
+        var index = V2pnPartnerTrust.ReadIndex(json, TestPartner.Sign(_hub, json), [_owner.RootPublic], [HubPublic], out _)!;
+
+        await index.Partners.Count.Should().BeEqualTo(0);
+        await index.Problems.Single().StartsWith("configra:").Should().BeTrue();
+    }
+
+    [Test]
     public async Task HubSignedIndex_KeepsApprovedRouting_DropsTransportAndCore()
     {
         var listing = TestPartner.Listing(grants: ["edition", "routing", "transport", "core"]) with
@@ -177,7 +222,7 @@ public class V2pnPartnerHubTests
     #region Merge
 
     [Test]
-    public async Task Merge_TheHubsEntryStands_TheRootAddsThePartnersTheHubDoesNotList_ButNotOnItsDomains()
+    public async Task Merge_TheHubsEntryStands_TheRootAddsThePartnersTheHubDoesNotList()
     {
         var hub = new V2pnPartnerIndex([Partner("configra", "#111111").Listing with { Signer = V2pnPartnerSigner.Hub }], [])
         { Signer = V2pnPartnerSigner.Hub, Published = T };
@@ -185,17 +230,34 @@ public class V2pnPartnerHubTests
         [
             Partner("configra", "#222222", ["edition", "routing"]).Listing,
             Partner("kestrel", domains: ["kestrel.example.net"]).Listing,
-            Partner("osprey", domains: ["*.example.com"]).Listing,
         ], []) { Published = T.AddDays(5) };
 
         var merged = V2pnPartnerIndex.Merge(hub, root)!;
 
         await string.Join(",", merged.Partners.Select(p => $"{p.Id}:{p.Signer}")).Should().BeEqualTo("configra:Hub,kestrel:Root");
         await merged.Get("configra")!.Zip.Sha256.Should().BeEqualTo(hub.Partners[0].Zip.Sha256);
-        await merged.Problems.Single().StartsWith("osprey:").Should().BeTrue();
+        await merged.Problems.Count.Should().BeEqualTo(0);
         await merged.Published.Should().BeEqualTo(T.AddDays(5));
         await V2pnPartnerIndex.Merge(null, root).Should().BeEqualTo(root);
         await V2pnPartnerIndex.Merge(hub, null).Should().BeEqualTo(hub);
+    }
+
+    [Test]
+    public async Task Merge_AHubPartnerOnADomainTheOwnerSigned_IsLeftOut()
+    {
+        // Someone made "configra-2" on the hub with a subscription on the domain of osprey, whom the owner signed.
+        var hub = new V2pnPartnerIndex(
+        [
+            Partner("configra-2", domains: ["config.example.com"]).Listing with { Signer = V2pnPartnerSigner.Hub },
+            Partner("heron", domains: ["heron.example.org"]).Listing with { Signer = V2pnPartnerSigner.Hub },
+        ], []) { Signer = V2pnPartnerSigner.Hub, Published = T };
+        var root = new V2pnPartnerIndex([Partner("osprey", domains: ["*.example.com"]).Listing], []) { Published = T };
+
+        var merged = V2pnPartnerIndex.Merge(hub, root)!;
+
+        await string.Join(",", merged.Partners.Select(p => $"{p.Id}:{p.Signer}")).Should().BeEqualTo("heron:Hub,osprey:Root");
+        await merged.Problems.Single().StartsWith("configra-2:").Should().BeTrue();
+        await merged.ForUrl("https://config.example.com/sub/abc")!.Id.Should().BeEqualTo("osprey");
     }
 
     [Test]

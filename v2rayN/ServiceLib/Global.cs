@@ -91,6 +91,8 @@ public class Global
     public const string RebootAs = "rebootas";
     // V2pn: written into the sign-in entry, so a sign-in launch can be told from a manual one.
     public const string AutostartArg = "--autostart";
+    // V2pn: v2pnctl started V2pn to send it a command; it stays in the tray, and a copy already running is not woken.
+    public const string TrayArg = "--tray";
     public const string AvaAssets = "avares://V2pn/Assets/";
     public const string LocalAppData = "V2RAYN_LOCAL_APPLICATION_DATA_V2";
     public const string V2RayLocalAsset = "V2RAY_LOCATION_ASSET";

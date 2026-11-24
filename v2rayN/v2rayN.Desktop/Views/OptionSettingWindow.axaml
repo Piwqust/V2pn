@@ -313,6 +313,26 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
+                        <!-- V2pn: what v2pnctl and AI assistants may do (V2pnControlHandler). -->
+                        <StackPanel Classes="sgroup">
+                            <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpControl}" />
+                            <Border Classes="sgroupcard">
+                                <StackPanel>
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconCommand}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetControl}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetControlHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ComboBox x:Name="cmbControl" Width="200" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
                         <StackPanel Classes="sgroup">
                             <TextBlock Classes="sgrouplabel" Text="{x:Static loc:L.GrpInterface}" />
                             <Border Classes="sgroupcard">

@@ -31,26 +31,10 @@ public class CoreAdminManager
 
     public async Task<ProcessService?> RunProcessAsLinuxSudo(string fileName, CoreInfo coreInfo, string configPath)
     {
-        StringBuilder sb = new();
-        sb.AppendLine("#!/bin/bash");
-        var cmdLine = $"{fileName.AppendQuotes()} {string.Format(coreInfo.Arguments, Utils.GetBinConfigPath(configPath).AppendQuotes())}";
-
-        // Passing environment variables to the sudo command, here it only xray or sing-box.
-        if (coreInfo.Environment.Count > 0)
-        {
-            var envArgs = string.Join(" ", coreInfo.Environment.Where(kv => kv.Value.IsNotEmpty()).Select(kv => $"{kv.Key}={kv.Value.AppendQuotes()}"));
-            sb.AppendLine($"exec sudo -S -- env {envArgs} {cmdLine}");
-        }
-        else
-        {
-            sb.AppendLine($"exec sudo -S -- {cmdLine}");
-        }
-
-        var shFilePath = await FileUtils.CreateLinuxShellFile("run_as_sudo.sh", sb.ToString(), true);
-
+        // V2pn: sudo is started directly (V2pnSudo); a script written to V2pn's folder could be rewritten before it ran.
         var procService = new ProcessService(
-            fileName: shFilePath,
-            arguments: "",
+            fileName: V2pnSudo.Sudo,
+            arguments: V2pnSudo.RunArguments(fileName, string.Format(coreInfo.Arguments, Utils.GetBinConfigPath(configPath).AppendQuotes()), coreInfo.Environment),
             workingDirectory: Utils.GetBinConfigPath(),
             displayLog: true,
             redirectInput: true,
@@ -79,14 +63,9 @@ public class CoreAdminManager
         try
         {
             var shellFileName = Utils.IsMacOS() ? Global.KillAsSudoOSXShellFileName : Global.KillAsSudoLinuxShellFileName;
-            var shFilePath = await FileUtils.CreateLinuxShellFile("kill_as_sudo.sh", EmbedUtils.GetEmbedText(shellFileName), true);
-            if (shFilePath.Contains(' '))
-            {
-                shFilePath = shFilePath.AppendQuotes();
-            }
-            var arg = new List<string>() { "-c", $"sudo -S {shFilePath} {_linuxSudoPid}" };
-            var result = await Cli.Wrap(Global.LinuxBash)
-                .WithArguments(arg)
+            // V2pn: the script goes to bash from memory (V2pnSudo); a file in V2pn's folder could be rewritten and run as root.
+            var result = await Cli.Wrap(V2pnSudo.Sudo)
+                .WithArguments(V2pnSudo.KillArguments(EmbedUtils.GetEmbedText(shellFileName), _linuxSudoPid))
                 .WithStandardInputPipe(PipeSource.FromString(AppManager.Instance.LinuxSudoPwd))
                 .ExecuteBufferedAsync();
 

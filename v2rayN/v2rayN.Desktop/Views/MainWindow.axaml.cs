@@ -10,7 +10,7 @@ using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
 
-public partial class MainWindow : WindowBase<MainWindowViewModel>
+public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnectionUi
 {
     private static Config _config;
     private readonly WindowNotificationManager? _manager;
@@ -281,6 +281,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             this.BindCommand(ViewModel, vm => vm.AddCustomOutboundServerCmd, v => v.menuAddCustomOutboundServer).DisposeWith(disposables);
 
             BuildViews();
+            V2pnConnectionService.Instance.Attach(_config, vm.StatusBarViewModel, this);
             InitConnectionBar();
             vm.SubUpdateCmd.IsExecuting
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
@@ -888,22 +889,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     /// UI and the core stay in step; the chosen method (UiItem.V2pnProxyMethod) stays, so Connect restores it.
     /// Same path as Disconnect: the Windows proxy is cleared only when it is V2pn's own (V2pnConnection).
     /// </summary>
-    private async Task SwitchOffWhenNoServersAsync()
-    {
-        if (ViewModel?.StatusBarViewModel is not { } status || !IsConnected(status))
-        {
-            return;
-        }
-        if (await V2pnConnection.HasAnyServerAsync())
-        {
-            return;
-        }
-        if (status.EnableTun)
-        {
-            status.EnableTun = false;
-        }
-        status.SystemProxySelected = (int)ESysProxyType.ForcedClear;
-    }
+    private Task SwitchOffWhenNoServersAsync() => V2pnConnectionService.Instance.DisconnectWhenNoServersAsync();
 
     private string? _shownFirewallError;
 
@@ -1124,37 +1110,28 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private void BtnConnect_Click(object? sender, RoutedEventArgs e) =>
         ToggleConnection(CurrentState() == ProtectionState.Unprotected);
+    // Connect and Disconnect go through V2pnConnectionService, like the hotkeys, the Mac menus and the settings.
     private async void ToggleConnection(bool connect)
     {
-        var status = ViewModel?.StatusBarViewModel;
-        if (status == null)
-        {
-            return;
-        }
-
         if (connect)
         {
-            if (_config.IndexId.IsNullOrEmpty())
-            {
-                NoticeManager.Instance.Enqueue(L.PickServer);
-                return;
-            }
-            if (_config.UiItem.V2pnPreferTun && !await EnsureTunAllowedAsync(connectAfterRestart: true))
-            {
-                return;
-            }
-            ApplyMode(status, _config.UiItem.V2pnPreferTun);
-            return;
+            await V2pnConnectionService.Instance.ConnectAsync();
         }
-
-        // Off stops the core; the Windows proxy is cleared only if V2pn set it (V2pnConnection).
-        SetTunDenied(false);
-        if (status.EnableTun)
+        else
         {
-            status.EnableTun = false;
+            V2pnConnectionService.Instance.Disconnect();
         }
-        status.SystemProxySelected = (int)ESysProxyType.ForcedClear;
     }
+
+    #region IV2pnConnectionUi
+
+    Task<bool> IV2pnConnectionUi.EnsureTunAllowedAsync(bool connectAfterRestart) => EnsureTunAllowedAsync(connectAfterRestart);
+
+    void IV2pnConnectionUi.NoServerChosen() => NoticeManager.Instance.Enqueue(L.PickServer);
+
+    void IV2pnConnectionUi.Disconnecting() => SetTunDenied(false);
+
+    #endregion IV2pnConnectionUi
 
     private async Task ConnectToAsync(string? indexId)
     {
@@ -1178,23 +1155,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private bool _routeSync;
     private bool _routeBusy;
 
-    private static bool IsConnected(StatusBarViewModel status) =>
-        status.EnableTun || (ESysProxyType)status.SystemProxySelected != ESysProxyType.ForcedClear;
-
-    private static void ApplyMode(StatusBarViewModel status, bool tun)
-    {
-        if (tun)
-        {
-            status.EnableTun = true;
-            // TUN already carries everything; a system proxy left behind would outlive a crash.
-            status.SystemProxySelected = (int)ESysProxyType.ForcedClear;
-        }
-        else
-        {
-            status.SystemProxySelected = (int)ConnectionPrefs.ProxyMethod(_config);
-            status.EnableTun = false;
-        }
-    }
+    private static bool IsConnected(StatusBarViewModel status) => V2pnConnectionService.IsOn(status);
 
     private void InitConnectionBar()
     {
@@ -1240,19 +1201,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         {
             return;
         }
-        var tun = lstMode.SelectedIndex == 1;
-        var connected = IsConnected(status);
-        if (tun && connected && !await EnsureTunAllowedAsync(connectAfterRestart: true))
+        if (!await V2pnConnectionService.Instance.SetModeAsync(lstMode.SelectedIndex == 1))
         {
             SyncModeSelection();
-            return;
-        }
-
-        _config.UiItem.V2pnPreferTun = tun;
-        await ConfigTextHandler.SaveConfig();
-        if (connected && tun != status.EnableTun)
-        {
-            ApplyMode(status, tun);
         }
     }
 

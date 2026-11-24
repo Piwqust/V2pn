@@ -431,17 +431,8 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         btnTunRestartAdmin.Click += async (_, _) => await AppManager.Instance.RebootAsAdmin();
     }
 
-    private static void SaveProxyMethodTo(ESysProxyType method)
-    {
-        _config.UiItem.V2pnProxyMethod = method;
-        // Connected in Proxy mode: switch the live mode too, so the change shows right away.
-        var status = StatusBarViewModel.Instance;
-        var live = (ESysProxyType)status.SystemProxySelected;
-        if (!status.EnableTun && live != ESysProxyType.ForcedClear && live != method)
-        {
-            status.SystemProxySelected = (int)method;
-        }
-    }
+    // Connected in Proxy mode, the live mode switches too, so the change shows right away (V2pnConnectionService).
+    private static void SaveProxyMethodTo(ESysProxyType method) => V2pnConnectionService.Instance.SetProxyMethod(method);
 
     // Runs before the Save command (Click is raised before Command executes), so the command saves it.
     private void SaveProxyMethod()

@@ -242,7 +242,7 @@ To put a version on it:
 tools/publish-mirror.ps1 -Version 1.0.1 -Target deploy@example.com:/var/www/v2pn
 ```
 
-The script checks the packages against the manifest, uploads them over SSH and only then switches `latest`. With `-FromGitHub` it takes the files from the published release instead of a local build. `.github/workflows/v2pn-mirror.yml` does the same automatically when a release is published, if the repository settings have the `MIRROR_TARGET` variable and the `MIRROR_SSH_KEY` secret.
+The script checks the packages against the manifest, uploads them over SSH and only then switches `latest`. With `-FromGitHub` it takes the files from the published release instead of a local build. `.github/workflows/v2pn-mirror.yml` does the same automatically when a release is published, if the repository settings have the `MIRROR_TARGET` variable and the `MIRROR_SSH_KEY` secret. It also needs the `MIRROR_KNOWN_HOSTS` variable, the server's host key from `ssh-keyscan <host>` (compare its fingerprint with `ssh-keygen -lf` on the server): without it the job fails instead of trusting whatever answers at that address.
 
 An example for nginx:
 

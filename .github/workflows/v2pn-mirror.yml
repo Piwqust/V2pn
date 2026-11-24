@@ -3,9 +3,11 @@ name: V2pn mirror
 # When a release is published, copies its files to your own server, laid out the way V2pn asks
 # for them (see tools/publish-mirror.ps1). Does nothing until it is configured:
 #
-#   variable MIRROR_TARGET    user@host:/absolute/path/of/the/mirror/root
-#   secret   MIRROR_SSH_KEY   a private key that may write there
-#   variable MIRROR_KNOWN_HOSTS (recommended)   the server's line from `ssh-keyscan host`
+#   variable MIRROR_TARGET        user@host:/absolute/path/of/the/mirror/root
+#   secret   MIRROR_SSH_KEY       a private key that may write there
+#   variable MIRROR_KNOWN_HOSTS   the server's host key line(s) from `ssh-keyscan host`, checked
+#                                 against the server's own fingerprint; without it the job fails
+#                                 rather than trust whatever answers at that address
 on:
   release:
     types: [published]
@@ -43,15 +45,15 @@ jobs:
           login="${MIRROR_TARGET%%:*}"
           root="${MIRROR_TARGET#*:}"
           root="${root%/}"
+          if [ -z "$MIRROR_KNOWN_HOSTS" ]; then
+            echo "::error::MIRROR_KNOWN_HOSTS is not set, so the server's identity cannot be checked and nothing is uploaded. Set it to the output of ssh-keyscan for the mirror's host."
+            exit 1
+          fi
           mkdir -p ~/.ssh
           printf '%s\n' "$MIRROR_SSH_KEY" > ~/.ssh/mirror && chmod 600 ~/.ssh/mirror
-          if [ -n "$MIRROR_KNOWN_HOSTS" ]; then
-            printf '%s\n' "$MIRROR_KNOWN_HOSTS" > ~/.ssh/known_hosts
-            opts="-i $HOME/.ssh/mirror"
-          else
-            echo "::warning::MIRROR_KNOWN_HOSTS is not set; the server's identity is not checked."
-            opts="-i $HOME/.ssh/mirror -o StrictHostKeyChecking=accept-new"
-          fi
+          printf '%s\n' "$MIRROR_KNOWN_HOSTS" > ~/.ssh/mirror_known_hosts
+          # Only this known_hosts, and a host key not in it is refused.
+          opts="-i $HOME/.ssh/mirror -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/mirror_known_hosts"
           ssh $opts "$login" "mkdir -p '$root/download/$TAG' '$root/latest/download'"
           scp -q $opts release/* "$login:$root/download/$TAG/"
           # "latest" switches last, by rename; see tools/publish-mirror.ps1.

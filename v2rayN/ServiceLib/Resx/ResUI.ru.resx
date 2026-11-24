@@ -2037,4 +2037,19 @@
   <data name="TransportPathTip6" xml:space="preserve">
     <value>Удаленная папка XDRIVE</value>
   </data>
+  <data name="MsgCheckUpdateViaLatest" xml:space="preserve">
+    <value>Проверяю обновления {0} по ссылке на последний выпуск...</value>
+  </data>
+  <data name="MsgCheckUpdateViaApi" xml:space="preserve">
+    <value>Проверяю обновления {0} через GitHub API...</value>
+  </data>
+  <data name="MsgCheckUpdateViaApiFailed" xml:space="preserve">
+    <value>GitHub API для {0} недоступен</value>
+  </data>
+  <data name="MsgCheckUpdateViaGitRefs" xml:space="preserve">
+    <value>Проверяю обновления {0} по тегам git-репозитория...</value>
+  </data>
+  <data name="MsgCheckUpdateViaGitRefsFailed" xml:space="preserve">
+    <value>Теги git-репозитория {0} недоступны</value>
+  </data>
 </root>

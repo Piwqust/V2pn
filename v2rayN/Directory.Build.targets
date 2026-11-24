@@ -67,7 +67,8 @@
     <V2pnNumericVersion>$([System.Text.RegularExpressions.Regex]::Match('$(V2pnVersion)', '^\d+\.\d+\.\d+').Value)</V2pnNumericVersion>
   </PropertyGroup>
 
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop'">
+  <!-- The app's version; v2pnctl comes with it and reports the same ("v2pnctl version"). -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop' Or '$(MSBuildProjectName)' == 'V2pnCtl'">
     <Version>$(V2pnVersion)</Version>
     <AssemblyVersion>$(V2pnNumericVersion)</AssemblyVersion>
     <FileVersion>$(V2pnNumericVersion)</FileVersion>
@@ -85,8 +86,8 @@
     <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
   </PropertyGroup>
 
-  <!-- What Windows shows in the file properties of V2pn.exe and AmazTool.exe. -->
-  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop' Or '$(MSBuildProjectName)' == 'AmazTool'">
+  <!-- What Windows shows in the file properties of V2pn.exe, AmazTool.exe and v2pnctl.exe. -->
+  <PropertyGroup Condition="'$(MSBuildProjectName)' == 'v2rayN.Desktop' Or '$(MSBuildProjectName)' == 'AmazTool' Or '$(MSBuildProjectName)' == 'V2pnCtl'">
     <Company>V2pn</Company>
     <Authors>V2pn contributors</Authors>
     <Copyright>Copyright © 2026 V2pn contributors. Based on v2rayN, © 2017-2026 2dust. GPL-3.0.</Copyright>

@@ -20,6 +20,7 @@
   <Project Path="ServiceLib.Tests/ServiceLib.Tests.csproj" />
   <Project Path="ServiceLib.UdpTest/ServiceLib.UdpTest.csproj" Id="77930428-4dc4-4130-9031-6b9e714f5d20" />
   <Project Path="ServiceLib/ServiceLib.csproj" />
+  <Project Path="V2pnCtl/V2pnCtl.csproj" />
   <Project Path="v2rayN.Desktop/v2rayN.Desktop.csproj" />
   <Project Path="v2rayN.Windows/v2rayN.Windows.csproj" />
   <Project Path="v2rayN.WebAPI/v2rayN.WebAPI.csproj" />

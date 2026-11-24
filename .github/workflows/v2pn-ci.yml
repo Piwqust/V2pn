@@ -65,7 +65,9 @@ jobs:
         run: dotnet test --project v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
 
       - name: Build
-        run: dotnet build v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj -c Release -v q -nologo
+        run: |
+          dotnet build v2rayN/v2rayN.Desktop/v2rayN.Desktop.csproj -c Release -v q -nologo
+          dotnet build v2rayN/V2pnCtl/V2pnCtl.csproj -c Release -v q -nologo
 
   hub:
     name: Hub tests and its C# fixture

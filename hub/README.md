@@ -22,7 +22,7 @@ node hub.mjs import-partner <folder> [--login <login>]
                                          proved; its account is <login> (default: the id), made without a password
                                          when new
 node hub.mjs publish                     rebuilds and re-signs the index, the zips and the pages
-node --test test/                        the tests (from hub/)
+node --test "test/*.test.mjs"           the tests (from hub/)
 node test/make-csharp-fixture.mjs        rewrites test/fixtures/csharp for V2pnHubFixtureTests.cs
 node dev/serve.mjs --fixture --configra  the site and the hub on one local origin, for working on the pages (not
                                          deployed; --unproved leaves the fixture's domains without a proof record,

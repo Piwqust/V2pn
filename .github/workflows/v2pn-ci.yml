@@ -87,7 +87,7 @@ jobs:
 
       - name: Test
         working-directory: hub
-        run: node --test test/
+        run: node --test "test/*.test.mjs"
 
       # v2rayN/ServiceLib.Tests reads hub/test/fixtures/csharp/ with V2pn's own code, so it must be
       # what the hub makes now. The generator signs with a new throwaway key at the current time and

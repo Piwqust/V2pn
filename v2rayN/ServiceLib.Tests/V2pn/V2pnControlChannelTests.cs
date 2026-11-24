@@ -54,7 +54,7 @@ public class V2pnControlChannelTests
         Stream stream;
         if (OperatingSystem.IsWindows())
         {
-            var pipe = new NamedPipeClientStream(".", endpoint.PipeName!, PipeDirection.InOut, PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            var pipe = new NamedPipeClientStream(".", endpoint.PipeName!, PipeDirection.InOut, PipeOptions.Asynchronous);
             await pipe.ConnectAsync(5000);
             stream = pipe;
         }

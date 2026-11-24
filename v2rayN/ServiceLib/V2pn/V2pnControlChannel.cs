@@ -87,7 +87,7 @@ public sealed class V2pnControlServer : IDisposable
         var user = me.User!;
         var security = new PipeSecurity();
         // The owner is the user, not the Administrators group an elevated V2pn would otherwise give the pipe: v2pnctl
-        // checks that the pipe's owner is its own user (PipeOptions.CurrentUserOnly), so no other user's program can
+        // checks that the pipe's owner is its own user (V2pnControlClient.IsOwnPipe), so no other user's program can
         // pretend to be V2pn.
         security.SetOwner(user);
         security.SetAccessRuleProtection(isProtected: true, preserveInheritance: false);

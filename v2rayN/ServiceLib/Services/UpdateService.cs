@@ -57,11 +57,27 @@ public partial class UpdateService(DownloadService downloadService, Config confi
     {
         var url = string.Empty;
         var fileName = string.Empty;
+        string? expectedDigest = null;
 
         downloadService.UpdateCompleted += (sender2, args) =>
         {
             if (args.Success)
             {
+                // V2pn: a core whose hash is not GitHub's is thrown away instead of unpacked over the one in use.
+                if (!V2pnCoreDigest.Matches(fileName, expectedDigest))
+                {
+                    Logging.SaveLog($"V2pn: the downloaded {type} core does not match GitHub's SHA-256; not installed");
+                    _ = UpdateFunc(false, $"V2pn: the downloaded {type} core does not match the SHA-256 GitHub gives for it; the core in use stays.");
+                    try
+                    {
+                        File.Delete(fileName);
+                    }
+                    catch (IOException)
+                    {
+                        // A temp file.
+                    }
+                    return;
+                }
                 _ = UpdateFunc(false, ResUI.MsgDownloadV2rayCoreSuccessfully);
                 _ = UpdateFunc(false, ResUI.MsgUnpacking);
 
@@ -100,6 +116,12 @@ public partial class UpdateService(DownloadService downloadService, Config confi
             url = result.Url!;
             var ext = url.Contains(".tar.gz") ? ".tar.gz" : Path.GetExtension(url);
             fileName = Utils.GetTempPath(Utils.GetGuid() + ext);
+            // V2pn: the SHA-256 GitHub keeps for this file, checked before the core is unpacked (V2pnCoreDigest).
+            expectedDigest = await V2pnCoreDigest.ExpectedAsync(url, cancellationToken);
+            if (expectedDigest == null)
+            {
+                Logging.SaveLog($"V2pn: no SHA-256 from GitHub for {V2pnLimits.Url(url)}; the {type} core is not checked");
+            }
             await downloadService.DownloadFileAsync(new() { FileUrl = url, FilePath = fileName }, cancellationToken);
         }
         else

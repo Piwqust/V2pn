@@ -289,16 +289,37 @@ public static class V2pnControlClient
         }
     }
 
+    /// <summary>
+    /// Whether a pipe's owner is this user: the user itself (V2pn sets it, also when it runs as administrator,
+    /// V2pnControlServer.Security), or the owner this process gives what it creates (the Administrators group for an
+    /// elevated process). A program of another user can make neither its pipe's owner.
+    /// </summary>
+    [SupportedOSPlatform("windows")]
+    internal static bool IsOwnOwner(SecurityIdentifier? owner, SecurityIdentifier? user, SecurityIdentifier? defaultOwner) =>
+        owner != null && (owner == user || owner == defaultOwner);
+
+    [SupportedOSPlatform("windows")]
+    private static bool IsOwnPipe(NamedPipeClientStream pipe)
+    {
+        using var me = WindowsIdentity.GetCurrent();
+        return IsOwnOwner(pipe.GetAccessControl().GetOwner(typeof(SecurityIdentifier)) as SecurityIdentifier, me.User, me.Owner);
+    }
+
     private static async Task<Stream?> ConnectAsync(V2pnControlEndpoint endpoint, TimeSpan timeout)
     {
         if (endpoint.PipeName != null && OperatingSystem.IsWindows())
         {
-            // CurrentUserOnly: the pipe must be owned by this user, so another user's program cannot pose as V2pn.
-            var pipe = new NamedPipeClientStream(".", endpoint.PipeName, PipeDirection.InOut,
-                PipeOptions.Asynchronous | PipeOptions.CurrentUserOnly);
+            // The pipe must be owned by this user, so another user's program cannot pose as V2pn (IsOwnPipe). Not
+            // PipeOptions.CurrentUserOnly: it wants the token's default owner, which for a v2pnctl run as administrator
+            // is the Administrators group, so it refused every V2pn from an administrator's terminal.
+            var pipe = new NamedPipeClientStream(".", endpoint.PipeName, PipeDirection.InOut, PipeOptions.Asynchronous);
             try
             {
                 await pipe.ConnectAsync((int)Math.Max(1, timeout.TotalMilliseconds));
+                if (!IsOwnPipe(pipe))
+                {
+                    throw new UnauthorizedAccessException("The control channel belongs to another user of this computer.");
+                }
                 return pipe;
             }
             catch (TimeoutException)

@@ -92,7 +92,7 @@ public class V2pnControlChannelTests
         var (server, _, _) = Serve(endpoint);
         using (server)
         {
-            await using var pipe = new NamedPipeClientStream(".", endpoint.PipeName!, PipeDirection.InOut, PipeOptions.CurrentUserOnly);
+            await using var pipe = new NamedPipeClientStream(".", endpoint.PipeName!, PipeDirection.InOut, PipeOptions.None);
             await pipe.ConnectAsync(5000);
             var security = pipe.GetAccessControl();
             using var me = WindowsIdentity.GetCurrent();
@@ -112,6 +112,28 @@ public class V2pnControlChannelTests
             }
             await everyone.Should().BeFalse();
         }
+    }
+
+    [Test]
+    public async Task APipeIsOurs_WhenOwnedByThisUser_OrByWhatThisProcessMakesOwners()
+    {
+        if (!OperatingSystem.IsWindows())
+        {
+            return;
+        }
+        var user = new SecurityIdentifier("S-1-5-21-1-2-3-1001");
+        var admins = new SecurityIdentifier(WellKnownSidType.BuiltinAdministratorsSid, null);
+        var other = new SecurityIdentifier("S-1-5-21-1-2-3-1002");
+
+        // A V2pn of this user, elevated or not, makes the user the owner.
+        await V2pnControlClient.IsOwnOwner(user, user, user).Should().BeTrue();
+        await V2pnControlClient.IsOwnOwner(user, user, admins).Should().BeTrue();
+        // v2pnctl run as administrator: what it would create belongs to Administrators.
+        await V2pnControlClient.IsOwnOwner(admins, user, admins).Should().BeTrue();
+        // Another user's pipe, or Administrators' for a v2pnctl that is not elevated, is not V2pn's.
+        await V2pnControlClient.IsOwnOwner(other, user, user).Should().BeFalse();
+        await V2pnControlClient.IsOwnOwner(admins, user, user).Should().BeFalse();
+        await V2pnControlClient.IsOwnOwner(null, user, user).Should().BeFalse();
     }
 
     [Test]

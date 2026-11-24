@@ -1923,7 +1923,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         // A run reports its end even when it fails; the timeout only guards against waiting forever.
         await Task.WhenAny(finished.Task, Task.Delay(TimeSpan.FromMinutes(5)));
-        return finished.Task.IsCompleted;
+        // A run the person stopped switches nothing: its results cover only the servers it reached.
+        return finished.Task.IsCompleted && !profiles.LastPingStopped;
     }
 
     // A run started elsewhere (the sidebar's ping) ends first: two at once would mix their progress.
@@ -1986,9 +1987,18 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var sidebar = _sidebar;
         var candidates = sidebar.FastestCandidates();
-        if (candidates.Count == 0 || !await PingAndWaitAsync(() => profiles.PingProfilesAsync(candidates)))
+        if (candidates.Count == 0)
         {
             await FindFastestAsync();
+            return;
+        }
+        if (!await PingAndWaitAsync(() => profiles.PingProfilesAsync(candidates)))
+        {
+            // Stopped by the person: no test of everything after it either.
+            if (!profiles.LastPingStopped)
+            {
+                await FindFastestAsync();
+            }
             return;
         }
         var ids = candidates.Select(m => m.IndexId).ToHashSet();

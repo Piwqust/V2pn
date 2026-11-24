@@ -23,6 +23,9 @@ public partial class ProfilesViewModel : MyReactiveObject
     /// <summary>Raised when a ping run finishes or is stopped.</summary>
     public EventChannel<RxVoid> PingTestFinished { get; } = new();
 
+    /// <summary>V2pn: the last ping run was stopped before it tested every server.</summary>
+    public bool LastPingStopped { get; private set; }
+
     [Reactive]
     public partial bool IsPingTesting { get; set; }
 
@@ -331,7 +334,12 @@ public partial class ProfilesViewModel : MyReactiveObject
                 // The sidebar shows progress and completion inline, so no toast for the routine ending.
                 IsPingTesting = false;
                 _pingPending.Clear();
-                _config.UiItem.V2pnLastPing = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                // V2pn: a run stopped half way is not a fresh result: "fastest" would pick from what it reached.
+                LastPingStopped = result.Delay == ResUI.SpeedtestingStop;
+                if (!LastPingStopped)
+                {
+                    _config.UiItem.V2pnLastPing = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                }
                 PingTestFinished.Publish(RxVoid.Default);
                 _ = ServerUsageManager.Instance.SaveAsync();
             }

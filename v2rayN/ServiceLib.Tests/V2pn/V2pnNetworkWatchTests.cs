@@ -64,7 +64,9 @@ public class V2pnNetworkWatchTests
         }, TimeSpan.FromMilliseconds(20));
 
         watch.Signal("a");
-        await Task.Delay(80);
+        // The second signal comes while the first check runs. A fixed pause was not enough on a busy CI machine:
+        // when the first check had not started yet, both signals rightly became one check.
+        await WaitUntil(() => Volatile.Read(ref running) == 1);
         watch.Signal("b");
         await WaitUntil(() => Volatile.Read(ref finished) == 2);
 

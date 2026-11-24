@@ -27,6 +27,8 @@ public static class V2pnAppKillSwitch
     private const string MarkerKey = @"Software\V2pn";
     private const string MarkerValue = "AppKillSwitch";
 
+    private static readonly char[] NotInWindowsNames = ['<', '>', ':', '"', '|', '?', '*'];
+
     /// <summary>"Claude.EXE", "C:\…\claude.exe" or "claude" → "claude.exe"; empty or path-like nonsense → null.</summary>
     public static string? Normalize(string? name)
     {
@@ -35,8 +37,10 @@ public static class V2pnAppKillSwitch
         {
             return null;
         }
-        name = Path.GetFileName(name.Replace('/', '\\'));
-        if (name.IsNullOrEmpty() || name.IndexOfAny(Path.GetInvalidFileNameChars()) >= 0)
+        // A Windows program's name, read the same on every system (the tests run on a Mac too): what follows the
+        // last \ or /, without the characters Windows keeps out of file names.
+        name = name[(name.LastIndexOfAny(['\\', '/']) + 1)..];
+        if (name.IsNullOrEmpty() || name.IndexOfAny(NotInWindowsNames) >= 0 || name.Any(char.IsControl))
         {
             return null;
         }

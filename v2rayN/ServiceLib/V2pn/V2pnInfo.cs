@@ -54,6 +54,17 @@ public static class V2pnInfo
     /// <summary>The repository page: the source code, the licence and the issues.</summary>
     public static string RepoUrl => $"{Global.GithubUrl}/{Repo}";
 
+    /// <summary>
+    /// A new bug report on GitHub with <paramref name="diagnostics"/> in its log field and the version and system in
+    /// theirs (issue forms take their fields from the address). Cut to stay well under what browsers open.
+    /// </summary>
+    public static string BugReportUrl(string diagnostics)
+    {
+        var log = diagnostics.Length > 5000 ? diagnostics[..5000] + "\n…" : diagnostics;
+        var system = $"V2pn {DisplayVersion}, {System.Runtime.InteropServices.RuntimeInformation.OSDescription}";
+        return $"{RepoUrl}/issues/new?template=01_bug_report.yml&version={Uri.EscapeDataString(system)}&logs={Uri.EscapeDataString(log)}";
+    }
+
     /// <summary>Places that serve releases, in the order they are tried. Set at build time.</summary>
     public static IReadOnlyList<string> UpdateSources { get; } = Split(Metadata("V2pnUpdateSources")).Select(s => s.TrimEnd('/')).ToList();
 

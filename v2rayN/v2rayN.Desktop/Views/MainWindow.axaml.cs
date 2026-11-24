@@ -625,25 +625,27 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     #region Connection
 
-    private ProtectionState CurrentState()
+    /// <summary>Everything the verdict on the connection depends on, read now (V2pnConnectionVerdict).</summary>
+    private V2pnConnectionSnapshot Snapshot()
     {
         var status = ViewModel?.StatusBarViewModel;
         // Without a server the core is not running: "proxy on port N" would describe nothing.
-        if (status == null || !_hasServer)
-        {
-            return ProtectionState.Unprotected;
-        }
-        if (status.EnableTun)
-        {
-            return ProtectionState.Protected;
-        }
-        return (ESysProxyType)status.SystemProxySelected switch
-        {
-            ESysProxyType.ForcedChange or ESysProxyType.Pac => ProtectionState.Protected,
-            ESysProxyType.Unchanged => ProtectionState.LocalOnly,
-            _ => ProtectionState.Unprotected,
-        };
+        return new V2pnConnectionSnapshot(
+            HasServer: status != null && _hasServer,
+            EnableTun: status?.EnableTun == true,
+            SystemProxy: status == null ? ESysProxyType.ForcedClear : (ESysProxyType)status.SystemProxySelected,
+            Core: V2pnCoreWatch.State,
+            Failure: V2pnCoreWatch.Failure,
+            KillSwitchHolding: V2pnKillSwitch.Holding,
+            Check: (status?.CurrentAvailability ?? AvailabilityCheckResult.Unchecked).State);
     }
+
+    private ProtectionState CurrentState() => V2pnConnectionVerdict.Protection(Snapshot()) switch
+    {
+        EV2pnProtection.Protected => ProtectionState.Protected,
+        EV2pnProtection.LocalOnly => ProtectionState.LocalOnly,
+        _ => ProtectionState.Unprotected,
+    };
 
     /// <summary>
     /// Server statistics: the connection counts as up while the core runs, the state is not "Unprotected"
@@ -726,7 +728,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private async Task RefreshConnectionAsync()
     {
+        // Several triggers call this; a call whose lookup finishes after a newer one's must not put the older server
+        // back in the header (and in the usage time and Recent, which follow _activeIndexId).
+        var generation = ++_refreshGeneration;
         var item = await ConfigDbQuery.GetProfileItem(_config.IndexId);
+        if (generation != _refreshGeneration)
+        {
+            return;
+        }
         try
         {
             _hasServer = item != null;
@@ -774,6 +783,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             if (empty)
             {
                 await SwitchOffWhenNoServersAsync();
+                if (generation != _refreshGeneration)
+                {
+                    return;
+                }
             }
             // The first server just arrived. Nothing is awaited from here on: three triggers re-enter this
             // method, and a second pass must not see the welcome card still up and start the handoff again.
@@ -838,8 +851,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
         // V2pn: the partner's buttons under Connect while a server of its subscription is in use.
         RefreshPartnerActionBar(item?.Subid);
-        ShowServerDelay(item, FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId));
+        var delay = FindModel(item?.IndexId)?.Delay ?? await StoredDelayAsync(item?.IndexId);
+        if (generation == _refreshGeneration)
+        {
+            ShowServerDelay(item, delay);
+        }
     }
+
+    private int _refreshGeneration;
 
     /// <summary>
     /// First paint: the header and whichever card is showing appear together, once they have content.
@@ -890,28 +909,30 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
 
     private void RefreshStatePill()
     {
+        var snapshot = Snapshot();
         var state = CurrentState();
         var status = ViewModel?.StatusBarViewModel;
         var check = status?.CurrentAvailability ?? AvailabilityCheckResult.Unchecked;
         var enabled = state != ProtectionState.Unprotected;
-        var core = V2pnCoreWatch.State;
-        var fault = !enabled || core == EV2pnCoreState.Failed ? V2pnCoreWatch.Failure : EV2pnFailure.None;
-        var restarting = enabled && core == EV2pnCoreState.Restarting;
-        var starting = enabled && core is EV2pnCoreState.Starting or EV2pnCoreState.Stopped;
-        var holding = fault != EV2pnFailure.None && V2pnKillSwitch.Holding;
-        var (kind, label) = (fault, enabled, restarting, starting, check.State, state) switch
+        var (verdictKind, verdict) = V2pnConnectionVerdict.Of(snapshot);
+        var kind = verdictKind.ToString().ToLowerInvariant();
+        var label = verdict switch
         {
-            _ when holding => ("unsafe", L.StateKillSwitch),
-            (EV2pnFailure.KeepsStopping, _, _, _, _, _) => ("warn", L.StateCoreStopped),
-            (not EV2pnFailure.None, _, _, _, _, _) => ("warn", L.StateCoreFailed),
-            (_, false, _, _, _, _) => ("unsafe", L.Unprotected),
-            (_, _, true, _, _, _) => ("checking", L.StateReconnecting),
-            (_, _, _, true, _, _) => ("checking", L.StateConnecting),
-            (_, _, _, _, AvailabilityState.Checking, _) => ("checking", L.StateChecking),
-            (_, _, _, _, AvailabilityState.Available, ProtectionState.LocalOnly) => ("safe", L.LocalOnly),
-            (_, _, _, _, AvailabilityState.Available, _) => ("safe", status?.EnableTun == true ? L.StateVpnConnected : L.StateProxyConnected),
-            _ => ("warn", L.CheckStatus(check)),
+            EV2pnVerdict.KillSwitch => L.StateKillSwitch,
+            EV2pnVerdict.CoreStopped => L.StateCoreStopped,
+            EV2pnVerdict.CoreFailed => L.StateCoreFailed,
+            EV2pnVerdict.Off => L.Unprotected,
+            EV2pnVerdict.Reconnecting => L.StateReconnecting,
+            EV2pnVerdict.Connecting => L.StateConnecting,
+            EV2pnVerdict.Checking => L.StateChecking,
+            EV2pnVerdict.LocalOnly => L.LocalOnly,
+            EV2pnVerdict.VpnConnected => L.StateVpnConnected,
+            EV2pnVerdict.ProxyConnected => L.StateProxyConnected,
+            _ => L.CheckStatus(check),
         };
+        var holding = verdict == EV2pnVerdict.KillSwitch;
+        var starting = verdict == EV2pnVerdict.Connecting;
+        var restarting = verdict == EV2pnVerdict.Reconnecting;
         foreach (var c in new[] { "safe", "unsafe", "warn", "checking" })
         {
             pillState.Classes.Set(c, c == kind);
@@ -923,7 +944,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
             _spokenState = label;
             Avalonia.Automation.AutomationProperties.SetName(txtStatePill, label);
         }
-        var faulted = fault != EV2pnFailure.None;
+        var faulted = V2pnConnectionVerdict.Faulted(snapshot);
         var faultTip = !faulted ? null
             : holding ? L.KillSwitchHoldTip
             : V2pnCoreWatch.FailureDetail.IsNullOrEmpty() ? L.StateCoreFailedTip
@@ -1902,7 +1923,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         // A run reports its end even when it fails; the timeout only guards against waiting forever.
         await Task.WhenAny(finished.Task, Task.Delay(TimeSpan.FromMinutes(5)));
-        return finished.Task.IsCompleted;
+        // A run the person stopped switches nothing: its results cover only the servers it reached.
+        return finished.Task.IsCompleted && !profiles.LastPingStopped;
     }
 
     // A run started elsewhere (the sidebar's ping) ends first: two at once would mix their progress.
@@ -1965,9 +1987,18 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
         }
         var sidebar = _sidebar;
         var candidates = sidebar.FastestCandidates();
-        if (candidates.Count == 0 || !await PingAndWaitAsync(() => profiles.PingProfilesAsync(candidates)))
+        if (candidates.Count == 0)
         {
             await FindFastestAsync();
+            return;
+        }
+        if (!await PingAndWaitAsync(() => profiles.PingProfilesAsync(candidates)))
+        {
+            // Stopped by the person: no test of everything after it either.
+            if (!profiles.LastPingStopped)
+            {
+                await FindFastestAsync();
+            }
             return;
         }
         var ids = candidates.Select(m => m.IndexId).ToHashSet();
@@ -2414,11 +2445,34 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
                 Dispatcher.UIThread.Post(() => ShowHideWindow(null));
                 break;
 
+            // V2pn: the keys go through Connect and Disconnect, so they keep their rules: VPN mode, the chosen way of
+            // the proxy, admin rights. Setting the system proxy directly put it over the tunnel in VPN mode, and
+            // "clear" did nothing there.
             case EGlobalHotkey.SystemProxyClear:
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (CurrentState() != ProtectionState.Unprotected)
+                    {
+                        ToggleConnection(false);
+                    }
+                });
+                break;
+
             case EGlobalHotkey.SystemProxySet:
             case EGlobalHotkey.SystemProxyUnchanged:
             case EGlobalHotkey.SystemProxyPac:
-                AppEvents.SysProxyChangeRequested.Publish((ESysProxyType)((int)e - 1));
+                Dispatcher.UIThread.Post(() =>
+                {
+                    if (CurrentState() == ProtectionState.Unprotected)
+                    {
+                        ToggleConnection(true);
+                    }
+                    else if (ViewModel?.StatusBarViewModel.EnableTun != true)
+                    {
+                        // In proxy mode the key still picks how the system proxy is set.
+                        AppEvents.SysProxyChangeRequested.Publish((ESysProxyType)((int)e - 1));
+                    }
+                });
                 break;
         }
     }
@@ -2945,6 +2999,23 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>
     private void ShowToast(ToastKind kind, string message)
     {
         ShowNotice(Toasts.Message(kind, null, message), Toasts.TypeOf(kind), TimeSpan.FromSeconds(6));
+    }
+
+    private DateTime _lastUnexpectedToast = DateTime.MinValue;
+
+    /// <summary>
+    /// An error nothing above caught (a click, a timer, an "async void" handler): V2pn keeps running, and the person
+    /// hears that something did not work instead of nothing happening at all. At most one such note a minute.
+    /// </summary>
+    public void ShowUnexpectedError(Exception ex)
+    {
+        if (DateTime.UtcNow - _lastUnexpectedToast < TimeSpan.FromMinutes(1))
+        {
+            return;
+        }
+        _lastUnexpectedToast = DateTime.UtcNow;
+        var what = ex.GetBaseException().Message;
+        ShowToast(ToastKind.Error, string.Format(L.UnexpectedError, what.Length > 160 ? what[..160] + "…" : what));
     }
 
     // The normal bounds and the maximized flag: a maximized window reopens maximized, and restores to its

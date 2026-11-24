@@ -22,7 +22,10 @@ public static class V2pnDeepLink
     public static readonly IReadOnlyList<string> Schemes = [Scheme, "happ", "v2raytun", "hiddify"];
 
     private const int MaxLink = 4096;
+    // The file of V2pn 1.4.2 and older, still read once; new links go to v2pn-link-<time>-<id>.txt.
     private const string StashFile = "v2pn-link.txt";
+    private const string StashPrefix = "v2pn-link-";
+    private const int MaxStashed = 16;
 
     /// <summary>
     /// Where providers' pages live: &lt;origin&gt;/p/&lt;id&gt;/ on the site of each partner source laid out as the V2pn Hub
@@ -124,13 +127,15 @@ public static class V2pnDeepLink
 
     /// <summary>
     /// Leaves a link for the copy of V2pn already running: a second start (a click on a v2pn:// link) writes it
-    /// here and wakes the first, which takes it with <see cref="TakeStashed"/>.
+    /// here and wakes the first, which takes it with <see cref="TakeStashed"/>. Each link gets a file of its own:
+    /// with one shared file, a second click before the first was taken wrote over it.
     /// </summary>
     public static void Stash(string link)
     {
         try
         {
-            File.WriteAllText(Utils.GetTempPath(StashFile), link);
+            var name = $"{StashPrefix}{DateTime.UtcNow.Ticks:D19}-{Guid.NewGuid():N}.txt";
+            File.WriteAllText(Utils.GetTempPath(name), link);
         }
         catch (Exception ex)
         {
@@ -138,24 +143,41 @@ public static class V2pnDeepLink
         }
     }
 
-    public static V2pnAddLink? TakeStashed()
+    /// <summary>Every link left by <see cref="Stash"/>, oldest first; each file is taken once.</summary>
+    public static List<V2pnAddLink> TakeStashed()
     {
+        var links = new List<V2pnAddLink>();
         try
         {
-            var path = Utils.GetTempPath(StashFile);
-            if (!File.Exists(path))
+            var folder = Utils.GetTempPath();
+            var files = Directory.EnumerateFiles(folder, $"{StashPrefix}*.txt")
+                .Append(Path.Combine(folder, StashFile))
+                .Where(File.Exists)
+                .Order(StringComparer.Ordinal)
+                .Take(MaxStashed)
+                .ToList();
+            foreach (var path in files)
             {
-                return null;
+                try
+                {
+                    var text = File.ReadAllText(path);
+                    File.Delete(path);
+                    if (Parse(text) is { } link)
+                    {
+                        links.Add(link);
+                    }
+                }
+                catch (IOException)
+                {
+                    // Being written, or taken by another look a moment ago: the next wake-up takes it.
+                }
             }
-            var text = File.ReadAllText(path);
-            File.Delete(path);
-            return Parse(text);
         }
         catch (Exception ex)
         {
             Logging.SaveLog(nameof(V2pnDeepLink), ex);
-            return null;
         }
+        return links;
     }
 
     /// <summary>

@@ -56,7 +56,7 @@ test('failed sign-ins are limited per login, registrations per address', async (
     const codes = [];
     for (let i = 0; i < 11; i++) codes.push((await c.post('/api/auth/login', { login: 'target', password: `x${i}xxxx` })).data.error.code);
     assert.deepEqual(codes, [...Array(10).fill('password_invalid'), 'rate_limited']);
-    // Even the right password waits now: guessing is cut off for this login.
+    // Even the right password waits now: guessing is cut off for this login from this network (login-limits.test.mjs).
     assert.equal((await c.post('/api/auth/login', { login: 'target', password: 'right-pass' })).data.error.code, 'rate_limited');
 
     const statuses = [];

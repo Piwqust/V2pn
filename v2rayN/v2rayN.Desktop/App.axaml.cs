@@ -58,6 +58,15 @@ public partial class App : Application
         {
             Logging.SaveLog("Dispatcher_UnhandledException", e.Exception);
             e.Handled = true;
+            // Said on screen too: a failed click used to leave only a line in the log.
+            try
+            {
+                TrayWindow?.ShowUnexpectedError(e.Exception);
+            }
+            catch (Exception ex)
+            {
+                Logging.SaveLog("Dispatcher_UnhandledException toast", ex);
+            }
         };
     }
 

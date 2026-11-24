@@ -293,14 +293,37 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
     }
 
     /// <summary>
-    /// Asks each source for the newest release until one gives a manifest with a valid signature.
+    /// Asks every source for the newest release and takes the highest version among the manifests with a valid
+    /// signature; for one version the source asked first wins. Every source is asked, not only the first that answers:
+    /// an old release is still validly signed, so a source that keeps serving one (V2pn's server taken over, a stale
+    /// mirror) could otherwise hold every copy on an old version, security fixes and all.
     /// A source that answers "not found" has published nothing yet, which is not an error.
     /// </summary>
     private async Task<(Release? Release, bool NothingPublished, string? Error)> FindReleaseAsync(bool preferProxy, CancellationToken cancellationToken)
     {
-        var proxy = await V2pnHttp.LocalProxyAsync(cancellationToken);
+        Release? best = null;
         var nothingPublished = false;
         string? error = null;
+        await foreach (var found in AskSourcesAsync(preferProxy, cancellationToken))
+        {
+            if (found.Release is { } release)
+            {
+                if (best == null || new SemanticVersion(release.Manifest.Version) > new SemanticVersion(best.Manifest.Version))
+                {
+                    best = release;
+                }
+            }
+            nothingPublished |= found.NothingPublished;
+            error = found.Error ?? error;
+        }
+        return best != null ? (best, false, null) : (null, nothingPublished, error);
+    }
+
+    /// <summary>Each source's answer: its verified release, "nothing published", or why it gave neither.</summary>
+    private async IAsyncEnumerable<(Release? Release, bool NothingPublished, string? Error)> AskSourcesAsync(bool preferProxy,
+        [System.Runtime.CompilerServices.EnumeratorCancellation] CancellationToken cancellationToken)
+    {
+        var proxy = await V2pnHttp.LocalProxyAsync(cancellationToken);
         foreach (var (source, i) in Settings.Sources.Select((s, i) => (s, i)))
         {
             var host = Uri.TryCreate(source, UriKind.Absolute, out var uri) ? uri.Host : source;
@@ -313,27 +336,24 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                 var json = await V2pnHttp.GetAsync(url, route, V2pnManifest.MaxBytes, cancellationToken, limits: limits);
                 if (json.NotFound)
                 {
-                    nothingPublished = true;
+                    yield return (null, true, null);
                     break;
                 }
                 if (!json.Ok)
                 {
-                    error = $"{host}: {json.Error}";
+                    yield return (null, false, $"{host}: {json.Error}");
                     continue;
                 }
                 var signature = await V2pnHttp.GetAsync(url + V2pnInfo.SignatureSuffix, route, 4096, cancellationToken, limits: limits);
                 var signatureText = signature.Ok ? Encoding.ASCII.GetString(signature.Body!) : null;
                 var manifest = V2pnManifest.ReadVerified(json.Body, signatureText, Settings.Keys, out var why);
-                if (manifest == null)
-                {
-                    // Not worth asking the same source another way: what it serves is not a V2pn release.
-                    error = $"{host}: {why}";
-                    break;
-                }
-                return (new Release(source, viaProxy, manifest, json.Body!, signatureText!), false, null);
+                // Not worth asking the same source another way: it answered, with a release or with something that is not one.
+                yield return manifest == null
+                    ? (null, false, $"{host}: {why}")
+                    : (new Release(source, viaProxy, manifest, json.Body!, signatureText!), false, null);
+                break;
             }
         }
-        return (null, nothingPublished, error);
     }
 
     /// <summary>Direct and through the local proxy, the configured preference first.</summary>

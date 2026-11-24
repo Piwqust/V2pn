@@ -48,6 +48,7 @@ public class StatisticsSingboxService
                     continue;
                 }
                 using var ws = new ClientWebSocket();
+                V2pnLocalApi.Authorize(ws);
                 await ws.ConnectAsync(new Uri(Url), token).ConfigureAwait(false);
 
                 var buffer = new byte[1024];

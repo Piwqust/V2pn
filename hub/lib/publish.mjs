@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { dotnetJson } from './jsonfmt.mjs';
 import { colors as C } from './colors.mjs';
-import { needsApi, packObject, packPictures, themeOf } from './look.mjs';
+import { linkAllowed, needsApi, packObject, packPictures, themeOf } from './look.mjs';
 import { buildDownPage, buildPage } from './page.mjs';
 import { routingBytes } from './routing.mjs';
 import { domainsOverlap } from './validate.mjs';
@@ -32,10 +32,15 @@ export function publishedStamp(date = new Date()) {
   return date.toISOString().replace(/\.\d{3}Z$/, 'Z');
 }
 
-/** The until of a partner without a term of its own: a year on, renewed by every publication. */
+// How long a partner without a term of its own stays in the index after a publication. The hub publishes again every
+// day, so a partner lives on while the hub does; if the hub stops (or its key is taken and the hub shut down), its
+// partners drop out of V2pn within two months. V2pn caps a hub-signed listing at published + 60 days as well.
+export const HUB_TERM_DAYS = 60;
+
+/** The until of a partner without a term of its own: HUB_TERM_DAYS on, renewed by every publication. */
 export function rollingUntil(today) {
   const d = new Date(`${today}T00:00:00Z`);
-  d.setUTCFullYear(d.getUTCFullYear() + 1);
+  d.setUTCDate(d.getUTCDate() + HUB_TERM_DAYS);
   return d.toISOString().slice(0, 10);
 }
 
@@ -52,8 +57,10 @@ export function indexBytes(listings, published, newline = '\n') {
 }
 
 /**
- * One partner's pack: {listing, zip, packBytes, look, pictures}. <partner> is {id, name, domains, until, look,
+ * One partner's pack: {listing, zip, packBytes, look, pictures, dropped}. <partner> is {id, name, domains, until, look,
  * approved: {account?, actions?, lock?, routing?}} with only the approved rights; <readUpload>(sha) gives a picture.
+ * A cabinet or support link off the partner's domains (saved before the hub checked that) is left out and named in
+ * <dropped>: the rest of the partner still goes out.
  */
 export function buildPack(partner, readUpload, today) {
   const { look } = partner;
@@ -70,7 +77,14 @@ export function buildPack(partner, readUpload, today) {
   const api = approved.account?.api ?? '';
   // A button that needs the API goes out only with an approved API.
   const actions = (approved.actions ?? []).filter(a => api || !needsApi(a));
-  const full = { ...look, api, login: Boolean(api && approved.account?.login), actions, lock: approved.lock === true };
+  const links = { cabinet: '', support: '' };
+  const dropped = [];
+  for (const key of Object.keys(links)) {
+    const link = look.links?.[key] || '';
+    if (link && !linkAllowed(link, partner.domains)) dropped.push(key);
+    else links[key] = link;
+  }
+  const full = { ...look, links, api, login: Boolean(api && approved.account?.login), actions, lock: approved.lock === true };
   const pack = packObject(partner.id, full, pictures);
   const files = pictures.map(p => ({ name: p.name, content: p.content }));
   const reviewed = {};
@@ -98,7 +112,7 @@ export function buildPack(partner, readUpload, today) {
     until: partner.until || rollingUntil(today),
     pack: { file: `partner-${partner.id}.zip`, size: zip.length, sha256: sha256(zip) },
   };
-  return { listing, zip, packBytes, look: full, pictures };
+  return { listing, zip, packBytes, look: full, pictures, dropped };
 }
 
 /** Reads a built pack back the way V2pn checks it (sizes, hashes, entries, id); throws on the first mismatch. */
@@ -121,10 +135,12 @@ export function verifyPack(listing, zip) {
 
 /**
  * Everything a publication writes, or {problems} when any partner cannot go out. <partners> are as buildPack takes
- * them, with their state: a partner taken down gets a page that says so instead of its pack.
+ * them, with their state: a partner taken down gets a page that says so instead of its pack. <notes> name what went
+ * out without a part ({partner, links}).
  */
-export function buildPublication(partners, { readUpload, today, published, origin }) {
+export function buildPublication(partners, { readUpload, today, published, origin, repo }) {
   const problems = [];
+  const notes = [];
   const built = [];
   const down = [];
   for (const partner of partners) {
@@ -137,8 +153,9 @@ export function buildPublication(partners, { readUpload, today, published, origi
     try {
       const pack = buildPack(partner, readUpload, today);
       verifyPack(pack.listing, pack.zip);
+      if (pack.dropped.length) notes.push({ partner: partner.id, links: pack.dropped });
       const pics = Object.fromEntries(pack.pictures.map(p => [p.key, p.content]));
-      const page = buildPage({ id: partner.id, name: pack.listing.name, look: pack.look, theme: themeOf(pack.look), pictures: pics, origin });
+      const page = buildPage({ id: partner.id, name: pack.listing.name, look: pack.look, theme: themeOf(pack.look), pictures: pics, origin, repo });
       built.push({ ...pack, page });
     } catch (e) {
       problems.push(String(e.message || e));
@@ -152,7 +169,7 @@ export function buildPublication(partners, { readUpload, today, published, origi
   }
   const index = indexBytes(built.map(b => b.listing), published);
   if (index.length > MAX_INDEX_BYTES) problems.push('partner-index.json would be larger than 256 KB');
-  return { problems, built, down, index, legacy: indexBytes([], published) };
+  return { problems, notes, built, down, index, legacy: indexBytes([], published) };
 }
 
 function writeAtomic(file, content) {

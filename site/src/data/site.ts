@@ -50,9 +50,11 @@ export const downloads: Download[] = [
   { key: 'macos-x64', os: 'mac', href: '/r/macos-x64', title: 'Mac с Intel', detail: 'macOS 13.6 и новее', file: 'V2pn-macos-x64.dmg' },
 ];
 
+// The one-line installers come straight from the GitHub release, not through the hub's /r/: what people pipe into a
+// shell must not depend on the site's server.
 export const commands = {
-  win: `irm ${site.url}/r/install.ps1 | iex`,
-  mac: `curl -fsSL ${site.url}/r/install.sh | bash`,
+  win: `irm ${site.repo}/releases/latest/download/install.ps1 | iex`,
+  mac: `curl -fsSL ${site.repo}/releases/latest/download/install.sh | bash`,
 };
 
 export { presets, traffic } from './routes';

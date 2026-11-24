@@ -84,6 +84,19 @@ export function isPublicV6(ip) {
   return true;
 }
 
+/**
+ * What a visitor's limits are counted by: an IPv4 address as it is (an IPv4-mapped IPv6 one too), an IPv6 address by
+ * its /64. One home or one server gets a whole /64, so counting single IPv6 addresses would let it walk round any limit.
+ */
+export function ipKey(ip) {
+  const text = String(ip ?? '');
+  if (net.isIPv4(text)) return text;
+  const g = v6Groups(text);
+  if (!g) return text;
+  if (g.slice(0, 5).every(x => x === 0) && g[5] === 0xffff) return `${g[6] >> 8}.${g[6] & 255}.${g[7] >> 8}.${g[7] & 255}`;
+  return `${g.slice(0, 4).map(x => x.toString(16)).join(':')}::/64`;
+}
+
 /** True for a public unicast IPv4 or IPv6 address. */
 export function isPublicIp(ip) {
   if (net.isIPv4(ip)) return isPublicV4(ip);

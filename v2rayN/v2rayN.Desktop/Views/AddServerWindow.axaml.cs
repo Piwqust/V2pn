@@ -18,6 +18,7 @@ public partial class AddServerWindow : WindowBase<AddServerViewModel>
         Loaded += Window_Loaded;
         btnCancel.Click += (s, e) => Close();
         cmbNetwork.SelectionChanged += CmbNetwork_SelectionChanged;
+        cmbCoreType.SelectionChanged += (_, _) => SetTransportCoreNote();
         cmbHeaderTypeRaw.SelectionChanged += CmbHeaderTypeRaw_SelectionChanged;
         cmbStreamSecurity.SelectionChanged += CmbStreamSecurity_SelectionChanged;
         btnGUID.Click += btnGUID_Click;
@@ -330,6 +331,7 @@ public partial class AddServerWindow : WindowBase<AddServerViewModel>
         }
         cmbStreamSecurity.ItemsSource = lstStreamSecurity;
         cmbStreamSecurity.SelectedItem = profileItem.StreamSecurity;
+        SetTransportCoreNote();
     }
 
     private void Window_Loaded(object? sender, RoutedEventArgs e)
@@ -340,6 +342,25 @@ public partial class AddServerWindow : WindowBase<AddServerViewModel>
     private void CmbNetwork_SelectionChanged(object? sender, SelectionChangedEventArgs e)
     {
         SetTransportGridVisibility();
+        SetTransportCoreNote();
+    }
+
+    // V2pn: says it under the transport when the server's core cannot carry it (sing-box has no kcp, xhttp or
+    // XDRIVE); saving such a server is refused, as v2rayN refuses to connect it.
+    private void SetTransportCoreNote()
+    {
+        var configType = ViewModel?.SelectedSource?.ConfigType;
+        var network = cmbNetwork.SelectedItem?.ToString();
+        string? error = null;
+        var core = ECoreType.Xray;
+        if (configType != null && gridTransport.IsVisible)
+        {
+            core = V2pnServerChecks.EffectiveCore(configType.Value, cmbCoreType.SelectedItem?.ToString());
+            error = V2pnServerChecks.TransportError(configType.Value, network, core);
+        }
+        txtTransportCoreNote.Text = error == null ? null
+            : string.Format(L.SvCoreCannotCarry, core == ECoreType.sing_box ? "sing-box" : core.ToString(), network);
+        txtTransportCoreNote.IsVisible = error != null;
     }
 
     private void CmbHeaderTypeRaw_SelectionChanged(object? sender, SelectionChangedEventArgs e)

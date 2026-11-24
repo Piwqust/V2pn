@@ -246,7 +246,7 @@ public static class ConfigTextHandler
         var tempPath = $"{resPath}_{Guid.NewGuid():N}.tmp";
         try
         {
-            var content = JsonUtils.Serialize(Config, true, true);
+            var content = await V2pnConfigSnapshot.SerializeAsync(() => JsonUtils.Serialize(Config, true, true));
             if (content.IsNullOrEmpty())
             {
                 return -1;

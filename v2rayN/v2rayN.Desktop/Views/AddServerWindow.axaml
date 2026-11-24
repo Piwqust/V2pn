@@ -1055,6 +1055,8 @@
                             </StackPanel>
                         </StackPanel>
                     </Border>
+                    <!--  Shown when the server's core cannot carry the chosen transport (sing-box: kcp, xhttp, XDRIVE).  -->
+                    <TextBlock x:Name="txtTransportCoreNote" Classes="sgroupnote" IsVisible="False" />
                 </StackPanel>
 
                 <StackPanel Classes="sgroup" x:Name="gridFinalmask">

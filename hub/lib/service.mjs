@@ -8,12 +8,14 @@ import { checkSubscription } from './check.mjs';
 import { colors as C } from './colors.mjs';
 import { DownloadCounter } from './downloads.mjs';
 import { HubError } from './errors.mjs';
+import { ipKey } from './ip.mjs';
 import { log } from './log.mjs';
 import { defaultLook, lookProblems, parseLook, themeOf, PICTURES, SLOT_OF } from './look.mjs';
 import { NetError, safeFetch } from './net.mjs';
 import { pageTheme } from './page.mjs';
 import { GRANT_ORDER, ROOT_ONLY_GRANTS, buildPublication, publishedStamp, writePublication } from './publish.mjs';
 import { RIGHTS, contentHash, parseRights, rightState, rightView } from './rights.mjs';
+import { RootPartners } from './roots.mjs';
 import { parseRouting } from './routing.mjs';
 import { RESERVED_IDS, domainAllowed, domainsOverlap, httpsUrl, multiLine, normalizeDomain, oneLine, validId, validName } from './validate.mjs';
 
@@ -49,6 +51,9 @@ export class Hub {
     this.checksRunning = 0;
     this.lastPublishError = null;
     fs.mkdirSync(config.uploadsDir, { recursive: true, mode: 0o700 });
+    // The partners the owner signs with the root key: their ids and domains are not the hub's to give.
+    this.roots = new RootPartners({ file: config.rootIndexFile, url: config.rootIndexUrl, keys: config.rootKeys, fixed: config.rootPartners, net });
+    if (this.roots.loadCached() || config.rootPartners.length) this.rootCollisions();
   }
 
   /**
@@ -86,9 +91,9 @@ export class Hub {
     return new Map(this.db.all('SELECT sha256, slot, width, height, size FROM uploads WHERE account_id = ?', accountId).map(r => [r.sha256, r]));
   }
 
-  /** What blocks a look, the colour notes and the colours V2pn will draw (for the live preview). */
-  lookReview(look, accountId) {
-    const problems = lookProblems(look, { pictures: this.pictureMap(accountId) });
+  /** What blocks a look, the colour notes and the colours V2pn will draw (for the live preview); <domains> are the partner's. */
+  lookReview(look, accountId, domains) {
+    const problems = lookProblems(look, { pictures: this.pictureMap(accountId), domains });
     const theme = themeOf(look);
     if (theme.brand.length && pageTheme(theme).failures.length) problems.colours = 'Текст на странице партнёра будет нечитаем. Возьмите другой цвет.';
     const derived = mode => {
@@ -141,7 +146,7 @@ export class Hub {
     return {
       partner: row ? this.partnerView(row) : null,
       look,
-      review: this.lookReview(look, accountId),
+      review: this.lookReview(look, accountId, row ? parseJson(row.domains, []) : undefined),
       pictures: [...this.pictureMap(accountId).values()].map(p => ({ sha256: p.sha256, slot: p.slot, width: p.width, height: p.height, size: p.size })),
       // What each picture slot takes, in the words the upload's refusal uses.
       slots: Object.fromEntries(PICTURES.map(key => [key, { hint: C.SLOTS[SLOT_OF[key]].desc[0], maxBytes: C.MAX_ASSET }])),
@@ -172,12 +177,47 @@ export class Hub {
     return { url, domain };
   }
 
-  /** The live partner other than <id> that already claims one of <domains>, or null. */
+  /**
+   * The partner other than <id> that already claims one of <domains>, or null: a live one of the hub's, or one the
+   * owner signs with the root key ({root: true}).
+   */
   domainOwner(domains, id) {
     for (const p of this.db.all("SELECT id, name, domains FROM partners WHERE state = 'live' AND id != ?", id || '')) {
       if (domainsOverlap(domains, parseJson(p.domains, []))) return p;
     }
-    return null;
+    const root = this.roots.owner(domains, id);
+    return root ? { ...root, root: true } : null;
+  }
+
+  /** "domain_taken" for <domain>, which <owner> (as domainOwner gives it) claims. */
+  domainTaken(owner, domain) {
+    const message = owner.root
+      ? `Домен ${domain} принадлежит партнёру ${owner.name}, которого V2pn подписал сам.`
+      : `Домен ${domain} уже у другого партнёра.`;
+    return new HubError('domain_taken', { message: owner.root ? message : undefined, fields: { subscription: message } });
+  }
+
+  /**
+   * Hub partners in the way of a root partner, logged as warnings: one with a root partner's id that was not imported
+   * from it, or one on a root partner's domain. V2pn would take the hub's and leave the root one out.
+   */
+  rootCollisions() {
+    const found = [];
+    for (const p of this.db.all('SELECT id, domains, source FROM partners ORDER BY id')) {
+      const domains = parseJson(p.domains, []);
+      if (p.source !== 'import' && this.roots.has(p.id)) found.push({ partner: p.id, root: p.id, why: 'id' });
+      const root = this.roots.owner(domains, p.id);
+      if (root) found.push({ partner: p.id, root: root.id, why: 'domain', clash: domainsOverlap(domains, root.domains) });
+    }
+    for (const c of found) log.warn('a hub partner collides with a root partner', c);
+    return found;
+  }
+
+  /** Reads the root-signed index again (startServer: at start and every six hours); the last good copy stays on failure. */
+  async refreshRoots() {
+    const ok = await this.roots.refresh();
+    if (ok) this.rootCollisions();
+    return ok;
   }
 
   /** POST /api/partner/check: a link checked without saving, with the domain the hub would take from it. */
@@ -194,7 +234,7 @@ export class Hub {
     if (base.length < 2) base = 'partner';
     for (let i = 1; ; i++) {
       const id = i === 1 ? base : `${base.slice(0, 31 - String(i).length).replace(/-+$/, '')}-${i}`;
-      if (validId(id) && !RESERVED_IDS.has(id) && !this.db.get('SELECT 1 FROM partners WHERE id = ?', id)) return id;
+      if (validId(id) && !RESERVED_IDS.has(id) && !this.roots.has(id) && !this.db.get('SELECT 1 FROM partners WHERE id = ?', id)) return id;
     }
   }
 
@@ -214,9 +254,10 @@ export class Hub {
     const asked = input.rights !== undefined ? input.rights
       : row ? Object.fromEntries(this.rightRows(row.id).map(r => [r.name, JSON.parse(r.content)])) : null;
     const rights = parseRights(asked, { domains });
-    const { problems } = this.lookReview(look, accountId);
+    const { problems } = this.lookReview(look, accountId, domains);
     if (Object.keys(problems).length) throw new HubError('look_invalid', { fields: problems });
-    if (this.domainOwner(domains, row?.id)) throw new HubError('domain_taken', { fields: { subscription: `Домен ${domain} уже у другого партнёра.` } });
+    const taken = this.domainOwner(domains, row?.id);
+    if (taken) throw this.domainTaken(taken, domain);
 
     let check = null;
     if (!row || row.subscription !== url || !row.check_json) {
@@ -228,7 +269,8 @@ export class Hub {
     const id = this.db.tx(() => {
       const now = nowIso();
       let current = this.ownPartner(accountId);
-      if (this.domainOwner(domains, current?.id)) throw new HubError('domain_taken', { fields: { subscription: `Домен ${domain} уже у другого партнёра.` } });
+      const owner = this.domainOwner(domains, current?.id);
+      if (owner) throw this.domainTaken(owner, domain);
       if (!current) {
         const newId = this.freeId(look.name);
         this.db.run(`INSERT INTO partners (id, account_id, name, domains, subscription, check_json, checked_at, look, state, source, created_at, updated_at)
@@ -382,8 +424,9 @@ export class Hub {
     const text = multiLine(input?.text ?? '', 1000);
     if (text == null) throw new HubError('invalid', { fields: { text: 'До 1000 символов.' } });
     if (!validId(id) || !this.db.get("SELECT 1 FROM partners WHERE id = ? AND state = 'live'", id)) throw new HubError('not_found');
-    if (!this.limiter.hit(`complaint-ip:${ip}`, 10, HOUR)) throw new HubError('rate_limited');
-    if (!this.limiter.hit(`complaint:${ip}:${id}`, 1, 24 * HOUR)) throw new HubError('rate_limited', { message: 'Вы уже пожаловались. Спасибо.' });
+    const network = ipKey(ip);
+    if (!this.limiter.hit(`complaint-ip:${network}`, 10, HOUR)) throw new HubError('rate_limited');
+    if (!this.limiter.hit(`complaint:${network}:${id}`, 1, 24 * HOUR)) throw new HubError('rate_limited', { message: 'Вы уже пожаловались. Спасибо.' });
     this.db.run('INSERT INTO complaints (partner_id, text, created_at) VALUES (?, ?, ?)', id, text, nowIso());
     log.info('complaint', { partner: id });
     return { ok: true };
@@ -462,7 +505,10 @@ export class Hub {
   restore(id, actor) {
     const row = this.partnerRow(id);
     if (row.state !== 'down') throw new HubError('state', { message: 'Партнёр не снят.' });
-    if (this.domainOwner(parseJson(row.domains, []), id)) throw new HubError('domain_taken', { message: 'Его домен уже у другого партнёра.' });
+    const owner = this.domainOwner(parseJson(row.domains, []), id);
+    if (owner) {
+      throw new HubError('domain_taken', { message: owner.root ? `Его домен у партнёра ${owner.name}, которого V2pn подписал сам.` : 'Его домен уже у другого партнёра.' });
+    }
     this.db.run("UPDATE partners SET state = 'live', down_reason = NULL, updated_at = ? WHERE id = ?", nowIso(), id);
     this.db.audit(actor, 'partner.restore', id);
     this.publishSafely(actor);
@@ -603,13 +649,14 @@ export class Hub {
   /** Rebuilds and re-signs everything; throws with the problems when nothing could be written. */
   publish(actor = 'system') {
     const publication = buildPublication(this.publicationPartners(), {
-      readUpload: h => this.readUpload(h), today: today(), published: publishedStamp(), origin: this.config.origin,
+      readUpload: h => this.readUpload(h), today: today(), published: publishedStamp(), origin: this.config.origin, repo: this.config.githubRepo,
     });
     if (publication.problems.length) {
       this.lastPublishError = { at: nowIso(), problems: publication.problems };
       log.error('publish refused', { problems: publication.problems });
       throw new HubError('publish_failed', { detail: publication.problems });
     }
+    for (const note of publication.notes) log.warn('published without', note);
     const previous = parseJson(this.db.meta('pages'), []);
     const pages = writePublication(this.config.publicDir, publication, this.key, previous);
     const now = nowIso();
@@ -726,7 +773,8 @@ export class Hub {
     const result = this.db.tx(() => {
       const existing = this.db.get('SELECT * FROM partners WHERE id = ?', listing.id);
       if (existing && existing.source !== 'import') throw new Error(`${listing.id} is a partner made on the hub; not replaced`);
-      if (this.domainOwner(domains, listing.id)) throw new Error(`a domain of ${listing.id} belongs to another live partner`);
+      const owner = this.domainOwner(domains, listing.id);
+      if (owner) throw new Error(`a domain of ${listing.id} belongs to ${owner.root ? 'the root-signed partner' : 'another live partner'} ${owner.id}`);
       let accountId = existing?.account_id;
       if (login || !accountId) {
         const wanted = normalizeLogin(login ?? listing.id);
@@ -744,7 +792,7 @@ export class Hub {
         this.db.run(`INSERT INTO uploads (account_id, sha256, slot, width, height, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT (account_id, sha256) DO UPDATE SET slot = excluded.slot`, accountId, hash, p.slotKey, w, h, p.bytes.length, Date.now());
       }
-      const problems = lookProblems(look, { pictures: this.pictureMap(accountId) });
+      const problems = lookProblems(look, { pictures: this.pictureMap(accountId), domains });
       if (Object.keys(problems).length) throw new Error(`the look does not pass: ${JSON.stringify(problems)}`);
       if (existing) {
         this.db.run(`UPDATE partners SET account_id = ?, name = ?, domains = ?, look = ?, state = 'live', down_reason = NULL, until = ?, updated_at = ?
@@ -769,12 +817,25 @@ export class Hub {
 
   // ---------------------------------------------------------------- housekeeping
 
-  /** Every few minutes: expired sessions out, counters in; once a day a fresh index (terms run on). */
+  /**
+   * Whether the index is due to be signed and written again: not yet today, or the last one is a day old. Every
+   * publication moves the term of the hub's own partners 60 days on (rollingUntil).
+   */
+  publishDue(now = Date.now()) {
+    if (this.db.meta('published_day') !== today()) return true;
+    const at = Date.parse(parseJson(this.db.meta('published'), null)?.at ?? '');
+    return !(at > now - 24 * HOUR);
+  }
+
+  /**
+   * Every ten minutes and right after start (startServer): expired sessions out, counters in; once a day a fresh index
+   * (terms run on), retried at the next round while it fails.
+   */
   maintain() {
     try {
       this.auth.sweep();
       this.counter.flush();
-      if (this.db.meta('published_day') !== today()) {
+      if (this.publishDue()) {
         const due = this.db.get('SELECT 1 FROM partners LIMIT 1');
         if (due || this.db.meta('published_day')) this.publishSafely('system');
         this.collectUploads();

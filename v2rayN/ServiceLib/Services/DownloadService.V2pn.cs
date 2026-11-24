@@ -15,6 +15,9 @@ public partial class DownloadService
     /// <summary>V2pn: the words of the last download error, for the subscription's update result.</summary>
     public string? LastError { get; set; }
 
+    /// <summary>V2pn: whether a panel refused this device (Remnawave's HWID device limit), from any answer.</summary>
+    public EV2pnDeviceRefusal DeviceRefusal => (Handler as ResponseHeadersHandler)?.DeviceRefusal ?? EV2pnDeviceRefusal.None;
+
     /// <summary>V2pn: wraps a handler so the service built on it keeps the response headers and status.</summary>
     public static HttpMessageHandler KeepResponseHeaders(HttpMessageHandler inner) => new ResponseHeadersHandler(inner);
 
@@ -24,10 +27,17 @@ public partial class DownloadService
 
         public int? LastStatus { get; private set; }
 
+        public EV2pnDeviceRefusal DeviceRefusal { get; private set; }
+
         protected override async Task<HttpResponseMessage> SendAsync(HttpRequestMessage request, CancellationToken cancellationToken)
         {
             var response = await base.SendAsync(request, cancellationToken).ConfigureAwait(false);
             LastStatus = (int)response.StatusCode;
+            // Remnawave says it in headers, with 200 and no servers or with 404: kept whatever the status.
+            if (V2pnDevice.Refusal(response.Headers) is not EV2pnDeviceRefusal.None and var refusal)
+            {
+                DeviceRefusal = refusal;
+            }
             if (Headers == null && response.IsSuccessStatusCode)
             {
                 Headers = SubPanelHeaders.Collect(response);

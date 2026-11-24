@@ -1,0 +1,66 @@
+# The site's block for Caddy (/etc/caddy/Caddyfile): the hub's paths in front of the static files, as in hub/README.md
+# ("Deployment"), and what happens while the hub is down (stopped, crashed, restarting). Then the download buttons
+# (/r/<name>) and V2pn's update checks and partner files (/releases/...) go straight to the same files on GitHub, and
+# /api/ answers 503 in the hub's own JSON. The /r/ names are those of hub/lib/downloads.mjs (SHORT_NAMES);
+# test/caddy.test.mjs keeps the two in step.
+#
+# Check after a change: caddy validate --config /etc/caddy/Caddyfile && systemctl reload caddy
+v2pn.angleford.co {
+	root * /var/www/v2pn.angleford.co
+
+	# The hub answers these at once with a redirect: a short wait is enough before falling back.
+	@downloads path /r/* /releases/*
+	handle @downloads {
+		reverse_proxy 127.0.0.1:18190 {
+			transport http {
+				dial_timeout 2s
+				response_header_timeout 5s
+			}
+		}
+	}
+	handle /api/* {
+		request_body {
+			max_size 3MB
+		}
+		reverse_proxy 127.0.0.1:18190
+	}
+	handle {
+		file_server
+	}
+
+	# 502: no connection to the hub; 504: no answer in time.
+	handle_errors {
+		@hub_down `{err.status_code} in [502, 503, 504]`
+		handle @hub_down {
+			header Cache-Control no-store
+			redir /r/windows-x64 https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64-setup.exe 302
+			redir /r/windows-arm64 https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64-setup.exe 302
+			redir /r/windows-x64-zip https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-x64.zip 302
+			redir /r/windows-arm64-zip https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-windows-arm64.zip 302
+			redir /r/macos-arm64 https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-arm64.dmg 302
+			redir /r/macos-x64 https://github.com/Piwqust/V2pn/releases/latest/download/V2pn-macos-x64.dmg 302
+			redir /r/install.ps1 https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 302
+			redir /r/install.sh https://github.com/Piwqust/V2pn/releases/latest/download/install.sh 302
+			@release path_regexp ^/releases/(latest/download|download/v[0-9][0-9A-Za-z.-]*)/[A-Za-z0-9._-]+$
+			redir @release https://github.com/Piwqust/V2pn{path} 302
+			header /api/* Content-Type "application/json; charset=utf-8"
+			respond /api/* `{"error":{"code":"unavailable","message":"Сервер V2pn сейчас недоступен. Попробуйте через минуту."}}` 503
+			respond "Сервер V2pn сейчас недоступен. Попробуйте через минуту." 503
+		}
+		# Every other error (a 404 of the static site) keeps its status: an error route that writes nothing would
+		# leave an empty 200.
+		handle {
+			respond "{err.status_code} {err.status_text}" {err.status_code}
+		}
+	}
+
+	header {
+		Content-Security-Policy "default-src 'self'; base-uri 'none'; frame-ancestors 'none'; object-src 'none'; img-src 'self' data:; style-src 'self' 'unsafe-inline'; script-src 'self'"
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+	}
+	@partners path /partners/*
+	header @partners Cache-Control "no-cache"
+	@static path /assets/*
+	header @static Cache-Control "public, max-age=86400"
+}

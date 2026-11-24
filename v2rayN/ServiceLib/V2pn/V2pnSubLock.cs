@@ -51,7 +51,8 @@ public sealed class V2pnLocks
     private volatile IReadOnlyDictionary<string, V2pnLockState> _bySub = new Dictionary<string, V2pnLockState>();
     private volatile IReadOnlyDictionary<string, V2pnPartner> _partnerBySub = new Dictionary<string, V2pnPartner>();
     private int _refreshing;
-    private bool _again;
+    // Every request counts: one that comes while a refresh runs is never lost, as a flag set after the loop read it was.
+    private int _requests;
 
     /// <summary>Raised after the partners of the subscriptions or what they closed changed. May come from any thread.</summary>
     public event Action? Changed;
@@ -180,16 +181,17 @@ public sealed class V2pnLocks
 
     public async Task RefreshAsync()
     {
+        Interlocked.Increment(ref _requests);
         if (Interlocked.Exchange(ref _refreshing, 1) == 1)
         {
-            _again = true;
             return;
         }
+        var seen = 0;
         try
         {
             do
             {
-                _again = false;
+                seen = Volatile.Read(ref _requests);
                 await SubInfoManager.Instance.LoadAsync();
                 await V2pnPartners.Instance.LoadAsync();
                 var subs = await ConfigDbQuery.SubItems() ?? [];
@@ -217,7 +219,7 @@ public sealed class V2pnLocks
                     Changed?.Invoke();
                 }
             }
-            while (_again);
+            while (Volatile.Read(ref _requests) != seen);
         }
         catch (Exception ex)
         {
@@ -226,6 +228,12 @@ public sealed class V2pnLocks
         finally
         {
             Volatile.Write(ref _refreshing, 0);
+        }
+        // A request counted after the last look but before the flag went down found the refresh still running and
+        // left it to this one: run once more for it.
+        if (Volatile.Read(ref _requests) != seen)
+        {
+            await RefreshAsync();
         }
     }
 }

@@ -88,7 +88,7 @@ public class CoreConfigClashService(Config config, bool isTunEnabled)
             //fileContent["external-controller"] = $"{Global.Loopback}:{AppManager.Instance.StatePort2}";
             fileContent.Children[new YamlScalarNode("external-controller")] = new YamlScalarNode($"{Global.Loopback}:{AppManager.Instance.StatePort2}");
             //fileContent.Remove("secret");
-            fileContent.Children.Remove(new YamlScalarNode("secret"));
+            fileContent.Children[new YamlScalarNode("secret")] = new YamlScalarNode(V2pnLocalApi.Secret);
             //allow-lan
             if (config.Inbound.First().AllowLANConn)
             {

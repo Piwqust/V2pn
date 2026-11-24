@@ -74,7 +74,7 @@ public partial class CoreConfigSingboxService
 
                 var address = _config.TunModeItem.IPv4Address.NullIfEmpty() ?? Global.TunIPv4Address.First();
                 tunInbound.address = [address];
-                if (_config.TunModeItem.EnableIPv6Address == true)
+                if (V2pnTun.UsesIPv6(_config, context.HasGlobalIPv6Address))
                 {
                     var address6 = _config.TunModeItem.IPv6Address.NullIfEmpty() ?? Global.TunIPv6Address.First();
                     tunInbound.address.Add(address6);

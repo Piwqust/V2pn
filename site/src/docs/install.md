@@ -13,7 +13,7 @@ V2pn работает на Windows 10 и 11 (x64 и ARM64) и на macOS 13.6 и
 Откройте Терминал (<kbd>Win</kbd>+<kbd>X</kbd>, «Терминал») и выполните:
 
 ```powershell
-irm https://v2pn.angleford.co/r/install.ps1 | iex
+irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex
 ```
 
 Скрипт скачает последнюю версию, сверит её со списком файлов релиза, поставит в `%LOCALAPPDATA%\Programs\V2pn`, добавит ярлыки в меню «Пуск» и на рабочий стол и запустит V2pn. Права администратора не нужны, окна SmartScreen не будет. Если на компьютере есть v2rayN, V2pn сразу заберёт его серверы и настройки.
@@ -33,7 +33,7 @@ irm https://v2pn.angleford.co/r/install.ps1 | iex
 Откройте Терминал («Программы», «Утилиты», «Терминал») и выполните:
 
 ```bash
-curl -fsSL https://v2pn.angleford.co/r/install.sh | bash
+curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh | bash
 ```
 
 Скрипт выберет сборку для вашего Mac, сверит её со списком файлов релиза, положит V2pn в «Программы» и откроет, без предупреждения о непроверенном разработчике.

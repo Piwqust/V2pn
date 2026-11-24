@@ -55,7 +55,7 @@ public partial class MainWindow
     /// <summary>A link a second start handed over (a click on v2pn:// while V2pn already runs).</summary>
     private async Task HandleStashedLinkAsync()
     {
-        if (V2pnDeepLink.TakeStashed() is { } link)
+        foreach (var link in V2pnDeepLink.TakeStashed())
         {
             await AskToAddLinkAsync(link);
         }
@@ -63,9 +63,13 @@ public partial class MainWindow
 
     private async Task AskToAddLinkAsync(V2pnAddLink link)
     {
-        // A second click while the question is open would stack a second dialog over the first.
+        // A second click while the question is open would stack a second dialog over the first: it waits its turn.
         if (_askingAboutLink)
         {
+            if (!_waitingLinks.Any(l => l.SubscriptionUrl == link.SubscriptionUrl) && _waitingLinks.Count < 8)
+            {
+                _waitingLinks.Enqueue(link);
+            }
             return;
         }
         _askingAboutLink = true;
@@ -85,6 +89,12 @@ public partial class MainWindow
             var partner = V2pnPartners.Instance.ListingFor(link.SubscriptionUrl)
                           ?? V2pnPartners.Instance.ListingForLink(link.Partner, link.SubscriptionUrl);
             var body = partner != null ? string.Format(L.LinkAddBodyPartner, partner.Name) : L.LinkAddBody;
+            // A subscription over plain http can be read and changed on the way: the person decides knowing it.
+            if (link.SubscriptionUrl.StartsWith(Global.HttpProtocol, StringComparison.OrdinalIgnoreCase)
+                && Utils.TryUri(link.SubscriptionUrl) is not { IsLoopback: true })
+            {
+                body += "\n\n" + L.LinkAddPlainHttp;
+            }
             var card = new DialogCard(link.Name ?? host,
                 partner != null ? string.Format(L.LinkAddPartnerCard, host) : host,
                 partner != null ? "SemiIconShieldStroked" : "SemiIconLink");
@@ -100,7 +110,13 @@ public partial class MainWindow
         {
             _askingAboutLink = false;
         }
+        if (_waitingLinks.TryDequeue(out var next))
+        {
+            await AskToAddLinkAsync(next);
+        }
     }
+
+    private readonly Queue<V2pnAddLink> _waitingLinks = new();
 
     /// <summary>
     /// A link with partner=&lt;id&gt;, after its subscription is here: when V2pn's signed index says the subscription is

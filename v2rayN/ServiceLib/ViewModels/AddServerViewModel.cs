@@ -524,6 +524,12 @@ public partial class AddServerViewModel : MyReactiveObject, ICloseable
             NoticeManager.Instance.Enqueue(ResUI.InvalidHttpOutboundHeaders);
             return;
         }
+        // V2pn: a server its core cannot carry (sing-box has no kcp, xhttp or XDRIVE) is refused here, not at connect.
+        if (V2pnServerChecks.TransportError(SelectedSource.ConfigType, Network, V2pnServerChecks.EffectiveCore(SelectedSource.ConfigType, CoreType)) is { } coreError)
+        {
+            NoticeManager.Instance.Enqueue(coreError);
+            return;
+        }
         SelectedSource.CoreType = CoreType.IsNullOrEmpty() ? null : Enum.Parse<ECoreType>(CoreType);
         SelectedSource.AllowInsecure = AllowInsecure ? Global.StringTrue : Global.StringFalse;
         SelectedSource.MuxEnabled = MuxEnabled;

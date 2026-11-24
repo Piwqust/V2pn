@@ -234,6 +234,20 @@ public class V2pnAppUpdaterTests
     }
 
     [Test]
+    public async Task AFirstSourceStuckOnAnOldRelease_DoesNotHoldTheUpdateBack()
+    {
+        // An old release is still validly signed: V2pn's server taken over, or a stale mirror, could keep serving it.
+        await using var stale = Serve("2.0.0");
+        await using var github = Serve("99.0.0");
+        Trust(stale.Source, github.Source);
+
+        await Updater.CheckAsync(download: true);
+
+        await Updater.LatestVersion.Should().BeEqualTo("99.0.0");
+        await Updater.FindPending()!.Value.Version.Should().BeEqualTo("99.0.0");
+    }
+
+    [Test]
     public async Task ASourceThatRedirects_IsFollowed_ForTheManifestAndThePackage()
     {
         // V2pn's server answers every release file with a redirect to the GitHub release.

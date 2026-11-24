@@ -82,11 +82,11 @@ function routes(hub) {
 
     ['POST', /^\/api\/auth\/register$/, async ({ req, ip, res }) => {
       const body = await readJson(req);
-      return signedIn(res, hub.auth.register(body.login, body.password, ip));
+      return signedIn(res, await hub.auth.register(body.login, body.password, ip));
     }, 'public'],
     ['POST', /^\/api\/auth\/login$/, async ({ req, ip, res }) => {
       const body = await readJson(req);
-      return signedIn(res, hub.auth.signIn(body.login, body.password, ip));
+      return signedIn(res, await hub.auth.signIn(body.login, body.password, ip));
     }, 'public'],
     ['POST', /^\/api\/auth\/signout$/, ({ session, res }) => {
       if (session) hub.auth.signOut(session.tokenHash);
@@ -95,7 +95,7 @@ function routes(hub) {
     }, 'public'],
     ['POST', /^\/api\/auth\/password$/, async ({ req, session }) => {
       const body = await readJson(req);
-      hub.auth.changePassword(session, body.password, body.newPassword);
+      await hub.auth.changePassword(session, body.password, body.newPassword);
       return { ok: true };
     }, 'user'],
     ['GET', /^\/api\/me$/, ({ session }) => {

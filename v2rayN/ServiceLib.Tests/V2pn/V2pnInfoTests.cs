@@ -86,4 +86,14 @@ public class V2pnInfoTests
         // Panels choose the config format from this agent, so it must keep naming v2rayN.
         await Utils.GetVersion(false).Should().StartWith("v2rayN/");
     }
+
+    [Test]
+    public async Task BugReportUrl_FillsTheFormsFields_AndStaysShort()
+    {
+        var url = V2pnInfo.BugReportUrl("state: Failed\nmode: proxy & route=ru\n" + new string('x', 9000));
+
+        await url.StartsWith("https://github.com/Piwqust/V2pn/issues/new?template=01_bug_report.yml&version=V2pn%20", StringComparison.Ordinal).Should().BeTrue();
+        await url.Contains("&logs=state%3A%20Failed%0Amode%3A%20proxy%20%26%20route%3Dru", StringComparison.Ordinal).Should().BeTrue();
+        await (url.Length < 20000).Should().BeTrue();
+    }
 }

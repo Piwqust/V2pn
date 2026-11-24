@@ -3,7 +3,7 @@
 // partner.json built from them as docs/partners/partner.schema.json describes it.
 import { colors as C } from './colors.mjs';
 import { HubError } from './errors.mjs';
-import { COLOUR, domainAllowed, httpsUrl, oneLine, validName } from './validate.mjs';
+import { COLOUR, TELEGRAM_HOSTS, httpsUrl, oneLine, partnerLink, validName } from './validate.mjs';
 
 export const ICONS = ['bolt', 'shield', 'play', 'game', 'card', 'chat', 'globe', 'star', 'refresh', 'check', 'info', 'gift'];
 export const DOS = ['connect.best', 'connect.recommend', 'connect.server', 'connect.group', 'open.cabinet', 'open.renew', 'open.support',
@@ -96,8 +96,6 @@ export function parseActions(input, prefix = 'actions') {
   return actions;
 }
 
-const hostOf = u => { try { return new URL(u).hostname.toLowerCase(); } catch { return null; } };
-
 /** Why a button would not pass V2pnPartnerCatalog.ParseAction for a partner with <api> on <domains>; null when it does. */
 export function actionProblem(a, api, domains) {
   if (!a.label || a.label.length > 24) return 'Подпись от 1 до 24 символов.';
@@ -109,8 +107,7 @@ export function actionProblem(a, api, domains) {
   if (a.do === 'connect.recommend' && !PURPOSES.includes(a.purpose)) return 'Выберите назначение из списка.';
   if (NEEDS_API.has(a.do) && !httpsUrl(api || '')) return 'Эта кнопка работает только с API (особое право «API»).';
   if (a.do === 'open.link') {
-    const h = hostOf(a.url);
-    const ok = a.url.startsWith('tg:') ? !/\s/.test(a.url) : Boolean(httpsUrl(a.url) && h && (h === 't.me' || domainAllowed(domains, a.url)));
+    const ok = a.url.startsWith('tg:') ? !/\s/.test(a.url) : partnerLink(a.url, domains);
     if (!ok) return 'Ссылка: tg: или https на t.me или на домене вашей подписки.';
   }
   return null;
@@ -119,10 +116,18 @@ export function actionProblem(a, api, domains) {
 export const needsApi = a => NEEDS_API.has(a.do);
 
 /**
- * What keeps <look> from being published; <pictures> maps a sha256 to its upload {slot, width, height, size} (only
- * the account's own). An empty object when it can go out.
+ * Whether the cabinet or support link <url> may go out for a partner on <domains>: https on Telegram or on the
+ * subscription's domain, a name under it included (the button rule, a little wider). V2pn itself would open any https
+ * link there; the hub keeps a provider from sending people to someone else's site under its name.
  */
-export function lookProblems(look, { pictures }) {
+export const linkAllowed = (url, domains) => partnerLink(url, domains, { telegram: TELEGRAM_HOSTS, subdomains: true });
+
+/**
+ * What keeps <look> from being published; <pictures> maps a sha256 to its upload {slot, width, height, size} (only
+ * the account's own), <domains> are the partner's (the links must be on them; not checked when unknown yet). An empty
+ * object when it can go out.
+ */
+export function lookProblems(look, { pictures, domains }) {
   const p = {};
   if (validName(look.name) !== look.name) p.name = 'Название от 1 до 40 символов, без «V2pn».';
   if (!look.brand.length) p.brand = 'Нужен хотя бы один цвет.';
@@ -136,7 +141,10 @@ export function lookProblems(look, { pictures }) {
   }
   if (look.background === 'image' && !look.backdrop) p.backdrop = 'Для фона-картинки загрузите картинку.';
   for (const key of ['cabinet', 'support']) {
-    if (look.links[key] && !httpsUrl(look.links[key])) p[`links.${key}`] = 'Ссылка должна начинаться с https://.';
+    const link = look.links[key];
+    if (!link) continue;
+    if (!httpsUrl(link)) p[`links.${key}`] = 'Ссылка должна начинаться с https://.';
+    else if (domains && !linkAllowed(link, domains)) p[`links.${key}`] = `Ссылка должна вести на домен подписки (${domains.join(', ')}), его поддомен или t.me.`;
   }
   return p;
 }

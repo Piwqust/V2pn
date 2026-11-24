@@ -23,6 +23,8 @@ public static partial class L
 
     public static string AppName => "V2pn";
 
+    public static string UnexpectedError => T("Something did not work: {0}. V2pn keeps running.",
+        "Что-то не сработало: {0}. V2pn продолжает работать.");
     public static string NavServers => T("Servers", "Серверы");
     public static string NavLog => T("Log", "Журнал");
     public static string NavProxies => T("Proxies", "Прокси");
@@ -224,6 +226,9 @@ public static partial class L
     public static string DiagLead => T("Exactly this text is copied. It has the version, system, mode, states and error codes, and no links, keys, server addresses or names.",
         "Скопируется ровно этот текст. В нём версия, система, режим, состояния и коды ошибок, без ссылок, ключей, адресов серверов и имён.");
     public static string DiagCopy => T("Copy", "Скопировать");
+    public static string DiagReport => T("Report on GitHub…", "Сообщить на GitHub…");
+    public static string DiagReportTip => T("Opens a bug report on GitHub with this text in it. Nothing is sent until you submit it there; describe what happened.",
+        "Откроет отчёт об ошибке на GitHub с этим текстом. Ничего не отправится, пока вы не нажмёте «Submit»; опишите, что произошло.");
     public static string DiagCopied => T("Copied", "Скопировано");
     public static string FixChangePort => T("Change port", "Сменить порт");
     public static string FixShowLog => T("Show log", "Открыть журнал");

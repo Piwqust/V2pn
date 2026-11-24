@@ -2,9 +2,10 @@
 #
 #   irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex
 #
-# Downloads the newest release, checks the package against the release's list of files (size and
-# SHA-256), unpacks it to %LOCALAPPDATA%\Programs\V2pn, adds Start menu and desktop shortcuts and
-# starts V2pn. At that first start V2pn moves over a v2rayN with servers found on this computer:
+# Downloads the newest release, checks the signature of its list of files (release.json.sig, made
+# with V2pn's release key, whose public half is built into this script) and then the package against
+# that list (size and SHA-256), unpacks it to %LOCALAPPDATA%\Programs\V2pn, adds Start menu and
+# desktop shortcuts and starts V2pn. At that first start V2pn moves over a v2rayN with servers found on this computer:
 # servers, subscriptions, routing and settings. v2rayN is closed and stops starting with Windows;
 # its own files are left as they are.
 #
@@ -16,7 +17,8 @@
 #   $env:V2PN_NO_IMPORT = 1           do not move anything from v2rayN
 #   $env:V2PN_NO_SHORTCUTS = 1        no shortcuts
 #   $env:V2PN_NO_START = 1            do not start V2pn
-#   $env:V2PN_SOURCE = <url>          another releases page or mirror (same layout as GitHub's)
+#   $env:V2PN_SOURCE = <url>          another releases page or mirror (same layout as GitHub's; its
+#                                     release.json must carry V2pn's signature all the same)
 #   $env:NO_COLOR = 1                 no colours
 #
 # ASCII only: Windows PowerShell reads a downloaded script that has no charset as Latin-1, so every
@@ -169,11 +171,66 @@
         Start-Process -FilePath (Join-Path $env:WINDIR 'explorer.exe') -ArgumentList "`"$exe`""
     }
 
-    function Get-Text([string]$url) {
-        # GitHub serves release files as application/octet-stream, which Windows PowerShell returns as bytes.
-        $content = (Invoke-WebRequest -UseBasicParsing -Uri $url).Content
-        if ($content -is [byte[]]) { return [Text.Encoding]::UTF8.GetString($content) }
-        return $content
+    # The body as it was served. The signature covers these exact bytes, so they are never decoded and
+    # encoded again on the way, whatever type and charset the server gives them.
+    function Get-Bytes([string]$url) {
+        return , (Invoke-WebRequest -UseBasicParsing -Uri $url).RawContentStream.ToArray()
+    }
+
+    # The public halves of V2pn's release keys, separated by | (V2pnUpdateKeys in
+    # v2rayN/Directory.Build.targets; tools/check-install-scripts.ps1 fails CI when they differ).
+    # release.json is used only when release.json.sig is valid for one of them, wherever both came
+    # from: a mirror set with V2PN_SOURCE is held to the same check.
+    $releaseKeys = 'MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEF1jwl9+NW069mc9OSG/didQuIcb0MowrLCF8Qv7B2VH27Z0ujKDj6M8txvra7q4jxomLfQmIwMaBCthrxim4Ig=='
+
+    # True when $signature (the text of release.json.sig: ECDSA P-256 over SHA-256, DER, base64) is
+    # valid for $data with one of $keys (SubjectPublicKeyInfo, base64, separated by |), as V2pn checks
+    # it (V2pnManifest.VerifySignature). Windows PowerShell 5.1 runs on .NET Framework, which cannot
+    # import a SubjectPublicKeyInfo: the key's point goes into a CNG public key blob instead, and the
+    # DER signature becomes the r|s pair that VerifyHash takes. Anything malformed is not valid.
+    function Test-ReleaseSignature([byte[]]$data, [string]$signature, [string]$keys) {
+        if (-not $data -or -not $signature -or -not $keys) { return $false }
+        try { $der = [Convert]::FromBase64String($signature.Trim()) }
+        catch { return $false }
+        # SEQUENCE { INTEGER r, INTEGER s }; a P-256 signature is at most 72 bytes, so every length is one byte.
+        if ($der.Length -lt 8 -or $der.Length -gt 72 -or $der[0] -ne 0x30 -or $der[1] -ne $der.Length - 2) { return $false }
+        $rs = New-Object byte[] 64
+        $at = 2
+        foreach ($half in 0, 32) {
+            if ($at + 2 -gt $der.Length -or $der[$at] -ne 0x02) { return $false }
+            $length = [int]$der[$at + 1]
+            $at += 2
+            if ($length -lt 1 -or $length -gt 33 -or $at + $length -gt $der.Length) { return $false }
+            # Big-endian with a leading zero when the top bit is set; r|s wants each in exactly 32 bytes.
+            $skip = 0
+            while ($skip -lt $length - 1 -and $der[$at + $skip] -eq 0) { $skip++ }
+            $count = $length - $skip
+            if ($count -gt 32) { return $false }
+            [Array]::Copy($der, $at + $skip, $rs, $half + 32 - $count, $count)
+            $at += $length
+        }
+        if ($at -ne $der.Length) { return $false }
+        $sha = [Security.Cryptography.SHA256]::Create()
+        try { $hash = $sha.ComputeHash($data) }
+        finally { $sha.Dispose() }
+        # A P-256 SubjectPublicKeyInfo is this header (id-ecPublicKey, prime256v1, an uncompressed point), then X and Y.
+        $header = '3059301306072A8648CE3D020106082A8648CE3D03010703420004'
+        foreach ($key in $keys.Split('|')) {
+            try {
+                $spki = [Convert]::FromBase64String($key.Trim())
+                if ($spki.Length -ne 91 -or ([BitConverter]::ToString($spki, 0, 27) -replace '-', '') -ne $header) { continue }
+                # BCRYPT_ECCKEY_BLOB: 'ECS1' (an ECDSA P-256 public key), 32 bytes per coordinate, then X and Y.
+                $blob = New-Object byte[] 72
+                [Array]::Copy([byte[]](0x45, 0x43, 0x53, 0x31, 0x20, 0, 0, 0), $blob, 8)
+                [Array]::Copy($spki, 27, $blob, 8, 64)
+                $cng = [Security.Cryptography.CngKey]::Import($blob, [Security.Cryptography.CngKeyBlobFormat]::EccPublicBlob)
+                $ecdsa = New-Object Security.Cryptography.ECDsaCng -ArgumentList $cng
+                try { if ($ecdsa.VerifyHash($hash, $rs)) { return $true } }
+                finally { $ecdsa.Dispose(); $cng.Dispose() }
+            }
+            catch { }
+        }
+        return $false
     }
 
     # Downloads with a live bar and hashes on the way, so the check needs no second read of the file.
@@ -296,7 +353,17 @@
 
         $ui.step = 'Release'
         Say -Temp @('   ', '', $spin[2], 'brand', " Looking for the newest V2pn$($g.ell)", 'dim')
-        $manifest = (Get-Text "$source/latest/download/release.json") | ConvertFrom-Json
+        $listed = Get-Bytes "$source/latest/download/release.json"
+        # Nothing in release.json is used, not even the version, until its signature is checked.
+        $ui.step = 'Signature'
+        $signature = ''
+        try { $signature = [Text.Encoding]::ASCII.GetString((Get-Bytes "$source/latest/download/release.json.sig")) }
+        catch { throw "Could not download release.json.sig, the signature of the newest release, so it cannot be checked. $($_.Exception.Message)" }
+        if (-not (Test-ReleaseSignature $listed $signature $releaseKeys)) {
+            throw "The newest release's list of files (release.json) is not signed with V2pn's release key, so it is not used."
+        }
+        $ui.step = 'Release'
+        $manifest = [Text.Encoding]::UTF8.GetString($listed) | ConvertFrom-Json
         $file = $manifest.files | Where-Object { $_.name -eq $name } | Select-Object -First 1
         if (-not $file) { throw "V2pn $($manifest.version) has no package for this computer ($name)." }
         $version = [string]$manifest.version
@@ -306,6 +373,7 @@
         Fact 'Version' @($version, 'bold', $(if ($published) { "   published $published" } else { '' }), 'dim')
         Fact 'Package' @($name, '', "   $(MB $file.size), Windows $(if ($arch -eq 'arm64') { 'on ARM' } else { 'x64' })", 'dim')
         Fact 'From' @(($source -replace '^https?://', ''), '')
+        Fact 'Signature' @("checked, V2pn's release key", '')
         Fact 'Into' @($dir, '')
         Fact 'Rights' @('this Windows user only, no administrator needed', '')
         Say
@@ -321,9 +389,9 @@
 
         $ui.step = 'Check'
         if ($got.size -ne [long]$file.size -or $got.sha256 -ne $file.sha256) {
-            throw 'The download does not match the release (size or SHA-256).'
+            throw 'The download does not match the signed release (size or SHA-256).'
         }
-        Step 'Check' @('size and SHA-256 match the release', '', "   $($got.sha256.Substring(0, 8))$($g.ell)$($got.sha256.Substring(56))", 'dim')
+        Step 'Check' @('size and SHA-256 match the signed release', '', "   $($got.sha256.Substring(0, 8))$($g.ell)$($got.sha256.Substring(56))", 'dim')
 
         $ui.step = 'Install'
         $put = Install-Package $zip $dir

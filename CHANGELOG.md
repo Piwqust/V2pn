@@ -2,6 +2,43 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+Safer by default: VPN mode keeps IPv6 inside the tunnel, the cores' control API needs a secret, updates and installs check signatures everywhere, and a provider's tab on the hub can no longer pose as another provider. Subscriptions from panels with a device limit work, and several quiet failures now either recover or say what happened.
+
+### Safety
+
+- **IPv6 stays in the tunnel in VPN mode.** On a network with IPv6 (many mobile and some home providers) the sing-box tunnel, the default one, now takes IPv6 too, as Xray's already did. Before, IPv6 went past the VPN on a Mac and was cut off on Windows.
+- **The cores' control API has a secret.** Any program on the computer could switch the core to "direct" with one request (all traffic then went past the server, and the kill switch let it out) or read which sites every program visits. Now the API answers only V2pn, with a new secret on every start.
+- **Updates come from the newest signed release of any source**, not from the first that answers, so a source stuck on an old release cannot hold V2pn back. The updater also checks the package against the signed manifest itself, right before it installs, holding it so that nothing can swap it in between.
+- **The install commands check the signature** of the release before using it (`install.ps1` on Windows PowerShell 5.1 and 7, `install.sh` with the Mac's own openssl), also from a mirror. The commands on the site and on providers' pages lead straight to GitHub.
+- **A provider's tab can no longer be taken over on the hub.** A domain belongs to the provider V2pn signed itself; a tab made on the hub on that domain is left out. A tab's cabinet and support links stay on the provider's own domains or Telegram, and a tab from the hub lasts 60 days after the hub last signed it (the hub signs every day).
+- **The log no longer keeps subscription links or tokens**: a subscription that did not parse is logged as its length and a short hash, an address as its host. A subscription larger than 32 MB, or a Clash config that would grow without end, is not read.
+- **VPN mode on a Mac writes no scripts for sudo**: the administrator password no longer goes through a file in V2pn's folder.
+- The PAC script is served on 127.0.0.1 only. Signing in with a provider no longer sends a computer name someone chose (a Mac is usually named after its owner). A `v2pn://` link to a plain http subscription says the address is not encrypted.
+- Kill switch: "Programs only through V2pn" says what it does not close (Windows' own DNS lookups; Claude Code from npm runs as node.exe).
+
+### Subscriptions with a device limit
+
+- V2pn sends the device headers panels such as Remnawave count devices by (`x-hwid` and the system and model), as Happ and INCY do. Before, a panel with the device limit on gave V2pn nothing.
+- When the plan's device limit is reached, the subscription says so and where to free a slot. The device id is derived from the computer under a V2pn-only salt, so a reinstall takes no new slot.
+
+### Fixes
+
+- A core reload asked for while another runs is no longer lost (a subscription updated in the background could leave the core on old keys).
+- The header no longer goes back to the previous server when two refreshes cross.
+- Global hotkeys go through Connect and Disconnect: no system proxy over the tunnel in VPN mode, and "clear" disconnects there too.
+- Settings are saved even when the window changes them at that moment.
+- Two `v2pn://` links clicked quickly both reach V2pn; a link that comes while V2pn asks about another waits its turn.
+- "Fastest server" no longer picks from a ping run that was stopped half way.
+- An update on a Mac no longer fails for good when a core file is gone right after unpacking: the installed core is kept instead.
+- An error nothing else caught is said on screen instead of only in the log.
+- Diagnostics: "Report on GitHub…" opens a bug report with the diagnostics already in it; nothing is sent until you submit it.
+
+### Also
+
+- V2pn takes in v2rayN 8.0.1: raw transport with an HTTP header works with Xray again, and the server form says when the chosen core cannot carry a transport (sing-box with XDRIVE, kcp or xhttp) instead of saving a server that will not connect.
+
 ## 1.4.2
 
 V2pn feels at home on a Mac: menus of its own in the menu bar, an icon there that tells the state by its shape, Mac keys, a Dock menu and notifications. On every system it is quieter when nothing happens and opens sooner, and buttons are drawn whole again.

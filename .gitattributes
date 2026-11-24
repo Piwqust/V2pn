@@ -78,3 +78,5 @@ v2rayN/ServiceLib/Sample/*_sh text eol=lf
 
 # Signed partner files: the signature covers the exact bytes, so git must not touch line ends.
 partners/** -text
+# The same for the signed release the installers' signature check is tested on (tools/check-install-scripts.*).
+tools/install-test/** -text

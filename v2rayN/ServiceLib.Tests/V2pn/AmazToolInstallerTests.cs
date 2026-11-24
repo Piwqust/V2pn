@@ -257,3 +257,178 @@ public class AmazToolInstallerTests
         await File.Exists(Path.Combine(bundle, "Contents", "MacOS", V2pnEdition.FileName)).Should().BeFalse();
     }
 }
+
+/// <summary>What AmazTool does when a file is gone right after it was unpacked (the Mac update of 1.3.0 to 1.4.0).</summary>
+public class AmazToolVanishingFileTests
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "v2pn-vanish-" + Guid.NewGuid().ToString("N"));
+    private readonly List<string> _log = [];
+
+    [After(Test)]
+    public void Cleanup()
+    {
+        if (Directory.Exists(_dir))
+        {
+            Directory.Delete(_dir, true);
+        }
+    }
+
+    private static void Write(string file, string content)
+    {
+        Directory.CreateDirectory(Path.GetDirectoryName(file)!);
+        File.WriteAllText(file, content);
+    }
+
+    private string Bundle(out string macos)
+    {
+        var bundle = Path.Combine(_dir, "Applications", "V2pn.app");
+        macos = Path.Combine(bundle, "Contents", "MacOS");
+        Write(Path.Combine(macos, "V2pn"), "old app");
+        Write(Path.Combine(macos, "bin", "mihomo", "mihomo"), "installed mihomo");
+        return bundle;
+    }
+
+    private string Package(params (string Name, string Content)[] files)
+    {
+        var zip = Path.Combine(_dir, "V2pn-2.0.0.zip");
+        using var archive = ZipFile.Open(zip, ZipArchiveMode.Create);
+        foreach (var (name, content) in files)
+        {
+            using var writer = new StreamWriter(archive.CreateEntry($"V2pn.app/{name}").Open());
+            writer.Write(content);
+        }
+        return zip;
+    }
+
+    [Test]
+    public async Task ACoreGoneAfterUnpacking_IsTakenFromTheInstalledApp_AndTheUpdateGoesOn()
+    {
+        var bundle = Bundle(out var macos);
+        var zip = Package(("Contents/MacOS/V2pn", "new app"), ("Contents/MacOS/bin/mihomo/mihomo", "packaged mihomo"));
+        var installer = new Installer(bundle, _log.Add)
+        {
+            Extracted = path =>
+            {
+                if (Path.GetFileName(path) == "mihomo")
+                {
+                    File.Delete(path);
+                }
+            },
+        };
+
+        installer.Stage(zip);
+        installer.Swap();
+
+        await File.ReadAllText(Path.Combine(macos, "V2pn")).Should().BeEqualTo("new app");
+        await File.ReadAllText(Path.Combine(macos, "bin", "mihomo", "mihomo")).Should().BeEqualTo("installed mihomo");
+        await _log.Any(l => l.Contains("installed core is kept", StringComparison.Ordinal)).Should().BeTrue();
+        installer.DeleteWork();
+    }
+
+    [Test]
+    public async Task AProgramFileGoneAfterUnpacking_StillStopsTheUpdate()
+    {
+        var bundle = Bundle(out var macos);
+        var zip = Package(("Contents/MacOS/V2pn", "new app"));
+        var installer = new Installer(bundle, _log.Add) { Extracted = File.Delete };
+
+        var stopped = false;
+        try
+        {
+            installer.Stage(zip);
+        }
+        catch (IOException)
+        {
+            stopped = true;
+        }
+
+        await stopped.Should().BeTrue();
+        await File.ReadAllText(Path.Combine(macos, "V2pn")).Should().BeEqualTo("old app");
+        installer.DeleteWork();
+    }
+}
+
+/// <summary>AmazTool checks the package against the signed manifest beside it before it unpacks anything.</summary>
+public class AmazToolPackageCheckTests
+{
+    private readonly string _dir = Path.Combine(Path.GetTempPath(), "v2pn-check-" + Guid.NewGuid().ToString("N"));
+    private readonly ECDsa _key = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+    private string Public => Convert.ToBase64String(_key.ExportSubjectPublicKeyInfo());
+
+    [After(Test)]
+    public void Cleanup()
+    {
+        if (Directory.Exists(_dir))
+        {
+            Directory.Delete(_dir, true);
+        }
+    }
+
+    private string Release(string version, byte[] package, string? manifestVersion = null, ECDsa? signer = null)
+    {
+        Directory.CreateDirectory(_dir);
+        var zip = Path.Combine(_dir, $"V2pn-{version}.zip");
+        File.WriteAllBytes(zip, package);
+        var json = Encoding.UTF8.GetBytes(new JsonObject
+        {
+            ["version"] = manifestVersion ?? version,
+            ["files"] = new JsonArray(new JsonObject
+            {
+                ["name"] = "V2pn-windows-x64-update.zip",
+                ["size"] = package.Length,
+                ["sha256"] = Convert.ToHexStringLower(SHA256.HashData(package)),
+            }),
+        }.ToJsonString());
+        File.WriteAllBytes(Path.ChangeExtension(zip, ".json"), json);
+        var signature = (signer ?? _key).SignData(json, HashAlgorithmName.SHA256, DSASignatureFormat.Rfc3279DerSequence);
+        File.WriteAllText(Path.ChangeExtension(zip, ".json") + ".sig", Convert.ToBase64String(signature));
+        return zip;
+    }
+
+    private string? Check(string zip, string version)
+    {
+        using var stream = new FileStream(zip, FileMode.Open, FileAccess.Read, FileShare.Read);
+        return PackageCheck.Verify(stream, zip, version, [Public]);
+    }
+
+    [Test]
+    public async Task TheSignedPackage_Passes()
+    {
+        var zip = Release("2.0.0", "a V2pn package"u8.ToArray());
+
+        await (Check(zip, "2.0.0") == null).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task AnotherZipPutInItsPlace_IsRefused()
+    {
+        var zip = Release("2.0.0", "a V2pn package"u8.ToArray());
+        File.WriteAllBytes(zip, "something else"u8.ToArray());
+
+        await (Check(zip, "2.0.0") != null).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task AnOlderSignedReleaseUnderTheNewName_IsRefused()
+    {
+        var zip = Release("2.0.0", "the 1.0.0 package"u8.ToArray(), manifestVersion: "1.0.0");
+
+        await (Check(zip, "2.0.0") != null).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task AManifestSignedWithAnotherKey_IsRefused()
+    {
+        using var other = ECDsa.Create(ECCurve.NamedCurves.nistP256);
+        var zip = Release("2.0.0", "a V2pn package"u8.ToArray(), signer: other);
+
+        await (Check(zip, "2.0.0") != null).Should().BeTrue();
+    }
+
+    [Test]
+    public async Task AmazToolCarriesTheReleaseKeys()
+    {
+        await (PackageCheck.Keys.Count > 0).Should().BeTrue();
+        await PackageCheck.Keys.SequenceEqual(V2pnInfo.UpdateKeys).Should().BeTrue();
+    }
+}

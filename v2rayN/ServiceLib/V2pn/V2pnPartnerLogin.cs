@@ -74,10 +74,14 @@ public static class V2pnPartnerLogin
     /// <summary>True when V2pn may offer to sign in with <paramref name="partner"/>.</summary>
     public static bool Offers(V2pnPartner partner) => partner.Pack.OffersLogin && Base(partner) != null;
 
-    /// <summary>What the partner's bot names this computer by: "Windows · DESKTOP-7Q2", at most 60 characters.</summary>
+    /// <summary>
+    /// What the partner's bot names this computer by, at most 60 characters: "Windows · DESKTOP-7Q2ABCD" when the
+    /// computer keeps the name Windows gave it, otherwise the system and a short code that stays the same for this
+    /// computer ("macOS · 7F3A"). A name someone chose, like a Mac's "Ivans-MacBook-Pro", often holds the person's
+    /// own name, and the provider does not need it to tell two devices apart.
+    /// </summary>
     public static string DeviceName()
     {
-        var os = OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsMacOS() ? "macOS" : OperatingSystem.IsLinux() ? "Linux" : "PC";
         string machine;
         try
         {
@@ -87,9 +91,25 @@ public static class V2pnPartnerLogin
         {
             machine = string.Empty;
         }
-        var name = machine.Length > 0 ? $"{os} · {machine}" : os;
+        return DeviceName(OperatingSystem.IsWindows() ? "Windows" : OperatingSystem.IsMacOS() ? "macOS" : OperatingSystem.IsLinux() ? "Linux" : "PC", machine);
+    }
+
+    /// <summary><see cref="DeviceName()"/> for a given system and computer name.</summary>
+    public static string DeviceName(string os, string machine)
+    {
+        if (machine.Length == 0)
+        {
+            return os;
+        }
+        var label = GivenByWindows.IsMatch(machine)
+            ? machine
+            : Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(machine.ToUpperInvariant())))[..4];
+        var name = $"{os} · {label}";
         return name.Length <= MaxDevice ? name : name[..MaxDevice];
     }
+
+    /// <summary>The names Windows makes up at setup: DESKTOP-7Q2ABCD, LAPTOP-…, WIN-…</summary>
+    private static readonly Regex GivenByWindows = new("^(DESKTOP|LAPTOP|WIN)-[A-Z0-9]{5,12}$", RegexOptions.CultureInvariant);
 
     /// <summary>A new code; null with the reason when the partner does not answer or answers something else.</summary>
     public static async Task<(V2pnLoginCode? Code, V2pnLoginProblem Problem)> StartAsync(V2pnPartner partner, CancellationToken cancellationToken = default)

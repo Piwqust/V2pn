@@ -68,14 +68,17 @@ irm https://github.com/Piwqust/V2pn/releases/latest/download/install.ps1 | iex
 
 `tools/install.ps1` is attached to every release: `tools/sign-release.ps1` or the signing step in `v2pn-release.yml` copies it. The `latest/download` link always opens the script of the latest published release. What it does:
 
-1. Takes `release.json` of the latest release, finds the package for its architecture (x64 or arm64), downloads it and checks the size and SHA-256 against the list. If they do not match, it installs nothing.
-2. Unpacks to `%LOCALAPPDATA%\Programs\V2pn` and adds shortcuts to Start and the desktop.
-3. Writes the word `auto` to `guiTemps\V2pnImport.txt`: at the first start V2pn moves over the data of the newest v2rayN that has servers (`V2pnImport.ApplyAtStart`).
-4. Starts V2pn through Explorer rather than as a child of the console: Windows may close a program started from a terminal together with the terminal.
+1. Takes `release.json` and `release.json.sig` of the latest release and checks the signature with V2pn's release keys, which are built into the script as they are into the app. Without a valid signature it uses nothing from `release.json` and installs nothing, from GitHub and from a mirror (`V2PN_SOURCE`) alike. Windows PowerShell 5.1 runs on .NET Framework, which cannot read the key's usual form, so the script puts the key's point into a CNG key and turns the DER signature into the r|s pair itself.
+2. Finds the package for its architecture (x64 or arm64), downloads it and checks the size and SHA-256 against the signed list. If they do not match, it installs nothing.
+3. Unpacks to `%LOCALAPPDATA%\Programs\V2pn` and adds shortcuts to Start and the desktop.
+4. Writes the word `auto` to `guiTemps\V2pnImport.txt`: at the first start V2pn moves over the data of the newest v2rayN that has servers (`V2pnImport.ApplyAtStart`).
+5. Starts V2pn through Explorer rather than as a child of the console: Windows may close a program started from a terminal together with the terminal.
 
 If V2pn is already in that folder, the script just starts it: from there V2pn updates itself. The script is ASCII only: Windows PowerShell reads downloaded text without an encoding as Latin-1.
 
-Options are environment variables set before the command: `V2PN_DIR` (another folder), `V2PN_NO_IMPORT`, `V2PN_NO_SHORTCUTS`, `V2PN_NO_START`, `V2PN_SOURCE` (another releases page or a mirror). To test without publishing: put the package, `release.json` and the script in `<folder>/<version>/`, serve it with `tools/fake_releases.py`, and run the command with `V2PN_SOURCE=http://127.0.0.1:<port>/releases`.
+Options are environment variables set before the command: `V2PN_DIR` (another folder), `V2PN_NO_IMPORT`, `V2PN_NO_SHORTCUTS`, `V2PN_NO_START`, `V2PN_SOURCE` (another releases page or a mirror). To test without publishing: put the package, `release.json`, `release.json.sig` and the script in `<folder>/<version>/`, serve it with `tools/fake_releases.py`, and run the command with `V2PN_SOURCE=http://127.0.0.1:<port>/releases`. The script trusts only the release keys, so the manifest has to be signed with the real key (`tools/manifest.cs`); there is deliberately no switch for another key.
+
+The keys in both scripts must equal `V2pnUpdateKeys`. `tools/check-install-scripts.ps1` checks that and runs the scripts' signature check alone (taken out of the script, the installer itself never runs) on a published release in `tools/install-test/`: valid, one byte changed, a changed signature, no signature, another key. `tools/check-install-scripts.sh` does the same for `install.sh`. CI (`v2pn-ci.yml`) runs the first with Windows PowerShell 5.1 and PowerShell 7, the second on macOS with the system's own LibreSSL. When a key is replaced, add it to both scripts together with `V2pnUpdateKeys`.
 
 ### The `install.sh` script (macOS)
 
@@ -85,9 +88,10 @@ curl -fsSL https://github.com/Piwqust/V2pn/releases/latest/download/install.sh |
 
 It is attached to the release together with `install.ps1` and does the same on a Mac:
 
-1. Picks the build by `sysctl hw.optional.arm64`, not by `uname -m`: Terminal under Rosetta on Apple silicon answers `x86_64`. It takes the size and SHA-256 from `release.json`; a Mac has no jq, so JavaScript for Automation (`osascript -l JavaScript`) reads the JSON.
-2. Unpacks with `ditto` (it keeps execute permissions and file signatures) into `/Applications`, or into `~/Applications` if `/Applications` is not writable, and removes the quarantine flag. curl does not set that flag anyway, so Gatekeeper asks nothing.
-3. Writes `auto` to `~/Library/Application Support/V2pn/guiTemps/V2pnImport.txt` and opens V2pn. On a Mac the move closes `v2rayN.app` and removes its login item `~/Library/LaunchAgents/v2rayN-LaunchAgent.plist`.
+1. Checks the signature of `release.json` (`release.json.sig`) with the same built-in release keys before it reads anything from it, with the Mac's own `openssl` (LibreSSL): the signature is DER already, which is what `openssl dgst -verify` takes. Without a valid signature it installs nothing, from a mirror too.
+2. Picks the build by `sysctl hw.optional.arm64`, not by `uname -m`: Terminal under Rosetta on Apple silicon answers `x86_64`. It takes the size and SHA-256 from the signed `release.json`; a Mac has no jq, so JavaScript for Automation (`osascript -l JavaScript`) reads the JSON.
+3. Unpacks with `ditto` (it keeps execute permissions and file signatures) into `/Applications`, or into `~/Applications` if `/Applications` is not writable, and removes the quarantine flag. curl does not set that flag anyway, so Gatekeeper asks nothing.
+4. Writes `auto` to `~/Library/Application Support/V2pn/guiTemps/V2pnImport.txt` and opens V2pn. On a Mac the move closes `v2rayN.app` and removes its login item `~/Library/LaunchAgents/v2rayN-LaunchAgent.plist`.
 
 The whole script is inside a `main` function: if the download breaks off halfway, bash runs nothing. Options: `V2PN_DIR`, `V2PN_NO_IMPORT`, `V2PN_NO_START`, `V2PN_SOURCE`. Tested on a Mac with release 1.0.0 (with a separate `HOME` and `V2PN_DIR`, without starting the app). The move from v2rayN on a Mac has not been tested live: the test Mac runs a v2rayN that is used every day.
 
@@ -133,7 +137,7 @@ To set up the tap: create the public repository `Piwqust/homebrew-tap` and put `
 Installing changes that are not in a release yet needs neither a release nor a sandbox. The installed V2pn does it itself (Windows only).
 
 1. Updates → "Developer mode" → "Choose…" → the repository folder that holds `tools/release.ps1`.
-2. "Build and install". V2pn runs `tools/release.ps1 -UpdateOnly -NoCores -NoManifest` for its own architecture. It builds the working tree as it is, uncommitted changes included. The connection keeps working during the build, and the window can be closed. It needs the .NET 10 SDK, like any build.
+2. "Build and install". V2pn runs `tools/release.ps1 -UpdateOnly -NoCores -NoManifest` for its own architecture. It builds the working tree as it is, uncommitted changes included. The connection keeps working during the build, and the window can be closed. It needs the .NET 10 SDK, like any build: 10.0.400 or newer, as `global.json` asks.
 3. When the build is ready, V2pn installs it through AmazTool: a restart of a few seconds, and a rollback if the new version does not start. The build and install logs are in `guiTemps/V2pnDevBuild/` (`build.log`, `update.log`); the "Log" button opens the right one.
 
 The version of such a build is the next patch with a timestamp: `1.0.1-local.202611141320`. So:
@@ -159,7 +163,7 @@ To replace the key:
 dotnet run tools/manifest.cs -- --new-key $HOME/.v2pn/release-signing-key-2.pem
 ```
 
-The command prints the public key. Add it to `V2pnUpdateKeys` after a `|`, **without removing the old one**, and release a version signed with the old key. Once everyone has updated to it, later versions can be signed with the new key, and the old one can go one release after that.
+The command prints the public key. Add it to `V2pnUpdateKeys` after a `|`, **without removing the old one**, and the same way to `$releaseKeys` in `tools/install.ps1` and `V2PN_RELEASE_KEYS` in `tools/install.sh` (`tools/check-install-scripts.ps1` fails while they differ), and release a version signed with the old key. Once everyone has updated to it, later versions can be signed with the new key, and the old one can go one release after that.
 
 ## How to release a version
 
@@ -238,7 +242,7 @@ To put a version on it:
 tools/publish-mirror.ps1 -Version 1.0.1 -Target deploy@example.com:/var/www/v2pn
 ```
 
-The script checks the packages against the manifest, uploads them over SSH and only then switches `latest`. With `-FromGitHub` it takes the files from the published release instead of a local build. `.github/workflows/v2pn-mirror.yml` does the same automatically when a release is published, if the repository settings have the `MIRROR_TARGET` variable and the `MIRROR_SSH_KEY` secret.
+The script checks the packages against the manifest, uploads them over SSH and only then switches `latest`. With `-FromGitHub` it takes the files from the published release instead of a local build. `.github/workflows/v2pn-mirror.yml` does the same automatically when a release is published, if the repository settings have the `MIRROR_TARGET` variable and the `MIRROR_SSH_KEY` secret. It also needs the `MIRROR_KNOWN_HOSTS` variable, the server's host key from `ssh-keyscan <host>` (compare its fingerprint with `ssh-keygen -lf` on the server): without it the job fails instead of trusting whatever answers at that address.
 
 An example for nginx:
 
@@ -271,7 +275,7 @@ The upload and the `v2pn-mirror.yml` workflow are written but have not run again
 
 | Workflow | When | What it does |
 | --- | --- | --- |
-| `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run |
+| `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run; the installers' signature check (`tools/check-install-scripts.*`); the hub's tests and a check that `hub/test/fixtures/csharp` is what the hub makes now; the website's build with its CSP check |
 | `v2pn-release.yml` | a `v1.2.3` tag | packages, signature, draft release |
 | `v2pn-mirror.yml` | a release is published | a copy on your own server, if set up |
 | `v2pn-winget.yml` | a release is published | a pull request to `microsoft/winget-pkgs`, if `WINGET_TOKEN` is set |
@@ -322,7 +326,7 @@ Why it works like this: the windows V2pn redrew are marked `merge=ours` in `v2ra
 
 Exit codes: `0`: merged or nothing to merge; `2`: conflicts; `3`: does not build; `4`: tests failed. On any error `v2pn` stays as it was.
 
-Once a week `.github/workflows/v2pn-upstream.yml` does the same and opens a pull request with the report. If something broke, the pull request is a draft.
+Once a week `.github/workflows/v2pn-upstream.yml` does the same and opens a pull request with the report. If something broke, the pull request is a draft. The build and the tests run v2rayN's code as it came, so that job has a read-only token that is not kept in the checkout; it hands the sync branch over as a git bundle to a second job, which runs nothing from the merged tree, checks the branch name, pushes the branch and opens the pull request.
 
 ### Rules that keep merges from breaking
 

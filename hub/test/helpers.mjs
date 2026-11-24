@@ -62,8 +62,8 @@ export const testNet = {
   },
 };
 
-/** A hub with its own data and public folders, on a free port. {hub, base, origin, close, dirs}. */
-export async function startHub({ net = testNet } = {}) {
+/** A hub with its own data and public folders, on a free port; <env> adds settings. {hub, base, origin, close, dirs}. */
+export async function startHub({ net = testNet, env = {} } = {}) {
   const root = tempDir();
   const server = http.createServer();
   await new Promise(r => server.listen(0, '127.0.0.1', r));
@@ -74,6 +74,7 @@ export async function startHub({ net = testNet } = {}) {
     HUB_PUBLIC_DIR: path.join(root, 'www'),
     HUB_ORIGIN: origin,
     HUB_PORT: String(port),
+    ...env,
   });
   const hub = createHub(config, { net });
   server.on('request', createHandler(hub));

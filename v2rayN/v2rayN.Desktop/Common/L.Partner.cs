@@ -8,6 +8,9 @@ public static partial class L
     public static string LinkAddAsk => T("Add this subscription?", "Добавить эту подписку?");
     public static string LinkAddBody => T("V2pn downloads its server list. The provider does not see your traffic.",
         "V2pn скачает список серверов. Провайдер не видит ваш трафик.");
+    public static string LinkAddPlainHttp => T(
+        "This address is not encrypted (http): anyone on the way, such as the Wi-Fi or the internet provider, can read the server list and its keys, or change it. Ask the provider for an https link.",
+        "Адрес не зашифрован (http): любой на пути, например Wi-Fi или интернет-провайдер, может прочитать список серверов с ключами или подменить его. Попросите у провайдера ссылку https.");
     public static string LinkAddYes => T("Add", "Добавить");
     public static string LinkAddNo => T("Cancel", "Отмена");
     public static string LinkAlreadyAdded => T("The subscription «{0}» is already in V2pn.", "Подписка «{0}» уже есть в V2pn.");

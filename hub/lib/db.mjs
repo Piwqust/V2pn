@@ -305,6 +305,19 @@ const MIGRATIONS = [
   `,
   // 4: domain proof; the partners already there keep their domains.
   addDomainProof,
+  // 5: reports of failed updates (lib/reports.mjs), counted by day, the version updated to, os, arch, stage and code.
+  `
+  CREATE TABLE update_failures (
+    day TEXT NOT NULL,
+    version TEXT NOT NULL,
+    os TEXT NOT NULL,
+    arch TEXT NOT NULL,
+    stage TEXT NOT NULL,
+    code TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (day, version, os, arch, stage, code)
+  );
+  `,
 ];
 
 export class Db {

@@ -60,7 +60,7 @@ test('a v1 database: providers stay partners with their look and their tier-2 pa
     const hub = createHub(config, { net: testNet });
     try {
       const { db } = hub;
-      assert.deepEqual(db.all('SELECT version FROM migrations ORDER BY version').map(r => r.version), [1, 2, 3, 4]);
+      assert.deepEqual(db.all('SELECT version FROM migrations ORDER BY version').map(r => r.version), [1, 2, 3, 4, 5]);
       const tables = db.all("SELECT name FROM sqlite_master WHERE type = 'table' ORDER BY name").map(r => r.name);
       for (const gone of ['applications', 'providers', 'login_codes', 'admin_links', 'outbox']) assert.ok(!tables.includes(gone), gone);
       assert.equal(db.get('SELECT COUNT(*) AS n FROM sessions').n, 0, 'sessions made by codes end');

@@ -1,10 +1,15 @@
 // The HTTP side: routes under /api/ (JSON, Cache-Control: no-store), the download redirects, CSRF and body limits.
 import { HubError } from './errors.mjs';
+import { ipKey } from './ip.mjs';
 import { log } from './log.mjs';
 import { appVersion, resolveDownload } from './downloads.mjs';
+import { MAX_REPORT_BYTES, parseUpdateReport } from './reports.mjs';
 
 const JSON_LIMIT = 64 * 1024;
 const UPLOAD_LIMIT = 2 * 1024 * 1024;
+const HOUR = 3600 * 1000;
+// Reports of failed updates an hour from one network (an IPv4 address or an IPv6 /64).
+const REPORTS_PER_NETWORK = 20;
 export const VERSION = '1.0.0';
 
 const BASE_HEADERS = {
@@ -43,8 +48,8 @@ function readBody(req, limit) {
   });
 }
 
-async function readJson(req) {
-  const buf = await readBody(req, JSON_LIMIT);
+async function readJson(req, limit = JSON_LIMIT) {
+  const buf = await readBody(req, limit);
   if (buf.length === 0) return {};
   try {
     return JSON.parse(buf.toString('utf8'));
@@ -64,7 +69,8 @@ export function clientIp(req) {
   return remote;
 }
 
-// [method, pattern, handler, access]; access: 'public' | 'user' | 'mod' (owner or moderator) | 'owner'
+// [method, pattern, handler, access]; access: 'public' | 'user' | 'mod' (owner or moderator) | 'owner' | 'app' (V2pn
+// itself: not a browser, so no CSRF check and no session)
 function routes(hub) {
   const signedIn = (res, { token, account }) => {
     res.setHeader('set-cookie', hub.auth.cookie(token));
@@ -108,6 +114,17 @@ function routes(hub) {
 
     ['POST', /^\/api\/complaints$/, async ({ req, ip }) => hub.complain(await readJson(req), ip), 'public'],
 
+    // A failed update, from a V2pn whose person turned the reports on: 204 and nothing else (lib/reports.mjs).
+    ['POST', /^\/api\/report\/update$/, async ({ req, ip, res }) => {
+      if (!hub.limiter.hit(`report:${ipKey(ip)}`, REPORTS_PER_NETWORK, HOUR)) throw new HubError('rate_limited');
+      const type = String(req.headers['content-type'] || '').split(';')[0].trim().toLowerCase();
+      if (type !== 'application/json') throw new HubError('bad_request', { status: 415, message: 'Нужен JSON (Content-Type: application/json).' });
+      hub.counter.failure(parseUpdateReport(await readJson(req, MAX_REPORT_BYTES)));
+      res.writeHead(204, BASE_HEADERS);
+      res.end();
+      return undefined;
+    }, 'app'],
+
     ['GET', /^\/api\/partner$/, ({ session }) => hub.myPartner(session.account.id), 'user'],
     ['PUT', /^\/api\/partner$/, async ({ req, session, actor }) => hub.savePartner(session.account.id, await readJson(req), actor), 'user'],
     ['POST', /^\/api\/partner\/check$/, async ({ req, session }) => hub.check(session.account.id, await readJson(req)), 'user'],
@@ -136,7 +153,7 @@ function routes(hub) {
     ['GET', /^\/api\/mod\/audit$/, ({ url }) => ({ audit: hub.auditLog(Number(url.searchParams.get('limit')) || 200) }), 'mod'],
     ['GET', /^\/api\/mod\/downloads$/, ({ url }) => {
       const days = Math.min(Math.max(Number(url.searchParams.get('days')) || 30, 1), 366);
-      return { downloads: hub.counter.stats(days), checks: hub.counter.checkStats(days) };
+      return { downloads: hub.counter.stats(days), checks: hub.counter.checkStats(days), failures: hub.counter.failureStats(days) };
     }, 'mod'],
     ['POST', /^\/api\/mod\/publish$/, ({ actor }) => ({ publication: hub.publish(actor) }), 'mod'],
 
@@ -179,12 +196,12 @@ export function createHandler(hub) {
       const route = candidates.find(r => r[0] === method);
       if (!route) throw new HubError('method');
       const [, pattern, handler, access] = route;
-      if (method !== 'GET') {
+      if (method !== 'GET' && access !== 'app') {
         // CSRF: a form or a script on another site can send neither this header nor this origin.
         if (req.headers['x-hub'] !== '1' || req.headers.origin !== hub.config.origin) throw new HubError('csrf');
       }
-      const session = hub.auth.session(req.headers.cookie);
-      if (access !== 'public' && !session) throw new HubError('unauthorized');
+      const session = access === 'app' ? null : hub.auth.session(req.headers.cookie);
+      if (access !== 'public' && access !== 'app' && !session) throw new HubError('unauthorized');
       if (access === 'mod' && !session.mod) throw new HubError('forbidden');
       if (access === 'owner' && !session.owner) throw new HubError('forbidden');
       const ctx = { req, res, url, match: url.pathname.match(pattern), session, ip: clientIp(req), actor: session ? session.account.login : 'anonymous' };

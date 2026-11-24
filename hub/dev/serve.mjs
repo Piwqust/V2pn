@@ -15,8 +15,8 @@
 //             account's DNS record is there), so a partner goes live on save; with --unproved they have none, and a
 //             partner waits for its domain as on the server without the record.
 // --configra  imports ../partners/configra as a live partner with its account right approved (login: configra).
-// --downloads fills the download and update-check counters of the last 30 days with made-up numbers for the
-//             moderators' charts.
+// --downloads fills the download, update-check and failed-update counters of the last 30 days with made-up numbers
+//             for the moderators' charts.
 import dns from 'node:dns';
 import fs from 'node:fs';
 import http from 'node:http';
@@ -154,6 +154,16 @@ if (opt('downloads', false)) {
     for (const [version, base] of Object.entries(versions)) {
       const n = Math.round(base * (0.9 + 0.01 * (29 - d)) * (0.85 + rand() * 0.3));
       if (n > 0) hub.db.run('INSERT INTO checks (day, version, count) VALUES (?, ?, ?) ON CONFLICT (day, version) DO UPDATE SET count = excluded.count', day, version, n);
+    }
+    // Failed updates, from the few who turned the reports on: mostly downloads cut short, now and then a swap.
+    const failures = [['1.4.0', 'windows', 'x64', 'download', 'timeout', 3], ['1.4.0', 'windows', 'x64', 'swap', 'access_denied', 1],
+      ['1.4.0', 'macos', 'arm64', 'verify', 'bad_signature', 0.3], ['1.3.2', 'windows', 'arm64', 'start', 'exit_code_1', 0.5]];
+    for (const [version, os, arch, stage, code, base] of failures) {
+      const n = Math.round(base * share * 2 * rand());
+      if (n > 0) {
+        hub.db.run(`INSERT INTO update_failures (day, version, os, arch, stage, code, count) VALUES (?, ?, ?, ?, ?, ?, ?)
+          ON CONFLICT (day, version, os, arch, stage, code) DO UPDATE SET count = excluded.count`, day, version, os, arch, stage, code, n);
+      }
     }
   }
 }

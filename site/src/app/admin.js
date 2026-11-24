@@ -1,6 +1,6 @@
 // /admin/ = moderation, for the owner and the moderators: the special rights waiting (with their content, the routing
 // rules as lines), every partner newest first (take down, restore, mark its domain proved, reset the password,
-// complaints), the moderators (the owner only), downloads and the audit log.
+// complaints), the moderators (the owner only), downloads, update checks and failed updates, and the audit log.
 import { api, isMod, me, wireAccount } from './api.js';
 import { $, $$, busy, confirmStep, copyText, date, esc, plural, toast } from './hubui.js';
 
@@ -345,6 +345,29 @@ const GROUPS = [
 ];
 
 const versionName = v => (v === 'other' ? 'прочие' : v);
+// Where a failed update stopped (lib/reports.mjs on the hub), in the order an update goes.
+const STAGES = [['download', 'Загрузка'], ['verify', 'Подпись'], ['stage', 'Распаковка'], ['swap', 'Замена'], ['start', 'Запуск'], ['rollback', 'Откат']];
+const SYSTEMS = { windows: 'Windows', macos: 'macOS' };
+
+/** The failed updates by version (rows, newest first) and stage (columns), then every kind with its code. */
+function failureTables(f) {
+  const versions = Object.keys(f.totals).sort(newerFirst);
+  const matrix = `<p class="hint" style="margin-top: 12px">По версиям и этапам</p>
+    <div class="tbl-wrap"><table class="tbl"><thead><tr><th>Версия</th>${STAGES.map(([, name]) => `<th class="num">${esc(name)}</th>`).join('')}<th class="num">Всего</th></tr></thead><tbody>
+    ${versions.map(v => `<tr><td>${esc(versionName(v))}</td>${STAGES.map(([k]) => `<td class="num">${(f.stages[v] || {})[k] || ''}</td>`).join('')}<td class="num">${f.totals[v]}</td></tr>`).join('')}
+    </tbody></table></div>`;
+  const kinds = new Map();
+  for (const r of f.days) {
+    const key = [r.version, r.stage, r.os, r.arch, r.code].join('|');
+    kinds.set(key, (kinds.get(key) || 0) + r.count);
+  }
+  const rows = [...kinds].sort((a, b) => b[1] - a[1]).slice(0, 100).map(([key, n]) => {
+    const [version, stage, os, arch, code] = key.split('|');
+    return `<tr><td>${esc(versionName(version))}</td><td>${esc((STAGES.find(s => s[0] === stage) || [stage, stage])[1])}</td><td>${esc(SYSTEMS[os] || os)} ${esc(arch)}</td><td><code>${esc(versionName(code))}</code></td><td class="num">${n}</td></tr>`;
+  }).join('');
+  return `${matrix}<details><summary class="hint" style="cursor: pointer">Коды ошибок</summary>
+    <div class="tbl-wrap"><table class="tbl" style="margin-top: 12px"><thead><tr><th>Версия</th><th>Этап</th><th>Система</th><th>Код</th><th class="num">Сбоев</th></tr></thead><tbody>${rows}</tbody></table></div></details>`;
+}
 // Newest first: by the numbers, a build of the same numbers with a suffix after the release.
 function newerFirst(a, b) {
   const pa = a.split('-')[0].split('.').map(Number), pb = b.split('-')[0].split('.').map(Number);
@@ -437,11 +460,12 @@ function mountChart(box, c) {
 }
 
 async function loadDownloads() {
-  const box = $('#dl-out'), checksBox = $('#ck-out');
+  const box = $('#dl-out'), checksBox = $('#ck-out'), failuresBox = $('#uf-out');
   loading(box);
   loading(checksBox);
+  loading(failuresBox);
   try {
-    const { downloads, checks } = await api.get(`/api/mod/downloads?days=${days}`);
+    const { downloads, checks, failures } = await api.get(`/api/mod/downloads?days=${days}`);
     mountChart(box, chartHtml(downloads.days, days, GROUPS, {
       title: 'Скачивания', tableTitle: 'Таблица по платформам',
       table: { head: ['Файл', 'Скачиваний'], rows: Object.entries(downloads.totals).sort((a, b) => b[1] - a[1]).map(([k, v]) => [`<code>/r/${esc(k)}</code>`, v]) },
@@ -456,8 +480,19 @@ async function loadDownloads() {
         rows: Object.entries(totals).sort((a, b) => newerFirst(a[0], b[0])).map(([k, v]) => [`${esc(versionName(k))} <span class="hint">· ${Math.round(v / all * 100) || '<1'}%</span>`, v]),
       },
     }));
+    // Failed updates by the version updated to; a hub older than this page has none to give.
+    if (!failures || !failures.days.length) {
+      failuresBox.innerHTML = empty('Сбоев нет', `За ${days} дней ни одного отчёта о неудачном обновлении.`);
+    } else {
+      mountChart(failuresBox, chartHtml(failures.days.map(r => ({ day: r.day, name: r.version, count: r.count })), days, versionGroups(failures.totals), {
+        title: 'Сбои обновлений', tableTitle: 'Таблица по версиям',
+        table: { head: ['Обновлялись на', 'Сбоев'], rows: Object.entries(failures.totals).sort((a, b) => newerFirst(a[0], b[0])).map(([k, v]) => [esc(versionName(k)), v]) },
+      }));
+      failuresBox.insertAdjacentHTML('beforeend', failureTables(failures));
+    }
   } catch (e) {
     checksBox.innerHTML = '';
+    failuresBox.innerHTML = '';
     failed(box, e);
   }
 }

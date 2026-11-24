@@ -121,6 +121,23 @@ requests, not people: one computer gives one to four or more a day. A local buil
 other User-Agent is redirected and not counted; a day keeps 40 versions, the rest add up as `other`. A check that
 falls back to GitHub (the hub did not answer) is not seen.
 
+**Update failure reports.** A V2pn whose person turned the reports on (off by default) tells the hub when an update
+failed: `POST /api/report/update` with `Content-Type: application/json` and at most 1 KB:
+
+```json
+{"from": "1.4.2", "to": "1.4.3", "os": "windows", "arch": "x64", "stage": "verify", "code": "bad_signature"}
+```
+
+All six fields, nothing else: `from` and `to` versions like `1.4.3` or `1.5.0-beta.2` (digits `a.b.c`, an optional
+`-` suffix of `0-9A-Za-z.-`, 32 characters at most), `os` `windows` or `macos`, `arch` `x64` or `arm64`, `stage` one of
+`download` `verify` `stage` `swap` `start` `rollback`, `code` 1 to 40 of `a-z 0-9 _ -`. The answer is `204` with no
+body; `422` names the bad fields (`{"error": {"code": "invalid", "fields": {...}}}`), `415` another content type, `413`
+a larger body, `429` past 20 reports an hour from one IPv4 address or IPv6 /64 (refused ones count too). No cookie, no
+`X-Hub`, no `Origin`, no CORS: the app is not a browser, and a web page cannot send JSON here without a preflight the
+hub never answers. Only counts are kept: by day, `to`, `os`, `arch`, `stage` and `code` (not `from`, no address, no
+User-Agent, no id of the copy); a day keeps 200 kinds, the rest add up with `to` and `code` as `other`. Moderators see
+them as «Сбои обновлений» under the update checks.
+
 **Health.** `GET /api/health`.
 
 Errors are `{"error": {"code", "message", "fields"?, "detail"?}}` with a stable `code` and a Russian `message`. Every
@@ -150,6 +167,7 @@ provider's id as its login, any other account keeps its email as the login; nobo
 | `GET /api/partner/pictures/<sha256>` | signed in (own) | the PNG |
 | `POST /api/partner/login-test` | signed in, with a partner | `{api?}` → `{test: {ok, lines}}` |
 | `POST /api/complaints` | anyone | `{partner, text?}` → `{ok}` |
+| `POST /api/report/update` | V2pn (no CSRF headers) | `{from, to, os, arch, stage, code}` → `204` (above) |
 | `GET /api/mod/overview` | moderator | partners by state, rights waiting, complaints, the last publication or its error |
 | `GET /api/mod/partners` | moderator | `{partners: [{id, name, login, domains, state, downReason, complaints, layout, brand, pictures, rights, pending, check, createdAt, …}]}` |
 | `GET /api/mod/partners/<id>` | moderator | the same with `look`, `rightDetails`, `complaintList` |
@@ -159,7 +177,7 @@ provider's id as its login, any other account keeps its email as the login; nobo
 | `GET /api/mod/partners/<id>/complaints` · `POST …/complaints/clear` | moderator | |
 | `POST /api/mod/accounts/<login>/password` | moderator (providers), owner (moderators too) | `{login, password}` |
 | `GET /api/mod/pictures/<sha256>` | moderator | the PNG |
-| `GET /api/mod/audit[?limit=]` · `/downloads[?days=]` · `POST /api/mod/publish` | moderator | `downloads` answers `{downloads, checks}` |
+| `GET /api/mod/audit[?limit=]` · `/downloads[?days=]` · `POST /api/mod/publish` | moderator | `downloads` answers `{downloads, checks, failures}` |
 | `GET /api/mod/moderators` · `POST /api/mod/moderators` · `POST /api/mod/moderators/<login>/remove` | owner | `{login}` → `{moderator: {login, role, password \| null}}` |
 | `GET /r/<name>`, `GET /releases/...` | anyone | 302 to GitHub |
 

@@ -123,7 +123,9 @@ The whole script is inside a `main` function: if the download breaks off halfway
 - at the first start it creates a Start shortcut, because winget does not make one for a portable program. After `winget uninstall` the shortcut stays and has to be deleted by hand;
 - developer mode is not available.
 
-`ArchiveBinariesDependOnPath: true` in the manifest keeps winget from starting V2pn through a link in another folder: the exe needs its DLLs next to it.
+`ArchiveBinariesDependOnPath: true` in the manifest keeps winget from starting V2pn through a link in another folder: the exe needs its DLLs next to it. It puts that folder on the PATH instead, so the two commands the manifest declares, `v2pn` and `v2pnctl`, work as they are named there.
+
+The installer (`V2pn-windows-<arch>-setup.exe`) also adds its folder to the user's PATH (`HKCU\Environment`, no administrator rights) for `v2pnctl`, and its uninstall takes it off; `install.ps1` and the portable zip do not.
 
 The first submission is made by hand, once a release with all of this is published:
 
@@ -146,6 +148,7 @@ brew install --cask piwqust/tap/v2pn
 The cask lives in a separate repository, `Piwqust/homebrew-tap`, file `Casks/v2pn.rb`. `tools/homebrew-cask.ps1 -Version <version>` writes it (into `dist/homebrew/Casks/`) and takes the hashes from `release.json`. In the cask:
 
 - `auto_updates true`: V2pn updates itself, and `brew upgrade` leaves it alone;
+- `binary` links `V2pn.app/Contents/MacOS/v2pnctl` into Homebrew's `bin`, so `v2pnctl` is on the PATH;
 - the quarantine flag is removed after install: V2pn has no Apple Developer ID signature, and macOS would not open a flagged copy;
 - `zap` deletes `~/Library/Application Support/V2pn` on `brew uninstall --zap`.
 

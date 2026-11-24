@@ -12,7 +12,9 @@
 
   The cask removes the quarantine flag after installing: V2pn has only an ad-hoc signature (no
   paid Apple Developer ID), and macOS refuses to open a quarantined app without one. "auto_updates"
-  tells Homebrew that V2pn replaces itself, so "brew upgrade" leaves it alone.
+  tells Homebrew that V2pn replaces itself, so "brew upgrade" leaves it alone. "binary" links
+  v2pnctl (V2pn.app/Contents/MacOS/v2pnctl) into Homebrew's bin folder, so it is on the PATH; the
+  link follows the app when V2pn updates itself, and goes with "brew uninstall".
 
   Later versions: .github/workflows/v2pn-homebrew.yml, when the HOMEBREW_TAP_TOKEN secret is set.
 
@@ -71,6 +73,8 @@ cask "v2pn" do
   depends_on macos: ">= :ventura"
 
   app "V2pn.app"
+  # V2pn's command line and MCP server, on the PATH as Homebrew's link to the app's own copy.
+  binary "#{appdir}/V2pn.app/Contents/MacOS/v2pnctl"
 
   # V2pn has only an ad-hoc signature (no Apple Developer ID): a quarantined copy would not open.
   postflight do

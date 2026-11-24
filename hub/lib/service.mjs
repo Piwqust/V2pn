@@ -819,7 +819,7 @@ export class Hub {
 
   /**
    * Whether the index is due to be signed and written again: not yet today, or the last one is a day old. Every
-   * publication moves the term of the hub's own partners 60 days on (rollingUntil).
+   * publication moves every listing's term 60 days on, an imported partner's no further than its own (listingUntil).
    */
   publishDue(now = Date.now()) {
     if (this.db.meta('published_day') !== today()) return true;

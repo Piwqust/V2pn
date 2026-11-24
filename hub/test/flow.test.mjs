@@ -6,7 +6,7 @@ import path from 'node:path';
 import { test } from 'node:test';
 import { publicKeyOf, verify } from '../lib/keys.mjs';
 import { setQuiet } from '../lib/log.mjs';
-import { verifyPack } from '../lib/publish.mjs';
+import { rollingUntil, verifyPack } from '../lib/publish.mjs';
 import { readZip } from '../lib/zip.mjs';
 import { Client, makePng, register, serve, signIn, signInOwner, startHub } from './helpers.mjs';
 
@@ -428,8 +428,10 @@ test("import-partner takes partners/configra as a live partner with Configra's l
     env.hub.publish('test');
     const pub = published(env);
     const entry = pub.index.partners.find(p => p.id === 'configra');
+    // Its own term (2027-11-16) is further off than V2pn takes a hub-signed listing: 60 days on, as a hub partner.
     assert.deepEqual({ ...entry, pack: undefined }, {
-      id: 'configra', name: 'Configra', domains: ['angleford.co', '*.angleford.co'], grants: ['edition', 'account'], until: '2027-11-16', pack: undefined,
+      id: 'configra', name: 'Configra', domains: ['angleford.co', '*.angleford.co'], grants: ['edition', 'account'],
+      until: rollingUntil(new Date().toISOString().slice(0, 10)), pack: undefined,
     });
     const zip = readZip(fs.readFileSync(path.join(pub.dir, entry.pack.file)));
     const folder = new URL('../../partners/configra/', import.meta.url);

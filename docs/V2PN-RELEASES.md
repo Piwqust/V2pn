@@ -19,7 +19,26 @@ A source is an address that holds files in the layout of a GitHub releases page:
 <source>/download/v1.0.1/<file>              packages of version 1.0.1
 ```
 
-The list of sources is set at build time by the `V2pnUpdateSources` property in `v2rayN/Directory.Build.targets`, separated by `|`. By default there is one: `https://github.com/Piwqust/V2pn/releases`. V2pn goes down the list in order and takes the first source that returns a manifest with a valid signature. It tries each source directly and through its own proxy, if that is running; the "Download through the VPN" switch in the Updates window decides which goes first. A 404 means "no releases yet" and is not an error.
+The list of sources is set at build time by the `V2pnUpdateSources` property in `v2rayN/Directory.Build.targets`, separated by `|`. By default there are two: V2pn's server `https://v2pn.angleford.co/releases` (it redirects to GitHub, `hub/lib/downloads.mjs`) and `https://github.com/Piwqust/V2pn/releases`. V2pn asks every source and takes the highest version among the manifests with a valid signature. It tries each source directly and through its own proxy, if that is running; the "Download through the VPN" switch in the Updates window decides which goes first. A 404 means "no releases yet" and is not an error.
+
+### Beta versions
+
+A beta is a version like `1.5.0-beta.1`, published on GitHub as a **pre-release**. GitHub's `releases/latest` never names a pre-release, so a copy with the default settings never sees it. A copy whose person turned on Updates → "Get beta versions" (off by default; `UiItem.V2pnBeta`) also asks the beta channel:
+
+```text
+<source>/beta/download/release.json        manifest of the newest release, pre-releases included
+<source>/beta/download/release.json.sig    its signature
+```
+
+Only the sources in `V2pnBetaSources` (`Directory.Build.targets`; by default V2pn's server only) have a beta channel. The updater asks the beta channel first and then every source's latest release, and takes the highest signed version of all of them (`V2pnUpdateSettings.Manifests`). The signature check and the package check are the same as for a release: a beta is signed with the same key. So:
+
+- a beta goes only to the copies that take betas; the release after the betas (`1.5.0` is higher than `1.5.0-beta.3`) replaces the beta by itself, as a normal update, for them and goes to everyone else;
+- a release of an older line (`1.4.3` after `1.5.0-beta.1`) goes to everyone who is not on the newer beta;
+- turned off, the setting keeps the beta that is installed until a release with a higher version comes, and a beta that was downloaded but not installed yet is dropped and never installed.
+
+V2pn's server finds the beta in GitHub's list of releases: it reads `api.github.com/repos/Piwqust/V2pn/releases` at start and every five minutes (an unchanged list costs nothing against GitHub's limit) and redirects `/releases/beta/download/<file>` to the files of the highest version that is not a draft and has `release.json`. Until it knows one, and while the hub is down (Caddy), the beta channel leads to the latest release. `https://v2pn.angleford.co/api/health` shows the tag it uses as `beta`. The hub's README has the details.
+
+To release a beta, see [How to release a version](#how-to-release-a-version): `tools/release.ps1 -Version 1.5.0 -Beta -Tag`.
 
 ### What exactly is checked
 
@@ -196,6 +215,20 @@ You need: the `Piwqust/V2pn` repository on GitHub with the main branch `v2pn`, a
 
 If the key is in the `V2PN_SIGNING_KEY` secret of the `release` environment, step 4 happens by itself: the workflow signs the manifest and creates the draft. The key is then kept on GitHub; turn on required approval for that environment.
 
+### A beta first
+
+To let the copies that take betas try a version for a few days before everyone else:
+
+```powershell
+tools/release.ps1 -Version 1.5.0 -Beta -Tag       # tags v1.5.0-beta.1 (then -beta.2, -beta.3 ...)
+git push --atomic origin HEAD v1.5.0-beta.1
+tools/sign-release.ps1 -Version 1.5.0-beta.1      # unless the workflow signs by itself
+```
+
+Everything else is as for a release, with these differences: the version must be newer than every release and beta before it; the notes are the `## 1.5.0-beta.1` section of `CHANGELOG.md` or, without one, the `## Unreleased` section, under a line that says it is a beta; the workflow and `tools/sign-release.ps1` open a draft **pre-release**. Publish it the same way. winget and Homebrew take only plain versions, and the mirror (`v2pn-mirror.yml`, `tools/publish-mirror.ps1`) puts a beta's files under `download/v<version>/` without switching `latest`.
+
+Watch the beta's update checks and failed updates in the hub's moderator page («Сбои обновлений»), then release `1.5.0` as usual (rename `## Unreleased` to `## 1.5.0`). If the beta is broken, release `1.5.0-beta.2` with the fix: a beta is never taken back, only replaced by a higher version.
+
 Push only your own branch and your own tags. `git push --tags` would also publish three hundred v2rayN tags.
 
 To build the packages locally without committing anything:
@@ -276,8 +309,8 @@ The upload and the `v2pn-mirror.yml` workflow are written but have not run again
 | Workflow | When | What it does |
 | --- | --- | --- |
 | `v2pn-ci.yml` | every push and pull request to `v2pn` | tests and builds on Windows and macOS; builds `V2pn.app`, starts it on a Mac, takes a screenshot and attaches it with the logs to the run; the installers' signature check (`tools/check-install-scripts.*`); the hub's tests and a check that `hub/test/fixtures/csharp` is what the hub makes now; the website's build with its CSP check |
-| `v2pn-release.yml` | a `v1.2.3` tag | packages, signature, draft release |
-| `v2pn-mirror.yml` | a release is published | a copy on your own server, if set up |
+| `v2pn-release.yml` | a `v1.2.3` tag (a `v1.2.3-beta.1` tag: a pre-release) | packages, signature, draft release |
+| `v2pn-mirror.yml` | a release is published | a copy on your own server, if set up (a pre-release: its files only, `latest` stays) |
 | `v2pn-winget.yml` | a release is published | a pull request to `microsoft/winget-pkgs`, if `WINGET_TOKEN` is set |
 | `v2pn-homebrew.yml` | a release is published | updates the cask in `Piwqust/homebrew-tap`, if `HOMEBREW_TAP_TOKEN` is set |
 | `v2pn-upstream.yml` | Mondays | a merge of the latest v2rayN on a separate branch and a pull request with a report |

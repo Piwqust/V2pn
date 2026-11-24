@@ -35,7 +35,8 @@
   tools/publish-mirror.ps1 -Version 1.0.1 -LocalRoot D:\mirror
 #>
 param(
-    [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
+    # A beta (1.5.0-beta.1) goes to download/v<version>/ only: "latest" stays the release everyone gets.
+    [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+(-beta\.\d+)?$')][string]$Version,
     # user@host:/path/of/the/mirror/root
     [string]$Target,
     # Lay the mirror out here instead of (or before) uploading.
@@ -72,16 +73,17 @@ foreach ($package in $manifest.files) {
     if ((Get-FileHash -Algorithm SHA256 $file).Hash.ToLowerInvariant() -ne $package.sha256) { throw "$($package.name) does not match release.json." }
 }
 Write-Host "V2pn ${Version}: $($files.Count) files, all packages match the manifest."
+$beta = $Version.Contains('-')
 
 if ($LocalRoot) {
     $versionDir = Join-Path $LocalRoot "download/v$Version"
     $latestDir = Join-Path $LocalRoot 'latest/download'
     New-Item -ItemType Directory -Force $versionDir, $latestDir | Out-Null
     Copy-Item -Force $files.FullName $versionDir
-    Copy-Item -Force (Join-Path $From 'release.json'), (Join-Path $From 'release.json.sig') $latestDir
+    if (-not $beta) { Copy-Item -Force (Join-Path $From 'release.json'), (Join-Path $From 'release.json.sig') $latestDir }
     # The partners are read from "latest" too.
     $partnerFiles = @($files | Where-Object { $_.Name -match '^(partners\.json(\.sig)?|partner-index\.json(\.sig)?|partner-[a-z0-9-]+\.zip)$' })
-    if ($partnerFiles) { Copy-Item -Force $partnerFiles.FullName $latestDir }
+    if ($partnerFiles -and -not $beta) { Copy-Item -Force $partnerFiles.FullName $latestDir }
     Write-Host "Laid out in $LocalRoot"
 }
 
@@ -90,8 +92,13 @@ if ($Target) {
     $login = $Matches.login
     $root = $Matches.path.TrimEnd('/')
     Invoke-Checked 'ssh' @($login, "mkdir -p '$root/download/v$Version' '$root/latest/download'")
+    # A beta goes to its own folder only, so a copy that updates from the mirror can still download it.
     Write-Host "Uploading to ${login}:$root/download/v$Version ..."
     Invoke-Checked 'scp' (@('-q') + $files.FullName + @("${login}:$root/download/v$Version/"))
+    if ($beta) {
+        Write-Host "Done. The mirror has the packages of beta $Version; ""latest"" is unchanged."
+        return
+    }
     # "latest" changes only now, with the packages already in place. Both files are copied next to
     # their final names first and then renamed, so the moment in which a V2pn can read a manifest
     # and a signature that do not belong together is two renames long; it would refuse that pair

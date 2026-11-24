@@ -129,6 +129,9 @@ public class UIItem
     // Null means on: new versions download in the background and install at the next start.
     public bool? V2pnAutoUpdate { get; set; }
 
+    /// <summary>V2pn: also take beta versions (the beta channel, V2pnUpdateSettings.Manifests); off unless the person turns it on.</summary>
+    public bool V2pnBeta { get; set; }
+
     /// <summary>V2pn: sites the person sends one way whatever the preset says (V2pnPresetRules).</summary>
     public List<V2pnSiteRule>? V2pnSiteRules { get; set; }
 

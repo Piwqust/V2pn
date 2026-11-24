@@ -28,6 +28,16 @@ test('release files (update checks, partner files) fall back to the same path on
   for (const p of ['/releases/latest/download/a/b', '/releases/latest/download/', '/releases/download/x1/a.zip', '/releases/evil', '/r/windows-x64']) {
     assert.ok(!release.test(p), p);
   }
+  // The beta channel falls back to the latest release, as the hub does before it knows a beta.
+  const beta = /@beta path_regexp beta (\S+)\n\s*redir @beta (\S+) 302/.exec(caddyfile);
+  assert.ok(beta, 'the beta fallback is there');
+  for (const p of ['/releases/beta/download/release.json', '/releases/beta/download/release.json.sig', '/releases/beta/download/V2pn-macos-x64.zip']) {
+    const file = new RegExp(beta[1]).exec(p)?.[1];
+    assert.ok(file, p);
+    assert.ok(!release.test(p), p);
+    assert.equal(beta[2].replace('{re.beta.1}', file), resolveDownload(p, REPO, null).location, p);
+  }
+  for (const p of ['/releases/beta/download/a/b', '/releases/beta/download/', '/releases/beta/x']) assert.ok(!new RegExp(beta[1]).test(p), p);
   const body = /respond \/api\/\* `([^`]+)` 503/.exec(caddyfile)?.[1];
   assert.equal(JSON.parse(body).error.code, 'unavailable');
   assert.match(caddyfile, /handle \{\s*respond "\{err\.status_code\} \{err\.status_text\}" \{err\.status_code\}\s*\}\s*\}/, 'other errors keep their status');

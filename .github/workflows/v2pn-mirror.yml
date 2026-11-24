@@ -28,6 +28,8 @@ jobs:
     env:
       TAG: ${{ inputs.tag || github.event.release.tag_name }}
       MIRROR_TARGET: ${{ vars.MIRROR_TARGET }}
+      # A pre-release (a beta, v1.5.0-beta.1) goes to download/<tag>/ only: latest/ stays the release everyone gets.
+      PRERELEASE: ${{ github.event.release.prerelease || contains(inputs.tag, '-') }}
     steps:
       - name: Download the release
         env:
@@ -56,6 +58,10 @@ jobs:
           opts="-i $HOME/.ssh/mirror -o StrictHostKeyChecking=yes -o UserKnownHostsFile=$HOME/.ssh/mirror_known_hosts"
           ssh $opts "$login" "mkdir -p '$root/download/$TAG' '$root/latest/download'"
           scp -q $opts release/* "$login:$root/download/$TAG/"
+          if [ "$PRERELEASE" = true ] || [[ "$TAG" == *-* ]]; then
+            echo "The mirror has the packages of pre-release $TAG; latest is unchanged." >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
           # "latest" switches last, by rename; see tools/publish-mirror.ps1.
           ssh $opts "$login" "cp '$root/download/$TAG/release.json.sig' '$root/latest/download/release.json.sig.new' && cp '$root/download/$TAG/release.json' '$root/latest/download/release.json.new' && mv '$root/latest/download/release.json.sig.new' '$root/latest/download/release.json.sig' && mv '$root/latest/download/release.json.new' '$root/latest/download/release.json'"
           echo "The mirror now serves $TAG." >> "$GITHUB_STEP_SUMMARY"

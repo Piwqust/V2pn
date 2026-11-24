@@ -56,6 +56,7 @@ V2pn moves to a working server by itself when the one you use stops answering, a
 
 ### Also
 
+- Updates → **"Get beta versions"** (off unless you turn it on): V2pn also takes the beta of the next version, a few days before everyone else, signed and checked like any release. The release that follows replaces the beta by itself; turned off, V2pn keeps the beta it has until then and never installs one it had downloaded.
 - V2pn takes in v2rayN 8.0.1: raw transport with an HTTP header works with Xray again, and the server form says when the chosen core cannot carry a transport (sing-box with XDRIVE, kcp or xhttp) instead of saving a server that will not connect.
 
 ## 1.4.2

@@ -1,5 +1,5 @@
 // Downloads through the hub: /r/<name> and /releases/... answer with a redirect to GitHub's release files (nothing is
-// stored here: the server has little disk). /r/<name> is counted by day and name, with no IP and no cookie. So is every
+// stored here: the server has little disk); /releases/beta/... to the newest release with the pre-releases (beta.mjs). /r/<name> is counted by day and name, with no IP and no cookie. So is every
 // request a running V2pn makes for the update manifest, by day and the version in its User-Agent: how many copies are
 // in use, and on which versions. And every report of a failed update (reports.mjs), by day, the version updated to,
 // os, arch, stage and code.
@@ -22,7 +22,7 @@ const RELEASE_FILE = /^(?:release\.json(?:\.sig)?|V2pn-windows-(?:x64|arm64)(?:(
 const VERSION = /^v\d{1,4}\.\d{1,4}\.\d{1,6}(?:-[0-9A-Za-z.-]{1,40})?$/;
 
 // What a running V2pn asks for shortly after its start and every six hours after (V2pnInfo.ManifestUrl, AppUpdates),
-// naming itself "V2pn/<version>" (V2pnHttp).
+// naming itself "V2pn/<version>" (V2pnHttp); a copy that takes betas asks the beta channel too.
 const MANIFEST = 'release.json';
 const APP = /^V2pn\/(\d{1,4}\.\d{1,4}\.\d{1,6})(?:-([0-9A-Za-z]{1,20})[0-9A-Za-z.-]{0,40})?$/;
 // A User-Agent is whatever the sender writes: a day keeps this many versions, the rest add up as one.
@@ -45,8 +45,11 @@ export function releaseUrl(repo, file, tag) {
     : `https://github.com/${repo}/releases/latest/download/${file}`;
 }
 
-/** Where a download path leads: {location, count?, check?} or null when it is not one the hub serves. */
-export function resolveDownload(pathname, repo) {
+/**
+ * Where a download path leads: {location, count?, check?} or null when it is not one the hub serves. <betaTag> is the
+ * newest release with the pre-releases (beta.mjs); without one the beta channel is the latest release.
+ */
+export function resolveDownload(pathname, repo, betaTag = null) {
   let m = /^\/r\/([A-Za-z0-9.-]{1,32})$/.exec(pathname);
   if (m) {
     const file = SHORT_NAMES[m[1]];
@@ -54,6 +57,11 @@ export function resolveDownload(pathname, repo) {
   }
   m = /^\/releases\/latest\/download\/([A-Za-z0-9._-]{1,80})$/.exec(pathname);
   if (m) return RELEASE_FILE.test(m[1]) ? { location: releaseUrl(repo, m[1]), check: m[1] === MANIFEST } : null;
+  m = /^\/releases\/beta\/download\/([A-Za-z0-9._-]{1,80})$/.exec(pathname);
+  if (m) {
+    const tag = betaTag && VERSION.test(betaTag) ? betaTag : null;
+    return RELEASE_FILE.test(m[1]) ? { location: releaseUrl(repo, m[1], tag), check: m[1] === MANIFEST } : null;
+  }
   m = /^\/releases\/download\/([A-Za-z0-9.-]{1,60})\/([A-Za-z0-9._-]{1,80})$/.exec(pathname);
   if (m) return VERSION.test(m[1]) && RELEASE_FILE.test(m[2]) ? { location: releaseUrl(repo, m[2], m[1]) } : null;
   return null;

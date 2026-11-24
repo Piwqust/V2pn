@@ -44,6 +44,8 @@ public class V2pnInfoTests
         // V2pn's server first (a redirect to GitHub, so the address can change without a release), GitHub as the fallback.
         await string.Join("|", V2pnInfo.UpdateSources).Should().BeEqualTo("https://v2pn.angleford.co/releases|" + V2pnInfo.ReleasesUrl);
         await V2pnInfo.ManifestUrl("https://example.com/v2pn").Should().BeEqualTo("https://example.com/v2pn/latest/download/release.json");
+        await V2pnInfo.BetaManifestUrl("https://example.com/v2pn").Should().BeEqualTo("https://example.com/v2pn/beta/download/release.json");
+        await string.Join("|", V2pnInfo.BetaSources).Should().BeEqualTo("https://v2pn.angleford.co/releases");
         await V2pnInfo.PackageUrl("https://example.com/v2pn", "1.2.3", "V2pn-windows-x64.zip")
             .Should().BeEqualTo("https://example.com/v2pn/download/v1.2.3/V2pn-windows-x64.zip");
     }

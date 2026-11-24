@@ -25,7 +25,8 @@
   tools/sign-release.ps1 -Version 1.0.1
 #>
 param(
-    [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version,
+    # A beta (1.5.0-beta.1, tools/release.ps1 -Beta) becomes a draft pre-release.
+    [Parameter(Mandatory = $true)][ValidatePattern('^\d+\.\d+\.\d+(-beta\.\d+)?$')][string]$Version,
     [string]$Repository = 'Piwqust/V2pn',
     # The workflow run to take the packages from; by default the newest successful one for the tag.
     [string]$Run,
@@ -38,6 +39,8 @@ $ErrorActionPreference = 'Stop'
 $repo = Split-Path -Parent $PSScriptRoot
 . (Join-Path $PSScriptRoot '_common.ps1')
 $tag = "v$Version"
+# GitHub's "latest" never names a pre-release: only copies that take betas get it, through the hub's beta channel.
+$beta = $Version.Contains('-')
 
 function Get-Output([string]$exe, [string[]]$arguments) {
     $previous = $ErrorActionPreference
@@ -109,10 +112,10 @@ if ($state -eq 'true') {
     Invoke-Checked 'gh' (@('release', 'upload', $tag, '--repo', $Repository, '--clobber') + $files)
 }
 else {
-    Invoke-Checked 'gh' (@('release', 'create', $tag, '--repo', $Repository, '--draft', '--verify-tag',
+    Invoke-Checked 'gh' (@('release', 'create', $tag, '--repo', $Repository, '--draft', '--verify-tag') + @(if ($beta) { '--prerelease' }) + @(
             '--title', "V2pn $Version", '--notes-file', $notesFile) + $files)
 }
 Remove-Item -Force $notesFile
 Write-Host ''
-Write-Host "Draft release $tag is ready with $($files.Count) files. Check it and publish:"
+Write-Host "Draft $(if ($beta) { 'pre-release' } else { 'release' }) $tag is ready with $($files.Count) files. Check it and publish:"
 Write-Host "  gh release edit $tag --repo $Repository --draft=false"

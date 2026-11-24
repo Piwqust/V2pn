@@ -424,6 +424,9 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
         var current = ConnectionPrefs.ProxyMethod(_config);
         cmbProxyMethod.SelectedIndex = Math.Max(0, Array.IndexOf(ProxyMethods, current));
         btnSave.Click += (_, _) => SaveProxyMethod();
+        // Saved with the rest by the Save command, which runs after Click.
+        togAutoSwitch.IsChecked = V2pnAutoSwitch.Enabled(_config);
+        btnSave.Click += (_, _) => _config.UiItem.V2pnAutoSwitch = togAutoSwitch.IsChecked == true;
 
         var admin = Utils.IsAdministrator();
         txtTunAdminState.Text = admin ? L.TunAdminYes : L.TunAdminNo;

@@ -531,6 +531,12 @@ public static partial class L
     public static string CheckOtherCountries => T("Check other countries in this subscription", "Проверить другие страны этой подписки");
     public static string NoServersInCountryResponded => T("No other server in this country answered the check.", "Другие серверы этой страны не ответили на проверку.");
     public static string UnknownServerCountry => T("unknown country", "страна неизвестна");
+    public static string AutoSwitched => T("{0} stopped answering. V2pn switched to {1} in the same country.",
+        "{0} перестал отвечать. V2pn переключился на {1} в той же стране.");
+    public static string SetAutoSwitch => T("Switch to a working server by itself", "Переключаться на рабочий сервер самому");
+    public static string SetAutoSwitchHint => T(
+        "When the server stops answering twice in a row, V2pn moves to the quickest working server of the same country and says so. Another country is never chosen without asking.",
+        "Если сервер дважды подряд не ответил, V2pn перейдёт на самый быстрый рабочий сервер той же страны и сообщит об этом. Другую страну без вопроса не выбирает.");
     public static string ConfirmReplacement => T("Switch to {0} ({1})? V2pn will check the new connection.", "Переключиться на {0} ({1})? V2pn проверит новое подключение.");
     public static string ConfirmReplacementOtherCountry => T("No server in {0} answered. Switch to {1}? Your country changes from {0} to {2}. V2pn will check the new connection.",
         "Серверы страны «{0}» не ответили. Переключиться на {1}? Страна сменится с «{0}» на «{2}». V2pn проверит новое подключение.");

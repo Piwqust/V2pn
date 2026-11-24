@@ -370,7 +370,11 @@ public partial class StatusBarViewModel : MyReactiveObject
         return await TestServerAvailability();
     }
 
-    public async Task<AvailabilityCheckResult?> TestServerAvailability()
+    /// <param name="quiet">
+    /// V2pn: a check of a connection that works (V2pnAutoSwitch.Recheck): no "checking" on screen, and a result that
+    /// still works changes nothing there; only a failure shows.
+    /// </param>
+    public async Task<AvailabilityCheckResult?> TestServerAvailability(bool quiet = false)
     {
         if (_runningProbe is not { Endpoint: { } endpoint } probe || !IsProbeCurrent(probe.Generation, probe.Target)
             || Availability.State == AvailabilityState.Checking)
@@ -378,12 +382,21 @@ public partial class StatusBarViewModel : MyReactiveObject
             return null;
         }
 
-        Availability = new(AvailabilityState.Checking);
-        RunningInfoDisplay = ResUI.Speedtesting;
+        quiet &= Availability.IsAvailable;
+        if (!quiet)
+        {
+            Availability = new(AvailabilityState.Checking);
+            RunningInfoDisplay = ResUI.Speedtesting;
+        }
         var result = await ConnectionHandler.RunAvailabilityCheck(endpoint, probe.Target.Url);
         if (!IsProbeCurrent(probe.Generation, probe.Target))
         {
             return null;
+        }
+        if (quiet && result.IsAvailable && Availability.IsAvailable)
+        {
+            AvailabilityCheckedAt = DateTime.Now;
+            return result;
         }
 
         if (_recheckAfterCurrent)

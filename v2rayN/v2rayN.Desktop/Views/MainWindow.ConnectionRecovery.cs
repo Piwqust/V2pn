@@ -221,8 +221,7 @@ public partial class MainWindow
             var country = ServerCountry(current);
             var otherCountries = ReferenceEquals(_offerOtherCountriesFor, origin);
             var all = await ConfigDbQuery.ProfileItems(string.Empty) ?? [];
-            var sameCountry = all.Where(p => p.IndexId != indexId && country.IsNotEmpty()
-                && string.Equals(ServerCountry(p), country, StringComparison.OrdinalIgnoreCase)).ToList();
+            var sameCountry = SameCountry(current, all);
             var elsewhere = all.Where(p => p.IndexId != indexId && current.Subid.IsNotEmpty()
                 && p.Subid == current.Subid && !string.Equals(ServerCountry(p), country, StringComparison.OrdinalIgnoreCase)).ToList();
             var candidates = otherCountries ? elsewhere : sameCountry;
@@ -293,6 +292,108 @@ public partial class MainWindow
         await Task.Run(() => service.RunLoop(ESpeedActionType.Realping, candidates, cancellationToken), cancellationToken);
         return candidates.Where(p => delays.ContainsKey(p.IndexId)).MinBy(p => delays[p.IndexId]);
     }
+
+    /// <summary>The other servers of <paramref name="current"/>'s country, from every subscription.</summary>
+    private static List<ProfileItem> SameCountry(ProfileItem current, List<ProfileItem> all)
+    {
+        var country = ServerCountry(current);
+        return all.Where(p => p.IndexId != current.IndexId && country.IsNotEmpty()
+            && string.Equals(ServerCountry(p), country, StringComparison.OrdinalIgnoreCase)).ToList();
+    }
+
+    #region Switching by itself (V2pnAutoSwitch)
+
+    private readonly V2pnAutoSwitch _autoSwitch = new();
+    private DispatcherTimer? _recheckTimer;
+    private bool _autoSwitching;
+
+    /// <summary>Checks a working connection again every few minutes, quietly, so a server that dies is noticed.</summary>
+    private void StartConnectionRecheck()
+    {
+        if (_recheckTimer != null)
+        {
+            return;
+        }
+        _recheckTimer = new DispatcherTimer { Interval = V2pnAutoSwitch.Recheck };
+        _recheckTimer.Tick += async (_, _) =>
+        {
+            if (ViewModel?.StatusBarViewModel is { } status && V2pnConnectionService.Instance.IsConnected
+                && status.CurrentAvailability.IsAvailable)
+            {
+                await status.TestServerAvailability(quiet: true);
+            }
+        };
+        _recheckTimer.Start();
+    }
+
+    /// <summary>After every check: check a failure once more, then switch to a working server of the same country.</summary>
+    private async Task OnCheckForAutoSwitchAsync()
+    {
+        if (ViewModel?.StatusBarViewModel is not { } status || _autoSwitching)
+        {
+            return;
+        }
+        var check = status.CurrentAvailability;
+        if (check.State is AvailabilityState.Unchecked or AvailabilityState.Checking or AvailabilityState.Unsupported)
+        {
+            return;
+        }
+        var server = _config.IndexId;
+        var action = _autoSwitch.OnResult(V2pnAutoSwitch.Enabled(_config), V2pnConnectionService.Instance.IsConnected, server, check, DateTime.UtcNow);
+        if (action == EV2pnAutoAction.RecheckSoon)
+        {
+            await Task.Delay(V2pnAutoSwitch.Confirm);
+            if (_config.IndexId == server && V2pnConnectionService.Instance.IsConnected)
+            {
+                await status.TestServerAvailability();
+            }
+        }
+        else if (action == EV2pnAutoAction.Search && _replacementSearch == null)
+        {
+            await AutoSwitchAsync(server, check);
+        }
+    }
+
+    private async Task AutoSwitchAsync(string? server, AvailabilityCheckResult origin)
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        var profiles = ViewModel?.ProfilesViewModel;
+        if (status == null || profiles == null || await ConfigDbQuery.GetProfileItem(server) is not { } current)
+        {
+            return;
+        }
+        _autoSwitching = true;
+        try
+        {
+            var all = await ConfigDbQuery.ProfileItems(string.Empty) ?? [];
+            using var search = new CancellationTokenSource(TimeSpan.FromMinutes(2));
+            var best = await ProbeReplacementAsync(SameCountry(current, all), search.Token);
+            _autoSwitch.Searched(DateTime.UtcNow);
+            // The person may have changed the server, disconnected or got the old one back meanwhile.
+            if (best == null || _config.IndexId != server || !V2pnConnectionService.Instance.IsConnected
+                || status.CurrentAvailability.IsAvailable)
+            {
+                return;
+            }
+            Logging.SaveLog($"V2pn: {current.IndexId} stopped answering ({origin.State}); switched to {best.IndexId} in the same country");
+            await profiles.SetDefaultServer(best.IndexId);
+            ShowToast(ToastKind.Info, string.Format(L.AutoSwitched, CountryResolver.ServerName(current), CountryResolver.ServerName(best)));
+        }
+        catch (OperationCanceledException)
+        {
+            // The search took too long; the button stays for the person.
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(AutoSwitchAsync), ex);
+        }
+        finally
+        {
+            _autoSwitching = false;
+        }
+    }
+
+    #endregion Switching by itself (V2pnAutoSwitch)
 
     private static string CountryName(string? code) =>
         WorldMap.Instance.Get(code)?.Name ?? (code.IsNotEmpty() ? code! : L.UnknownServerCountry);

@@ -272,6 +272,19 @@
                                             </Panel>
                                         </Grid>
                                     </Border>
+                                    <!-- V2pn: switching to a working server by itself (V2pnAutoSwitch). -->
+                                    <Border Classes="srow">
+                                        <Grid ColumnDefinitions="Auto,*,Auto">
+                                            <Border Classes="srowicon"><PathIcon Data="{StaticResource SemiIconRefresh}" /></Border>
+                                            <StackPanel Grid.Column="1" Classes="srowtext">
+                                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SetAutoSwitch}" />
+                                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SetAutoSwitchHint}" />
+                                            </StackPanel>
+                                            <Panel Grid.Column="2" VerticalAlignment="Center">
+                                                <ToggleSwitch x:Name="togAutoSwitch" />
+                                            </Panel>
+                                        </Grid>
+                                    </Border>
                                     <!-- V2pn: on a Mac closing the window always leaves the app in the menu bar, as Mac apps do; there is nothing to choose. -->
                                     <Border Classes="srow nonmac">
                                         <Grid ColumnDefinitions="Auto,*,Auto">

@@ -129,6 +129,9 @@ public class UIItem
     // Null means on: new versions download in the background and install at the next start.
     public bool? V2pnAutoUpdate { get; set; }
 
+    /// <summary>V2pn: switch to a working server of the same country by itself (V2pnAutoSwitch); null means on.</summary>
+    public bool? V2pnAutoSwitch { get; set; }
+
     /// <summary>V2pn: tell V2pn's server when an update fails (V2pnUpdateReport); off unless the person turns it on.</summary>
     public bool V2pnReportUpdateFailures { get; set; }
 

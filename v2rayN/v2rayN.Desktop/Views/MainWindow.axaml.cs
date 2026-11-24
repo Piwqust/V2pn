@@ -283,6 +283,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
             BuildViews();
             V2pnConnectionService.Instance.Attach(_config, vm.StatusBarViewModel, this);
             InitConnectionBar();
+            StartConnectionRecheck();
             vm.SubUpdateCmd.IsExecuting
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
                 .Subscribe(busy =>
@@ -320,13 +321,14 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
                 .DisposeWith(disposables);
             this.WhenAnyValue(v => v.ViewModel.StatusBarViewModel.Availability)
                 .ObserveOn(RxSchedulers.MainThreadScheduler)
-                .Subscribe(_ =>
+                .Subscribe(changed =>
                 {
                     RefreshStatePill();
                     if (ViewModel?.StatusBarViewModel.CurrentAvailability.IsAvailable == true)
                     {
                         Remember(_config.IndexId, CurrentState());
                     }
+                    _ = OnCheckForAutoSwitchAsync();
                 })
                 .DisposeWith(disposables);
             // The pill follows the core process itself: restarting after a crash, or switched off after a failure.

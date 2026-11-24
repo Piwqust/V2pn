@@ -202,8 +202,7 @@ public class SubscriptionHandler(
         var ret = await ConfigDbHandler.AddBatchServers(result, id, true);
         if (ret <= 0)
         {
-            Logging.SaveLog("FailedImportSubscription");
-            Logging.SaveLog(result);
+            Logging.SaveLog($"FailedImportSubscription: {V2pnLimits.Body(result)}");
         }
 
         // Update completion message

@@ -60,7 +60,8 @@ public class YamlUtils
         {
             var doc = new YamlDocument(node);
             var stream = new YamlStream(doc);
-            using var writer = new StringWriter();
+            // V2pn: without anchors every alias is written out whole, so "a billion laughs" would fill memory.
+            using var writer = new V2pnYamlLimits.LimitedWriter();
             stream.Save(writer, assignAnchors: false);
             result = writer.ToString();
         }
@@ -79,8 +80,9 @@ public class YamlUtils
             var parser = new Parser(reader);
             var mergingParser = new MergingParser(parser);
             var yamlStream = new YamlStream();
-            yamlStream.Load(mergingParser);
-            using var writer = new StringWriter();
+            // V2pn: merges of merges grow exponentially; a config from a subscription must not take all memory.
+            yamlStream.Load(new V2pnYamlLimits.CountingParser(mergingParser));
+            using var writer = new V2pnYamlLimits.LimitedWriter();
             yamlStream.Save(writer, assignAnchors: false);
 
             return writer.ToString();

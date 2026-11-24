@@ -44,7 +44,20 @@ public class DownloaderHelper : IDisposable
             }
         };
 
-        await using var stream = await downloader.DownloadFileTaskAsync(url, cancellationToken);
+        // V2pn: a subscription larger than V2pnLimits allows is cut off instead of filling memory.
+        using var limit = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        downloader.DownloadProgressChanged += (_, value) =>
+        {
+            if (value.ReceivedBytesSize > V2pnLimits.MaxSubscriptionBytes || value.TotalBytesToReceive > V2pnLimits.MaxSubscriptionBytes)
+            {
+                limit.Cancel();
+            }
+        };
+        await using var stream = await downloader.DownloadFileTaskAsync(url, limit.Token);
+        if (stream.CanSeek && stream.Length > V2pnLimits.MaxSubscriptionBytes)
+        {
+            return null;
+        }
         using StreamReader reader = new(stream);
 
         return await reader.ReadToEndAsync(cancellationToken);

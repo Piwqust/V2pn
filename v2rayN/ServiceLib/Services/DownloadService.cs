@@ -217,7 +217,7 @@ public partial class DownloadService : IDisposable
         }
 
         Error?.Invoke(this, new ErrorEventArgs(new Exception("StatusCode error: " + response.StatusCode)));
-        Logging.SaveLog("StatusCode error: " + url);
+        Logging.SaveLog("StatusCode error: " + V2pnLimits.Url(url));
         return null;
     }
 
@@ -296,7 +296,10 @@ public partial class DownloadService : IDisposable
             timeoutCts.CancelAfter(Global.ProxyFetch);
             using var linkedCts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token);
 
-            return await client.GetStringAsync(url, linkedCts.Token);
+            using var response = await client.GetAsync(url, HttpCompletionOption.ResponseHeadersRead, linkedCts.Token);
+            response.EnsureSuccessStatusCode();
+            return await V2pnLimits.ReadStringAsync(response.Content, V2pnLimits.MaxSubscriptionBytes, linkedCts.Token)
+                   ?? throw new InvalidDataException($"The answer is larger than {V2pnLimits.MaxSubscriptionBytes / (1024 * 1024)} MB.");
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {

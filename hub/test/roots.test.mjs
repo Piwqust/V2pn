@@ -113,13 +113,19 @@ test('root partners keep their ids and domains: new ids skip them, saving on the
 
     // The one with Falcon's id is taken down by a publication at once: kept with its work, out of the index, its page
     // gone (/p/falcon/ is the root partner's address), with the reason for its provider and a line in the audit log.
+    // Sokol, on Falcon's domain under its own id, is taken down too: V2pn leaves it out, and its page would show a
+    // provider's name on V2pn's site to people that provider does not serve.
     assert.deepEqual(lines.filter(l => l.level === 'warn' && l.msg !== clash).map(l => [l.msg, l.partner]),
-      [["a hub partner holds a root partner's id: taken down", 'falcon']]);
+      [["a hub partner holds a root partner's id: taken down", 'falcon'], ["a hub partner holds a root partner's domain: taken down", 'sokol']]);
+    const sokolNow = (await sokol.c.get('/api/partner')).data.partner;
+    assert.deepEqual([sokolNow.state, sokolNow.downReason],
+      ['down', 'Домен подписки принадлежит партнёру Falcon, которого V2pn подписал сам. Напишите модераторам V2pn.']);
+    assert.equal(hub.auditLog().find(a => a.action === 'partner.down' && a.target === 'sokol').detail.root, 'falcon');
     const falcon = (await early.c.get('/api/partner')).data.partner;
     assert.deepEqual([falcon.id, falcon.state, falcon.downReason],
       ['falcon', 'down', 'Id «falcon» принадлежит партнёру Falcon, которого V2pn подписал сам. Напишите модераторам V2pn.']);
     const index = JSON.parse(fs.readFileSync(path.join(env.config.publicDir, 'partners', 'latest', 'download', 'partner-index.json')));
-    assert.deepEqual(index.partners.map(p => p.id), ['configra', 'sokol']);
+    assert.deepEqual(index.partners.map(p => p.id), ['configra']);
     assert.ok(!fs.existsSync(path.join(pages, 'falcon')));
     assert.ok(fs.existsSync(path.join(pages, 'configra', 'index.html')), 'the imported Configra (source import) is not touched');
     const entry = hub.auditLog().find(a => a.action === 'partner.down' && a.target === 'falcon');
@@ -142,9 +148,10 @@ test('root partners keep their ids and domains: new ids skip them, saving on the
     assert.equal((await rival.c.get('/api/partner')).data.partner, null);
     const check = await rival.c.post('/api/partner/check', { subscription: `http://kestrel.test:${sub.port}/s/x` });
     assert.deepEqual([check.data.check.ok, check.data.domain, check.data.taken], [true, 'kestrel.test', true]);
-    // The partner already on it cannot save it again; the imported Configra keeps its own domains.
+    // The partner already on it (taken down) cannot save it again; the imported Configra keeps its own domains.
     const again = await sokol.c.put('/api/partner', { name: 'Sokol', brand: ['#2F6BFF'] });
     assert.equal(again.data.error.code, 'domain_taken');
+    assert.throws(() => hub.restore('sokol', 'owner'), e => e.code === 'domain_taken', 'nor can a moderator bring it back on that domain');
     assert.equal(hub.domainOwner(['angleford.co'], 'configra'), null);
     assert.equal(hub.domainOwner(['vpn.angleford.co'], 'sokol').id, 'configra');
 

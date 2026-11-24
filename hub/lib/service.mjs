@@ -232,15 +232,26 @@ export class Hub {
    * of the index and removes its page, for /p/<id>/ is the root partner's address.
    */
   takeDownRootIds() {
-    for (const p of this.db.all("SELECT id, source FROM partners WHERE state != 'down' ORDER BY id")) {
-      if (!this.holdsRootId(p)) continue;
-      const reason = `Id «${p.id}» принадлежит партнёру ${this.roots.get(p.id).name}, которого V2pn подписал сам. Напишите модераторам V2pn.`;
+    for (const p of this.db.all("SELECT id, source, domains FROM partners WHERE state != 'down' ORDER BY id")) {
+      const byId = this.holdsRootId(p);
+      // Under another id on a root partner's domain: V2pn leaves it out (V2pnPartnerIndex.Merge), and its page would
+      // show a provider's name on V2pn's site to people that provider does not serve.
+      const owner = byId ? null : this.rootDomainOwner(p);
+      if (!byId && !owner) continue;
+      const reason = byId
+        ? `Id «${p.id}» принадлежит партнёру ${this.roots.get(p.id).name}, которого V2pn подписал сам. Напишите модераторам V2pn.`
+        : `Домен подписки принадлежит партнёру ${owner.name}, которого V2pn подписал сам. Напишите модераторам V2pn.`;
       this.db.tx(() => {
         this.db.run("UPDATE partners SET state = 'down', down_reason = ?, updated_at = ? WHERE id = ?", reason, nowIso(), p.id);
-        this.db.audit('system', 'partner.down', p.id, { reason, root: p.id });
+        this.db.audit('system', 'partner.down', p.id, { reason, root: byId ? p.id : owner.id });
       });
-      log.warn('a hub partner holds a root partner\'s id: taken down', { partner: p.id });
+      log.warn(byId ? 'a hub partner holds a root partner\'s id: taken down' : 'a hub partner holds a root partner\'s domain: taken down', { partner: p.id });
     }
+  }
+
+  /** The root-signed partner whose domain the hub partner <p> claims under another id, or null; an imported one claims nothing. */
+  rootDomainOwner(p) {
+    return p.source === 'import' ? null : this.roots.owner(parseJson(p.domains, []), p.id);
   }
 
   /**
@@ -251,7 +262,9 @@ export class Hub {
     const ok = await this.roots.refresh();
     if (ok) {
       this.rootCollisions();
-      if (this.db.all("SELECT id, source FROM partners WHERE state != 'down'").some(p => this.holdsRootId(p))) this.publishSafely('system');
+      if (this.db.all("SELECT id, source, domains FROM partners WHERE state != 'down'").some(p => this.holdsRootId(p) || this.rootDomainOwner(p))) {
+        this.publishSafely('system');
+      }
     }
     return ok;
   }

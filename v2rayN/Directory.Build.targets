@@ -109,4 +109,9 @@
     <AssemblyMetadata Include="V2pnPartnerKeys" Value="$(V2pnPartnerKeys)" />
     <AssemblyMetadata Include="V2pnPartnerSources" Value="$(V2pnPartnerSources)" />
   </ItemGroup>
+
+  <!-- AmazTool checks the package against the signed manifest itself, with the same release keys. -->
+  <ItemGroup Condition="'$(MSBuildProjectName)' == 'AmazTool'">
+    <AssemblyMetadata Include="V2pnUpdateKeys" Value="$(V2pnUpdateKeys)" />
+  </ItemGroup>
 </Project>

@@ -35,7 +35,15 @@ internal static class InstallFlow
         WaitForApp(appPid);
         try
         {
-            installer.Stage(zip);
+            // Held open with writing shut out from the check to the end of unpacking: what is checked is what is installed.
+            using (var package = new FileStream(zip, FileMode.Open, FileAccess.Read, FileShare.Read))
+            {
+                if (PackageCheck.Verify(package, zip, version, PackageCheck.Keys) is { } refused)
+                {
+                    throw new InvalidDataException(refused);
+                }
+                installer.Stage(package);
+            }
             installer.Swap();
         }
         catch (Exception ex)

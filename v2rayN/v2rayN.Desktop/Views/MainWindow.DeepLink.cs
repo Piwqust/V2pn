@@ -90,7 +90,8 @@ public partial class MainWindow
                           ?? V2pnPartners.Instance.ListingForLink(link.Partner, link.SubscriptionUrl);
             var body = partner != null ? string.Format(L.LinkAddBodyPartner, partner.Name) : L.LinkAddBody;
             // A subscription over plain http can be read and changed on the way: the person decides knowing it.
-            if (link.SubscriptionUrl.StartsWith(Global.HttpProtocol, StringComparison.OrdinalIgnoreCase))
+            if (link.SubscriptionUrl.StartsWith(Global.HttpProtocol, StringComparison.OrdinalIgnoreCase)
+                && Utils.TryUri(link.SubscriptionUrl) is not { IsLoopback: true })
             {
                 body += "\n\n" + L.LinkAddPlainHttp;
             }

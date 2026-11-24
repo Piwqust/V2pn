@@ -20,6 +20,13 @@ public sealed class DiagnosticsView : UserControl
         close.Bind(ThemeProperty, close.GetResourceObservable("V2Button"));
         close.Click += (_, _) => DialogHost.Close(null);
 
+        // A bug report on GitHub with this very text in its log field: nothing is sent until the person presses
+        // Submit there, and they see the text first.
+        var report_ = new Button { Classes = { "ghost" }, Content = L.DiagReport };
+        report_.Bind(ThemeProperty, report_.GetResourceObservable("V2Button"));
+        ToolTip.SetTip(report_, L.DiagReportTip);
+        report_.Click += (_, _) => ProcUtils.ProcessStart(V2pnInfo.BugReportUrl(report));
+
         var copied = new TextBlock { Classes = { "srowhint" }, VerticalAlignment = VerticalAlignment.Center, IsVisible = false, Text = L.DiagCopied };
         AutomationProperties.SetLiveSetting(copied, AutomationLiveSetting.Polite);
         var copy = new Button { Classes = { "accent" }, Content = L.DiagCopy };
@@ -56,7 +63,7 @@ public sealed class DiagnosticsView : UserControl
                     Orientation = Orientation.Horizontal,
                     Spacing = 8,
                     HorizontalAlignment = HorizontalAlignment.Right,
-                    Children = { copied, close, copy },
+                    Children = { copied, report_, close, copy },
                 },
             },
         };

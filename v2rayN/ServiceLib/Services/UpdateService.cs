@@ -156,7 +156,14 @@ public partial class UpdateService(DownloadService downloadService, Config confi
         requests.AddRange(await GetSrsFileAllRequest());
         // NOTE: srs files are more small, so we reverse the order to ensure a good download experience for the user.
         requests.Reverse();
+        // V2pn: runetfreedom's lists are checked against the publisher's SHA-256 and fetched from mirrors when the
+        // release does not give them (V2pnGeoMirror).
+        var mirror = await V2pnGeoMirror.BeginAsync(_config, cancellationToken);
         await DownloadGeoFiles(requests, cancellationToken);
+        if (mirror != null)
+        {
+            await mirror.FillGapsAsync(UpdateFunc, cancellationToken);
+        }
         await UpdateFunc(true, string.Format(ResUI.MsgDownloadGeoFileSuccessfully, "geo"));
     }
 
@@ -566,6 +573,12 @@ public partial class UpdateService(DownloadService downloadService, Config confi
                         //    //await    UpdateFunc(true, "");
                         //}
                         var tmpFileName = tmpFilePathDict[request.FilePath];
+                        // V2pn: a rule list that does not match the publisher's hash does not replace the one in use.
+                        if (V2pnGeoMirror.Current?.Accept(request.DisplayFileName, tmpFileName) == false)
+                        {
+                            File.Delete(tmpFileName);
+                            continue;
+                        }
                         if (File.Exists(tmpFileName))
                         {
                             File.Copy(tmpFileName, request.FilePath, true);

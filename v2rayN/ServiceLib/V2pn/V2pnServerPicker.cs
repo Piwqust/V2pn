@@ -17,13 +17,25 @@ public static class V2pnServerPicker
     public const int MaxRecent = 8;
 
     /// <summary>
-    /// The quickest server by the last results. With statistics on, a server that failed most of its tests is passed
-    /// over even when its last answer was quick (<paramref name="unreliable"/>); when every answering server is so, the
-    /// quickest of them still counts.
+    /// Results this much older than the newest one do not compete with it: a quick recheck of a couple of dozen servers
+    /// would otherwise lose to a server whose quick answer came hours ago, on another network.
     /// </summary>
-    public static T? PickFastest<T>(IEnumerable<T> items, Func<T, int> delay, Func<T, bool> unreliable) where T : class
+    public static readonly TimeSpan FreshWindow = TimeSpan.FromMinutes(30);
+
+    /// <summary>
+    /// The quickest server by the last results. A server that failed most of its checks is passed over even when its
+    /// last answer was quick (<paramref name="unreliable"/>); when every answering server is so, the quickest of them
+    /// still counts. With <paramref name="measuredAt"/>, only results within <see cref="FreshWindow"/> of the newest
+    /// answer compete; a result with no time counts as old, and when no answer has a time all of them compete.
+    /// </summary>
+    public static T? PickFastest<T>(IEnumerable<T> items, Func<T, int> delay, Func<T, bool> unreliable,
+        Func<T, DateTime?>? measuredAt = null) where T : class
     {
         var answered = items.Where(m => delay(m) > 0).ToList();
+        if (measuredAt != null && answered.Select(measuredAt).Max() is { } newest)
+        {
+            answered = answered.Where(m => measuredAt(m) is { } at && newest - at <= FreshWindow).ToList();
+        }
         return answered.Where(m => !unreliable(m)).MinBy(delay) ?? answered.MinBy(delay);
     }
 

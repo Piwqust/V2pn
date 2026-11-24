@@ -648,14 +648,16 @@ public sealed partial class SidebarViewModel : ReactiveObject
     }
 
     /// <summary>
-    /// The quickest server by the last results. With statistics on, a server that failed most of its
-    /// tests is passed over even when its last answer was quick: it is likely to drop again.
+    /// The quickest server by the last results that are fresh (see <see cref="V2pnServerPicker.FreshWindow"/>). A server
+    /// that failed most of its checks is passed over even when its last answer was quick: it is likely to drop again.
     /// </summary>
     public static ProfileItemModel? PickFastest(IEnumerable<ProfileItemModel> items) =>
-        V2pnServerPicker.PickFastest(items, m => m.Delay, Unreliable);
+        V2pnServerPicker.PickFastest(items, m => m.Delay, Unreliable, m => V2pnDelayHistory.Instance.MeasuredAt(m.IndexId));
 
+    // V2pn's own last ten checks are kept with statistics off too; the statistics count every check since they were turned on.
     private static bool Unreliable(ProfileItemModel m) =>
-        StatsEnabled && ServerUsageManager.Instance.Get(m.IndexId) is { Tests: >= 4 } u && u.AnswerRate < 0.5;
+        V2pnDelayHistory.Flaky(V2pnDelayHistory.Instance.Get(m.IndexId))
+        || (StatsEnabled && ServerUsageManager.Instance.Get(m.IndexId) is { Tests: >= 4 } u && u.AnswerRate < 0.5);
 
     /// <summary>The last ping run is older than this: "fastest" tests its candidates again before connecting.</summary>
     public static readonly TimeSpan FastestFresh = TimeSpan.FromMinutes(30);

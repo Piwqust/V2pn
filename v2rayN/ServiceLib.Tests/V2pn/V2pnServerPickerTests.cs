@@ -22,6 +22,27 @@ public class V2pnServerPickerTests
     }
 
     [Test]
+    public async Task Fastest_TakesOnlyResultsNearTheNewest()
+    {
+        var now = new DateTime(2026, 11, 24, 12, 0, 0, DateTimeKind.Utc);
+        var at = new Dictionary<string, DateTime?>
+        {
+            ["old-quick"] = now.AddHours(-3),
+            ["fresh"] = now,
+            ["fresh-earlier"] = now.AddMinutes(-20),
+            ["no-time"] = null,
+        };
+        var servers = new S[] { new("old-quick", 15), new("fresh", 80), new("fresh-earlier", 70), new("no-time", 10) };
+
+        var picked = V2pnServerPicker.PickFastest(servers, s => s.Delay, s => s.Flaky, s => at[s.Id]);
+        await picked!.Id.Should().BeEqualTo("fresh-earlier");
+
+        // Results kept by an older V2pn have no time: then all of them compete, as before.
+        var legacy = V2pnServerPicker.PickFastest(servers, s => s.Delay, s => s.Flaky, _ => null);
+        await legacy!.Id.Should().BeEqualTo("no-time");
+    }
+
+    [Test]
     public async Task Candidates_AreTheQuickest_ThenFavorites_ThenRecent_EachOnce_AtMost24()
     {
         var all = Enumerable.Range(1, 40).Select(i => new S($"s{i}", i * 10)).ToList();

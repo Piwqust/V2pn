@@ -378,6 +378,47 @@ public class V2pnPartnerCatalogTests
     }
 
     [Test]
+    public async Task DelayHistory_KeepsWhenTheLastResultCame_AndOldFilesStillRead()
+    {
+        var file = Path.Combine(Path.GetTempPath(), "v2pn-delays-" + Guid.NewGuid().ToString("N") + ".json");
+        try
+        {
+            // A file from V2pn 1.4: histories only, no times.
+            await File.WriteAllTextAsync(file, """{"a":[50,60],"b":[-1]}""");
+            var old = new V2pnDelayHistory(() => file);
+            await old.Get("a").Count.Should().BeEqualTo(2);
+            await (old.MeasuredAt("a") == null).Should().BeTrue();
+
+            var at = new DateTime(2026, 11, 24, 9, 30, 0, DateTimeKind.Utc);
+            old.Record("a", 40, at);
+            old.Record("c", -1, at.AddMinutes(5));
+            old.Save();
+
+            var again = new V2pnDelayHistory(() => file);
+            await again.MeasuredAt("a").Should().BeEqualTo(at);
+            await again.MeasuredAt("c").Should().BeEqualTo(at.AddMinutes(5));
+            await (again.MeasuredAt("b") == null).Should().BeTrue();
+            await (again.Get("@at").Count == 0).Should().BeTrue();
+
+            again.Retain(["c"]);
+            await (new V2pnDelayHistory(() => file).MeasuredAt("a") == null).Should().BeTrue();
+        }
+        finally
+        {
+            File.Delete(file);
+        }
+    }
+
+    [Test]
+    public async Task DelayHistory_FlakyIsFewerThanHalfOfFourOrMore()
+    {
+        await V2pnDelayHistory.Flaky([30, -1, -1, -1]).Should().BeTrue();
+        await V2pnDelayHistory.Flaky([30, 40, -1, -1]).Should().BeFalse();
+        await V2pnDelayHistory.Flaky([-1, -1, 30]).Should().BeFalse();
+        await V2pnDelayHistory.Flaky([]).Should().BeFalse();
+    }
+
+    [Test]
     public async Task Cooldown_HoldsEachButtonForThreeSeconds()
     {
         var cooldown = new V2pnActionCooldown(V2pnActionCooldown.Default);

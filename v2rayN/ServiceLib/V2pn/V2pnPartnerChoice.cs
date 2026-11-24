@@ -146,17 +146,22 @@ public static class V2pnPartnerChoice
 }
 
 /// <summary>
-/// The last delay results of each server (V2pn's own checks, 0 or less for no answer), kept between starts in
-/// guiConfigs/v2pn-delays.json for the "stable" strategy. Only numbers by server id; nothing leaves the computer.
+/// The last delay results of each server (V2pn's own checks, 0 or less for no answer) and when the last one came, kept
+/// between starts in guiConfigs/v2pn-delays.json for the "stable" strategy and for "Fastest", which takes only fresh
+/// results. Only numbers by server id; nothing leaves the computer.
 /// </summary>
 public sealed class V2pnDelayHistory
 {
     public const int Keep = 10;
+
+    /// <summary>The file's key for the times of the last results; an array per server id would be read as a history.</summary>
+    private const string TimesKey = "@at";
     private static readonly Lazy<V2pnDelayHistory> _instance = new(() => new V2pnDelayHistory(() => Utils.GetConfigPath("v2pn-delays.json")));
     public static V2pnDelayHistory Instance => _instance.Value;
 
     private readonly Func<string> _file;
     private readonly Dictionary<string, List<int>> _history = new(StringComparer.Ordinal);
+    private readonly Dictionary<string, long> _at = new(StringComparer.Ordinal);
     private bool _loaded;
     private bool _saveQueued;
 
@@ -166,7 +171,7 @@ public sealed class V2pnDelayHistory
     }
 
     /// <summary>Adds a result; the oldest beyond <see cref="Keep"/> goes. Saved a few seconds later, once for a whole run.</summary>
-    public void Record(string? indexId, int delay)
+    public void Record(string? indexId, int delay, DateTime? now = null)
     {
         if (indexId.IsNullOrEmpty())
         {
@@ -180,6 +185,7 @@ public sealed class V2pnDelayHistory
                 _history[indexId!] = list = [];
             }
             list.Add(delay > 0 ? delay : -1);
+            _at[indexId!] = new DateTimeOffset(now ?? DateTime.UtcNow).ToUnixTimeSeconds();
             if (list.Count > Keep)
             {
                 list.RemoveRange(0, list.Count - Keep);
@@ -202,6 +208,22 @@ public sealed class V2pnDelayHistory
         }
     }
 
+    /// <summary>When the server's last result came (UTC); null before its first one, or for results kept by V2pn 1.4 and older.</summary>
+    public DateTime? MeasuredAt(string? indexId)
+    {
+        lock (_history)
+        {
+            Load();
+            return indexId != null && _at.TryGetValue(indexId, out var at) ? DateTimeOffset.FromUnixTimeSeconds(at).UtcDateTime : null;
+        }
+    }
+
+    /// <summary>
+    /// A server that answered fewer than half of its last checks, at least four of them: likely to drop again even when
+    /// its last answer was quick.
+    /// </summary>
+    public static bool Flaky(IReadOnlyList<int> history) => history.Count >= 4 && history.Count(d => d > 0) * 2 < history.Count;
+
     /// <summary>Drops the servers that are gone (by the ids still there), so the file does not grow forever.</summary>
     public void Retain(IEnumerable<string> indexIds)
     {
@@ -212,6 +234,10 @@ public sealed class V2pnDelayHistory
             foreach (var id in _history.Keys.Where(id => !keep.Contains(id)).ToList())
             {
                 _history.Remove(id);
+            }
+            foreach (var id in _at.Keys.Where(id => !keep.Contains(id)).ToList())
+            {
+                _at.Remove(id);
             }
         }
         Save();
@@ -228,6 +254,12 @@ public sealed class V2pnDelayHistory
             {
                 root[id] = new JsonArray(list.Select(d => (JsonNode)JsonValue.Create(d)).ToArray());
             }
+            var times = new JsonObject();
+            foreach (var (id, at) in _at)
+            {
+                times[id] = at;
+            }
+            root[TimesKey] = times;
             text = root.ToJsonString();
         }
         try
@@ -259,6 +291,16 @@ public sealed class V2pnDelayHistory
                 if (node is JsonArray array)
                 {
                     _history[id] = array.Select(n => n is JsonValue v && v.TryGetValue<int>(out var d) ? d : -1).TakeLast(Keep).ToList();
+                }
+                else if (id == TimesKey && node is JsonObject times)
+                {
+                    foreach (var (server, at) in times)
+                    {
+                        if (at is JsonValue v && v.TryGetValue<long>(out var seconds))
+                        {
+                            _at[server] = seconds;
+                        }
+                    }
                 }
             }
         }

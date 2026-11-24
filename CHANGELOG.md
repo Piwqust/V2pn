@@ -50,7 +50,7 @@ V2pn moves to a working server by itself when the one you use stops answering, a
 - Global hotkeys go through Connect and Disconnect: no system proxy over the tunnel in VPN mode, and "clear" disconnects there too.
 - Settings are saved even when the window changes them at that moment.
 - Two `v2pn://` links clicked quickly both reach V2pn; a link that comes while V2pn asks about another waits its turn.
-- "Fastest server" no longer picks from a ping run that was stopped half way.
+- "Fastest server" no longer picks from a ping run that was stopped half way, and compares only results from the same half hour: a server whose quick answer came hours ago, maybe on another network, no longer wins over the ones just tested. A server that answered fewer than half of its last checks is passed over with statistics off too.
 - An update on a Mac no longer fails for good when a core file is gone right after unpacking: the installed core is kept instead.
 - An error nothing else caught is said on screen instead of only in the log.
 - Diagnostics: "Report on GitHub…" opens a bug report with the diagnostics already in it; nothing is sent until you submit it.

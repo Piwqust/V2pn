@@ -171,6 +171,29 @@ public class V2pnControlChannelTests
     }
 
     [Test]
+    public async Task TheLanguageCrossesTheChannel_AndNotRunningIsSaidInItToo()
+    {
+        var endpoint = TestEndpoint();
+        var (server, _, app) = Serve(endpoint);
+        using (server)
+        {
+            var link = new V2pnControlLink(endpoint, () => false);
+
+            var ru = await link.CallAsync("disconnect", new JsonObject(), V2pnControlProtocol.SourceCli, V2pnControlText.Russian);
+            var en = await link.CallAsync("connect", new JsonObject(), V2pnControlProtocol.SourceCli);
+
+            await V2pnControlJson.String(ru.Data?["message"]).Should().BeEqualTo("Отключено.");
+            await V2pnControlJson.String(en.Data?["message"]).Should().BeEqualTo("Connecting.");
+            await app.AskedIn.Should().BeEqualTo(V2pnControlText.English);
+        }
+
+        var nowhere = new V2pnControlLink(TestEndpoint(), () => false) { Folder = "C:\\nowhere" };
+        var notRunning = await nowhere.CallAsync("status", new JsonObject(), V2pnControlProtocol.SourceCli, V2pnControlText.Russian);
+        await notRunning.ErrorCode.Should().BeEqualTo(V2pnControlProtocol.ErrNotRunning);
+        await notRunning.ErrorMessage.Should().BeEqualTo("V2pn не запущен, и в папке C:\\nowhere нет V2pn, чтобы его запустить.");
+    }
+
+    [Test]
     public async Task ALineTooLong_IsNotRead()
     {
         using var stream = new MemoryStream(Encoding.UTF8.GetBytes(new string('x', 100_000) + "\n"));

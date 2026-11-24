@@ -13,7 +13,8 @@
 //             refuses private addresses and plain http, so here (and only here) names under .test resolve to
 //             127.0.0.1 and http is allowed. The test link is printed at start.
 // --configra  imports ../partners/configra as a live partner with its account right approved (login: configra).
-// --downloads fills the download counters of the last 30 days with made-up numbers for the moderators' chart.
+// --downloads fills the download and update-check counters of the last 30 days with made-up numbers for the
+//             moderators' charts.
 import fs from 'node:fs';
 import http from 'node:http';
 import net from 'node:net';
@@ -136,6 +137,13 @@ if (opt('downloads', false)) {
     for (const [name, base] of Object.entries(names)) {
       const n = Math.round(base * wave * (0.6 + rand() * 0.8));
       if (n > 0) hub.db.run('INSERT INTO downloads (day, name, count) VALUES (?, ?, ?) ON CONFLICT (day, name) DO UPDATE SET count = excluded.count', day, name, n);
+    }
+    // Update checks: 1.4.0 came out ten days ago and takes over from 1.3.2; a few stay on older versions.
+    const share = Math.min(1, Math.max(0, (11 - d) / 8));
+    const versions = { '1.4.0': 420 * share, '1.3.2': 400 * (1 - share) + 25, '1.3.0': 30, '1.2.2': 12, '1.4.1-local': d % 4 ? 0 : 2 };
+    for (const [version, base] of Object.entries(versions)) {
+      const n = Math.round(base * (0.9 + 0.01 * (29 - d)) * (0.85 + rand() * 0.3));
+      if (n > 0) hub.db.run('INSERT INTO checks (day, version, count) VALUES (?, ?, ?) ON CONFLICT (day, version) DO UPDATE SET count = excluded.count', day, version, n);
     }
   }
 }

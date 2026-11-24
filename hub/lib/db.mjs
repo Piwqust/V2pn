@@ -269,6 +269,15 @@ const MIGRATIONS = [
   `,
   // 2: the simple partner path (hub/README.md).
   migrateToV2,
+  // 3: V2pn's requests for the update manifest, by day and the version that asked.
+  `
+  CREATE TABLE checks (
+    day TEXT NOT NULL,
+    version TEXT NOT NULL,
+    count INTEGER NOT NULL,
+    PRIMARY KEY (day, version)
+  );
+  `,
 ];
 
 export class Db {

@@ -87,7 +87,7 @@ signs with the root key.
 
 **Moderation** (`/api/mod/*`, owner and moderators): every partner newest first with its login, domains, state,
 complaints and the rights waiting; take down (with a reason) and restore; approve or deny rights; complaints and
-clearing them; password resets; the audit log of every decision; downloads by day; publish now. The owner alone lists,
+clearing them; password resets; the audit log of every decision; downloads and update checks by day; publish now. The owner alone lists,
 adds and removes moderators. A login not taken yet becomes a new moderator account with a password shown once.
 
 **Complaints.** `POST /api/complaints {partner, text?}` without signing in, from the «Пожаловаться» form on the
@@ -113,6 +113,13 @@ A partner taken down drops out of the index (V2pn prunes it) and its page says i
 answers 302 to `https://github.com/<repo>/releases/latest/download/<asset>` and is counted per day and name (no IP, no
 cookie). `GET /releases/latest/download/<file>` and `/releases/download/v<version>/<file>` answer 302 to the same paths
 on GitHub, for release file names only, so the hub can be V2pn's first update source without storing anything.
+
+**Update checks.** A running V2pn asks for `/releases/latest/download/release.json` shortly after its start and every
+six hours after, naming itself `V2pn/<version>` in the User-Agent. Each such request is counted per day and version (no
+IP, no cookie, no id of the copy): the moderators' chart of how many copies are in use and on which versions. These are
+requests, not people: one computer gives one to four or more a day. A local build counts as `<version>-local`; any
+other User-Agent is redirected and not counted; a day keeps 40 versions, the rest add up as `other`. A check that
+falls back to GitHub (the hub did not answer) is not seen.
 
 **Health.** `GET /api/health`.
 
@@ -152,7 +159,7 @@ provider's id as its login, any other account keeps its email as the login; nobo
 | `GET /api/mod/partners/<id>/complaints` · `POST …/complaints/clear` | moderator | |
 | `POST /api/mod/accounts/<login>/password` | moderator (providers), owner (moderators too) | `{login, password}` |
 | `GET /api/mod/pictures/<sha256>` | moderator | the PNG |
-| `GET /api/mod/audit[?limit=]` · `/downloads[?days=]` · `POST /api/mod/publish` | moderator | |
+| `GET /api/mod/audit[?limit=]` · `/downloads[?days=]` · `POST /api/mod/publish` | moderator | `downloads` answers `{downloads, checks}` |
 | `GET /api/mod/moderators` · `POST /api/mod/moderators` · `POST /api/mod/moderators/<login>/remove` | owner | `{login}` → `{moderator: {login, role, password \| null}}` |
 | `GET /r/<name>`, `GET /releases/...` | anyone | 302 to GitHub |
 

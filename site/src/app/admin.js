@@ -328,7 +328,8 @@ $('#mod-form').addEventListener('submit', async e => {
   });
 });
 
-// ---------------------------------------------------------------- downloads: stacked bars by day, three groups
+// ---------------------------------------------------------------- downloads and update checks: stacked bars by day,
+// three groups each (the chart's three colours)
 
 const GROUPS = [
   { key: 'win', name: 'Windows', names: ['windows-x64', 'windows-arm64', 'windows-x64-zip', 'windows-arm64-zip'] },
@@ -336,15 +337,32 @@ const GROUPS = [
   { key: 'cmd', name: 'Командой', names: ['install.ps1', 'install.sh'] },
 ];
 
-function chartHtml(stats, nDays) {
+const versionName = v => (v === 'other' ? 'прочие' : v);
+// Newest first: by the numbers, a build of the same numbers with a suffix after the release.
+function newerFirst(a, b) {
+  const pa = a.split('-')[0].split('.').map(Number), pb = b.split('-')[0].split('.').map(Number);
+  for (let i = 0; i < 3; i++) if ((pb[i] || 0) !== (pa[i] || 0)) return (pb[i] || 0) - (pa[i] || 0);
+  return a.length - b.length || a.localeCompare(b);
+}
+
+/** The two versions that asked most, then every other one together. */
+function versionGroups(totals) {
+  const top = Object.entries(totals).filter(([v]) => v !== 'other').sort((a, b) => b[1] - a[1]).slice(0, 2).map(([v]) => v).sort(newerFirst);
+  const groups = top.map((v, i) => ({ key: i ? 'mac' : 'win', name: v, names: [v] }));
+  if (Object.keys(totals).length > top.length) groups.push({ key: 'cmd', name: 'Остальные', rest: true });
+  return groups;
+}
+
+/** <rows> = [{day, name, count}], <groups> = [{key, name, names | rest}], <table> = the rows under the chart. */
+function chartHtml(rows, nDays, groups, { title, tableTitle, table }) {
   const dayList = [];
   for (let i = nDays - 1; i >= 0; i--) dayList.push(new Date(Date.now() - i * 86400000).toISOString().slice(0, 10));
-  const by = Object.fromEntries(dayList.map(d => [d, { win: 0, mac: 0, cmd: 0 }]));
-  for (const r of stats.days) {
-    const g = GROUPS.find(x => x.names.includes(r.name));
+  const by = Object.fromEntries(dayList.map(d => [d, Object.fromEntries(groups.map(g => [g.key, 0]))]));
+  for (const r of rows) {
+    const g = groups.find(x => x.names && x.names.includes(r.name)) || groups.find(x => x.rest);
     if (g && by[r.day]) by[r.day][g.key] += r.count;
   }
-  const totals = dayList.map(d => GROUPS.reduce((s, g) => s + by[d][g.key], 0));
+  const totals = dayList.map(d => groups.reduce((s, g) => s + by[d][g.key], 0));
   const max = Math.max(1, ...totals);
   const step = max <= 5 ? 1 : 10 ** Math.floor(Math.log10(max / 4));
   const tick = [1, 2, 5, 10].map(m => m * step).find(t => max / t <= 5) || step * 10;
@@ -359,7 +377,7 @@ function chartHtml(stats, nDays) {
     const x = L + i * bw + gap / 2;
     const w = Math.max(1, bw - gap);
     let acc = 0;
-    const segs = GROUPS.map(g => ({ g, v: by[d][g.key] })).filter(s => s.v > 0);
+    const segs = groups.map(g => ({ g, v: by[d][g.key] })).filter(s => s.v > 0);
     segs.forEach((s, j) => {
       const y0 = y(acc), y1 = y(acc + s.v);
       acc += s.v;
@@ -369,51 +387,70 @@ function chartHtml(stats, nDays) {
       const path = r ? `M${x},${y1 + h} V${y1 + r} Q${x},${y1} ${x + r},${y1} H${x + w - r} Q${x + w},${y1} ${x + w},${y1 + r} V${y1 + h} Z` : `M${x},${y1} h${w} v${h} h${-w} Z`;
       svg += `<path d="${path}" fill="var(--dl-${s.g.key})"/>`;
     });
-    const label = `${date(d, { year: false })}: всего ${totals[i]} — ${GROUPS.map(g => `${g.name} ${by[d][g.key]}`).join(', ')}`;
+    const label = `${date(d, { year: false })}: всего ${totals[i]} — ${groups.map(g => `${g.name} ${by[d][g.key]}`).join(', ')}`;
     svg += `<rect class="bar" x="${L + i * bw}" y="${T}" width="${bw}" height="${H - T - B}" fill="transparent" tabindex="0" role="img" aria-label="${esc(label)}" data-i="${i}"/>`;
     if (i % Math.ceil(dayList.length / 6) === 0 || i === dayList.length - 1) svg += `<text class="axis-label" x="${L + i * bw + bw / 2}" y="${H - 6}" text-anchor="middle">${esc(date(d, { year: false }).replace(/ (\S{3})\S*/, ' $1'))}</text>`;
   });
   const sum = g => dayList.reduce((s, d) => s + by[d][g.key], 0);
   const all = totals.reduce((a, b) => a + b, 0);
   return {
-    by, dayList, totals,
+    by, dayList, totals, groups: groups,
     html: `<div class="chart" style="position: relative">
-      <ul class="legend">${GROUPS.map(g => `<li><i style="background: var(--dl-${g.key})"></i>${g.name} <b>${sum(g)}</b></li>`).join('')}<li>Всего <b>${all}</b></li></ul>
-      <svg viewBox="0 0 ${W} ${H}" role="group" aria-label="Скачивания по дням за ${nDays} дней">${svg}</svg>
+      <ul class="legend">${groups.map(g => `<li><i style="background: var(--dl-${g.key})"></i>${esc(g.name)} <b>${sum(g)}</b></li>`).join('')}<li>Всего <b>${all}</b></li></ul>
+      <svg viewBox="0 0 ${W} ${H}" role="group" aria-label="${esc(title)} по дням за ${nDays} дней">${svg}</svg>
       <div class="tip" hidden></div>
-      <details><summary class="hint" style="cursor: pointer">Таблица по платформам</summary>
-        <table class="tbl" style="margin-top: 12px"><thead><tr><th>Файл</th><th class="num">Скачиваний</th></tr></thead><tbody>
-        ${Object.entries(stats.totals).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<tr><td><code>/r/${esc(k)}</code></td><td class="num">${v}</td></tr>`).join('') || '<tr><td colspan="2">Пока ни одного</td></tr>'}
+      <details><summary class="hint" style="cursor: pointer">${esc(tableTitle)}</summary>
+        <table class="tbl" style="margin-top: 12px"><thead><tr><th>${esc(table.head[0])}</th><th class="num">${esc(table.head[1])}</th></tr></thead><tbody>
+        ${table.rows.map(([k, v]) => `<tr><td>${k}</td><td class="num">${v}</td></tr>`).join('') || '<tr><td colspan="2">Пока ни одного</td></tr>'}
         </tbody></table></details></div>`,
   };
 }
 
+/** Puts a chart into <box> and shows a day's numbers over its bar on hover and focus. */
+function mountChart(box, c) {
+  box.innerHTML = c.html;
+  const tip = $('.tip', box);
+  const chart = $('.chart', box);
+  const show = rect => {
+    const i = Number(rect.dataset.i);
+    const d = c.dayList[i];
+    tip.innerHTML = `<b>${esc(date(d, { year: false }))}</b> · ${c.totals[i]}<br>${c.groups.map(g => `${esc(g.name)}: ${c.by[d][g.key]}`).join('<br>')}`;
+    tip.hidden = false;
+    const r = rect.getBoundingClientRect(), base = chart.getBoundingClientRect();
+    const left = Math.min(Math.max(0, r.left - base.left + r.width / 2 - tip.offsetWidth / 2), base.width - tip.offsetWidth);
+    tip.style.left = `${left}px`;
+    tip.style.top = `${r.top - base.top + 4}px`;
+  };
+  $$('.bar', box).forEach(rect => {
+    rect.addEventListener('mouseenter', () => show(rect));
+    rect.addEventListener('focus', () => show(rect));
+    rect.addEventListener('mouseleave', () => { tip.hidden = true; });
+    rect.addEventListener('blur', () => { tip.hidden = true; });
+  });
+}
+
 async function loadDownloads() {
-  const box = $('#dl-out');
+  const box = $('#dl-out'), checksBox = $('#ck-out');
   loading(box);
+  loading(checksBox);
   try {
-    const { downloads } = await api.get(`/api/mod/downloads?days=${days}`);
-    const c = chartHtml(downloads, days);
-    box.innerHTML = c.html;
-    const tip = $('.tip', box);
-    const chart = $('.chart', box);
-    const show = rect => {
-      const i = Number(rect.dataset.i);
-      const d = c.dayList[i];
-      tip.innerHTML = `<b>${esc(date(d, { year: false }))}</b> · ${c.totals[i]}<br>${GROUPS.map(g => `${g.name}: ${c.by[d][g.key]}`).join('<br>')}`;
-      tip.hidden = false;
-      const r = rect.getBoundingClientRect(), base = chart.getBoundingClientRect();
-      const left = Math.min(Math.max(0, r.left - base.left + r.width / 2 - tip.offsetWidth / 2), base.width - tip.offsetWidth);
-      tip.style.left = `${left}px`;
-      tip.style.top = `${r.top - base.top + 4}px`;
-    };
-    $$('.bar', box).forEach(rect => {
-      rect.addEventListener('mouseenter', () => show(rect));
-      rect.addEventListener('focus', () => show(rect));
-      rect.addEventListener('mouseleave', () => { tip.hidden = true; });
-      rect.addEventListener('blur', () => { tip.hidden = true; });
-    });
+    const { downloads, checks } = await api.get(`/api/mod/downloads?days=${days}`);
+    mountChart(box, chartHtml(downloads.days, days, GROUPS, {
+      title: 'Скачивания', tableTitle: 'Таблица по платформам',
+      table: { head: ['Файл', 'Скачиваний'], rows: Object.entries(downloads.totals).sort((a, b) => b[1] - a[1]).map(([k, v]) => [`<code>/r/${esc(k)}</code>`, v]) },
+    }));
+    // A hub older than this page has no checks to give.
+    const totals = checks ? checks.totals : {};
+    const all = Object.values(totals).reduce((a, b) => a + b, 0);
+    mountChart(checksBox, chartHtml(checks ? checks.days.map(r => ({ day: r.day, name: r.version, count: r.count })) : [], days, versionGroups(totals), {
+      title: 'Проверки обновлений', tableTitle: 'Таблица по версиям',
+      table: {
+        head: ['Версия', 'Проверок'],
+        rows: Object.entries(totals).sort((a, b) => newerFirst(a[0], b[0])).map(([k, v]) => [`${esc(versionName(k))} <span class="hint">· ${Math.round(v / all * 100) || '<1'}%</span>`, v]),
+      },
+    }));
   } catch (e) {
+    checksBox.innerHTML = '';
     failed(box, e);
   }
 }

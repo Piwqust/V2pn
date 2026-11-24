@@ -27,6 +27,7 @@ code { font-family: var(--f-mono); font-size: 0.86em; overflow-wrap: anywhere; }
 .box__head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.5rem 1.5rem; margin-bottom: 1.5rem; }
 .box__head h2 { font: 600 var(--t-l)/1.08 var(--f-display); letter-spacing: -0.028em; }
 .box__head p { color: var(--c-muted); font-size: var(--t-s); flex-basis: 100%; }
+.box__head--next { margin-top: 3rem; padding-top: 2.5rem; border-top: 1px solid var(--c-line); }
 .state { padding: 2.5rem 0; display: grid; gap: 0.75rem; justify-items: start; }
 .state h2, .state h3 { font: 600 var(--t-m)/1.2 var(--f-display); }
 .state p { color: var(--c-muted); }

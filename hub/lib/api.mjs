@@ -1,7 +1,7 @@
 // The HTTP side: routes under /api/ (JSON, Cache-Control: no-store), the download redirects, CSRF and body limits.
 import { HubError } from './errors.mjs';
 import { log } from './log.mjs';
-import { resolveDownload } from './downloads.mjs';
+import { appVersion, resolveDownload } from './downloads.mjs';
 
 const JSON_LIMIT = 64 * 1024;
 const UPLOAD_LIMIT = 2 * 1024 * 1024;
@@ -132,7 +132,10 @@ function routes(hub) {
     ['POST', /^\/api\/mod\/accounts\/([^/]{3,254})\/password$/, ({ match, session, actor }) => hub.resetPassword(session, login(match[1]), actor), 'mod'],
     ['GET', /^\/api\/mod\/pictures\/([0-9a-f]{64})$/, ({ session, match, res }) => picture(res, hub.picture(session, match[1], { mod: true })), 'mod'],
     ['GET', /^\/api\/mod\/audit$/, ({ url }) => ({ audit: hub.auditLog(Number(url.searchParams.get('limit')) || 200) }), 'mod'],
-    ['GET', /^\/api\/mod\/downloads$/, ({ url }) => ({ downloads: hub.counter.stats(Math.min(Math.max(Number(url.searchParams.get('days')) || 30, 1), 366)) }), 'mod'],
+    ['GET', /^\/api\/mod\/downloads$/, ({ url }) => {
+      const days = Math.min(Math.max(Number(url.searchParams.get('days')) || 30, 1), 366);
+      return { downloads: hub.counter.stats(days), checks: hub.counter.checkStats(days) };
+    }, 'mod'],
     ['POST', /^\/api\/mod\/publish$/, ({ actor }) => ({ publication: hub.publish(actor) }), 'mod'],
 
     ['GET', /^\/api\/mod\/moderators$/, () => ({ moderators: hub.moderators() }), 'owner'],
@@ -162,6 +165,9 @@ export function createHandler(hub) {
         const download = method === 'GET' ? resolveDownload(url.pathname, hub.config.githubRepo) : null;
         if (!download) throw new HubError('not_found');
         if (download.count && req.method === 'GET') hub.counter.count(download.count);
+        // A running V2pn asking for its update manifest: the version it names is all that is kept.
+        const version = download.check && req.method === 'GET' ? appVersion(req.headers['user-agent']) : null;
+        if (version) hub.counter.check(version);
         res.writeHead(302, { ...BASE_HEADERS, location: download.location, 'content-length': 0 });
         res.end();
         return;

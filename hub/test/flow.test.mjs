@@ -383,6 +383,44 @@ test('downloads redirect to GitHub and are counted by day and name, without anyt
   }
 });
 
+test('update checks of running V2pn are counted by day and version, and nothing else about the sender', async () => {
+  const env = await startHub();
+  try {
+    const c = new Client(env.base);
+    const ask = (agent, p = '/releases/latest/download/release.json', method = 'GET') => c.request(method, p, undefined, agent === null ? {} : { 'user-agent': agent });
+    for (const agent of ['V2pn/1.4.0', 'V2pn/1.4.0', 'V2pn/1.3.2', 'V2pn/1.5.0-beta.2', 'V2pn/1.4.1-local.202611141320', 'V2pn/1.4.1-local.202611150900']) {
+      assert.equal((await ask(agent)).status, 302, agent);
+    }
+    // Not V2pn, or not the manifest: redirected all the same and not counted.
+    for (const agent of ['Mozilla/5.0 (Windows NT 10.0; Win64; x64)', 'curl/8.9.0', 'v2rayN/7.15 V2pn/1.4.0', 'V2pn/1.4', 'V2pn/1.4.0 extra', `V2pn/1.4.0-${'x'.repeat(80)}`, null]) {
+      assert.equal((await ask(agent)).status, 302, String(agent));
+    }
+    assert.equal((await ask('V2pn/1.4.0', '/releases/latest/download/release.json.sig')).status, 302);
+    assert.equal((await ask('V2pn/1.4.0', '/releases/latest/download/V2pn-windows-x64-update.zip')).status, 302);
+    assert.equal((await ask('V2pn/1.4.0', '/releases/latest/download/release.json', 'HEAD')).status, 302);
+
+    const owner = new Client(env.base);
+    await signInOwner(env, owner);
+    const { checks, downloads } = (await owner.get('/api/mod/downloads?days=7')).data;
+    assert.deepEqual(checks.totals, { '1.3.2': 1, '1.4.0': 2, '1.4.1-local': 2, '1.5.0-beta.2': 1 });
+    const today = new Date().toISOString().slice(0, 10);
+    assert.deepEqual(checks.days.filter(r => r.day === today).map(r => [r.version, r.count]), [['1.3.2', 1], ['1.4.0', 2], ['1.4.1-local', 2], ['1.5.0-beta.2', 1]]);
+    assert.deepEqual(downloads.totals, {});
+    assert.deepEqual(Object.keys(env.hub.db.get('SELECT * FROM checks')).sort(), ['count', 'day', 'version']);
+
+    // Made-up versions do not grow the table without end: past the day's limit they add up as "other".
+    for (let i = 0; i < 60; i++) env.hub.counter.check(`9.9.${i}`);
+    env.hub.counter.check('1.4.0');
+    const after = env.hub.counter.checkStats(7).totals;
+    assert.equal(Object.keys(after).length, 41);
+    assert.equal(after.other, 24);
+    assert.equal(after['1.4.0'], 3);
+    assert.equal((await new Client(env.base).get('/api/mod/downloads')).status, 401);
+  } finally {
+    await env.close();
+  }
+});
+
 test("import-partner takes partners/configra as a live partner with Configra's look and its account right approved", async () => {
   const env = await startHub();
   try {

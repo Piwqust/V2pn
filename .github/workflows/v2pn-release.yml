@@ -53,11 +53,13 @@ jobs:
       - name: Test
         run: dotnet test --project v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
 
+      # The runner image has Inno Setup already (6.7.1 in windows-2025 of November 2026). When it
+      # does not, Chocolatey installs that exact version; its package checks the installer's hash.
       - name: Inno Setup (for the installer)
         shell: pwsh
         run: |
           . ./tools/_common.ps1
-          if (-not (Find-Iscc)) { choco install innosetup --no-progress -y }
+          if (-not (Find-Iscc)) { choco install innosetup --version 6.7.1 --no-progress -y }
 
       - name: Build packages
         shell: pwsh
@@ -84,6 +86,10 @@ jobs:
         uses: actions/setup-dotnet@v6
         with:
           dotnet-version: 10.0.x
+
+      # As on Windows: the macOS packages are built only from code whose tests pass on a Mac.
+      - name: Test
+        run: dotnet test --project v2rayN/ServiceLib.Tests/ServiceLib.Tests.csproj -c Release
 
       - name: Build packages
         run: |

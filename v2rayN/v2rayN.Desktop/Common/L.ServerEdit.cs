@@ -121,7 +121,7 @@ public static partial class L
     public static string SvXdrivePathStyleHint => T("Path-style addresses. Needed by Cloudflare R2, MinIO and similar.", "Адреса в стиле path. Нужно для Cloudflare R2, MinIO и похожих.");
     public static string SvXdriveExtra => T("Extra XDRIVE settings", "Дополнительные настройки XDRIVE");
     public static string SvXdriveExtraTip => T("JSON object with XDRIVE settings", "JSON-объект с настройками XDRIVE");
-    public static string SvCoreCannotCarry => T("{0} cannot carry {1}, so this server will not connect. Choose Xray in “Core” (Show more fields) or another transport.", "{0} не поддерживает {1}, сервер не подключится. Выберите Xray в поле «Ядро» (Показать дополнительные поля) или другой транспорт.");
+    public static string SvCoreCannotCarry => T("{0} cannot carry {1}, so this server will not connect. Choose Xray in “Core” or another transport.", "{0} не поддерживает {1}, сервер не подключится. Выберите Xray в поле «Ядро» или другой транспорт.");
     public static string SvFinalmask => T("Finalmask", "Finalmask");
     public static string SvFinalmaskHint => T("Xray traffic disguise, as JSON.", "Маскировка трафика Xray в формате JSON.");
 

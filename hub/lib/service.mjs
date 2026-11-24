@@ -205,7 +205,7 @@ export class Hub {
     const found = [];
     for (const p of this.db.all('SELECT id, domains, source FROM partners ORDER BY id')) {
       const domains = parseJson(p.domains, []);
-      if (p.source !== 'import' && this.roots.has(p.id)) found.push({ partner: p.id, root: p.id, why: 'id' });
+      if (this.holdsRootId(p)) found.push({ partner: p.id, root: p.id, why: 'id' });
       const root = this.roots.owner(domains, p.id);
       if (root) found.push({ partner: p.id, root: root.id, why: 'domain', clash: domainsOverlap(domains, root.domains) });
     }
@@ -213,10 +213,41 @@ export class Hub {
     return found;
   }
 
-  /** Reads the root-signed index again (startServer: at start and every six hours); the last good copy stays on failure. */
+  /**
+   * Whether the partner row <p> was made on the hub with the id of a root-signed partner (one made before the hub knew
+   * that id). An imported partner with the id is that root partner itself (partners/configra) and holds nothing.
+   */
+  holdsRootId(p) {
+    return p.source !== 'import' && this.roots.has(p.id);
+  }
+
+  /**
+   * Takes down every partner of the hub that holds a root partner's id (publish(), before anything is built): V2pn
+   * would show it instead of the root one. It is kept with its provider's work, not deleted; publish() leaves it out
+   * of the index and removes its page, for /p/<id>/ is the root partner's address.
+   */
+  takeDownRootIds() {
+    for (const p of this.db.all("SELECT id, source FROM partners WHERE state != 'down' ORDER BY id")) {
+      if (!this.holdsRootId(p)) continue;
+      const reason = `Id «${p.id}» принадлежит партнёру ${this.roots.get(p.id).name}, которого V2pn подписал сам. Напишите модераторам V2pn.`;
+      this.db.tx(() => {
+        this.db.run("UPDATE partners SET state = 'down', down_reason = ?, updated_at = ? WHERE id = ?", reason, nowIso(), p.id);
+        this.db.audit('system', 'partner.down', p.id, { reason, root: p.id });
+      });
+      log.warn('a hub partner holds a root partner\'s id: taken down', { partner: p.id });
+    }
+  }
+
+  /**
+   * Reads the root-signed index again (startServer: at start and every six hours); the last good copy stays on failure.
+   * A partner that now holds a root partner's id is taken down by a publication at once.
+   */
   async refreshRoots() {
     const ok = await this.roots.refresh();
-    if (ok) this.rootCollisions();
+    if (ok) {
+      this.rootCollisions();
+      if (this.db.all("SELECT id, source FROM partners WHERE state != 'down'").some(p => this.holdsRootId(p))) this.publishSafely('system');
+    }
     return ok;
   }
 
@@ -505,6 +536,9 @@ export class Hub {
   restore(id, actor) {
     const row = this.partnerRow(id);
     if (row.state !== 'down') throw new HubError('state', { message: 'Партнёр не снят.' });
+    if (this.holdsRootId(row)) {
+      throw new HubError('state', { message: `Его id у партнёра ${this.roots.get(id).name}, которого V2pn подписал сам. Такой партнёр не возвращается.` });
+    }
     const owner = this.domainOwner(parseJson(row.domains, []), id);
     if (owner) {
       throw new HubError('domain_taken', { message: owner.root ? `Его домен у партнёра ${owner.name}, которого V2pn подписал сам.` : 'Его домен уже у другого партнёра.' });
@@ -633,14 +667,17 @@ export class Hub {
 
   // ---------------------------------------------------------------- publication
 
-  /** The partners as the publication takes them, with only the approved content of their rights. */
+  /**
+   * The partners as the publication takes them, with only the approved content of their rights. One that holds a root
+   * partner's id is not among them: no pack, and no page either (the one it had is removed).
+   */
   publicationPartners() {
     const approved = new Map();
     for (const r of this.db.all('SELECT partner_id, name, approved FROM rights WHERE approved_hash IS NOT NULL')) {
       if (!approved.has(r.partner_id)) approved.set(r.partner_id, {});
       approved.get(r.partner_id)[r.name] = JSON.parse(r.approved);
     }
-    return this.db.all('SELECT * FROM partners ORDER BY id').map(p => ({
+    return this.db.all('SELECT * FROM partners ORDER BY id').filter(p => !this.holdsRootId(p)).map(p => ({
       id: p.id, name: p.name, domains: parseJson(p.domains, []), until: p.until, state: p.state, look: parseJson(p.look, defaultLook(p.name)),
       approved: approved.get(p.id) ?? {},
     }));
@@ -648,6 +685,7 @@ export class Hub {
 
   /** Rebuilds and re-signs everything; throws with the problems when nothing could be written. */
   publish(actor = 'system') {
+    this.takeDownRootIds();
     const publication = buildPublication(this.publicationPartners(), {
       readUpload: h => this.readUpload(h), today: today(), published: publishedStamp(), origin: this.config.origin, repo: this.config.githubRepo,
     });

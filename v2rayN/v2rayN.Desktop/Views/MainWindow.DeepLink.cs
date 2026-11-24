@@ -89,6 +89,11 @@ public partial class MainWindow
             var partner = V2pnPartners.Instance.ListingFor(link.SubscriptionUrl)
                           ?? V2pnPartners.Instance.ListingForLink(link.Partner, link.SubscriptionUrl);
             var body = partner != null ? string.Format(L.LinkAddBodyPartner, partner.Name) : L.LinkAddBody;
+            // A subscription over plain http can be read and changed on the way: the person decides knowing it.
+            if (link.SubscriptionUrl.StartsWith(Global.HttpProtocol, StringComparison.OrdinalIgnoreCase))
+            {
+                body += "\n\n" + L.LinkAddPlainHttp;
+            }
             var card = new DialogCard(link.Name ?? host,
                 partner != null ? string.Format(L.LinkAddPartnerCard, host) : host,
                 partner != null ? "SemiIconShieldStroked" : "SemiIconLink");

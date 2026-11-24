@@ -1,0 +1,56 @@
+{
+  "version": "1.4.2",
+  "published": "2026-11-23T23:30:26Z",
+  "files": [
+    {
+      "name": "V2pn-macos-arm64.dmg",
+      "size": 154407001,
+      "sha256": "9dd63505d7461be4fdaf1046cfe3971f46415540f366d34e53ef5032a198e78c"
+    },
+    {
+      "name": "V2pn-macos-arm64.zip",
+      "size": 140171456,
+      "sha256": "0381b259eb254ff75736ee2cbd973bf006ccd7230e2426a5bfdedcf536c488fa"
+    },
+    {
+      "name": "V2pn-macos-x64.dmg",
+      "size": 165610764,
+      "sha256": "4d71f7d3e6a18001d7e398436c0950a09e790237ee7c145a5fbf5e097f1181ce"
+    },
+    {
+      "name": "V2pn-macos-x64.zip",
+      "size": 149723688,
+      "sha256": "e925812e3d724bd3e29cb4ec7b465af91be1f8400929c6cf99db2de6684a02f0"
+    },
+    {
+      "name": "V2pn-windows-arm64-setup.exe",
+      "size": 99127912,
+      "sha256": "8c4f348faed0dbca30a9822048a6d78e3e2ab7295e43b88258d37a555d253555"
+    },
+    {
+      "name": "V2pn-windows-arm64-update.zip",
+      "size": 76905821,
+      "sha256": "72df72aff8e599222707ded414f63f9c49dec85ff46f11150bc0e6377526561f"
+    },
+    {
+      "name": "V2pn-windows-arm64.zip",
+      "size": 154159575,
+      "sha256": "04e56ccacb2d9a2ba15006a1c0d295c9c2a5c53ba64846a0203f23ffadf0de4c"
+    },
+    {
+      "name": "V2pn-windows-x64-setup.exe",
+      "size": 109890189,
+      "sha256": "b0948e95e2c516a3096a2b08159c221173de9ba6603c408a150248db3172b811"
+    },
+    {
+      "name": "V2pn-windows-x64-update.zip",
+      "size": 80635914,
+      "sha256": "a73e933f0e3ab8fbf24152c38c20d3fd4e0cf78de91093043f19e2bd33fe8397"
+    },
+    {
+      "name": "V2pn-windows-x64.zip",
+      "size": 165120485,
+      "sha256": "2ddbcb428d0ce719ae66870468bd4e6c76d458ac38a56209afb4b400ce9c7c6c"
+    }
+  ]
+}

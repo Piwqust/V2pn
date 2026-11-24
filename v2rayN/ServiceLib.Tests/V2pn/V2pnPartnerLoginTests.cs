@@ -142,6 +142,17 @@ public class V2pnPartnerLoginTests
     }
 
     [Test]
+    public async Task DeviceName_KeepsWindowsMadeNames_AndHidesChosenOnes()
+    {
+        await V2pnPartnerLogin.DeviceName("Windows", "DESKTOP-7Q2ABCD").Should().BeEqualTo("Windows · DESKTOP-7Q2ABCD");
+        var mac = V2pnPartnerLogin.DeviceName("macOS", "Ivans-MacBook-Pro");
+        await mac.Contains("Ivan", StringComparison.OrdinalIgnoreCase).Should().BeFalse();
+        await mac.Should().BeEqualTo(V2pnPartnerLogin.DeviceName("macOS", "ivans-macbook-pro"));
+        await (mac != V2pnPartnerLogin.DeviceName("macOS", "Olgas-MacBook-Air")).Should().BeTrue();
+        await V2pnPartnerLogin.DeviceName("Linux", "").Should().BeEqualTo("Linux");
+    }
+
+    [Test]
     public async Task Start_ThatFails_SaysWhy()
     {
         var asked = new List<string>();

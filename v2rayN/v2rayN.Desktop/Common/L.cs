@@ -546,6 +546,37 @@ public static partial class L
     public static string SitesNone => T("No sites yet. Type a site above and choose how it goes.", "Пока сайтов нет. Введите сайт выше и выберите, как ему идти.");
     public static string SitesNotADomain => T("That is not a site's address. Type it like example.com.", "Это не адрес сайта. Введите его так: example.com.");
     public static string SitesRemove => T("Remove {0}", "Убрать {0}");
+
+    // Programs that always go directly in VPN mode (AppRulesView).
+    public static string AppsTitle => T("Programs that always go directly", "Программы напрямую");
+    public static string AppsMenu => T("Programs that always go directly…", "Программы напрямую…");
+    public static string AppsMenuCount => T("{0} programs", "Программ: {0}");
+    public static string AppsLead => T(
+        "In VPN mode these programs go directly, past the server, whatever is chosen under Connect and in the sites: a bank's app, a game, a work program. In Proxy mode each program decides for itself whether to use the proxy, so the list changes nothing there. Works with the three ways above, not with your own rule sets.",
+        "В режиме VPN эти программы идут напрямую, мимо сервера, что бы ни было выбрано под «Подключиться» и в сайтах-исключениях: приложение банка, игра, рабочая программа. В режиме «Прокси» каждая программа сама решает, идти ли через прокси, поэтому там список ничего не меняет. Работает с тремя режимами выше, но не со своими наборами правил.");
+    public static string AppsAddRunning => T("Add a running program…", "Добавить запущенную…");
+    public static string AppsChooseFile => T("Choose a file…", "Выбрать файл…");
+    public static string AppsFileFilter => T("Programs", "Программы");
+    public static string AppsNone => T("No programs yet. Add one that is running now, or choose its file.",
+        "Пока программ нет. Добавьте запущенную сейчас или выберите её файл.");
+    public static string AppsNotAProgram => T("That is not a program. Choose its .exe file.", "Это не программа. Выберите её файл .exe.");
+    public static string AppsNotAProgramMac => T("That is not an app. Choose it in Applications.", "Это не приложение. Выберите его в папке «Программы».");
+    public static string AppsVpnOff => T("Now in Proxy mode: the list starts working when you switch to VPN.",
+        "Сейчас режим «Прокси»: список заработает, когда вы переключитесь на VPN.");
+    public static string AppsOwnRules => T("Your own rule set is in use: the list works with the three ways under Connect.",
+        "Сейчас включён свой набор правил: список работает с тремя режимами под «Подключиться».");
+    public static string AppsMacXrayTunnel => T(
+        "\"Legacy TUN protection\" is off, so with most servers Xray runs the tunnel, and on a Mac it may not tell programs apart. For the list to work, turn the setting back on in Settings → VPN mode (TUN).",
+        "«Старая защита TUN» выключена, поэтому с большинством серверов туннель ведёт Xray, а он на Mac может не различать программы. Чтобы список работал, включите её обратно в «Настройки → Режим VPN (TUN)».");
+    public static string AppsRunningTitle => T("Running programs", "Запущенные программы");
+    public static string AppsRunningHint => T("Programs with a window come first. System processes are not shown.",
+        "Сначала программы с окном. Системные процессы не показаны.");
+    public static string AppsRunningFilter => T("Find a program", "Найти программу");
+    public static string AppsRunningNone => T("No such program is running. Start it and look again, or choose its file.",
+        "Такая программа не запущена. Запустите её и посмотрите снова или выберите её файл.");
+    public static string AppsRunningLoading => T("Looking at running programs…", "Смотрим запущенные программы…");
+    public static string AppsRunningAdd => T("Add {0}", "Добавить {0}");
+    public static string AppsAdded => T("Added", "Добавлена");
     public static string AutoSwitched => T("{0} stopped answering. V2pn switched to {1} in the same country.",
         "{0} перестал отвечать. V2pn переключился на {1} в той же стране.");
     public static string SetAutoSwitch => T("Switch to a working server by itself", "Переключаться на рабочий сервер самому");

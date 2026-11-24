@@ -566,7 +566,7 @@ public static class V2pnImport
     /// Where a process runs from. On Windows this also answers for a process running as administrator,
     /// which Process.MainModule refuses to describe to a normal one; null when even that is refused.
     /// </summary>
-    private static string? ImagePath(Process process)
+    public static string? ImagePath(Process process)
     {
         try
         {

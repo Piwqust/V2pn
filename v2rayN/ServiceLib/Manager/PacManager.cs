@@ -20,7 +20,9 @@ public class PacManager
 
         Stop();
         var cts = new CancellationTokenSource();
-        var listener = TcpListener.Create(pacPort);
+        // V2pn: the system proxy asks http://127.0.0.1:<port>/pac, and the script names 127.0.0.1 itself, so the
+        // server listens on loopback only; TcpListener.Create took every interface and told the network the local port.
+        var listener = new TcpListener(IPAddress.Loopback, pacPort);
         listener.Start();
 
         _cts = cts;

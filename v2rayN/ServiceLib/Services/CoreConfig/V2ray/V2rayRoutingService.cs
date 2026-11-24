@@ -64,6 +64,12 @@ public partial class CoreConfigV2rayService
                         {
                             continue;
                         }
+                        // V2pn: programs that always go directly are for VPN mode only, and only for the core that
+                        // runs the tunnel (Xray behind sing-box's tunnel sees sing-box as the program).
+                        if (!context.IsTunEnabled && V2pnPresetRules.IsAppRule(item))
+                        {
+                            continue;
+                        }
                         if (V2pnPartnerRoutes.IsCatchAll(item))
                         {
                             AddPartnerRules();

@@ -281,6 +281,12 @@ public partial class CoreConfigSingboxService
                     {
                         continue;
                     }
+                    // V2pn: programs that always go directly are for VPN mode only, and only for the core that
+                    // runs the tunnel.
+                    if (!context.IsTunEnabled && V2pnPresetRules.IsAppRule(item1))
+                    {
+                        continue;
+                    }
                     if (V2pnPartnerRoutes.IsCatchAll(item1))
                     {
                         AddPartnerRules();

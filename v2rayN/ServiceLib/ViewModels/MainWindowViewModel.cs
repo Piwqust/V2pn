@@ -733,7 +733,9 @@ public partial class MainWindowViewModel : MyReactiveObject
 
     #region core job
 
-    private bool _hasNextReloadJob = false;
+    // V2pn: every request counts, so one that comes while a reload runs is never lost (a plain flag set after the
+    // running reload had read it was: a subscription update with new keys could leave the core on the old ones).
+    private int _reloadRequests;
     private readonly SemaphoreSlim _reloadSemaphore = new(1, 1);
 
     // V2pn: V2pnSubUpdate.ConnectionKey of the server the running core was started with.
@@ -830,11 +832,12 @@ public partial class MainWindowViewModel : MyReactiveObject
     {
         var availabilityGeneration = StatusBarViewModel.InvalidateAvailability();
         //If there are unfinished reload job, marked with next job.
+        Interlocked.Increment(ref _reloadRequests);
         if (!await _reloadSemaphore.WaitAsync(0))
         {
-            _hasNextReloadJob = true;
             return;
         }
+        var requestsSeen = Volatile.Read(ref _reloadRequests);
 
         if (DesignMode)
         {
@@ -971,9 +974,9 @@ public partial class MainWindowViewModel : MyReactiveObject
             SetReloadEnabled(true);
             _reloadSemaphore.Release();
             //If there is a next reload job, execute it.
-            if (_hasNextReloadJob)
+            // Read after the release: a request counted later either is seen here or finds the semaphore free.
+            if (Volatile.Read(ref _reloadRequests) != requestsSeen)
             {
-                _hasNextReloadJob = false;
                 await Reload();
             }
         }

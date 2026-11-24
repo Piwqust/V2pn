@@ -51,10 +51,32 @@ public static class V2pnRunningPrograms
     }
 
     /// <summary>
+    /// V2pn and the cores it runs, wherever they run from (another copy of V2pn too): their own traffic already goes
+    /// directly, so they are not offered.
+    /// </summary>
+    private static readonly HashSet<string> OwnPrograms = new(
+        new[] { "V2pn", "v2rayN", "v2pnctl", "AmazTool", "V2pnSetup" }
+            .Concat(CoreExes())
+            .Select(V2pnPresetRules.ProgramKey),
+        StringComparer.Ordinal);
+
+    private static IEnumerable<string> CoreExes()
+    {
+        try
+        {
+            return CoreInfoManager.Instance.GetCoreInfo().SelectMany(c => c.CoreExes ?? []).ToList();
+        }
+        catch
+        {
+            return ["xray", "sing-box", "mihomo", "naive"];
+        }
+    }
+
+    /// <summary>
     /// The programs a person would pick from <paramref name="all"/>: not the system's (under
     /// <paramref name="systemDir"/>, or on a Mac anything outside an app bundle in /Applications-like places), not
-    /// V2pn's own (under <paramref name="ownDir"/>, its cores included), not a nameless process without a window.
-    /// One entry per program; with a window first, then by name.
+    /// V2pn's own (under <paramref name="ownDir"/>, or named as V2pn or one of its cores), not a nameless process
+    /// without a window. One entry per program; with a window first, then by name.
     /// </summary>
     public static List<V2pnRunningProgram> Pick(IEnumerable<V2pnRunningProgram> all, string? systemDir, string? ownDir, bool mac)
     {
@@ -76,7 +98,7 @@ public static class V2pnRunningPrograms
                 }
                 entry = program with { Title = System.IO.Path.GetFileNameWithoutExtension(bundle) };
             }
-            if (V2pnPresetRules.NormalizeProgram(entry.Process) is not { } name)
+            if (V2pnPresetRules.NormalizeProgram(entry.Process) is not { } name || OwnPrograms.Contains(V2pnPresetRules.ProgramKey(name)))
             {
                 continue;
             }

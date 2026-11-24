@@ -240,8 +240,21 @@ public sealed class AppRulesView : UserControl
             VerticalAlignment = VerticalAlignment.Center,
             Children =
             {
-                new TextBlock { Classes = { "srowtitle" }, Text = program.Title, TextTrimming = TextTrimming.CharacterEllipsis },
-                new TextBlock { Classes = { "srowhint" }, Text = program.Path ?? program.Process, TextTrimming = TextTrimming.CharacterEllipsis },
+                new TextBlock
+                {
+                    Classes = { "srowtitle" },
+                    Text = program.Title,
+                    TextWrapping = TextWrapping.NoWrap,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                },
+                // The name the rule matches ("Codex" runs as ChatGPT.exe); the full path is in the tooltip.
+                new TextBlock
+                {
+                    Classes = { "srowhint" },
+                    Text = program.Process,
+                    TextWrapping = TextWrapping.NoWrap,
+                    TextTrimming = TextTrimming.CharacterEllipsis,
+                },
             },
         };
         var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto"), ColumnSpacing = 12, Margin = new Thickness(4, 2) };

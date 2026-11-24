@@ -14,6 +14,10 @@ public class V2pnRunningProgramsTests
             P("explorer.exe", @"C:\Windows\explorer.exe", window: true),
             P("sing-box.exe", @"C:\Users\me\AppData\Local\Programs\V2pn\bin\sing_box\sing-box.exe"),
             P("V2pn.exe", @"C:\Users\me\AppData\Local\Programs\V2pn\V2pn.exe", window: true),
+            // Another copy of V2pn and its cores, outside this one's folder.
+            P("V2pn.exe", @"C:\Users\me\AppData\Local\Temp\v2pn-copy\V2pn.exe", window: true),
+            P("xray.exe", @"C:\Users\me\AppData\Local\Temp\v2pn-copy\bin\xray\xray.exe"),
+            P("sing-box.exe", @"D:\other\sing-box.exe"),
             P("System", null),
             P("steamwebhelper.exe", @"C:\Program Files (x86)\Steam\bin\cef\steamwebhelper.exe"),
             P("Telegram.exe", @"C:\Users\me\AppData\Roaming\Telegram Desktop\Telegram.exe"),

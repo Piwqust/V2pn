@@ -22,6 +22,7 @@ V2pn moves to a working server by itself when the one you use stops answering, a
 ### Sites that always go one way
 
 - In the menu under Connect, **Sites that always go one way…** sends a site directly or through the server whatever the chosen way says: your bank directly while everything else goes through the server, or one site through the server in "Only blocked". With or without its subdomains; Cyrillic names work too. A change applies at once, and removing a site puts it back under the route.
+- **Programs that always go directly…**, the row under it, does the same for programs in VPN mode: a bank's app, a game or a work program goes past the server whatever the route and the sites say. Add one that is running now (from a list with icons, without system processes) or choose its file (an .exe on Windows, an app on a Mac). In Proxy mode programs decide for themselves whether to use the proxy, so the list changes nothing there, and the window says so. Like the sites, it works with V2pn's three ways, not with your own rule sets. On a Mac with "Legacy TUN protection" turned off, Xray runs the tunnel and may not tell programs apart; the window says so too.
 
 ### Safety
 

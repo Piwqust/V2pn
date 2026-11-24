@@ -1547,6 +1547,32 @@
                                                                     Data="{StaticResource SemiIconChevronRight}" />
                                                             </Grid>
                                                         </Button>
+                                                        <!--  V2pn: programs that always go directly in VPN mode (AppRulesView).  -->
+                                                        <Button
+                                                            x:Name="btnAppRules"
+                                                            AutomationProperties.Name="{x:Static loc:L.AppsMenu}"
+                                                            Classes="routelink"
+                                                            Theme="{StaticResource V2SideRow}">
+                                                            <Grid ColumnDefinitions="Auto,*,Auto,Auto" ColumnSpacing="12">
+                                                                <Border Classes="routeicon plain">
+                                                                    <PathIcon Data="{StaticResource SemiIconDesktop}" />
+                                                                </Border>
+                                                                <TextBlock
+                                                                    Grid.Column="1"
+                                                                    VerticalAlignment="Center"
+                                                                    Classes="routetitle"
+                                                                    Text="{x:Static loc:L.AppsMenu}" />
+                                                                <TextBlock
+                                                                    x:Name="txtAppRulesCount"
+                                                                    Grid.Column="2"
+                                                                    VerticalAlignment="Center"
+                                                                    Classes="routehint" />
+                                                                <PathIcon
+                                                                    Grid.Column="3"
+                                                                    Classes="i12 routechevron"
+                                                                    Data="{StaticResource SemiIconChevronRight}" />
+                                                            </Grid>
+                                                        </Button>
                                                         <Button
                                                             x:Name="btnRoutingSettings"
                                                             AutomationProperties.Name="{x:Static loc:L.RoutingSettings}"

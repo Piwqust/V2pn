@@ -89,14 +89,18 @@ public static class RoutingPresets
     public static bool NeedsRussianSources(Config config, RoutingPresetKind kind) =>
         kind != RoutingPresetKind.All && config.ConstItem.GeoSourceUrl != Global.GeoFilesSources[1];
 
-    /// <summary>The rules of a preset, with the person's sites first (V2pnPresetRules, in ServiceLib with its tests).</summary>
-    public static List<RulesItem> Rules(RoutingPresetKind kind, bool blockAds, IReadOnlyList<V2pnSiteRule>? sites = null) =>
+    /// <summary>
+    /// The rules of a preset, with the person's programs and then their sites first (V2pnPresetRules, in ServiceLib
+    /// with its tests).
+    /// </summary>
+    public static List<RulesItem> Rules(RoutingPresetKind kind, bool blockAds, IReadOnlyList<V2pnSiteRule>? sites = null,
+        IReadOnlyList<V2pnAppRule>? apps = null) =>
         V2pnPresetRules.Rules(kind switch
         {
             RoutingPresetKind.RussiaDirect => EV2pnPreset.RussiaDirect,
             RoutingPresetKind.BlockedOnly => EV2pnPreset.BlockedOnly,
             _ => EV2pnPreset.All,
-        }, blockAds, sites);
+        }, blockAds, sites, apps);
 
     /// <summary>
     /// Creates the preset items or refreshes their names and rules; keeps which one is active.
@@ -112,7 +116,8 @@ public static class RoutingPresets
         {
             var id = Id(kind);
             var item = existing.FirstOrDefault(t => t.Id == id);
-            var rules = JsonUtils.Serialize(Rules(kind, config.UiItem.V2pnBlockAds, config.UiItem.V2pnSiteRules), false);
+            var rules = JsonUtils.Serialize(Rules(kind, config.UiItem.V2pnBlockAds, config.UiItem.V2pnSiteRules,
+                config.UiItem.V2pnDirectApps), false);
             var strategy = kind == RoutingPresetKind.All ? Global.AsIs : Global.IPOnDemand;
             if (item != null && item.Remarks == Title(kind) && item.DomainStrategy == strategy && SameRules(item.RuleSet, rules))
             {

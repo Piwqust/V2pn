@@ -1166,8 +1166,17 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         btnSiteRules.Click += async (_, _) =>
         {
             btnRoute.Flyout?.Hide();
-            await ShowRoomyDialog(new SiteRulesView(_config, ApplyPresetRulesAsync));
+            await ShowRoomyDialog(new SiteRulesView(_config, () => ApplyPresetRulesAsync()));
             RefreshSiteRulesCount();
+        };
+        RefreshAppRulesCount();
+        btnAppRules.Click += async (_, _) =>
+        {
+            btnRoute.Flyout?.Hide();
+            await ShowRoomyDialog(new AppRulesView(_config, () => ApplyPresetRulesAsync(vpnOnly: true),
+                vpnMode: () => ViewModel?.StatusBarViewModel is { } s && (IsConnected(s) ? s.EnableTun : _config.UiItem.V2pnPreferTun),
+                presetInUse: () => RoutingPresets.IsPreset(ViewModel?.StatusBarViewModel?.SelectedRouting?.Id)));
+            RefreshAppRulesCount();
         };
         lstCustomRoutes.SelectionChanged += async (_, _) =>
         {
@@ -1483,8 +1492,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         await ApplyPresetRulesAsync();
     }
 
-    /// <summary>Rewrites the presets' rules (ads, the person's sites) and reloads the core when a preset is in use.</summary>
-    private async Task ApplyPresetRulesAsync()
+    /// <summary>
+    /// Rewrites the presets' rules (ads, the person's sites and programs) and reloads the core when a preset is in use.
+    /// <paramref name="vpnOnly"/>: the change matters only to the tunnel (the programs), so in Proxy mode the core
+    /// keeps running; it takes the new rules when VPN mode starts it again.
+    /// </summary>
+    private async Task ApplyPresetRulesAsync(bool vpnOnly = false)
     {
         if (ViewModel?.StatusBarViewModel is not { } status)
         {
@@ -1492,7 +1505,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         }
         var changed = await RoutingPresets.EnsureAsync(_config);
         await status.RefreshRoutingsMenu();
-        if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id))
+        if (changed && RoutingPresets.IsPreset(status.SelectedRouting?.Id) && (!vpnOnly || status.EnableTun))
         {
             status.ReloadRequested.Publish();
         }
@@ -1502,6 +1515,12 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
     {
         var count = _config.UiItem.V2pnSiteRules?.Count ?? 0;
         txtSiteRulesCount.Text = count > 0 ? string.Format(L.SitesMenuCount, count) : string.Empty;
+    }
+
+    private void RefreshAppRulesCount()
+    {
+        var count = _config.UiItem.V2pnDirectApps?.Count ?? 0;
+        txtAppRulesCount.Text = count > 0 ? string.Format(L.AppsMenuCount, count) : string.Empty;
     }
 
     #endregion Mode and routing

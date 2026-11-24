@@ -132,6 +132,9 @@ public class UIItem
     /// <summary>V2pn: sites the person sends one way whatever the preset says (V2pnPresetRules).</summary>
     public List<V2pnSiteRule>? V2pnSiteRules { get; set; }
 
+    /// <summary>V2pn: programs that always go directly while VPN mode is on (V2pnPresetRules).</summary>
+    public List<V2pnAppRule>? V2pnDirectApps { get; set; }
+
     /// <summary>V2pn: switch to a working server of the same country by itself (V2pnAutoSwitch); null means on.</summary>
     public bool? V2pnAutoSwitch { get; set; }
 

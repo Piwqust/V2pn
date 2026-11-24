@@ -33,6 +33,7 @@ internal static class InstallFlow
         }
 
         WaitForApp(appPid);
+        var staged = false;
         try
         {
             // Held open with writing shut out from the check to the end of unpacking: what is checked is what is installed.
@@ -44,13 +45,14 @@ internal static class InstallFlow
                 }
                 installer.Stage(package);
             }
+            staged = true;
             installer.Swap();
         }
         catch (Exception ex)
         {
             // Stage touches nothing and Swap puts everything back before throwing.
             Log($"{Resx.Resource.FailedUpgrade} {ex}");
-            Fail(workDir, version, installer);
+            Fail(workDir, version, installer, staged ? "swap" : "stage", ex.GetType().Name);
             return;
         }
 
@@ -85,7 +87,7 @@ internal static class InstallFlow
             {
                 Log($"Rollback failed: {ex}");
             }
-            Fail(workDir, version, installer);
+            Fail(workDir, version, installer, "start", app == null ? "not_started" : $"exit_{app.ExitCode}");
             return;
         }
 
@@ -94,11 +96,13 @@ internal static class InstallFlow
         Log("Done.");
     }
 
-    private static void Fail(string workDir, string version, Installer installer)
+    private static void Fail(string workDir, string version, Installer installer, string stage, string code)
     {
         try
         {
-            File.WriteAllText(Path.Combine(workDir, FailedMarker), version + "\n");
+            // The version, then the step and a short code for the opt-in report (V2pnUpdateReport). The app that reads
+            // it is the one this AmazTool came with (the version put back), so both know this layout.
+            File.WriteAllText(Path.Combine(workDir, FailedMarker), $"{version}\n{stage}\n{code}\n");
         }
         catch (Exception ex)
         {

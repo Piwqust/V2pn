@@ -43,6 +43,13 @@ public partial class CheckUpdateView : ReactiveUserControl<CheckUpdateViewModel>
             _config.UiItem.V2pnAutoUpdate = togAutoUpdate.IsChecked == true;
             await ConfigTextHandler.SaveConfig();
         };
+        rowReportFailures.IsVisible = !_updater.ByWinGet;
+        togReportFailures.IsChecked = _config.UiItem.V2pnReportUpdateFailures;
+        togReportFailures.IsCheckedChanged += async (_, _) =>
+        {
+            _config.UiItem.V2pnReportUpdateFailures = togReportFailures.IsChecked == true;
+            await ConfigTextHandler.SaveConfig();
+        };
         btnAppAction.Click += async (_, _) => await OnAppActionAsync();
         btnWhatsNew.Click += (_, _) => ProcUtils.ProcessStart($"{V2pnInfo.ReleasesUrl}/tag/v{_updater.LatestVersion}");
 

@@ -121,10 +121,11 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                 State = EV2pnUpdateState.UpToDate;
                 return;
             }
-            if (FailedVersion() == version)
+            if (FailedInstall() is { } failed && failed.Version == version)
             {
                 InstallFailed = true;
                 Fail($"V2pn {version} did not start after it was installed; the previous version was put back.");
+                _ = V2pnUpdateReport.SendAsync(ConfigTextHandler.Config, CurrentVersion, version, failed.Stage, failed.Code);
                 return;
             }
             if (FindPending()?.Version == version)
@@ -198,6 +199,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         {
             DeletePackage(file);
             Fail("The downloaded package is damaged.", download: true);
+            _ = V2pnUpdateReport.SendAsync(ConfigTextHandler.Config, CurrentVersion, version, "verify", expected == null ? "no_manifest" : "damaged");
             return false;
         }
         return await StartInstallerAsync(file, version, Fail);
@@ -381,6 +383,7 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
             .SelectMany(s => Routes(release.ViaProxy, proxyRuns).Select(viaProxy => (Source: s, ViaProxy: viaProxy)));
         var error = "The download did not finish.";
         var done = false;
+        var mismatched = false;
         foreach (var (source, viaProxy) in attempts)
         {
             DeleteFile(part);
@@ -408,11 +411,14 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
                 break;
             }
             error = mismatch;
+            mismatched = true;
         }
         if (!done)
         {
             DeleteFile(part);
             Fail(error, download: true);
+            _ = V2pnUpdateReport.SendAsync(ConfigTextHandler.Config, CurrentVersion, version,
+                mismatched ? "verify" : "download", mismatched ? "hash_mismatch" : error);
             return;
         }
 
@@ -462,12 +468,23 @@ public sealed partial class V2pnAppUpdater : ReactiveObject
         }
     }
 
-    private static string? FailedVersion()
+    private static string? FailedVersion() => FailedInstall()?.Version;
+
+    /// <summary>
+    /// What AmazTool left in failed.txt after it put the previous version back: the version, and from this release on
+    /// the step that failed and a short code (for the opt-in report).
+    /// </summary>
+    internal static (string Version, string Stage, string Code)? FailedInstall()
     {
         try
         {
             var marker = Path.Combine(PendingDir, FailedMarker);
-            return File.Exists(marker) ? File.ReadAllText(marker).Trim() : null;
+            if (!File.Exists(marker))
+            {
+                return null;
+            }
+            var lines = File.ReadAllLines(marker).Select(l => l.Trim()).Where(l => l.Length > 0).ToList();
+            return lines.Count == 0 ? null : (lines[0], lines.ElementAtOrDefault(1) ?? "rollback", lines.ElementAtOrDefault(2) ?? "unknown");
         }
         catch (Exception ex)
         {

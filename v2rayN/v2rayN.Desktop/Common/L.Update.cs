@@ -23,6 +23,10 @@ public static partial class L
 
     public static string UpdAuto => T("Update V2pn automatically", "Обновлять V2pn автоматически");
     public static string UpdAutoHint => T("New versions download in the background and install the next time V2pn starts.", "Новые версии скачиваются в фоне и ставятся при следующем запуске V2pn.");
+    public static string UpdReport => T("Tell V2pn when an update fails", "Сообщать V2pn о неудачных обновлениях");
+    public static string UpdReportHint => T(
+        "Only which version failed to replace which, the system and the step, such as \"download\" or \"start\". Nothing about you, your servers or your settings. Off unless you turn it on.",
+        "Только какая версия не смогла заменить какую, система и шаг, например «скачивание» или «запуск». Ничего о вас, ваших серверах и настройках. Выключено, пока вы не включите.");
     public static string UpdComponents => T("Cores and lists", "Ядра и списки");
     public static string UpdComponentsHint => Tk("Turn on what to check, then press Update.", "Turn on what to check, then press Update selected.", "Отметьте, что проверять, и нажмите «Обновить отмеченное».");
 

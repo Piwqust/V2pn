@@ -129,6 +129,12 @@ public class UIItem
     // Null means on: new versions download in the background and install at the next start.
     public bool? V2pnAutoUpdate { get; set; }
 
+    /// <summary>V2pn: tell V2pn's server when an update fails (V2pnUpdateReport); off unless the person turns it on.</summary>
+    public bool V2pnReportUpdateFailures { get; set; }
+
+    /// <summary>V2pn: the failures already told, "version|step".</summary>
+    public List<string>? V2pnReportedFailures { get; set; }
+
     // Developer mode (Windows): the Updates window builds V2pn from this source folder and installs it.
     public bool V2pnDevMode { get; set; }
 

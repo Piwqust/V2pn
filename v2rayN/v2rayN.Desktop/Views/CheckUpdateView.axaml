@@ -125,6 +125,21 @@
                         OffContent=""
                         OnContent="" />
                 </Grid>
+                <!-- V2pn: the opt-in note about a failed update (V2pnUpdateReport), off by default. -->
+                <Border Height="1" Background="{DynamicResource V2PanelBorder}" />
+                <Grid x:Name="rowReportFailures" ColumnDefinitions="*,Auto">
+                    <StackPanel Classes="srowtext">
+                        <TextBlock Classes="srowtitle" Text="{x:Static loc:L.UpdReport}" />
+                        <TextBlock Classes="srowhint" Text="{x:Static loc:L.UpdReportHint}" TextWrapping="Wrap" />
+                    </StackPanel>
+                    <ToggleSwitch
+                        x:Name="togReportFailures"
+                        Grid.Column="1"
+                        MinWidth="0"
+                        VerticalAlignment="Center"
+                        OffContent=""
+                        OnContent="" />
+                </Grid>
 
                 <!--
                     V2pn: developer mode. Builds V2pn from the sources on this computer and installs it over

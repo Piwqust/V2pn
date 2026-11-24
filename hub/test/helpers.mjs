@@ -90,6 +90,8 @@ export async function startHub({ net = testNet, env = {} } = {}) {
     HUB_PUBLIC_DIR: path.join(root, 'www'),
     HUB_ORIGIN: origin,
     HUB_PORT: String(port),
+    // The rule list mirror would fetch from GitHub; its own test (geo.test.mjs) serves the files locally.
+    HUB_GEO_MIRROR: '0',
     ...env,
   });
   const hub = createHub(config, { net });

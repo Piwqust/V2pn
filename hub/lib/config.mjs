@@ -45,5 +45,8 @@ export function loadConfig(env = process.env) {
     rootIndexFile: path.join(data, 'root-partner-index.json'),
     rootKeys: (env.HUB_ROOT_KEYS || ROOT_PARTNER_KEY).split('|').map(k => k.trim()).filter(Boolean),
     rootPartners: parseRootList(env.HUB_ROOT_PARTNERS),
+    // V2pn's own copy of runetfreedom's rule lists (lib/geo.mjs); HUB_GEO_MIRROR=0 turns it off.
+    geoMirror: env.HUB_GEO_MIRROR !== '0',
+    geoSource: env.HUB_GEO_SOURCE || undefined,
   };
 }

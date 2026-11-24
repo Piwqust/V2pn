@@ -47,6 +47,8 @@ The service reads `/etc/v2pn-hub.env` (`deploy/v2pn-hub.env.example`), the daily
 | `HUB_ROOT_INDEX_URL` | `https://github.com/<repo>/releases/latest/download/partner-index.json` | The index the owner signs with V2pn's root key; its signature is at the same address + `.sig`. |
 | `HUB_ROOT_KEYS` | the key of `V2pnPartnerKeys` | Root keys that index may be signed with: base64 SubjectPublicKeyInfo, several split by `\|`. |
 | `HUB_ROOT_PARTNERS` | none | Root partners kept whatever the index says: `id=domain,domain; id=domain`. |
+| `HUB_GEO_MIRROR` | on | `0` turns off V2pn's own copy of runetfreedom's rule lists (`/geo/runetfreedom/`). |
+| `HUB_GEO_SOURCE` | `https://github.com/runetfreedom/russia-v2ray-rules-dat/releases/latest/download` | Where that copy is fetched from (`<file>` and `<file>.sha256sum`). |
 | `HUB_BACKUP_DIR` | `/var/backups/v2pn-hub` | Backup: where the daily archives are kept (`deploy/BACKUP.md`). |
 | `HUB_BACKUP_KEEP_DAYS` | `14` | Backup: how many days of archives stay. |
 | `HUB_BACKUP_REMOTE` | none | Backup: `user@host:path/` the new archive is also copied to with rsync over ssh. |
@@ -151,6 +153,14 @@ partner that holds a root partner's id (made before the hub knew it) is taken do
 when a refresh finds it): kept with its provider's work, out of the index, its page removed (`/p/<id>/` is the root
 partner's address), the reason shown to its provider, an audit line and a log warning; it cannot be restored. A
 partner imported from the root partner itself (`source` `import`, the same id) is not touched.
+
+**Rule list mirror.** V2pn's Russian ways read runetfreedom's `geoip.dat` and `geosite.dat` (about 18 and 90 MB)
+from a GitHub release; where GitHub is blocked or slow, V2pn falls back to the release branch, to this copy and to
+jsDelivr (`V2pnGeoMirror`). The hub fetches both files at start and every six hours (half an hour after a failure)
+from `HUB_GEO_SOURCE`, checks each against the release's `.sha256sum`, and writes them with their hashes to
+`<HUB_PUBLIC_DIR>/geo/runetfreedom/`, which Caddy serves as static files; a file is replaced only when it is whole on
+disk and has the release's hash, and an unchanged release costs two small requests. V2pn checks the hash again
+against the publisher's own sources, so the copy needs no trust of its own. It takes about 110 MB of disk.
 
 **Moderation** (`/api/mod/*`, owner and moderators): every partner newest first with its login, domains, state (`live`,
 `pending`, `down`), how its domain is proved, complaints and the rights waiting; take down (with a reason) and restore;

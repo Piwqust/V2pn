@@ -4,6 +4,8 @@ import { createHandler } from './api.mjs';
 import { Db } from './db.mjs';
 import { loadKey, ensureKey } from './keys.mjs';
 import { log } from './log.mjs';
+import path from 'node:path';
+import { GEO_REFRESH_MS, GEO_RETRY_MS, GeoMirror } from './geo.mjs';
 import { ROOT_REFRESH_MS, ROOT_RETRY_MS } from './roots.mjs';
 import { Hub } from './service.mjs';
 
@@ -53,6 +55,24 @@ export function startServer(hub) {
     roots.unref();
   };
   setImmediate(refreshRoots);
+  // V2pn's own copy of runetfreedom's rule lists: now, then every six hours (half an hour after a failure).
+  let geo = null;
+  const mirror = hub.config.geoMirror
+    ? new GeoMirror({ dir: path.join(hub.config.publicDir, 'geo', 'runetfreedom'), source: hub.config.geoSource })
+    : null;
+  const refreshGeo = async () => {
+    let ok = false;
+    try {
+      const { updated } = await mirror.refresh();
+      if (updated.length) log.info('rule list mirror updated', { files: updated.join(',') });
+      ok = true;
+    } catch (e) {
+      log.error('rule list mirror failed', { error: String(e.message || e).slice(0, 500) });
+    }
+    geo = setTimeout(refreshGeo, ok ? GEO_REFRESH_MS : GEO_RETRY_MS);
+    geo.unref();
+  };
+  if (mirror) setImmediate(refreshGeo);
 
   let stopping = false;
   const stop = signal => {
@@ -62,6 +82,7 @@ export function startServer(hub) {
     clearInterval(flush);
     clearInterval(maintain);
     clearTimeout(roots);
+    clearTimeout(geo);
     server.close(() => {
       try {
         hub.counter.flush();

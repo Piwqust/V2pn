@@ -232,7 +232,7 @@ export function buildPage({ id, name, look, theme, pictures, origin, home = '/' 
   const files = { logo, logoOnLight: logoLight, mark: pictures.mark ? 'mark.png' : null, backdrop: theme.background.type === 'image' && pictures.backdrop ? 'background.png' : null };
   const login = look.login === true && Boolean(look.api);
   const support = look.links?.support || '';
-  const bot = /^(https:\/\/t\.me\/|tg:)/.test(support) ? support : null;
+  const bot = /^(https:\/\/(t|telegram)\.me\/|tg:)/.test(support) ? support : null;
   const cabinet = /^https:\/\//.test(look.links?.cabinet || '') ? look.links.cabinet : '';
   const { ru, en } = strings(name, login, cabinet);
 

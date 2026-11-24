@@ -90,9 +90,9 @@ export class Hub {
     return new Map(this.db.all('SELECT sha256, slot, width, height, size FROM uploads WHERE account_id = ?', accountId).map(r => [r.sha256, r]));
   }
 
-  /** What blocks a look, the colour notes and the colours V2pn will draw (for the live preview). */
-  lookReview(look, accountId) {
-    const problems = lookProblems(look, { pictures: this.pictureMap(accountId) });
+  /** What blocks a look, the colour notes and the colours V2pn will draw (for the live preview); <domains> are the partner's. */
+  lookReview(look, accountId, domains) {
+    const problems = lookProblems(look, { pictures: this.pictureMap(accountId), domains });
     const theme = themeOf(look);
     if (theme.brand.length && pageTheme(theme).failures.length) problems.colours = 'Текст на странице партнёра будет нечитаем. Возьмите другой цвет.';
     const derived = mode => {
@@ -145,7 +145,7 @@ export class Hub {
     return {
       partner: row ? this.partnerView(row) : null,
       look,
-      review: this.lookReview(look, accountId),
+      review: this.lookReview(look, accountId, row ? parseJson(row.domains, []) : undefined),
       pictures: [...this.pictureMap(accountId).values()].map(p => ({ sha256: p.sha256, slot: p.slot, width: p.width, height: p.height, size: p.size })),
       // What each picture slot takes, in the words the upload's refusal uses.
       slots: Object.fromEntries(PICTURES.map(key => [key, { hint: C.SLOTS[SLOT_OF[key]].desc[0], maxBytes: C.MAX_ASSET }])),
@@ -253,7 +253,7 @@ export class Hub {
     const asked = input.rights !== undefined ? input.rights
       : row ? Object.fromEntries(this.rightRows(row.id).map(r => [r.name, JSON.parse(r.content)])) : null;
     const rights = parseRights(asked, { domains });
-    const { problems } = this.lookReview(look, accountId);
+    const { problems } = this.lookReview(look, accountId, domains);
     if (Object.keys(problems).length) throw new HubError('look_invalid', { fields: problems });
     const taken = this.domainOwner(domains, row?.id);
     if (taken) throw this.domainTaken(taken, domain);
@@ -654,6 +654,7 @@ export class Hub {
       log.error('publish refused', { problems: publication.problems });
       throw new HubError('publish_failed', { detail: publication.problems });
     }
+    for (const note of publication.notes) log.warn('published without', note);
     const previous = parseJson(this.db.meta('pages'), []);
     const pages = writePublication(this.config.publicDir, publication, this.key, previous);
     const now = nowIso();
@@ -789,7 +790,7 @@ export class Hub {
         this.db.run(`INSERT INTO uploads (account_id, sha256, slot, width, height, size, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)
           ON CONFLICT (account_id, sha256) DO UPDATE SET slot = excluded.slot`, accountId, hash, p.slotKey, w, h, p.bytes.length, Date.now());
       }
-      const problems = lookProblems(look, { pictures: this.pictureMap(accountId) });
+      const problems = lookProblems(look, { pictures: this.pictureMap(accountId), domains });
       if (Object.keys(problems).length) throw new Error(`the look does not pass: ${JSON.stringify(problems)}`);
       if (existing) {
         this.db.run(`UPDATE partners SET account_id = ?, name = ?, domains = ?, look = ?, state = 'live', down_reason = NULL, until = ?, updated_at = ?

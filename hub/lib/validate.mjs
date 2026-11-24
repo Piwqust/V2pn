@@ -64,6 +64,21 @@ export function domainAllowed(domains, url) {
   return domains.some(d => (d.startsWith('*.') ? host.endsWith('.' + d.slice(2)) : host === d));
 }
 
+export const TELEGRAM_HOSTS = ['t.me', 'telegram.me'];
+
+/**
+ * An https link a partner may give as its own: on Telegram (<telegram>) or on its subscription <domains>
+ * (domainAllowed; with <subdomains>, any name under one of them too). With the defaults it is the rule of an open.link
+ * button, V2pnPartnerCatalog.ActionLink's: t.me and the listing's domains.
+ */
+export function partnerLink(url, domains, { telegram = ['t.me'], subdomains = false } = {}) {
+  const link = httpsUrl(url);
+  if (!link) return false;
+  const host = new URL(link).hostname.replace(/\.$/, '').toLowerCase();
+  if (telegram.includes(host) || domainAllowed(domains, link)) return true;
+  return subdomains && domains.some(d => host.endsWith('.' + (d.startsWith('*.') ? d.slice(2) : d)));
+}
+
 /** Two domain lists that could claim the same subscription (the same name, or one under the other's "*."). */
 export function domainsOverlap(a, b) {
   const covers = (wild, d) => wild.startsWith('*.') && (d === wild || (d.startsWith('*.') ? d.slice(2) : d).endsWith('.' + wild.slice(2)));

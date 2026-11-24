@@ -634,11 +634,11 @@ public static class V2pnPartnerTrust
                 : null;
 
             var links = root["links"] as JsonObject;
-            // Anyone can make a partner on the hub, so its cabinet and support links stay on its own domains or Telegram,
-            // like its buttons: a tab with a provider's name must not send people to someone else's sign-in page.
-            // A partner the owner signed with the root key was read by hand and keeps any https link.
+            // Anyone can make a partner on the hub, so its cabinet and support links stay on its own domains, their site
+            // or Telegram (V2pnPartnerLinks, the hub's own rule): a tab with a provider's name must not send people to
+            // someone else's sign-in page. A partner the owner signed with the root key was read by hand and keeps any https link.
             string? Link(string? url) => listing.Signer == V2pnPartnerSigner.Hub
-                ? V2pnPartnerCatalog.ActionLink(listing, url)
+                ? (V2pnPartnerLinks.Allowed(url, listing.Domains) ? Https(url) : null)
                 : Https(url);
             var api = Https(Text(root["api"]));
             if (api != null && (!listing.Allows(V2pnPartnerGrants.Account) || !DomainAllowed(listing, api)))

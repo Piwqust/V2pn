@@ -90,7 +90,7 @@ The server makes the page's address `/p/<id>/` from the name at the first public
 - **Brand colours**: one to three. The first is the Connect button, links and the subscription card.
 - **Background**: the world map in your colours ("Accent"), a gradient of the brand colours, or a picture. A gradient or a picture gives the tab the "Scene": your background instead of the map, with the plan large on it. One colour is enough for a gradient; V2pn adds a second.
 - **Layout**: V2pn's usual one (the sidebar and the main screen) or «Наклейки» (stickers): a sticker-book screen over the whole window, always in night colours.
-- **Support** and **Payment**: links for the "Support" and "Renew" buttons when the subscription headers have none. `t.me/…` works without `https://`.
+- **Support** and **Payment**: links for the "Support" and "Renew" buttons when the subscription headers have none. `t.me/…` works without `https://`. A link leads to Telegram or to your site: the subscription's domain, its parent domain and the names under them. For a subscription on `sub.example.com`, `example.com`, `lk.example.com` and `sub.example.com` all do. Shared zones such as `co.uk`, `com.ru` or `workers.dev` never count as a parent domain.
 - **Special rights**: below, in their own section.
 
 | Picture | Size |

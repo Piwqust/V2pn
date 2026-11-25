@@ -31,7 +31,7 @@
   tools/release.ps1 -Version 1.1.0 -Beta -Tag       # the next beta of 1.1.0 (v1.1.0-beta.1, then .2 ...)
   tools/release.ps1 -Version 1.0.1 -Arch x64 -NoCores -NoInstaller -OutDir $env:TEMP/rel   # quick test build
   tools/release.ps1 -Version 1.0.1 -ManifestOnly    # re-list and re-sign what is in the folder
-  tools/release.ps1 -Version 1.0.1-local.202611141320 -Arch x64 -UpdateOnly -NoManifest -OutDir <dir>
+  tools/release.ps1 -Version 1.0.1-local.202611141320 -Arch x64 -UpdateOnly -OutDir <dir>   # developer mode: signed like a release
                                                     # what the app's developer mode runs
   tools/release.ps1 -Version 1.1.1 -NoManifest -OutDir dist/special/x -Preset https://host/s/abc
                                                     # a special build that adds that subscription at first start

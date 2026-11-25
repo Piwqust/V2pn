@@ -45,6 +45,14 @@ public sealed partial class V2pnDevBuild : ReactiveObject
     /// <summary>What AmazTool wrote while installing the last build.</summary>
     public static string InstallLogPath => Path.Combine(WorkDir, "update.log");
 
+    /// <summary>Where tools/manifest.cs looks for the release signing key when V2PN_SIGNING_KEY is not set.</summary>
+    public static string HomeSigningKey =>
+        Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), ".v2pn", "release-signing-key.pem");
+
+    /// <summary>Whether a build can be signed here, as tools/manifest.cs finds the key.</summary>
+    public static bool HasSigningKey() =>
+        Environment.GetEnvironmentVariable("V2PN_SIGNING_KEY").IsNotEmpty() || File.Exists(HomeSigningKey);
+
     /// <summary>A folder holding the V2pn sources: the build script and the app project.</summary>
     public static bool IsSourceFolder(string? path) =>
         !path.IsNullOrEmpty()
@@ -122,6 +130,12 @@ public sealed partial class V2pnDevBuild : ReactiveObject
                 return Fail($"{source} does not hold the V2pn sources (tools/release.ps1 is missing).");
             }
 
+            // AmazTool installs only a package the release key signed (PackageCheck), a local build too.
+            if (!HasSigningKey())
+            {
+                return Fail($"Installing a build needs V2pn's release signing key on this computer ({HomeSigningKey} or V2PN_SIGNING_KEY): the updater takes only packages that key signed.");
+            }
+
             var version = NextVersion(V2pnAppUpdater.Instance.CurrentVersion, V2pnAppUpdater.Instance.LatestVersion, DateTime.Now);
             if (Directory.Exists(WorkDir))
             {
@@ -148,6 +162,14 @@ public sealed partial class V2pnDevBuild : ReactiveObject
             // AmazTool reads the version from the file name, and writes update.log and failed.txt next to it.
             var package = Path.Combine(WorkDir, $"V2pn-{version}.zip");
             File.Move(built, package);
+            // The signed manifest goes where AmazTool and the updater look for it: beside the package, under its name.
+            var manifest = Path.Combine(outDir, "release.json");
+            if (!File.Exists(manifest) || !File.Exists(manifest + V2pnInfo.SignatureSuffix))
+            {
+                return Fail(LogTail() ?? "The build made no signed manifest.");
+            }
+            File.Copy(manifest, Path.ChangeExtension(package, ".json"), true);
+            File.Copy(manifest + V2pnInfo.SignatureSuffix, Path.ChangeExtension(package, ".json") + V2pnInfo.SignatureSuffix, true);
             Directory.Delete(outDir, true);
 
             State = EV2pnDevBuildState.Installing;
@@ -199,7 +221,7 @@ public sealed partial class V2pnDevBuild : ReactiveObject
                  {
                      "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                      "-File", Path.Combine(source, "tools", "release.ps1"),
-                     "-Version", version, "-Arch", arch, "-NoCores", "-UpdateOnly", "-NoManifest", "-OutDir", outDir,
+                     "-Version", version, "-Arch", arch, "-NoCores", "-UpdateOnly", "-OutDir", outDir,
                  })
         {
             start.ArgumentList.Add(argument);

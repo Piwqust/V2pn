@@ -4,10 +4,11 @@ namespace ServiceLib.Tests.Handler;
 
 public class ConfigHandlerCustomSubscriptionTests
 {
+    // V2pn: chained, so they stay whole configs; a config with one plain server becomes that server (V2pnProviderConfigs).
     private const string FullXrayConfigs = """
         [
-          {"remarks":"custom-1","inbounds":[{"tag":"socks","listen":"127.0.0.1","port":10808,"protocol":"socks","settings":{"auth":"noauth","udp":true}}],"outbounds":[{"tag":"proxy","protocol":"vless","settings":{"vnext":[{"address":"127.0.0.1","port":443,"users":[{"id":"00000000-0000-0000-0000-000000000001","encryption":"none"}]}]},"streamSettings":{"network":"tcp"}}],"routing":{"domainStrategy":"AsIs","rules":[]}},
-          {"remarks":"custom-2","inbounds":[{"tag":"socks","listen":"127.0.0.1","port":10808,"protocol":"socks","settings":{"auth":"noauth","udp":true}}],"outbounds":[{"tag":"proxy","protocol":"vless","settings":{"vnext":[{"address":"127.0.0.1","port":443,"users":[{"id":"00000000-0000-0000-0000-000000000001","encryption":"none"}]}]},"streamSettings":{"network":"tcp"}}],"routing":{"domainStrategy":"AsIs","rules":[]}}
+          {"remarks":"custom-1","inbounds":[{"tag":"socks","listen":"127.0.0.1","port":10808,"protocol":"socks","settings":{"auth":"noauth","udp":true}}],"outbounds":[{"tag":"proxy","protocol":"vless","settings":{"vnext":[{"address":"127.0.0.1","port":443,"users":[{"id":"00000000-0000-0000-0000-000000000001","encryption":"none"}]}]},"streamSettings":{"network":"tcp"},"proxySettings":{"tag":"front"}}],"routing":{"domainStrategy":"AsIs","rules":[]}},
+          {"remarks":"custom-2","inbounds":[{"tag":"socks","listen":"127.0.0.1","port":10808,"protocol":"socks","settings":{"auth":"noauth","udp":true}}],"outbounds":[{"tag":"proxy","protocol":"vless","settings":{"vnext":[{"address":"127.0.0.1","port":443,"users":[{"id":"00000000-0000-0000-0000-000000000001","encryption":"none"}]}]},"streamSettings":{"network":"tcp"},"proxySettings":{"tag":"front"}}],"routing":{"domainStrategy":"AsIs","rules":[]}}
         ]
         """;
 

@@ -58,6 +58,12 @@ public class SubInfoItem
     /// <summary>info, attention or ok (SubPanelHeaders.Tone*).</summary>
     public string? InfoTone { get; set; }
 
+    /// <summary>
+    /// The texts the panel sent as made-up servers ("Обновляйте для актуальности"), one per line
+    /// (V2pnProviderConfigs.Notices); shown with the announcement, never as servers.
+    /// </summary>
+    public string? Notices { get; set; }
+
     public string? InfoButtonText { get; set; }
 
     public string? InfoButtonUrl { get; set; }
@@ -103,6 +109,12 @@ public class SubInfoItem
 
     /// <summary>true: the person turned off the reviewed transport and core config of this subscription's partner.</summary>
     public bool PartnerConnectionOff { get; set; }
+
+    /// <summary>
+    /// true: this subscription's servers go by the rules that came in the provider's configs (V2pnRules) instead of
+    /// the person's routing in V2pn. Off by default: V2pn's routing comes first.
+    /// </summary>
+    public bool ProviderRules { get; set; }
 
     // V2pn: the last update attempt, whatever started it (a click, the schedule, a new subscription).
 

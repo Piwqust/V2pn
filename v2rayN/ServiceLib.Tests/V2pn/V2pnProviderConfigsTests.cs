@@ -65,7 +65,7 @@ public class V2pnProviderConfigsTests
             "balancers": [ { "tag": "Super_Balancer", "selector": [ "proxy" ], "strategy": { "type": "leastLoad" }, "fallbackTag": "direct" } ] } }
         """;
 
-    private static string Answer => $$"""
+    internal static string Answer => $$"""
         [
           {{Single("🇸🇴 Проверяйте отклик нажимая на 🕔", Notice)}},
           {{Auto}},

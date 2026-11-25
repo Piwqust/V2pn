@@ -140,6 +140,10 @@ public static class V2pnProviderConfigs
         !item.ConfigType.IsComplexType() && item.ConfigType != EConfigType.Outbound
         && IsMadeUp(item.Address, item.Port, item.ConfigType is EConfigType.VLESS or EConfigType.VMess ? item.Password : null);
 
+    /// <summary>A group filter (a regex on the servers' names) that takes exactly the servers named.</summary>
+    public static string MembersFilter(IEnumerable<string> names) =>
+        $@"^\s*(?:{string.Join("|", names.Select(n => Regex.Escape(n.Trim())))})\s*$";
+
     #region Configs
 
     private static List<JsonObject>? WholeConfigs(string? text)

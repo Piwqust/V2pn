@@ -1,6 +1,6 @@
 namespace ServiceLib.Handler.Data;
 
-public static class ConfigDbHandler
+public static partial class ConfigDbHandler
 {
     private static readonly string _tag = "ConfigDbHandler";
 
@@ -1393,7 +1393,8 @@ public static class ConfigDbHandler
     /// <param name="subid">Subscription ID to associate with the servers</param>
     /// <param name="isSub">Whether this is from a subscription</param>
     /// <returns>Number of successfully imported servers or -1 if failed</returns>
-    private static async Task<int> AddBatchServersCommon(string strData, string subid, bool isSub)
+    /// <param name="v2pnAccept">V2pn: sees each server read from a line before it is added; false leaves it out.</param>
+    private static async Task<int> AddBatchServersCommon(string strData, string subid, bool isSub, Func<string, ProfileItem, bool>? v2pnAccept = null)
     {
         if (strData.IsNullOrEmpty())
         {
@@ -1446,6 +1447,11 @@ public static class ConfigDbHandler
 
                 var profileItem = FmtHandler.ResolveConfig(str, out _);
                 if (profileItem is null)
+                {
+                    return;
+                }
+                // V2pn: a made-up server is a panel's line of text (V2pnProviderConfigs.Notices), not a server.
+                if (V2pnProviderConfigs.IsMadeUp(profileItem) || v2pnAccept?.Invoke(str, profileItem) == false)
                 {
                     return;
                 }
@@ -1574,6 +1580,15 @@ public static class ConfigDbHandler
         SubItem? subItem)
     {
         var subRemarks = subItem?.Remarks;
+        // V2pn: whole Xray configs from a panel become its servers, a group and notices, not "Custom" profiles.
+        if (V2pnProviderConfigs.Unpack(strData) is { Servers.Count: > 0 } unpacked)
+        {
+            var unpackedCount = await AddV2pnProviderConfigs(unpacked, subid, isSub, subItem);
+            if (unpackedCount > 0)
+            {
+                return unpackedCount;
+            }
+        }
         // Prioritize using complete custom parsing, followed by custom outbound parsing.
         var lstProfiles = V2rayFmt.ResolveToCustom(strData, subRemarks);
         if (lstProfiles.Count == 0)

@@ -87,6 +87,7 @@ public sealed class SubInfoManager
             info.PartnerUrl = null;
             info.AccountToken = panel.AccountToken;
             CopyCompat(panel, info);
+            info.Notices = V2pnProviderConfigs.Notices(body) is { Count: > 0 } notices ? string.Join('\n', notices) : null;
             info.ReceivedTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (imported && ApplyToSubscription(item, info, panel))

@@ -38,8 +38,10 @@
             <SolidColorBrush x:Key="V2Scrim" Color="#E6000000" />
             <SolidColorBrush x:Key="V2Safe" Color="#3DD68C" />
             <SolidColorBrush x:Key="V2SafeSoft" Color="#263DD68C" />
-            <SolidColorBrush x:Key="V2Unsafe" Color="#FF5A3D" />
-            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#26FF5A3D" />
+            <!--  Unprotected, a bad ping and Delete are crimson (OKLCH hue 15), clear of the red accent (32):
+                  the Connect button must not share a colour with "unprotected" or with deleting.  -->
+            <SolidColorBrush x:Key="V2Unsafe" Color="#FF5470" />
+            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#26FF5470" />
             <SolidColorBrush x:Key="V2Folder" Color="#5C9DF0" />
             <SolidColorBrush x:Key="V2FolderSoft" Color="#1E2B3E" />
             <SolidColorBrush x:Key="V2Star" Color="#F2B14E" />
@@ -47,8 +49,8 @@
             <SolidColorBrush x:Key="V2PingGoodSoft" Color="#1F3DD68C" />
             <SolidColorBrush x:Key="V2PingMid" Color="#F2B84B" />
             <SolidColorBrush x:Key="V2PingMidSoft" Color="#1FF2B84B" />
-            <SolidColorBrush x:Key="V2PingBad" Color="#FF5A3D" />
-            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FFF5A3D" />
+            <SolidColorBrush x:Key="V2PingBad" Color="#FF5470" />
+            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FFF5470" />
             <SolidColorBrush x:Key="V2PingNone" Color="#6C6C78" />
             <SolidColorBrush x:Key="V2PingNoneSoft" Color="#14FFFFFF" />
             <SolidColorBrush x:Key="V2MapOcean" Color="#0E0E11" />
@@ -56,7 +58,7 @@
             <SolidColorBrush x:Key="V2MapBorder" Color="#34343F" />
             <SolidColorBrush x:Key="V2MapDot" Color="#8A8A99" />
             <SolidColorBrush x:Key="V2MapActiveSafe" Color="#2A4A3A" />
-            <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#4A2A22" />
+            <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#4A2230" />
             <SolidColorBrush x:Key="V2MapActiveLocal" Color="#463D27" />
             <!--  Meridians and parallels on the ocean, and the shadow under the map pin.  -->
             <SolidColorBrush x:Key="V2MapGrid" Color="#0BFFFFFF" />
@@ -81,8 +83,8 @@
                 <GradientStop Offset="1" Color="#02F2B84B" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2StateTintUnsafe" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#38FF5A3D" />
-                <GradientStop Offset="1" Color="#02FF5A3D" />
+                <GradientStop Offset="0" Color="#38FF5470" />
+                <GradientStop Offset="1" Color="#02FF5470" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2SidebarFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#1F1F27" />
@@ -106,12 +108,12 @@
             </LinearGradientBrush>
             <!--  Destructive buttons: red whatever the accent (not in Appearance.AccentKeys), dark label.  -->
             <LinearGradientBrush x:Key="V2DangerFill" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#E5484D" />
-                <GradientStop Offset="1" Color="#DE4449" />
+                <GradientStop Offset="0" Color="#E54A66" />
+                <GradientStop Offset="1" Color="#E04460" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2DangerFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#EE5A5F" />
-                <GradientStop Offset="1" Color="#E64D52" />
+                <GradientStop Offset="0" Color="#EB5A74" />
+                <GradientStop Offset="1" Color="#E54A66" />
             </LinearGradientBrush>
             <SolidColorBrush x:Key="V2OnDanger" Color="#0B0B0D" />
             <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
@@ -162,17 +164,18 @@
             <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#245C9DF0" />
             <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches take the accent when on.  -->
             <SolidColorBrush x:Key="TextBoxDefaultBackground" Color="#17171D" />
-            <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#30303A" />
+            <!--  Input and switch edges reach 3:1 against the card (WCAG 1.4.11): #30303A was 1.3:1.  -->
+            <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#6C6C78" />
             <SolidColorBrush x:Key="TextBoxPointeroverBackground" Color="#1A1A21" />
-            <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#41414D" />
+            <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#7C7C88" />
             <SolidColorBrush x:Key="TextBoxPressedBackground" Color="#17171D" />
             <SolidColorBrush x:Key="TextBoxFocusBorderBrush" Color="#5C9DF0" />
             <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#858591" />
             <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#66FF3D1F" />
             <SolidColorBrush x:Key="ComboBoxSelectorBackground" Color="#17171D" />
-            <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#30303A" />
+            <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#6C6C78" />
             <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBackground" Color="#1A1A21" />
-            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBorderBrush" Color="#41414D" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBorderBrush" Color="#7C7C88" />
             <SolidColorBrush x:Key="ComboBoxSelectorFocusBackground" Color="#1A1A21" />
             <SolidColorBrush x:Key="ComboBoxSelectorFocusBorderBrush" Color="#5C9DF0" />
             <SolidColorBrush x:Key="ComboBoxSelectorPressedBackground" Color="#1A1A21" />
@@ -228,8 +231,8 @@
                   for 4.5:1 on their Soft fill over the map; the tints and map fills below keep lighter tones.  -->
             <SolidColorBrush x:Key="V2Safe" Color="#046B39" />
             <SolidColorBrush x:Key="V2SafeSoft" Color="#22046B39" />
-            <SolidColorBrush x:Key="V2Unsafe" Color="#AE250D" />
-            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#22AE250D" />
+            <SolidColorBrush x:Key="V2Unsafe" Color="#AD1F3E" />
+            <SolidColorBrush x:Key="V2UnsafeSoft" Color="#22AD1F3E" />
             <SolidColorBrush x:Key="V2Folder" Color="#3A7BD5" />
             <SolidColorBrush x:Key="V2FolderSoft" Color="#E3ECFA" />
             <SolidColorBrush x:Key="V2Star" Color="#A86400" />
@@ -237,8 +240,8 @@
             <SolidColorBrush x:Key="V2PingGoodSoft" Color="#1F046B39" />
             <SolidColorBrush x:Key="V2PingMid" Color="#834F00" />
             <SolidColorBrush x:Key="V2PingMidSoft" Color="#1F834F00" />
-            <SolidColorBrush x:Key="V2PingBad" Color="#AE250D" />
-            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FAE250D" />
+            <SolidColorBrush x:Key="V2PingBad" Color="#AD1F3E" />
+            <SolidColorBrush x:Key="V2PingBadSoft" Color="#1FAD1F3E" />
             <SolidColorBrush x:Key="V2PingNone" Color="#8E8E9A" />
             <SolidColorBrush x:Key="V2PingNoneSoft" Color="#0F16161B" />
             <SolidColorBrush x:Key="V2MapOcean" Color="#E6E9F0" />
@@ -246,7 +249,7 @@
             <SolidColorBrush x:Key="V2MapBorder" Color="#CDD2DC" />
             <SolidColorBrush x:Key="V2MapDot" Color="#7C8293" />
             <SolidColorBrush x:Key="V2MapActiveSafe" Color="#C9EEDB" />
-            <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#F8D3CF" />
+            <SolidColorBrush x:Key="V2MapActiveUnsafe" Color="#F8D0D8" />
             <SolidColorBrush x:Key="V2MapActiveLocal" Color="#F5E6C4" />
             <!--  Meridians and parallels on the ocean, and the shadow under the map pin.  -->
             <SolidColorBrush x:Key="V2MapGrid" Color="#0E16161B" />
@@ -269,8 +272,8 @@
                 <GradientStop Offset="1" Color="#02C98510" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2StateTintUnsafe" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#26E8391B" />
-                <GradientStop Offset="1" Color="#02E8391B" />
+                <GradientStop Offset="0" Color="#26E04460" />
+                <GradientStop Offset="1" Color="#02E04460" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2SidebarFill" StartPoint="0%,0%" EndPoint="0%,100%">
                 <GradientStop Offset="0" Color="#F9F9FB" />
@@ -294,12 +297,12 @@
             </LinearGradientBrush>
             <!--  Destructive buttons: red whatever the accent (not in Appearance.AccentKeys), white label.  -->
             <LinearGradientBrush x:Key="V2DangerFill" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#C62A2F" />
-                <GradientStop Offset="1" Color="#B82328" />
+                <GradientStop Offset="0" Color="#C62A4C" />
+                <GradientStop Offset="1" Color="#BF1F45" />
             </LinearGradientBrush>
             <LinearGradientBrush x:Key="V2DangerFillHover" StartPoint="0%,0%" EndPoint="0%,100%">
-                <GradientStop Offset="0" Color="#CC3237" />
-                <GradientStop Offset="1" Color="#C62A2F" />
+                <GradientStop Offset="0" Color="#CC3354" />
+                <GradientStop Offset="1" Color="#C62A4C" />
             </LinearGradientBrush>
             <SolidColorBrush x:Key="V2OnDanger" Color="#FFFFFF" />
             <LinearGradientBrush x:Key="V2NeutralFill" StartPoint="0%,0%" EndPoint="0%,100%">
@@ -342,7 +345,8 @@
             <SolidColorBrush x:Key="MenuItemSeparatorBackground" Color="#1416161B" />
             <SolidColorBrush x:Key="MenuItemForeground" Color="#16161B" />
             <SolidColorBrush x:Key="MenuItemExpandIconForeground" Color="#8E8E9A" />
-            <SolidColorBrush x:Key="MenuItemInputGestureTextForeground" Color="#8E8E9A" />
+            <!--  Shortcut text in menus is text: 5.7:1 on the white menu (#8E8E9A gave 3.2:1).  -->
+            <SolidColorBrush x:Key="MenuItemInputGestureTextForeground" Color="#666673" />
             <SolidColorBrush x:Key="NotificationCardBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="NotificationCardBorderBrush" Color="#1416161B" />
             <BoxShadows x:Key="NotificationCardBoxShadows">0 2 4 0 #1416161B, 0 16 36 -10 #3316161B</BoxShadows>
@@ -350,17 +354,19 @@
             <SolidColorBrush x:Key="V2ToastInfoSoft" Color="#1A3A7BD5" />
             <!--  Inputs and switches: inset wells with a hairline border, blue focus; switches take the accent when on.  -->
             <SolidColorBrush x:Key="TextBoxDefaultBackground" Color="#F5F6F8" />
-            <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#2116161B" />
+            <!--  Input edges and the off switch reach 3:1 against the white card (WCAG 1.4.11); the old
+                  hairline and #D9DBE1 track were about 1.3:1, and the white knob vanished on them.  -->
+            <SolidColorBrush x:Key="TextBoxDefaultBorderBrush" Color="#8A8A96" />
             <SolidColorBrush x:Key="TextBoxPointeroverBackground" Color="#F1F2F5" />
-            <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#3316161B" />
+            <SolidColorBrush x:Key="TextBoxPointeroverBorderBrush" Color="#73737F" />
             <SolidColorBrush x:Key="TextBoxPressedBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="TextBoxFocusBorderBrush" Color="#3A7BD5" />
             <SolidColorBrush x:Key="TextBoxPlaceholderForeground" Color="#73737F" />
             <SolidColorBrush x:Key="TextBoxSelectionBackground" Color="#55E8391B" />
             <SolidColorBrush x:Key="ComboBoxSelectorBackground" Color="#F5F6F8" />
-            <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#2116161B" />
+            <SolidColorBrush x:Key="ComboBoxSelectorBorderBrush" Color="#8A8A96" />
             <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBackground" Color="#F1F2F5" />
-            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBorderBrush" Color="#3316161B" />
+            <SolidColorBrush x:Key="ComboBoxSelectorPointeroverBorderBrush" Color="#73737F" />
             <SolidColorBrush x:Key="ComboBoxSelectorFocusBackground" Color="#FFFFFF" />
             <SolidColorBrush x:Key="ComboBoxSelectorFocusBorderBrush" Color="#3A7BD5" />
             <SolidColorBrush x:Key="ComboBoxSelectorPressedBackground" Color="#FFFFFF" />
@@ -372,9 +378,9 @@
             <SolidColorBrush x:Key="ComboBoxItemFocusBackground" Color="#0D16161B" />
             <SolidColorBrush x:Key="ComboBoxItemSelectedBackground" Color="#1AE8391B" />
             <SolidColorBrush x:Key="ComboBoxItemSelectedForeground" Color="#16161B" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedDefaultBackground" Color="#D9DBE1" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPointeroverBackground" Color="#CFD2D9" />
-            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPressedBackground" Color="#C3C6CE" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedDefaultBackground" Color="#8E8E9A" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPointeroverBackground" Color="#80808C" />
+            <SolidColorBrush x:Key="ToggleSwitchContainerUnCheckedPressedBackground" Color="#777783" />
             <SolidColorBrush x:Key="ToggleSwitchContainerCheckedDefaultBackground" Color="#E8391B" />
             <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPointeroverBackground" Color="#F04A2D" />
             <SolidColorBrush x:Key="ToggleSwitchContainerCheckedPressedBackground" Color="#C82F15" />
@@ -387,6 +393,8 @@
 
     <FontFamily x:Key="V2UiFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
     <FontFamily x:Key="V2DisplayFont">avares://V2pn/Assets/Fonts#Inter</FontFamily>
+    <!--  Type scale: 10 (badges, monograms), 11, 12, 13 (body), 14, 15, 16, 20, 22, 24, 28, 36. A new size takes
+          one of these; half steps (11.5, 12.5, 13.5) were indistinguishable from their neighbours.  -->
     <!--  Radii nest: inner = outer - padding (panel 18 with 6 padding -> rows 12; floating 16 with 6 -> rail tiles 10).  -->
     <!--  Icon tiles of the settings menu: one hue per kind of setting, white glyph, same in both themes.  -->
     <LinearGradientBrush x:Key="V2TileGray" StartPoint="0%,0%" EndPoint="0%,100%"><GradientStop Offset="0" Color="#9A9AA6" /><GradientStop Offset="1" Color="#73737F" /></LinearGradientBrush>

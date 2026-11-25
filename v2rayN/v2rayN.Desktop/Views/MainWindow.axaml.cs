@@ -1078,6 +1078,9 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         }, state != ProtectionState.Unprotected);
         btnConnect.Classes.Set("safe", kind == "safe");
         btnConnect.Classes.Set("warn", kind == "warn" && state != ProtectionState.Unprotected);
+        // The selected server's dot in the sidebar: green only while the connection is protected.
+        lstRows.Classes.Set("verdictsafe", kind == "safe");
+        lstRows.Classes.Set("verdictwarn", kind == "warn" && state != ProtectionState.Unprotected);
     }
     private static async Task<int> StoredDelayAsync(string? indexId)
     {

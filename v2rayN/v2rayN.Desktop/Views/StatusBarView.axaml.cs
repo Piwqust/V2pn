@@ -43,7 +43,9 @@ public partial class StatusBarView : ReactiveUserControl<StatusBarViewModel>
         btnCheck.Click += (_, _) => _ = CheckConnectionAsync();
         Avalonia.Automation.AutomationProperties.SetName(btnCheck, L.CheckConnection);
         btnIpInfo.Click += (_, _) => _ = MainWindow.ShowRoomyDialog(new IpInfoView());
-        Avalonia.Automation.AutomationProperties.SetName(btnIpInfo, L.IpButtonTip);
+        // The name is the visible label (WCAG 2.5.3), also when the compact card hides it; the tip explains.
+        Avalonia.Automation.AutomationProperties.SetName(btnIpInfo, L.IpButton);
+        Avalonia.Automation.AutomationProperties.SetHelpText(btnIpInfo, L.IpButtonTip);
         chartHost.SizeChanged += (_, _) => DrawChart();
         // The card's width follows the window, never its own content, so this cannot flip back and forth.
         SizeChanged += (_, e) => SetCompact(e.NewSize.Width < CompactWidth);

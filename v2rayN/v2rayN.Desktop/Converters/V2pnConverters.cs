@@ -26,6 +26,43 @@ public static class V2pnConverters
             _ => L.Ms(d),
         });
 
+    /// <summary>The favorite button says what pressing it does now.</summary>
+    public static readonly IValueConverter FavoriteAction =
+        new FuncValueConverter<bool, string>(on => on ? L.Unfavorite : L.Favorite);
+
+    /// <summary>
+    /// A sidebar list item's name for screen readers. Server rows say what the row shows besides the name:
+    /// "Frankfurt, VLESS, 59 ms, selected, in favorites"; other rows keep their text. Values: the row,
+    /// Model.Delay and Model.IsFavorite (bound so the name follows a new ping or a star).
+    /// </summary>
+    public static readonly IMultiValueConverter SideRowName = new FuncMultiValueConverter<object?, string>(values =>
+    {
+        var list = values.ToList();
+        if (list.Count == 0 || list[0] is not v2rayN.Desktop.ViewModels.SideServerRow row)
+        {
+            return list.Count > 0 ? list[0]?.ToString() ?? string.Empty : string.Empty;
+        }
+        var parts = new List<string> { row.Title };
+        if (row.Subtitle.IsNotEmpty())
+        {
+            parts.Add(row.Subtitle);
+        }
+        if (row.Model.Delay != 0)
+        {
+            parts.Add(PingText.Convert(row.Model.Delay, typeof(string), null, System.Globalization.CultureInfo.CurrentCulture) as string ?? string.Empty);
+        }
+        var name = string.Join(", ", parts.Where(p => p.IsNotEmpty()));
+        if (row.IsActive)
+        {
+            name += L.OptionSelected;
+        }
+        if (row.Model.IsFavorite)
+        {
+            name += ", " + L.RowInFavorites;
+        }
+        return name;
+    });
+
     // A never-tested delay (0) shows no pill at all instead of a column of grey "—" placeholders.
     public static readonly IValueConverter NotZero =
         new FuncValueConverter<int, bool>(d => d != 0);

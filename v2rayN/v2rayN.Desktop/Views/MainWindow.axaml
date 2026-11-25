@@ -324,7 +324,7 @@
                                       setting; by default its tile shows only with advanced settings on, and it is always in the menu.  -->
                                 <Button
                                     x:Name="btnRailUpdate"
-                                    AutomationProperties.Name="{x:Static loc:L.UpdateAll}"
+                                    AutomationProperties.Name="{x:Static loc:L.RailUpdate}"
                                     Classes="rail"
                                     Theme="{StaticResource V2RailTile}"
                                     ToolTip.Tip="{x:Static loc:L.UpdateAll}">
@@ -378,6 +378,18 @@
                             BorderThickness="0"
                             ItemContainerTheme="{StaticResource V2PlainItem}"
                             ScrollViewer.HorizontalScrollBarVisibility="Disabled">
+                            <!--  The list item is what arrow keys land on: a server row's name carries its ping, the pick and the star.  -->
+                            <ListBox.Styles>
+                                <Style Selector="ListBox#lstRows > ListBoxItem">
+                                    <Setter Property="AutomationProperties.Name">
+                                        <MultiBinding Converter="{x:Static conv:V2pnConverters.SideRowName}">
+                                            <ReflectionBinding />
+                                            <ReflectionBinding Path="Model.Delay" />
+                                            <ReflectionBinding Path="Model.IsFavorite" />
+                                        </MultiBinding>
+                                    </Setter>
+                                </Style>
+                            </ListBox.Styles>
                             <ListBox.DataTemplates>
                                 <DataTemplate x:DataType="side:SideHeaderRow">
                                     <Grid
@@ -625,12 +637,12 @@
                                                     Classes="rowactions"
                                                     Orientation="Horizontal">
                                                     <Button
-                                                        AutomationProperties.Name="{x:Static loc:L.ToggleFavorite}"
+                                                        AutomationProperties.Name="{Binding Model.IsFavorite, Converter={x:Static conv:V2pnConverters.FavoriteAction}}"
                                                         Classes="ghost small icon star"
                                                         Classes.on="{Binding Model.IsFavorite}"
                                                         Click="SideStar_Click"
                                                         Theme="{StaticResource V2Button}"
-                                                        ToolTip.Tip="{x:Static loc:L.ToggleFavorite}">
+                                                        ToolTip.Tip="{Binding Model.IsFavorite, Converter={x:Static conv:V2pnConverters.FavoriteAction}}">
                                                         <Panel>
                                                             <PathIcon Data="{StaticResource SemiIconStar}" IsVisible="{Binding Model.IsFavorite}" />
                                                             <PathIcon Data="{StaticResource SemiIconStarStroked}" IsVisible="{Binding !Model.IsFavorite}" />
@@ -638,7 +650,7 @@
                                                     </Button>
                                                     <Button
                                                         Margin="0,0,-4,0"
-                                                        AutomationProperties.Name="{x:Static loc:L.More}"
+                                                        AutomationProperties.Name="{Binding MoreName}"
                                                         Classes="ghost small icon kebab"
                                                         Click="SideServerMenu_Click"
                                                         Theme="{StaticResource V2Button}"
@@ -865,7 +877,7 @@
                                                         <PathIcon Classes="i14" Data="{StaticResource SemiIconRefresh}" />
                                                     </Button>
                                                     <Button
-                                                        AutomationProperties.Name="{x:Static loc:L.More}"
+                                                        AutomationProperties.Name="{Binding MoreName}"
                                                         Classes="ghost small icon kebab reveal"
                                                         Click="SideSubMenu_Click"
                                                         Theme="{StaticResource V2Button}"
@@ -1662,28 +1674,35 @@
                                             Classes="hairline" />
                                     </Grid>
                                 </StackPanel>
-                                <StackPanel Spacing="8">
+                                <!--  One grid for all three ways in, laid out by MainWindow.LayOutHandButtons: the buttons
+                                      change rows and columns but never parents (a moved button broke UI Automation).  -->
+                                <Grid
+                                    x:Name="gridWelcomeHand"
+                                    ColumnDefinitions="*,8,*"
+                                    RowDefinitions="Auto,Auto"
+                                    RowSpacing="8">
                                     <Button
                                         x:Name="btnWelcomePaste"
+                                        Grid.ColumnSpan="3"
                                         Height="42"
                                         HorizontalAlignment="Stretch"
                                         Classes="accent"
                                         Content="{x:Static loc:L.WelcomePaste}"
                                         Theme="{StaticResource V2Button}" />
-                                    <Grid x:Name="gridWelcomeHand" ColumnDefinitions="*,8,*">
-                                        <Button
-                                            x:Name="btnWelcomeSub"
-                                            HorizontalAlignment="Stretch"
-                                            Content="{x:Static loc:L.AddSubscription}"
-                                            Theme="{StaticResource V2Button}" />
-                                        <Button
-                                            x:Name="btnWelcomeQr"
-                                            Grid.Column="2"
-                                            HorizontalAlignment="Stretch"
-                                            Content="{x:Static loc:L.WelcomeQr}"
-                                            Theme="{StaticResource V2Button}" />
-                                    </Grid>
-                                </StackPanel>
+                                    <Button
+                                        x:Name="btnWelcomeSub"
+                                        Grid.Row="1"
+                                        HorizontalAlignment="Stretch"
+                                        Content="{x:Static loc:L.AddSubscription}"
+                                        Theme="{StaticResource V2Button}" />
+                                    <Button
+                                        x:Name="btnWelcomeQr"
+                                        Grid.Row="1"
+                                        Grid.Column="2"
+                                        HorizontalAlignment="Stretch"
+                                        Content="{x:Static loc:L.WelcomeQr}"
+                                        Theme="{StaticResource V2Button}" />
+                                </Grid>
                                 <!--  What goes through the VPN, decided before the first connection. The Russian
                                       mode needs the runetfreedom lists, downloaded only when the person picks it.  -->
                                 <Border Classes="hairline" />

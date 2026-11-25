@@ -48,7 +48,7 @@
         <Setter Property="LineHeight" Value="28" />
     </Style>
     <Style Selector="TextBlock.h3">
-        <Setter Property="FontSize" Value="19" />
+        <Setter Property="FontSize" Value="20" />
     </Style>
     <!--  The connection header (country or server name), with .display.  -->
     <Style Selector="TextBlock.hdr">
@@ -164,7 +164,7 @@
         <Setter Property="BorderThickness" Value="1" />
     </Style>
     <Style Selector="Border.mono TextBlock">
-        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontSize" Value="10" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LetterSpacing" Value="0.3" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
@@ -215,9 +215,9 @@
     <!--  Settings navigation: links to the windows of their own, shaped like the nav entries above them.  -->
     <Style Selector="TextBlock.navgroup">
         <Setter Property="Margin" Value="10,0,0,6" />
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
     <Style Selector="Button.navlink">
         <Setter Property="HorizontalAlignment" Value="Stretch" />
@@ -526,7 +526,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Border.membernum > TextBlock">
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
         <Setter Property="HorizontalAlignment" Value="Center" />
@@ -539,9 +539,17 @@
         <Setter Property="Margin" Value="0,0,-3,-3" />
         <Setter Property="HorizontalAlignment" Value="Right" />
         <Setter Property="VerticalAlignment" Value="Bottom" />
-        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+        <Setter Property="Fill" Value="{DynamicResource V2Muted}" />
         <Setter Property="Stroke" Value="{DynamicResource V2SidebarBackground}" />
         <Setter Property="StrokeThickness" Value="2" />
+    </Style>
+    <!--  The selected server's dot takes the verdict's colour (MainWindow.PaintVerdict): green only while
+          the connection is protected, amber for a local proxy; grey marks the pick while unprotected.  -->
+    <Style Selector="ListBox.verdictsafe Ellipse.badge">
+        <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+    </Style>
+    <Style Selector="ListBox.verdictwarn Ellipse.badge">
+        <Setter Property="Fill" Value="{DynamicResource V2PingMid}" />
     </Style>
 
     <Style Selector="Border.mono.sm">
@@ -550,7 +558,7 @@
         <Setter Property="CornerRadius" Value="5" />
     </Style>
     <Style Selector="Border.mono.sm TextBlock">
-        <Setter Property="FontSize" Value="9.5" />
+        <Setter Property="FontSize" Value="10" />
         <Setter Property="LetterSpacing" Value="0" />
     </Style>
 
@@ -668,7 +676,7 @@
         <Setter Property="Background" Value="{DynamicResource V2Hover}" />
     </Style>
     <Style Selector="Border.state TextBlock">
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="LetterSpacing" Value="0.6" />
         <Setter Property="FontFeatures" Value="+tnum" />
@@ -926,7 +934,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBlock.srowtitle">
-        <Setter Property="FontSize" Value="13.5" />
+        <Setter Property="FontSize" Value="14" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
         <Setter Property="TextWrapping" Value="Wrap" />
@@ -1037,7 +1045,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Border.adminbadge > TextBlock">
-        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontSize" Value="10" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
     </Style>
@@ -1048,7 +1056,7 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="Border.recommend > TextBlock">
-        <Setter Property="FontSize" Value="10.5" />
+        <Setter Property="FontSize" Value="10" />
         <Setter Property="FontWeight" Value="SemiBold" />
         <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
     </Style>
@@ -1242,7 +1250,7 @@
         <Setter Property="FontSize" Value="13" />
     </Style>
     <Style Selector="MenuItem TextBlock.midesc">
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         <Setter Property="Margin" Value="0,1,0,0" />
     </Style>
@@ -1268,7 +1276,7 @@
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
     </Style>
     <Style Selector="TextBlock.toastmsg">
-        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="LineHeight" Value="17" />
         <Setter Property="TextWrapping" Value="Wrap" />
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
@@ -1463,7 +1471,7 @@
         <Setter Property="Spacing" Value="5" />
     </Style>
     <Style Selector="TextBlock.usage">
-        <Setter Property="FontSize" Value="11.5" />
+        <Setter Property="FontSize" Value="12" />
         <Setter Property="FontFeatures" Value="+tnum" />
         <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
@@ -1544,14 +1552,14 @@
         <Setter Property="VerticalAlignment" Value="Center" />
     </Style>
     <Style Selector="TextBlock.advtitle">
-        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
     </Style>
     <Style Selector="TextBlock.advhint">
         <Setter Property="FontSize" Value="11" />
         <Setter Property="TextWrapping" Value="Wrap" />
-        <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
     </Style>
     <Style Selector="Border.srow.advhidden, StackPanel.sgroup.advhidden, ListBoxItem.advhidden">
         <Setter Property="IsVisible" Value="False" />

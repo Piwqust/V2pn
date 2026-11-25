@@ -26,7 +26,7 @@
     -->
     <Window.Styles>
         <Style Selector="TextBlock.navsec">
-            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
             <Setter Property="Margin" Value="10,2,10,6" />
@@ -44,7 +44,7 @@
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
         <Style Selector="TextBlock.sublink">
-            <Setter Property="FontSize" Value="11.5" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
             <Setter Property="Margin" Value="0,1,0,0" />

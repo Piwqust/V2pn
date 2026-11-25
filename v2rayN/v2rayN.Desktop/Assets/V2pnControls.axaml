@@ -860,7 +860,7 @@
         <Setter Property="MinHeight" Value="30" />
         <Setter Property="Margin" Value="0,0,6,6" />
         <Setter Property="CornerRadius" Value="15" />
-        <Setter Property="FontSize" Value="12.5" />
+        <Setter Property="FontSize" Value="13" />
         <Setter Property="FontWeight" Value="Medium" />
         <Setter Property="VerticalContentAlignment" Value="Center" />
         <Setter Property="Cursor" Value="Hand" />

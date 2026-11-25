@@ -4,6 +4,22 @@ What changes for the people who use the app. Each version's section becomes the 
 
 ## Unreleased
 
+### Interface
+
+- The dot on the selected server's flag is green only while the connection is protected; before, it stayed green after Disconnect, under "Unprotected". It is amber for a local proxy and grey while unprotected.
+- "Unprotected", a server that does not answer and the Delete buttons are crimson now, set apart from the red-orange of Connect: the button you press to get protected no longer has the colour of "unprotected" or of deleting.
+- Easier to read: the hint under Advanced settings, the "More settings" heading and the shortcuts in menus were too faint. In the light theme a switch that is off and the edges of text fields now stand out from the card.
+- A subscription's traffic fits its row: "44 / 200 GB" instead of "44 GB of 200 …".
+- "Change mode and route" in the first-run walkthrough looks like a button, not like a line of the summary.
+- Errors say what to do: a route that did not switch, a bypass chain that was not saved and a move from another app that failed each name the next step.
+- Menus (☰ and a row's right-click menu) open at once instead of growing in.
+- Screen readers:
+  - A server row says its ping, whether it is selected and whether it is in favorites. Its buttons name the action and the server: "Add to favorites" or "Remove from favorites", "More actions for Frankfurt".
+  - The apps to move from in the walkthrough say whether they are ticked; the chosen palette in Appearance says it is chosen.
+  - The field for your own accent colour has a name.
+  - "My IP" and "Update subscriptions" are called what they say on screen.
+  - The first-run card stays readable while V2pn looks for other VPN apps. Before, one of its buttons was moved during the search, and screen readers could no longer read the card.
+
 ### Fixes
 
 - `v2pnctl` works in a new terminal after V2pn updated itself to 1.5.0. Only the installer put V2pn's folder on the PATH, so a copy that came by an update had `v2pnctl` in its folder and no terminal found it. The installed V2pn now adds its folder to your user's PATH once, at its next start, the way the installer does; if you take it off again, V2pn leaves it off. Portable copies are left alone.

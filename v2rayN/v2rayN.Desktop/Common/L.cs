@@ -66,6 +66,10 @@ public static partial class L
     public static string ToggleFavorite => T("Favorite / unfavorite", "В избранное / убрать");
     public static string Ping => T("Ping", "Пинг");
     public static string More => T("More", "Ещё");
+    // V2pn: the "More" button of a sidebar row names its object, so a list of them is not "More, More, More".
+    public static string MoreFor(string name) => string.Format(T("More actions for {0}", "Другие действия: {0}"), name);
+    // Parts of a server row's name for screen readers: "Frankfurt, VLESS, 59 ms, selected, in favorites".
+    public static string RowInFavorites => T("in favorites", "в избранном");
 
     public static string EmptyTitle => T("Nothing here yet.", "Пока пусто.");
     public static string EmptyHint => T("Add a subscription link or paste a server from the clipboard.", "Добавьте ссылку на подписку или вставьте сервер из буфера обмена.");
@@ -267,7 +271,10 @@ public static partial class L
     public static string RouteCustomPick => T("Choose…", "Выбрать…");
     public static string RouteDownloading => T("Downloading the rule lists for Russia…", "Загрузка списков правил для России…");
     public static string RouteApplying => T("Applying…", "Применение…");
-    public static string RouteFailed => T("Couldn't switch the routing. Details are in the log.", "Не удалось переключить маршруты. Подробности в журнале.");
+    // Errors say what to do next; Tk keeps the other languages' translation of the old wording.
+    public static string RouteFailed => Tk("Couldn't switch the routing. Details are in the log.",
+        "Couldn't switch the routing. Pick the route again; if it fails again, restart V2pn. Details are in the log.",
+        "Не удалось переключить маршруты. Выберите маршрут ещё раз, а если не выйдет, перезапустите V2pn. Подробности в журнале.");
     public static string MenuLog => T("Log", "Журнал");
     public static string MenuTable => T("Server table", "Таблица серверов");
     public static string MenuClashProxies => T("Clash proxies", "Прокси Clash");
@@ -474,7 +481,8 @@ public static partial class L
     public static string CheckFailureHint => T("The check could not confirm this connection. Try the check again.",
         "Проверка не смогла подтвердить подключение. Повторите проверку.");
     public static string StateNoResponse => T("Server not responding", "Сервер не отвечает");
-    public static string ClickToConnect => Tk("Click to connect · right-click for more", "Right-click for more actions", "Правой кнопкой\u00A0— другие действия");
+    // Names the keyboard way too: the ⋮ button on the row (Tab reaches it), not only the mouse.
+    public static string ClickToConnect => Tk("Click to connect · right-click for more", "More actions: right-click or the ⋮ button", "Другие действия: правой кнопкой или кнопкой ⋮");
 
     /// <summary>"6 servers" with the plural form the language needs.</summary>
     public static string ServerCount(int n)

@@ -168,6 +168,9 @@ public sealed class AppearanceView : UserControl
         DetachedFromVisualTree += (_, _) => Editions.Changed -= ShowPartnerNote;
         ShowPartnerNote();
 
+        // The watermark is no label: the field gets a name of its own for screen readers.
+        AutomationProperties.SetName(_customAccent, L.ApAccentCustom);
+        ToolTip.SetTip(_customAccent, L.ApAccentCustom);
         _customAccent.LostFocus += (_, _) => ApplyCustomAccent();
         _customAccent.KeyDown += (_, e) =>
         {
@@ -447,7 +450,8 @@ public sealed class AppearanceView : UserControl
                 },
             };
             card.Bind(ThemeProperty, card.GetResourceObservable("V2Button"));
-            AutomationProperties.SetName(card, L.ApPaletteName(palette.Id));
+            // Like the accents: the frame shows the pick, the name says it.
+            AutomationProperties.SetName(card, selected ? L.ApPaletteName(palette.Id) + L.OptionSelected : L.ApPaletteName(palette.Id));
             var id = palette.Id;
             card.Click += (_, _) =>
             {

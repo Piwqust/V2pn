@@ -209,6 +209,7 @@ public sealed class SideServerRow : SideRow
     public string Subtitle { get; }
     public bool IsActive => Model.IsActive;
     public bool Indent { get; }
+    public string MoreName => L.MoreFor(Title);
     public override string ToString() => Title;
 }
 
@@ -273,6 +274,7 @@ public sealed class SideSubRow : SideRow
         updateFailed = status.Failed;
         UpdateFailed = updateFailed;
         DisplayName = NameOf(sub.Item);
+        MoreName = L.MoreFor(DisplayName);
         var name = DisplayName;
         var letter = name.FirstOrDefault(char.IsLetterOrDigit);
         Monogram = letter == default ? "?" : char.ToUpper(letter, CultureInfo.CurrentCulture).ToString();
@@ -339,6 +341,7 @@ public sealed class SideSubRow : SideRow
 
     public SubItemModel Sub { get; }
     public string DisplayName { get; }
+    public string MoreName { get; }
 
     /// <summary>The last update brought no servers: the provider's site was unreachable or the link is wrong.</summary>
     public bool UpdateFailed { get; }

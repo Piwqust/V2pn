@@ -20,6 +20,8 @@ public static partial class L
     public static string ImportFoundV2rayN => T("with routing and settings", "с маршрутами и настройками");
     public static string ImportOrByHand => T("or add a server by hand", "или добавьте сервер вручную");
     public static string ImportMoreApps => T("{0} more", "Ещё {0}");
+    // The name of that button for screen readers: an action, without the "⌄" glyph the label ends with.
+    public static string ImportShowMoreApps => T("Show {0} more apps", "Показать ещё {0}");
     // The three ways to add by hand share one row under the move, so their labels are short.
     public static string HandPaste => T("Paste link", "Вставить");
     public static string HandSubscription => T("Subscription", "Подписка");
@@ -37,7 +39,9 @@ public static partial class L
     public static string ImportForeignNothingNew => T("Everything from {0} is already in V2pn.", "Всё из {0} уже есть в V2pn.");
     public static string ImportForeignSkipped => T("{0} of kinds V2pn does not support stayed behind.", "Не перенесено: {0}, V2pn такие не поддерживает.");
     public static string ImportLockedHint => T("Keeps its servers encrypted. Copy the subscription link in Happ and paste it into V2pn.", "Хранит серверы в зашифрованном виде. Скопируйте ссылку на подписку в Happ и вставьте её в V2pn.");
-    public static string ImportForeignFailed => T("Couldn't move from {0}. The details are in the log.", "Не удалось перенести из {0}. Подробности в журнале.");
+    public static string ImportForeignFailed => Tk("Couldn't move from {0}. The details are in the log.",
+        "Couldn't move from {0}. Try again, or copy the subscription link in {0} and paste it into V2pn.",
+        "Не удалось перенести из {0}. Попробуйте ещё раз или скопируйте ссылку на подписку в {0} и вставьте её в V2pn.");
 
     /// <summary>"Move from 3 apps", with the plural form the language needs.</summary>
     public static string ImportMoveApps(int n)

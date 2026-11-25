@@ -432,6 +432,7 @@ public partial class MainWindow
                 more.Classes.Add("small");
                 more.HorizontalAlignment = HorizontalAlignment.Left;
                 more.Margin = new Thickness(4, 2, 0, 0);
+                AutomationProperties.SetName(more, string.Format(L.ImportShowMoreApps, hidden.Count));
                 more.Click += (_, _) =>
                 {
                     hidden.ForEach(r => r.IsVisible = true);
@@ -496,8 +497,11 @@ public partial class MainWindow
         _obSummaryServer = new TextBlock { TextWrapping = TextWrapping.Wrap };
         _obSummaryRoute = new TextBlock { TextWrapping = TextWrapping.Wrap };
         _obSummaryMode = new TextBlock { TextWrapping = TextWrapping.Wrap };
-        var editConnection = TextButton(L.ObEditConnection, "ghost");
+        // A filled button, set off from the summary: as a ghost it read as a fourth line of the summary.
+        var editConnection = TextButton(L.ObEditConnection, "subtle");
+        editConnection.Classes.Add("small");
         editConnection.HorizontalAlignment = HorizontalAlignment.Left;
+        editConnection.Margin = new Thickness(0, 6, 0, 0);
         editConnection.Click += (_, _) => GoTo(ObStep.Route);
         _obConnectionSummary = new StackPanel
         {

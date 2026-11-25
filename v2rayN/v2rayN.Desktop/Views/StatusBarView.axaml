@@ -17,7 +17,7 @@
             <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         </Style>
         <Style Selector="TextBlock.v">
-            <Setter Property="FontSize" Value="13.5" />
+            <Setter Property="FontSize" Value="14" />
             <Setter Property="FontWeight" Value="SemiBold" />
             <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
             <Setter Property="FontFeatures" Value="+tnum" />

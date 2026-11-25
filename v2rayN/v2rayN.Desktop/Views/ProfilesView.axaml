@@ -219,7 +219,7 @@
                                             Classes="mono"
                                             Classes.live="{Binding IsActive}"
                                             CornerRadius="8">
-                                            <TextBlock FontSize="9.5" Text="{Binding ConfigType, Converter={x:Static conv:V2pnConverters.ProtocolMonogram}}" />
+                                            <TextBlock FontSize="10" Text="{Binding ConfigType, Converter={x:Static conv:V2pnConverters.ProtocolMonogram}}" />
                                         </Border>
                                         <Border
                                             Grid.Column="2"

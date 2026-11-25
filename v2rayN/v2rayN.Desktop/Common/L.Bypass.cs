@@ -148,7 +148,9 @@ public static partial class L
     public static string BypassChainPick => T("Server in Russia", "Сервер в России");
     public static string BypassChainCreate => T("Create and connect", "Создать и подключиться");
     public static string BypassChainMade => T("The chain is saved as a server: {0}.", "Цепочка сохранена как сервер: {0}.");
-    public static string BypassChainFailed => T("Could not save the chain.", "Не удалось сохранить цепочку.");
+    public static string BypassChainFailed => Tk("Could not save the chain.",
+        "Could not save the chain. Press “Create and connect” again, or pick another server in Russia.",
+        "Не удалось сохранить цепочку. Нажмите «Создать и подключиться» ещё раз или выберите другой сервер в России.");
     public static string BypassChainNoServers => T("Add your server in Russia first: there is nothing to chain yet.", "Сначала добавьте свой сервер в России: пока не из чего собрать цепочку.");
     public static string BypassNoServer => T("Pick a server first.", "Сначала выберите сервер.");
 }

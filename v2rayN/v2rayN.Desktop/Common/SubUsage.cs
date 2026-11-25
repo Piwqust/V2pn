@@ -88,13 +88,25 @@ public sealed class SubUsage
         // The sidebar line starts with the traffic; without it the expiry takes its place.
         if (HasTraffic)
         {
-            (RowStart, RowStartWarn, RowStartBad) = (TrafficText, TrafficWarn, TrafficBad);
+            // "44 / 200 GB" in the row: "44 GB of 200 GB" did not fit beside the expiry and lost its total.
+            var row = info.Total > 0 ? CompactOf(Fmt.Bytes(used), Fmt.Bytes(info.Total)) : TrafficText;
+            (RowStart, RowStartWarn, RowStartBad) = (row, TrafficWarn, TrafficBad);
             (RowEnd, RowEndWarn, RowEndBad) = (ExpiryText, ExpiryWarn, ExpiryBad);
         }
         else
         {
             (RowStart, RowStartWarn, RowStartBad) = (ExpiryText, ExpiryWarn, ExpiryBad);
         }
+    }
+
+    /// <summary>"44 / 200 GB" when both share a unit, "512 MB / 200 GB" otherwise.</summary>
+    internal static string CompactOf(string used, string total)
+    {
+        var u = used.LastIndexOf(' ');
+        var t = total.LastIndexOf(' ');
+        return u > 0 && t > 0 && used[(u + 1)..] == total[(t + 1)..]
+            ? $"{used[..u]} / {total}"
+            : $"{used} / {total}";
     }
 
     public string RowStart { get; } = string.Empty;

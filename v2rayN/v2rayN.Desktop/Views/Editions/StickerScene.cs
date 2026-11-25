@@ -513,7 +513,7 @@ public sealed class StickerScene : EditionScene
             {
                 Text = caption.ToUpper(CultureInfo.CurrentUICulture),
                 FontFamily = StrokeText.Heavy,
-                FontSize = 17,
+                FontSize = 16,
                 Foreground = Brushes.White,
                 VerticalAlignment = VerticalAlignment.Center,
             });

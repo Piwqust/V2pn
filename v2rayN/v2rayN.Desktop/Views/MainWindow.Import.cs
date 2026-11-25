@@ -139,6 +139,7 @@ public partial class MainWindow
                 HorizontalAlignment = HorizontalAlignment.Left,
                 Margin = new Thickness(4, 2, 0, 0),
             };
+            AutomationProperties.SetName(more, string.Format(L.ImportShowMoreApps, hidden.Count));
             more.Click += (_, _) =>
             {
                 hidden.ForEach(r => r.IsVisible = true);
@@ -157,33 +158,38 @@ public partial class MainWindow
     /// </summary>
     private void LayOutHandButtons(bool compact)
     {
+        // Rows and columns only: reparenting the paste button left screen readers a stale tree (E_FAIL).
         var qr = btnWelcomeQr.IsVisible;
-        if (compact && btnWelcomePaste.Parent is StackPanel stack)
+        if (compact)
         {
-            stack.Children.Remove(btnWelcomePaste);
-            gridWelcomeHand.Children.Insert(0, btnWelcomePaste);
             gridWelcomeHand.ColumnDefinitions = new ColumnDefinitions(qr ? "*,8,*,8,*" : "*,8,*");
+            gridWelcomeHand.RowSpacing = 0;
             btnWelcomePaste.Height = double.NaN;
-            Grid.SetColumn(btnWelcomePaste, 0);
-            Grid.SetColumn(btnWelcomeSub, 2);
-            Grid.SetColumnSpan(btnWelcomeSub, 1);
-            Grid.SetColumn(btnWelcomeQr, 4);
+            Place(btnWelcomePaste, 0, 0, 1);
+            Place(btnWelcomeSub, 0, 2, 1);
+            Place(btnWelcomeQr, 0, 4, 1);
             btnWelcomePaste.Content = L.HandPaste;
             btnWelcomeSub.Content = L.HandSubscription;
             btnWelcomeQr.Content = L.HandQr;
         }
-        else if (!compact && btnWelcomePaste.Parent == gridWelcomeHand && gridWelcomeHand.Parent is StackPanel parent)
+        else
         {
-            gridWelcomeHand.Children.Remove(btnWelcomePaste);
-            parent.Children.Insert(0, btnWelcomePaste);
             gridWelcomeHand.ColumnDefinitions = new ColumnDefinitions("*,8,*");
+            gridWelcomeHand.RowSpacing = 8;
             btnWelcomePaste.Height = 42;
-            Grid.SetColumn(btnWelcomeSub, 0);
-            Grid.SetColumnSpan(btnWelcomeSub, qr ? 1 : 3);
-            Grid.SetColumn(btnWelcomeQr, 2);
+            Place(btnWelcomePaste, 0, 0, 3);
+            Place(btnWelcomeSub, 1, 0, qr ? 1 : 3);
+            Place(btnWelcomeQr, 1, 2, 1);
             btnWelcomePaste.Content = L.WelcomePaste;
             btnWelcomeSub.Content = L.AddSubscription;
             btnWelcomeQr.Content = L.WelcomeQr;
+        }
+
+        static void Place(Control c, int row, int column, int span)
+        {
+            Grid.SetRow(c, row);
+            Grid.SetColumn(c, column);
+            Grid.SetColumnSpan(c, span);
         }
     }
 
@@ -221,25 +227,21 @@ public partial class MainWindow
             Grid.SetColumn(check, 2);
             grid.Children.Add(check);
         }
-        var row = new Button
-        {
-            Tag = source,
-            Content = grid,
-            Theme = this.FindResource("V2SideRow") as ControlTheme,
-            Classes = { "routeoption", "importapp" },
-            IsHitTestVisible = tick,
-            Focusable = tick,
-        };
+        // A row with a tick is a CheckRow: it keeps the Button look and tells screen readers whether it is ticked.
+        var row = tick ? new CheckRow { IsTicked = true } : new Button();
+        row.Tag = source;
+        row.Content = grid;
+        row.Theme = this.FindResource("V2SideRow") as ControlTheme;
+        row.Classes.AddRange(["routeoption", "importapp"]);
+        row.IsHitTestVisible = tick;
+        row.Focusable = tick;
         AutomationProperties.SetName(row, source.Name);
+        AutomationProperties.SetHelpText(row, hint);
         row.Classes.Set("active", tick);
         row.Classes.Set("locked", source.Locked);
         if (tick)
         {
-            row.Click += (_, _) =>
-            {
-                row.Classes.Set("active", !row.Classes.Contains("active"));
-                (changed ?? UpdateImportButton)();
-            };
+            row.Click += (_, _) => (changed ?? UpdateImportButton)();
         }
         return row;
     }

@@ -213,7 +213,7 @@ public sealed class PartnerLoginView : UserControl
         var digits = new SelectableTextBlock
         {
             Text = $"{code.Code[..3]} {code.Code[3..]}",
-            FontSize = 38,
+            FontSize = 36,
             FontWeight = FontWeight.SemiBold,
             LetterSpacing = 6,
             FontFeatures = [FontFeature.Parse("+tnum")],

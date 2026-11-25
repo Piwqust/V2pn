@@ -23,11 +23,9 @@
     </Style>
     <!--  No brush transitions on buttons and list chips: their fills are gradients, which Avalonia
           can't interpolate, and the half-way frame got stuck as a flat grey.  -->
-    <Style Selector="Button.rail:pressed, ToggleButton:pressed">
+    <!--  One press depth for every button that squeezes.  -->
+    <Style Selector="Button.rail:pressed, ToggleButton:pressed, Button.routeoption:pressed, Button.accent:pressed, Button.disconnect:pressed">
         <Setter Property="RenderTransform" Value="scale(0.96)" />
-    </Style>
-    <Style Selector="Button.routeoption:pressed, Button.accent:pressed, Button.disconnect:pressed">
-        <Setter Property="RenderTransform" Value="scale(0.97)" />
     </Style>
 
     <!--  List chips and rows fade between rest, hover and selected.  -->
@@ -46,8 +44,9 @@
         </Setter>
     </Style>
 
-    <!--  Popovers, menus and tooltips grow out of their trigger side instead of popping in.  -->
-    <Style Selector="FlyoutPresenter, MenuFlyoutPresenter, ContextMenu">
+    <!--  Popovers grow out of their trigger side instead of popping in. Menus (☰, a row's right click)
+          open many times a day and appear at once: an entrance there only makes people wait.  -->
+    <Style Selector="FlyoutPresenter">
         <Setter Property="RenderTransformOrigin" Value="50%,0%" />
         <Style.Animations>
             <Animation Easing="0.32,0.72,0,1" FillMode="Forward" Duration="0:0:0.18">

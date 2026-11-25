@@ -1187,9 +1187,9 @@ public sealed partial class SidebarViewModel : ReactiveObject
             {
                 rows.Add(new SideBannerRow(openedBanner, OpenedSub.Id));
             }
-            if (info?.Announce.IsNotEmpty() == true)
+            if (V2pnSubDefaults.AnnounceText(info) is { } announce)
             {
-                rows.Add(new SideAnnounceRow(info.Announce!, info.AnnounceUrl));
+                rows.Add(new SideAnnounceRow(announce, info?.AnnounceUrl));
             }
             // The order the person chose for this subscription, else the provider's, else fastest first.
             var sort = V2pnSubDefaults.SortOf(info, V2pnLocks.Instance.Hides(OpenedSub.Id));

@@ -88,6 +88,8 @@ public sealed class SubInfoManager
             info.AccountToken = panel.AccountToken;
             CopyCompat(panel, info);
             info.Notices = V2pnProviderConfigs.Notices(body) is { Count: > 0 } notices ? string.Join('\n', notices) : null;
+            info.HasProviderRules = V2pnProviderConfigs.Unpack(body) is { } unpacked
+                && (unpacked.Servers.Any(t => t.Rules != null) || unpacked.Groups.Any(t => t.Rules != null));
             info.ReceivedTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
             if (imported && ApplyToSubscription(item, info, panel))
@@ -162,6 +164,28 @@ public sealed class SubInfoManager
         catch (Exception ex)
         {
             Logging.SaveLog(_tag, ex);
+        }
+    }
+
+    /// <summary>The person's choice of the provider's rules over V2pn's routing for a subscription; true when it changed.</summary>
+    public async Task<bool> SetProviderRulesAsync(string subId, bool on)
+    {
+        try
+        {
+            await LoadAsync();
+            if (Get(subId) is not { } info || info.ProviderRules == on)
+            {
+                return false;
+            }
+            info.ProviderRules = on;
+            await SQLiteHelper.Instance.ReplaceAsync(info);
+            Changed?.Invoke(subId);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(_tag, ex);
+            return false;
         }
     }
 

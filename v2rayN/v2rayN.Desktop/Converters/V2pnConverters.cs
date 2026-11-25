@@ -96,6 +96,8 @@ public static class V2pnConverters
             EConfigType.WireGuard => "WireGuard",
             EConfigType.SOCKS => "SOCKS",
             EConfigType.HTTP => "HTTP",
+            EConfigType.PolicyGroup => L.ProtocolGroup,
+            EConfigType.Custom => L.ProtocolCustom,
             _ => t.ToString(),
         });
 

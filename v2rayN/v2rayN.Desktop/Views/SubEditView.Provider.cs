@@ -23,7 +23,7 @@ public partial class SubEditView
         var usage = SubUsage.From(info);
         rowTraffic.IsVisible = usage?.HasTraffic == true;
         rowExpiry.IsVisible = usage?.HasExpiry == true;
-        rowAnnounce.IsVisible = info?.Announce.IsNotEmpty() == true;
+        rowAnnounce.IsVisible = V2pnSubDefaults.AnnounceText(info) != null;
         btnAnnounceMore.IsVisible = info?.AnnounceUrl.IsNotEmpty() == true;
         btnAnnounceMore.Tag = info?.AnnounceUrl;
         ToolTip.SetTip(btnAnnounceMore, info?.AnnounceUrl);
@@ -35,7 +35,7 @@ public partial class SubEditView
         rowLinks.IsVisible = btnSupport.IsVisible || btnWebPage.IsVisible;
         ShowPartner(source, info);
         ShowLock(source);
-        var rows = new Border[] { rowLock, rowBanner, rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowStartConnect, rowOrder, rowOnStart, rowPartner, rowReviewed, rowPartnerConn };
+        var rows = new Border[] { rowLock, rowBanner, rowTraffic, rowExpiry, rowAnnounce, rowLinks, rowStartConnect, rowOrder, rowProviderRules, rowOnStart, rowPartner, rowReviewed, rowPartnerConn };
         if (info == null || !rows.Any(r => r.IsVisible))
         {
             grpProvider.IsVisible = false;
@@ -56,7 +56,7 @@ public partial class SubEditView
             txtExpiry.Classes.Set("warn", usage.ExpiryWarn);
             txtExpiry.Classes.Set("bad", usage.ExpiryBad);
         }
-        txtAnnounce.Text = info.Announce;
+        txtAnnounce.Text = V2pnSubDefaults.AnnounceText(info);
         btnSupport.Tag = info.SupportUrl;
         ToolTip.SetTip(btnSupport, info.SupportUrl);
         btnWebPage.Tag = info.WebPageUrl;
@@ -111,6 +111,9 @@ public partial class SubEditView
             txtOrderHint.Text = string.Format(L.SubOrderAdvice, OrderName(info.SortType).ToLower(CultureInfo.CurrentUICulture));
         }
 
+        rowProviderRules.IsVisible = info?.HasProviderRules == true;
+        togProviderRules.IsChecked = info?.ProviderRules == true;
+
         var update = V2pnSubDefaults.UpdatesOnStart(info);
         var ping = V2pnSubDefaults.PingsOnStart(info);
         rowOnStart.IsVisible = update || ping;
@@ -162,6 +165,10 @@ public partial class SubEditView
         if (rowPartnerConn.IsVisible)
         {
             _ = V2pnPartnerTraffics.SetOffAsync(source.Id, togPartnerConn.IsChecked != true);
+        }
+        if (rowProviderRules.IsVisible)
+        {
+            _ = V2pnProviderRouting.SetChosenAsync(source.Id, togProviderRules.IsChecked == true);
         }
     }
 

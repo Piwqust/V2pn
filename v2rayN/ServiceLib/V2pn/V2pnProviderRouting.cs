@@ -8,6 +8,18 @@ namespace ServiceLib;
 /// </summary>
 public sealed record V2pnProviderRouting(string? DomainStrategy, List<RulesItem4Ray> Rules)
 {
+    /// <summary>Raised with the subscription's id when the person switched between the provider's rules and V2pn's.</summary>
+    public static event Action<string>? Changed;
+
+    /// <summary>Keeps the person's choice for a subscription; a connection to one of its servers needs a reload after.</summary>
+    public static async Task SetChosenAsync(string subId, bool on)
+    {
+        if (await SubInfoManager.Instance.SetProviderRulesAsync(subId, on))
+        {
+            Changed?.Invoke(subId);
+        }
+    }
+
     /// <summary>The provider's routing for <paramref name="node"/>, or null when V2pn's own routing applies.</summary>
     public static V2pnProviderRouting? For(ProfileItem? node)
     {

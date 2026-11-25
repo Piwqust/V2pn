@@ -16,6 +16,16 @@ public static class V2pnSubDefaults
     /// <summary>The expiry reminder shows from this many days before the end, and after it.</summary>
     public const int ExpiryDays = 3;
 
+    /// <summary>
+    /// The provider's announcement with the lines it sent as made-up servers (SubInfoItem.Notices) under it; null when
+    /// it said neither.
+    /// </summary>
+    public static string? AnnounceText(SubInfoItem? info)
+    {
+        var parts = new[] { info?.Announce?.Trim(), info?.Notices?.Trim() }.Where(t => t.IsNotEmpty()).ToList();
+        return parts.Count == 0 ? null : string.Join('\n', parts);
+    }
+
     /// <summary>The one banner to show: the expiry reminder when it is due, else the provider's info banner.</summary>
     public static SubBanner? Banner(SubInfoItem? info, DateTimeOffset now) => ExpiryBanner(info, now) ?? InfoBanner(info);
 

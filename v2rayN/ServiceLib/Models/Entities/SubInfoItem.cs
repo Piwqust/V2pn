@@ -64,6 +64,9 @@ public class SubInfoItem
     /// </summary>
     public string? Notices { get; set; }
 
+    /// <summary>The panel sent whole configs with rules of its own, which the person may choose over V2pn's (ProviderRules).</summary>
+    public bool HasProviderRules { get; set; }
+
     public string? InfoButtonText { get; set; }
 
     public string? InfoButtonUrl { get; set; }

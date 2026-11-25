@@ -113,6 +113,18 @@
                             </Panel>
                         </Grid>
                     </Border>
+                    <!--  V2pn: the provider's own rules from its whole configs, instead of the person's routing (V2pnProviderRouting).  -->
+                    <Border x:Name="rowProviderRules" Classes="srow" IsVisible="False">
+                        <Grid ColumnDefinitions="*,Auto">
+                            <StackPanel Classes="srowtext">
+                                <TextBlock Classes="srowtitle" Text="{x:Static loc:L.SubProviderRules}" />
+                                <TextBlock Classes="srowhint" Text="{x:Static loc:L.SubProviderRulesHint}" TextWrapping="Wrap" />
+                            </StackPanel>
+                            <Panel Classes="srowctl" Grid.Column="1" VerticalAlignment="Center">
+                                <ToggleSwitch x:Name="togProviderRules" AutomationProperties.Name="{x:Static loc:L.SubProviderRules}" />
+                            </Panel>
+                        </Grid>
+                    </Border>
                     <Border x:Name="rowOnStart" Classes="srow" IsVisible="False">
                         <TextBlock x:Name="txtOnStart" Classes="srowhint" Margin="0" TextWrapping="Wrap" />
                     </Border>

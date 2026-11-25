@@ -24,6 +24,8 @@ public partial class MainWindow
         // A partner added, refreshed, unlinked, expired or revoked, or another tab opened: the presets follow.
         V2pnPartners.Instance.Changed += () => Dispatcher.UIThread.Post(() => _ = SyncPartnerRoutesAsync(refresh: true));
         V2pnPartnerTraffics.Changed += subId => Dispatcher.UIThread.Post(() => OnPartnerTrafficChanged(subId));
+        // V2pn: the provider's rules switched on or off for the subscription of the connected server.
+        V2pnProviderRouting.Changed += subId => Dispatcher.UIThread.Post(() => OnPartnerTrafficChanged(subId));
     }
 
     /// <summary>Brings the partner presets in line with the partners; reloads the core when the active mode changed under it.</summary>

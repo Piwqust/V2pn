@@ -317,6 +317,17 @@ foreach ($a in $Arch) {
 Remove-Item -Recurse -Force $work
 
 if (-not $NoManifest) { New-Manifest }
+elseif ($UpdateOnly -and $Version -match '-local\.' -and ($env:V2PN_SIGNING_KEY -or (Test-Path (Join-Path $HOME '.v2pn/release-signing-key.pem')))) {
+    # Bridge for developer mode in V2pn 1.5.0: it still asks for no manifest, but its AmazTool installs only a
+    # package with a signed one beside it, and it moves the package to the folder above as V2pn-<version>.zip and
+    # deletes this one. So sign here and put the manifest where the package will land. Newer V2pn asks for the
+    # manifest itself (ServiceLib/V2pn/V2pnDevBuild.cs); remove this once 1.5.0 is gone.
+    New-Manifest
+    $beside = Join-Path (Split-Path -Parent ([IO.Path]::GetFullPath($OutDir))) "V2pn-$Version.json"
+    Copy-Item (Join-Path $OutDir 'release.json') $beside -Force
+    Copy-Item (Join-Path $OutDir 'release.json.sig') "$beside.sig" -Force
+    Write-Host "Signed manifest for developer mode: $beside"
+}
 
 if ($Tag) {
     # Everything that can fail has run. Notes first, then the only change to the tree; if the commit

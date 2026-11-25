@@ -61,6 +61,7 @@ public partial class CoreConfigV2rayService
         }
         FillOutbound(outbound);
         outbound.tag = baseTagName;
+        UseV2pnProviderOutbound(outbound);
         ApplyV2pnPartnerServer(outbound);
         ApplyV2pnBypass(outbound);
         return outbound;

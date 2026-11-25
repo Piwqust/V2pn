@@ -396,6 +396,18 @@ public class CoreConfigContextBuilder
                 nodeValidatorResult.Errors.Add(string.Format(ResUI.MsgCustomOutboundFileNotFound, node.Remarks, addressFileName));
             }
         }
+        // V2pn: a server taken out of a provider's whole config runs on Xray with the provider's own outbound
+        // (V2pnProviderConfigs), filtered as every outbound from a subscription is. Unfiltered it does not run, and
+        // the server runs with the outbound V2pn builds from its fields instead.
+        else if (node.V2pnOutbound.IsNotEmpty() && context.RunCoreType == ECoreType.Xray)
+        {
+            var removed = new List<string>();
+            if (V2pnCoreConfigFilter.FilterOutbound(ECoreType.Xray, node.V2pnOutbound, removed) is { } filtered)
+            {
+                CoreConfigHandler.NoteFiltered(node, removed);
+                context.CustomOutboundContent[node.IndexId] = filtered;
+            }
+        }
 
         var msgs = new List<string>([.. nodeValidatorResult.Errors, .. nodeValidatorResult.Warnings]);
         if (msgs.Count > 0)

@@ -196,6 +196,15 @@ public class CoreManager
         return await RunProcess(coreInfo, fileName, true, false);
     }
 
+    /// <summary>V2pn: runs a whole config made for a ping (V2pnCustomPing.TestConfig); the caller stops it.</summary>
+    public async Task<ProcessService?> LoadCoreConfigSpeedtestCustom(ECoreType coreType, string configText)
+    {
+        var fileName = string.Format(Global.CoreSpeedtestConfigFileName, Utils.GetGuid(false));
+        await File.WriteAllTextAsync(Utils.GetBinConfigPath(fileName), configText);
+        var coreInfo = CoreInfoManager.Instance.GetCoreInfo(coreType);
+        return await RunProcess(coreInfo, fileName, false, false);
+    }
+
     public async Task CoreStop()
     {
         try

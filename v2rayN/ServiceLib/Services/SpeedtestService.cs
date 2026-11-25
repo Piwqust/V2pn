@@ -2,7 +2,7 @@ using ServiceLib.UdpTest;
 
 namespace ServiceLib.Services;
 
-public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateFunc)
+public partial class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateFunc)
 {
     private static readonly string _tag = "SpeedtestService";
     private readonly Config? _config = config;
@@ -91,32 +91,36 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
     {
         var lstSelected = await GetClearItem(actionType, selecteds);
         var completedIds = new ConcurrentDictionary<string, byte>();
+        // V2pn: whole configs are tested on cores of their own, after the rest (V2pnCustomPing).
+        var lstCustom = lstSelected.Where(it => it.ConfigType == EConfigType.Custom).ToList();
+        var lstOwn = lstSelected.Except(lstCustom).ToList();
 
         try
         {
             switch (actionType)
             {
                 case ESpeedActionType.Tcping:
-                    await RunTcpingAsync(lstSelected, completedIds, ct);
+                    await RunTcpingAsync(lstOwn, completedIds, ct);
                     break;
 
                 case ESpeedActionType.Realping:
-                    await RunRealPingBatchAsync(lstSelected, completedIds, 0, ct);
+                    await RunRealPingBatchAsync(lstOwn, completedIds, 0, ct);
                     break;
 
                 case ESpeedActionType.UdpTest:
-                    await RunUdpTestBatchAsync(lstSelected, completedIds, 0, ct);
+                    await RunUdpTestBatchAsync(lstOwn, completedIds, 0, ct);
                     break;
 
                 case ESpeedActionType.Speedtest:
-                    await RunMixedTestAsync(lstSelected, completedIds, 1, true, ct);
+                    await RunMixedTestAsync(lstOwn, completedIds, 1, true, ct);
                     break;
 
                 case ESpeedActionType.Mixedtest:
-                    await RunMixedTestAsync(lstSelected, completedIds, _config.SpeedTestItem.MixedConcurrencyCount, true,
+                    await RunMixedTestAsync(lstOwn, completedIds, _config.SpeedTestItem.MixedConcurrencyCount, true,
                         ct);
                     break;
             }
+            await RunV2pnCustomAsync(actionType, lstCustom, completedIds, ct);
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested)
         {
@@ -135,7 +139,6 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
     {
         var lstSelected = new List<ServerTestItem>(selecteds.Count);
         var ids = selecteds.Where(it => !it.IndexId.IsNullOrEmpty()
-            && it.ConfigType != EConfigType.Custom
             && (it.ConfigType.IsComplexType() || it.Port > 0))
             .Select(it => it.IndexId)
             .ToList();
@@ -145,6 +148,20 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
             var it = selecteds[i];
             if (it.ConfigType == EConfigType.Custom)
             {
+                // V2pn: a whole config gets a ping of its own (V2pnCustomPing); other tests still pass it by.
+                if (actionType is ESpeedActionType.Tcping or ESpeedActionType.Realping or ESpeedActionType.Mixedtest
+                    && profileMap.GetValueOrDefault(it.IndexId) is { } custom && V2pnCustomPing.CanTest(custom))
+                {
+                    lstSelected.Add(new ServerTestItem
+                    {
+                        IndexId = it.IndexId,
+                        ConfigType = EConfigType.Custom,
+                        QueueNum = i,
+                        Profile = custom,
+                        CoreType = custom.CoreType ?? ECoreType.Xray,
+                        AllowTest = true,
+                    });
+                }
                 continue;
             }
 
@@ -588,7 +605,7 @@ public class SpeedtestService(Config config, Func<SpeedTestResult, Task> updateF
         return responseTime;
     }
 
-    private async Task<int> GetTcpingTime(string? url, int port, CancellationToken ct = default)
+    internal async Task<int> GetTcpingTime(string? url, int port, CancellationToken ct = default)
     {
         var responseTime = -1;
 

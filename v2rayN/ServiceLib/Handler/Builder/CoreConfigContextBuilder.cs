@@ -54,6 +54,7 @@ public class CoreConfigContextBuilder
             ProtectCoreTypeList = config.TunModeItem.EnableTun ? [ECoreType.Xray, ECoreType.sing_box] : [],
             V2pnPartnerSubs = await V2pnPartnerTraffics.SnapshotAsync(),
             V2pnBypass = V2pnBypassPlan.From(config),
+            V2pnProviderRouting = V2pnProviderRouting.For(node),
         };
         var validatorResult = NodeValidatorResult.Empty();
         var (actNode, nodeValidatorResult) = await ResolveNodeAsync(context, node);

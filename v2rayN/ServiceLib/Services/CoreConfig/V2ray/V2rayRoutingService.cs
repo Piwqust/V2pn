@@ -40,6 +40,7 @@ public partial class CoreConfigV2rayService
                 _coreConfig.routing.domainStrategy = _config.RoutingBasicItem.DomainStrategy;
 
                 var routing = context.RoutingItem;
+                var provider = context.V2pnProviderRouting;
                 // V2pn: the connected partner's core.json rules go after the person's own rules (pinned programs
                 // included), right before the routing's catch-all default, so the person's choices always win.
                 var partnerRules = BuildV2pnPartnerRules();
@@ -70,6 +71,12 @@ public partial class CoreConfigV2rayService
                         {
                             continue;
                         }
+                        // V2pn: with the provider's rules chosen for this subscription, only the person's pins and
+                        // programs stay of their rule set; the provider's rules take the place of the rest.
+                        if (provider != null && !V2pnPresetRules.IsAppRule(item) && item.Id?.StartsWith("v2pn-pin-", StringComparison.Ordinal) != true)
+                        {
+                            continue;
+                        }
                         if (V2pnPartnerRoutes.IsCatchAll(item))
                         {
                             AddPartnerRules();
@@ -83,6 +90,15 @@ public partial class CoreConfigV2rayService
                         var item2 = JsonUtils.Deserialize<RulesItem4Ray>(JsonUtils.Serialize(item));
                         GenRoutingUserRule(item2);
                     }
+                }
+                if (provider != null)
+                {
+                    if (provider.DomainStrategy.IsNotEmpty())
+                    {
+                        _coreConfig.routing.domainStrategy = provider.DomainStrategy;
+                    }
+                    // As the provider wrote them: one rule's domains and addresses together, not split as V2pn's are.
+                    _coreConfig.routing.rules.AddRange(provider.Rules.Select(JsonUtils.DeepCopy));
                 }
                 AddPartnerRules();
                 var balancerTagList = _coreConfig.routing.balancers

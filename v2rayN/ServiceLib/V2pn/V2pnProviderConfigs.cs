@@ -33,6 +33,8 @@ public static class V2pnProviderConfigs
 
     private static readonly HashSet<string> BuiltIn = ["freedom", "blackhole", "dns", "loopback"];
 
+    private static readonly HashSet<string> RuleKeys = ["type", "domain", "ip", "port", "network", "protocol", "outboundTag", "balancerTag", "ruleTag"];
+
     /// <summary>
     /// The servers, groups and notices of <paramref name="text"/>, or null when it is not whole Xray configs
     /// (a JSON array of them or one config, each with inbounds and outbounds).
@@ -253,7 +255,9 @@ public static class V2pnProviderConfigs
         var kept = new JsonArray();
         foreach (var rule in rules.OfType<JsonObject>())
         {
-            if (rule["inboundTag"] != null || rule["user"] != null || rule["attrs"] != null)
+            // A rule with a condition V2pn's rules cannot hold (inbounds, users, sources…) is left out whole: kept
+            // without it, it would match more than the provider meant.
+            if (rule.Any(p => !RuleKeys.Contains(p.Key)))
             {
                 continue;
             }
@@ -264,7 +268,7 @@ public static class V2pnProviderConfigs
             }
             var copy = new JsonObject { ["type"] = "field" };
             var matches = false;
-            foreach (var key in new[] { "domain", "ip", "port", "network", "protocol", "source", "sourcePort" })
+            foreach (var key in new[] { "domain", "ip", "port", "network", "protocol" })
             {
                 if (rule[key] is { } value && (value is JsonArray { Count: > 0 } || Str(value) != null))
                 {

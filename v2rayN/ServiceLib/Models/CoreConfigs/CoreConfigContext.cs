@@ -67,6 +67,10 @@ public record CoreConfigContext
     // defaults, the fragmentation of direct sites (V2pnBypassPlan.From).
     public V2pnBypassPlan V2pnBypass { get; init; } = V2pnBypassPlan.Off;
 
+    // V2pn: the provider's rules in place of the person's rule set, when they chose them for the subscription of the
+    // connected server (V2pnProviderRouting.For); null for V2pn's own routing.
+    public V2pnProviderRouting? V2pnProviderRouting { get; init; }
+
     public V2pnPartnerTraffic? V2pnTrafficFor(ProfileItem? node) =>
         node?.Subid is { Length: > 0 } subId && V2pnPartnerSubs.TryGetValue(subId, out var traffic) ? traffic : null;
 }

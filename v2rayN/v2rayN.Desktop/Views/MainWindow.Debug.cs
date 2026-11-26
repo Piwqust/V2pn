@@ -73,7 +73,7 @@ public partial class MainWindow
             {
                 name = name[..dot];
             }
-            if (name is not ("hide" or "show" or "toggle" or "minimize" or "restore" or "back")
+            if (name is not ("hide" or "show" or "toggle" or "minimize" or "restore" or "back" or "tray" or "traymenu")
                 && !name.StartsWith("click-", StringComparison.Ordinal) && !name.StartsWith("tab-", StringComparison.Ordinal))
             {
                 return;
@@ -112,6 +112,14 @@ public partial class MainWindow
                             owned.Close();
                         }
                         ClosePage();
+                        DebugTraceAction(name, asked);
+                        break;
+                    case "traymenu":
+                        DebugToggleTrayMenu();
+                        DebugTraceAction(name, asked);
+                        break;
+                    case "tray":
+                        DebugToggleTray();
                         DebugTraceAction(name, asked);
                         break;
                     case not null when name.StartsWith("tab-", StringComparison.Ordinal):
@@ -438,4 +446,72 @@ public partial class MainWindow
     internal string DebugPlanState() => $"план на сцене: {(passHost.IsVisible ? "да" : "нет")} · {_planFit}";
 
     internal IReadOnlyList<SubItem> DebugSubscriptions() => ViewModel?.ProfilesViewModel.SubItems.Where(s => s.Id.IsNotEmpty()).ToList() ?? [];
+
+    private Window? _debugTray;
+
+    /// <summary>
+    /// "tray": the tray panel in a window like Avalonia's tray window, so a script can see it (tools/shot.ps1, title
+    /// "V2pn tray") without a click on the real icon; again closes it. Off screen and unfocused in background mode.
+    /// </summary>
+    private void DebugToggleTray()
+    {
+        if (_debugTray != null)
+        {
+            _debugTray.Close();
+            _debugTray = null;
+            return;
+        }
+        var window = new Window
+        {
+            Title = "V2pn tray",
+            WindowDecorations = WindowDecorations.None,
+            SizeToContent = SizeToContent.WidthAndHeight,
+            Background = null,
+            TransparencyLevelHint = [WindowTransparencyLevel.Transparent],
+            ShowInTaskbar = false,
+            ShowActivated = false,
+            Topmost = !OffscreenMode.IsOn,
+        };
+        OffscreenMode.Attach(window);
+        window.Content = new TrayPanel(this, () =>
+        {
+            window.Close();
+            _debugTray = null;
+        });
+        _debugTray = window;
+        window.Show();
+    }
+
+    private Window? _debugTrayMenu;
+
+    /// <summary>
+    /// "traymenu": Avalonia's own tray window, made the way a right click on the icon makes it (with a menu as its
+    /// content), to see that TrayMenuPlacement puts the panel in its place. Off screen and unfocused in background mode.
+    /// </summary>
+    private void DebugToggleTrayMenu()
+    {
+        if (_debugTrayMenu != null)
+        {
+            _debugTrayMenu.Close();
+            _debugTrayMenu = null;
+            return;
+        }
+        var type = AppDomain.CurrentDomain.GetAssemblies().FirstOrDefault(a => a.GetName().Name == "Avalonia.Win32")?.GetType("Avalonia.Win32.TrayIconImpl+TrayPopupRoot");
+        if (type == null || Activator.CreateInstance(type, nonPublic: true) is not Window window)
+        {
+            DebugPerfLine("traymenu: no TrayPopupRoot in this Avalonia");
+            return;
+        }
+        window.Title = "V2pn traymenu";
+        window.WindowDecorations = WindowDecorations.None;
+        window.SizeToContent = SizeToContent.WidthAndHeight;
+        window.Background = null;
+        window.TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
+        OffscreenMode.Attach(window);
+        window.Content = new MenuFlyoutPresenter();
+        DebugPerfLine($"traymenu: content is {window.Content?.GetType().Name}");
+        _debugTrayMenu = window;
+        window.Closed += (_, _) => _debugTrayMenu = null;
+        window.Show();
+    }
 }

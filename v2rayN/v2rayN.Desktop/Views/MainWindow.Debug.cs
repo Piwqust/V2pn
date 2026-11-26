@@ -73,7 +73,7 @@ public partial class MainWindow
             {
                 name = name[..dot];
             }
-            if (name is not ("hide" or "show" or "toggle" or "minimize" or "restore" or "back" or "tray" or "traymenu")
+            if (name is not ("hide" or "show" or "toggle" or "minimize" or "restore" or "back" or "tray" or "traymenu" or "macmenu")
                 && !name.StartsWith("click-", StringComparison.Ordinal) && !name.StartsWith("tab-", StringComparison.Ordinal))
             {
                 return;
@@ -112,6 +112,10 @@ public partial class MainWindow
                             owned.Close();
                         }
                         ClosePage();
+                        DebugTraceAction(name, asked);
+                        break;
+                    case "macmenu":
+                        DebugToggleTrayMenu(mac: true);
                         DebugTraceAction(name, asked);
                         break;
                     case "traymenu":
@@ -488,7 +492,7 @@ public partial class MainWindow
     /// "traymenu": Avalonia's own tray window, made the way a right click on the icon makes it (with a menu as its
     /// content), to see that TrayMenuPlacement puts the panel in its place. Off screen and unfocused in background mode.
     /// </summary>
-    private void DebugToggleTrayMenu()
+    private void DebugToggleTrayMenu(bool mac = false)
     {
         if (_debugTrayMenu != null)
         {
@@ -508,7 +512,23 @@ public partial class MainWindow
         window.Background = null;
         window.TransparencyLevelHint = [WindowTransparencyLevel.Transparent];
         OffscreenMode.Attach(window);
-        window.Content = new MenuFlyoutPresenter();
+        if (mac)
+        {
+            // "macmenu": the status item's menu of a Mac, drawn by Avalonia's own tray menu presenter, to read what it holds.
+            var presenterType = type.DeclaringType?.GetNestedType("TrayIconMenuFlyoutPresenter", System.Reflection.BindingFlags.NonPublic);
+            if (presenterType == null || Activator.CreateInstance(presenterType, nonPublic: true) is not MenuFlyoutPresenter presenter)
+            {
+                DebugPerfLine("macmenu: no TrayIconMenuFlyoutPresenter in this Avalonia");
+                return;
+            }
+            presenter.ItemsSource = MacStatusMenuPreview().Items;
+            TrayMenuPlacement.KeepMenuOnce = true;
+            window.Content = presenter;
+        }
+        else
+        {
+            window.Content = new MenuFlyoutPresenter();
+        }
         DebugPerfLine($"traymenu: content is {window.Content?.GetType().Name}");
         _debugTrayMenu = window;
         window.Closed += (_, _) => _debugTrayMenu = null;

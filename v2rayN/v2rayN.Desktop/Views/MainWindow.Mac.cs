@@ -418,6 +418,24 @@ public partial class MainWindow
         return tray.State == ProtectionState.Unprotected ? tray.Label : $"{tray.Label} · {Shorten(_serverName ?? L.NoServer, 40)}";
     }
 
+    /// <summary>The status item's menu as it would be filled now (the debug hook shows it on Windows).</summary>
+    internal NativeMenu MacStatusMenuPreview()
+    {
+        var keep = (_macStatusMenu, _macStatusStamp);
+        var menu = new NativeMenu();
+        _macStatusMenu = menu;
+        _macStatusStamp = null;
+        try
+        {
+            FillMacStatusMenu();
+        }
+        finally
+        {
+            (_macStatusMenu, _macStatusStamp) = keep;
+        }
+        return menu;
+    }
+
     private string MacConnectText() => CurrentState() == ProtectionState.Unprotected ? L.Connect : L.Disconnect;
 
     /// <param name="countriesOnly">Without the fastest, favorite and recent servers: the status menu has them above.</param>

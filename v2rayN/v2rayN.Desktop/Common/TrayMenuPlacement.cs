@@ -25,11 +25,19 @@ internal static class TrayMenuPlacement
         {
             if (window.GetType().Name == TrayWindowType && e.NewValue is MenuFlyoutPresenter)
             {
+                if (KeepMenuOnce)
+                {
+                    KeepMenuOnce = false;
+                    return;
+                }
                 UsePanel(window);
             }
         });
         Window.WindowOpenedEvent.AddClassHandler<Window>((window, _) => OnOpened(window));
     }
+
+    /// <summary>The next tray window keeps its menu (the debug hook's "macmenu" shows the Mac's menu that way).</summary>
+    internal static bool KeepMenuOnce;
 
     private static Views.TrayPanel? _panel;
     private static Views.MainWindow? _panelOwner;

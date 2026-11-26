@@ -2,7 +2,18 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
+## 1.6.0
+
+Subscriptions that send whole Xray configs, as Remnawave panels do, now show real servers: each one gets a ping, a flag on the map and V2pn's routing, and the provider's own rules are one switch away. The first click on the tray icon opens the window at once, and the interface is easier to read, with a screen reader too.
+
+### Subscriptions with whole configs
+
+- Some providers' panels answer V2pn with complete Xray configs instead of server links. Before, each one stayed a "Custom" entry that could not be pinged, sorted by ping or shown on the map, and V2pn's routing did not apply to it. Now a config with one server becomes that server (VLESS, Hysteria2 and so on), and V2pn connects with the provider's own settings for it, so nothing the link would leave out is lost.
+- A provider's "AUTO" config becomes a V2pn group of the same servers. When all of them fail, traffic is blocked; before, such a config quietly sent it directly, past the VPN.
+- Lines a panel sends as fake servers ("Check the ping", "Update for fresh servers", "App not supported") are no longer added as servers from Somalia: their text shows under the subscription's announcement. An answer with nothing but such lines leaves your server list as it was.
+- Whatever cannot be taken apart (chains, configs of your own) gets a ping too: V2pn runs the config on a test core of its own, the way your traffic would go.
+- The servers go by your routing in V2pn. If the provider's configs brought rules of their own, the subscription's settings get a **Provider's rules** switch: on, its servers go the way the provider set (Russian sites and banks directly, for example), while the sites and programs you pinned stay as they are.
+- The list says "Group" and "Config file" instead of PolicyGroup and Custom.
 
 ### Interface
 

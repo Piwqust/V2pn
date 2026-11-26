@@ -37,6 +37,175 @@ public partial class MainWindow
             }
         };
         InitDebugShots();
+        InitDebugPerf();
+    }
+
+    // V2PN_PERF=<folder>, where debugging is allowed: a file named hide, show, toggle, minimize or restore dropped
+    // into the folder does that to the window, as the tray icon and the taskbar would. Every time the window comes
+    // up, a line in <folder>/perf.log says how long it took: until the call returned, until the first frame with the
+    // window's content was drawn, and until the window had nothing left to do. The times start at the moment the
+    // request reached the window (a tray click, a second start of V2pn), counted on the clock every process of this
+    // computer shares, so a script that started a second V2pn can add its own part. tools/showperf.ps1 uses it.
+    private string? _perfFolder;
+    private long _perfShowAsked;
+    private string? _perfShowWhy;
+
+    private void InitDebugPerf()
+    {
+        var folder = Environment.GetEnvironmentVariable("V2PN_PERF");
+        if (folder.IsNullOrEmpty() || !V2pnPartnerTrust.DebugAllowed || !Directory.Exists(folder))
+        {
+            return;
+        }
+        _perfFolder = folder;
+        // A watcher, not a timer: a timer would keep the hidden window's code in memory, and how fast a window that
+        // was left alone comes back is what is measured.
+        var watcher = new FileSystemWatcher(folder) { EnableRaisingEvents = true };
+        watcher.Created += (_, e) =>
+        {
+            // "show.7" is "show": a script that names each file anew never meets one left from a stalled command.
+            var name = Path.GetFileName(e.FullPath);
+            var dot = name.IndexOf('.');
+            if (dot > 0)
+            {
+                name = name[..dot];
+            }
+            if (name is not ("hide" or "show" or "toggle" or "minimize" or "restore"))
+            {
+                return;
+            }
+            var asked = System.Diagnostics.Stopwatch.GetTimestamp();
+            if (Environment.GetEnvironmentVariable("V2PN_PERF_TRACE") == "1")
+            {
+                DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} event {Path.GetFileName(e.FullPath)}"));
+            }
+            Dispatcher.UIThread.Post(() =>
+            {
+                var waited = System.Diagnostics.Stopwatch.GetElapsedTime(asked).TotalMilliseconds;
+                var began = System.Diagnostics.Stopwatch.GetTimestamp();
+                try
+                {
+                    File.Delete(e.FullPath);
+                }
+                catch
+                {
+                }
+                switch (name)
+                {
+                    case "hide":
+                        ShowHideWindow(false);
+                        break;
+                    case "minimize":
+                        WindowState = WindowState.Minimized;
+                        break;
+                    case "restore":
+                        DebugNoteShowAsked(asked, name);
+                        WindowState = _restoreState;
+                        break;
+                    default:
+                        DebugNoteShowAsked(asked, name);
+                        ShowHideWindow(name == "show" ? true : null);
+                        break;
+                }
+                // A command that waited for the window's thread, or held it, is a stall worth seeing.
+                var took = System.Diagnostics.Stopwatch.GetElapsedTime(began).TotalMilliseconds;
+                if (waited > 100 || took > 250)
+                {
+                    DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} stall {name} waited={waited:0} took={took:0}"));
+                }
+            });
+        };
+        Closed += (_, _) => watcher.Dispose();
+        // V2PN_PERF_BEAT=<ms>: a thread of its own asks the window's thread for a turn that often and writes down
+        // every turn that came late. It keeps the window's thread awake, so it is for finding stalls, not for timing.
+        if (int.TryParse(Environment.GetEnvironmentVariable("V2PN_PERF_BEAT"), out var beat) && beat > 0)
+        {
+            new Thread(() =>
+            {
+                while (true)
+                {
+                    Thread.Sleep(beat);
+                    var asked = System.Diagnostics.Stopwatch.GetTimestamp();
+                    Dispatcher.UIThread.Post(() =>
+                    {
+                        var waited = System.Diagnostics.Stopwatch.GetElapsedTime(asked).TotalMilliseconds;
+                        if (waited > 200)
+                        {
+                            DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} beat waited={waited:0}"));
+                        }
+                    });
+                }
+            })
+            { IsBackground = true, Name = "V2pn perf beat" }.Start();
+        }
+    }
+
+    /// <summary>When a request to bring the window up arrived, before the window's thread took it.</summary>
+    private void DebugNoteShowAsked(long asked, string why)
+    {
+        if (_perfFolder != null && _perfShowAsked == 0)
+        {
+            _perfShowAsked = asked;
+            _perfShowWhy = why;
+        }
+    }
+
+    /// <summary>The window has just become seen (shown from the tray or restored from the taskbar): time it.</summary>
+    private async void DebugTraceSeen()
+    {
+        if (_perfFolder is not { } folder)
+        {
+            return;
+        }
+        var now = System.Diagnostics.Stopwatch.GetTimestamp();
+        var asked = _perfShowAsked == 0 ? now : _perfShowAsked;
+        var why = _perfShowWhy ?? "window";
+        _perfShowAsked = 0;
+        _perfShowWhy = null;
+        try
+        {
+            static double Ms(long from) => System.Diagnostics.Stopwatch.GetElapsedTime(from).TotalMilliseconds;
+            var seen = Ms(asked);
+            // The rest of Show (the platform's own call, activation) runs before this continues.
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Send);
+            var compositor = Avalonia.Rendering.Composition.ElementComposition.GetElementVisual(this)?.Compositor;
+            if (compositor == null)
+            {
+                return;
+            }
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Input);
+            var returned = Ms(asked);
+            await compositor.RequestCompositionBatchCommitAsync().Rendered;
+            var frame = Ms(asked);
+            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+            await compositor.RequestCompositionBatchCommitAsync().Rendered;
+            var settled = Ms(asked);
+            DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} {why} asked={asked} freq={System.Diagnostics.Stopwatch.Frequency} seen={seen:0.0} returned={returned:0.0} frame={frame:0.0} settled={settled:0.0}"));
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(DebugTraceSeen), ex);
+        }
+    }
+
+    private readonly Lock _perfLogGate = new();
+
+    private void DebugPerfLine(string line)
+    {
+        try
+        {
+            if (_perfFolder is { } folder)
+            {
+                lock (_perfLogGate)
+                {
+                    File.AppendAllText(Path.Combine(folder, "perf.log"), line + Environment.NewLine);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(DebugPerfLine), ex);
+        }
     }
 
     // V2PN_SHOTS=<folder>, where debugging is allowed: when a file named "shoot" appears in the folder, every open

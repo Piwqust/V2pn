@@ -2381,8 +2381,10 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
 
     private void OnProgramStarted(object state, bool timeout)
     {
+        var asked = System.Diagnostics.Stopwatch.GetTimestamp();
         Dispatcher.UIThread.Post(() =>
             {
+                DebugNoteShowAsked(asked, "second start");
                 ShowHideWindow(true);
                 // A second start may have come from a click on a v2pn:// link.
                 _ = HandleStashedLinkAsync();

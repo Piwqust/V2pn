@@ -53,6 +53,7 @@ public partial class MainWindow
         _seen = seen;
         if (seen)
         {
+            DebugTraceSeen();
             RefreshActivePing();
             _pingTimer.Start();
             // After the first layout of the shown window, so the toasts land above the status card.

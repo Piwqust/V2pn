@@ -4,9 +4,10 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
     xmlns:loc="using:v2rayN.Desktop">
     <!--
-        V2pn: what a right click on the tray icon opens on Windows, in place of Avalonia's plain menu
-        (TrayPanelHost). The connection as the window shows it, Connect, the servers a person goes back to,
-        the mode and the route, and the everyday actions. MainWindow.Tray.cs fills it and keeps it current.
+        V2pn: what the tray icon opens (TrayMenuPlacement on Windows, MainWindow.Tray.cs on a Mac). Compact on purpose:
+        the connection and its power button in one row, the servers a person goes back to as two columns of cards,
+        the mode and the route as two switches, and the everyday actions as one bar of icons. MainWindow.Tray.cs fills
+        it and keeps it current.
     -->
     <UserControl.Styles>
         <Style Selector="Border#root">
@@ -18,438 +19,350 @@
         </Style>
         <Style Selector="Border.tsep">
             <Setter Property="Height" Value="1" />
-            <Setter Property="Margin" Value="0,2" />
             <Setter Property="Background" Value="{DynamicResource V2Border}" />
         </Style>
-        <Style Selector="TextBlock.tcaption">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="LetterSpacing" Value="0.4" />
-            <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
-            <Setter Property="Margin" Value="4,0,0,0" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-        </Style>
-        <Style Selector="TextBlock.ttitle">
-            <Setter Property="FontSize" Value="17" />
-            <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+
+        <!--  The connection.  -->
+        <Style Selector="Button.thero">
+            <Setter Property="MinHeight" Value="0" />
+            <Setter Property="Padding" Value="6" />
+            <Setter Property="Margin" Value="-6" />
+            <Setter Property="CornerRadius" Value="12" />
         </Style>
         <Style Selector="Border.tflag">
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="27" />
-            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="CornerRadius" Value="7" />
             <Setter Property="ClipToBounds" Value="True" />
             <Setter Property="BoxShadow" Value="0 1 2 0 #40000000" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style Selector="Border.tglobe">
-            <Setter Property="Width" Value="36" />
-            <Setter Property="Height" Value="27" />
-            <Setter Property="CornerRadius" Value="6" />
+            <Setter Property="Width" Value="40" />
+            <Setter Property="Height" Value="30" />
+            <Setter Property="CornerRadius" Value="7" />
             <Setter Property="Background" Value="{DynamicResource V2CardMutedBackground}" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
         <Style Selector="Border.tglobe PathIcon">
-            <Setter Property="Width" Value="15" />
-            <Setter Property="Height" Value="15" />
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
             <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
         </Style>
+        <Style Selector="TextBlock.ttitle">
+            <Setter Property="FontSize" Value="16" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="PathIcon.tchevron">
+            <Setter Property="Width" Value="12" />
+            <Setter Property="Height" Value="12" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
+        </Style>
+        <Style Selector="TextBlock.tstate">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontWeight" Value="SemiBold" />
+            <Setter Property="LetterSpacing" Value="0.4" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
+        </Style>
+        <Style Selector="Ellipse.tdot">
+            <Setter Property="Width" Value="7" />
+            <Setter Property="Height" Value="7" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Fill" Value="{DynamicResource V2Muted}" />
+        </Style>
+        <Style Selector="StackPanel.safe TextBlock.tstate">
+            <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
+        </Style>
+        <Style Selector="StackPanel.safe Ellipse.tdot">
+            <Setter Property="Fill" Value="{DynamicResource V2Safe}" />
+        </Style>
+        <Style Selector="StackPanel.warn TextBlock.tstate">
+            <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+        </Style>
+        <Style Selector="StackPanel.warn Ellipse.tdot">
+            <Setter Property="Fill" Value="{DynamicResource V2PingMid}" />
+        </Style>
+        <Style Selector="StackPanel.unsafe TextBlock.tstate">
+            <Setter Property="Foreground" Value="{DynamicResource V2Unsafe}" />
+        </Style>
+        <Style Selector="StackPanel.unsafe Ellipse.tdot">
+            <Setter Property="Fill" Value="{DynamicResource V2Unsafe}" />
+        </Style>
+        <!--  Connect and Disconnect as one round power button, coloured as the window's Connect.  -->
+        <Style Selector="Button.tpower">
+            <Setter Property="Width" Value="48" />
+            <Setter Property="Height" Value="48" />
+            <Setter Property="MinHeight" Value="48" />
+            <Setter Property="Padding" Value="0" />
+            <Setter Property="CornerRadius" Value="24" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+        </Style>
+        <Style Selector="Button.tpower PathIcon">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="20" />
+        </Style>
 
-        <!--  Server rows: flag, name, ping; the one in use has the chip fill and a check.  -->
-        <Style Selector="Button.trow">
-            <Setter Property="MinHeight" Value="32" />
+        <!--  Server cards: flag, name, ping; the one in use is outlined.  -->
+        <Style Selector="Button.tcard">
+            <Setter Property="MinHeight" Value="38" />
             <Setter Property="Padding" Value="8,0" />
             <Setter Property="Margin" Value="0" />
-            <Setter Property="CornerRadius" Value="10" />
+            <Setter Property="CornerRadius" Value="11" />
+            <Setter Property="BorderThickness" Value="1" />
+            <Setter Property="BorderBrush" Value="{DynamicResource V2Border}" />
         </Style>
-        <Style Selector="Button.trow TextBlock.tname">
-            <Setter Property="FontSize" Value="13" />
+        <Style Selector="Button.tcard.active">
+            <Setter Property="BorderBrush" Value="{DynamicResource V2RowSelectedBorder}" />
+        </Style>
+        <Style Selector="Button.tcard TextBlock.tname">
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="Medium" />
             <Setter Property="VerticalAlignment" Value="Center" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
-        <Style Selector="Button.trow Border.rowflag">
-            <Setter Property="Width" Value="22" />
-            <Setter Property="Height" Value="16" />
+        <Style Selector="Button.tcard TextBlock.tping">
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontFeatures" Value="+tnum" />
+            <Setter Property="VerticalAlignment" Value="Center" />
+            <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
+        </Style>
+        <Style Selector="Button.tcard TextBlock.tping.good">
+            <Setter Property="Foreground" Value="{DynamicResource V2PingGood}" />
+        </Style>
+        <Style Selector="Button.tcard TextBlock.tping.mid">
+            <Setter Property="Foreground" Value="{DynamicResource V2PingMid}" />
+        </Style>
+        <Style Selector="Button.tcard TextBlock.tping.bad">
+            <Setter Property="Foreground" Value="{DynamicResource V2PingBad}" />
+        </Style>
+        <Style Selector="Button.tcard Border.rowflag">
+            <Setter Property="Width" Value="20" />
+            <Setter Property="Height" Value="15" />
             <Setter Property="CornerRadius" Value="3" />
             <Setter Property="ClipToBounds" Value="True" />
             <Setter Property="VerticalAlignment" Value="Center" />
         </Style>
-        <Style Selector="Button.trow PathIcon.rowicon">
+        <Style Selector="Button.tcard PathIcon.rowicon">
             <Setter Property="Width" Value="15" />
             <Setter Property="Height" Value="15" />
-            <Setter Property="Margin" Value="3,0" />
+            <Setter Property="Margin" Value="2,0" />
             <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
-        </Style>
-        <Style Selector="Button.trow PathIcon.check">
-            <Setter Property="Width" Value="14" />
-            <Setter Property="Height" Value="14" />
-            <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
-            <Setter Property="IsVisible" Value="False" />
-        </Style>
-        <Style Selector="Button.trow.active PathIcon.check">
-            <Setter Property="IsVisible" Value="True" />
-        </Style>
-        <Style Selector="Button.trow Border.pill">
-            <Setter Property="MinWidth" Value="0" />
-            <Setter Property="Padding" Value="7,1" />
-        </Style>
-        <Style Selector="Button.trow Border.pill TextBlock">
-            <Setter Property="FontSize" Value="11" />
         </Style>
 
-        <!--  Route rows: the route's own icon, its name and a radio; the one in force has the accent.  -->
-        <Style Selector="Button.troute">
-            <Setter Property="MinHeight" Value="31" />
-            <Setter Property="Padding" Value="8,0" />
-            <Setter Property="Margin" Value="0" />
-            <Setter Property="CornerRadius" Value="10" />
-        </Style>
-        <Style Selector="Button.troute PathIcon.rowicon">
-            <Setter Property="Width" Value="15" />
-            <Setter Property="Height" Value="15" />
-            <Setter Property="Margin" Value="3,0" />
-            <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
-        </Style>
-        <Style Selector="Button.troute.active PathIcon.rowicon">
-            <Setter Property="Foreground" Value="{DynamicResource V2Accent}" />
-        </Style>
-        <Style Selector="Button.troute TextBlock">
-            <Setter Property="FontSize" Value="13" />
-            <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="VerticalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
-        </Style>
-        <Style Selector="Button.troute.active TextBlock">
-            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
-        </Style>
-        <Style Selector="Button.troute Ellipse.ring">
-            <Setter Property="Width" Value="15" />
-            <Setter Property="Height" Value="15" />
-            <Setter Property="StrokeThickness" Value="1.5" />
-            <Setter Property="Stroke" Value="{DynamicResource V2BorderStrong}" />
-        </Style>
-        <Style Selector="Button.troute.active Ellipse.ring">
-            <Setter Property="Stroke" Value="{DynamicResource V2Accent}" />
-        </Style>
-        <Style Selector="Button.troute Ellipse.dot">
-            <Setter Property="Width" Value="7" />
-            <Setter Property="Height" Value="7" />
-            <Setter Property="Fill" Value="{DynamicResource V2Accent}" />
-            <Setter Property="IsVisible" Value="False" />
-        </Style>
-        <Style Selector="Button.troute.active Ellipse.dot">
-            <Setter Property="IsVisible" Value="True" />
-        </Style>
-
-        <!--  The everyday actions as tiles, as Windows' own quick settings have them.  -->
-        <Style Selector="Button.ttile">
-            <Setter Property="Padding" Value="2,7,2,5" />
-            <Setter Property="MinHeight" Value="52" />
-            <Setter Property="CornerRadius" Value="12" />
-            <Setter Property="HorizontalAlignment" Value="Stretch" />
-        </Style>
-        <Style Selector="Button.ttile PathIcon">
-            <Setter Property="Width" Value="17" />
-            <Setter Property="Height" Value="17" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="Foreground" Value="{DynamicResource V2Ink}" />
-        </Style>
-        <Style Selector="Button.ttile TextBlock">
-            <Setter Property="FontSize" Value="11" />
-            <Setter Property="FontWeight" Value="Medium" />
-            <Setter Property="HorizontalAlignment" Value="Center" />
-            <Setter Property="TextAlignment" Value="Center" />
-            <Setter Property="TextTrimming" Value="CharacterEllipsis" />
-            <Setter Property="Foreground" Value="{DynamicResource V2InkSoft}" />
-        </Style>
         <Style Selector="ListBox.tseg">
             <Setter Property="HorizontalAlignment" Value="Stretch" />
         </Style>
-        <Style Selector="ListBox.tmethod">
-            <Setter Property="Padding" Value="2" />
-        </Style>
-        <Style Selector="ListBox.tmethod ListBoxItem">
-            <Setter Property="MinHeight" Value="24" />
+        <Style Selector="ListBox.tseg ListBoxItem">
             <Setter Property="Padding" Value="6,0" />
-            <Setter Property="FontSize" Value="11" />
+        </Style>
+
+        <!--  The bar of actions: icons with their names in the tooltips.  -->
+        <Style Selector="Button.tact">
+            <Setter Property="Width" Value="36" />
+            <Setter Property="Height" Value="34" />
+            <Setter Property="MinHeight" Value="34" />
+            <Setter Property="CornerRadius" Value="10" />
+        </Style>
+        <Style Selector="Button.tact PathIcon">
+            <Setter Property="Width" Value="16" />
+            <Setter Property="Height" Value="16" />
+        </Style>
+        <Style Selector="Button.tact.done PathIcon">
+            <Setter Property="Foreground" Value="{DynamicResource V2Safe}" />
         </Style>
     </UserControl.Styles>
 
     <!--  The margin leaves room for the shadow inside the transparent window.  -->
     <Border
         x:Name="root"
-        Width="328"
+        Width="320"
         Margin="10">
-        <StackPanel Margin="12,14,12,8" Spacing="8">
+        <StackPanel Margin="14,14,14,8" Spacing="12">
 
-            <!--  The connection: the state as the window's pill has it, the server, Connect.  -->
-            <StackPanel Margin="4,0" Spacing="10">
-                <Border
-                    x:Name="pillState"
-                    HorizontalAlignment="Left"
-                    Classes="state">
-                    <Grid ColumnDefinitions="Auto,*" ColumnSpacing="7">
-                        <Ellipse x:Name="dotState" Classes="statedot" />
-                        <TextBlock
-                            x:Name="txtState"
+            <!--  The connection: flag, country and server (a click picks another), the state, and the power button.  -->
+            <Grid ColumnDefinitions="*,Auto" ColumnSpacing="10">
+                <Button
+                    x:Name="btnServer"
+                    Classes="thero"
+                    Theme="{StaticResource V2SideRow}"
+                    ToolTip.Tip="{x:Static loc:L.TrayAllServersTip}">
+                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
+                        <Panel>
+                            <Border x:Name="borderFlag" Classes="tflag">
+                                <Image x:Name="imgFlag" Stretch="UniformToFill" />
+                            </Border>
+                            <Border x:Name="borderGlobe" Classes="tglobe">
+                                <PathIcon Data="{StaticResource SemiIconGlobeStroke}" />
+                            </Border>
+                        </Panel>
+                        <StackPanel
                             Grid.Column="1"
-                            TextWrapping="Wrap" />
-                    </Grid>
-                </Border>
-                <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="12">
-                    <Panel>
-                        <Border x:Name="borderFlag" Classes="tflag">
-                            <Image x:Name="imgFlag" Stretch="UniformToFill" />
-                        </Border>
-                        <Border x:Name="borderGlobe" Classes="tglobe">
-                            <PathIcon Data="{StaticResource SemiIconGlobeStroke}" />
-                        </Border>
-                    </Panel>
-                    <StackPanel
-                        Grid.Column="1"
-                        VerticalAlignment="Center"
-                        Spacing="1">
-                        <TextBlock
-                            x:Name="txtTitle"
-                            Classes="ttitle"
-                            TextTrimming="CharacterEllipsis" />
-                        <TextBlock
-                            x:Name="txtSubtitle"
-                            Classes="muted small"
-                            TextTrimming="CharacterEllipsis" />
-                    </StackPanel>
-                    <Border
-                        x:Name="pillPing"
-                        Grid.Column="2"
-                        Classes="pill">
-                        <TextBlock x:Name="txtPing" />
-                    </Border>
-                </Grid>
-            </StackPanel>
-            <Button
-                x:Name="btnConnect"
-                Height="42"
-                HorizontalAlignment="Stretch"
-                CornerRadius="21"
-                FontSize="14"
-                FontWeight="SemiBold"
-                Classes="connectbtn"
-                Theme="{StaticResource V2Button}">
-                <StackPanel
-                    HorizontalAlignment="Center"
-                    Orientation="Horizontal"
-                    Spacing="8">
-                    <PathIcon Data="{StaticResource SemiIconPower}" />
-                    <TextBlock x:Name="txtConnect" VerticalAlignment="Center" />
-                </StackPanel>
-            </Button>
-
-            <Border Classes="tsep" />
-
-            <!--  The servers a person goes back to: the fastest, the favorites, the recent ones.  -->
-            <StackPanel x:Name="panelServers" Spacing="2">
-                <Grid Margin="0,0,0,2" ColumnDefinitions="*,Auto">
-                    <TextBlock Classes="tcaption" Text="{x:Static loc:L.TrayServers}" />
-                    <Button
-                        x:Name="btnAllServers"
-                        Grid.Column="1"
-                        Classes="tiny"
-                        Theme="{StaticResource V2Button}">
-                        <StackPanel Orientation="Horizontal" Spacing="4">
-                            <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TrayAllServers}" />
-                            <PathIcon Classes="i12" Data="{StaticResource SemiIconChevronRight}" />
+                            VerticalAlignment="Center"
+                            Spacing="2">
+                            <TextBlock x:Name="txtTitle" Classes="ttitle" />
+                            <TextBlock
+                                x:Name="txtSubtitle"
+                                Classes="muted small"
+                                TextTrimming="CharacterEllipsis" />
+                            <StackPanel
+                                x:Name="panelState"
+                                Margin="0,1,0,0"
+                                Orientation="Horizontal"
+                                Spacing="6">
+                                <Ellipse Classes="tdot" />
+                                <TextBlock x:Name="txtState" Classes="tstate" />
+                            </StackPanel>
                         </StackPanel>
-                    </Button>
-                </Grid>
-                <StackPanel x:Name="listServers" Spacing="1" />
-            </StackPanel>
-
-            <Border Classes="tsep" />
-
-            <!--  How the computer is protected, then what goes through the VPN.  -->
-            <Grid
-                ColumnDefinitions="Auto,*"
-                ColumnSpacing="12"
-                RowDefinitions="Auto,Auto"
-                RowSpacing="5">
-                <TextBlock Classes="tcaption" Text="{x:Static loc:L.BarMode}" />
-                    <ListBox
-                        x:Name="lstMode"
-                        Grid.Column="1"
-                        Classes="tseg"
-                        Theme="{StaticResource V2Segmented}">
-                        <ListBoxItem x:Name="itemProxy" AutomationProperties.Name="{x:Static loc:L.ModeProxy}">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <PathIcon Classes="i14" Data="{StaticResource SemiIconGlobeStroke}" />
-                                <TextBlock Text="{x:Static loc:L.ModeProxy}" />
-                            </StackPanel>
-                        </ListBoxItem>
-                        <ListBoxItem x:Name="itemVpn" AutomationProperties.Name="{x:Static loc:L.ModeVpn}">
-                            <StackPanel Orientation="Horizontal" Spacing="6">
-                                <PathIcon Classes="i14" Data="{StaticResource SemiIconShieldStroked}" />
-                                <TextBlock Text="{x:Static loc:L.ModeVpn}" />
-                                <PathIcon
-                                    x:Name="badgeAdmin"
-                                    Classes="i12 adminlock"
-                                    Data="{StaticResource SemiIconLock}" />
-                            </StackPanel>
-                        </ListBoxItem>
-                    </ListBox>
-                <!--  In Proxy mode: how the system proxy is set (Settings → General has the same choice).  -->
-                <ListBox
-                    x:Name="lstMethod"
-                    Grid.Row="1"
+                        <PathIcon
+                            Grid.Column="2"
+                            Classes="tchevron"
+                            Data="{StaticResource SemiIconChevronRight}" />
+                    </Grid>
+                </Button>
+                <Button
+                    x:Name="btnConnect"
                     Grid.Column="1"
-                    Classes="tseg tmethod"
-                    Theme="{StaticResource V2Segmented}" />
+                    Classes="connectbtn tpower"
+                    Theme="{StaticResource V2Button}">
+                    <PathIcon Data="{StaticResource SemiIconPower}" />
+                </Button>
             </Grid>
 
-            <StackPanel Spacing="1">
-                <TextBlock
-                    Margin="4,0,0,3"
-                    Classes="tcaption"
-                    Text="{x:Static loc:L.BarRoute}" />
-                <Button
-                    x:Name="btnRouteRussia"
-                    AutomationProperties.Name="{x:Static loc:L.RouteRussiaDirect}"
-                    Classes="troute"
-                    Theme="{StaticResource V2SideRow}">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                        <PathIcon Classes="rowicon" Data="{StaticResource SemiIconBranch}" />
-                        <TextBlock Grid.Column="1" Text="{x:Static loc:L.RouteRussiaDirect}" />
-                        <Panel Grid.Column="2">
-                            <Ellipse Classes="ring" />
-                            <Ellipse Classes="dot" />
-                        </Panel>
-                    </Grid>
-                </Button>
-                <Button
-                    x:Name="btnRouteBlocked"
-                    AutomationProperties.Name="{x:Static loc:L.RouteBlockedOnly}"
-                    Classes="troute"
-                    Theme="{StaticResource V2SideRow}">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                        <PathIcon Classes="rowicon" Data="{StaticResource SemiIconFilterStroked}" />
-                        <TextBlock Grid.Column="1" Text="{x:Static loc:L.RouteBlockedOnly}" />
-                        <Panel Grid.Column="2">
-                            <Ellipse Classes="ring" />
-                            <Ellipse Classes="dot" />
-                        </Panel>
-                    </Grid>
-                </Button>
-                <Button
-                    x:Name="btnRouteAll"
-                    AutomationProperties.Name="{x:Static loc:L.RouteAll}"
-                    Classes="troute"
-                    Theme="{StaticResource V2SideRow}">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                        <PathIcon Classes="rowicon" Data="{StaticResource SemiIconGlobeStroke}" />
-                        <TextBlock Grid.Column="1" Text="{x:Static loc:L.RouteAll}" />
-                        <Panel Grid.Column="2">
-                            <Ellipse Classes="ring" />
-                            <Ellipse Classes="dot" />
-                        </Panel>
-                    </Grid>
-                </Button>
-                <!--  The person's own rule set when one is in force instead of the three.  -->
-                <Button
-                    x:Name="btnRouteCustom"
-                    Classes="troute active"
-                    IsVisible="False"
-                    Theme="{StaticResource V2SideRow}">
-                    <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                        <PathIcon Classes="rowicon" Data="{StaticResource SemiIconRoute}" />
-                        <TextBlock
-                            x:Name="txtRouteCustom"
-                            Grid.Column="1"
-                            TextTrimming="CharacterEllipsis" />
-                        <Panel Grid.Column="2">
-                            <Ellipse Classes="ring" />
-                            <Ellipse Classes="dot" />
-                        </Panel>
-                    </Grid>
-                </Button>
+            <!--  The fastest server, the favorites and the recent ones.  -->
+            <UniformGrid
+                x:Name="gridServers"
+                ColumnSpacing="6"
+                Columns="2"
+                RowSpacing="6" />
+            <TextBlock
+                x:Name="txtNoServers"
+                Classes="muted small"
+                IsVisible="False"
+                Text="{x:Static loc:L.TrayNoServers}"
+                TextWrapping="Wrap" />
+
+            <!--  How the computer is protected, and what goes through the VPN.  -->
+            <StackPanel Spacing="6">
+                <ListBox
+                    x:Name="lstMode"
+                    Classes="tseg"
+                    Theme="{StaticResource V2Segmented}">
+                    <ListBoxItem x:Name="itemProxy" AutomationProperties.Name="{x:Static loc:L.ModeProxy}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <PathIcon Classes="i14" Data="{StaticResource SemiIconGlobeStroke}" />
+                            <TextBlock Text="{x:Static loc:L.ModeProxy}" />
+                        </StackPanel>
+                    </ListBoxItem>
+                    <ListBoxItem x:Name="itemVpn" AutomationProperties.Name="{x:Static loc:L.ModeVpn}">
+                        <StackPanel Orientation="Horizontal" Spacing="6">
+                            <PathIcon Classes="i14" Data="{StaticResource SemiIconShieldStroked}" />
+                            <TextBlock Text="{x:Static loc:L.ModeVpn}" />
+                            <PathIcon
+                                x:Name="badgeAdmin"
+                                Classes="i12 adminlock"
+                                Data="{StaticResource SemiIconLock}" />
+                        </StackPanel>
+                    </ListBoxItem>
+                </ListBox>
+                <!--  The three routes by short names (the full ones are in the tooltips); a rule set of one's own
+                      shows as a fourth item while it is in force.  -->
+                <ListBox
+                    x:Name="lstRoute"
+                    Classes="tseg"
+                    Theme="{StaticResource V2Segmented}">
+                    <ListBoxItem
+                        x:Name="itemRouteRussia"
+                        AutomationProperties.Name="{x:Static loc:L.RouteRussiaDirect}"
+                        ToolTip.Tip="{x:Static loc:L.RouteRussiaDirect}">
+                        <TextBlock Text="{x:Static loc:L.TrayRouteRussia}" TextTrimming="CharacterEllipsis" />
+                    </ListBoxItem>
+                    <ListBoxItem
+                        x:Name="itemRouteBlocked"
+                        AutomationProperties.Name="{x:Static loc:L.RouteBlockedOnly}"
+                        ToolTip.Tip="{x:Static loc:L.RouteBlockedOnly}">
+                        <TextBlock Text="{x:Static loc:L.TrayRouteBlocked}" TextTrimming="CharacterEllipsis" />
+                    </ListBoxItem>
+                    <ListBoxItem
+                        x:Name="itemRouteAll"
+                        AutomationProperties.Name="{x:Static loc:L.RouteAll}"
+                        ToolTip.Tip="{x:Static loc:L.RouteAll}">
+                        <TextBlock Text="{x:Static loc:L.TrayRouteAll}" TextTrimming="CharacterEllipsis" />
+                    </ListBoxItem>
+                    <ListBoxItem x:Name="itemRouteCustom" IsVisible="False">
+                        <TextBlock x:Name="txtRouteCustom" TextTrimming="CharacterEllipsis" />
+                    </ListBoxItem>
+                </ListBox>
             </StackPanel>
 
             <Border Classes="tsep" />
 
-            <UniformGrid Columns="4" ColumnSpacing="4">
+            <!--  Paste, Update, Update through the VPN and the terminal command; then the window, Settings and Quit.  -->
+            <Grid Margin="-4,-4,-4,0" ColumnDefinitions="Auto,Auto,Auto,Auto,*,Auto,Auto,Auto">
                 <Button
                     x:Name="btnPaste"
                     AutomationProperties.Name="{x:Static loc:L.WelcomePaste}"
-                    Classes="ttile"
-                    Theme="{StaticResource V2RailTile}"
+                    Classes="ghost tact"
+                    Theme="{StaticResource V2Button}"
                     ToolTip.Tip="{x:Static loc:L.WelcomePaste}">
-                    <StackPanel Spacing="5">
-                        <PathIcon Data="{StaticResource SemiIconCopyAdd}" />
-                        <TextBlock Text="{x:Static loc:L.TrayTilePaste}" />
-                    </StackPanel>
+                    <PathIcon Data="{StaticResource SemiIconCopyAdd}" />
                 </Button>
                 <Button
                     x:Name="btnUpdate"
+                    Grid.Column="1"
                     AutomationProperties.Name="{x:Static loc:L.UpdateAll}"
-                    Classes="ttile"
-                    Theme="{StaticResource V2RailTile}"
+                    Classes="ghost tact"
+                    Theme="{StaticResource V2Button}"
                     ToolTip.Tip="{x:Static loc:L.UpdateAll}">
-                    <StackPanel Spacing="5">
-                        <PathIcon Data="{StaticResource SemiIconRefresh}" />
-                        <TextBlock Text="{x:Static loc:L.TrayTileUpdate}" />
-                    </StackPanel>
+                    <PathIcon Data="{StaticResource SemiIconRefresh}" />
                 </Button>
                 <Button
                     x:Name="btnUpdateVpn"
+                    Grid.Column="2"
                     AutomationProperties.Name="{x:Static loc:L.TraySubUpdateViaVpn}"
-                    Classes="ttile"
-                    Theme="{StaticResource V2RailTile}"
+                    Classes="ghost tact"
+                    Theme="{StaticResource V2Button}"
                     ToolTip.Tip="{x:Static loc:L.TraySubUpdateViaVpn}">
-                    <StackPanel Spacing="5">
-                        <PathIcon Data="{StaticResource SemiIconShieldStroked}" />
-                        <TextBlock Text="{x:Static loc:L.TrayTileUpdateVpn}" />
-                    </StackPanel>
+                    <PathIcon Data="{StaticResource SemiIconShieldStroked}" />
                 </Button>
                 <Button
                     x:Name="btnTerminal"
+                    Grid.Column="3"
                     AutomationProperties.Name="{x:Static loc:L.TrayCopyProxyCmd}"
-                    Classes="ttile"
-                    Theme="{StaticResource V2RailTile}"
+                    Classes="ghost tact"
+                    Theme="{StaticResource V2Button}"
                     ToolTip.Tip="{x:Static loc:L.TrayCopyProxyCmd}">
-                    <StackPanel Spacing="5">
-                        <PathIcon Data="{StaticResource SemiIconTerminal}" />
-                        <TextBlock x:Name="txtTerminal" Text="{x:Static loc:L.TrayTileTerminal}" />
-                    </StackPanel>
+                    <PathIcon Data="{StaticResource SemiIconTerminal}" />
                 </Button>
-            </UniformGrid>
-
-            <Grid ColumnDefinitions="*,Auto,Auto" ColumnSpacing="2">
                 <Button
                     x:Name="btnOpenWide"
-                    HorizontalAlignment="Left"
-                    Classes="ghost small"
-                    Theme="{StaticResource V2Button}">
-                    <StackPanel Orientation="Horizontal" Spacing="7">
-                        <PathIcon Classes="i14" Data="{StaticResource SemiIconExternalOpen}" />
-                        <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TrayOpen}" />
-                    </StackPanel>
+                    Grid.Column="5"
+                    AutomationProperties.Name="{x:Static loc:L.TrayOpen}"
+                    Classes="ghost tact"
+                    Theme="{StaticResource V2Button}"
+                    ToolTip.Tip="{x:Static loc:L.TrayOpen}">
+                    <PathIcon Data="{StaticResource SemiIconExternalOpen}" />
                 </Button>
                 <Button
                     x:Name="btnSettings"
-                    Grid.Column="1"
+                    Grid.Column="6"
                     AutomationProperties.Name="{x:Static loc:L.Settings}"
-                    Classes="ghost icon small"
+                    Classes="ghost tact"
                     Theme="{StaticResource V2Button}"
                     ToolTip.Tip="{x:Static loc:L.Settings}">
-                    <PathIcon Classes="i14" Data="{StaticResource SemiIconSettingStroked}" />
+                    <PathIcon Data="{StaticResource SemiIconSettingStroked}" />
                 </Button>
                 <Button
                     x:Name="btnQuit"
-                    Grid.Column="2"
-                    Classes="ghost small"
-                    Theme="{StaticResource V2Button}">
-                    <StackPanel Orientation="Horizontal" Spacing="7">
-                        <PathIcon Classes="i14" Data="{StaticResource SemiIconExit}" />
-                        <TextBlock VerticalAlignment="Center" Text="{x:Static loc:L.TrayQuit}" />
-                    </StackPanel>
+                    Grid.Column="7"
+                    AutomationProperties.Name="{x:Static loc:L.MenuQuit}"
+                    Classes="ghost tact"
+                    Theme="{StaticResource V2Button}"
+                    ToolTip.Tip="{x:Static loc:L.MenuQuit}">
+                    <PathIcon Data="{StaticResource SemiIconExit}" />
                 </Button>
             </Grid>
         </StackPanel>

@@ -24,20 +24,19 @@ internal sealed record TrayView(
 internal sealed record TrayServer(string IndexId, string Name, Bitmap? Flag, int Delay, bool Active);
 
 /// <summary>
-/// V2pn: what a right click on the tray icon opens on Windows (TrayPanelHost puts it into Avalonia's tray
-/// window in place of the menu). It stays open while the connection, the mode or the route changes, so the
-/// result is seen where it was asked for; whatever needs the window opens the window and closes the panel.
+/// V2pn: what the tray icon opens (on Windows TrayMenuPlacement puts it into Avalonia's tray window in place of the
+/// menu; on a Mac MainWindow.Tray.cs shows it under the menu bar). It stays open while the connection, the mode or
+/// the route changes, so the result is seen where it was asked for; whatever needs the window opens the window and
+/// closes the panel.
 /// </summary>
 public partial class TrayPanel : UserControl
 {
+    /// <summary>Servers beside "Fastest" in the two columns of cards.</summary>
     internal const int QuickServers = 3;
-
-    private static readonly ESysProxyType[] WindowsMethods = [ESysProxyType.ForcedChange, ESysProxyType.Unchanged, ESysProxyType.Pac];
 
     private readonly MainWindow? _main;
     private Action _close;
     private bool _sync;
-    private ESysProxyType[] _methods = [];
     private string? _shownServers;
 
     public TrayPanel() : this(null, () => { })
@@ -51,7 +50,7 @@ public partial class TrayPanel : UserControl
         InitializeComponent();
 
         btnConnect.Click += (_, _) => _main?.ToggleConnectionFromTray();
-        btnAllServers.Click += (_, _) => Leave(m => m.TrayShowServers());
+        btnServer.Click += (_, _) => Leave(m => m.TrayShowServers());
         lstMode.SelectionChanged += (_, _) =>
         {
             if (!_sync && lstMode.SelectedIndex >= 0)
@@ -59,26 +58,36 @@ public partial class TrayPanel : UserControl
                 _main?.TraySetMode(lstMode.SelectedIndex == 1);
             }
         };
-        lstMethod.SelectionChanged += (_, _) =>
+        lstRoute.SelectionChanged += async (_, _) =>
         {
-            if (!_sync && lstMethod.SelectedIndex >= 0 && lstMethod.SelectedIndex < _methods.Length)
+            if (_sync || _main == null)
             {
-                _main?.TraySetMethod(_methods[lstMethod.SelectedIndex]);
+                return;
+            }
+            if (lstRoute.SelectedItem == itemRouteRussia)
+            {
+                await _main.SelectPresetFromTrayAsync(RoutingPresetKind.RussiaDirect);
+            }
+            else if (lstRoute.SelectedItem == itemRouteBlocked)
+            {
+                await _main.SelectPresetFromTrayAsync(RoutingPresetKind.BlockedOnly);
+            }
+            else if (lstRoute.SelectedItem == itemRouteAll)
+            {
+                await _main.SelectPresetFromTrayAsync(RoutingPresetKind.All);
             }
         };
-        btnRouteRussia.Click += async (_, _) => await Route(RoutingPresetKind.RussiaDirect);
-        btnRouteBlocked.Click += async (_, _) => await Route(RoutingPresetKind.BlockedOnly);
-        btnRouteAll.Click += async (_, _) => await Route(RoutingPresetKind.All);
-        btnRouteCustom.Click += (_, _) => Leave(m => m.TrayShowRoutes());
 
         btnPaste.Click += (_, _) => Leave(m => { _ = m.TrayPasteAsync(); });
         btnUpdate.Click += (_, _) => Leave(m => m.TrayUpdateSubscriptions(viaVpn: false));
         btnUpdateVpn.Click += (_, _) => Leave(m => m.TrayUpdateSubscriptions(viaVpn: true));
         btnTerminal.Click += (_, _) =>
         {
-            // Copied without leaving: the tile says so, and the panel closes a moment later.
+            // Copied without leaving: the icon turns green and says so, and the panel closes a moment later.
             _main?.TrayCopyProxyCommand();
-            txtTerminal.Text = L.TrayTileCopied;
+            btnTerminal.Classes.Add("done");
+            ToolTip.SetTip(btnTerminal, L.TrayCopied);
+            AutomationPropertiesName(btnTerminal, L.TrayCopied);
             DispatcherTimer.RunOnce(_close, TimeSpan.FromMilliseconds(700));
         };
         btnSettings.Click += (_, _) => Leave(m => m.TrayOpenSettings());
@@ -103,7 +112,9 @@ public partial class TrayPanel : UserControl
             old.Content = null;
         }
         _close = close;
-        txtTerminal.Text = L.TrayTileTerminal;
+        btnTerminal.Classes.Remove("done");
+        ToolTip.SetTip(btnTerminal, L.TrayCopyProxyCmd);
+        AutomationPropertiesName(btnTerminal, L.TrayCopyProxyCmd);
         window.Content = this;
     }
 
@@ -136,14 +147,6 @@ public partial class TrayPanel : UserControl
         }
     }
 
-    private async Task Route(RoutingPresetKind kind)
-    {
-        if (_main != null)
-        {
-            await _main.SelectPresetFromTrayAsync(kind);
-        }
-    }
-
     internal void Refresh()
     {
         if (_main?.TrayViewNow() is not { } v)
@@ -155,10 +158,11 @@ public partial class TrayPanel : UserControl
         {
             foreach (var c in new[] { "safe", "unsafe", "warn", "checking" })
             {
-                pillState.Classes.Set(c, c == v.Kind);
+                panelState.Classes.Set(c, c == v.Kind);
             }
-            txtState.Text = v.StateLabel.ToUpper(CultureInfo.CurrentUICulture);
-            AutomationPropertiesName(pillState, v.StateLabel);
+            txtState.Text = v.Connected && v.Delay > 0
+                ? $"{v.StateLabel.ToUpper(CultureInfo.CurrentUICulture)} · {L.Ms(v.Delay)}"
+                : v.StateLabel.ToUpper(CultureInfo.CurrentUICulture);
 
             imgFlag.Source = v.Flag;
             borderFlag.IsVisible = v.Flag != null;
@@ -166,10 +170,11 @@ public partial class TrayPanel : UserControl
             txtTitle.Text = v.Title;
             txtSubtitle.Text = v.Subtitle;
             txtSubtitle.IsVisible = !string.IsNullOrEmpty(v.Subtitle);
-            SetPing(pillPing, txtPing, v.Connected ? v.Delay : 0);
+            AutomationPropertiesName(btnServer, string.Join(", ", new[] { v.Title, v.Subtitle, v.StateLabel }.Where(t => !string.IsNullOrEmpty(t))));
 
-            txtConnect.Text = !v.Connected ? L.Connect : v.Busy ? L.StateConnecting : L.Disconnect;
-            AutomationPropertiesName(btnConnect, txtConnect.Text);
+            var action = !v.Connected ? L.Connect : v.Busy ? L.StateConnecting : L.Disconnect;
+            ToolTip.SetTip(btnConnect, action);
+            AutomationPropertiesName(btnConnect, action);
             btnConnect.Classes.Set("accent", !v.Connected);
             btnConnect.Classes.Set("disconnect", v.Connected);
             btnConnect.Classes.Set("safe", v.Connected && v.Kind == "safe");
@@ -182,15 +187,19 @@ public partial class TrayPanel : UserControl
             badgeAdmin.IsVisible = v.NeedsAdmin;
             ToolTip.SetTip(itemProxy, L.ModeProxyTip);
             ToolTip.SetTip(itemVpn, v.NeedsAdmin ? $"{L.ModeVpnTip} {L.ModeVpnNeedsAdmin}" : L.ModeVpnTip);
-            FillMethods(v);
 
             var custom = v.Route == null && !string.IsNullOrEmpty(v.CustomRoute);
-            btnRouteRussia.Classes.Set("active", v.Route == RoutingPresetKind.RussiaDirect);
-            btnRouteBlocked.Classes.Set("active", v.Route == RoutingPresetKind.BlockedOnly);
-            btnRouteAll.Classes.Set("active", v.Route == RoutingPresetKind.All);
-            btnRouteCustom.IsVisible = custom;
+            itemRouteCustom.IsVisible = custom;
             txtRouteCustom.Text = v.CustomRoute;
-            AutomationPropertiesName(btnRouteCustom, v.CustomRoute ?? string.Empty);
+            ToolTip.SetTip(itemRouteCustom, v.CustomRoute);
+            AutomationPropertiesName(itemRouteCustom, v.CustomRoute ?? string.Empty);
+            lstRoute.SelectedItem = v.Route switch
+            {
+                RoutingPresetKind.RussiaDirect => itemRouteRussia,
+                RoutingPresetKind.BlockedOnly => itemRouteBlocked,
+                RoutingPresetKind.All => itemRouteAll,
+                _ => custom ? itemRouteCustom : null,
+            };
         }
         finally
         {
@@ -198,135 +207,75 @@ public partial class TrayPanel : UserControl
         }
     }
 
-    // In Proxy mode, how the system proxy is set: the choice from Settings → General, one click away.
-    private void FillMethods(TrayView v)
-    {
-        var methods = v.PacAvailable ? WindowsMethods : WindowsMethods[..2];
-        if (!methods.SequenceEqual(_methods))
-        {
-            _methods = methods;
-            lstMethod.ItemsSource = methods.Select(m => new ListBoxItem
-            {
-                Content = m switch
-                {
-                    ESysProxyType.Pac => L.TrayMethodPac,
-                    ESysProxyType.Unchanged => L.TrayMethodPort,
-                    _ => L.TrayMethodSystem,
-                },
-                [ToolTip.TipProperty] = m switch
-                {
-                    ESysProxyType.Pac => L.ProxyMethodPac,
-                    ESysProxyType.Unchanged => L.ProxyModeKeep,
-                    _ => L.ProxyMethodSystem,
-                },
-            }).ToList();
-        }
-        lstMethod.SelectedIndex = Array.IndexOf(_methods, v.Method);
-        lstMethod.IsVisible = !v.Tun;
-    }
-
     private void FillServers(TrayView v)
     {
-        panelServers.IsVisible = true;
-        // Rebuilt only when something in it changed; a new ping every few seconds must not flicker the rows.
-        var stamp = string.Join("|", v.Servers.Select(s => $"{s.IndexId}:{s.Delay}:{s.Active}")) + $"|{v.HasServers}";
+        gridServers.IsVisible = v.HasServers;
+        txtNoServers.IsVisible = !v.HasServers;
+        // Rebuilt only when something in it changed; a new ping every few seconds must not flicker the cards.
+        var stamp = string.Join("|", v.Servers.Select(s => $"{s.IndexId}:{s.Delay}:{s.Active}:{s.Name}")) + $"|{v.HasServers}";
         if (stamp == _shownServers)
         {
             return;
         }
         _shownServers = stamp;
-        listServers.Children.Clear();
+        gridServers.Children.Clear();
         if (!v.HasServers)
         {
-            btnAllServers.IsVisible = false;
-            listServers.Children.Add(new TextBlock
-            {
-                Text = L.TrayNoServers,
-                TextWrapping = TextWrapping.Wrap,
-                Margin = new Thickness(4, 2, 4, 4),
-                Classes = { "muted", "small" },
-            });
             return;
         }
-        btnAllServers.IsVisible = true;
-        listServers.Children.Add(Row(Icon("SemiIconBolt"), L.Fastest, 0, false, () => _main?.TrayFastestAsync() ?? Task.CompletedTask));
+        gridServers.Children.Add(Card(Icon("SemiIconBolt"), L.TrayFastest, 0, false, () => _main?.TrayFastestAsync() ?? Task.CompletedTask));
         foreach (var s in v.Servers.Take(QuickServers))
         {
             var id = s.IndexId;
-            listServers.Children.Add(Row(FlagOf(s), s.Name, s.Delay, s.Active, () => _main?.TrayConnectToAsync(id) ?? Task.CompletedTask));
+            gridServers.Children.Add(Card(FlagOf(s), s.Name, s.Delay, s.Active, () => _main?.TrayConnectToAsync(id) ?? Task.CompletedTask));
         }
     }
 
-    private Button Row(Control lead, string name, int delay, bool active, Func<Task> click)
+    private Button Card(Control lead, string name, int delay, bool active, Func<Task> click)
     {
-        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions("Auto,*,Auto,Auto"), ColumnSpacing = 10 };
+        // No third column without a ping: its spacing alone would cut "Fastest" short.
+        var grid = new Grid { ColumnDefinitions = new ColumnDefinitions(delay != 0 ? "Auto,*,Auto" : "Auto,*"), ColumnSpacing = 7 };
         grid.Children.Add(lead);
         var text = new TextBlock { Text = name, Classes = { "tname" } };
         Grid.SetColumn(text, 1);
         grid.Children.Add(text);
         if (delay != 0)
         {
-            var pill = new Border { Classes = { "pill" } };
-            var label = new TextBlock();
-            pill.Child = label;
-            SetPing(pill, label, delay);
-            Grid.SetColumn(pill, 2);
-            grid.Children.Add(pill);
+            var ping = new TextBlock
+            {
+                Text = delay > 0 ? L.Ms(delay) : L.Timeout,
+                Classes = { "tping", delay switch { > 0 and <= 300 => "good", > 300 and <= 800 => "mid", _ => "bad" } },
+            };
+            Grid.SetColumn(ping, 2);
+            grid.Children.Add(ping);
         }
-        var check = Icon("SemiIconTickCircle");
-        check.Classes.Add("check");
-        Grid.SetColumn(check, 3);
-        grid.Children.Add(check);
-
-        var row = new Button
+        var card = new Button
         {
             Content = grid,
-            Classes = { "trow" },
+            Classes = { "tcard" },
             Theme = this.FindResource("V2SideRow") as ControlTheme,
         };
-        row.Classes.Set("active", active);
-        AutomationPropertiesName(row, delay > 0 ? $"{name}, {L.Ms(delay)}" : name);
-        row.Click += async (_, _) => await click();
-        return row;
+        card.Classes.Set("active", active);
+        ToolTip.SetTip(card, name);
+        AutomationPropertiesName(card, delay > 0 ? $"{name}, {L.Ms(delay)}" : name);
+        card.Click += async (_, _) => await click();
+        return card;
     }
 
     private Control FlagOf(TrayServer s)
     {
         if (s.Flag == null)
         {
-            var globe = Icon("SemiIconGlobeStroke");
-            globe.Classes.Add("rowicon");
-            return globe;
+            return Icon("SemiIconGlobeStroke");
         }
         return new Border { Classes = { "rowflag" }, Child = new Image { Source = s.Flag, Stretch = Stretch.UniformToFill } };
     }
 
-    private PathIcon Icon(string key)
+    private static PathIcon Icon(string key)
     {
-        var icon = new PathIcon();
-        if (key == "SemiIconBolt")
-        {
-            icon.Classes.Add("rowicon");
-        }
+        var icon = new PathIcon { Classes = { "rowicon" } };
         icon.Bind(PathIcon.DataProperty, icon.GetResourceObservable(key));
         return icon;
-    }
-
-    private static void SetPing(Border pill, TextBlock text, int delay)
-    {
-        var tier = delay switch
-        {
-            0 => "none",
-            > 0 and <= 300 => "good",
-            > 300 and <= 800 => "mid",
-            _ => "bad",
-        };
-        foreach (var c in new[] { "good", "mid", "bad" })
-        {
-            pill.Classes.Set(c, c == tier);
-        }
-        pill.IsVisible = delay != 0;
-        text.Text = delay > 0 ? L.Ms(delay) : delay < 0 ? L.Timeout : string.Empty;
     }
 
     private static void AutomationPropertiesName(Control control, string name) =>

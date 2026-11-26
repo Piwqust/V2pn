@@ -6,8 +6,8 @@ What changes for the people who use the app. Each version's section becomes the 
 
 ### Interface
 
-- A right click on the tray icon on Windows opens a panel instead of a plain list. It shows the connection as the window does: the state, the server with its flag and ping, and the Connect button. Below are the fastest server, your favorites and the servers used last, one click to switch. Proxy or VPN mode and how the proxy is set are switches, the three routes have their icons, and Paste, Update, Update through the VPN and the terminal command are tiles. The panel stays open while you change the server, the mode or the route, so you see the result where you asked for it. It follows the light or dark theme. On Linux the tray keeps its menu.
-- On a Mac the menu-bar icon's menu is laid out the same way and stays a native menu: the state with a coloured dot, the server with its flag and ping, Connect, the fastest, favorite and recent servers, Proxy or VPN and the three routes as choices on the menu itself instead of in submenus, each with its icon. All servers by country, how the proxy is set, your own routes and the subscriptions are one submenu away.
+- A right click on the tray icon on Windows opens a compact panel instead of a long list. At the top are the server with its flag, the state and ping, and a round power button; a click on the server opens the list of all servers. Below are the fastest server, your favorites and the servers used last as cards, then two switches: Proxy or VPN, and what goes through the VPN (except Russian sites, blocked sites, everything). A bar of icons pastes a link, updates the subscriptions (also through the VPN), copies the terminal command and opens the window, Settings or Quit. The panel stays open while you change the server, the mode or the route, and follows the light or dark theme. On Linux the tray keeps its menu.
+- On a Mac the menu-bar icon's menu is half as long: the state with a coloured dot and the server, Connect, the fastest, favorite and recent servers with flags and ping, then one line each for the mode and the route that says what is chosen, with the choices one level down.
 
 ## 1.6.0
 

@@ -198,13 +198,23 @@ public partial class OptionSettingWindow : WindowBase<OptionSettingViewModel>
 
     private async Task InitSettingFont()
     {
-        var lstFonts = await GetFonts();
+        // The list the main window gathered in the background after the start, else gathered now.
+        var lstFonts = _fonts is { IsCompletedSuccessfully: true } ready ? [.. ready.Result] : await GetFonts();
 
         lstFonts.Add(string.Empty);
         cmbcurrentFontFamily.ItemsSource = lstFonts;
     }
 
-    private async Task<List<string>> GetFonts()
+    private static Task<List<string>>? _fonts;
+
+    /// <summary>
+    /// Gathers the installed fonts off the window's thread, once. The first opening of Settings read them there and
+    /// waited (about 70 ms on an ordinary system, far more with thousands of fonts). Avalonia keeps the system font
+    /// list for the whole run anyway, so a font installed later shows only after a restart, as it did before.
+    /// </summary>
+    public static void PrefetchFonts() => _fonts ??= Task.Run(GetFonts);
+
+    private static async Task<List<string>> GetFonts()
     {
         await Task.CompletedTask;
 

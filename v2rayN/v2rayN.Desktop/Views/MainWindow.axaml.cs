@@ -2937,6 +2937,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
             ShowHideWindow(false);
             _ = WarmUpInTrayAsync();
         }
+        // Settings lists the installed fonts; gathered in the background once the start is done, not on its first opening.
+        DispatcherTimer.RunOnce(OptionSettingWindow.PrefetchFonts, TimeSpan.FromSeconds(4), DispatcherPriority.Background);
         // Sign-in entries are tidied at every start: one fixed name, the sign-in argument, nothing left
         // from removed or test copies (registry or task; schtasks is slow, hence the background).
         var moved = V2pnImport.Imported != null;

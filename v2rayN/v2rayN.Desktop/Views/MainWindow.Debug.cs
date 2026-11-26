@@ -1,6 +1,7 @@
 using Avalonia.Automation;
 using DialogHostAvalonia;
 using v2rayN.Desktop.Common;
+using v2rayN.Desktop.ViewModels;
 
 namespace v2rayN.Desktop.Views;
 
@@ -46,6 +47,8 @@ public partial class MainWindow
     // window's content was drawn, and until the window had nothing left to do. The times start at the moment the
     // request reached the window (a tray click, a second start of V2pn), counted on the clock every process of this
     // computer shares, so a script that started a second V2pn can add its own part. tools/showperf.ps1 uses it.
+    // "click-<name>" presses the window's control of that name (a button, a menu item, a list item), "tab-<n>" picks
+    // the sidebar's tab n and "back" closes the open page and the windows it owns: each writes how long until its frame and the idle window.
     private string? _perfFolder;
     private long _perfShowAsked;
     private string? _perfShowWhy;
@@ -70,7 +73,8 @@ public partial class MainWindow
             {
                 name = name[..dot];
             }
-            if (name is not ("hide" or "show" or "toggle" or "minimize" or "restore"))
+            if (name is not ("hide" or "show" or "toggle" or "minimize" or "restore" or "back")
+                && !name.StartsWith("click-", StringComparison.Ordinal) && !name.StartsWith("tab-", StringComparison.Ordinal))
             {
                 return;
             }
@@ -101,6 +105,25 @@ public partial class MainWindow
                     case "restore":
                         DebugNoteShowAsked(asked, name);
                         WindowState = _restoreState;
+                        break;
+                    case "back":
+                        foreach (var owned in OwnedWindows.ToList())
+                        {
+                            owned.Close();
+                        }
+                        ClosePage();
+                        DebugTraceAction(name, asked);
+                        break;
+                    case not null when name.StartsWith("tab-", StringComparison.Ordinal):
+                        if (int.TryParse(name[4..], out var tab))
+                        {
+                            SelectTab((SidebarTab)tab);
+                        }
+                        DebugTraceAction(name, asked);
+                        break;
+                    case not null when name.StartsWith("click-", StringComparison.Ordinal):
+                        DebugPress(name[6..]);
+                        DebugTraceAction(name, asked);
                         break;
                     default:
                         DebugNoteShowAsked(asked, name);
@@ -140,6 +163,71 @@ public partial class MainWindow
         }
     }
 
+    /// <summary>Presses a named control of the window the way a click would, without moving the mouse or the focus.</summary>
+    private void DebugPress(string controlName)
+    {
+        switch (this.FindControl<Control>(controlName))
+        {
+            case Button { Command: { } command } button when command.CanExecute(button.CommandParameter):
+                command.Execute(button.CommandParameter);
+                break;
+            case Button button:
+                button.RaiseEvent(new RoutedEventArgs(Button.ClickEvent));
+                break;
+            case MenuItem { Command: { } command } item when command.CanExecute(item.CommandParameter):
+                command.Execute(item.CommandParameter);
+                break;
+            case MenuItem item:
+                item.RaiseEvent(new RoutedEventArgs(MenuItem.ClickEvent));
+                break;
+            case ListBoxItem item:
+                item.IsSelected = true;
+                break;
+            default:
+                DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} no control {controlName}"));
+                break;
+        }
+    }
+
+    /// <summary>Times an action the window's thread has just run: until its first frame and until all was idle.</summary>
+    private async void DebugTraceAction(string why, long asked)
+    {
+        try
+        {
+            if (await DebugFramesAsync(asked) is { } t)
+            {
+                DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} {why} action returned={t.Returned:0.0} frame={t.Frame:0.0} settled={t.Settled:0.0}"));
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(DebugTraceAction), ex);
+        }
+    }
+
+    /// <summary>
+    /// From <paramref name="asked"/>: until the window's thread was free for input again, until the next frame was
+    /// drawn, and until layout and the rest had run (context idle) and one more frame was drawn.
+    /// </summary>
+    private async Task<(double Returned, double Frame, double Settled)?> DebugFramesAsync(long asked)
+    {
+        static double Ms(long from) => System.Diagnostics.Stopwatch.GetElapsedTime(from).TotalMilliseconds;
+        // The rest of what is running (the platform's own call, activation) comes before this continues.
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Send);
+        var compositor = Avalonia.Rendering.Composition.ElementComposition.GetElementVisual(this)?.Compositor;
+        if (compositor == null)
+        {
+            return null;
+        }
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Input);
+        var returned = Ms(asked);
+        await compositor.RequestCompositionBatchCommitAsync().Rendered;
+        var frame = Ms(asked);
+        await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
+        await compositor.RequestCompositionBatchCommitAsync().Rendered;
+        return (returned, frame, Ms(asked));
+    }
+
     /// <summary>When a request to bring the window up arrived, before the window's thread took it.</summary>
     private void DebugNoteShowAsked(long asked, string why)
     {
@@ -164,23 +252,11 @@ public partial class MainWindow
         _perfShowWhy = null;
         try
         {
-            static double Ms(long from) => System.Diagnostics.Stopwatch.GetElapsedTime(from).TotalMilliseconds;
-            var seen = Ms(asked);
-            // The rest of Show (the platform's own call, activation) runs before this continues.
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Send);
-            var compositor = Avalonia.Rendering.Composition.ElementComposition.GetElementVisual(this)?.Compositor;
-            if (compositor == null)
+            var seen = System.Diagnostics.Stopwatch.GetElapsedTime(asked).TotalMilliseconds;
+            if (await DebugFramesAsync(asked) is { } t)
             {
-                return;
+                DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} {why} asked={asked} freq={System.Diagnostics.Stopwatch.Frequency} seen={seen:0.0} returned={t.Returned:0.0} frame={t.Frame:0.0} settled={t.Settled:0.0}"));
             }
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.Input);
-            var returned = Ms(asked);
-            await compositor.RequestCompositionBatchCommitAsync().Rendered;
-            var frame = Ms(asked);
-            await Dispatcher.UIThread.InvokeAsync(() => { }, DispatcherPriority.ContextIdle);
-            await compositor.RequestCompositionBatchCommitAsync().Rendered;
-            var settled = Ms(asked);
-            DebugPerfLine(FormattableString.Invariant($"{DateTime.Now:HH:mm:ss.fff} {why} asked={asked} freq={System.Diagnostics.Stopwatch.Frequency} seen={seen:0.0} returned={returned:0.0} frame={frame:0.0} settled={settled:0.0}"));
         }
         catch (Exception ex)
         {

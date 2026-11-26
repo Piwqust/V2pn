@@ -2,12 +2,31 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
-## Unreleased
+## 1.6.1
 
-### Interface
+The tray icon opens a small panel instead of a long list: the server with its flag and ping, a power button, the servers you go back to, the mode and the route, all in one place. On a Mac the menu-bar menu shows your servers and says which mode and route are chosen.
 
-- A right click on the tray icon on Windows opens a compact panel instead of a long list. At the top are the server with its flag, the state and ping, and a round power button; a click on the server opens the list of all servers. Below are the fastest server, your favorites and the servers used last as cards, then two switches: Proxy or VPN, and what goes through the VPN (except Russian sites, blocked sites, everything). A bar of icons pastes a link, updates the subscriptions (also through the VPN), copies the terminal command and opens the window, Settings or Quit. The panel stays open while you change the server, the mode or the route, and follows the light or dark theme. On Linux the tray keeps its menu.
-- On a Mac the menu-bar icon's menu is half as long: the state with a coloured dot and the server, Connect, the fastest, favorite and recent servers with flags and ping, then one line each for the mode and the route that says what is chosen, with the choices one level down.
+<p align="center"><img src="docs/images/changelog/1.6.1-hero.png" width="800" alt="V2pn 1.6.1: the tray panel in front of the main window, connected through Frankfurt, with the fastest, favorite and recent servers as cards, the Proxy and VPN switch and the route switch"></p>
+
+### The tray panel
+
+<p align="center"><img src="docs/images/changelog/1.6.1-panel.png" width="800" alt="Before: the old tray menu, nineteen lines of text. Now: the panel, with callouts on the server, state and ping, the power button, your servers, Proxy or VPN, what goes through the VPN and the bar of everyday actions"></p>
+
+- A right click on the tray icon on Windows opens a panel instead of the old list. At the top are the server with its flag, the state and the ping, and a round button that connects and disconnects. A click on the server opens the list of all servers.
+- The fastest server, your favorites and the servers you used last are cards: one click switches to one.
+- Proxy or VPN, and what goes through the VPN (everything except Russian sites, only blocked sites, or everything), are two switches. The full names of the routes are in their tooltips; a rule set of your own shows as a fourth choice while it is in use.
+- A bar of icons pastes a link, updates the subscriptions (also through the VPN), copies the proxy command for a terminal, and opens the window, Settings or Quit.
+- The panel stays open while you change the server, the mode or the route, so you see the result where you asked for it. It follows the light or dark theme and opens as fast as the old menu did.
+- How Proxy mode sets the system proxy (system proxy, local port only, PAC) is no longer in the tray; it stays in Settings → General.
+- On Linux the tray keeps its menu.
+
+### On a Mac
+
+<p align="center"><img src="docs/images/changelog/1.6.1-mac.png" width="800" alt="The menu-bar menu on a Mac: the state with a green dot, Disconnect, the fastest server, Stockholm, Frankfurt and Amsterdam with flags and ping, All Servers, Mode: Proxy, Route: Everything through VPN with its submenu open, Subscriptions, Open V2pn, Settings and Quit"></p>
+
+- The servers you use are in the menu itself, with their flags and ping, instead of one submenu down. The one in use is ticked; All Servers lists the rest by country.
+- The first line tells the state with a coloured dot, as the window's pill does, together with the country and the ping.
+- "Mode: Proxy" and "Route: Everything through VPN" say what is chosen; the choices are one level down. How the proxy is set and the terminal command are under Mode, Add from Clipboard under Subscriptions.
 
 ## 1.6.0
 

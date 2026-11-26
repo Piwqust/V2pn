@@ -160,16 +160,17 @@ public partial class TrayPanel : UserControl
             {
                 panelState.Classes.Set(c, c == v.Kind);
             }
-            txtState.Text = v.Connected && v.Delay > 0
-                ? $"{v.StateLabel.ToUpper(CultureInfo.CurrentUICulture)} · {L.Ms(v.Delay)}"
-                : v.StateLabel.ToUpper(CultureInfo.CurrentUICulture);
+            txtState.Text = v.StateLabel;
+            ToolTip.SetTip(panelState, v.StateLabel);
 
             imgFlag.Source = v.Flag;
             borderFlag.IsVisible = v.Flag != null;
             borderGlobe.IsVisible = v.Flag == null;
             txtTitle.Text = v.Title;
-            txtSubtitle.Text = v.Subtitle;
-            txtSubtitle.IsVisible = !string.IsNullOrEmpty(v.Subtitle);
+            // The ping goes with the server's name; the state line keeps its whole width for words like "Local proxy on port 20808".
+            var ping = v.Connected && v.Delay > 0 ? L.Ms(v.Delay) : null;
+            txtSubtitle.Text = string.Join(" · ", new[] { v.Subtitle, ping }.Where(t => !string.IsNullOrEmpty(t)));
+            txtSubtitle.IsVisible = txtSubtitle.Text.Length > 0;
             AutomationPropertiesName(btnServer, string.Join(", ", new[] { v.Title, v.Subtitle, v.StateLabel }.Where(t => !string.IsNullOrEmpty(t))));
 
             var action = !v.Connected ? L.Connect : v.Busy ? L.StateConnecting : L.Disconnect;

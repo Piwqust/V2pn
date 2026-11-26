@@ -62,9 +62,8 @@
             <Setter Property="Foreground" Value="{DynamicResource V2Faint}" />
         </Style>
         <Style Selector="TextBlock.tstate">
-            <Setter Property="FontSize" Value="11" />
+            <Setter Property="FontSize" Value="12" />
             <Setter Property="FontWeight" Value="SemiBold" />
-            <Setter Property="LetterSpacing" Value="0.4" />
             <Setter Property="Foreground" Value="{DynamicResource V2Muted}" />
             <Setter Property="TextTrimming" Value="CharacterEllipsis" />
         </Style>
@@ -179,7 +178,7 @@
     <!--  The margin leaves room for the shadow inside the transparent window.  -->
     <Border
         x:Name="root"
-        Width="320"
+        Width="344"
         Margin="10">
         <StackPanel Margin="14,14,14,8" Spacing="12">
 

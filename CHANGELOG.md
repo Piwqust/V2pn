@@ -2,6 +2,12 @@
 
 What changes for the people who use the app. Each version's section becomes the text of its release page on GitHub; the section of the coming version is called "Unreleased" until `tools/release.ps1` is run with its number (rename the heading to that number first).
 
+## Unreleased
+
+### Interface
+
+- A right click on the tray icon on Windows opens a panel instead of a plain list. It shows the connection as the window does: the state, the server with its flag and ping, and the Connect button. Below are the fastest server, your favorites and the servers used last, one click to switch. Proxy or VPN mode and how the proxy is set are switches, the three routes have their icons, and Paste, Update, Update through the VPN and the terminal command are tiles. The panel stays open while you change the server, the mode or the route, so you see the result where you asked for it. It follows the light or dark theme. On Linux the tray keeps its menu.
+
 ## 1.6.0
 
 Subscriptions that send whole Xray configs, as Remnawave panels do, now show real servers: each one gets a ping, a flag on the map and V2pn's routing, and the provider's own rules are one switch away. The first click on the tray icon opens the window at once, and the interface is easier to read, with a screen reader too.

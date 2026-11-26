@@ -40,6 +40,8 @@
                         V2pn: the state and the everyday actions first, in the window's words; the window sets the
                         texts and checks (MainWindow RefreshTray). The proxy items keep v2rayN's four system-proxy
                         states, named as kinds of the "Proxy" mode.
+                        On Windows the tray panel (Views/TrayPanel, Common/TrayMenuPlacement) takes the menu's place;
+                        Linux shows this menu.
                     -->
                     <NativeMenu>
                         <NativeMenuItem Header="{Binding TrayStatusText, TargetNullValue={x:Static service:Global.AppName}}" IsEnabled="False" />

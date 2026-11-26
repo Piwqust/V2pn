@@ -62,6 +62,7 @@ public partial class MainWindow
                 FocusMap(_mapState, _mapConnected);
             }
         }
+        NotifyTray();
     }
 
     private MapPlace? ServerPlace()

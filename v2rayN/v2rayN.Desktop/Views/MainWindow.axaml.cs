@@ -1040,6 +1040,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
             status.TrayConnectText = state == ProtectionState.Unprotected ? L.Connect : L.Disconnect;
         }
         QueueMacDockMenu();
+        NotifyTray();
     }
     /// <summary>Connect/Disconnect from the tray menu: the window's button, without opening the window.</summary>
     public void ToggleConnectionFromTray()
@@ -1158,6 +1159,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         ToolTip.SetTip(itemModeProxy, L.ModeProxyTip);
         ToolTip.SetTip(itemModeVpn, needsAdmin ? $"{L.ModeVpnTip} {L.ModeVpnNeedsAdmin}" : L.ModeVpnTip);
         lstMode.SelectionChanged += LstMode_SelectionChanged;
+        lstMode.SelectionChanged += (_, _) => NotifyTray();
 
         btnRouteRussia.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.RussiaDirect);
         btnRouteBlocked.Click += async (_, _) => await SelectPresetAsync(RoutingPresetKind.BlockedOnly);
@@ -1358,6 +1360,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         status.BlTrayRouteRussia = kind == RoutingPresetKind.RussiaDirect;
         status.BlTrayRouteBlocked = kind == RoutingPresetKind.BlockedOnly;
         status.BlTrayRouteAll = kind == RoutingPresetKind.All;
+        NotifyTray();
 
         // The bar was transparent until the route name came in, so its change of width is never seen.
         if (!_routeShown)

@@ -3,7 +3,10 @@ using System.Runtime.InteropServices;
 namespace v2rayN.Desktop.Common;
 
 /// <summary>
-/// V2pn: keeps the Windows tray menu next to the click. Avalonia's tray menu window (TrayPopupRoot)
+/// V2pn: what a right click on the tray icon opens on Windows. Avalonia's plain menu gives way to the tray
+/// panel (Views/TrayPanel), and the window is kept next to the click.
+///
+/// The placement: Avalonia's tray menu window (TrayPopupRoot)
 /// re-runs its positioner on every layout pass and anchors it at the window's own current position,
 /// which the previous pass already moved. When a later pass comes back taller, the menu flips up a
 /// second time and hangs a whole menu-height above the taskbar. Here the click point is taken once,
@@ -16,7 +19,50 @@ internal static class TrayMenuPlacement
 
     public static void Install()
     {
+        // Avalonia builds the tray window with its menu as the content and shows it at once; the panel takes
+        // the menu's place before the first layout pass, so the plain menu is never drawn.
+        ContentControl.ContentProperty.Changed.AddClassHandler<Window>((window, e) =>
+        {
+            if (window.GetType().Name == TrayWindowType && e.NewValue is MenuFlyoutPresenter)
+            {
+                UsePanel(window);
+            }
+        });
         Window.WindowOpenedEvent.AddClassHandler<Window>((window, _) => OnOpened(window));
+    }
+
+    private static Views.TrayPanel? _panel;
+    private static Views.MainWindow? _panelOwner;
+
+    private static void UsePanel(Window window)
+    {
+        try
+        {
+            if (Application.Current?.ApplicationLifetime is not IClassicDesktopStyleApplicationLifetime { MainWindow: Views.MainWindow main })
+            {
+                return;
+            }
+            // One panel for the whole run: built once, it opens as fast as the plain menu did.
+            if (_panel == null || _panelOwner != main)
+            {
+                _panel = new Views.TrayPanel(main, window.Close);
+                _panelOwner = main;
+            }
+            _panel.MoveTo(window, window.Close);
+            window.KeyDown += (_, e) =>
+            {
+                if (e.Key == Key.Escape)
+                {
+                    e.Handled = true;
+                    window.Close();
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            // The plain menu stays: it still does everything the panel does.
+            Logging.SaveLog(nameof(TrayMenuPlacement), ex);
+        }
     }
 
     private static void OnOpened(Window window)
@@ -52,7 +98,8 @@ internal static class TrayMenuPlacement
             x = Math.Max(area.X, Math.Min(x, area.Right - size.Width));
             y = Math.Max(area.Y, Math.Min(y, area.Bottom - size.Height));
 
-            var target = new PixelPoint(x, y);
+            // Background mode (tools/sandbox.ps1) keeps it off the screen like every other window.
+            var target = OffscreenMode.Place(new PixelPoint(x, y));
             if (window.Position != target)
             {
                 window.Position = target;

@@ -33,6 +33,9 @@ public static partial class L
     public static string MacRoute => T("Route", "Маршрут");
     public static string MacRouteSettings => T("Route Settings…", "Настроить маршруты…");
     public static string MacServers => T("Servers", "Серверы");
+    public static string MacAllServers => T("All Servers", "Все серверы");
+    public static string MacProxyMethod => T("How the Proxy Is Set", "Как включается прокси");
+    public static string MacOtherRoutes => T("Other Routes", "Другие маршруты");
     public static string MacNoServers => T("No servers yet", "Серверов пока нет");
     // {0}: how many servers of the country the menu leaves out.
     public static string MacMoreServers => T("{0} more in the window…", "Ещё {0} в окне…");

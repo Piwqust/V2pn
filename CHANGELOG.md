@@ -7,6 +7,7 @@ What changes for the people who use the app. Each version's section becomes the 
 ### Interface
 
 - A right click on the tray icon on Windows opens a panel instead of a plain list. It shows the connection as the window does: the state, the server with its flag and ping, and the Connect button. Below are the fastest server, your favorites and the servers used last, one click to switch. Proxy or VPN mode and how the proxy is set are switches, the three routes have their icons, and Paste, Update, Update through the VPN and the terminal command are tiles. The panel stays open while you change the server, the mode or the route, so you see the result where you asked for it. It follows the light or dark theme. On Linux the tray keeps its menu.
+- On a Mac the menu-bar icon's menu is laid out the same way and stays a native menu: the state with a coloured dot, the server with its flag and ping, Connect, the fastest, favorite and recent servers, Proxy or VPN and the three routes as choices on the menu itself instead of in submenus, each with its icon. All servers by country, how the proxy is set, your own routes and the subscriptions are one submenu away.
 
 ## 1.6.0
 

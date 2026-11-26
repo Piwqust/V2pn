@@ -253,36 +253,125 @@ public partial class MainWindow
         MacMenus.Fill(_macConnectionMenu, items);
     }
 
-    /// <summary>The status item: the state, the everyday actions, then what the window is for.</summary>
+    /// <summary>
+    /// The status item, laid out as the tray panel on Windows: the state and the server, Connect, the servers a person
+    /// goes back to, the mode and the route as choices on the menu itself, the everyday actions, then the window.
+    /// </summary>
     private void FillMacStatusMenu()
     {
-        if (_macStatusMenu == null || !MacStampChanged(ref _macStatusStamp))
+        if (_macStatusMenu == null || TrayViewNow() is not { } v
+            || !MacStampChanged(ref _macStatusStamp, $"{v.Kind}|{v.Delay}|{v.Method}|{v.HasServers}|{v.Title}|{v.Subtitle}"))
         {
             return;
         }
         var status = ViewModel?.StatusBarViewModel;
+        var server = v.Subtitle.IsNullOrEmpty() ? v.Title : $"{v.Title} — {v.Subtitle}";
+        if (v.Connected && v.Delay > 0)
+        {
+            server = $"{server}  ·  {L.Ms(v.Delay)}";
+        }
         var items = new List<NativeMenuItemBase>
         {
-            MacMenus.Label(MacStateLine()),
-            MacMenus.Item(MacConnectText(), ToggleConnectionFromTray),
+            MacMenus.Label(v.StateLabel, MacMenuIcons.Dot(v.Kind)),
+            // The server opens the window, where another one is picked.
+            MacMenus.Item(Shorten(server, 60), () => ShowHideWindow(true), icon: v.Flag ?? MacMenuIcons.Glyph("SemiIconGlobeStroke")),
+            MacMenus.Item(MacConnectText(), ToggleConnectionFromTray, icon: MacMenuIcons.Glyph("SemiIconPower")),
             MacMenus.Separator(),
-            MacMenus.Submenu(L.MacServers, MacServersMenu()),
-            MacMenus.Submenu(L.MacMode, MacModeMenu()),
-            MacMenus.Submenu(L.MacRoute, MacRouteMenu()),
-            MacMenus.Submenu(L.MacSubscriptions, MacSubscriptionsMenu()),
-            MacMenus.Separator(),
-            MacMenus.Item(L.MacAddFromClipboard, () => MacInWindow(AddServerViaClipboardAsync)),
+            MacMenus.Label(L.MacServers),
         };
+        if (!v.HasServers)
+        {
+            items.Add(MacMenus.Item(L.MacAddFromClipboard, () => MacInWindow(AddServerViaClipboardAsync), icon: MacMenuIcons.Glyph("SemiIconCopyAdd")));
+            items.Add(MacMenus.Item(L.MacAddSubscription, () => MacInWindow(() => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe()), icon: MacMenuIcons.Glyph("SemiIconPlus")));
+        }
+        else
+        {
+            items.Add(MacMenus.Item(L.Fastest, RecheckFastestAsync, icon: MacMenuIcons.Glyph("SemiIconBolt")));
+            foreach (var s in v.Servers)
+            {
+                var id = s.IndexId;
+                var name = s.Delay > 0 ? $"{s.Name}  ·  {L.Ms(s.Delay)}" : s.Name;
+                items.Add(MacMenus.Choice(name, s.Active, () => ConnectToAsync(id), s.Flag ?? MacMenuIcons.Glyph("SemiIconGlobeStroke")));
+            }
+            items.Add(MacMenus.Submenu(L.MacAllServers, MacServersMenu(countriesOnly: true), MacMenuIcons.Glyph("SemiIconListView")));
+        }
+
+        items.Add(MacMenus.Separator());
+        items.Add(MacMenus.Label(L.MacMode));
+        items.Add(MacMenus.Choice(L.ModeProxy, !v.Tun, () => MacSetModeAsync(false), MacMenuIcons.Glyph("SemiIconGlobeStroke"), L.ModeProxyTip));
+        items.Add(MacMenus.Choice(L.ModeVpn, v.Tun, () => MacSetModeAsync(true), MacMenuIcons.Glyph("SemiIconShieldStroked"), L.ModeVpnTip));
+        if (!v.Tun)
+        {
+            items.Add(MacMenus.Submenu(L.MacProxyMethod, MacProxyMethodMenu(v), MacMenuIcons.Glyph("SemiIconSettingStroked")));
+        }
+
+        items.Add(MacMenus.Separator());
+        items.Add(MacMenus.Label(L.BarRoute));
+        items.AddRange(MacRouteChoices(v));
+
+        items.Add(MacMenus.Separator());
+        items.Add(MacMenus.Item(L.MacAddFromClipboard, () => MacInWindow(AddServerViaClipboardAsync), icon: MacMenuIcons.Glyph("SemiIconCopyAdd")));
+        items.Add(MacMenus.Submenu(L.MacSubscriptions, MacSubscriptionsMenu(), MacMenuIcons.Glyph("SemiIconRefresh")));
         if (status != null)
         {
-            items.Add(MacMenus.Item(L.TrayCopyProxyCmd, () => status.CopyProxyCmdToClipboardCmd.Execute().Subscribe()));
+            items.Add(MacMenus.Item(L.TrayCopyProxyCmd, () => status.CopyProxyCmdToClipboardCmd.Execute().Subscribe(), icon: MacMenuIcons.Glyph("SemiIconTerminal")));
         }
         items.Add(MacMenus.Separator());
-        items.Add(MacMenus.Item(L.TrayOpen, () => ShowHideWindow(true)));
-        items.Add(MacMenus.Item(L.MacSettings, MacOpenSettings));
+        items.Add(MacMenus.Item(L.TrayOpen, () => ShowHideWindow(true), new KeyGesture(Key.D0, MacMenus.Cmd)));
+        items.Add(MacMenus.Item(L.MacSettings, MacOpenSettings, new KeyGesture(Key.OemComma, MacMenus.Cmd)));
         items.Add(MacMenus.Separator());
-        items.Add(MacMenus.Item(L.MacQuit, MacQuit));
+        items.Add(MacMenus.Item(L.MacQuit, MacQuit, new KeyGesture(Key.Q, MacMenus.Cmd)));
         MacMenus.Fill(_macStatusMenu, items);
+    }
+
+    // The three routes with their icons, then the person's own (a partner's route stays in its tab).
+    private List<NativeMenuItemBase> MacRouteChoices(TrayView v)
+    {
+        var status = ViewModel?.StatusBarViewModel;
+        var active = status?.SelectedRouting?.Id;
+        var items = new List<NativeMenuItemBase>
+        {
+            MacMenus.Choice(L.RouteRussiaDirect, v.Route == RoutingPresetKind.RussiaDirect,
+                () => MacSelectRouteAsync(RoutingPresets.Id(RoutingPresetKind.RussiaDirect)), MacMenuIcons.Glyph("SemiIconBranch")),
+            MacMenus.Choice(L.RouteBlockedOnly, v.Route == RoutingPresetKind.BlockedOnly,
+                () => MacSelectRouteAsync(RoutingPresets.Id(RoutingPresetKind.BlockedOnly)), MacMenuIcons.Glyph("SemiIconFilterStroked")),
+            MacMenus.Choice(L.RouteAll, v.Route == RoutingPresetKind.All,
+                () => MacSelectRouteAsync(RoutingPresets.Id(RoutingPresetKind.All)), MacMenuIcons.Glyph("SemiIconGlobeStroke")),
+        };
+        var settings = MacMenus.Item(L.MacRouteSettings, () => MacInWindow(() => ViewModel?.RoutingSettingCmd.Execute().Subscribe()));
+        var custom = status?.RoutingItems.Where(t => !RoutingPresets.IsPreset(t.Id) && !V2pnPartnerRoutes.IsPartnerRoute(t.Id)).ToList() ?? [];
+        if (custom.Count == 0)
+        {
+            items.Add(settings);
+            return items;
+        }
+        // The person's own rule sets wait in a submenu; the one in force shows with the three.
+        NativeMenuItem Own(RoutingItem t) => MacMenus.Choice(Shorten(RoutingPresets.DisplayName(t.Remarks), 48), v.Route == null && t.Id == active,
+            () => MacSelectRouteAsync(t.Id), MacMenuIcons.Glyph("SemiIconRoute"));
+        if (v.Route == null && custom.FirstOrDefault(t => t.Id == active) is { } inForce)
+        {
+            items.Add(Own(inForce));
+        }
+        var more = custom.Take(MacMenuServersPerCountry).Select(t => (NativeMenuItemBase)Own(t)).ToList();
+        more.Add(MacMenus.Separator());
+        more.Add(settings);
+        items.Add(MacMenus.Submenu(L.MacOtherRoutes, MacMenus.Menu([.. more]), MacMenuIcons.Glyph("SemiIconRoute")));
+        return items;
+    }
+
+    // How Proxy mode sets the system proxy, as Settings → General has it. PAC is Windows only.
+    private NativeMenu MacProxyMethodMenu(TrayView v)
+    {
+        var items = new List<NativeMenuItemBase>
+        {
+            MacMenus.Choice(L.ProxyMethodSystem, v.Method == ESysProxyType.ForcedChange, () => TraySetMethod(ESysProxyType.ForcedChange)),
+            MacMenus.Choice(L.ProxyModeKeep, v.Method == ESysProxyType.Unchanged, () => TraySetMethod(ESysProxyType.Unchanged)),
+        };
+        if (v.PacAvailable)
+        {
+            items.Add(MacMenus.Choice(L.ProxyMethodPac, v.Method == ESysProxyType.Pac, () => TraySetMethod(ESysProxyType.Pac)));
+        }
+        return MacMenus.Menu([.. items]);
     }
 
     /// <summary>The Dock menu, above what the Dock adds itself: connect or disconnect, and the servers used last.</summary>
@@ -331,7 +420,8 @@ public partial class MainWindow
 
     private string MacConnectText() => CurrentState() == ProtectionState.Unprotected ? L.Connect : L.Disconnect;
 
-    private NativeMenu MacServersMenu()
+    /// <param name="countriesOnly">Without the fastest, favorite and recent servers: the status menu has them above.</param>
+    private NativeMenu MacServersMenu(bool countriesOnly = false)
     {
         var items = new List<NativeMenuItemBase>();
         var sidebar = _sidebar;
@@ -343,8 +433,11 @@ public partial class MainWindow
             items.Add(MacMenus.Item(L.MacAddSubscription, () => MacInWindow(() => ViewModel?.ProfilesViewModel.AddSubCmd.Execute().Subscribe())));
             return MacMenus.Menu([.. items]);
         }
-        items.Add(MacMenus.Item(L.Fastest, RecheckFastestAsync));
-        var favorites = sidebar.MenuFavorites();
+        var favorites = countriesOnly ? [] : sidebar.MenuFavorites();
+        if (!countriesOnly)
+        {
+            items.Add(MacMenus.Item(L.Fastest, RecheckFastestAsync));
+        }
         if (favorites.Count > 0)
         {
             items.Add(MacMenus.Separator());
@@ -352,7 +445,7 @@ public partial class MainWindow
             items.AddRange(favorites.Take(MacMenuServersPerCountry).Select(m => MacServerItem(m, null)));
         }
         var favoriteIds = favorites.Select(m => m.IndexId).ToHashSet();
-        var recent = sidebar.MenuRecent(MacMenuRecent + favoriteIds.Count).Where(m => !favoriteIds.Contains(m.IndexId)).Take(MacMenuRecent).ToList();
+        var recent = countriesOnly ? [] : sidebar.MenuRecent(MacMenuRecent + favoriteIds.Count).Where(m => !favoriteIds.Contains(m.IndexId)).Take(MacMenuRecent).ToList();
         if (recent.Count > 0)
         {
             items.Add(MacMenus.Separator());
@@ -360,7 +453,10 @@ public partial class MainWindow
             items.AddRange(recent.Select(m => MacServerItem(m, null)));
         }
         items.Add(MacMenus.Separator());
-        items.Add(MacMenus.Label(L.TabCountries));
+        if (!countriesOnly)
+        {
+            items.Add(MacMenus.Label(L.TabCountries));
+        }
         foreach (var (code, name, servers) in countries.Take(MacMenuCountries))
         {
             var flag = V2pnConverters.Flag(code);
@@ -523,9 +619,9 @@ public partial class MainWindow
     /// Everything the menus show, as one text: the state, the mode, the route, the servers with their pings, the
     /// subscriptions. True when it differs from <paramref name="stamp"/>, which then takes the new one.
     /// </summary>
-    private bool MacStampChanged(ref string? stamp)
+    private bool MacStampChanged(ref string? stamp, string? extra = null)
     {
-        var sb = new StringBuilder();
+        var sb = new StringBuilder(extra);
         sb.Append(MacStateLine()).Append('|').Append(MacConnectText()).Append('|').Append(lstMode.SelectedIndex)
             .Append('|').Append(ViewModel?.StatusBarViewModel.SelectedRouting?.Id).Append('|').Append(_config.IndexId)
             .Append('|').Append(Editions.Partner?.Id).Append('|').Append(CultureInfo.CurrentUICulture.Name);

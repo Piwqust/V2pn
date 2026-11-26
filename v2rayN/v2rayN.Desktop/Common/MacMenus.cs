@@ -20,7 +20,7 @@ internal static class MacMenus
         Item(header, () => { _ = RunAsync(click); }, gesture, icon, tip);
 
     /// <summary>A line that says something and does nothing: the state, a section's name.</summary>
-    public static NativeMenuItem Label(string text) => new(text) { IsEnabled = false };
+    public static NativeMenuItem Label(string text, Bitmap? icon = null) => new(text) { IsEnabled = false, Icon = icon };
 
     public static NativeMenuItem Submenu(string header, NativeMenu menu, Bitmap? icon = null) => new(header) { Menu = menu, Icon = icon };
 
@@ -230,6 +230,75 @@ internal static class MacMenus
         {
             Logging.SaveLog(nameof(MacMenus), ex);
         }
+    }
+}
+
+/// <summary>
+/// V2pn: the small pictures in the status item's menu. macOS draws them at the height of the menu's text and does
+/// not tint them, so the glyphs are grey (readable on a light and a dark menu, like a secondary label) and the state
+/// dot keeps the colour of the window's pill.
+/// </summary>
+internal static class MacMenuIcons
+{
+    private const int Size = 64;
+    private static readonly Dictionary<string, Bitmap?> _cache = [];
+
+    /// <summary>A Lucide glyph from the app's resources (Icons.Install), in grey.</summary>
+    public static Bitmap? Glyph(string key)
+    {
+        if (_cache.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+        Bitmap? bitmap = null;
+        try
+        {
+            if (Application.Current?.FindResource(key) is Geometry geometry)
+            {
+                var target = new RenderTargetBitmap(new PixelSize(Size, Size));
+                using (var ctx = target.CreateDrawingContext())
+                {
+                    // The glyphs live in a 24 by 24 frame; a margin keeps them the size of the menu's letters.
+                    const double margin = 8;
+                    var scale = (Size - 2 * margin) / 24;
+                    using (ctx.PushTransform(Matrix.CreateScale(scale, scale) * Matrix.CreateTranslation(margin, margin)))
+                    {
+                        ctx.DrawGeometry(new SolidColorBrush(Color.FromRgb(0x8E, 0x8E, 0x93)), null, geometry);
+                    }
+                }
+                bitmap = target;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logging.SaveLog(nameof(MacMenuIcons), ex);
+        }
+        _cache[key] = bitmap;
+        return bitmap;
+    }
+
+    /// <summary>The state as a dot in the colour of the window's pill: "safe", "warn", "unsafe" or "checking".</summary>
+    public static Bitmap? Dot(string kind)
+    {
+        var key = "dot:" + kind;
+        if (_cache.TryGetValue(key, out var cached))
+        {
+            return cached;
+        }
+        var color = kind switch
+        {
+            "safe" => Color.FromRgb(0x2E, 0xB8, 0x72),
+            "warn" => Color.FromRgb(0xE5, 0xA0, 0x33),
+            "unsafe" => Color.FromRgb(0xE8, 0x47, 0x5F),
+            _ => Color.FromRgb(0x8E, 0x8E, 0x93),
+        };
+        var target = new RenderTargetBitmap(new PixelSize(Size, Size));
+        using (var ctx = target.CreateDrawingContext())
+        {
+            ctx.DrawEllipse(new SolidColorBrush(color), null, new Point(Size / 2.0, Size / 2.0), 12, 12);
+        }
+        _cache[key] = target;
+        return target;
     }
 }
 

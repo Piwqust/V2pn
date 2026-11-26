@@ -43,6 +43,28 @@ internal static class WindowsShell
         }
     }
 
+    /// <summary>
+    /// Takes a window out of sight while Windows keeps composing it (it still draws, yet has no place on the
+    /// screen), or brings it back. False when Windows refused.
+    /// </summary>
+    public static bool Cloak(IntPtr hwnd, bool cloak)
+    {
+        try
+        {
+            var value = cloak ? 1 : 0;
+            return hwnd != IntPtr.Zero && DwmSetWindowAttribute(hwnd, DwmwaCloak, ref value, sizeof(int)) == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private const int DwmwaCloak = 13;
+
+    [DllImport("dwmapi.dll")]
+    private static extern int DwmSetWindowAttribute(IntPtr hwnd, int attribute, ref int value, int size);
+
     [DllImport("user32.dll")]
     private static extern bool AllowSetForegroundWindow(int dwProcessId);
 

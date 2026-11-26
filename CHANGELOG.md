@@ -20,6 +20,10 @@ What changes for the people who use the app. Each version's section becomes the 
   - "My IP" and "Update subscriptions" are called what they say on screen.
   - The first-run card stays readable while V2pn looks for other VPN apps. Before, one of its buttons was moved during the search, and screen readers could no longer read the card.
 
+### Speed
+
+- When V2pn starts in the tray (at sign-in), the first click on its icon opens the window at once. Before, that first opening took about half a second, while every later one was instant: the window had never been drawn. Now V2pn draws it once a few seconds after the start, out of sight, without a taskbar button and without taking the focus.
+
 ### Fixes
 
 - `v2pnctl` works in a new terminal after V2pn updated itself to 1.5.0. Only the installer put V2pn's folder on the PATH, so a copy that came by an update had `v2pnctl` in its folder and no terminal found it. The installed V2pn now adds its folder to your user's PATH once, at its next start, the way the installer does; if you take it off again, V2pn leaves it off. Portable copies are left alone.

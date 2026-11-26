@@ -2870,6 +2870,8 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
                     : !IsInFront());
         if (bl)
         {
+            // Asked for while it was being drawn in the tray, or before that: the window comes as it is.
+            EndWarmUp(true);
             Show();
             if (WindowState == WindowState.Minimized)
             {
@@ -2933,6 +2935,7 @@ public partial class MainWindow : WindowBase<MainWindowViewModel>, IV2pnConnecti
         if (_startHidden)
         {
             ShowHideWindow(false);
+            _ = WarmUpInTrayAsync();
         }
         // Sign-in entries are tidied at every start: one fixed name, the sign-in argument, nothing left
         // from removed or test copies (registry or task; schtasks is slow, hence the background).

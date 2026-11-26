@@ -254,8 +254,8 @@ public partial class MainWindow
     }
 
     /// <summary>
-    /// The status item, laid out as the tray panel on Windows: the state and the server, Connect, the servers a person
-    /// goes back to, the mode and the route as choices on the menu itself, the everyday actions, then the window.
+    /// The status item, short: the state with the server, Connect, the servers a person goes back to, the mode and the
+    /// route as one line each that says what is chosen (the choices one level down), adding servers, the window.
     /// </summary>
     private void FillMacStatusMenu()
     {
@@ -265,19 +265,13 @@ public partial class MainWindow
             return;
         }
         var status = ViewModel?.StatusBarViewModel;
-        var server = v.Subtitle.IsNullOrEmpty() ? v.Title : $"{v.Title} — {v.Subtitle}";
-        if (v.Connected && v.Delay > 0)
-        {
-            server = $"{server}  ·  {L.Ms(v.Delay)}";
-        }
+        var state = v.Connected && v.Delay > 0 ? $"{v.StateLabel} · {v.Title} · {L.Ms(v.Delay)}"
+            : v.HasServers ? $"{v.StateLabel} · {v.Title}" : v.StateLabel;
         var items = new List<NativeMenuItemBase>
         {
-            MacMenus.Label(v.StateLabel, MacMenuIcons.Dot(v.Kind)),
-            // The server opens the window, where another one is picked.
-            MacMenus.Item(Shorten(server, 60), () => ShowHideWindow(true), icon: v.Flag ?? MacMenuIcons.Glyph("SemiIconGlobeStroke")),
+            MacMenus.Label(Shorten(state, 60), MacMenuIcons.Dot(v.Kind)),
             MacMenus.Item(MacConnectText(), ToggleConnectionFromTray, icon: MacMenuIcons.Glyph("SemiIconPower")),
             MacMenus.Separator(),
-            MacMenus.Label(L.MacServers),
         };
         if (!v.HasServers)
         {
@@ -297,31 +291,38 @@ public partial class MainWindow
         }
 
         items.Add(MacMenus.Separator());
-        items.Add(MacMenus.Label(L.MacMode));
-        items.Add(MacMenus.Choice(L.ModeProxy, !v.Tun, () => MacSetModeAsync(false), MacMenuIcons.Glyph("SemiIconGlobeStroke"), L.ModeProxyTip));
-        items.Add(MacMenus.Choice(L.ModeVpn, v.Tun, () => MacSetModeAsync(true), MacMenuIcons.Glyph("SemiIconShieldStroked"), L.ModeVpnTip));
-        if (!v.Tun)
-        {
-            items.Add(MacMenus.Submenu(L.MacProxyMethod, MacProxyMethodMenu(v), MacMenuIcons.Glyph("SemiIconSettingStroked")));
-        }
-
-        items.Add(MacMenus.Separator());
-        items.Add(MacMenus.Label(L.BarRoute));
-        items.AddRange(MacRouteChoices(v));
-
-        items.Add(MacMenus.Separator());
-        items.Add(MacMenus.Item(L.MacAddFromClipboard, () => MacInWindow(AddServerViaClipboardAsync), icon: MacMenuIcons.Glyph("SemiIconCopyAdd")));
+        items.Add(MacMenus.Submenu($"{L.MacMode}: {(v.Tun ? L.ModeVpn : L.ModeProxy)}", MacModeChoices(v),
+            MacMenuIcons.Glyph(v.Tun ? "SemiIconShieldStroked" : "SemiIconGlobeStroke")));
+        var route = v.Route is { } kind ? RoutingPresets.Title(kind) : v.CustomRoute ?? L.RouteTitle;
+        items.Add(MacMenus.Submenu($"{L.MacRoute}: {Shorten(route, 40)}", MacMenus.Menu([.. MacRouteChoices(v)]), MacMenuIcons.Glyph("SemiIconRoute")));
         items.Add(MacMenus.Submenu(L.MacSubscriptions, MacSubscriptionsMenu(), MacMenuIcons.Glyph("SemiIconRefresh")));
-        if (status != null)
-        {
-            items.Add(MacMenus.Item(L.TrayCopyProxyCmd, () => status.CopyProxyCmdToClipboardCmd.Execute().Subscribe(), icon: MacMenuIcons.Glyph("SemiIconTerminal")));
-        }
+
         items.Add(MacMenus.Separator());
         items.Add(MacMenus.Item(L.TrayOpen, () => ShowHideWindow(true), new KeyGesture(Key.D0, MacMenus.Cmd)));
         items.Add(MacMenus.Item(L.MacSettings, MacOpenSettings, new KeyGesture(Key.OemComma, MacMenus.Cmd)));
-        items.Add(MacMenus.Separator());
         items.Add(MacMenus.Item(L.MacQuit, MacQuit, new KeyGesture(Key.Q, MacMenus.Cmd)));
         MacMenus.Fill(_macStatusMenu, items);
+    }
+
+    // Proxy or VPN, how Proxy mode sets the system proxy, and the proxy's command for a terminal.
+    private NativeMenu MacModeChoices(TrayView v)
+    {
+        var items = new List<NativeMenuItemBase>
+        {
+            MacMenus.Choice(L.ModeProxy, !v.Tun, () => MacSetModeAsync(false), MacMenuIcons.Glyph("SemiIconGlobeStroke"), L.ModeProxyTip),
+            MacMenus.Choice(L.ModeVpn, v.Tun, () => MacSetModeAsync(true), MacMenuIcons.Glyph("SemiIconShieldStroked"), L.ModeVpnTip),
+        };
+        if (!v.Tun)
+        {
+            items.Add(MacMenus.Separator());
+            items.Add(MacMenus.Submenu(L.MacProxyMethod, MacProxyMethodMenu(v)));
+        }
+        if (ViewModel?.StatusBarViewModel is { } status)
+        {
+            items.Add(MacMenus.Separator());
+            items.Add(MacMenus.Item(L.TrayCopyProxyCmd, () => status.CopyProxyCmdToClipboardCmd.Execute().Subscribe(), icon: MacMenuIcons.Glyph("SemiIconTerminal")));
+        }
+        return MacMenus.Menu([.. items]);
     }
 
     // The three routes with their icons, then the person's own (a partner's route stays in its tab).
@@ -573,6 +574,7 @@ public partial class MainWindow
             items.Add(MacMenus.Separator());
         }
         items.Add(MacMenus.Item(L.MacAddSubscription, () => MacInWindow(() => vm?.ProfilesViewModel.AddSubCmd.Execute().Subscribe())));
+        items.Add(MacMenus.Item(L.MacAddFromClipboard, () => MacInWindow(AddServerViaClipboardAsync)));
         items.Add(MacMenus.Item(L.MacAllSubscriptions, () => MacInWindow(() => SelectTab(SidebarTab.Subscriptions))));
         return MacMenus.Menu([.. items]);
     }
